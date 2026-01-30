@@ -86,7 +86,6 @@ describe('AddonConfigurationCommand', () => {
       const addons: string[] = [];
 
       const result = await command.execute({
-        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
       });
@@ -100,7 +99,6 @@ describe('AddonConfigurationCommand', () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
 
       const result = await command.execute({
-        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
       });
@@ -119,7 +117,6 @@ describe('AddonConfigurationCommand', () => {
       mockPostinstallAddon.mockRejectedValue(error);
 
       const result = await command.execute({
-        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
       });
@@ -134,7 +131,6 @@ describe('AddonConfigurationCommand', () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
 
       const result = await command.execute({
-        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
       });

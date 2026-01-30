@@ -98,7 +98,6 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     addons: extraAddons,
     configDir,
-    dependencyInstallationResult,
     options,
   });
 

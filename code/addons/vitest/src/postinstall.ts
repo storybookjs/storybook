@@ -9,6 +9,7 @@ import {
   formatFileContent,
   getProjectRoot,
   getStorybookInfo,
+  versions,
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import type { StorybookError } from 'storybook/internal/server-errors';
@@ -229,11 +230,11 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const getTemplateName = () => {
     if (isVitest4OrNewer) {
-      return 'vitest.config.4.template.ts';
+      return 'vitest.config.4.template.txt';
     } else if (isVitest3_2To4) {
-      return 'vitest.config.3.2.template.ts';
+      return 'vitest.config.3.2.template.txt';
     }
-    return 'vitest.config.template.ts';
+    return 'vitest.config.template.txt';
   };
 
   // If there's an existing workspace file, we update that file to include the Storybook Addon Vitest plugin.
@@ -249,7 +250,7 @@ export default async function postInstall(options: PostinstallOptions) {
       return;
     }
 
-    const workspaceTemplate = await loadTemplate('vitest.workspace.template.ts', {
+    const workspaceTemplate = await loadTemplate('vitest.workspace.template.txt', {
       EXTENDS_WORKSPACE: viteConfigFile
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
         : '',
@@ -358,7 +359,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       const command = [
-        'storybook',
+        `storybook@${versions.storybook}`,
         'automigrate',
         'addon-a11y-addon-test',
         '--loglevel',

@@ -1,16 +1,11 @@
-import * as fs from 'node:fs/promises';
-
 import type { BabelFile, types as t } from 'storybook/internal/babel';
 
-import { join, normalize } from 'pathe';
-
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+import { normalize } from 'pathe';
 
 export const loadTemplate = async (name: string, replacements: Record<string, string>) => {
-  let template = await fs.readFile(
-    join(resolvePackageDir('@storybook/addon-vitest'), 'templates', name),
-    'utf8'
-  );
+  // Dynamically import the template file as plain text
+  const templateModule = await import(`../templates/${name}`);
+  let template = templateModule.default;
   // Normalize Windows paths (backslashes) to forward slashes for JavaScript string compatibility
   Object.entries(replacements).forEach(
     ([key, value]) => (template = template.replace(key, normalize(value)))

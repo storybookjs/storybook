@@ -154,7 +154,7 @@ export const check = defineJob(
   (workflowName) => ({
     executor: {
       name: 'sb_node_22_classic',
-      class: 'xlarge',
+      class: 'large',
     },
     steps: [
       ...workflow.restoreLinux(),
@@ -184,7 +184,7 @@ export const lint = defineJob(
   () => ({
     executor: {
       name: 'sb_node_22_classic',
-      class: 'xlarge',
+      class: 'large',
     },
     steps: [
       ...workflow.restoreLinux(),

@@ -68,11 +68,11 @@ function defineSandboxJob_dev({
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: 'large',
+            class: 'medium+',
           }
         : {
             name: 'sb_node_22_classic',
-            class: 'large',
+            class: 'medium',
           },
       steps: [
         ...workflow.restoreLinux(),
@@ -267,7 +267,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'large',
+        class: 'medium+',
       },
       steps: [
         ...workflow.restoreLinux(),

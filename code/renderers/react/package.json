@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.2.1",
+  "version": "10.2.2",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"

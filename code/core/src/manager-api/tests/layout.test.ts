@@ -9,7 +9,7 @@ import { themes } from 'storybook/theming';
 import type { ModuleArgs } from '../lib/types';
 import type { SubState as AddonsSubState } from '../modules/addons';
 import type { SubAPI, SubState } from '../modules/layout';
-import { defaultLayoutState, init as initLayout } from '../modules/layout';
+import { getDefaultLayoutState, init as initLayout } from '../modules/layout';
 import type { API, State } from '../root';
 import type Store from '../store';
 
@@ -24,7 +24,7 @@ describe('layout API', () => {
 
   beforeEach(() => {
     currentState = {
-      ...defaultLayoutState,
+      ...getDefaultLayoutState(),
       selectedPanel: 'storybook/internal/action/panel',
       theme: themes.light,
       singleStory: false,

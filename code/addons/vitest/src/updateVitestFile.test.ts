@@ -1087,7 +1087,7 @@ describe('updateWorkspaceFile', () => {
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
       + export default ['packages/*', 'ROOT_CONFIG', {
-      +   extends: '',
+      +   extends: '.',
       +   plugins: [
       +   // The plugin will run tests for the stories defined in your Storybook config
       +   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1146,7 +1146,7 @@ describe('updateWorkspaceFile', () => {
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
       + export default defineWorkspace(['packages/*', 'ROOT_CONFIG', {
-      +   extends: '',
+      +   extends: '.',
       +   plugins: [
       +   // The plugin will run tests for the stories defined in your Storybook config
       +   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1181,7 +1181,7 @@ describe('loadTemplate', () => {
     });
 
     // Should contain forward slashes, not backslashes
-    expect(result).toContain('./apps/frontend-storybook/.storybook');
+    expect(result).toContain('apps/frontend-storybook/.storybook');
     expect(result).not.toContain('\\apps\\');
   });
 
@@ -1195,6 +1195,6 @@ describe('loadTemplate', () => {
     });
 
     // Should still contain forward slashes
-    expect(result).toContain('./apps/frontend-storybook/.storybook');
+    expect(result).toContain('apps/frontend-storybook/.storybook');
   });
 });

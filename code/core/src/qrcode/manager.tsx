@@ -68,8 +68,13 @@ const ShareProviderRender = () => {
               : 'View story on another device.'}
           </Description>
         </div>
-        <Button onClick={copyLink} shortcut={shortcutKeys?.copyStoryLink} variant="solid">
-          <CopyIcon />
+        <Button
+          onClick={copyLink}
+          shortcut={shortcutKeys?.copyStoryLink}
+          padding="small"
+          size="medium"
+          variant="solid"
+        >
           {copied ? 'Copied!' : 'Copy link'}
         </Button>
       </Content>

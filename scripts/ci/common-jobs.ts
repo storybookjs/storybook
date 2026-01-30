@@ -190,9 +190,16 @@ export const lint = defineJob(
       ...workflow.restoreLinux(),
       {
         run: {
-          name: 'Lint code',
+          name: 'Lint code JS',
           working_directory: `code`,
-          command: 'yarn lint',
+          command: 'yarn lint:js',
+        },
+      },
+      {
+        run: {
+          name: 'Lint code Other',
+          working_directory: `code`,
+          command: 'yarn lint:other',
         },
       },
       {

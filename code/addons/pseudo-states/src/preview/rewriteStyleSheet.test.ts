@@ -3,6 +3,34 @@ import { describe, expect, it } from 'vitest';
 import { rewriteStyleSheet } from './rewriteStyleSheet';
 import { splitSelectors } from './splitSelectors';
 
+function getNestedRule(rule: any, index: number) {
+  if (!('cssRules' in rule)) {
+    throw new Error('Cannot get nested rule, because the rule is not a CSSGroupingRule.', rule);
+  }
+  return (rule as CSSGroupingRule).cssRules[index];
+}
+
+function ensureCSSStyleRule(rule: any) {
+  if (!(rule instanceof CSSStyleRule)) {
+    throw new Error(`Rule is not a CSSStyleRule, but a ${rule.constructor.name}`);
+  }
+  return rule;
+}
+
+function ensureCSSLayerBlockRule(rule: any) {
+  if (!(rule instanceof CSSLayerBlockRule)) {
+    throw new Error(`Rule is not a BlockLayerRule, but a ${rule.constructor.name}`);
+  }
+  return rule;
+}
+
+function ensureCSSMediaRule(rule: any) {
+  if (!(rule instanceof CSSMediaRule)) {
+    throw new Error(`Rule is not a CSSMediaRule, but a ${rule.constructor.name}`);
+  }
+  return rule;
+}
+
 function splitRules(cssText: string): string[] {
   let ruleStart: number | undefined;
   let depth = 0;
@@ -448,6 +476,36 @@ describe('rewriteStyleSheet', () => {
     expect(sheet.cssRules[3].getSelectors()).toContain('.test2:hover');
     expect(sheet.cssRules[3].getSelectors()).toContain('.test2.pseudo-hover');
     expect(sheet.cssRules[3].getSelectors()).toContain('.pseudo-hover-all .test2');
+  });
+
+  it('rewrites deeply nested rules', () => {
+    const styleSheet = new CSSStyleSheet();
+    styleSheet.replaceSync(
+      `@layer utilities {
+        .hover\\:text-red-500 {
+          @media (hover: hover) {
+            &:hover {
+                color: var(--color-red-500);
+            }
+          }
+        }
+      }`
+    );
+
+    rewriteStyleSheet(styleSheet);
+
+    const layerRule = ensureCSSLayerBlockRule(getNestedRule(styleSheet, 0));
+    expect(layerRule.name).toBe('utilities');
+
+    const twSelector = ensureCSSStyleRule(getNestedRule(layerRule, 0));
+    expect(twSelector.selectorText).toBe('.hover\\:text-red-500');
+
+    const media = ensureCSSMediaRule(getNestedRule(twSelector, 0));
+    expect(media.conditionText).toBe('(hover: hover)');
+
+    const hover = ensureCSSStyleRule(getNestedRule(media, 0));
+    expect(hover).toBeInstanceOf(CSSStyleRule);
+    expect(hover.selectorText).toBe('&:hover, &.pseudo-hover, .pseudo-hover-all &');
   });
 
   it('rewrites rules inside "@media"', () => {

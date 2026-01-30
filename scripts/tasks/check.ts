@@ -5,7 +5,7 @@ import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
 
 // The amount of VCPUs for the check task on CI is 4 (large resource)
 
-const parallel = process.env.CI ? `--parallel=${maxConcurrentTasks}` : '';
+const parallel = process.env.CI ? '' : `--parallel=${maxConcurrentTasks}`;
 
 const linkCommand = `yarn nx run-many -t check ${parallel}`;
 const nolinkCommand = `yarn nx run-many -t check -c production ${parallel}`;

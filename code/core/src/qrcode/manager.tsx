@@ -1,76 +1,93 @@
-import React from 'react';
+import React, { useState } from 'react';
+
+import { Button } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
+import { CopyIcon } from '@storybook/icons';
 
+import copy from 'copy-to-clipboard';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { addons, types, useStorybookApi } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { ADDON_ID } from './constants';
 
-const QRContainer = styled.div(() => ({
+const Container = styled.div(() => ({
   display: 'flex',
-  alignItems: 'center',
-  padding: 8,
-  maxWidth: 200,
+  justifyContent: 'space-between',
+  padding: 24,
+  maxWidth: 500,
+  gap: 16,
 }));
 
-const QRImageContainer = styled.div(() => ({
-  width: 64,
-  height: 64,
-  marginRight: 12,
-  backgroundColor: 'white',
-  padding: 2,
+const Content = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: 8,
+  fontSize: theme.typography.size.s1,
+  color: theme.color.defaultText,
 }));
 
-const QRImage = ({ value }: { value: string }) => {
-  const theme = useTheme();
-  return (
-    <QRImageContainer>
-      <QRCode value={value} marginSize={0} size={60} fgColor={theme.color.darkest} />
-    </QRImageContainer>
-  );
-};
-
-const QRContent = styled.div(() => ({}));
-
-const QRTitle = styled.div(({ theme }) => ({
+const Title = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s1,
-  marginBottom: 4,
+  lineHeight: '20px',
 }));
 
-const QRDescription = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
+const Description = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
 const ShareProviderRender = () => {
   const api = useStorybookApi();
+  const theme = useTheme();
+  const [copied, setCopied] = useState(false);
+
   const { id: storyId, refId } = api.getCurrentStoryData() ?? {};
   if (!storyId) {
     return null;
   }
 
   const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
+  const shortcutKeys = api.getShortcutKeys();
+
+  const copyLink = () => {
+    copy(networkHrefs.managerHref);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <QRContainer>
-      <QRImage value={networkHrefs.managerHref} />
-      <QRContent>
-        <QRTitle>Scan to open</QRTitle>
-        <QRDescription>
-          {global.CONFIG_TYPE === 'DEVELOPMENT'
-            ? 'Device must be on the same network.'
-            : 'View story on another device.'}
-        </QRDescription>
-      </QRContent>
-    </QRContainer>
+    <Container>
+      <Content>
+        <div>
+          <Title>Copy link or scan QR code</Title>
+          <Description>
+            {global.CONFIG_TYPE === 'DEVELOPMENT'
+              ? 'Must be on the same network as this device.'
+              : 'View story on another device.'}
+          </Description>
+        </div>
+        <Button onClick={copyLink} shortcut={shortcutKeys?.copyStoryLink} variant="solid">
+          <CopyIcon />
+          {copied ? 'Copied!' : 'Copy link'}
+        </Button>
+      </Content>
+      <QRCode
+        value={networkHrefs.managerHref}
+        marginSize={0}
+        size={80}
+        fgColor={theme.color.darkest}
+        bgColor="transparent"
+      />
+    </Container>
   );
 };
 
 export default addons.register(ADDON_ID, () => {
   addons.add(ADDON_ID, {
     type: types.experimental_SHARE_PROVIDER,
+    title: 'Share',
     render: () => <ShareProviderRender />,
   });
 });

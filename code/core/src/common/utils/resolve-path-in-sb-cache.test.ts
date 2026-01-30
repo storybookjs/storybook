@@ -51,7 +51,8 @@ describe('resolvePathInStorybookCache', () => {
 
     const result = resolvePathInStorybookCache('', 'test-sub');
 
-    expect(result).toBe(`${mockCacheDir}/${versions.storybook}/test-sub/`);
+    // Note: path.join() normalizes away the trailing slash for empty strings
+    expect(result).toBe(`${mockCacheDir}/${versions.storybook}/test-sub`);
   });
 
   it('should create consistent paths for the same version', () => {

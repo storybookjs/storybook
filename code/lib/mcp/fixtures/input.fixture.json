@@ -106,7 +106,7 @@
 			},
 			{
 				"id": "input--with-error",
-				"name": "WithError",
+				"name": "With Error",
 				"description": "An input displaying an error state with an error message.\n\nError messages should be clear, concise, and provide actionable guidance to help users fix the issue. The input border and message text are styled in red to indicate the error state.",
 				"summary": "Input with validation error",
 				"import": "import { Input } from '@storybook/design-system';",
@@ -120,7 +120,7 @@
 			},
 			{
 				"id": "input--with-helper-text",
-				"name": "WithHelperText",
+				"name": "With Helper Text",
 				"description": "An input with helper text providing additional context or instructions.\n\nHelper text appears below the input and provides guidance without being an error. Use it to clarify format expectations, character limits, or provide helpful hints.",
 				"summary": "Input with helper text for guidance",
 				"import": "import { Input } from '@storybook/design-system';",

@@ -125,6 +125,7 @@ This addon should work with any MCP-compatible client that supports the `tool` c
 - [Cline](https://docs.cline.bot/mcp/configuring-mcp-servers)
 - [Zed Editor](https://zed.dev/docs/ai/mcp#as-custom-servers)
 - [Continue](https://docs.continue.dev/customize/deep-dives/mcp#how-to-configure-mcp-servers)
+- [Codex](https://github.com/openai/codex/blob/main/docs/config.md#mcp_servers)
 
 For clients not listed above, consult their documentation for MCP server configuration. The server configuration typically requires:
 
@@ -152,7 +153,7 @@ Provides agents with standardized instructions for UI component development with
 
 The instructions ensure agents follow your project's conventions when creating or modifying UI components and their corresponding stories.
 
-#### 2. Get Story URLs (`get_story_urls`)
+#### 2. Preview Stories (`preview-stories`)
 
 Allows agents to retrieve direct URLs to specific stories in your Storybook. The agent can request URLs for multiple stories by providing:
 

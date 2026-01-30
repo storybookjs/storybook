@@ -1,9 +1,9 @@
 import type { McpServer } from 'tmcp';
-import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
 import {
 	getAddonVitestConstants,
 	RUN_STORY_TESTS_TOOL_NAME,
 } from './run-story-tests.ts';
+import { PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import storyInstructionsTemplate from '../storybook-story-instructions.md';
 import storyTestingInstructionsTemplate from '../story-testing-instructions.md';
@@ -66,7 +66,7 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 				let uiInstructions = storyInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
-					.replace('{{GET_STORY_URLS_TOOL_NAME}}', GET_STORY_URLS_TOOL_NAME);
+					.replace('{{PREVIEW_STORIES_TOOL_NAME}}', PREVIEW_STORIES_TOOL_NAME);
 
 				// Conditionally append story testing instructions if test toolset is enabled and addon-vitest is available
 				const testToolsetAvailable =

@@ -147,4 +147,4 @@ play: async ({ canvas }) => {
 
 - ALWAYS provide story links after any changes to stories files, including changes to existing stories.
 - After changing any UI components, ALWAYS search for related stories that might cover the changes you've made. If you find any, provide the story links to the user. THIS IS VERY IMPORTANT, as it allows the user to visually inspect the changes you've made. Even later in a session when changing UI components or stories that have already been linked to previously, YOU MUST PROVIDE THE LINKS AGAIN.
-- Use the {{GET_STORY_URLS_TOOL_NAME}} tool to get the correct URLs for links to stories.
+- Use the {{PREVIEW_STORIES_TOOL_NAME}} tool to get the correct URLs for links to stories.

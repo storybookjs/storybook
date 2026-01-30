@@ -91,7 +91,7 @@
 			},
 			{
 				"id": "card--with-header-and-footer",
-				"name": "WithHeaderAndFooter",
+				"name": "With Header and Footer",
 				"description": "A card with distinct header and footer sections.\n\nHeaders typically contain titles, subtitles, or avatars. Footers often contain actions like buttons or metadata like timestamps. The header and footer are visually separated from the main content area.",
 				"summary": "Card with header and footer sections",
 				"import": "import { Card } from '@storybook/design-system';",
@@ -133,7 +133,7 @@
 			},
 			{
 				"id": "card--user-profile",
-				"name": "UserProfile",
+				"name": "User Profile",
 				"description": "A real-world example of a user profile card.\n\nThis example demonstrates how to compose the Card component with other design system components to create a complete, functional UI element. It includes an avatar, user information, stats, and action buttons.",
 				"summary": "Complete user profile card example",
 				"import": "import { Card, Avatar, Button } from '@storybook/design-system';",

@@ -12,15 +12,17 @@ describe('collectTelemetry', () => {
 		mockServer = {
 			ctx: {
 				sessionId: 'test-session-123',
+				sessionInfo: {
+					clientInfo: {
+						name: 'test-client',
+						version: '1.0.0',
+					},
+					clientCapabilities: {
+						experimental: {},
+						roots: { listChanged: true },
+					},
+				},
 			},
-			currentClientInfo: vi.fn().mockReturnValue({
-				name: 'test-client',
-				version: '1.0.0',
-			}),
-			currentClientCapabilities: vi.fn().mockReturnValue({
-				experimental: {},
-				roots: { listChanged: true },
-			}),
 		} as any;
 	});
 
@@ -89,10 +91,9 @@ describe('collectTelemetry', () => {
 	it('should handle missing session ID gracefully', async () => {
 		vi.mocked(telemetry).mockResolvedValue(undefined);
 
-		const serverWithoutSession = {
-			...mockServer,
+		const serverWithoutSession = Object.assign(Object.create(mockServer), {
 			ctx: {},
-		} as any;
+		}) as any;
 
 		await collectTelemetry({
 			event: 'test-event',
@@ -102,8 +103,8 @@ describe('collectTelemetry', () => {
 		expect(telemetry).toHaveBeenCalledWith('addon-mcp', {
 			event: 'test-event',
 			mcpSessionId: undefined,
-			clientInfo: expect.any(Object),
-			clientCapabilities: expect.any(Object),
+			clientInfo: undefined,
+			clientCapabilities: undefined,
 		});
 	});
 });

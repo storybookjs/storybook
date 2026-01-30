@@ -69,7 +69,7 @@ async function waitForMcpEndpoint(
 				resolve();
 				return;
 			}
-		} catch (error) {
+		} catch {
 			// Server not ready yet
 		}
 
@@ -166,7 +166,12 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
 				  {
-				    "description": "Get the URL for one or more stories.",
+				    "_meta": {
+				      "ui": {
+				        "resourceUri": "ui://preview-stories/preview.html",
+				      },
+				    },
+				    "description": "Use this tool to preview one or more stories, rendering them as an MCP App using the UI Resource or returning the raw URL for users to visit.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -177,10 +182,25 @@ describe('MCP Endpoint E2E Tests', () => {
 				                "type": "string",
 				              },
 				              "explicitStoryName": {
+				                "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				Otherwise don't set this.",
 				                "type": "string",
 				              },
 				              "exportName": {
 				                "type": "string",
+				              },
+				              "globals": {
+				                "additionalProperties": {},
+				                "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                "type": "object",
+				              },
+				              "props": {
+				                "additionalProperties": {},
+				                "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                "type": "object",
 				              },
 				            },
 				            "required": [
@@ -197,8 +217,88 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "name": "get-story-urls",
-				    "title": "Get stories' URLs",
+				    "name": "preview-stories",
+				    "outputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "stories": {
+				          "items": {
+				            "anyOf": [
+				              {
+				                "properties": {
+				                  "name": {
+				                    "type": "string",
+				                  },
+				                  "previewUrl": {
+				                    "type": "string",
+				                  },
+				                  "title": {
+				                    "type": "string",
+				                  },
+				                },
+				                "required": [
+				                  "title",
+				                  "name",
+				                  "previewUrl",
+				                ],
+				                "type": "object",
+				              },
+				              {
+				                "properties": {
+				                  "error": {
+				                    "type": "string",
+				                  },
+				                  "input": {
+				                    "properties": {
+				                      "absoluteStoryPath": {
+				                        "type": "string",
+				                      },
+				                      "explicitStoryName": {
+				                        "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				Otherwise don't set this.",
+				                        "type": "string",
+				                      },
+				                      "exportName": {
+				                        "type": "string",
+				                      },
+				                      "globals": {
+				                        "additionalProperties": {},
+				                        "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                        "type": "object",
+				                      },
+				                      "props": {
+				                        "additionalProperties": {},
+				                        "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                        "type": "object",
+				                      },
+				                    },
+				                    "required": [
+				                      "exportName",
+				                      "absoluteStoryPath",
+				                    ],
+				                    "type": "object",
+				                  },
+				                },
+				                "required": [
+				                  "input",
+				                  "error",
+				                ],
+				                "type": "object",
+				              },
+				            ],
+				          },
+				          "type": "array",
+				        },
+				      },
+				      "required": [
+				        "stories",
+				      ],
+				      "type": "object",
+				    },
+				    "title": "Preview stories",
 				  },
 				  {
 				    "description": "Get comprehensive instructions for writing and updating Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
@@ -272,7 +372,11 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "List All Documentation",
 				  },
 				  {
-				    "description": "Get detailed documentation for a specific UI component or docs entry",
+				    "description": "Get documentation for a UI component or docs entry.
+
+				Returns the first 3 stories with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the get-documentation-for-story tool to fetch the story documentation for the specific story variant you need.
+
+				Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -293,7 +397,7 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Tool: get-story-urls', () => {
+	describe('Tool: preview-stories', () => {
 		it('should return story URLs for valid stories', async () => {
 			const cwd = process.cwd();
 			const storyPath = cwd.endsWith('/apps/internal-storybook')
@@ -301,7 +405,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
 
 			const response = await mcpRequest('tools/call', {
-				name: 'get-story-urls',
+				name: 'preview-stories',
 				arguments: {
 					stories: [
 						{
@@ -320,13 +424,22 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "text",
 				    },
 				  ],
+				  "structuredContent": {
+				    "stories": [
+				      {
+				        "name": "Primary",
+				        "previewUrl": "http://localhost:6006/?path=/story/example-button--primary",
+				        "title": "Example/Button",
+				      },
+				    ],
+				  },
 				}
 			`);
 		});
 
 		it('should return error message for non-existent story', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-story-urls',
+				name: 'preview-stories',
 				arguments: {
 					stories: [
 						{
@@ -447,13 +560,9 @@ describe('MCP Endpoint E2E Tests', () => {
 				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`
 
-				### Small
+				### Other Stories
 
-				\`\`\`
-				import { Button } from "@my-org/my-component-library";
-
-				const Small = () => <Button onClick={fn()} size="small" label="Button" />;
-				\`\`\`
+				- Small
 
 				### With A11y Violation
 
@@ -622,7 +731,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
-				  "get-story-urls",
+				  "preview-stories",
 				  "get-storybook-story-instructions",
 				]
 			`);

@@ -85,7 +85,7 @@
 			"stories": [
 				{
 					"id": "error-component-with-error-stories--broken-story-1",
-					"name": "BrokenStory1",
+					"name": "Broken Story 1",
 					"description": "This story failed to generate.",
 					"error": {
 						"name": "Error",
@@ -94,7 +94,7 @@
 				},
 				{
 					"id": "error-component-with-error-stories--broken-story-2",
-					"name": "BrokenStory2",
+					"name": "Broken Story 2",
 					"description": "This story also failed to generate.",
 					"error": {
 						"name": "ReferenceError",
@@ -143,14 +143,14 @@
 				},
 				{
 					"id": "partial-success--with-subtitle",
-					"name": "WithSubtitle",
+					"name": "With Subtitle",
 					"description": "Component with both title and subtitle.",
 					"import": "import { PartialSuccess } from '@storybook/design-system';",
 					"snippet": "const WithSubtitle = () => <PartialSuccess title=\"Hello\" subtitle=\"World\" />"
 				},
 				{
 					"id": "partial-success--complex-case",
-					"name": "ComplexCase",
+					"name": "Complex Case",
 					"description": "A complex story that failed to generate.",
 					"error": {
 						"name": "Error",

@@ -107,7 +107,7 @@
 			},
 			{
 				"id": "button--with-sizes",
-				"name": "WithSizes",
+				"name": "With Sizes",
 				"description": "Buttons are available in three sizes: small, medium (default), and large.\n\nChoose the appropriate size based on the context and hierarchy of actions. Larger buttons are more prominent and easier to tap on mobile devices.",
 				"summary": "Button size variations",
 				"import": "import { Button } from '@storybook/design-system';",

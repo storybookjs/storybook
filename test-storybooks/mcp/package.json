@@ -15,6 +15,7 @@
 		"@storybook/addon-docs": "catalog:",
 		"@storybook/addon-mcp": "workspace:*",
 		"@storybook/addon-vitest": "catalog:",
+		"@storybook/addon-themes": "catalog:",
 		"@storybook/react-vite": "catalog:",
 		"@types/react": "^18.2.65",
 		"@types/react-dom": "^18.2.21",

@@ -85,7 +85,7 @@ describe('createStorybookMcpHandler', () => {
 
 		const tools = await client.listTools();
 
-		expect(tools.tools).toHaveLength(2);
+		expect(tools.tools).toHaveLength(3);
 		expect(tools.tools).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
@@ -95,6 +95,10 @@ describe('createStorybookMcpHandler', () => {
 				expect.objectContaining({
 					name: 'get-documentation',
 					title: 'Get Documentation',
+				}),
+				expect.objectContaining({
+					name: 'get-documentation-for-story',
+					title: 'Get Documentation for Story',
 				}),
 			]),
 		);

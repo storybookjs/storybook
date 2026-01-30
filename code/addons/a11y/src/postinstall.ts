@@ -1,9 +1,9 @@
-import { JsPackageManagerFactory } from 'storybook/internal/common';
+import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
 
 import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 
 export default async function postinstall(options: PostinstallOptions) {
-  const args = ['storybook', 'automigrate', 'addon-a11y-addon-test'];
+  const args = [`storybook@${versions.storybook}`, 'automigrate', 'addon-a11y-addon-test'];
 
   args.push('--loglevel', 'silent');
   args.push('--skip-doctor');

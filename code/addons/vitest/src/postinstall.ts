@@ -9,6 +9,7 @@ import {
   formatFileContent,
   getProjectRoot,
   getStorybookInfo,
+  versions,
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import type { StorybookError } from 'storybook/internal/server-errors';
@@ -358,7 +359,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       const command = [
-        'storybook',
+        `storybook@${versions.storybook}`,
         'automigrate',
         'addon-a11y-addon-test',
         '--loglevel',

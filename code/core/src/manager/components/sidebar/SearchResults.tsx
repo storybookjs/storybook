@@ -182,6 +182,7 @@ const Result: FC<
   const pathMatches = matches.filter((match: Match) => match.key === 'path');
 
   const [icon] = item.status ? getStatus(theme, item.status) : [];
+  const heading = item.type === 'docs' && item.headings ? ` ${item.headings}` : undefined;
 
   return (
     <ResultRow {...props} onClick={click}>
@@ -204,7 +205,10 @@ const Result: FC<
       </IconWrapper>
       <ResultRowContent className="search-result-item--label">
         <Title>
-          <Highlight match={nameMatch}>{item.name}</Highlight>
+          <Highlight match={nameMatch}>
+            {item.name}
+            {heading}
+          </Highlight>
         </Title>
         <Path>
           {item.path.map((group, index) => (

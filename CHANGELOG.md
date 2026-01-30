@@ -1,3 +1,8 @@
+## 10.2.3
+
+- Addon-Vitest: Normalize Windows paths in addon-vitest automigration - [#33340](https://github.com/storybookjs/storybook/pull/33340), thanks @tanujbhaud!
+- Core: Fix `previewHref` when current path does not end with a slash - [#33647](https://github.com/storybookjs/storybook/pull/33647), thanks @ghengeveld!
+
 ## 10.2.2
 
 - Addon Vitest: Support simple vite.config without defineConfig helper - [#33694](https://github.com/storybookjs/storybook/pull/33694), thanks @valentinpalkovic!

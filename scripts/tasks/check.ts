@@ -50,7 +50,7 @@ export const check: Task = {
         process.stderr.write(data);
       });
 
-      await sub.catch((error) => {
+      await sub.catch(() => {
         failed.push(workspace.name);
       });
     }

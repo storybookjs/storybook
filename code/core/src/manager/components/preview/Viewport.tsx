@@ -359,7 +359,7 @@ export const Viewport = ({
           style={{
             height: `${(1 / scale) * 100}%`,
             width: `${(1 / scale) * 100}%`,
-            transform: `scale(${scale})`,
+            transform: scale !== 1 ? `scale(${scale})` : 'none',
             transformOrigin: 'top left',
           }}
         >

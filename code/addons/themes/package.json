@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "10.3.0-alpha.0",
+  "version": "10.3.0-alpha.2",
   "description": "Storybook Themes addon: Switch between themes from the toolbar",
   "keywords": [
     "css",

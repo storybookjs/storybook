@@ -297,6 +297,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
+          expect: { requireAssertions: false },
           setupFiles: [
             fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/setup-file')),
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it

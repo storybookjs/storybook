@@ -112,7 +112,7 @@ describe('getComponentStoryDocumentationTool', () => {
 			{
 			  "content": [
 			    {
-			      "text": "Component not found: "nonexistent". Use the list-all-components tool to see available components.",
+			      "text": "Component not found: "nonexistent". Use the list-all-documentation tool to see available components.",
 			      "type": "text",
 			    },
 			  ],

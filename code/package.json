@@ -220,5 +220,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.3.0-alpha.2"
 }

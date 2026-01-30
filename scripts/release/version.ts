@@ -291,15 +291,15 @@ export const run = async (options: unknown) => {
     await bumpAllPackageJsons({ packages, nextVersion, verbose });
 
     console.log(
-      `⬆️ Updating lock file with ${picocolors.blue('yarn install --mode=update-lockfile')}`
+      `⬆️ Updating lock file with ${picocolors.blue('pnpm install --lockfile-only')}`
     );
-    await execaCommand(`yarn install --mode=update-lockfile`, {
+    await execaCommand(`pnpm install --lockfile-only`, {
       cwd: join(CODE_DIR_PATH),
       stdio: verbose ? 'inherit' : undefined,
       cleanup: true,
     });
     console.log(
-      `✅ Updated lock file with ${picocolors.blue('yarn install --mode=update-lockfile')}`
+      `✅ Updated lock file with ${picocolors.blue('pnpm install --lockfile-only')}`
     );
   }
 

@@ -24,7 +24,7 @@
   "targetDefaults": {
     "compile": {
       "dependsOn": ["^compile"],
-      "command": "yarn exec jiti ./scripts/build/build-package.ts --cwd {projectRoot}",
+      "command": "pnpm exec jiti ./scripts/build/build-package.ts --cwd {projectRoot}",
       "configurations": { "production": { "args": "--prod" } },
       "cache": true,
       "inputs": ["production", "^production"],
@@ -35,14 +35,14 @@
     },
     "check": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
-      "command": "yarn exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
+      "command": "pnpm exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
       "cache": true,
       "inputs": ["default", "^production"],
       "configurations": { "production": {} }
     },
     "publish": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
-      "command": "yarn workspace @storybook/scripts local-registry --publish",
+      "command": "pnpm --filter @storybook/scripts exec local-registry --publish",
       "cache": true,
       "inputs": ["all-production"],
       "outputs": ["{workspaceRoot}/.verdaccio-cache"],
@@ -50,13 +50,13 @@
     },
     "run-registry": {
       "dependsOn": [{ "projects": ["scripts"], "target": "publish" }],
-      "command": "yarn workspace @storybook/scripts local-registry --open",
+      "command": "pnpm --filter @storybook/scripts exec local-registry --open",
       "continuous": true,
       "configurations": { "production": {} }
     },
     "sandbox": {
       "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
-      "command": "yarn task sandbox -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task sandbox -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}"],
@@ -64,20 +64,20 @@
     },
     "prepare-sandbox": {
       "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
-      "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
+      "command": "pnpm --filter @storybook/scripts exec prepare-sandbox --template={projectName} --no-link",
       "cache": false,
       "configurations": { "production": {} }
     },
     "check-sandbox": {
       "dependsOn": ["prepare-sandbox"],
-      "command": "yarn task check-sandbox -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task check-sandbox -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "build": {
       "dependsOn": ["prepare-sandbox"],
-      "command": "yarn task build -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task build -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}/storybook-static"],
@@ -85,39 +85,39 @@
     },
     "prepare-build-sandbox": {
       "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }, "build"],
-      "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
+      "command": "pnpm --filter @storybook/scripts exec prepare-sandbox --template={projectName} --no-link",
       "cache": false,
       "configurations": { "production": {} }
     },
     "dev": {
       "dependsOn": ["prepare-sandbox"],
-      "command": "yarn task dev -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task dev -s task --debug --no-link --template={projectName}",
       "continuous": true,
       "configurations": { "production": {} }
     },
     "vitest-integration": {
       "dependsOn": ["prepare-sandbox"],
-      "command": "yarn task vitest-integration -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task vitest-integration -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "chromatic": {
       "dependsOn": ["prepare-build-sandbox"],
-      "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task chromatic -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "serve": {
       "dependsOn": ["prepare-build-sandbox"],
-      "command": "yarn task serve -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task serve -s task --debug --no-link --template={projectName}",
       "continuous": true,
       "configurations": { "production": {} }
     },
     "e2e-tests": {
       "dependsOn": ["serve"],
-      "command": "yarn task e2e-tests --junit -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task e2e-tests --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -125,7 +125,7 @@
     },
     "test-runner": {
       "dependsOn": ["serve"],
-      "command": "yarn task test-runner --junit -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task test-runner --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -133,7 +133,7 @@
     },
     "e2e-tests-dev": {
       "dependsOn": ["dev"],
-      "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -141,7 +141,7 @@
     },
     "test-runner-dev": {
       "dependsOn": ["dev"],
-      "command": "yarn task test-runner-dev --junit -s task --debug --no-link --template={projectName}",
+      "command": "pnpm task test-runner-dev --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -153,7 +153,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
-        "command": "yarn --no-immutable && yarn playwright-e2e"
+        "command": "pnpm install && pnpm playwright-e2e"
       },
       "cache": true,
       "inputs": ["default", "^production"],
@@ -163,7 +163,7 @@
     "jest": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm install && pnpm jest" },
       "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -172,7 +172,7 @@
     "vitest": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm install && pnpm vitest" },
       "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -181,7 +181,7 @@
     "playwright-ct": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn playwright-ct" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm install && pnpm playwright-ct" },
       "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -190,7 +190,7 @@
     "cypress": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm install && pnpm cypress" },
       "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],

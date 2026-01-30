@@ -14,7 +14,6 @@ on:
   # 4. 👉 DON'T FORGET TO UNDO THE STEPS BEFORE YOU MERGE YOUR CHANGES!
 
 env:
-  YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
   CLEANUP_SANDBOX_NODE_MODULES: "true"
 
 defaults:
@@ -62,25 +61,33 @@ jobs:
         run: node --experimental-modules ./check-dependencies.js
 
       - name: Compile Storybook libraries
-        run: yarn task --task compile --start-from=auto --no-link
+        run: pnpm task --task compile --start-from=auto --no-link
 
       - name: Publish to local registry
-        run: yarn local-registry --publish
+        run: pnpm local-registry --publish
 
       - name: Run local registry
-        run: yarn local-registry --open &
+        run: pnpm local-registry --open &
 
       - name: Wait for registry
-        run: yarn wait-on tcp:127.0.0.1:6001
+        run: pnpm wait-on tcp:127.0.0.1:6001
+
+      - name: Verify registry is responding
+        run: |
+          if ! curl -sf http://127.0.0.1:6001 > /dev/null; then
+            echo "ERROR: Local registry is not responding"
+            exit 1
+          fi
+          echo "Registry is healthy"
 
       - name: Generate
         id: generate
-        run: yarn generate-sandboxes --local-registry
+        run: pnpm generate-sandboxes --local-registry
 
       - name: Publish
         # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
         if: ${{ !cancelled() }}
-        run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=next
+        run: pnpm publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=next
 
       - name: Report failure to Discord
         if: failure()
@@ -131,25 +138,33 @@ jobs:
         run: node --experimental-modules ./check-dependencies.js
 
       - name: Compile Storybook libraries
-        run: yarn task --task compile --start-from=auto --no-link
+        run: pnpm task --task compile --start-from=auto --no-link
 
       - name: Publish to local registry
-        run: yarn local-registry --publish
+        run: pnpm local-registry --publish
 
       - name: Run local registry
-        run: yarn local-registry --open &
+        run: pnpm local-registry --open &
 
       - name: Wait for registry
-        run: yarn wait-on tcp:127.0.0.1:6001
+        run: pnpm wait-on tcp:127.0.0.1:6001
+
+      - name: Verify registry is responding
+        run: |
+          if ! curl -sf http://127.0.0.1:6001 > /dev/null; then
+            echo "ERROR: Local registry is not responding"
+            exit 1
+          fi
+          echo "Registry is healthy"
 
       - name: Generate
         id: generate
-        run: yarn generate-sandboxes --local-registry
+        run: pnpm generate-sandboxes --local-registry
 
       - name: Publish
         # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
         if: ${{ !cancelled() }}
-        run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=main
+        run: pnpm publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=main
 
       - name: Report failure to Discord
         if: failure()

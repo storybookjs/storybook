@@ -62,7 +62,7 @@ jobs:
       - name: Cancel all release preparation runs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:cancel-preparation-runs
+        run: pnpm release:cancel-preparation-runs
 
       - name: Apply deferred version bump and commit
         working-directory: .
@@ -77,7 +77,7 @@ jobs:
               exit 0
           fi
           cd scripts
-          yarn release:version --apply --verbose
+          pnpm release:version --apply --verbose
           cd ..
 
           git config --global user.name "storybook-bot"
@@ -88,24 +88,24 @@ jobs:
 
       - name: Get current version
         id: version
-        run: yarn release:get-current-version
+        run: pnpm release:get-current-version
 
       - name: Check if publish is needed
         id: publish-needed
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
-        run: yarn release:is-version-published "$CURRENT_VERSION"
+        run: pnpm release:is-version-published "$CURRENT_VERSION"
 
       - name: Check release vs prerelease
         if: steps.publish-needed.outputs.published == 'false'
         id: is-prerelease
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
-        run: yarn release:is-prerelease "$CURRENT_VERSION" --verbose
+        run: pnpm release:is-prerelease "$CURRENT_VERSION" --verbose
 
       - name: Publish
         if: steps.publish-needed.outputs.published == 'false'
-        run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
+        run: pnpm release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 
       - name: Get target branch
         id: target
@@ -116,7 +116,7 @@ jobs:
         id: changelog
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
-        run: yarn release:get-changelog-from-file "$CURRENT_VERSION"
+        run: pnpm release:get-changelog-from-file "$CURRENT_VERSION"
 
       # tags are needed to get list of patches to label as picked
       - name: Fetch git tags
@@ -128,7 +128,7 @@ jobs:
         if: github.ref_name == 'latest-release'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:label-patches
+        run: pnpm release:label-patches
 
       - name: Create GitHub Release
         if: steps.publish-needed.outputs.published == 'false'
@@ -273,11 +273,11 @@ jobs:
           PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
           SHORT_SHA: ${{ steps.info.outputs.shortSha }}
         run: |
-          yarn release:version --exact "0.0.0-pr-$PR_NUMBER-sha-$SHORT_SHA" --verbose
+          pnpm release:version --exact "0.0.0-pr-$PR_NUMBER-sha-$SHORT_SHA" --verbose
 
       - name: Publish v${{ steps.version.outputs.next-version }}
         working-directory: scripts
-        run: yarn release:publish --tag canary --verbose
+        run: pnpm release:publish --tag canary --verbose
 
       - name: Replace Pull Request Body
         uses: ivangabriele/find-and-replace-pull-request-body@042438c6cbfbacf6a4701d6042f59b1f73db2fd8

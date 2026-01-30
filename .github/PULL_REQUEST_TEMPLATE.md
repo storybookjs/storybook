@@ -32,7 +32,7 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 
 <!-- Please include the steps to test your changes here. For example:
 
-1. Run a sandbox for template, e.g. `yarn task --task sandbox --start-from auto --template react-vite/default-ts`
+1. Run a sandbox for template, e.g. `pnpm task --task sandbox --start-from auto --template react-vite/default-ts`
 2. Open Storybook in your browser
 3. Access X story
 

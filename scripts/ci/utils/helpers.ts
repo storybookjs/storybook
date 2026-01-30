@@ -81,14 +81,13 @@ export const node = {
   installOnWindows: () => {
     return {
       run: {
-        name: 'Install Node + Yarn',
+        name: 'Install Node + pnpm',
         shell: 'powershell.exe',
         command: [
           '$nodeVersion = Get-Content .nvmrc | Select-Object -First 1',
           'nvm install $nodeVersion',
           'nvm use $nodeVersion',
           'corepack enable',
-          'corepack prepare yarn@stable --activate',
         ].join('\n'),
       },
     };
@@ -100,24 +99,16 @@ export const npm = {
     return {
       run: {
         name: 'Install scripts',
-        command: 'yarn workspaces focus @storybook/scripts',
+        command: 'pnpm install --filter @storybook/scripts',
       },
     };
   },
-  install: (appDir: string, pkgManager: string = 'yarn') => {
+  install: (appDir: string, pkgManager: string = 'pnpm') => {
     return {
       'node/install-packages': {
         'app-dir': appDir,
         'pkg-manager': pkgManager,
         'cache-only-lockfile': true,
-      },
-    };
-  },
-  check: () => {
-    return {
-      run: {
-        name: 'Check for dedupe',
-        command: 'yarn dedupe --check',
       },
     };
   },
@@ -138,7 +129,7 @@ export const server = {
       run: {
         name: 'Wait on servers',
         working_directory: `code`,
-        command: ports.map((port) => `yarn wait-on tcp:127.0.0.1:${port}`).join('\n'),
+        command: ports.map((port) => `pnpm wait-on tcp:127.0.0.1:${port}`).join('\n'),
       },
     };
   },
@@ -151,7 +142,7 @@ export const verdaccio = {
         name: 'Verdaccio',
         working_directory: `code`,
         background: true,
-        command: 'yarn local-registry --open',
+        command: 'pnpm local-registry --open',
       },
     };
   },
@@ -160,7 +151,7 @@ export const verdaccio = {
       run: {
         name: 'Publish to Verdaccio',
         working_directory: `code`,
-        command: 'yarn local-registry --publish',
+        command: 'pnpm local-registry --publish',
       },
     };
   },
@@ -188,7 +179,7 @@ export const workflow = {
     {
       run: {
         name: 'Install dependencies',
-        command: 'yarn install',
+        command: 'pnpm install',
       },
     },
   ],
@@ -224,7 +215,7 @@ export const workflow = {
         'discord/status': {
           only_for_branches: ['main', 'next', 'next-release', 'latest-release'].join(','),
           fail_only: true,
-          failure_message: `$(yarn get-report-message ${workflow} ${template})`,
+          failure_message: `$(pnpm get-report-message ${workflow} ${template})`,
         },
       },
     ];
@@ -233,19 +224,15 @@ export const workflow = {
 
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v5-${platform}-node_modules`,
+    `v6-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
-    '{{ checksum ".yarnrc.yml" }}',
-    '{{ checksum "yarn.lock" }}',
+    '{{ checksum "pnpm-lock.yaml" }}',
   ].map((_, index, list) => {
     return list.slice(0, list.length - index).join('/');
   });
 
 export const CACHE_PATHS = [
-  '.yarn/cache',
-  '.yarn/unplugged',
-  '.yarn/build-state.yml',
-  '.yarn/root-install-state.gz',
+  '~/.local/share/pnpm/store',
   'node_modules',
   'code/node_modules',
   'scripts/node_modules',

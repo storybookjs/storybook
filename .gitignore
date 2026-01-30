@@ -16,6 +16,7 @@ test-results
 .verdaccio-cache
 .next
 /.npmrc
+/.npmrc.verdaccio.bak
 tsconfig.vitest-temp.json
 
 .env.local

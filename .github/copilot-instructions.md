@@ -9,13 +9,13 @@ Storybook is a large monorepo built with TypeScript, React, and various other fr
 ## System Requirements
 
 - **Node.js**: 22.21.1 (see `.nvmrc`)
-- **Package Manager**: Yarn 4.9.1
+- **Package Manager**: pnpm 10.28.1 (via corepack)
 - **Operating System**: Linux/macOS (CI environment)
 
 ## Repository Structure
 
 ```
-storybook/                        # Yarn monorepo root
+storybook/                        # pnpm monorepo root
 ├── .github/                      # GitHub configurations and workflows
 ├── .nx/                          # NX workflows and configuration
 ├── code/                         # Main codebase
@@ -41,81 +41,81 @@ All commands run from the **repository root** unless otherwise specified.
 ### Installation & Setup
 
 ```bash
-yarn                              # Install all dependencies (~2.5 min)
+pnpm install                      # Install all dependencies (~2.5 min)
 ```
 
 ### Compilation (Two Approaches)
 
-**Using yarn task (custom task runner):**
+**Using pnpm task (custom task runner):**
 
 ```bash
-yarn task compile                 # Compile all packages (~3 min)
+pnpm task compile                 # Compile all packages (~3 min)
 ```
 
 **Using NX (recommended for better caching):**
 
 ```bash
-yarn nx run-many -t compile -c production    # Compile all packages
-yarn nx compile <package-name> -c production # Compile specific package
+pnpm nx run-many -t compile -c production    # Compile all packages
+pnpm nx compile <package-name> -c production # Compile specific package
 ```
 
 ### Linting
 
 ```bash
-yarn lint                         # Run all linting checks (~4 min)
+pnpm lint                         # Run all linting checks (~4 min)
 ```
 
 ### Type Checking
 
 ```bash
-yarn task check                   # TypeScript type checking
+pnpm task check                   # TypeScript type checking
 # OR with NX:
-yarn nx run-many -t check -c production
+pnpm nx run-many -t check -c production
 ```
 
 ### Development Server
 
 ```bash
 # Start Storybook UI development server
-cd code && yarn storybook:ui      # Serves on http://localhost:6006/
+cd code && pnpm storybook:ui      # Serves on http://localhost:6006/
 # Requires compilation first!
 
 # Build Storybook UI for production
-cd code && yarn storybook:ui:build  # Output: code/storybook-static/
+cd code && pnpm storybook:ui:build  # Output: code/storybook-static/
 ```
 
 ### Testing
 
 ```bash
-cd code && yarn test              # Run all tests
-cd code && yarn test:watch        # Watch mode
-cd code && yarn storybook:vitest  # Storybook UI specific tests
+cd code && pnpm test              # Run all tests
+cd code && pnpm test:watch        # Watch mode
+cd code && pnpm storybook:vitest  # Storybook UI specific tests
 
 # Task-based testing (with template sandboxes)
-yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto
-yarn task e2e-tests-build --template react-vite/default-ts --start-from auto
-yarn task test-runner-dev --template react-vite/default-ts --start-from auto
-yarn task test-runner-build --template react-vite/default-ts --start-from auto
+pnpm task e2e-tests-dev --template react-vite/default-ts --start-from auto
+pnpm task e2e-tests-build --template react-vite/default-ts --start-from auto
+pnpm task test-runner-dev --template react-vite/default-ts --start-from auto
+pnpm task test-runner-build --template react-vite/default-ts --start-from auto
 ```
 
 ## NX Task Runner (Recommended)
 
 The repository uses NX for task orchestration with better caching and dependency management. NX correctly invalidates compile/check steps when `scripts/` changes.
 
-### yarn task vs NX equivalents
+### pnpm task vs NX equivalents
 
 ```bash
 # Compilation
-yarn task compile --no-link
-yarn nx run-many -t compile -c production
+pnpm task compile --no-link
+pnpm nx run-many -t compile -c production
 
 # E2E tests on specific template
-yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto --no-link
-yarn nx e2e-tests-dev react-vite/default-ts -c production
+pnpm task e2e-tests-dev --template react-vite/default-ts --start-from auto --no-link
+pnpm nx e2e-tests-dev react-vite/default-ts -c production
 
 # Skip task dependencies (start from a specific step)
-yarn task e2e-tests-dev --start-from e2e-tests --template react-vite/default-ts --no-link
-yarn nx e2e-tests-dev -c production --exclude-task-dependencies
+pnpm task e2e-tests-dev --start-from e2e-tests --template react-vite/default-ts --no-link
+pnpm nx e2e-tests-dev -c production --exclude-task-dependencies
 ```
 
 ### Key NX Concepts
@@ -129,8 +129,8 @@ yarn nx e2e-tests-dev -c production --exclude-task-dependencies
 
 ### Commands to Avoid
 
-- **DO NOT RUN**: `yarn task dev` - This starts a permanent development server that runs indefinitely
-- **DO NOT RUN**: `yarn start` - Also starts a long-running development server
+- **DO NOT RUN**: `pnpm task dev` - This starts a permanent development server that runs indefinitely
+- **DO NOT RUN**: `pnpm start` - Also starts a long-running development server
 
 ### Sandbox Location Change
 
@@ -160,25 +160,25 @@ The repository includes task scripts in `scripts/tasks/`:
 
 ### For Code Changes
 
-1. Install dependencies: `yarn` (if needed)
-2. Compile packages: `yarn nx run-many -t compile -c production`
+1. Install dependencies: `pnpm install` (if needed)
+2. Compile packages: `pnpm nx run-many -t compile -c production`
 3. Make your changes
 4. Recompile changed packages
-5. Test changes with: `cd code && yarn storybook:ui:build`
-6. Run relevant tests: `cd code && yarn test`
+5. Test changes with: `cd code && pnpm storybook:ui:build`
+6. Run relevant tests: `cd code && pnpm test`
 
 ### For Testing UI Changes
 
-1. Generate a sandbox: `yarn task sandbox --template react-vite/default-ts --start-from auto`
+1. Generate a sandbox: `pnpm task sandbox --template react-vite/default-ts --start-from auto`
    - Sandboxes are created at `../storybook-sandboxes/` by default
-2. If sandbox generation fails, use Storybook UI: `cd code && yarn storybook:ui`
+2. If sandbox generation fails, use Storybook UI: `cd code && pnpm storybook:ui`
 3. Access at http://localhost:6006/
 
 ### For Addon/Framework/Renderers Development
 
 1. Navigate to the relevant package in `code/addons/`, `code/frameworks/` or `code/renderers/`
 2. Make changes to source files
-3. Recompile: `yarn nx compile <package-name> -c production`
+3. Recompile: `pnpm nx compile <package-name> -c production`
 4. Generate a sandbox matching the framework/renderer
 5. Test with appropriate test tasks
 
@@ -196,13 +196,13 @@ The repository includes task scripts in `scripts/tasks/`:
 
 ```bash
 # Safe compilation with proper timeout
-bash(command="cd /path/to/storybook && yarn nx run-many -t compile -c production", timeout=300, async=false)
+bash(command="cd /path/to/storybook && pnpm nx run-many -t compile -c production", timeout=300, async=false)
 
 # Start development server with timeout to prevent hanging
-bash(command="cd /path/to/storybook/code && timeout 30s yarn storybook:ui", timeout=45, async=false)
+bash(command="cd /path/to/storybook/code && timeout 30s pnpm storybook:ui", timeout=45, async=false)
 
 # Use async for interactive or long-running commands
-bash(command="cd /path/to/storybook/code && yarn storybook:ui", async=true)
+bash(command="cd /path/to/storybook/code && pnpm storybook:ui", async=true)
 ```
 
 ## Sandbox Environments
@@ -213,11 +213,11 @@ Sandboxes are test environments that allow you to test Storybook changes with di
 
 ```bash
 # Generate a new sandbox (run from repository root)
-yarn task sandbox --template react-vite/default-ts --start-from auto
+pnpm task sandbox --template react-vite/default-ts --start-from auto
 # Creates: ../storybook-sandboxes/react-vite-default-ts/
 
 # Using NX (with -c production flag required)
-yarn nx sandbox react-vite/default-ts -c production
+pnpm nx sandbox react-vite/default-ts -c production
 ```
 
 ### Available Framework/Builder Templates
@@ -240,7 +240,7 @@ Once a sandbox is successfully generated, you can work with it:
 # Navigate to the generated sandbox (now outside the repo)
 cd ../storybook-sandboxes/react-vite-default-ts
 
-# Install dependencies if needed
+# Install dependencies if needed (sandboxes use yarn)
 yarn install
 
 # Start the sandbox Storybook
@@ -258,8 +258,8 @@ yarn storybook
 When sandbox generation is not available:
 
 1. Make your changes to the relevant packages in `code/`
-2. Compile: `yarn nx run-many -t compile -c production`
-3. Test with Storybook UI: `cd code && yarn storybook:ui`
+2. Compile: `pnpm nx run-many -t compile -c production`
+3. Test with Storybook UI: `cd code && pnpm storybook:ui`
 4. Access at http://localhost:6006/ to test your changes
 
 ## Package Management
@@ -268,17 +268,17 @@ When sandbox generation is not available:
 
 ```bash
 # Add to specific workspace
-cd code/frameworks/react-vite && yarn add <package>
+cd code/frameworks/react-vite && pnpm add <package>
 
 # Add to root workspace
-yarn add <package> -W
+pnpm add <package> -w
 ```
 
 ### Building Specific Packages
 
 ```bash
 # Build specific package (run from code/ directory)
-cd code && yarn build <package-name>
+cd code && pnpm build <package-name>
 ```
 
 ## Testing Strategy
@@ -286,7 +286,7 @@ cd code && yarn build <package-name>
 ### Unit Tests
 
 ```bash
-cd code && yarn test
+cd code && pnpm test
 # Run specific test suites as needed
 ```
 
@@ -298,28 +298,28 @@ cd code && yarn test
 ### End-to-End Testing
 
 - Playwright tests available (version 1.52.0 configured)
-- E2E test tasks: `yarn task e2e-tests-build --start-from auto` or `yarn task e2e-tests-dev --start-from auto`
-- Test runner scenarios: `yarn task test-runner-build --start-from auto` or `yarn task test-runner-dev --start-from auto`
-- Smoke tests: `yarn task smoke-test --start-from auto`
+- E2E test tasks: `pnpm task e2e-tests-build --start-from auto` or `pnpm task e2e-tests-dev --start-from auto`
+- Test runner scenarios: `pnpm task test-runner-build --start-from auto` or `pnpm task test-runner-dev --start-from auto`
+- Smoke tests: `pnpm task smoke-test --start-from auto`
 
 ### Watch Mode Commands
 
 ```bash
 # Watch mode for unit tests
-cd code && yarn test:watch
+cd code && pnpm test:watch
 
 # Watch mode for affected tests only
-yarn affected:test
+pnpm affected:test
 
 # Storybook UI vitest watch mode
-cd code && yarn storybook:vitest
+cd code && pnpm storybook:vitest
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Build Failures**: Often resolved by running `yarn` followed by `yarn nx run-many -t compile -c production`
+1. **Build Failures**: Often resolved by running `pnpm install` followed by `pnpm nx run-many -t compile -c production`
 2. **Port Conflicts**: Storybook UI uses port 6006 by default
 3. **Memory Issues**: Large compilation tasks may require increased Node.js memory limits
 4. **Sandbox Directory Confusion**: Sandboxes are at `../storybook-sandboxes/`, not `./sandbox` or `code/sandbox/`
@@ -335,7 +335,7 @@ cd code && yarn storybook:vitest
 1. **Incremental Builds**: Use compilation cache when possible
 2. **Selective Building**: Build only changed packages during development
 3. **Memory Management**: Monitor memory usage during large operations
-4. **Parallel Processing**: Yarn commands use parallel processing by default
+4. **Parallel Processing**: pnpm commands use parallel processing by default
 
 ## Contributing Guidelines
 
@@ -349,8 +349,8 @@ cd code && yarn storybook:vitest
 
 After making file changes, always run both formatting and linting checks:
 
-1. **Prettier**: Format code with `yarn prettier --write <file>`
-2. **ESLint**: Check for linting issues with `yarn lint:js:cmd <file>`
+1. **Prettier**: Format code with `pnpm prettier --write <file>`
+2. **ESLint**: Check for linting issues with `pnpm lint:js:cmd <file>`
    - The full eslint command is: `cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives`
    - Use the `lint:js:cmd` script for convenience
    - Fix any errors or warnings before committing
@@ -362,7 +362,7 @@ When writing unit tests:
 1. **Export functions for testing**: If functions need to be tested, export them from the module
 2. **Write meaningful tests**: Tests should actually import and call the functions being tested, not just verify syntax patterns
 3. **Use coverage reports**: Run tests with coverage to identify untested code
-   - Run coverage: `yarn vitest run --coverage <test-file>`
+   - Run coverage: `pnpm vitest run --coverage <test-file>`
    - Aim for high coverage of business logic (75%+ for statements/lines)
    - Use coverage reports to identify missing test cases
    - Focus on covering:
@@ -370,7 +370,7 @@ When writing unit tests:
      - Edge cases and error paths
      - Different input variations
 4. **Mock external dependencies**: Use `vi.mock()` to mock file system, loggers, and other external dependencies
-5. **Run tests before committing**: Ensure all tests pass with `yarn test` or `yarn vitest run`
+5. **Run tests before committing**: Ensure all tests pass with `pnpm test` or `pnpm vitest run`
 
 ### Logging
 

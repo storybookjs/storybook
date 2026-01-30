@@ -5,17 +5,16 @@ TEMPLATE=${1:?Usage: $0 <template> [renderer]}
 RENDERER=${2:-}
 
 # Install all dependencies
-yarn task --task install
+pnpm task --task install
 
 # If a renderer is specified, build it so it uses the resolution set by the ecosystem-ci
 if [ -n "$RENDERER" ]; then
-  yarn --cwd code build "$RENDERER"
+  pnpm --dir code build "$RENDERER"
 fi
 
 # Create the storybook-sandboxes directory with a package.json that specifies Yarn as the package manager.
-# This is required because the ecosystem-ci repo uses pnpm, and yarn refuses to install in the sandbox dir
-# if it sees a different packageManager field higher up in the directory tree.
+# Sandboxes use yarn by default for user project simulation.
 mkdir -p ../storybook-sandboxes
-echo "{ \"packageManager\": \"yarn@$(yarn -v)\" }" > ../storybook-sandboxes/package.json
+echo "{ \"packageManager\": \"yarn@4.10.3\" }" > ../storybook-sandboxes/package.json
 
-yarn task build --template "$TEMPLATE" --start-from=compile --no-link --skip-cache
+pnpm task build --template "$TEMPLATE" --start-from=compile --no-link --skip-cache

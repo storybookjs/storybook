@@ -1,3 +1,9 @@
+## 10.3.0-alpha.3
+
+- Manager: Remove deprecated `active` prop warning in ZoomButton - [#33697](https://github.com/storybookjs/storybook/pull/33697), thanks @yatishgoel!
+- Next.js: Alias AppRouterContext to shared runtime to fix Link navigation - [#33419](https://github.com/storybookjs/storybook/pull/33419), thanks @pallaprolus!
+- Vue: Make globals reactive in decorators - [#33562](https://github.com/storybookjs/storybook/pull/33562), thanks @Sidnioulz!
+
 ## 10.3.0-alpha.2
 
 - Addon Vitest: Support simple vite.config without defineConfig helper - [#33694](https://github.com/storybookjs/storybook/pull/33694), thanks @valentinpalkovic!

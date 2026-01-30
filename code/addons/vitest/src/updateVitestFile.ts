@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 
 import type { BabelFile, types as t } from 'storybook/internal/babel';
 
-import { join } from 'pathe';
+import { join, normalize } from 'pathe';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 
@@ -11,7 +11,10 @@ export const loadTemplate = async (name: string, replacements: Record<string, st
     join(resolvePackageDir('@storybook/addon-vitest'), 'templates', name),
     'utf8'
   );
-  Object.entries(replacements).forEach(([key, value]) => (template = template.replace(key, value)));
+  // Normalize Windows paths (backslashes) to forward slashes for JavaScript string compatibility
+  Object.entries(replacements).forEach(
+    ([key, value]) => (template = template.replace(key, normalize(value)))
+  );
   return template;
 };
 

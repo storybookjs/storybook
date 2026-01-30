@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { isConfigAlreadySetup } from './postinstall';
 
-const setupPath = '/project/.storybook/vitest.setup.ts';
-
 describe('postinstall helpers', () => {
   it('detects a fully configured Vitest config with addon plugin', () => {
     const config = `
@@ -25,7 +23,7 @@ describe('postinstall helpers', () => {
       });
     `;
 
-    expect(isConfigAlreadySetup('/project/vitest.config.ts', config, setupPath)).toBe(true);
+    expect(isConfigAlreadySetup('/project/vitest.config.ts', config)).toBe(true);
   });
 
   it('returns false when storybookTest plugin is not used', () => {
@@ -46,6 +44,6 @@ describe('postinstall helpers', () => {
       });
     `;
 
-    expect(isConfigAlreadySetup('/project/vitest.config.ts', config, setupPath)).toBe(false);
+    expect(isConfigAlreadySetup('/project/vitest.config.ts', config)).toBe(false);
   });
 });

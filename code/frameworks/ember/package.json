@@ -1,6 +1,6 @@
 {
   "name": "@storybook/ember",
-  "version": "10.2.2",
+  "version": "10.2.3",
   "description": "Storybook for Ember: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

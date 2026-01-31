@@ -15,6 +15,7 @@ export function argsHash(args: Args): ArgsHash {
 export interface SourceItem {
   code: string;
   format?: SyntaxHighlighterFormatTypes;
+  simplifiedCode?: string;
 }
 
 export type StorySources = Record<StoryId, Record<ArgsHash, SourceItem>>;
@@ -31,6 +32,7 @@ type SnippetRenderedEvent = {
   source: string;
   args?: Args;
   format?: SyntaxHighlighterFormatTypes;
+  simplifiedSource?: string;
 };
 
 export const UNKNOWN_ARGS_HASH = '--unknown--';
@@ -52,11 +54,13 @@ export const SourceContainer: FC<PropsWithChildren<{ channel: DocsContextProps['
         args = undefined,
         source,
         format,
+        simplifiedSource,
       } = typeof idOrEvent === 'string'
         ? {
             id: idOrEvent,
             source: inputSource,
             format: inputFormat,
+            simplifiedSource: undefined,
           }
         : idOrEvent;
 
@@ -75,7 +79,11 @@ export const SourceContainer: FC<PropsWithChildren<{ channel: DocsContextProps['
           ...current,
           [id]: {
             ...current[id],
-            [hash]: { code: source || '', format },
+            [hash]: {
+              code: source || '',
+              format,
+              simplifiedCode: simplifiedSource,
+            },
           },
         };
 

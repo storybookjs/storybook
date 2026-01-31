@@ -12,16 +12,24 @@ type Transformer =
   | ((code: string, storyContext: ReducedStoryContext) => string | Promise<string>)
   | undefined;
 
-export async function emitTransformCode(source: string | undefined, context: ReducedStoryContext) {
+export async function emitTransformCode(
+  source: string | undefined,
+  context: ReducedStoryContext,
+  simplifiedSource?: string
+) {
   const transform = context.parameters?.docs?.source?.transform as Transformer;
   const { id, unmappedArgs } = context;
 
   const transformed = transform && source ? transform?.(source, context) : source;
   const result = transformed ? await transformed : undefined;
+  const transformedSimplified =
+    transform && simplifiedSource ? transform?.(simplifiedSource, context) : simplifiedSource;
+  const simplifiedResult = transformedSimplified ? await transformedSimplified : undefined;
 
   addons.getChannel().emit(SNIPPET_RENDERED, {
     id,
     source: result,
     args: unmappedArgs,
+    simplifiedSource: simplifiedResult,
   });
 }

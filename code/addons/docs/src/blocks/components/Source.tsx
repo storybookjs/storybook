@@ -1,5 +1,5 @@
 import type { ComponentProps, FunctionComponent } from 'react';
-import React from 'react';
+import React, { useState } from 'react';
 
 import type { SupportedLanguage, SyntaxHighlighterProps } from 'storybook/internal/components';
 import { SyntaxHighlighter } from 'storybook/internal/components';
@@ -50,7 +50,37 @@ export interface SourceCodeProps {
 export interface SourceProps extends SourceCodeProps {
   isLoading?: boolean;
   error?: SourceError;
+  simplifiedCode?: string;
 }
+
+const SourceToggleWrapper = styled.div({
+  position: 'relative',
+});
+
+const SourceToggleButton = styled.button(({ theme }) => ({
+  position: 'absolute',
+  top: 10,
+  right: 10,
+  zIndex: 1,
+  padding: '6px 12px',
+  fontSize: 12,
+  fontWeight: 600,
+  lineHeight: '16px',
+  color: theme.color.lightest,
+  background: 'rgba(255, 255, 255, 0.1)',
+  border: `1px solid rgba(255, 255, 255, 0.2)`,
+  borderRadius: theme.appBorderRadius,
+  cursor: 'pointer',
+  transition: 'all 150ms ease-out',
+  '&:hover': {
+    background: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  '&:focus': {
+    outline: 'none',
+    boxShadow: `0 0 0 1px ${theme.color.secondary}`,
+  },
+}));
 
 const SourceSkeletonWrapper = styled.div(({ theme }) => ({
   background: theme.background.content,
@@ -91,9 +121,12 @@ const Source: FunctionComponent<SourceProps> = ({
   code,
   dark,
   format = true,
+  simplifiedCode,
   ...rest
 }) => {
   const { typography } = useTheme();
+  const [showSimplified, setShowSimplified] = useState(true);
+
   if (isLoading) {
     return <SourceSkeleton />;
   }
@@ -101,17 +134,37 @@ const Source: FunctionComponent<SourceProps> = ({
     return <EmptyBlock>{error}</EmptyBlock>;
   }
 
+  // Determine which code to display based on toggle state
+  const displayCode = showSimplified && simplifiedCode ? simplifiedCode : code;
+
+  // Only show toggle if we have both versions and they're different
+  const showToggle = simplifiedCode && simplifiedCode !== code;
+
   const syntaxHighlighter = (
-    <StyledSyntaxHighlighter
-      bordered
-      copyable
-      format={format}
-      language={language ?? 'jsx'}
-      className="docblock-source sb-unstyled"
-      {...rest}
-    >
-      {code}
-    </StyledSyntaxHighlighter>
+    <SourceToggleWrapper>
+      {showToggle && (
+        <SourceToggleButton
+          onClick={() => setShowSimplified(!showSimplified)}
+          title={
+            showSimplified
+              ? 'Expand to show full component names (e.g., Card.Header)'
+              : 'Collapse to show simplified names (e.g., CardHeader)'
+          }
+        >
+          {showSimplified ? 'Expand code' : 'Collapse code'}
+        </SourceToggleButton>
+      )}
+      <StyledSyntaxHighlighter
+        bordered
+        copyable
+        format={format}
+        language={language ?? 'jsx'}
+        className="docblock-source sb-unstyled"
+        {...rest}
+      >
+        {displayCode}
+      </StyledSyntaxHighlighter>
+    </SourceToggleWrapper>
   );
   if (typeof dark === 'undefined') {
     return syntaxHighlighter;

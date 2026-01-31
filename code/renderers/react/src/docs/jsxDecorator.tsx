@@ -82,8 +82,11 @@ type JSXOptions = Options & {
   displayName?: string | Options['displayName'];
 };
 
-/** Apply the users parameters and render the jsx for a story */
-export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
+/** Apply the users parameters and render the jsx for a story, with option to use simplified names */
+export const renderJsx = (
+  code: React.ReactElement,
+  options?: JSXOptions & { useSimplifiedNames?: boolean }
+) => {
   if (typeof code === 'undefined') {
     logger.warn('Too many skip or undefined component');
     return null;
@@ -134,6 +137,27 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
     displayNameDefaults = {
       // To get exotic component names resolving properly
       displayName: (el: any): string => {
+        // This is used to generate the "simplified" version for the toggle UI
+        if (options?.useSimplifiedNames) {
+          if (el.type.name && el.type.name !== '_default') {
+            return el.type.name;
+          } else if (typeof el.type === 'function') {
+            return 'No Display Name';
+          } else if (isForwardRef(el.type)) {
+            return el.type.render.name;
+          } else if (isMemo(el.type)) {
+            return el.type.type.name;
+          } else if (
+            typeof el.type === 'symbol' ||
+            (el.type.$$typeof && typeof el.type.$$typeof === 'symbol')
+          ) {
+            return getReactSymbolName(el.type);
+          } else {
+            return el.type;
+          }
+        }
+
+        // Default behavior: use displayName if available (preserves dot notation)
         if (el.type.displayName) {
           return el.type.displayName;
         } else if (getDocgenSection(el.type, 'displayName')) {
@@ -236,6 +260,7 @@ export const jsxDecorator = (
   context: StoryContext<ReactRenderer>
 ) => {
   const jsx = useRef<undefined | string>(undefined);
+  const simplifiedJsx = useRef<undefined | string>(undefined);
   const story = storyFn();
 
   const skip = skipJsxRender(context);
@@ -254,10 +279,19 @@ export const jsxDecorator = (
 
     const sourceJsx = mdxToJsx(storyJsx);
 
-    const rendered = renderJsx(sourceJsx, options);
-    if (rendered && jsx.current !== rendered) {
-      emitTransformCode(rendered, context);
-      jsx.current = rendered;
+    const renderedFull = renderJsx(sourceJsx, options);
+    const renderedSimplified = renderJsx(sourceJsx, { ...options, useSimplifiedNames: true });
+
+    if (renderedFull && jsx.current !== renderedFull) {
+      const hasCompoundComponents = renderedFull !== renderedSimplified;
+
+      emitTransformCode(
+        renderedFull,
+        context,
+        hasCompoundComponents && renderedSimplified ? renderedSimplified : undefined
+      );
+      jsx.current = renderedFull;
+      simplifiedJsx.current = renderedSimplified ?? undefined;
     }
   });
 

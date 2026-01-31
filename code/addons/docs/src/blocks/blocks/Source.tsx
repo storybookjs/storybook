@@ -163,6 +163,7 @@ export const useSourceProps = (
     format,
     language,
     dark,
+    simplifiedCode: source?.simplifiedCode,
   };
 };
 

@@ -203,14 +203,18 @@ export function Panel({ active, storyId }: PanelProps) {
           <IconButton
             title="Export JSON"
             onClick={() => {
-              const json = JSON.stringify(data, null, 2);
-              const blob = new Blob([json], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `perf-${storyId}.json`;
-              a.click();
-              URL.revokeObjectURL(url);
+              try {
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `perf-${storyId}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch (error) {
+                console.error('[Performance Addon] Failed to export JSON:', error);
+              }
             }}
           >
             <DownloadIcon />

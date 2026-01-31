@@ -10,19 +10,20 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 import { EVENTS, PARAM_KEY } from './constants';
 import type { ProfilerData, PerformanceMetrics, PerformanceParameters } from './types';
 
-// Track metrics per story
+// Track metrics per story (including CLS and longTaskCount per story)
 const storyMetrics = new Map<
   string,
   {
     renderCount: number;
     metrics: PerformanceMetrics;
+    clsValue: number;
+    longTaskCount: number;
   }
 >();
 
 // Performance Observer for web vitals
 let performanceObserver: PerformanceObserver | null = null;
-let clsValue = 0;
-let longTaskCount = 0;
+let currentStoryId: string | null = null;
 
 /**
  * Initialize Performance Observer for CLS and long tasks
@@ -33,8 +34,15 @@ function initPerformanceObserver(storyId: string, emit: (data: PerformanceMetric
     performanceObserver.disconnect();
   }
 
-  clsValue = 0;
-  longTaskCount = 0;
+  // Track which story we're observing
+  currentStoryId = storyId;
+
+  // Initialize per-story metrics if not exists
+  const storyState = storyMetrics.get(storyId);
+  if (storyState) {
+    storyState.clsValue = 0;
+    storyState.longTaskCount = 0;
+  }
 
   if (typeof PerformanceObserver === 'undefined') {
     return;
@@ -42,6 +50,13 @@ function initPerformanceObserver(storyId: string, emit: (data: PerformanceMetric
 
   try {
     performanceObserver = new PerformanceObserver((entryList) => {
+      // Use currentStoryId to ensure we're updating the right story
+      const activeStoryId = currentStoryId;
+      if (!activeStoryId) return;
+
+      const current = storyMetrics.get(activeStoryId);
+      if (!current) return;
+
       for (const entry of entryList.getEntries()) {
         // Track layout shifts for CLS
         if (entry.entryType === 'layout-shift') {
@@ -50,25 +65,22 @@ function initPerformanceObserver(storyId: string, emit: (data: PerformanceMetric
             value?: number;
           };
           if (!layoutShift.hadRecentInput && layoutShift.value) {
-            clsValue += layoutShift.value;
+            current.clsValue += layoutShift.value;
           }
         }
 
         // Track long tasks (>50ms)
         if (entry.entryType === 'longtask') {
-          longTaskCount++;
+          current.longTaskCount++;
         }
       }
 
-      // Emit updated metrics
-      const current = storyMetrics.get(storyId);
-      if (current) {
-        current.metrics = {
-          cls: clsValue,
-          longTaskCount,
-        };
-        emit(current.metrics);
-      }
+      // Emit updated metrics from per-story state
+      current.metrics = {
+        cls: current.clsValue,
+        longTaskCount: current.longTaskCount,
+      };
+      emit(current.metrics);
     });
 
     // Observe layout shifts
@@ -118,6 +130,8 @@ function ProfilerWrapper({ storyId, storyFn }: ProfilerWrapperProps) {
       storyMetrics.set(storyId, {
         renderCount: 0,
         metrics: { cls: 0, longTaskCount: 0 },
+        clsValue: 0,
+        longTaskCount: 0,
       });
     }
 
@@ -211,14 +225,20 @@ export const withPerformance: DecoratorFunction = (storyFn, context) => {
   });
 };
 
-// Handle clear event from manager
-if (typeof window !== 'undefined') {
+// Handle clear event from manager (with HMR guard)
+let listenersRegistered = false;
+
+function registerChannelListeners() {
+  if (typeof window === 'undefined' || listenersRegistered) {
+    return;
+  }
+
   try {
     const channel = addons.getChannel();
+
     channel.on(EVENTS.CLEAR, () => {
       storyMetrics.clear();
-      clsValue = 0;
-      longTaskCount = 0;
+      currentStoryId = null;
     });
 
     channel.on(EVENTS.REQUEST_STATE, ({ storyId }: { storyId: string }) => {
@@ -227,10 +247,14 @@ if (typeof window !== 'undefined') {
         channel.emit(EVENTS.STATE, { storyId, ...data });
       }
     });
+
+    listenersRegistered = true;
   } catch {
     // Channel not available yet
   }
 }
+
+registerChannelListeners();
 
 // Export decorators array for preset
 export const decorators = [withPerformance];

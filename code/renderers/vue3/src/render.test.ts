@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Args, Globals } from 'storybook/internal/types';
+
 import { expectTypeOf } from 'expect-type';
-import { reactive } from 'vue';
+import { computed, reactive } from 'vue';
 
 import { updateArgs } from './render';
 
@@ -23,7 +25,7 @@ describe('Render Story', () => {
     expectTypeOf(reactiveArgs).toEqualTypeOf<{ objectArg: { argFoo: string; argBar: string } }>();
 
     const newArgs = { argFoo: 'foo2', argBar: 'bar2' };
-    updateArgs(reactiveArgs, newArgs);
+    updateArgs<Args>(reactiveArgs, newArgs);
     expectTypeOf(reactiveArgs).toEqualTypeOf<{ objectArg: { argFoo: string; argBar: string } }>();
     expect(reactiveArgs).toEqual({
       argFoo: 'foo2',
@@ -37,7 +39,7 @@ describe('Render Story', () => {
     expectTypeOf(reactiveArgs).toEqualTypeOf<{ objectArg: { argFoo: string } }>();
 
     const newArgs = { argFoo: 'foo2', argBar: 'bar2' };
-    updateArgs(reactiveArgs, newArgs);
+    updateArgs<Args>(reactiveArgs, newArgs);
     expect(reactiveArgs).toEqual({ argFoo: 'foo2', argBar: 'bar2' });
   });
 
@@ -53,7 +55,7 @@ describe('Render Story', () => {
     }>();
 
     const newArgs = { argFoo: 'foo2', argBar: 'bar2' };
-    updateArgs(reactiveArgs, newArgs);
+    updateArgs<Args>(reactiveArgs, newArgs);
 
     expect(reactiveArgs).toEqual({
       argFoo: 'foo2',
@@ -87,5 +89,24 @@ describe('Render Story', () => {
     updateArgs(reactiveArgs, newArgs);
 
     expect(reactiveArgs).toEqual({ objectArg: { argFoo: 'bar' } });
+  });
+
+  it('update reactive Globals', async () => {
+    const reactiveGlobals = reactive<Globals>({ theme: 'light', locale: 'en' });
+
+    let observedTheme: string | undefined;
+    const watcher = computed(() => {
+      observedTheme = reactiveGlobals.theme as string;
+      return reactiveGlobals.theme;
+    });
+
+    expect(watcher.value).toBe('light');
+    expect(observedTheme).toBe('light');
+
+    updateArgs<Globals>(reactiveGlobals, { theme: 'dark', locale: 'en' });
+
+    expect(watcher.value).toBe('dark');
+    expect(observedTheme).toBe('dark');
+    expect(reactiveGlobals).toEqual({ theme: 'dark', locale: 'en' });
   });
 });

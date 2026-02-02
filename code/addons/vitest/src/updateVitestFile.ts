@@ -5,16 +5,12 @@ import { normalize } from 'pathe';
 async function getTemplatePath(name: string) {
   switch (name) {
     case 'vitest.config.template':
-      // @ts-expect-error - Errors due to query string
       return import('../templates/vitest.config.template?raw');
     case 'vitest.config.4.template':
-      // @ts-expect-error - Errors due to query string
       return import('../templates/vitest.config.4.template?raw');
     case 'vitest.config.3.2.template':
-      // @ts-expect-error - Errors due to query string
       return import('../templates/vitest.config.3.2.template?raw');
     case 'vitest.workspace.template':
-      // @ts-expect-error - Errors due to query string
       return import('../templates/vitest.workspace.template?raw');
     default:
       throw new Error(`Unknown template: ${name}`);

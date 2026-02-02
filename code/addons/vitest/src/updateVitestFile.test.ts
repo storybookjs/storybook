@@ -1,11 +1,8 @@
-import { fstat, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
 import * as babel from 'storybook/internal/babel';
-
-import { normalize } from 'pathe';
 
 import { getDiff } from '../../../core/src/core-server/utils/save-story/getDiff';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
@@ -21,23 +18,6 @@ vi.mock('storybook/internal/node-logger', () => ({
 vi.mock('../../../core/src/shared/utils/module', () => ({
   resolvePackageDir: vi.fn().mockImplementation(() => join(__dirname, '..')),
 }));
-
-vi.mock(import('./updateVitestFile'), async (actualModule) => {
-  const mod = await actualModule();
-  return {
-    ...mod,
-    loadTemplate: async (name: string, replacements: Record<string, string>) => {
-      // Dynamically import the template file as plain text
-      const templateModule = await import(`../templates/${name}?raw`);
-      let template = templateModule.default;
-      // Normalize Windows paths (backslashes) to forward slashes for JavaScript string compatibility
-      Object.entries(replacements).forEach(
-        ([key, value]) => (template = template.replace(key, normalize(value)))
-      );
-      return template;
-    },
-  };
-});
 
 describe('updateConfigFile', () => {
   it('updates vite config file', async () => {

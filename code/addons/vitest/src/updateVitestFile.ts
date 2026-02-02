@@ -2,9 +2,28 @@ import type { BabelFile, types as t } from 'storybook/internal/babel';
 
 import { normalize } from 'pathe';
 
+async function getTemplatePath(name: string) {
+  switch (name) {
+    case 'vitest.config.template.txt':
+      // @ts-expect-error - Errors due to query string
+      return import('../templates/vitest.config.template?raw');
+    case 'vitest.config.4.template.txt':
+      // @ts-expect-error - Errors due to query string
+      return import('../templates/vitest.config.4.template?raw');
+    case 'vitest.config.3.2.template.txt':
+      // @ts-expect-error - Errors due to query string
+      return import('../templates/vitest.config.3.2.template?raw');
+    case 'vitest.workspace.template.txt':
+      // @ts-expect-error - Errors due to query string
+      return import('../templates/vitest.workspace.template?raw');
+    default:
+      throw new Error(`Unknown template: ${name}`);
+  }
+}
+
 export const loadTemplate = async (name: string, replacements: Record<string, string>) => {
   // Dynamically import the template file as plain text
-  const templateModule = await import(`../templates/${name}`);
+  const templateModule = await getTemplatePath(name);
   let template = templateModule.default;
   // Normalize Windows paths (backslashes) to forward slashes for JavaScript string compatibility
   Object.entries(replacements).forEach(

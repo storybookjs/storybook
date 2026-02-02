@@ -4,16 +4,16 @@ import { normalize } from 'pathe';
 
 async function getTemplatePath(name: string) {
   switch (name) {
-    case 'vitest.config.template.txt':
+    case 'vitest.config.template.ts':
       // @ts-expect-error - Errors due to query string
       return import('../templates/vitest.config.template?raw');
-    case 'vitest.config.4.template.txt':
+    case 'vitest.config.4.template.ts':
       // @ts-expect-error - Errors due to query string
       return import('../templates/vitest.config.4.template?raw');
-    case 'vitest.config.3.2.template.txt':
+    case 'vitest.config.3.2.template.ts':
       // @ts-expect-error - Errors due to query string
       return import('../templates/vitest.config.3.2.template?raw');
-    case 'vitest.workspace.template.txt':
+    case 'vitest.workspace.template.ts':
       // @ts-expect-error - Errors due to query string
       return import('../templates/vitest.workspace.template?raw');
     default:

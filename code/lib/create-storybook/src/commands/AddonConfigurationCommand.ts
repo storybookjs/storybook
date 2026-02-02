@@ -3,9 +3,17 @@ import { type JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
+import { dedent } from 'ts-dedent';
+
+import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall';
 import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall';
 import type { CommandOptions } from '../generators/types';
 import { TelemetryService } from '../services';
+
+const ADDON_INSTALLATION_INSTRUCTIONS = {
+  '@storybook/addon-vitest':
+    'https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced',
+} as { [key: string]: string };
 
 type ExecuteAddonConfigurationParams = {
   addons: string[];
@@ -53,11 +61,46 @@ export class AddonConfigurationCommand {
         await this.telemetryService.trackPlaywrightPromptDecision(result);
       }
 
+      // some addons failed
+      if (hasFailures) {
+        this.logManualAddonInstructions(
+          addons.filter((addon) => addonResults.get(addon)?.result === 'failed')
+        );
+      }
+
       return { status: hasFailures ? 'failed' : 'success' };
     } catch (e) {
       logger.error('Unexpected error during addon configuration:');
       logger.error(e);
       return { status: 'failed' };
+    }
+  }
+
+  private getAddonsWithInstructions(addons: string[]): string[] {
+    return addons.filter((addon) => ADDON_INSTALLATION_INSTRUCTIONS[addon]);
+  }
+
+  private logManualAddonInstructions(addons: string[]): void {
+    const addonsWithInstructions = this.getAddonsWithInstructions(addons);
+
+    if (addonsWithInstructions.length > 0) {
+      logger.warn(dedent`
+      The following addons couldn't be configured:
+
+      ${addonsWithInstructions
+        .map((addon) => {
+          const manualInstructionLink = ADDON_INSTALLATION_INSTRUCTIONS[addon];
+
+          return `- ${addon}: ${manualInstructionLink}`;
+        })
+        .join('\n')}
+
+      ${
+        addonsWithInstructions.length > 0
+          ? `Please follow each addon's configuration instructions manually.`
+          : ''
+      }
+      `);
     }
   }
 
@@ -91,6 +134,8 @@ export class AddonConfigurationCommand {
 
         if (addon === '@storybook/addon-vitest') {
           await addonVitestPostinstall(options);
+        } else if (addon === '@storybook/addon-a11y') {
+          await addonA11yPostinstall(options);
         } else {
           await postinstallAddon(addon, options);
         }

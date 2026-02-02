@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import React, { Component, useMemo } from 'react';
+import React, { Component, useMemo, useRef } from 'react';
 
 import {
   Button,
@@ -17,6 +17,7 @@ import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybo
 import type { State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useLandmark } from '../../hooks/useLandmark';
 import { useLayout } from '../layout/LayoutProvider';
 
 export interface SafeTabProps {
@@ -61,17 +62,23 @@ class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean
   }
 }
 
-const Section = styled.section({
+const Aside = styled.aside({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
 });
 
+// Ensures we don't cause difficult-to-debug hooks violations
+// whether addon authors pass a React component ctor or anonymous function.
+function renderChild(RenderProp: Addon_BaseType['render']) {
+  return <RenderProp active={true} />;
+}
+
 // Avoids crashes due to rules of hooks.
 const PreRenderAddons = ({ panels }: { panels: Record<string, Addon_BaseType> }) => {
   return Object.entries(panels).map(([k, v]) => (
     <StatelessTabPanel key={k} name={k} hasScrollbar={false}>
-      <TabErrorBoundary key={k}>{v.render({ active: true })}</TabErrorBoundary>
+      <TabErrorBoundary key={k}>{renderChild(v.render)}</TabErrorBoundary>
     </StatelessTabPanel>
   ));
 };
@@ -146,8 +153,14 @@ export const AddonPanel = React.memo<{
     [actions, isDesktop, panelPosition, setMobilePanelOpen, shortcuts]
   );
 
+  const asideRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': 'storybook-panel-heading', role: 'region' },
+    asideRef
+  );
+
   return (
-    <Section aria-labelledby="storybook-panel-heading">
+    <Aside ref={asideRef} {...landmarkProps}>
       <h2 id="storybook-panel-heading" className="sb-sr-only">
         Addon panel
       </h2>
@@ -168,7 +181,7 @@ export const AddonPanel = React.memo<{
         </StatelessTabList>
         {Object.keys(panels).length ? <PreRenderAddons panels={panels} /> : null}
       </StatelessTabsView>
-    </Section>
+    </Aside>
   );
 });
 

@@ -122,7 +122,7 @@ export default addons.register(ADDON_ID, (api) => {
           return null;
         }
         return (
-          <AddonPanel active={active} hasScrollbar={false}>
+          <AddonPanel active={active}>
             <ControlsPanel saveStory={saveStory} createStory={createStory} />
           </AddonPanel>
         );

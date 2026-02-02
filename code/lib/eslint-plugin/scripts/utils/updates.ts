@@ -9,7 +9,7 @@ export const extendsCategories: Partial<Record<CategoryId, string | null>> = {
 
 const externalRuleOverrides: { [key: string]: string } = {
   'react-hooks/rules-of-hooks': 'off',
-  'import/no-anonymous-default-export': 'off',
+  'import-x/no-anonymous-default-export': 'off',
 };
 
 export function formatRules(rules: TCategory['rules'], exclude?: string[]) {

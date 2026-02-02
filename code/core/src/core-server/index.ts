@@ -9,8 +9,14 @@ export * from './withTelemetry';
 export { default as build } from './standalone';
 export { mapStaticDir } from './utils/server-statics';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+export { generateStoryFile } from './utils/generate-story';
+export type { GenerateStoryResult, GenerateStoryOptions } from './utils/generate-story';
+export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes';
 
 export { loadStorybook as experimental_loadStorybook } from './load';
+
+export { Tag } from '../shared/constants/tags';
+export { analyze as analyzeMdx } from '@storybook/docs-mdx';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
@@ -24,3 +30,5 @@ export {
   fullTestProviderStore as internal_fullTestProviderStore,
   universalTestProviderStore as internal_universalTestProviderStore,
 } from './stores/test-provider';
+
+export { getServerPort } from './utils/server-address';

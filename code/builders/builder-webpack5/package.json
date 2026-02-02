@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "10.2.0-alpha.6",
+  "version": "10.3.0-alpha.2",
   "description": "A Storybook builder to dev and build with Webpack",
   "keywords": [
     "storybook",
@@ -52,7 +52,6 @@
   ],
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "@vitest/mocker": "3.2.4",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
     "cjs-module-lexer": "^1.2.3",
     "css-loader": "^7.1.2",
@@ -69,13 +68,13 @@
     "webpack-virtual-modules": "^0.6.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/webpack-hot-middleware": "^2.25.6",
     "pretty-hrtime": "^1.0.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

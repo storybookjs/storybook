@@ -22,6 +22,7 @@ import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
 import { getFrameworkInfo } from './get-framework-info';
 import { getHasRouterPackage } from './get-has-router-package';
+import { analyzeEcosystemPackages } from './get-known-packages';
 import { getMonorepoType } from './get-monorepo-type';
 import { getPackageManagerInfo } from './get-package-manager-info';
 import { getPortableStoriesFileCount } from './get-portable-stories-usage';
@@ -43,12 +44,56 @@ export const metaFrameworks = {
 } as Record<string, string>;
 
 export const sanitizeAddonName = (name: string) => {
-  return cleanPaths(name)
+  const normalized = name.replace(/\\/g, '/');
+
+  let candidate: string = normalized;
+
+  if (normalized.includes('/node_modules/')) {
+    // common case for package manager cache/pnp mode so we take the segment after node_modules
+    candidate = normalized.split('/node_modules/').pop() ?? normalized;
+  }
+
+  const cleaned = cleanPaths(candidate)
+    .replace(/^file:\/\//i, '')
+    .replace(/\/+$/, '')
     .replace(/\/dist\/.*/, '')
     .replace(/\.[mc]?[tj]?s[x]?$/, '')
-    .replace(/\/register$/, '')
-    .replace(/\/manager$/, '')
-    .replace(/\/preset$/, '');
+    .replace(/\/(register|manager|preset|index)$/, '')
+    .replace(/\$SNIP?/g, '');
+
+  let prefix = '';
+  if (
+    cleaned.startsWith('file') ||
+    cleaned.startsWith('.') ||
+    cleaned.startsWith('/') ||
+    cleaned.includes(':')
+  ) {
+    prefix = 'CUSTOM:';
+  }
+
+  const scopedMatches = cleaned.match(/@[^/]+\/[^/]+/g);
+  if (scopedMatches?.length) {
+    return scopedMatches.at(-1) as string;
+  }
+
+  const parts = cleaned.split('/').filter(Boolean);
+  const addonLike = [...parts]
+    .reverse()
+    .find((part) => part.includes('addon-') || part.includes('-addon'));
+
+  if (addonLike) {
+    return `${prefix}${addonLike}`;
+  }
+
+  if (parts.length >= 2 && parts[parts.length - 2].startsWith('@')) {
+    return `${prefix}${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
+  }
+
+  if (parts.length) {
+    return `${prefix}${parts[parts.length - 1]}`;
+  }
+
+  return `${prefix}${candidate}`;
 };
 
 // Analyze a combination of information from main.js and package.json
@@ -91,35 +136,7 @@ export const computeStorybookMetadata = async ({
     };
   }
 
-  const testPackages = [
-    'playwright',
-    'vitest',
-    'jest',
-    'cypress',
-    'nightwatch',
-    'webdriver',
-    '@web/test-runner',
-    'puppeteer',
-    'karma',
-    'jasmine',
-    'chai',
-    'testing-library',
-    '@ngneat/spectator',
-    'wdio',
-    'msw',
-    'miragejs',
-    'sinon',
-    'chromatic',
-  ];
-  const testPackageDeps = Object.keys(allDependencies).filter((dep) =>
-    testPackages.find((pkg) => dep.includes(pkg))
-  );
-  metadata.testPackages = Object.fromEntries(
-    await Promise.all(
-      testPackageDeps.map(async (dep) => [dep, (await getActualPackageVersion(dep))?.version])
-    )
-  );
-
+  metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
 
   const monorepoType = getMonorepoType();
@@ -249,6 +266,7 @@ export const computeStorybookMetadata = async ({
     storybookPackages,
     addons,
     hasStorybookEslint,
+    packageJsonType: packageJson.type ?? 'unknown',
   };
 };
 

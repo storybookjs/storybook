@@ -39,9 +39,9 @@ export class ZoomIFrame extends Component<IZoomIFrameProps> {
     try {
       // @ts-expect-error (non strict)
       Object.assign(this.iframe.contentDocument.body.style, {
-        width: `${scale * 100}%`,
-        height: `${scale * 100}%`,
-        transform: `scale(${1 / scale})`,
+        width: `${(1 / scale) * 100}%`,
+        height: `${(1 / scale) * 100}%`,
+        transform: `scale(${scale})`,
         transformOrigin: 'top left',
       });
     } catch (e) {
@@ -51,9 +51,9 @@ export class ZoomIFrame extends Component<IZoomIFrameProps> {
 
   setIframeZoom(scale: number) {
     Object.assign(this.iframe.style, {
-      width: `${scale * 100}%`,
-      height: `${scale * 100}%`,
-      transform: `scale(${1 / scale})`,
+      width: `${(1 / scale) * 100}%`,
+      height: `${(1 / scale) * 100}%`,
+      transform: `scale(${scale})`,
       transformOrigin: 'top left',
     });
   }

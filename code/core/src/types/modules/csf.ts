@@ -62,7 +62,6 @@ export type {
   StoryName,
   StrictArgs,
   StrictArgTypes,
-  StrictGlobalTypes,
   StrictInputType,
   Tag,
 } from 'storybook/internal/csf';

@@ -37,7 +37,7 @@ export const Root: FC<RootProps> = ({ provider }) => (
   </HelmetProvider>
 );
 
-const Main: FC<{ provider: Provider }> = ({ provider }) => {
+export const Main: FC<{ provider: Provider }> = ({ provider }) => {
   const navigate = useNavigate();
 
   return (

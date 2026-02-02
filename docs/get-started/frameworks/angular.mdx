@@ -14,7 +14,7 @@ To install Storybook in an existing Angular project, run this command in your pr
 
 <CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/). For more control over the installation process, refer to the [installation guide](/docs/install/).
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
 ### Requirements
 
@@ -46,7 +46,7 @@ You will find the output in the configured `outputDir` (default is `dist/storybo
 
 ## Configure
 
-To make the most out of Storybook in your Angular project, you can set up Compodoc integration and Storybook [decorators](/docs/writing-stories/decorators/) based on your project needs.
+To make the most out of Storybook in your Angular project, you can set up Compodoc integration and Storybook [decorators](../../writing-stories/decorators.mdx) based on your project needs.
 
 ### Compodoc
 
@@ -108,60 +108,13 @@ Add the following option to your Storybook Builder:
 
 Go to your `.storybook/preview.ts` and add the following:
 
-```ts title=".storybook/preview.ts"
-import type { Preview } from '@storybook/angular';
-
-// 👇 Add these
-import { setCompodocJson } from '@storybook/addon-docs/angular';
-import docJson from '../documentation.json';
-setCompodocJson(docJson);
-
-const preview: Preview = {};
-export default preview;
-```
+<CodeSnippets path="angular-add-compodoc.md" />
 
 ### Application-wide providers
 
-If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.io/guide/standalone-components#configuring-dependency-injection), used to bootstrap the component in Storybook.
+If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.dev/api/platform-browser/bootstrapApplication), used to bootstrap the component in Storybook.
 
-```ts title="ChipsModule.stories.ts"
-import { Meta, applicationConfig, StoryObj } from '@storybook/angular';
-
-import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
-import { importProvidersFrom } from '@angular/core';
-
-import { ChipsModule } from './angular-src/chips.module';
-
-const meta: Meta<ChipsModule> = {
-  component: ChipsModule,
-  decorators: [
-    // Apply application config to all stories
-    applicationConfig({
-      // List of providers and environment providers that should be available to the root component and all its children.
-      providers: [
-        ...
-        // Import application-wide providers from a module
-        importProvidersFrom(BrowserAnimationsModule)
-        // Or use provide-style functions if available instead, e.g.
-        provideAnimations()
-      ],
-    }),
-  ],
-};
-
-export default meta;
-type Story = StoryObj<ChipsModule>;
-
-export const WithCustomApplicationProvider: Story = {
-  render: () => ({
-    // Apply application config to a specific story
-    applicationConfig: {
-      // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
-      providers: [...],
-    }
-  })
-}
-```
+<CodeSnippets path="angular-application-providers-in-meta-and-story.md" />
 
 ### Angular dependencies
 
@@ -202,7 +155,6 @@ export const WithCustomProvider: Story = {
   ],
 };
 ```
-
 
 ## FAQ
 
@@ -337,7 +289,7 @@ These are common options you may need for the Angular builder:
 | `"initialPath"`              | URL path to be appended when visiting Storybook for the first time. <br /> `"initialPath": "docs/configure-your-project--docs"`                                                                 |
 | `"webpackStatsJson"`         | Write Webpack Stats JSON to disk. <br /> `"webpackStatsJson": true`                                                                                                                             |
 | `"previewUrl"`               | Disables the default storybook preview and lets you use your own. <br /> `"previewUrl": "iframe.html"`                                                                                          |
-| `"loglevel"`                 | Controls level of logging during build. Can be one of: [silly, verbose, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                       |
+| `"loglevel"`                 | Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                       |
 | `"sourceMap"`                | Configure [sourcemaps](https://angular.dev/reference/configs/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                                         |
 | `"experimentalZoneless"`     | Configure [zoneless change detection](https://angular.dev/guide/zoneless). <br /> `"experimentalZoneless": true`                                                                 |
 
@@ -352,18 +304,7 @@ The full list of options can be found in the Angular builder schemas:
 
 You can pass an options object for additional configuration if needed:
 
-```js title=".storybook/main.ts"
-import type { StorybookConfig } from '@storybook/angular';
-
-const config: StorybookConfig = {
-  framework: {
-    name: '@storybook/angular',
-    options: {
-      // ...
-    },
-  },
-};
-```
+<CodeSnippets path="angular-framework-options.md" />
 
 The available options are:
 

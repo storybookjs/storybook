@@ -6,7 +6,7 @@ export default {
 };
 
 // Wrapped in light theme
-export const Default = {};
+export const Basic = {};
 
 // Wrapped in dark theme
 export const Dark = {
@@ -30,7 +30,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Wrapped in light theme
-export const Default: Story = {};
+export const Basic: Story = {};
 
 // Wrapped in dark theme
 export const Dark: Story = {
@@ -50,7 +50,7 @@ const meta = preview.meta({
 });
 
 // Wrapped in light theme
-export const Default = meta.story();
+export const Basic = meta.story();
 
 // Wrapped in dark theme
 export const Dark = meta.story({
@@ -64,6 +64,7 @@ export const Dark = meta.story({
 
 ```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
 const meta = preview.meta({
@@ -71,7 +72,7 @@ const meta = preview.meta({
 });
 
 // Wrapped in light theme
-export const Default = meta.story();
+export const Basic = meta.story();
 
 // Wrapped in dark theme
 export const Dark = meta.story({

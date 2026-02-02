@@ -11,6 +11,7 @@ import { nanoid } from 'nanoid';
 import { version } from '../../package.json';
 import { resolvePackageDir } from '../shared/utils/module';
 import { getAnonymousProjectId } from './anonymous-id';
+import { detectAgent } from './detect-agent';
 import { set as saveToCache } from './event-cache';
 import { fetch } from './fetch';
 import { getSessionId } from './session-id';
@@ -49,9 +50,12 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
 // context info sent with all events, provided
 // by the app. currently:
 // - cliVersion
+const inCI = isCI();
+const agentDetection = detectAgent({ stdoutIsTTY: process.stdout.isTTY, env: process.env });
 const globalContext = {
-  inCI: isCI(),
+  inCI,
   isTTY: process.stdout.isTTY,
+  agent: agentDetection,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,
   storybookVersion: getVersionNumber(),

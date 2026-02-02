@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-native-web-vite",
-  "version": "10.2.0-alpha.6",
+  "version": "10.3.0-alpha.2",
   "description": "Storybook for React Native Web and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -56,8 +56,8 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.8.3"
+    "@types/node": "^22.19.1",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",

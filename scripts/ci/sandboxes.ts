@@ -33,7 +33,7 @@ function defineSandboxJob_build({
     () => ({
       executor: {
         name: 'sb_node_22_classic',
-        class: 'large',
+        class: 'medium+',
       },
       steps: [
         ...workflow.restoreLinux(),
@@ -68,11 +68,11 @@ function defineSandboxJob_dev({
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: 'xlarge',
+            class: 'medium+',
           }
         : {
             name: 'sb_node_22_classic',
-            class: 'large',
+            class: 'medium',
           },
       steps: [
         ...workflow.restoreLinux(),
@@ -267,7 +267,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'xlarge',
+        class: 'medium+',
       },
       steps: [
         ...workflow.restoreLinux(),
@@ -371,7 +371,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
     () => ({
       executor: {
         name: 'win/default',
-        size: 'xlarge',
+        size: 'large',
         shell: 'bash.exe',
       },
       steps: [
@@ -420,7 +420,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
     () => ({
       executor: {
         name: 'win/default',
-        size: 'xlarge',
+        size: 'large',
         shell: 'bash.exe',
       },
       steps: [

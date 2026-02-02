@@ -1,3 +1,16 @@
+## 10.2.4
+
+- Angular: fix --loglevel options in docs and descriptions - [#33726](https://github.com/storybookjs/storybook/pull/33726), thanks @theRuslan!
+- Builder-Vite: Add plugin to enforce Storybook's output directory in Vite build configuration - [#33740](https://github.com/storybookjs/storybook/pull/33740), thanks @valentinpalkovic!
+- CSF-Factories: Fix codemod for preview files without exports - [#33673](https://github.com/storybookjs/storybook/pull/33673), thanks @kasperpeulen!
+- CSF-Factories: Preserve leading comments when adding imports - [#33645](https://github.com/storybookjs/storybook/pull/33645), thanks @kasperpeulen!
+- CSF: Fix false positive detection of Zod v4 .meta() as CSF Factory - [#33666](https://github.com/storybookjs/storybook/pull/33666), thanks @kasperpeulen!
+- CSFFactories: Add non-interactive mode and --glob flag - [#33648](https://github.com/storybookjs/storybook/pull/33648), thanks @kasperpeulen!
+- Codemod: Fix csf-2-to-3 failing due to quoted filenames - [#33646](https://github.com/storybookjs/storybook/pull/33646), thanks @kasperpeulen!
+- Codemod: Fix glob pattern handling on Windows - [#33714](https://github.com/storybookjs/storybook/pull/33714), thanks @kasperpeulen!
+- Manager: Remove deprecated `active` prop warning in ZoomButton - [#33697](https://github.com/storybookjs/storybook/pull/33697), thanks @yatishgoel!
+- Next.js: Alias AppRouterContext to shared runtime to fix Link navigation - [#33419](https://github.com/storybookjs/storybook/pull/33419), thanks @pallaprolus!
+
 ## 10.2.3
 
 - Addon-Vitest: Normalize Windows paths in addon-vitest automigration - [#33340](https://github.com/storybookjs/storybook/pull/33340), thanks @tanujbhaud!

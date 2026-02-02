@@ -162,6 +162,7 @@ export default async function postInstall(options: PostinstallOptions) {
     if (!options.skipInstall) {
       await addonVitestService.installPlaywright({
         yes: options.yes,
+        useRemotePkg: !!options.skipInstall,
       });
     } else {
       logger.warn(dedent`
@@ -359,7 +360,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       const command = [
-        `storybook@${versions.storybook}`,
+        options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
         'automigrate',
         'addon-a11y-addon-test',
         '--loglevel',
@@ -382,7 +383,12 @@ export default async function postInstall(options: PostinstallOptions) {
 
       await prompt.executeTask(
         // TODO: Remove stdio: 'ignore' once we have a way to log the output of the command properly
-        () => packageManager.runPackageCommand({ args: command, stdio: 'ignore' }),
+        () =>
+          packageManager.runPackageCommand({
+            args: command,
+            stdio: 'ignore',
+            useRemotePkg: !!options.skipInstall,
+          }),
         {
           intro: 'Setting up a11y addon for @storybook/addon-vitest',
           error: 'Failed to setup a11y addon for @storybook/addon-vitest',

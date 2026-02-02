@@ -3,7 +3,11 @@ import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
 import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 
 export default async function postinstall(options: PostinstallOptions) {
-  const args = [`storybook@${versions.storybook}`, 'automigrate', 'addon-a11y-addon-test'];
+  const args = [
+    options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
+    'automigrate',
+    'addon-a11y-addon-test',
+  ];
 
   args.push('--loglevel', 'silent');
   args.push('--skip-doctor');
@@ -25,5 +29,5 @@ export default async function postinstall(options: PostinstallOptions) {
     configDir: options.configDir,
   });
 
-  await jsPackageManager.runPackageCommand({ args });
+  await jsPackageManager.runPackageCommand({ args, useRemotePkg: !!options.skipInstall });
 }

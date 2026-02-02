@@ -56,6 +56,7 @@ export class AddonConfigurationCommand {
       if (addonResults.has('@storybook/addon-vitest')) {
         const { result } = await this.addonVitestService.installPlaywright({
           yes: this.commandOptions.yes,
+          useRemotePkg: !!this.commandOptions.skipInstall,
         });
         // Map outcome to telemetry decision
         await this.telemetryService.trackPlaywrightPromptDecision(result);

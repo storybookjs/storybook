@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Button, Toolbar } from 'storybook/internal/components';
 
 import { LinuxIcon } from '@storybook/icons';
 
@@ -199,6 +199,113 @@ export const WithSiblings = meta.story({
       <Button ariaLabel={false}>After</Button>
     </Row>
   ),
+  play: async ({ canvas, step }) => {
+    const user = userEvent.setup();
+
+    await step('Open select and select an option', async () => {
+      const select = canvas.getByRole('button', { name: /Animal/i });
+      await user.click(select);
+
+      const listbox = await screen.findByRole('listbox');
+      expect(listbox).toBeInTheDocument();
+
+      const option = within(listbox).getByRole('option', { name: 'Frog' });
+      await user.click(option);
+    });
+
+    await step('Tab should land on sibling after select', async () => {
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+
+      await user.tab();
+
+      const afterButton = canvas.getByRole('button', { name: 'After' });
+      expect(afterButton).toHaveFocus();
+    });
+
+    await step('Navigate back and reopen select', async () => {
+      await user.tab({ shift: true });
+
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+
+      await user.keyboard('{Enter}');
+
+      const listbox = await screen.findByRole('listbox');
+      expect(listbox).toBeInTheDocument();
+    });
+
+    await step('Escape should return to select trigger', async () => {
+      await user.keyboard('{Escape}');
+
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+    });
+  },
+});
+
+export const WithSiblingsInToolbar = meta.story({
+  name: 'With Siblings in Toolbar',
+  render: (args) => (
+    <Toolbar aria-label="Test toolbar">
+      <Button ariaLabel="Before button">Before</Button>
+      <Select {...args} />
+      <Button ariaLabel="After button">After</Button>
+    </Toolbar>
+  ),
+  play: async ({ canvas, step }) => {
+    const user = userEvent.setup();
+
+    await step('Navigate to select with ArrowRight', async () => {
+      const beforeButton = canvas.getByRole('button', { name: 'Before button' });
+      beforeButton.focus();
+      expect(beforeButton).toHaveFocus();
+
+      await user.keyboard('{ArrowRight}');
+
+      const select = canvas.getByRole('button', { name: /Animal/i });
+      expect(select).toHaveFocus();
+    });
+
+    await step('Open select and select an option', async () => {
+      await user.keyboard('{Enter}');
+
+      const listbox = await screen.findByRole('listbox');
+      expect(listbox).toBeInTheDocument();
+
+      const option = within(listbox).getByRole('option', { name: 'Frog' });
+      await user.click(option);
+    });
+
+    await step('ArrowRight should land on sibling after select', async () => {
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+
+      await user.keyboard('{ArrowRight}');
+
+      const afterButton = canvas.getByRole('button', { name: 'After button' });
+      expect(afterButton).toHaveFocus();
+    });
+
+    await step('Navigate back with ArrowLeft and reopen select', async () => {
+      await user.keyboard('{ArrowLeft}');
+
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+
+      await user.keyboard('{Enter}');
+
+      const listbox = await screen.findByRole('listbox');
+      expect(listbox).toBeInTheDocument();
+    });
+
+    await step('Escape should return to select trigger', async () => {
+      await user.keyboard('{Escape}');
+
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+    });
+  },
 });
 
 export const DefaultOption = meta.story({
@@ -427,6 +534,47 @@ export const KeyboardSelectionMultiSS = meta.story({
   name: 'KB Selection (multi, Space, Space)',
   args: { multiSelect: true },
   play: kbMultiSelectionTest(' ', ' '),
+});
+
+export const FullArrowNavigation = meta.story({
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
+    await step('Open select', async () => {
+      selectButton.focus();
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+
+    await step('Navigate to option 2 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Pollywog');
+    });
+
+    await step('Navigate to option 3 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Frog');
+    });
+
+    await step('Loop back to option 1 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+
+    await step('Navigate backwards with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Frog');
+    });
+
+    await step('Navigate backwards with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Pollywog');
+    });
+
+    await step('Navigate back to option 1 with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+  },
 });
 
 export const MouseOpenNoAutoselect = meta.story({

@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+/// <reference types="@testing-library/jest-dom" />
 import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 

@@ -339,7 +339,7 @@ If you need to release a change to an older minor version that is not the latest
     1. `git fetch --all --tags`
     2. `git checkout tags/v8.3.6 -b patch-8-3-7`
 2. Make the changes you need to, most likely cherry-picking commits from the fix you need to back-port.
-3. Run `yarn install` in `scripts` and `code`
+3. Run `yarn install`
 4. Build all packages in `code` with `yarn task --task compile --no-link`
 5. Commit and push your changes.
 6. Trigger _daily_ CI manually on your branch:

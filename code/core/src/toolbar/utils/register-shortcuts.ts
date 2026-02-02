@@ -10,7 +10,7 @@ interface Shortcuts {
 }
 
 export const registerShortcuts = async (api: API, id: string, shortcuts: Shortcuts) => {
-  if (shortcuts && shortcuts.next) {
+  if (shortcuts.next) {
     await api.setAddonShortcut(TOOLBAR_ID, {
       label: shortcuts.next.label,
       defaultShortcut: shortcuts.next.keys,
@@ -19,7 +19,7 @@ export const registerShortcuts = async (api: API, id: string, shortcuts: Shortcu
     });
   }
 
-  if (shortcuts && shortcuts.previous) {
+  if (shortcuts.previous) {
     await api.setAddonShortcut(TOOLBAR_ID, {
       label: shortcuts.previous.label,
       defaultShortcut: shortcuts.previous.keys,
@@ -28,7 +28,7 @@ export const registerShortcuts = async (api: API, id: string, shortcuts: Shortcu
     });
   }
 
-  if (shortcuts && shortcuts.reset) {
+  if (shortcuts.reset) {
     await api.setAddonShortcut(TOOLBAR_ID, {
       label: shortcuts.reset.label,
       defaultShortcut: shortcuts.reset.keys,

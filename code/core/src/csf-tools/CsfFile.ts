@@ -19,11 +19,11 @@ import type {
   IndexInputStats,
   IndexedCSFFile,
   StoryAnnotations,
-  Tag,
 } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
+import { Tag } from '../shared/constants/tags';
 import type { PrintResultType } from './PrintResultType';
 import { findVarInitialization } from './findVarInitialization';
 
@@ -255,11 +255,10 @@ export class BadMetaError extends Error {
   }
 }
 
-export interface StaticMeta
-  extends Pick<
-    ComponentAnnotations,
-    'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
-  > {
+export interface StaticMeta extends Pick<
+  ComponentAnnotations,
+  'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
+> {
   component?: string;
 }
 
@@ -553,24 +552,13 @@ export class CsfFile {
               const id = declPath.node.id;
 
               if (t.isIdentifier(id)) {
-                let storyIsFactory = false;
                 const { name: exportName } = id;
                 if (exportName === '__namedExportsOrder' && declPath.isVariableDeclarator()) {
                   self._namedExportsOrder = parseExportsOrder(declPath.node.init as t.Expression);
                   return;
                 }
-                self._storyExports[exportName] = decl;
-                self._storyDeclarationPath[exportName] = declPath;
-                self._storyPaths[exportName] = path;
-                self._storyStatements[exportName] = node;
-                let name = storyNameFromExport(exportName);
-                if (self._storyAnnotations[exportName]) {
-                  logger.warn(
-                    `Unexpected annotations for "${exportName}" before story declaration`
-                  );
-                } else {
-                  self._storyAnnotations[exportName] = {};
-                }
+
+                // Determine the story node, unwrapping TS expressions
                 let storyNode;
                 if (t.isVariableDeclarator(decl)) {
                   if (
@@ -592,6 +580,9 @@ export class CsfFile {
                 } else {
                   storyNode = decl;
                 }
+
+                // Check if this is a factory story (meta.story() or meta.extend())
+                let storyIsFactory = false;
                 if (
                   t.isCallExpression(storyNode) &&
                   t.isMemberExpression(storyNode.callee) &&
@@ -602,13 +593,13 @@ export class CsfFile {
                   storyIsFactory = true;
                   storyNode = storyNode.arguments[0];
                 }
+
+                // Skip non-factory exports in factory files
                 if (self._metaIsFactory && !storyIsFactory) {
-                  throw new MixedFactoryError(
-                    'expected factory story',
-                    storyNode as t.Node,
-                    self._options.fileName
-                  );
-                } else if (!self._metaIsFactory && storyIsFactory) {
+                  return;
+                }
+
+                if (!self._metaIsFactory && storyIsFactory) {
                   if (self._metaNode) {
                     throw new MixedFactoryError(
                       'expected non-factory story',
@@ -623,6 +614,21 @@ export class CsfFile {
                     );
                   }
                 }
+
+                // Now we know this is a valid story, register it
+                self._storyExports[exportName] = decl;
+                self._storyDeclarationPath[exportName] = declPath;
+                self._storyPaths[exportName] = path;
+                self._storyStatements[exportName] = node;
+                let name = storyNameFromExport(exportName);
+                if (self._storyAnnotations[exportName]) {
+                  logger.warn(
+                    `Unexpected annotations for "${exportName}" before story declaration`
+                  );
+                } else {
+                  self._storyAnnotations[exportName] = {};
+                }
+
                 const parameters: { [key: string]: any } = {};
                 if (t.isObjectExpression(storyNode)) {
                   parameters.__isArgsStory = true; // assume default render is an args story
@@ -824,32 +830,44 @@ export class CsfFile {
             t.isMemberExpression(callee) &&
             t.isIdentifier(callee.property) &&
             callee.property.name === 'meta' &&
-            t.isIdentifier(callee.object) &&
             node.arguments.length > 0
           ) {
-            const configCandidate = path.scope.getBinding(callee.object.name);
-            const configParent = configCandidate?.path?.parentPath?.node;
-            if (t.isImportDeclaration(configParent)) {
-              if (isValidPreviewPath(configParent.source.value)) {
-                self._metaIsFactory = true;
-                const metaDeclarator = path.findParent((p) =>
-                  p.isVariableDeclarator()
-                ) as NodePath<t.VariableDeclarator>;
+            // Find the root object for factory pattern:
+            // - preview.meta() => preview
+            // - preview.type().meta() => preview
+            let rootObject = callee.object;
+            if (t.isCallExpression(rootObject) && t.isMemberExpression(rootObject.callee)) {
+              rootObject = rootObject.callee.object;
+            }
 
-                // find the name of the meta variable declaration
-                // e.g. const foo = preview.meta({ ... });
-                // otherwise fallback to meta
-                self._metaVariableName = t.isIdentifier(metaDeclarator.node.id)
-                  ? metaDeclarator.node.id.name
-                  : callee.property.name;
-                const metaNode = node.arguments[0] as t.ObjectExpression;
-                self._parseMeta(metaNode, self._ast.program);
-              } else {
-                throw new BadMetaError(
-                  'meta() factory must be imported from .storybook/preview configuration',
-                  configParent,
-                  self._options.fileName
-                );
+            if (t.isIdentifier(rootObject)) {
+              const configCandidate = path.scope.getBinding(rootObject.name);
+              const configParent = configCandidate?.path?.parentPath?.node;
+              if (t.isImportDeclaration(configParent)) {
+                if (isValidPreviewPath(configParent.source.value)) {
+                  self._metaIsFactory = true;
+                  const metaDeclarator = path.findParent((p) =>
+                    p.isVariableDeclarator()
+                  ) as NodePath<t.VariableDeclarator>;
+
+                  // find the name of the meta variable declaration
+                  // e.g. const foo = preview.meta({ ... });
+                  // otherwise fallback to meta
+                  self._metaVariableName = t.isIdentifier(metaDeclarator.node.id)
+                    ? metaDeclarator.node.id.name
+                    : callee.property.name;
+                  const metaNode = node.arguments[0] as t.ObjectExpression;
+                  self._parseMeta(metaNode, self._ast.program);
+                } else if (rootObject.name === 'preview') {
+                  // Only throw if the variable is named "preview" - this indicates
+                  // the user is trying to use CSF Factories but with a wrong import path.
+                  // Other .meta() calls (e.g., Zod v4's .meta()) are silently ignored.
+                  throw new BadMetaError(
+                    'meta() factory must be imported from .storybook/preview configuration',
+                    configParent,
+                    self._options.fileName
+                  );
+                }
               }
             }
           }
@@ -875,7 +893,7 @@ export class CsfFile {
     const entries = Object.entries(self._stories);
     self._meta.title = this._options.makeTitle(self._meta?.title as string);
     if (self._metaAnnotations.play) {
-      self._meta.tags = [...(self._meta.tags || []), 'play-fn'];
+      self._meta.tags = [...(self._meta.tags || []), Tag.PLAY_FN];
     }
     self._stories = entries.reduce(
       (acc, [key, story]) => {
@@ -904,7 +922,7 @@ export class CsfFile {
           acc[key].tags = parseTags(node);
         }
         if (play) {
-          acc[key].tags = [...(acc[key].tags || []), 'play-fn'];
+          acc[key].tags = [...(acc[key].tags || []), Tag.PLAY_FN];
         }
         const stats = acc[key].__stats;
         ['play', 'render', 'loaders', 'beforeEach', 'globals', 'tags'].forEach((annotation) => {
@@ -992,7 +1010,6 @@ export class CsfFile {
       // don't remove any duplicates or negations -- tags will be combined in the index
       const tags = [...(this._meta?.tags ?? []), ...(story.tags ?? [])];
       const storyInput = {
-        importPath: fileName,
         rawComponentPath: this._rawComponentPath,
         exportName,
         title: this.meta?.title,
@@ -1026,10 +1043,10 @@ export class CsfFile {
             tags: [
               ...storyInput.tags,
               // this tag comes before test tags so users can invert if they like
-              '!autodocs',
+              `!${Tag.AUTODOCS}`,
               ...test.tags,
               // this tag comes after test tags so users can't change it
-              'test-fn',
+              Tag.TEST_FN,
             ],
             __id: test.id,
           });

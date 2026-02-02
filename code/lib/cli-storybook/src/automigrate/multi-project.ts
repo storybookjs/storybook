@@ -20,6 +20,7 @@ export interface ProjectAutomigrationData {
   storybookVersion: string;
   beforeVersion: string;
   storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
 }
 
 export interface AutomigrationCheckResultReport {
@@ -109,6 +110,7 @@ export async function collectAutomigrationsAcrossProjects(
           previewConfigPath: project.previewConfigPath,
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
+          hasCsfFactoryPreview: project.hasCsfFactoryPreview,
         };
         const result = await fix.check(checkOptions);
 
@@ -262,7 +264,7 @@ export async function runAutomigrationsForProjects(
   selectedAutomigrations: AutomigrationCheckResult[],
   options: MultiProjectRunAutomigrationOptions
 ): Promise<Record<ConfigDir, AutomigrationResult>> {
-  const { dryRun, skipInstall, automigrations } = options;
+  const { dryRun, skipInstall, automigrations, yes } = options;
   const projectResults: Record<ConfigDir, AutomigrationResult> = {};
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
@@ -376,6 +378,7 @@ export async function runAutomigrationsForProjects(
             skipInstall,
             storybookVersion: project.storybookVersion,
             storiesPaths: project.storiesPaths,
+            yes,
           };
 
           await fix.run(runOptions);
@@ -430,6 +433,7 @@ export async function runAutomigrations(
     storybookVersion: project.currentCLIVersion,
     beforeVersion: project.beforeVersion,
     storiesPaths: project.storiesPaths,
+    hasCsfFactoryPreview: project.hasCsfFactoryPreview,
   }));
 
   const detectingAutomigrationTask = prompt.taskLog({

@@ -281,6 +281,7 @@ command('automigrate [fixId]')
     'The renderer package for the framework Storybook is using.'
   )
   .option('--skip-doctor', 'Skip doctor check')
+  .option('--glob <pattern>', 'Glob pattern for story files (for csf-factories codemod)')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
       logger.intro(fixId ? `Running ${fixId} automigration` : 'Running automigrations');

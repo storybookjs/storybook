@@ -40,6 +40,20 @@ export async function build(options: Options) {
 
   const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
 
+  // Add a plugin to enforce Storybook's outDir after all other plugins.
+  // This prevents frameworks like TanStack Start/Nitro from redirecting
+  // build output to their own directories (e.g., .output/public/).
+  // The 'enforce: post' ensures this runs after all other config hooks.
+  finalConfig.plugins?.push({
+    name: 'storybook:enforce-output-dir',
+    enforce: 'post',
+    config: () => ({
+      build: {
+        outDir: options.outputDir,
+      },
+    }),
+  });
+
   if (options.features?.developmentModeForBuild) {
     finalConfig.plugins?.push({
       name: 'storybook:define-env',

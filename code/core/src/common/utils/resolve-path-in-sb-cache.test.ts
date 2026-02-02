@@ -33,7 +33,7 @@ describe('resolvePathInStorybookCache', () => {
   });
 
   it('should include version in the cache path when falling back to cwd', () => {
-    vi.mocked(pkg.cache).mockReturnValue(null);
+    vi.mocked(pkg.cache).mockReturnValue(undefined);
     const cwd = process.cwd();
 
     const result = resolvePathInStorybookCache('test-file', 'test-sub');

@@ -79,38 +79,20 @@ export async function storyToCsfFactory(
 
   const sbConfigImportSpecifier = t.importDefaultSpecifier(t.identifier(sbConfigImportName));
 
-  programNode.body.forEach((node) => {
-    if (t.isImportDeclaration(node) && isValidPreviewPath(node.source.value)) {
-      const defaultImportSpecifier = node.specifiers.find((specifier) =>
-        t.isImportDefaultSpecifier(specifier)
-      );
-
-      if (!defaultImportSpecifier) {
-        node.specifiers.push(sbConfigImportSpecifier);
-      } else if (defaultImportSpecifier.local.name !== sbConfigImportName) {
-        sbConfigImportName = defaultImportSpecifier.local.name;
-      }
-
-      previewImport = node;
-    }
-  });
-
-  const hasMeta = !!csf._meta;
-
   /**
    * Collect imports from other .stories files.
    *
-   * When we see:
-   *   import * as BaseStories from './Button.stories';
-   *   import { Primary } from './Card.stories';
+   * When we see: import * as BaseStories from './Button.stories'; import { Primary } from
+   * './Card.stories';
    *
-   * We store the local names ("BaseStories", "Primary") so we can later
-   * transform references like `BaseStories.Primary.args` → `BaseStories.Primary.input.args`
+   * We store the local names ("BaseStories", "Primary") so we can later transform references like
+   * `BaseStories.Primary.args` → `BaseStories.Primary.input.args`
    *
-   * Why? Because those imported stories will ALSO be transformed to CSF4,
-   * so their properties will be under `.input` instead of directly on the object.
+   * Why? Because those imported stories will ALSO be transformed to CSF4, so their properties will
+   * be under `.input` instead of directly on the object.
    *
    * We track TWO types of imports:
+   *
    * - Namespace imports (import * as X): X.Story.args → X.Story.input.args
    * - Named imports (import { Story }): Story.args → Story.input.args
    */
@@ -144,7 +126,23 @@ export async function storyToCsfFactory(
         });
       }
     }
+
+    if (t.isImportDeclaration(node) && isValidPreviewPath(node.source.value)) {
+      const defaultImportSpecifier = node.specifiers.find((specifier) =>
+        t.isImportDefaultSpecifier(specifier)
+      );
+
+      if (!defaultImportSpecifier) {
+        node.specifiers.push(sbConfigImportSpecifier);
+      } else if (defaultImportSpecifier.local.name !== sbConfigImportName) {
+        sbConfigImportName = defaultImportSpecifier.local.name;
+      }
+
+      previewImport = node;
+    }
   });
+
+  const hasMeta = !!csf._meta;
 
   // Combined set for quick lookup
   const storyFileImports = new Set([...namespaceStoryImports, ...namedStoryImports]);
@@ -237,9 +235,7 @@ export async function storyToCsfFactory(
     /**
      * Handle SAME-FILE story references.
      *
-     * Examples:
-     *   Primary.args → Primary.input.args
-     *   meta.args → meta.input.args
+     * Examples: Primary.args → Primary.input.args meta.args → meta.input.args
      */
     Identifier(nodePath) {
       const identifierName = nodePath.node.name;
@@ -301,17 +297,14 @@ export async function storyToCsfFactory(
     /**
      * Handle CROSS-FILE story references.
      *
-     * When we import stories from another file:
-     *   import * as BaseStories from './Button.stories';
+     * When we import stories from another file: import * as BaseStories from './Button.stories';
      *
-     * And use them like:
-     *   BaseStories.Primary.args
+     * And use them like: BaseStories.Primary.args
      *
-     * We need to transform to:
-     *   BaseStories.Primary.input.args
+     * We need to transform to: BaseStories.Primary.input.args
      *
-     * Why? Because the imported file will ALSO be transformed to CSF4,
-     * where story properties are accessed via `.input`.
+     * Why? Because the imported file will ALSO be transformed to CSF4, where story properties are
+     * accessed via `.input`.
      */
     MemberExpression(nodePath) {
       const node = nodePath.node;

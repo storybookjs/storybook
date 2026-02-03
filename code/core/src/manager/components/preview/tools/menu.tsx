@@ -36,8 +36,6 @@ export const menuTool: Addon_BaseType = {
             >
               <MenuIcon />
             </Button>
-            {/* Only show separator in story mode where other tools (like remount) are visible.
-                In docs mode, most left-side tools are filtered out, leaving an orphaned separator (fixes #21429) */}
             {viewMode === 'story' && <Separator />}
           </>
         )

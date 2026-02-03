@@ -69,6 +69,7 @@ function extractStories(
         const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
 
         return {
+          id: story.id,
           name: story.name ?? storyNameFromExport(storyExport),
           snippet: recast.print(getCodeSnippet(csf, storyExport, componentName)).code,
           description: finalDescription?.trim(),
@@ -77,6 +78,7 @@ function extractStories(
       } catch (e) {
         invariant(e instanceof Error);
         return {
+          id: story.id,
           name: story.name ?? storyNameFromExport(storyExport),
           error: { name: e.name, message: e.message },
         };

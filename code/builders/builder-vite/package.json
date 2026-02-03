@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "10.3.0-alpha.2",
+  "version": "10.3.0-alpha.3",
   "description": "A Storybook builder to dev and build with Vite",
   "keywords": [
     "storybook",
@@ -30,6 +30,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./input/iframe.html": "./input/iframe.html",

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "10.3.0-alpha.0",
+  "version": "10.3.0-alpha.3",
   "description": "Storybook Links: Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "storybook",
@@ -29,16 +29,19 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./preview": {
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
       "default": "./dist/preview.js"
     },
     "./react": {
       "types": "./dist/react/index.d.ts",
+      "code": "./src/react/index.ts",
       "default": "./dist/react/index.js"
     }
   },

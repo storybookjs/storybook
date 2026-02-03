@@ -112,7 +112,7 @@ export const Opens = {
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect } from 'storybook/test';
 
-import { Dialog } from './Dialog.svelte';
+import Dialog from './Dialog.svelte';
 
 const meta = {
   component: Dialog,
@@ -156,7 +156,7 @@ export const Opens: Story = {
 ```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { expect } from 'storybook/test';
 
-import { Dialog } from './Dialog.svelte';
+import Dialog from './Dialog.svelte';
 
 export default {
   component: Dialog,

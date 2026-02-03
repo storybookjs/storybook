@@ -650,6 +650,7 @@ export default {
     'Location',
     'LocationProvider',
     'Match',
+    'MemoryRouter',
     'Route',
     'buildArgsParam',
     'deepDiff',

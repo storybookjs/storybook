@@ -248,6 +248,8 @@ export const ExampleStory: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
+  import YourComponent from './YourComponent.svelte';
+
   const { Story } = defineMeta({
       component: YourComponent,
       //👇 Creates specific argTypes
@@ -326,6 +328,8 @@ export const ExampleStory = {
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import YourComponent from './YourComponent.svelte';
 
   const { Story } = defineMeta({
       component: YourComponent,
@@ -818,6 +822,7 @@ export const ExampleStory = meta.story({
 
 ```jsx filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { YourComponent } from './your-component';
 
 const meta = preview.meta({

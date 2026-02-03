@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html-vite",
-  "version": "10.3.0-alpha.0",
+  "version": "10.3.0-alpha.3",
   "description": "Storybook for HTML and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -28,10 +28,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./node": {
       "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",

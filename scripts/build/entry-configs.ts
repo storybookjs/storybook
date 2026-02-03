@@ -47,6 +47,8 @@ import vue3ViteFrameworkConfig from '../../../code/frameworks/vue3-vite/build-co
 // @ts-ignore
 import webComponentsViteFrameworkConfig from '../../../code/frameworks/web-components-vite/build-config';
 // @ts-ignore
+import tanstackReactFrameworkConfig from '../../../code/frameworks/tanstack-react/build-config';
+// @ts-ignore
 import cliConfig from '../../../code/lib/cli-storybook/build-config';
 // @ts-ignore
 import codemodConfig from '../../../code/lib/codemod/build-config';
@@ -113,6 +115,7 @@ export const buildEntries = {
   '@storybook/sveltekit': sveltekitFrameworkConfig,
   '@storybook/vue3-vite': vue3ViteFrameworkConfig,
   '@storybook/web-components-vite': webComponentsViteFrameworkConfig,
+  '@storybook/tanstack-react': tanstackReactFrameworkConfig,
 
   // lib
   '@storybook/cli': cliConfig,

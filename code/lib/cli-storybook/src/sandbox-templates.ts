@@ -519,6 +519,26 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
+  'tanstack-react/default-ts': {
+    name: 'TanStack Router + Query Latest (Vite | TypeScript)',
+    script:
+      'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --add-ons tanstack-query,form',
+    expected: {
+      framework: '@storybook/tanstack-react',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    inDevelopment: true,
+    modifications: {
+      useCsfFactory: true,
+      // useCsfFactory: true,
+      extraDependencies: [],
+      mainConfig: {
+        framework: '@storybook/tanstack-react',
+      },
+    },
+    skipTasks: ['bench'],
+  },
   'vue3-vite/default-js': {
     name: 'Vue v3 (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue',

@@ -27,6 +27,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./builders/build-storybook": "./dist/builders/build-storybook/index.js",
@@ -37,6 +38,7 @@
     "./client/preview-prod": "./dist/client/preview-prod.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",

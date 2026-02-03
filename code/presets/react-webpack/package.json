@@ -23,6 +23,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",

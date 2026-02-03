@@ -29,6 +29,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./loaders/export-order-loader": "./dist/loaders/export-order-loader.js",

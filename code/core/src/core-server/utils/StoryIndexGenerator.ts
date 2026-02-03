@@ -492,6 +492,7 @@ export class StoryIndexGenerator {
       const entry = storyEntries[0];
       const id = toId(metaId ?? entry.title, name);
       const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
+      const headings = indexInputs.map((input) => input.name).filter(Boolean) as string[];
 
       const docsEntry: DocsCacheEntry & { tags: Tag[] } = {
         id,
@@ -501,6 +502,7 @@ export class StoryIndexGenerator {
         type: 'docs',
         tags,
         storiesImports: [],
+        headings,
       };
 
       return {
@@ -616,6 +618,7 @@ export class StoryIndexGenerator {
         storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
         type: 'docs',
         tags,
+        headings: result.headings || [],
       };
       return docsEntry;
     } catch (err) {

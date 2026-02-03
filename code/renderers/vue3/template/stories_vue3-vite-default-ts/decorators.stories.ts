@@ -3,7 +3,9 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 import { global as globalThis } from '@storybook/global';
 import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3';
 
+import { useArgs } from 'storybook/preview-api';
 import { h } from 'vue';
+import { computed } from 'vue';
 
 const { Button, Pre } = (globalThis as any).__TEMPLATE_COMPONENTS__;
 
@@ -47,6 +49,62 @@ const DynamicWrapperWrapper: DecoratorFunction<VueRenderer> = (storyFn, { args }
   computed: { level: () => `${args.level}px` },
 });
 
+const getCaptionForLocale = (locale: string) => {
+  switch (locale) {
+    case 'es':
+      return 'Hola!';
+    case 'kr':
+      return '안녕하세요!';
+    case 'zh':
+      return '你好!';
+    case 'en':
+      return 'Hello!';
+    default:
+      return undefined;
+  }
+};
+
+const updateArgsDecorator: DecoratorFunction<VueRenderer> = (story, { args }) => {
+  const [, updateArgs] = useArgs();
+  return {
+    components: { story },
+    setup() {
+      return {
+        args,
+        updateArgs,
+      };
+    },
+    template: `
+      <div>
+        <button @click="() => updateArgs({ label: Number(args.label) + 1 })">Add 1</button>
+        <hr />
+        <story />
+      </div>
+    `,
+  };
+};
+
+const localeDecorator: DecoratorFunction<VueRenderer> = (story, { globals }) => {
+  return {
+    components: { story },
+    setup() {
+      const ctxGreeting = computed(() => getCaptionForLocale(globals?.locale) || 'Hello!');
+
+      return {
+        ctxGreeting,
+        globals,
+      };
+    },
+    template: `
+      <div>
+        <p>Greeting: {{ctxGreeting}}</p>
+        <p>Locale: {{globals?.locale}}</p>
+        <story />
+      </div>
+    `,
+  };
+};
+
 export const ComponentTemplate: Story = {
   args: { label: 'With component' },
   decorators: [ComponentTemplateWrapper],
@@ -83,4 +141,14 @@ export const MultipleWrappers = {
     VueWrapperWrapper,
     DynamicWrapperWrapper,
   ],
+};
+
+export const UpdateArgs = {
+  args: { label: '0' },
+  decorators: [updateArgsDecorator],
+};
+
+export const ReactiveGlobalDecorator = {
+  args: { label: 'With reactive global decorator' },
+  decorators: [localeDecorator],
 };

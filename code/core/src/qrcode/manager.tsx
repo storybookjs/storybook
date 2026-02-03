@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
-import { CopyIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
@@ -69,6 +68,7 @@ const ShareProviderRender = () => {
           </Description>
         </div>
         <Button
+          ariaLabel="Copy link to clipboard"
           onClick={copyLink}
           shortcut={shortcutKeys?.copyStoryLink}
           padding="small"

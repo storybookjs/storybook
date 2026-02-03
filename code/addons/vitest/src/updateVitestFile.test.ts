@@ -291,6 +291,97 @@ describe('updateConfigFile', () => {
     `);
   });
 
+  it('updates config which is not exported immediately', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.3.2.template.ts', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vite'
+      import { devtools } from '@tanstack/devtools-vite'
+      import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+      import viteReact from '@vitejs/plugin-react'
+      import viteTsConfigPaths from 'vite-tsconfig-paths'
+      import { fileURLToPath, URL } from 'url'
+
+      import tailwindcss from '@tailwindcss/vite'
+
+      const config = defineConfig({
+        resolve: {
+          preserveSymlinks: true,
+          alias: {
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
+          },
+        },
+        plugins: [
+          viteReact(),
+        ],
+      })
+
+      export default config
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        import viteTsConfigPaths from 'vite-tsconfig-paths';
+        import { fileURLToPath, URL } from 'url';
+        import tailwindcss from '@tailwindcss/vite';
+        
+      + import path from 'node:path';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        const config = defineConfig({
+          resolve: {
+            preserveSymlinks: true,
+            alias: {
+              '@': fileURLToPath(new URL('./src', import.meta.url))
+            }
+          },
+        
+      -   plugins: [viteReact()]
+      - 
+      +   plugins: [viteReact()],
+      +   test: {
+      +     projects: [{
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         },
+      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +       }
+      +     }]
+      +   }
+      + 
+        });
+        export default config;"
+    `);
+  });
+
   it('edits projects property of test config', async () => {
     const source = babel.babelParse(
       await loadTemplate('vitest.config.3.2.template.ts', {

@@ -178,7 +178,8 @@ async function runStorybookDev(result: {
 
     const parts = storybookCommand.split(' ');
 
-    if (packageManager.type === 'npm') {
+    // Angular CLI throws "Unknown argument: silent"
+    if (packageManager.type === 'npm' && projectType !== ProjectType.ANGULAR) {
       parts.push('--silent');
     }
 

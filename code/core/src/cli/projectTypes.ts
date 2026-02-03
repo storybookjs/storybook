@@ -8,6 +8,7 @@ export enum ProjectType {
   PREACT = 'preact',
   QWIK = 'qwik',
   REACT = 'react',
+  TANSTACK = 'tanstack',
   REACT_NATIVE = 'react_native',
   REACT_NATIVE_AND_RNW = 'react_native_and_rnw',
   REACT_NATIVE_WEB = 'react_native_web',

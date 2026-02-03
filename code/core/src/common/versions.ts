@@ -22,6 +22,7 @@ export default {
   '@storybook/server-webpack5': '10.3.0-alpha.2',
   '@storybook/svelte-vite': '10.3.0-alpha.2',
   '@storybook/sveltekit': '10.3.0-alpha.2',
+  '@storybook/tanstack-react': '10.3.0-alpha.2',
   '@storybook/vue3-vite': '10.3.0-alpha.2',
   '@storybook/web-components-vite': '10.3.0-alpha.2',
   sb: '10.3.0-alpha.2',

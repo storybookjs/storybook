@@ -1,0 +1,9 @@
+{
+  "name": "tanstack-react",
+  "projectType": "library",
+  "targets": {
+    "compile": {},
+    "check": {}
+  },
+  "tags": ["library"]
+}

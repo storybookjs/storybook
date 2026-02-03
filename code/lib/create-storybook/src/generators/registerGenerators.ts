@@ -7,6 +7,7 @@ import nuxtGenerator from './NUXT';
 import preactGenerator from './PREACT';
 import qwikGenerator from './QWIK';
 import reactGenerator from './REACT';
+import tanstackGenerator from './TANSTACK';
 import reactNativeGenerator from './REACT_NATIVE';
 import reactNativeAndRNWGenerator from './REACT_NATIVE_AND_RNW';
 import reactNativeWebGenerator from './REACT_NATIVE_WEB';
@@ -38,6 +39,7 @@ const setOfGenerators = new Set<GeneratorModule>([
   solidGenerator,
   serverGenerator,
   qwikGenerator,
+  tanstackGenerator,
 ]);
 
 /** Register all framework generators with the central registry */

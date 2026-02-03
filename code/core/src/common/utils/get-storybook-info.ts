@@ -51,6 +51,7 @@ export const frameworkPackages: Record<string, SupportedFramework> = {
   '@storybook/nextjs-vite': SupportedFramework.NEXTJS_VITE,
   '@storybook/react-native-web-vite': SupportedFramework.REACT_NATIVE_WEB_VITE,
   '@storybook/web-components-vite': SupportedFramework.WEB_COMPONENTS_VITE,
+  '@storybook/tanstack-react': SupportedFramework.TANSTACK_REACT,
   // community (outside of monorepo)
   'storybook-framework-qwik': SupportedFramework.QWIK,
   'storybook-solidjs-vite': SupportedFramework.SOLID,

@@ -1,0 +1,89 @@
+{
+  "name": "@storybook/tanstack-react",
+  "version": "10.3.0-alpha.2",
+  "description": "Storybook for TanStack (React, Vite): Router + Query ready Storybook framework",
+  "keywords": [
+    "storybook",
+    "storybook-framework",
+    "tanstack",
+    "tanstack-router",
+    "tanstack-query",
+    "react",
+    "vite",
+    "component",
+    "components"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/tanstack-react",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/frameworks/tanstack-react"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "default": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json",
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "template/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "@storybook/builder-vite": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/react-vite": "workspace:*"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.90.20",
+    "@tanstack/react-router": "^1.157.18",
+    "@types/node": "^22.19.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.0.4"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.59.0",
+    "@tanstack/react-router": "^1.85.7",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "storybook": "workspace:^",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": false
+    },
+    "@tanstack/react-router": {
+      "optional": false
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

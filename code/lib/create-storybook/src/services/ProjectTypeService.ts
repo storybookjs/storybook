@@ -44,6 +44,13 @@ export class ProjectTypeService {
         },
       },
       {
+        preset: ProjectType.TANSTACK,
+        dependencies: ['@tanstack/start', '@tanstack/react-router', '@tanstack/router'],
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.some(Boolean) ?? false;
+        },
+      },
+      {
         preset: ProjectType.VUE3,
         dependencies: {
           // This Vue template works with Vue 3

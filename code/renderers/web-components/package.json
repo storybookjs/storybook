@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "10.2.0-alpha.8",
+  "version": "10.3.0-alpha.4",
   "description": "Storybook Web Components renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -29,6 +29,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
@@ -52,7 +53,7 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "@types/tmp": "^0.2.6",
     "cross-spawn": "^7.0.6",
     "lit": "2.3.1",

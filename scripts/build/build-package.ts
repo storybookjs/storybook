@@ -23,9 +23,7 @@ import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs';
 import { measure } from './utils/entry-utils';
 import { generateBundle } from './utils/generate-bundle';
 import { generatePackageJsonFile } from './utils/generate-package-json';
-import { generateTypesMapperFiles } from './utils/generate-type-mappers';
 import { generateTypesFiles } from './utils/generate-types';
-import { modifyCoreThemeTypes } from './utils/modify-core-theme-types';
 
 const {
   values: { prod, production, optimized, watch, cwd },
@@ -86,8 +84,6 @@ async function run() {
   const [bundleTime, typesTime] = await Promise.all([
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
     measure(async () => {
-      await generateTypesMapperFiles(DIR_CWD, entry);
-      await modifyCoreThemeTypes(DIR_CWD);
       if (isProduction) {
         await generateTypesFiles(DIR_CWD, entry);
       }

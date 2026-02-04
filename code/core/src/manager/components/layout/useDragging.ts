@@ -34,7 +34,7 @@ export function useDragging({
   useEffect(() => {
     const panelResizer = panelResizerRef.current;
     const sidebarResizer = sidebarResizerRef.current;
-    const previewIframe = document.querySelector('#storybook-preview-wrapper') as HTMLIFrameElement;
+    const previewIframe = document.querySelector('#storybook-preview-iframe') as HTMLIFrameElement;
     let draggedElement: typeof panelResizer | typeof sidebarResizer | null = null;
 
     const onDragStart = (e: MouseEvent) => {

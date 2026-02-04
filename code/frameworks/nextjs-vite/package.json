@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs-vite",
-  "version": "10.2.0-alpha.8",
+  "version": "10.3.0-alpha.4",
   "description": "Storybook for Next.js and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -29,37 +29,45 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./cache.mock": {
       "types": "./dist/export-mocks/cache/index.d.ts",
+      "code": "./src/export-mocks/cache/index.ts",
       "default": "./dist/export-mocks/cache/index.js"
     },
     "./config/preview": "./dist/config/preview.js",
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",
+      "code": "./src/export-mocks/headers/index.ts",
       "default": "./dist/export-mocks/headers/index.js"
     },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
+      "code": "./src/export-mocks/navigation/index.ts",
       "default": "./dist/export-mocks/navigation/index.js"
     },
     "./node": {
       "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.tsx",
       "default": "./dist/preview.js"
     },
     "./router.mock": {
       "types": "./dist/export-mocks/router/index.d.ts",
+      "code": "./src/export-mocks/router/index.ts",
       "default": "./dist/export-mocks/router/index.js"
     },
     "./vite-plugin": {
       "types": "./dist/vite-plugin/index.d.ts",
+      "code": "./src/vite-plugin/index.ts",
       "default": "./dist/vite-plugin/index.js"
     }
   },
@@ -79,15 +87,15 @@
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^3.1.7"
+    "vite-plugin-storybook-nextjs": "^3.1.9"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "lilconfig": "^3.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
-    "semver": "^7.3.5",
-    "typescript": "^5.8.3"
+    "semver": "^7.7.3",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "next": "^14.1.0 || ^15.0.0 || ^16.0.0",

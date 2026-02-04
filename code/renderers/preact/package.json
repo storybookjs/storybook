@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact",
-  "version": "10.2.0-alpha.8",
+  "version": "10.3.0-alpha.4",
   "description": "Storybook Preact renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -27,6 +27,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",

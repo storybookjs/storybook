@@ -6,16 +6,5 @@ interface GetSelectedItemProps {
 }
 
 export const getSelectedItem = ({ currentValue, items }: GetSelectedItemProps) => {
-  const selectedItem =
-    currentValue != null &&
-    items.find((item) => item.value === currentValue && item.type !== 'reset');
-  return selectedItem;
-};
-
-export const getSelectedIcon = ({ currentValue, items }: GetSelectedItemProps) => {
-  const selectedItem = getSelectedItem({ currentValue, items });
-  if (selectedItem) {
-    return selectedItem.icon;
-  }
-  return undefined;
+  return items.find((item) => item.value === currentValue && item.type !== 'reset');
 };

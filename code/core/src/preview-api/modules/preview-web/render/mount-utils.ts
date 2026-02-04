@@ -4,32 +4,70 @@ export function mountDestructured(playFunction?: (...args: any[]) => any): boole
   return playFunction != null && getUsedProps(playFunction).includes('mount');
 }
 
-export function getUsedProps(fn: (...args: any[]) => any) {
-  const match = fn.toString().match(/[^(]*\(([^)]*)/);
-
-  if (!match) {
+/**
+ * Extracts a list of properties destructured from the argument of a play function, either inline or
+ * as the first statement in the body of the function.
+ *
+ * @param fn - The function to extract the properties from.
+ * @returns An array of property names.
+ */
+export function getUsedProps(fn: (...args: unknown[]) => unknown) {
+  const [, args, body] = fn.toString().match(/[^(]*\(([^)]+)\)(?:.*{([^]+)})?/) || [];
+  if (!args) {
     return [];
   }
 
-  const args = splitByComma(match[1]);
-
-  if (!args.length) {
+  const [firstArg] = splitByComma(args);
+  if (!firstArg) {
     return [];
   }
 
-  const first = args[0];
+  const [, destructuredProps] = firstArg.match(/^{([^]+)}$/) || [];
+  if (destructuredProps) {
+    return splitByComma(stripComments(destructuredProps)).map((prop) =>
+      prop.replace(/:.*|=.*/g, '').trim()
+    );
+  }
 
-  if (!(first.startsWith('{') && first.endsWith('}'))) {
+  if (!firstArg.match(/^[a-z_$][0-9a-z_$]*$/i)) {
     return [];
   }
 
-  const props = splitByComma(first.slice(1, -1).replace(/\s/g, '')).map((prop) => {
-    return prop.replace(/:.*|=.*/g, '');
-  });
+  const escapedArg = firstArg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const [, destructuredArg] =
+    body?.trim()?.match(new RegExp(`^(?:const|let|var)\\s*{([^}]+)}\\s*=\\s*${escapedArg};`)) || [];
+  if (destructuredArg) {
+    return splitByComma(stripComments(destructuredArg)).map((prop) =>
+      prop.replace(/:.*|=.*/g, '').trim()
+    );
+  }
 
-  return props;
+  return [];
 }
 
+/**
+ * Strips JavaScript comments from a string.
+ *
+ * @param s - The string to strip comments from.
+ * @returns The string with comments removed.
+ */
+function stripComments(s: string): string {
+  // Remove single-line comments (// ...)
+  s = s.replace(/\/\/.*$/gm, '');
+  // Remove multi-line comments (/* ... */)
+  s = s.replace(/\/\*[\s\S]*?\*\//g, '');
+  return s;
+}
+
+/**
+ * Splits a string by top-level commas, ignoring commas nested within curly or square brackets.
+ *
+ * This is useful for parsing function argument lists or destructured object patterns where elements
+ * inside nested structures (like { a, b: [x, y], c }) should not be split.
+ *
+ * @param s - The string to split.
+ * @returns An array of substrings split by top-level commas.
+ */
 function splitByComma(s: string) {
   const result = [];
   const stack = [];

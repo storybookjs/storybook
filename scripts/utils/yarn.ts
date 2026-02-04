@@ -1,11 +1,10 @@
-import { access, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
-import type { TemplateKey } from '../get-template';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { exec } from './exec';
-import touch from './touch';
 
 export type YarnOptions = {
   cwd: string;
@@ -51,13 +50,17 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
-  const command = [
-    touch('yarn.lock'),
-    touch('.yarnrc.yml'),
-    `yarn set version berry`,
+  await mkdir(cwd, { recursive: true }).then(() =>
+    Promise.all([
+      //
+      writeFile(join(cwd, 'yarn.lock'), ''),
+      writeFile(join(cwd, '.yarnrc.yml'), ''),
+    ])
+  );
 
-    // Use the global cache so we aren't re-caching dependencies each time we run sandbox
-    `yarn config set enableGlobalCache true`,
+  const command = [
+    `yarn set version berry`,
+    `yarn config set enableGlobalCache true`, // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set checksumBehavior ignore`,
   ];
 
@@ -66,7 +69,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   }
 
   await exec(
-    command,
+    command.join(' && '),
     { cwd },
     {
       dryRun,
@@ -81,7 +84,7 @@ export const addWorkaroundResolutions = async ({
   cwd,
   dryRun,
   key,
-}: YarnOptions & { key?: TemplateKey }) => {
+}: YarnOptions & { key?: AllTemplatesKey }) => {
   logger.info(`🔢 Adding resolutions for workarounds`);
 
   if (dryRun) {
@@ -128,7 +131,7 @@ export const configureYarn2ForVerdaccio = async ({
   dryRun,
   debug,
   key,
-}: YarnOptions & { key: TemplateKey }) => {
+}: YarnOptions & { key: AllTemplatesKey }) => {
   const command = [
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
@@ -171,7 +174,7 @@ export const configureYarn2ForVerdaccio = async ({
   }
 
   await exec(
-    command,
+    command.join(' && '),
     { cwd },
     {
       dryRun,

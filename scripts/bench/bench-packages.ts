@@ -404,13 +404,16 @@ const uploadToGithub = async ({
 const run = async () => {
   program
     .option(
-      '-b, --base-branch <string>',
+      '-b, --base-branch [branchName]',
       'The base branch to compare the results with. Requires GCP_CREDENTIALS env var'
     )
     .option(
-      '-p, --pull-request <number>',
+      '-p, --pull-request [pullRequestNumber]',
       'The PR number to add compare results to. Only used together with --baseBranch',
-      function parseInt(value) {
+      function parsePrNumber(value) {
+        if (value === '0' || value === '') {
+          return null;
+        }
         const parsedValue = Number.parseInt(value);
         if (Number.isNaN(parsedValue)) {
           throw new InvalidArgumentError('Must be a number');
@@ -443,7 +446,7 @@ const run = async () => {
   ) as PackageName[];
   const options = program.opts<{ pullRequest?: number; baseBranch?: string; upload?: boolean }>();
 
-  if (options.upload || options.baseBranch) {
+  if (options.upload === true || typeof options.baseBranch === 'string') {
     if (!GCP_CREDENTIALS.project_id) {
       throw new Error(
         'GCP_CREDENTIALS env var is required to upload to BigQuery or compare against a base branch'
@@ -498,7 +501,7 @@ const run = async () => {
   if (options.baseBranch) {
     const comparisonResults = await compareResults({ results, baseBranch: options.baseBranch });
     const resultsAboveThreshold = filterResultsByThresholds(comparisonResults);
-    if (options.pullRequest) {
+    if (typeof options.pullRequest === 'number') {
       await uploadToGithub({
         results: resultsAboveThreshold,
         pullRequest: options.pullRequest,

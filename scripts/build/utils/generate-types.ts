@@ -5,7 +5,6 @@ import picocolors from 'picocolors';
 
 import { ROOT_DIRECTORY } from '../../utils/constants';
 import type { BuildEntries } from './entry-utils';
-import { modifyCoreThemeTypes } from './modify-core-theme-types';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
@@ -84,12 +83,8 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
           processes.forEach((p) => p.kill());
           processes = [];
           process.exit(dtsProcess.exitCode || 1);
-        } else {
+        } else if(!process.env.CI) {
           console.log('✅ Generated types for', picocolors.cyan(join(DIR_REL, entryPoint)));
-
-          if (entryPoint.includes('src/theming/index')) {
-            await modifyCoreThemeTypes(cwd);
-          }
         }
       });
     })

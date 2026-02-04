@@ -1,6 +1,6 @@
 {
   "name": "@storybook/csf-plugin",
-  "version": "10.2.0-alpha.8",
+  "version": "10.3.0-alpha.4",
   "description": "Enrich CSF files via static analysis",
   "keywords": [
     "storybook"
@@ -24,6 +24,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",
@@ -40,7 +41,7 @@
     "unplugin": "^2.3.5"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "esbuild": "*",

@@ -1,131 +1,160 @@
 import { recast } from 'storybook/internal/babel';
-import { combineTags } from 'storybook/internal/csf';
+import { Tag } from 'storybook/internal/core-server';
+import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
+import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
   type ComponentManifest,
-  type ComponentManifestGenerator,
   type PresetPropertyFn,
+  type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
-import { cachedFindUp, cachedReadFileSync, groupBy, invalidateCache, invariant } from './utils';
+import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
 }
 
-export const componentManifestGenerator: PresetPropertyFn<
-  'experimental_componentManifestGenerator'
-> = async () => {
-  return (async (storyIndexGenerator) => {
-    invalidateCache();
+function findMatchingComponent(
+  components: ReturnType<typeof getComponents>,
+  componentName: string | undefined,
+  trimmedTitle: string
+) {
+  return components.find((it) =>
+    componentName
+      ? [it.componentName, it.localImportName, it.importName].includes(componentName)
+      : trimmedTitle.includes(it.componentName) ||
+        (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
+        (it.importName && trimmedTitle.includes(it.importName))
+  );
+}
 
-    const startIndex = performance.now();
-    const index = await storyIndexGenerator.getIndex();
-    logger.verbose(`Story index generation took ${performance.now() - startIndex}ms`);
+function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
+  const nearestPkg = cachedFindUp('package.json', {
+    cwd: path.dirname(componentPath ?? fallbackPath),
+  });
 
-    const startPerformance = performance.now();
+  try {
+    return nearestPkg
+      ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
-    const groupByComponentId = groupBy(
-      Object.values(index.entries)
-        .filter((entry) => entry.type === 'story')
-        .filter((entry) => entry.subtype === 'story'),
-      (it) => it.id.split('--')[0]
-    );
-    const singleEntryPerComponent = Object.values(groupByComponentId).flatMap((group) =>
-      group && group?.length > 0 ? [group[0]] : []
-    );
-    const components = singleEntryPerComponent.map((entry): ReactComponentManifest | undefined => {
-      const absoluteImportPath = path.join(process.cwd(), entry.importPath);
+function extractStories(
+  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
+  componentName: string | undefined,
+  manifestEntries: IndexEntry[]
+) {
+  const manifestEntryIds = new Set(manifestEntries.map((entry) => entry.id));
+  return Object.entries(csf._stories)
+    .filter(([, story]) =>
+      // Only include stories that are in the list of entries already filtered for the 'manifest' tag
+      manifestEntryIds.has(story.id)
+    )
+    .map(([storyExport, story]) => {
+      try {
+        const jsdocComment = extractDescription(csf._storyStatements[storyExport]);
+        const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+        const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+
+        return {
+          id: story.id,
+          name: story.name ?? storyNameFromExport(storyExport),
+          snippet: recast.print(getCodeSnippet(csf, storyExport, componentName)).code,
+          description: finalDescription?.trim(),
+          summary: tags.summary?.[0],
+        };
+      } catch (e) {
+        invariant(e instanceof Error);
+        return {
+          id: story.id,
+          name: story.name ?? storyNameFromExport(storyExport),
+          error: { name: e.name, message: e.message },
+        };
+      }
+    });
+}
+
+function extractComponentDescription(
+  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
+  docgen: DocObj | undefined
+) {
+  const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
+  const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+  return {
+    description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
+    summary: tags.summary?.[0],
+    jsDocTags: tags,
+  };
+}
+
+export const manifests: PresetPropertyFn<
+  'experimental_manifests',
+  StorybookConfigRaw,
+  { manifestEntries: IndexEntry[] }
+> = async (existingManifests = {}, { manifestEntries }) => {
+  invalidateCache();
+
+  const startPerformance = performance.now();
+
+  const entriesByUniqueComponent = uniqBy(
+    manifestEntries.filter(
+      (entry) =>
+        (entry.type === 'story' && entry.subtype === 'story') ||
+        // addon-docs will add docs entries to these manifest entries afterwards
+        // Docs entries have importPath pointing to MDX file, but storiesImports[0] points to the story file
+        (entry.type === 'docs' &&
+          entry.tags?.includes(Tag.ATTACHED_MDX) &&
+          entry.storiesImports.length > 0)
+    ),
+    (entry) => entry.id.split('--')[0]
+  );
+
+  const components = entriesByUniqueComponent
+    .map((entry): ReactComponentManifest | undefined => {
+      const storyFilePath =
+        entry.type === 'story'
+          ? entry.importPath
+          : // For attached docs entries, storiesImports[0] points to the stories file being attached to
+            (entry as DocsIndexEntry).storiesImports[0];
+      const absoluteImportPath = path.join(process.cwd(), storyFilePath);
       const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
       const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
 
-      const manifestEnabled = csf.stories
-        .map((it) => combineTags('manifest', ...(csf.meta.tags ?? []), ...(it.tags ?? [])))
-        .some((it) => it.includes('manifest'));
-
-      if (!manifestEnabled) {
-        return;
-      }
       const componentName = csf._meta?.component;
-
       const id = entry.id.split('--')[0];
-      const importPath = entry.importPath;
+      const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-      const components = getComponents({ csf, storyFilePath: absoluteImportPath });
+      const allComponents = getComponents({ csf, storyFilePath: absoluteImportPath });
+      const component = findMatchingComponent(
+        allComponents,
+        componentName,
+        entry.title.replace(/\s+/g, '')
+      );
 
-      const trimmedTitle = entry.title.replace(/\s+/g, '');
-
-      const component = components.find((it) => {
-        return componentName
-          ? [it.componentName, it.localImportName, it.importName].includes(componentName)
-          : trimmedTitle.includes(it.componentName) ||
-              (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
-              (it.importName && trimmedTitle.includes(it.importName));
-      });
-
-      const stories = Object.keys(csf._stories)
-        .map((storyName) => {
-          const story = csf._stories[storyName];
-
-          const manifestEnabled = combineTags(
-            'manifest',
-            ...(csf.meta.tags ?? []),
-            ...(story.tags ?? [])
-          ).includes('manifest');
-
-          if (!manifestEnabled) {
-            return;
-          }
-          try {
-            const jsdocComment = extractDescription(csf._storyStatements[storyName]);
-            const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
-            const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
-
-            return {
-              name: storyName,
-              snippet: recast.print(getCodeSnippet(csf, storyName, component?.componentName)).code,
-              description: finalDescription?.trim(),
-              summary: tags.summary?.[0],
-            };
-          } catch (e) {
-            invariant(e instanceof Error);
-            return {
-              name: storyName,
-              error: { name: e.name, message: e.message },
-            };
-          }
-        })
-        .filter((it) => it != null);
-
-      const nearestPkg = cachedFindUp('package.json', {
-        cwd: path.dirname(component?.path ?? absoluteImportPath),
-      });
-
-      let packageName;
-      try {
-        packageName = nearestPkg
-          ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
-          : undefined;
-      } catch {}
-
+      const packageName = getPackageInfo(component?.path, absoluteImportPath);
       const fallbackImport =
         packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
+      const imports =
+        getImports({ components: allComponents, packageName }).join('\n').trim() || fallbackImport;
 
-      const imports = getImports({ components, packageName }).join('\n').trim() || fallbackImport;
-
-      const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
+      const stories = extractStories(csf, component?.componentName, manifestEntries);
 
       const base = {
         id,
         name: componentName ?? title,
-        path: importPath,
+        path: storyFilePath,
         stories,
         import: imports,
         jsDocTags: {},
@@ -142,6 +171,7 @@ export const componentManifestGenerator: PresetPropertyFn<
               name: 'No component import found',
               message: `No component file found for the "${csf.meta.component}" component.`,
             };
+
         return {
           ...base,
           error: {
@@ -154,33 +184,28 @@ export const componentManifestGenerator: PresetPropertyFn<
       }
 
       const docgenResult = component.reactDocgen;
-
       const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
-      const error = docgenResult.type === 'error' ? docgenResult.error : undefined;
-
-      const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
-      const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+      const { description, summary, jsDocTags } = extractComponentDescription(csf, docgen);
 
       return {
         ...base,
-        description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
-        summary: tags.summary?.[0],
+        description,
+        summary,
         import: imports,
         reactDocgen: docgen,
-        jsDocTags: tags,
-        error,
+        jsDocTags,
+        error: docgenResult.type === 'error' ? docgenResult.error : undefined,
       };
-    });
+    })
+    .filter((component) => component !== undefined);
 
-    logger.verbose(`Component manifest generation took ${performance.now() - startPerformance}ms`);
+  logger.verbose(`Component manifest generation took ${performance.now() - startPerformance}ms`);
 
-    return {
+  return {
+    ...existingManifests,
+    components: {
       v: 0,
-      components: Object.fromEntries(
-        components
-          .filter((component) => component != null)
-          .map((component) => [component.id, component])
-      ),
-    };
-  }) satisfies ComponentManifestGenerator;
+      components: Object.fromEntries(components.map((component) => [component.id, component])),
+    },
+  };
 };

@@ -60,7 +60,7 @@ export const frameworkPackages: Record<string, SupportedFramework> = {
   'storybook-web-components-rsbuild': SupportedFramework.WEB_COMPONENTS_RSBUILD,
   'storybook-html-rsbuild': SupportedFramework.HTML_RSBUILD,
   '@storybook-vue/nuxt': SupportedFramework.NUXT,
-  '@stencil/storybook-plugin': SupportedFramework.STENCIL_VITE,
+  '@stencil/storybook-plugin': SupportedFramework.STENCIL,
 };
 
 export const builderPackages: Record<string, SupportedBuilder> = {

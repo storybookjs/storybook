@@ -449,6 +449,7 @@ export interface Addon_ShareProviderType {
   /** The unique id of the share provider. */
   id: string;
   title: string;
+  order?: number;
   render: () => ReactNode;
 }
 

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
-import { addons, types, useStorybookApi } from 'storybook/manager-api';
+import { type API, addons } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { ADDON_ID } from './constants';
@@ -37,8 +38,7 @@ const Description = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-const ShareProviderRender = () => {
-  const api = useStorybookApi();
+const ShareProviderRender = ({ api }: { api: API }) => {
   const theme = useTheme();
   const [copied, setCopied] = useState(false);
 
@@ -82,17 +82,17 @@ const ShareProviderRender = () => {
         value={networkHrefs.managerHref}
         marginSize={0}
         size={80}
-        fgColor={theme.color.darkest}
+        fgColor={theme.color.defaultText}
         bgColor="transparent"
       />
     </Container>
   );
 };
 
-export default addons.register(ADDON_ID, () => {
+export default addons.register(ADDON_ID, (api) => {
   addons.add(ADDON_ID, {
-    type: types.experimental_SHARE_PROVIDER,
-    title: 'Share',
-    render: () => <ShareProviderRender />,
+    type: Addon_TypesEnum.experimental_SHARE_PROVIDER,
+    title: 'Preview_',
+    render: () => <ShareProviderRender api={api} />,
   });
 });

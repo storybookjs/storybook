@@ -81,10 +81,8 @@ export const getSourceType = (source: string, refId?: string) => {
   const { origin: localOrigin, pathname: localPathname } = location;
   const { origin: sourceOrigin, pathname: sourcePathname } = new URL(source);
 
-  const localFull = `${localOrigin + localPathname}`.replace('/iframe.html', '').replace(/\/$/, '');
-  const sourceFull = `${sourceOrigin + sourcePathname}`
-    .replace('/iframe.html', '')
-    .replace(/\/$/, '');
+  const localFull = `${localOrigin + localPathname}`.replace(/\/[^\/]*$/, '');
+  const sourceFull = `${sourceOrigin + sourcePathname}`.replace(/\/[^\/]*$/, '');
 
   if (localFull === sourceFull) {
     return ['local', sourceFull];

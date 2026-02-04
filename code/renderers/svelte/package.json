@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "10.3.0-alpha.2",
+  "version": "10.3.0-alpha.3",
   "description": "Storybook Svelte renderer: Develop, document, and test UI components in isolation.",
   "keywords": [
     "storybook",
@@ -26,12 +26,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
+      "code": "./src/playwright.ts",
       "default": "./dist/playwright.js"
     },
     "./internal/AddStorybookIdDecorator.svelte": "./static/AddStorybookIdDecorator.svelte",

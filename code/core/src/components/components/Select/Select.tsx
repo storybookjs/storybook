@@ -522,7 +522,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           {!multiSelect && (
             <>
               {icon}
-              {selectedOptions[0]?.title ?? children}
+              {/* If children are explicitly passed, use them (e.g., toolbar with dynamicTitle: false).
+                  Otherwise, show the selected option's title if available (fixes #33281) */}
+              {children ?? selectedOptions[0]?.title}
             </>
           )}
 

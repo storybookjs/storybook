@@ -10,13 +10,6 @@ type FrameworkName = CompatibleString<'@storybook/tanstack-react'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
-  /** Optional Vite server overrides applied via the preset. */
-  server?: NonNullable<StorybookConfigReactVite['viteFinal']> extends (
-    config: infer C,
-    options: any
-  ) => any
-    ? C['server']
-    : unknown;
   /** Builder options passed through to @storybook/builder-vite. */
   builder?: BuilderOptions;
 };
@@ -83,12 +76,12 @@ export interface TanStackRouterOptions {
    * Context passed to `createRouter` when the framework builds the router (routeTree or story
    * mode).
    */
-  context?: RouterOptions['context'];
+  context?: RouterOptions<any, any, any, any, any>['context'];
   /**
    * Advanced escape hatch: supply a custom factory for creating the router. The framework will
    * still compute routeTree/history/context and pass them through.
    */
-  createRouter?: (options: RouterOptions<any>) => Router<any>;
+  createRouter?: (options: RouterOptions<any, any, any, any, any>) => Router<any>;
 }
 
 export interface TanStackPreviewOptions {

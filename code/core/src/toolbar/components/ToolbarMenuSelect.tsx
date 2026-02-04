@@ -29,7 +29,14 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   id,
   name,
   description,
-  toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle = true, shortcuts },
+  toolbar: {
+    icon: _icon,
+    items,
+    title: _title,
+    preventDynamicIcon,
+    dynamicTitle = true,
+    shortcuts,
+  },
 }) => {
   const api = useStorybookApi();
   const [globals, updateGlobals, storyGlobals] = useGlobals();

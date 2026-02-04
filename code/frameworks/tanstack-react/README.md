@@ -74,6 +74,77 @@ export const parameters = {
 };
 ```
 
+## Routes in Storybook
+
+The router can run in three modes:
+- `story` (default): wraps the story element in a minimal router with a configurable `storyPath`.
+- `routeTree`: builds a router from your route tree (file-based or code-based).
+- `instance`: uses a router instance you supply.
+
+Common router options:
+- `storyPath` (default `/`), `initialEntries`, `initialIndex`
+- `defaultSearch`, `defaultParams` (prefill location when creating the router)
+- `context` (passed to `createRouter`, e.g. for `createRootRouteWithContext`)
+- `createRouter` (advanced factory override), `history` (bring your own)
+
+### File-based / generated route tree
+
+```ts
+// .storybook/preview.ts
+import { routeTree } from '../src/routeTree.gen';
+
+export const parameters = {
+  tanstack: {
+    router: {
+      mode: 'routeTree',
+      routeTree,
+      initialEntries: ['/posts/123'],
+      context: { featureFlag: true },
+    },
+  },
+};
+```
+
+### Code-based route tree with helper
+
+```ts
+// stories/router.setup.ts
+import { createRootRoute, createRoute } from '@tanstack/react-router';
+import { createStoryMemoryRouter } from '@storybook/tanstack-react';
+import { RouterLayout, RouterHome, RouterAbout } from './RouterExample';
+
+const root = createRootRoute({ component: RouterLayout });
+const home = createRoute({ getParentRoute: () => root, path: '/', component: RouterHome });
+const about = createRoute({ getParentRoute: () => root, path: 'about', component: RouterAbout });
+
+export const router = createStoryMemoryRouter({
+  routeTree: root.addChildren([home, about]),
+  initialEntries: ['/'],
+});
+```
+
+```ts
+// stories/RouterExample.stories.ts
+import type { Meta, StoryObj } from '@storybook/react';
+import { router } from './router.setup';
+
+const meta: Meta = {
+  render: () => null,
+  parameters: { tanstack: { router: { instance: router } } },
+};
+
+export default meta;
+export const WithMemoryRouter: StoryObj = {};
+```
+
+### Layouts, nested routes, and params
+
+- Use `initialEntries` to land on nested paths (e.g., `/app/settings/profile`).
+- Use dynamic segments by setting `initialEntries: ['/posts/42']` and reading params via `useMatch({ from: '/posts/$postId' })`.
+- Supply `context` when your routes use `createRootRouteWithContext`.
+
+> File-based routing note: Storybook filters TanStack Start Vite plugins for compatibility. Generate your `routeTree.gen.ts` during your app build/dev and import it into Storybook.
+
 ## Templates
 Starter stories live in `template/cli/ts`:
 - `QueryExample` shows basic `useQuery` setup

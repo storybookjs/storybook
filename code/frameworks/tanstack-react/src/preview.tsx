@@ -8,6 +8,7 @@ import {
   isCancelledError as isQueryCancelledError,
 } from '@tanstack/react-query';
 import {
+  type Router,
   RouterProvider,
   createMemoryHistory,
   createRootRoute,
@@ -17,27 +18,101 @@ import {
 
 import type { TanStackPreviewOptions } from './types';
 
+const buildInitialEntry = (path: string, search?: Record<string, unknown>) => {
+  if (!search || Object.keys(search).length === 0) {
+    return path;
+  }
+  const params = new URLSearchParams();
+  Object.entries(search).forEach(([key, value]) => {
+    if (value === undefined || value === null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((v) => params.append(key, String(v)));
+      return;
+    }
+    params.set(key, String(value));
+  });
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
+};
+
+const applyDefaultLocation = (
+  router: Router<any>,
+  options: TanStackPreviewOptions['router'] = {}
+) => {
+  const { defaultParams, defaultSearch } = options;
+  const hasDefaultParams = defaultParams && Object.keys(defaultParams).length > 0;
+  const hasDefaultSearch = defaultSearch && Object.keys(defaultSearch).length > 0;
+
+  if (!hasDefaultParams && !hasDefaultSearch) {
+    return;
+  }
+
+  const { location } = router.state;
+  const nextParams =
+    hasDefaultParams && (!location.params || Object.keys(location.params).length === 0)
+      ? defaultParams
+      : undefined;
+  const nextSearch =
+    hasDefaultSearch && (!location.search || Object.keys(location.search).length === 0)
+      ? defaultSearch
+      : undefined;
+
+  if (!nextParams && !nextSearch) {
+    return;
+  }
+
+  void router.navigate({
+    to: location.pathname,
+    params: nextParams as any,
+    search: nextSearch as any,
+    replace: true,
+  });
+};
+
 const createStoryRouter = (storyElement: React.ReactElement, options: TanStackPreviewOptions) => {
   const routerOptions = options.router ?? {};
 
-  if (!routerOptions.enabled && !routerOptions.instance && !routerOptions.routeTree) {
+  const mode =
+    routerOptions.mode ??
+    (routerOptions.instance
+      ? 'instance'
+      : routerOptions.routeTree
+        ? 'routeTree'
+        : routerOptions.enabled
+          ? 'story'
+          : undefined);
+
+  if (!mode) {
     return null;
   }
 
-  if (routerOptions.instance) {
-    return routerOptions.instance;
+  if (mode === 'instance') {
+    return routerOptions.instance ?? null;
   }
 
-  if (routerOptions.routeTree) {
-    return createRouter({
-      routeTree: routerOptions.routeTree,
-      history:
-        routerOptions.history ??
-        createMemoryHistory({
-          initialEntries: routerOptions.initialEntries ?? ['/'],
-        }),
+  const createRouterFactory = routerOptions.createRouter ?? createRouter;
+  const createHistory = () =>
+    routerOptions.history ??
+    createMemoryHistory({
+      initialEntries: routerOptions.initialEntries ?? [
+        buildInitialEntry(routerOptions.storyPath ?? '/', routerOptions.defaultSearch),
+      ],
+      initialIndex: routerOptions.initialIndex,
     });
+
+  if (mode === 'routeTree' && routerOptions.routeTree) {
+    const router = createRouterFactory({
+      routeTree: routerOptions.routeTree,
+      history: createHistory(),
+      context: routerOptions.context,
+    });
+    applyDefaultLocation(router, routerOptions);
+    return router;
   }
+
+  const storyPath = routerOptions.storyPath ?? '/';
 
   const rootRoute = createRootRoute({
     component: ({ children }) => <>{children}</>,
@@ -45,7 +120,7 @@ const createStoryRouter = (storyElement: React.ReactElement, options: TanStackPr
 
   const storyRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: '/',
+    path: storyPath,
     component: () => storyElement,
   });
 
@@ -57,16 +132,14 @@ const createStoryRouter = (storyElement: React.ReactElement, options: TanStackPr
 
   const routeTree = rootRoute.addChildren([storyRoute, fallbackRoute]);
 
-  const history =
-    routerOptions.history ??
-    createMemoryHistory({
-      initialEntries: routerOptions.initialEntries ?? ['/'],
-    });
-
-  return createRouter({
+  const router = createRouterFactory({
     routeTree,
-    history,
+    history: createHistory(),
+    context: routerOptions.context,
   });
+
+  applyDefaultLocation(router, routerOptions);
+  return router;
 };
 
 const TanStackProvider: React.FC<{

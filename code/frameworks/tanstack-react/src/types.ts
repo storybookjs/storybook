@@ -4,7 +4,7 @@ import type { BuilderOptions } from '@storybook/builder-vite';
 import type { StorybookConfig as StorybookConfigReactVite } from '@storybook/react-vite';
 
 import type { QueryClient, QueryClientConfig } from '@tanstack/react-query';
-import type { AnyRouter, Router, RouterHistory } from '@tanstack/react-router';
+import type { AnyRouter, Router, RouterHistory, RouterOptions } from '@tanstack/react-router';
 
 type FrameworkName = CompatibleString<'@storybook/tanstack-react'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
@@ -42,6 +42,8 @@ type StorybookConfigFramework = {
 export type StorybookConfig = Omit<StorybookConfigReactVite, keyof StorybookConfigFramework> &
   StorybookConfigFramework;
 
+export type TanStackRouterMode = 'story' | 'routeTree' | 'instance';
+
 export interface TanStackRouterOptions {
   /**
    * Provide a Router instance; if omitted, the framework can create a simple in-memory router when
@@ -54,10 +56,39 @@ export interface TanStackRouterOptions {
    */
   routeTree?: AnyRouter['routeTree'];
   history?: RouterHistory;
+  /**
+   * Controls how the framework creates or uses a router:
+   *
+   * - 'instance' -> use the provided `instance`
+   * - 'routeTree' -> build a router from `routeTree`
+   * - 'story' -> wrap the story element in a minimal router (default)
+   */
+  mode?: TanStackRouterMode;
   /** Enable the built-in in-memory router wrapper. */
   enabled?: boolean;
-  /** Initial entries used when creating the in-memory router. */
+  /**
+   * Initial entries used when creating the in-memory router. Ignored if a custom history is
+   * supplied.
+   */
   initialEntries?: string[];
+  /** Initial index used when creating the in-memory router. Ignored if a custom history is supplied. */
+  initialIndex?: number;
+  /** Optional path for the generated story route when in `story` mode. Defaults to '/'. */
+  storyPath?: string;
+  /** Default search params applied when the router is created. */
+  defaultSearch?: Record<string, unknown>;
+  /** Default path params applied when the router is created (mostly useful with `initialEntries`). */
+  defaultParams?: Record<string, unknown>;
+  /**
+   * Context passed to `createRouter` when the framework builds the router (routeTree or story
+   * mode).
+   */
+  context?: RouterOptions['context'];
+  /**
+   * Advanced escape hatch: supply a custom factory for creating the router. The framework will
+   * still compute routeTree/history/context and pass them through.
+   */
+  createRouter?: (options: RouterOptions<any>) => Router<any>;
 }
 
 export interface TanStackPreviewOptions {

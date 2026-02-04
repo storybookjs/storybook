@@ -32,8 +32,31 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
 
   const frameworkOptions = await options.presets.apply<FrameworkOptions>('frameworkOptions', {});
 
+  /**
+   * A custom viteFinal implementation that removes any TanStack Start Vite plugins from the user's
+   * Vite config, as a workaround for compatibility issues.
+   *
+   * This follows the pattern discussed at: https://github.com/storybookjs/storybook/issues/33754
+   */
+  const isTanStackStartPlugin = (p: unknown): boolean => {
+    if (Array.isArray(p)) {
+      return p.some(isTanStackStartPlugin);
+    }
+    return (
+      typeof p === 'object' &&
+      p !== null &&
+      'name' in p &&
+      typeof (p as any).name === 'string' &&
+      (p as any).name.startsWith('tanstack-start')
+    );
+  };
+
+  const basePlugins = reactConfig.plugins ?? [];
+  const plugins = basePlugins.filter((plugin) => !isTanStackStartPlugin(plugin));
+
   return {
     ...reactConfig,
+    plugins,
     server: {
       ...reactConfig.server,
       ...(frameworkOptions?.server || {}),

@@ -1,3 +1,11 @@
+## 10.3.0-alpha.4
+
+- Addon-Vitest: Support vite/vitest config with deferred export - [#33755](https://github.com/storybookjs/storybook/pull/33755), thanks @valentinpalkovic!
+- Controls: Allow story argTypes to override control: false from meta - [#33729](https://github.com/storybookjs/storybook/pull/33729), thanks @jonathan-fulton!
+- Manager: Update logic to use base path instead of full pathname - [#33686](https://github.com/storybookjs/storybook/pull/33686), thanks @JSMike!
+- Manifests: Use correct story name - [#33709](https://github.com/storybookjs/storybook/pull/33709), thanks @JReinhold!
+- Toolbar: Remove extra toolbar divider when zoom controls not shown - [#33731](https://github.com/storybookjs/storybook/pull/33731), thanks @jonathan-fulton!
+
 ## 10.3.0-alpha.3
 
 - Angular: Storybook fails with unknown option silent - [#33736](https://github.com/storybookjs/storybook/pull/33736), thanks @tanujbhaud!

@@ -26,12 +26,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
+      "code": "./src/playwright.ts",
       "default": "./dist/playwright.js"
     },
     "./internal/AddStorybookIdDecorator.svelte": "./static/AddStorybookIdDecorator.svelte",

@@ -30,6 +30,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./internal/MockProvider.svelte": "./static/MockProvider.svelte",
@@ -39,6 +40,7 @@
     "./internal/mocks/app/stores": "./dist/mocks/app/stores.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",

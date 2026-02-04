@@ -37,6 +37,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
@@ -44,6 +45,7 @@
     "./postinstall": "./dist/postinstall.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.tsx",
       "default": "./dist/preview.js"
     }
   },

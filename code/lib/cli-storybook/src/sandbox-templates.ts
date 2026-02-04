@@ -1,8 +1,8 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/types';
 
-import { ProjectType } from '../../../core/src/cli/projectTypes';
-import { SupportedBuilder } from '../../../core/src/types/modules/builders';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder } from 'storybook/internal/types';
 
 export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type AllTemplatesKey = keyof typeof allTemplates;
@@ -843,7 +843,7 @@ export const baseTemplates = {
     expected: {
       framework: '@stencil/storybook-plugin',
       renderer: '@stencil/storybook-plugin',
-      builder: '@stencil/storybook-plugin',
+      builder: '@storybook/builder-vite',
     },
     // TODO: The community template does not provide standard stories, which is required for e2e tests.
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],

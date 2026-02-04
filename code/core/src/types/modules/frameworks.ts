@@ -21,7 +21,7 @@ export enum SupportedFramework {
   QWIK = 'qwik',
   REACT_RSBUILD = 'react-rsbuild',
   SOLID = 'solid',
-  STENCIL = 'stencil',
+  STENCIL_VITE = 'stencil-vite',
   VUE3_RSBUILD = 'vue3-rsbuild',
   WEB_COMPONENTS_RSBUILD = 'web-components-rsbuild',
 }

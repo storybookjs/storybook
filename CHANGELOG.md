@@ -1,3 +1,9 @@
+## 10.2.5
+
+- Angular: fix --loglevel options in docs and descriptions - [#33726](https://github.com/storybookjs/storybook/pull/33726), thanks @theRuslan!
+- Builder-Vite: Add plugin to enforce Storybook's output directory in Vite build configuration - [#33740](https://github.com/storybookjs/storybook/pull/33740), thanks @valentinpalkovic!
+- Core: Invalidate cache on Storybook version upgrade - [#33717](https://github.com/storybookjs/storybook/pull/33717), thanks @copilot-swe-agent!
+
 ## 10.2.4
 
 - CSF-Factories: Fix codemod for preview files without exports - [#33673](https://github.com/storybookjs/storybook/pull/33673), thanks @kasperpeulen!

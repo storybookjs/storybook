@@ -30,6 +30,14 @@ The following table details how to use the API values:
 | **sidebar**              | Object          | Sidebar options, see below                              | `{ showRoots: false }`                                                                         |
 | **toolbar**              | Object          | Modify the tools in the toolbar using the addon id      | `{ fullscreen: { hidden: false } } `                                                           |
 
+<Callout variant="info">
+  Storybook suppresses global keyboard shortcuts while you're typing in text inputs, to prevent focus-stealing shortcuts from interrupting typing. If you're building
+  custom elements (Web Components) that render an internal input inside a <code>closed</code> shadow
+  root, event retargeting may hide the internal <code>&lt;input&gt;</code> from Storybook. In that
+  case, add an ARIA role such as <code>textbox</code>, <code>searchbox</code>, <code>combobox</code>,
+  or <code>input</code> to the custom element host so Storybook can treat it as an editable control.
+</Callout>
+
 The following options are configurable under the `sidebar` namespace:
 
 | Name               | Type     | Description                                                   | Example Value                                         |

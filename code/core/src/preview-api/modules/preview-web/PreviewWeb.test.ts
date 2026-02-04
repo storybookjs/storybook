@@ -3729,6 +3729,27 @@ describe('PreviewWeb', () => {
       expect(mockChannel.emit).toHaveBeenCalledWith(PREVIEW_KEYDOWN, expect.objectContaining({}));
     });
 
+    it('does not emit PREVIEW_KEYDOWN for input-like custom elements when the composedPath is retargeted', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      const getAttribute = vi.fn((attr: string) => {
+        if (attr === 'role') {
+          return 'textbox';
+        }
+        return null;
+      });
+
+      preview.onKeydown({
+        composedPath: vi.fn().mockReturnValue([{ tagName: 'inp-element', getAttribute }]),
+      } as any);
+
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        PREVIEW_KEYDOWN,
+        expect.objectContaining({})
+      );
+    });
+
     it('emits PREVIEW_KEYDOWN for regular elements, fallback to event.target', async () => {
       document.location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();

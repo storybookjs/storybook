@@ -57,9 +57,5 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   return {
     ...reactConfig,
     plugins,
-    server: {
-      ...reactConfig.server,
-      ...(frameworkOptions?.server || {}),
-    },
   };
 };

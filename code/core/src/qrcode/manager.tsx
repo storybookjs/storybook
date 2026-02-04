@@ -92,7 +92,7 @@ const ShareProviderRender = ({ api }: { api: API }) => {
 export default addons.register(ADDON_ID, (api) => {
   addons.add(ADDON_ID, {
     type: Addon_TypesEnum.experimental_SHARE_PROVIDER,
-    title: 'Preview_',
+    title: 'Preview',
     render: () => <ShareProviderRender api={api} />,
   });
 });

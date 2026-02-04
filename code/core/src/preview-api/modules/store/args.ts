@@ -14,7 +14,7 @@ import { dedent } from 'ts-dedent';
 const INCOMPATIBLE = Symbol('incompatible');
 const map = (arg: unknown, argType: InputType): any => {
   const type = argType.type as SBType;
-
+  const control = argType.control;
   if (arg === undefined || arg === null || !type) {
     return arg;
   }
@@ -23,6 +23,9 @@ const map = (arg: unknown, argType: InputType): any => {
   }
   switch (type.name) {
     case 'string':
+      if (typeof control === 'object' && control.type === 'multi-select') {
+        return arg;
+      }
       return String(arg);
     case 'enum':
       return arg;

@@ -1,16 +1,30 @@
-import * as fs from 'node:fs/promises';
-
 import type { BabelFile, types as t } from 'storybook/internal/babel';
 
-import { join, normalize } from 'pathe';
+import { normalize } from 'pathe';
 
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+/**
+ * Each template is imported separately to allow the build system to process the template as raw
+ * text. A mix of globs and the "?raw" string query is not supported in esbuild
+ */
+async function getTemplatePath(name: string) {
+  switch (name) {
+    case 'vitest.config.template':
+      return import('../templates/vitest.config.template?raw');
+    case 'vitest.config.4.template':
+      return import('../templates/vitest.config.4.template?raw');
+    case 'vitest.config.3.2.template':
+      return import('../templates/vitest.config.3.2.template?raw');
+    case 'vitest.workspace.template':
+      return import('../templates/vitest.workspace.template?raw');
+    default:
+      throw new Error(`Unknown template: ${name}`);
+  }
+}
 
 export const loadTemplate = async (name: string, replacements: Record<string, string>) => {
-  let template = await fs.readFile(
-    join(resolvePackageDir('@storybook/addon-vitest'), 'templates', name),
-    'utf8'
-  );
+  // Dynamically import the template file as plain text
+  const templateModule = await getTemplatePath(name);
+  let template = templateModule.default;
   // Normalize Windows paths (backslashes) to forward slashes for JavaScript string compatibility
   Object.entries(replacements).forEach(
     ([key, value]) => (template = template.replace(key, normalize(value)))

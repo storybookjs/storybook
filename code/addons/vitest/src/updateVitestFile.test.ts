@@ -22,7 +22,7 @@ vi.mock('../../../core/src/shared/utils/module', () => ({
 describe('updateConfigFile', () => {
   it('updates vite config file', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -102,7 +102,7 @@ describe('updateConfigFile', () => {
 
   it('supports object notation without defineConfig', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -182,7 +182,7 @@ describe('updateConfigFile', () => {
 
   it('does not support function notation', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -214,7 +214,7 @@ describe('updateConfigFile', () => {
 
   it('adds projects property to test config', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -378,7 +378,7 @@ describe('updateConfigFile', () => {
 
   it('edits projects property of test config', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -458,7 +458,7 @@ describe('updateConfigFile', () => {
 
   it('adds workspace property to test config', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -537,7 +537,7 @@ describe('updateConfigFile', () => {
 
   it('adds test property to vite config', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -612,7 +612,7 @@ describe('updateConfigFile', () => {
 
   it('supports mergeConfig with multiple defineConfig calls, finding the one with test', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -698,7 +698,7 @@ describe('updateConfigFile', () => {
   });
   it('supports mergeConfig without defineConfig calls', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -781,7 +781,7 @@ describe('updateConfigFile', () => {
 
   it('supports mergeConfig without config containing test property', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -857,7 +857,7 @@ describe('updateConfigFile', () => {
 
   it('supports mergeConfig with defineConfig pattern using projects (Vitest 3.2+)', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -941,7 +941,7 @@ describe('updateConfigFile', () => {
 
   it('appends storybook project to existing test.projects array (no double nesting)', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -1030,7 +1030,7 @@ describe('updateConfigFile', () => {
 
   it('extracts coverage config and keeps it at top level when using workspace', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -1129,7 +1129,7 @@ describe('updateConfigFile', () => {
 
   it('extracts coverage config and keeps it at top level when using projects', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -1230,7 +1230,7 @@ describe('updateConfigFile', () => {
 describe('updateWorkspaceFile', () => {
   it('updates vitest workspace file using array syntax', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.workspace.template.ts', {
+      await loadTemplate('vitest.workspace.template', {
         EXTENDS_WORKSPACE: '',
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
@@ -1286,7 +1286,7 @@ describe('updateWorkspaceFile', () => {
 
   it('updates vitest workspace file using defineWorkspace syntax', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.workspace.template.ts', {
+      await loadTemplate('vitest.workspace.template', {
         EXTENDS_WORKSPACE: '',
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
@@ -1349,7 +1349,7 @@ describe('loadTemplate', () => {
     // Windows-style path with backslashes (need to escape them in JS strings)
     const windowsPath = '.\\apps\\frontend-storybook\\.storybook';
 
-    const result = await loadTemplate('vitest.config.template.ts', {
+    const result = await loadTemplate('vitest.config.template', {
       CONFIG_DIR: windowsPath,
       SETUP_FILE: '.\\apps\\frontend-storybook\\.storybook\\vitest.setup.ts',
     });
@@ -1363,7 +1363,7 @@ describe('loadTemplate', () => {
     // Unix-style path with forward slashes
     const unixPath = './apps/frontend-storybook/.storybook';
 
-    const result = await loadTemplate('vitest.config.template.ts', {
+    const result = await loadTemplate('vitest.config.template', {
       CONFIG_DIR: unixPath,
       SETUP_FILE: './apps/frontend-storybook/.storybook/vitest.setup.ts',
     });

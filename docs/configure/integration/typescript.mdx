@@ -87,6 +87,74 @@ Now, when you define a story or update an existing one, you'll automatically get
 
 {/* prettier-ignore-end */}
 
+## Generating TypeScript declaration files
+
+If you're building a library and want to generate TypeScript declaration files (`.d.ts`), you should exclude your story files from the declaration build. Story files are development-time assets—they help document and test components, but consumers of your package don't need their type definitions.
+
+This is especially important when using [CSF factories](../../api/csf/csf-next.mdx) (`preview.meta()`, `meta.story()`) or TypeScript's [`isolatedDeclarations`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#isolated-declarations) option. These patterns use complex type inference that can cause errors like:
+
+```
+TS2742: The inferred type of 'meta' cannot be named without a reference to
+'@storybook/react/node_modules/@storybook/types'. This is likely not portable.
+```
+
+### Solution: Separate tsconfig for builds
+
+Create a `tsconfig.build.json` that extends your base config but excludes stories:
+
+```json
+// tsconfig.build.json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true
+  },
+  "exclude": ["**/*.stories.*", "**/*.story.*", ".storybook/**"]
+}
+```
+
+Then update your build script to use this config:
+
+```bash
+tsc -p tsconfig.build.json
+```
+
+Your IDE and type checking continue to work normally—only the declaration output excludes stories.
+
+### Alternative: Project references
+
+Using [TypeScript project references](https://www.typescriptlang.org/docs/handbook/project-references.html) separates your app code from Storybook files. This approach has an advantage: your IDE will show type errors from all configs, not just the base one. The downside is that project references are more complex to set up and maintain.
+
+```json
+// tsconfig.json
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.storybook.json" }
+  ]
+}
+
+// tsconfig.app.json - your app code, generates declarations
+{
+  "compilerOptions": {
+    "declaration": true
+    // ...other options
+  },
+  "include": ["src"],
+  "exclude": ["**/*.stories.*", "**/*.story.*"]
+}
+
+// tsconfig.storybook.json - stories and Storybook config
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "declaration": false
+  },
+  "include": ["src/**/*.stories.*", ".storybook/**"]
+}
+```
+
 ## Troubleshooting
 
 ### The `satisfies` operator is not working as expected

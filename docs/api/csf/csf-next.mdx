@@ -546,4 +546,10 @@ Yes, the [doc blocks](../../writing-docs/doc-blocks.mdx) used to reference stori
 
 For more information on this experimental format's original proposal, refer to its [RFC on GitHub](https://github.com/storybookjs/storybook/discussions/30112). We welcome your comments!
 
+### Why do I get TypeScript errors when generating declaration files?
+
+CSF factories (`preview.meta()`, `meta.story()`) use complex type inference that can cause `TS2742` errors when generating `.d.ts` files. This is expected—story files don't need declaration files since they're development-time assets, not part of your package's public API.
+
+The solution is to exclude stories from your declaration build using a separate `tsconfig.build.json`. See [Generating TypeScript declaration files](../../configure/integration/typescript.mdx#generating-typescript-declaration-files) for detailed instructions.
+
 </If>

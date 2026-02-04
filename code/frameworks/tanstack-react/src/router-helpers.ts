@@ -12,8 +12,8 @@ export interface StoryMemoryRouterOptions {
   history?: RouterHistory;
   initialEntries?: string[];
   initialIndex?: number;
-  context?: RouterOptions['context'];
-  createRouter?: (options: RouterOptions<any>) => Router<any>;
+  context?: RouterOptions<any, any, any, any, any>['context'];
+  createRouter?: (options: RouterOptions<any, any, any, any, any>) => Router<any>;
 }
 
 /**

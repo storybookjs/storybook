@@ -5,19 +5,12 @@ import { parseArgs } from 'node:util';
 import type { OutputFormat } from './src/types.ts';
 import { basename } from 'node:path';
 
-async function serveMcp(
-	port: number,
-	manifestsDir: string,
-	format: OutputFormat,
-) {
+async function serveMcp(port: number, manifestsDir: string, format: OutputFormat) {
 	const storybookMcpHandler = await createStorybookMcpHandler({
 		format,
 		// Use the local fixture file via manifestProvider
 		manifestProvider: async (_request, path) => {
-			if (
-				manifestsDir.startsWith('http://') ||
-				manifestsDir.startsWith('https://')
-			) {
+			if (manifestsDir.startsWith('http://') || manifestsDir.startsWith('https://')) {
 				const res = await fetch(`${manifestsDir}/${basename(path)}`);
 				return await res.text();
 			}

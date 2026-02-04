@@ -5,12 +5,9 @@ import storyInstructionsTemplate from '../storybook-story-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 
-export const GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME =
-	'get-storybook-story-instructions';
+export const GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME = 'get-storybook-story-instructions';
 
-export async function addGetUIBuildingInstructionsTool(
-	server: McpServer<any, AddonContext>,
-) {
+export async function addGetUIBuildingInstructionsTool(server: McpServer<any, AddonContext>) {
 	server.tool(
 		{
 			name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
@@ -53,9 +50,7 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 
 				const frameworkPreset = await options.presets.apply('framework');
 				const framework =
-					typeof frameworkPreset === 'string'
-						? frameworkPreset
-						: frameworkPreset?.name;
+					typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
 				const renderer = frameworkToRendererMap[framework!];
 
 				const uiInstructions = storyInstructionsTemplate

@@ -37,8 +37,5 @@ export interface ManifestFormatter {
 	/**
 	 * Format a single story's documentation.
 	 */
-	formatStoryDocumentation(
-		componentManifest: ComponentManifest,
-		storyName: string,
-	): string;
+	formatStoryDocumentation(componentManifest: ComponentManifest, storyName: string): string;
 }

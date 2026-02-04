@@ -10,10 +10,7 @@
  * 2. Keeps bundle size smaller for such a simple utility (avoid "is-even" syndrome)
  */
 
-export function dedent(
-	templ: TemplateStringsArray | string,
-	...values: unknown[]
-): string {
+export function dedent(templ: TemplateStringsArray | string, ...values: unknown[]): string {
 	let strings = Array.from(typeof templ === 'string' ? [templ] : templ);
 
 	// 1. Remove trailing whitespace.
@@ -23,9 +20,7 @@ export function dedent(
 	const indentLengths = strings.reduce((arr, str) => {
 		const matches = str.match(/\n([\t ]+|(?!\s).)/g);
 		if (matches) {
-			return arr.concat(
-				matches.map((match) => match.match(/[\t ]/g)?.length ?? 0),
-			);
+			return arr.concat(matches.map((match) => match.match(/[\t ]/g)?.length ?? 0));
 		}
 		return arr;
 	}, [] as number[]);

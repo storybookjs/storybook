@@ -1,28 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { markdownFormatter } from './markdown.ts';
-import type {
-	AllManifests,
-	ComponentManifest,
-	ComponentManifestMap,
-} from '../../types.ts';
+import type { AllManifests, ComponentManifest, ComponentManifestMap } from '../../types.ts';
 import fullManifestFixture from '../../../fixtures/full-manifest.fixture.json' with { type: 'json' };
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
 	it('formats all full fixtures', () => {
 		expect(
-			markdownFormatter.formatComponentManifest(
-				fullManifestFixture.components.button,
-			),
+			markdownFormatter.formatComponentManifest(fullManifestFixture.components.button),
 		).toMatchSnapshot();
 		expect(
-			markdownFormatter.formatComponentManifest(
-				fullManifestFixture.components.card,
-			),
+			markdownFormatter.formatComponentManifest(fullManifestFixture.components.card),
 		).toMatchSnapshot();
 		expect(
-			markdownFormatter.formatComponentManifest(
-				fullManifestFixture.components.input,
-			),
+			markdownFormatter.formatComponentManifest(fullManifestFixture.components.input),
 		).toMatchSnapshot();
 	});
 

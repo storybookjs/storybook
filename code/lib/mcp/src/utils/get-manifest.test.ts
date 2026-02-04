@@ -57,9 +57,7 @@ function createFetchMock(responses: { components?: unknown; docs?: unknown }) {
 				return Promise.reject(responses.docs);
 			}
 			return Promise.resolve(
-				responses.docs !== undefined
-					? createJsonResponse(responses.docs)
-					: create404Response(),
+				responses.docs !== undefined ? createJsonResponse(responses.docs) : create404Response(),
 			);
 		}
 		return Promise.resolve(create404Response());
@@ -73,27 +71,25 @@ function createManifestProviderMock(responses: {
 	components?: string | Error;
 	docs?: string | Error;
 }) {
-	return vi
-		.fn()
-		.mockImplementation((_request: Request | undefined, path: string) => {
-			if (path.includes('components.json')) {
-				if (responses.components instanceof Error) {
-					return Promise.reject(responses.components);
-				}
-				return responses.components !== undefined
-					? Promise.resolve(responses.components)
-					: Promise.reject(new Error('Components not found'));
+	return vi.fn().mockImplementation((_request: Request | undefined, path: string) => {
+		if (path.includes('components.json')) {
+			if (responses.components instanceof Error) {
+				return Promise.reject(responses.components);
 			}
-			if (path.includes('docs.json')) {
-				if (responses.docs instanceof Error) {
-					return Promise.reject(responses.docs);
-				}
-				return responses.docs !== undefined
-					? Promise.resolve(responses.docs)
-					: Promise.reject(new Error('Docs not found'));
+			return responses.components !== undefined
+				? Promise.resolve(responses.components)
+				: Promise.reject(new Error('Components not found'));
+		}
+		if (path.includes('docs.json')) {
+			if (responses.docs instanceof Error) {
+				return Promise.reject(responses.docs);
 			}
-			return Promise.reject(new Error('Unknown path'));
-		});
+			return responses.docs !== undefined
+				? Promise.resolve(responses.docs)
+				: Promise.reject(new Error('Docs not found'));
+		}
+		return Promise.reject(new Error('Unknown path'));
+	});
 }
 
 describe('getManifest', () => {
@@ -173,9 +169,7 @@ describe('getManifest', () => {
 
 			const request = createMockRequest('https://example.com/mcp');
 			await expect(getManifests(request)).rejects.toThrow(ManifestGetError);
-			await expect(getManifests(request)).rejects.toThrow(
-				'Failed to parse component manifest:',
-			);
+			await expect(getManifests(request)).rejects.toThrow('Failed to parse component manifest:');
 		});
 
 		it('should throw ManifestGetError when manifest schema is invalid', async () => {
@@ -214,21 +208,15 @@ Invalid key: Expected "v" but received undefined]`);
 
 			const request = createMockRequest('https://example.com/mcp');
 			await expect(getManifests(request)).rejects.toThrow(ManifestGetError);
-			await expect(getManifests(request)).rejects.toThrow(
-				'No components found in the manifest',
-			);
+			await expect(getManifests(request)).rejects.toThrow('No components found in the manifest');
 		});
 
 		it('should wrap network errors in ManifestGetError', async () => {
-			global.fetch = vi
-				.fn()
-				.mockRejectedValue(new Error('Network connection failed'));
+			global.fetch = vi.fn().mockRejectedValue(new Error('Network connection failed'));
 
 			const request = createMockRequest('https://example.com/mcp');
 			await expect(getManifests(request)).rejects.toThrow(ManifestGetError);
-			await expect(getManifests(request)).rejects.toThrow(
-				'Network connection failed',
-			);
+			await expect(getManifests(request)).rejects.toThrow('Network connection failed');
 		});
 
 		it('should preserve ManifestGetError when already thrown', async () => {
@@ -271,12 +259,8 @@ Invalid key: Expected "v" but received undefined]`);
 
 			expect(result).toEqual({ componentManifest: validManifest });
 			expect(global.fetch).toHaveBeenCalledTimes(2);
-			expect(global.fetch).toHaveBeenCalledWith(
-				'https://example.com/manifests/components.json',
-			);
-			expect(global.fetch).toHaveBeenCalledWith(
-				'https://example.com/manifests/docs.json',
-			);
+			expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/components.json');
+			expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/docs.json');
 		});
 
 		it('should successfully fetch and parse both component and docs manifests', async () => {
@@ -344,14 +328,8 @@ Invalid key: Expected "v" but received undefined]`);
 
 			expect(result).toEqual({ componentManifest: validManifest });
 			expect(manifestProvider).toHaveBeenCalledTimes(2);
-			expect(manifestProvider).toHaveBeenCalledWith(
-				request,
-				'./manifests/components.json',
-			);
-			expect(manifestProvider).toHaveBeenCalledWith(
-				request,
-				'./manifests/docs.json',
-			);
+			expect(manifestProvider).toHaveBeenCalledWith(request, './manifests/components.json');
+			expect(manifestProvider).toHaveBeenCalledWith(request, './manifests/docs.json');
 			// fetch should not be called when manifestProvider is used
 			expect(global.fetch).not.toHaveBeenCalled();
 		});
@@ -377,10 +355,7 @@ Invalid key: Expected "v" but received undefined]`);
 
 			expect(result).toEqual({ componentManifest: validManifest });
 			expect(manifestProvider).toHaveBeenCalledTimes(2);
-			expect(manifestProvider).toHaveBeenCalledWith(
-				undefined,
-				'./manifests/components.json',
-			);
+			expect(manifestProvider).toHaveBeenCalledWith(undefined, './manifests/components.json');
 			// fetch should not be called when manifestProvider is used
 			expect(global.fetch).not.toHaveBeenCalled();
 		});
@@ -405,9 +380,7 @@ Invalid key: Expected "v" but received undefined]`);
 
 			expect(result).toEqual({ componentManifest: validManifest });
 			expect(global.fetch).toHaveBeenCalledTimes(2);
-			expect(global.fetch).toHaveBeenCalledWith(
-				'https://example.com/manifests/components.json',
-			);
+			expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/components.json');
 		});
 
 		it('should handle errors from manifestProvider', async () => {
@@ -416,9 +389,7 @@ Invalid key: Expected "v" but received undefined]`);
 				components: new Error('File not found'),
 			});
 
-			await expect(getManifests(request, manifestProvider)).rejects.toThrow(
-				ManifestGetError,
-			);
+			await expect(getManifests(request, manifestProvider)).rejects.toThrow(ManifestGetError);
 			await expect(getManifests(request, manifestProvider)).rejects.toThrow(
 				'Failed to get component manifest: File not found',
 			);
@@ -430,9 +401,7 @@ Invalid key: Expected "v" but received undefined]`);
 				components: 'not valid json{',
 			});
 
-			await expect(getManifests(request, manifestProvider)).rejects.toThrow(
-				ManifestGetError,
-			);
+			await expect(getManifests(request, manifestProvider)).rejects.toThrow(ManifestGetError);
 		});
 	});
 });

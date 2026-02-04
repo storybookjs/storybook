@@ -16,10 +16,7 @@ export function extractDocsSummary(content: string): string | undefined {
 
 	// Step 1: Remove import statements (can be single or multi-line)
 	// Matches: import ... from '...' or import '...'
-	result = result.replace(
-		/^\s*import\s+(?:[\s\S]*?from\s+)?['"][^'"]+['"];?\s*$/gm,
-		'',
-	);
+	result = result.replace(/^\s*import\s+(?:[\s\S]*?from\s+)?['"][^'"]+['"];?\s*$/gm, '');
 
 	// Step 2: Remove JSX/MDX expressions like {expression} or {/* comments */}
 	// Handle nested braces by iteratively removing innermost expressions

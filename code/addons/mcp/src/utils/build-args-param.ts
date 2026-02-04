@@ -50,8 +50,7 @@ function encodeSpecialValues(value: unknown): unknown {
 	// is object
 	if (typeof value === 'object' && value !== null) {
 		return Object.entries(value as Record<string, unknown>).reduce(
-			(acc, [key, val]) =>
-				Object.assign(acc, { [key]: encodeSpecialValues(val) }),
+			(acc, [key, val]) => Object.assign(acc, { [key]: encodeSpecialValues(val) }),
 			{},
 		);
 	}

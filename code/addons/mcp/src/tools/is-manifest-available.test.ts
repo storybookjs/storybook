@@ -17,14 +17,10 @@ function createMockOptions({
 		presets: {
 			apply: vi.fn(async (key: string) => {
 				if (key === 'features') {
-					return hasFeaturesObject
-						? { experimentalComponentsManifest: featureFlag }
-						: {};
+					return hasFeaturesObject ? { experimentalComponentsManifest: featureFlag } : {};
 				}
 				if (key === 'experimental_manifests') {
-					return hasManifests
-						? { components: { v: 1, components: {} } }
-						: undefined;
+					return hasManifests ? { components: { v: 1, components: {} } } : undefined;
 				}
 				if (key === 'experimental_componentManifestGenerator') {
 					return hasLegacyComponentManifestGenerator ? vi.fn() : undefined;
@@ -43,8 +39,7 @@ describe('getManifestStatus', () => {
 			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
 		},
 		{
-			description:
-				'both feature flag and legacy component manifest generator are present',
+			description: 'both feature flag and legacy component manifest generator are present',
 			options: { featureFlag: true, hasLegacyComponentManifestGenerator: true },
 			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
 		},
@@ -72,12 +67,9 @@ describe('getManifestStatus', () => {
 			options: { hasManifests: true, hasFeaturesObject: false },
 			expected: { available: false, hasManifests: true, hasFeatureFlag: false },
 		},
-	])(
-		'should return correct status when $description',
-		async ({ options, expected }) => {
-			const mockOptions = createMockOptions(options);
-			const result = await getManifestStatus(mockOptions);
-			expect(result).toEqual(expected);
-		},
-	);
+	])('should return correct status when $description', async ({ options, expected }) => {
+		const mockOptions = createMockOptions(options);
+		const result = await getManifestStatus(mockOptions);
+		expect(result).toEqual(expected);
+	});
 });

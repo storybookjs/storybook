@@ -83,9 +83,7 @@ describe('collectTelemetry', () => {
 			}),
 		).resolves.not.toThrow();
 
-		expect(logger.debug).toHaveBeenCalledWith(
-			`Error collecting telemetry: ${error}`,
-		);
+		expect(logger.debug).toHaveBeenCalledWith(`Error collecting telemetry: ${error}`);
 	});
 
 	it('should handle missing session ID gracefully', async () => {

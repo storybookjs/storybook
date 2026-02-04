@@ -205,8 +205,7 @@ describe('getComponentStoryDocumentationTool', () => {
 						{
 							name: 'Primary',
 							description: 'The primary button variant.',
-							snippet:
-								'const Primary = () => <Button variant="primary">Click Me</Button>',
+							snippet: 'const Primary = () => <Button variant="primary">Click Me</Button>',
 						},
 					],
 				},

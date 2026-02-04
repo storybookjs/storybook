@@ -16,11 +16,7 @@ export type ParsedDocgen = {
 function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
 	if (!tsType) return undefined;
 	// Prefer raw if provided
-	if (
-		'raw' in tsType &&
-		typeof tsType.raw === 'string' &&
-		tsType.raw.trim().length > 0
-	) {
+	if ('raw' in tsType && typeof tsType.raw === 'string' && tsType.raw.trim().length > 0) {
 		return tsType.raw;
 	}
 
@@ -28,9 +24,7 @@ function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
 
 	if ('elements' in tsType) {
 		const serializeElements = () =>
-			(tsType.elements ?? []).map(
-				(el: any) => serializeTsType(el) ?? 'unknown',
-			);
+			(tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
 
 		switch (tsType.name) {
 			case 'union':
@@ -69,9 +63,7 @@ function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
 	}
 	// Default case (Generic like Item<TMeta>)
 	if ('elements' in tsType) {
-		const inner = (tsType.elements ?? []).map(
-			(el) => serializeTsType(el) ?? 'unknown',
-		);
+		const inner = (tsType.elements ?? []).map((el) => serializeTsType(el) ?? 'unknown');
 		if (inner.length > 0) return `${tsType.name}<${inner.join(', ')}>`;
 	}
 

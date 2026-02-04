@@ -11,9 +11,7 @@ const GetStoryDocumentationInput = v.object({
 	storyName: v.string(),
 });
 
-type GetStoryDocumentationInput = v.InferOutput<
-	typeof GetStoryDocumentationInput
->;
+type GetStoryDocumentationInput = v.InferOutput<typeof GetStoryDocumentationInput>;
 
 export async function addGetStoryDocumentationTool(
 	server: McpServer<any, StorybookContext>,
@@ -35,8 +33,7 @@ export async function addGetStoryDocumentationTool(
 					server.ctx.custom?.manifestProvider,
 				);
 
-				const component =
-					manifest.componentManifest?.components[input.componentId];
+				const component = manifest.componentManifest?.components[input.componentId];
 
 				if (!component) {
 					return {
@@ -50,13 +47,10 @@ export async function addGetStoryDocumentationTool(
 					};
 				}
 
-				const story = component.stories?.find(
-					(s) => s.name === input.storyName,
-				);
+				const story = component.stories?.find((s) => s.name === input.storyName);
 
 				if (!story) {
-					const availableStories =
-						component.stories?.map((s) => s.name).join(', ') ?? 'none';
+					const availableStories = component.stories?.map((s) => s.name).join(', ') ?? 'none';
 					return {
 						content: [
 							{
@@ -73,11 +67,7 @@ export async function addGetStoryDocumentationTool(
 					content: [
 						{
 							type: 'text' as const,
-							text: formatStoryDocumentation(
-								component,
-								input.storyName,
-								format,
-							),
+							text: formatStoryDocumentation(component, input.storyName, format),
 						},
 					],
 				};

@@ -20,8 +20,7 @@
 .storybook-button--secondary {
 	color: var(--color-secondary-text, #333);
 	background-color: var(--color-secondary-bg, transparent);
-	box-shadow: var(--color-secondary-border, rgba(0, 0, 0, 0.15)) 0px 0px 0px 1px
-		inset;
+	box-shadow: var(--color-secondary-border, rgba(0, 0, 0, 0.15)) 0px 0px 0px 1px inset;
 }
 .storybook-button--small {
 	font-size: 12px;

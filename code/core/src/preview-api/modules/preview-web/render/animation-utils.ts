@@ -14,39 +14,70 @@ export function isTestEnvironment() {
   }
 }
 
-// Pause all animations and transitions by overriding the CSS properties
-export function pauseAnimations(atEnd = true): CleanupCallback {
-  if (!('document' in globalThis && 'createElement' in globalThis.document)) {
+// Pause all DocumentTimeline animations and transitions by overriding the CSS properties
+export function pauseAnimations(): CleanupCallback {
+  if (
+    !(
+      'document' in globalThis &&
+      'createElement' in globalThis.document &&
+      'getAnimations' in globalThis.document
+    )
+  ) {
     // Don't run in React Native
     return () => {};
   }
 
-  // Remove all animations
-  const disableStyle = document.createElement('style');
-  disableStyle.textContent = `*, *:before, *:after {
-    animation: none !important;
-  }`;
-  document.head.appendChild(disableStyle);
+  const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
+  const previousStates: {
+    animation: Animation;
+    playState: AnimationPlayState;
+    currentTime: CSSNumberish | null;
+  }[] = [];
 
-  // Pause any new animations
-  const pauseStyle = document.createElement('style');
-  pauseStyle.textContent = `*, *:before, *:after {
-    animation-delay: 0s !important;
-    animation-direction: ${atEnd ? 'reverse' : 'normal'} !important;
-    animation-play-state: paused !important;
-    transition: none !important;
-  }`;
-  document.head.appendChild(pauseStyle);
+  const pauseAllAnimations = () => {
+    const animations = animationRoots.flatMap((el) => el?.getAnimations?.() || []);
+    animations.forEach((a) => {
+      previousStates.push({
+        animation: a,
+        playState: a.playState,
+        currentTime: a.currentTime,
+      });
+      if (isDocumentAnimation(a)) {
+        // Normal animations and transitions instantly run to their end state (finish),
+        // while infinite animations pause and rewind to their starting state.
+        if (isFiniteAnimation(a)) {
+          a.finish();
+        } else {
+          a.pause();
+          a.currentTime = 0;
+        }
+      } else {
+        // Scroll/view-driven animations are paused as-is, so that play functions may affect them.
+        // The play function should account for the animation duration to get consistent results.
+        a.pause();
+      }
+    });
 
-  // Force a reflow
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  document.body.clientHeight;
+    // Force a reflow
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    document.body.clientHeight;
+  };
 
-  // Now recreate all animations, getting paused in their initial state
-  document.head.removeChild(disableStyle);
+  addEventListener('animationstart', pauseAllAnimations);
+  addEventListener('transitionrun', pauseAllAnimations);
+  pauseAllAnimations();
 
   return () => {
-    pauseStyle.parentNode?.removeChild(pauseStyle);
+    removeEventListener('animationstart', pauseAllAnimations);
+    removeEventListener('transitionrun', pauseAllAnimations);
+
+    while (previousStates.length > 0) {
+      const { animation, playState, currentTime } = previousStates.pop()!;
+      animation.currentTime = currentTime;
+      if (playState === 'running') {
+        animation.play();
+      }
+    }
   };
 }
 
@@ -76,7 +107,9 @@ export async function waitForAnimations(signal?: AbortSignal) {
           }
           const runningAnimations = animationRoots
             .flatMap((el) => el?.getAnimations?.() || [])
-            .filter((a) => a.playState === 'running' && !isInfiniteAnimation(a));
+            .filter(
+              (a) => a.playState === 'running' && isDocumentAnimation(a) && isFiniteAnimation(a)
+            );
           if (runningAnimations.length > 0) {
             // Treat any errors (e.g. AbortError) from `finished` as also finished, even though not successfully so
             await Promise.allSettled(runningAnimations.map(async (a) => a.finished));
@@ -106,12 +139,19 @@ function getShadowRoots(doc: Document | ShadowRoot) {
   }, []);
 }
 
-function isInfiniteAnimation(anim: Animation) {
+function isDocumentAnimation(anim: Animation) {
+  return (
+    (anim instanceof CSSAnimation || anim instanceof CSSTransition) &&
+    anim.timeline instanceof DocumentTimeline
+  );
+}
+
+function isFiniteAnimation(anim: Animation) {
   if (anim instanceof CSSAnimation && anim.effect instanceof KeyframeEffect && anim.effect.target) {
     const style = getComputedStyle(anim.effect.target, anim.effect.pseudoElement);
     const index = style.animationName?.split(', ').indexOf(anim.animationName);
     const iterations = style.animationIterationCount.split(', ')[index];
-    return iterations === 'infinite';
+    return iterations !== 'infinite';
   }
-  return false;
+  return true;
 }

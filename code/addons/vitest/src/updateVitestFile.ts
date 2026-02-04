@@ -2,6 +2,10 @@ import type { BabelFile, types as t } from 'storybook/internal/babel';
 
 import { normalize } from 'pathe';
 
+/**
+ * Each template is imported separately to allow the build system to process the template as raw
+ * text. A mix of globs and the "?raw" string query is not supported in esbuild
+ */
 async function getTemplatePath(name: string) {
   switch (name) {
     case 'vitest.config.template':

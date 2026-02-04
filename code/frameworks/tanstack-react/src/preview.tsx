@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 
-import type { DecoratorFunction } from '@storybook/react';
+import type { Decorator } from '@storybook/react';
 
 import {
   QueryClient,
@@ -51,7 +51,8 @@ const applyDefaultLocation = (
 
   const { location } = router.state;
   const nextParams =
-    hasDefaultParams && (!location.params || Object.keys(location.params).length === 0)
+    hasDefaultParams &&
+    (!(location as any).params || Object.keys((location as any).params).length === 0)
       ? defaultParams
       : undefined;
   const nextSearch =
@@ -115,8 +116,8 @@ const createStoryRouter = (storyElement: React.ReactElement, options: TanStackPr
   const storyPath = routerOptions.storyPath ?? '/';
 
   const rootRoute = createRootRoute({
-    component: ({ children }) => <>{children}</>,
-  });
+    component: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  } as any);
 
   const storyRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -166,8 +167,8 @@ const TanStackProvider: React.FC<{
   return <QueryClientProvider client={queryClient}>{content}</QueryClientProvider>;
 };
 
-export const decorators: DecoratorFunction[] = [
-  (Story, context) => {
+export const decorators: Decorator[] = [
+  (Story: any, context: any) => {
     const options = (context.parameters?.tanstack ?? {}) as TanStackPreviewOptions;
     const storyElement = <Story />;
     return <TanStackProvider storyElement={storyElement} options={options} />;

@@ -56,8 +56,8 @@ export default async function postInstall(options: PostinstallOptions) {
   // Determine Vitest version/range from installed or declared dependency to avoid pulling
   // incompatible majors by default.
   let vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
-  if (!vitestVersionSpecifier && allDeps.vitest) {
-    vitestVersionSpecifier = allDeps.vitest;
+  if (!vitestVersionSpecifier && allDeps['vitest']) {
+    vitestVersionSpecifier = allDeps['vitest'];
   }
 
   /**

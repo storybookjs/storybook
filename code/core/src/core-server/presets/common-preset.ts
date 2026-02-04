@@ -264,7 +264,7 @@ export const experimental_serverChannel = async (
   initCreateNewStoryChannel(channel, options, coreOptions);
   initGhostStoriesChannel(channel, options, coreOptions);
   initOpenInEditorChannel(channel, options, coreOptions);
-  initTelemetryChannel(channel, options, coreOptions);
+  initTelemetryChannel(channel, options);
 
   return channel;
 };

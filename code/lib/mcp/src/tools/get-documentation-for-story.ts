@@ -40,7 +40,7 @@ export async function addGetStoryDocumentationTool(
 						content: [
 							{
 								type: 'text' as const,
-								text: `Component not found: "${input.componentId}". Use the list-all-components tool to see available components.`,
+								text: `Component not found: "${input.componentId}". Use the list-all-documentation tool to see available components.`,
 							},
 						],
 						isError: true,

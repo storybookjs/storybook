@@ -24,6 +24,7 @@ export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
 
       if (entry.dts === undefined) {
         pkgJson.exports[exportEntry] = {
+          code: entry.entryPoint,
           types: dtsPath,
           default: jsPath,
         };

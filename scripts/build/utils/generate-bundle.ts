@@ -7,6 +7,7 @@ import * as esbuild from 'esbuild';
 import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
+import {raw as rawPlugin} from 'esbuild-raw-plugin';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info';
 import {
@@ -99,6 +100,7 @@ export async function generateBundle({
       'process.env.NODE_ENV': 'process.env.NODE_ENV',
     },
     plugins: [
+      rawPlugin(),
       {
         name: 'postbuild',
         setup(build) {

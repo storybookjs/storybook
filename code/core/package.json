@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.3.0-alpha.2",
+  "version": "10.3.0-alpha.4",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -48,141 +48,174 @@
   "exports": {
     "./actions": {
       "types": "./dist/actions/index.d.ts",
+      "code": "./src/actions/index.ts",
       "default": "./dist/actions/index.js"
     },
     "./actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
+      "code": "./src/actions/decorator.ts",
       "default": "./dist/actions/decorator.js"
     },
     "./highlight": {
       "types": "./dist/highlight/index.d.ts",
+      "code": "./src/highlight/index.ts",
       "default": "./dist/highlight/index.js"
     },
     "./internal/babel": {
       "types": "./dist/babel/index.d.ts",
+      "code": "./src/babel/index.ts",
       "default": "./dist/babel/index.js"
     },
     "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
     "./internal/bin/loader": "./dist/bin/loader.js",
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
+      "code": "./src/channels/index.ts",
       "default": "./dist/channels/index.js"
     },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
+      "code": "./src/cli/index.ts",
       "default": "./dist/cli/index.js"
     },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
+      "code": "./src/client-logger/index.ts",
       "default": "./dist/client-logger/index.js"
     },
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
+      "code": "./src/common/index.ts",
       "default": "./dist/common/index.js"
     },
     "./internal/components": {
       "types": "./dist/components/index.d.ts",
+      "code": "./src/components/index.ts",
       "default": "./dist/components/index.js"
     },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
+      "code": "./src/core-events/index.ts",
       "default": "./dist/core-events/index.js"
     },
     "./internal/core-server": {
       "types": "./dist/core-server/index.d.ts",
+      "code": "./src/core-server/index.ts",
       "default": "./dist/core-server/index.js"
     },
     "./internal/core-server/presets/common-override-preset": "./dist/core-server/presets/common-override-preset.js",
     "./internal/csf": {
       "types": "./dist/csf/index.d.ts",
+      "code": "./src/csf/index.ts",
       "default": "./dist/csf/index.js"
     },
     "./internal/csf-tools": {
       "types": "./dist/csf-tools/index.d.ts",
+      "code": "./src/csf-tools/index.ts",
       "default": "./dist/csf-tools/index.js"
     },
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
+      "code": "./src/docs-tools/index.ts",
       "default": "./dist/docs-tools/index.js"
     },
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
+      "code": "./src/instrumenter/index.ts",
       "default": "./dist/instrumenter/index.js"
     },
     "./internal/manager-errors": {
       "types": "./dist/manager-errors.d.ts",
+      "code": "./src/manager-errors.ts",
       "default": "./dist/manager-errors.js"
     },
     "./internal/manager/globals": {
       "types": "./dist/manager/globals.d.ts",
+      "code": "./src/manager/globals.ts",
       "default": "./dist/manager/globals.js"
     },
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
     "./internal/manager/manager-stores": {
       "types": "./dist/manager/manager-stores.d.ts",
+      "code": "./src/manager/manager-stores.ts",
       "default": "./dist/manager/manager-stores.js"
     },
     "./internal/mocking-utils": {
       "types": "./dist/mocking-utils/index.d.ts",
+      "code": "./src/mocking-utils/index.ts",
       "default": "./dist/mocking-utils/index.js"
     },
     "./internal/mocking-utils/mocker-runtime": "./dist/mocking-utils/mocker-runtime.js",
     "./internal/node-logger": {
       "types": "./dist/node-logger/index.d.ts",
+      "code": "./src/node-logger/index.ts",
       "default": "./dist/node-logger/index.js"
     },
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",
+      "code": "./src/preview-api/index.ts",
       "default": "./dist/preview-api/index.js"
     },
     "./internal/preview-errors": {
       "types": "./dist/preview-errors.d.ts",
+      "code": "./src/preview-errors.ts",
       "default": "./dist/preview-errors.js"
     },
     "./internal/preview/globals": {
       "types": "./dist/preview/globals.d.ts",
+      "code": "./src/preview/globals.ts",
       "default": "./dist/preview/globals.js"
     },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/router": {
       "types": "./dist/router/index.d.ts",
+      "code": "./src/router/index.ts",
       "default": "./dist/router/index.js"
     },
     "./internal/server-errors": {
       "types": "./dist/server-errors.d.ts",
+      "code": "./src/server-errors.ts",
       "default": "./dist/server-errors.js"
     },
     "./internal/telemetry": {
       "types": "./dist/telemetry/index.d.ts",
+      "code": "./src/telemetry/index.ts",
       "default": "./dist/telemetry/index.js"
     },
     "./internal/types": {
       "types": "./dist/types/index.d.ts",
+      "code": "./src/types/index.ts",
       "default": "./dist/types/index.js"
     },
     "./manager-api": {
       "types": "./dist/manager-api/index.d.ts",
+      "code": "./src/manager-api/index.ts",
       "default": "./dist/manager-api/index.js"
     },
     "./package.json": "./package.json",
     "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",
+      "code": "./src/preview-api/index.ts",
       "default": "./dist/preview-api/index.js"
     },
     "./test": {
       "types": "./dist/test/index.d.ts",
+      "code": "./src/test/index.ts",
       "default": "./dist/test/index.js"
     },
     "./theming": {
       "types": "./dist/theming/index.d.ts",
+      "code": "./src/theming/index.ts",
       "default": "./dist/theming/index.js"
     },
     "./theming/create": {
       "types": "./dist/theming/create.d.ts",
+      "code": "./src/theming/create.ts",
       "default": "./dist/theming/create.js"
     },
     "./viewport": {
       "types": "./dist/viewport/index.d.ts",
+      "code": "./src/viewport/index.ts",
       "default": "./dist/viewport/index.js"
     }
   },

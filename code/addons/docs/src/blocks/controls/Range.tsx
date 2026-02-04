@@ -185,6 +185,7 @@ export const RangeControl: FC<RangeProps> = ({
   onBlur,
   onFocus,
   argType,
+  idPrefix,
 }) => {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(parse(event.target.value));
@@ -194,7 +195,7 @@ export const RangeControl: FC<RangeProps> = ({
   const numberOFDecimalsPlaces = useMemo(() => getNumberOfDecimalPlaces(step), [step]);
 
   const readonly = !!argType?.table?.readonly;
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, idPrefix);
 
   return (
     <RangeWrapper readOnly={readonly}>

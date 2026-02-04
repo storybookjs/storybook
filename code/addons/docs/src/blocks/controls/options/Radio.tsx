@@ -61,13 +61,14 @@ export const RadioControl: FC<RadioProps> = ({
   onChange,
   isInline,
   argType,
+  idPrefix,
 }) => {
   if (!options) {
     logger.warn(`Radio with no options: ${name}`);
     return <>-</>;
   }
   const selection = selectedKey(value, options);
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, idPrefix);
 
   const readonly = !!argType?.table?.readonly;
 

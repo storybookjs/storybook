@@ -172,7 +172,7 @@ const getCustomStyleFunction: (theme: Theme) => JsonTreeProps['getStyle'] = (the
   },
 });
 
-export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
+export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType, idPrefix }) => {
   const theme = useTheme();
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
@@ -217,7 +217,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
       <Button
         ariaLabel={false}
         disabled={readonly}
-        id={getControlSetterButtonId(name)}
+        id={getControlSetterButtonId(name, idPrefix)}
         onClick={onForceVisible}
       >
         Set object
@@ -228,7 +228,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const rawJSONForm = (
     <RawInput
       ref={htmlElRef}
-      id={getControlId(name)}
+      id={getControlId(name, idPrefix)}
       minRows={3}
       name={name}
       key={jsonString}

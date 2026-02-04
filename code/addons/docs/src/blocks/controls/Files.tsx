@@ -43,6 +43,7 @@ export const FilesControl: FC<FilesControlProps> = ({
   accept = 'image/*',
   value,
   argType,
+  idPrefix,
 }) => {
   const inputElement = useRef<HTMLInputElement>(null);
   const readonly = argType?.control?.readOnly;
@@ -63,7 +64,7 @@ export const FilesControl: FC<FilesControlProps> = ({
     }
   }, [value, name]);
 
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, idPrefix);
 
   return (
     <>

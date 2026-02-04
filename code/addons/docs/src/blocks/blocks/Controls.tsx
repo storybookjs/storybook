@@ -75,6 +75,7 @@ export const Controls: FC<ControlsProps> = (props) => {
         globals={globals}
         updateArgs={updateArgs}
         resetArgs={resetArgs}
+        idPrefix={story.id}
       />
     );
   }
@@ -101,6 +102,7 @@ export const Controls: FC<ControlsProps> = (props) => {
       globals={globals}
       updateArgs={updateArgs}
       resetArgs={resetArgs}
+      idPrefix={story.id}
     />
   );
 };

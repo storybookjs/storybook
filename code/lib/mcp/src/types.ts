@@ -1,4 +1,3 @@
-import type { Documentation } from 'react-docgen';
 import * as v from 'valibot';
 
 /**
@@ -99,7 +98,7 @@ export const ComponentManifest = v.object({
 	import: v.optional(v.string()),
 	stories: v.optional(v.array(Story)),
 	// loose schema for react-docgen types, as they are pretty complex
-	reactDocgen: v.optional(v.custom<Documentation>(() => true)),
+	reactDocgen: v.optional(v.any()),
 	docs: v.optional(v.record(v.string(), Doc)),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;

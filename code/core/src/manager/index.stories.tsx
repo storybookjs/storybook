@@ -169,12 +169,6 @@ export const FullScreen = meta.story({
   },
 });
 
-export const ShareMenu = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.click(await canvas.findByRole('button', { name: /Share/i }));
-  },
-});
-
 export const ConnectionLost = meta.story({
   play: async () => {
     channel.emit(CHANNEL_WS_DISCONNECT, { code: 3007 });

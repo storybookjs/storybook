@@ -19,7 +19,7 @@ jobs:
           node-version: 22
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.4.0
+          version: 10.28.2
           run_install: true
       - run: pnpm build
       - name: Release

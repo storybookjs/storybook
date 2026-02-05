@@ -214,10 +214,10 @@ describe('initModule', () => {
       initialGlobals: { a: 1, b: 1 },
     });
     expect(navigate).toHaveBeenCalledWith(
-      '/story/test--story&globals=a:2;b:!undefined',
+      '/story/test--story&globals=a:2',
       expect.objectContaining({ replace: true })
     );
-    expect(store.getState().customQueryParams).toEqual({ globals: 'a:2;b:!undefined' });
+    expect(store.getState().customQueryParams).toEqual({ globals: 'a:2' });
   });
 
   it('adds url params alphabetically', async () => {
@@ -235,7 +235,12 @@ describe('initModule', () => {
       }),
     });
 
-    channel.emit(GLOBALS_UPDATED, { userGlobals: { g: 2 }, storyGlobals: {}, globals: { g: 2 } });
+    channel.emit(GLOBALS_UPDATED, {
+      userGlobals: { g: 2 },
+      storyGlobals: {},
+      globals: { g: 2 },
+      initialGlobals: {},
+    });
     expect(navigate).toHaveBeenCalledWith(
       '/story/test--story&full=1&globals=g:2',
       expect.objectContaining({ replace: true })
@@ -464,5 +469,21 @@ describe('getStoryHrefs', () => {
     const { managerHref, previewHref } = api.getStoryHrefs('test--story');
     expect(managerHref).toEqual('/?path=/story/test--story');
     expect(previewHref).toEqual('https://custom.preview.url/?id=test--story&viewMode=story');
+    delete global.PREVIEW_URL;
+  });
+
+  it('correctly links from /index.html', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/index.html', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/index.html?path=/story/test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
   });
 });

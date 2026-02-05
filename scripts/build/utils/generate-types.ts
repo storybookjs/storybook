@@ -83,7 +83,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
           processes.forEach((p) => p.kill());
           processes = [];
           process.exit(dtsProcess.exitCode || 1);
-        } else {
+        } else if(!process.env.CI) {
           console.log('✅ Generated types for', picocolors.cyan(join(DIR_REL, entryPoint)));
         }
       });

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-dom-shim",
-  "version": "10.2.0-alpha.18",
+  "version": "10.3.0-alpha.4",
   "description": "",
   "keywords": [
     "storybook"
@@ -24,6 +24,7 @@
   "exports": {
     ".": {
       "types": "./dist/react-18.d.ts",
+      "code": "./src/react-18.tsx",
       "default": "./dist/react-18.js"
     },
     "./package.json": "./package.json",

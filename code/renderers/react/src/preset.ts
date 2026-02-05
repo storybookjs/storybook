@@ -3,13 +3,24 @@ import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
-import type { PresetProperty } from 'storybook/internal/types';
+import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
-import {
-  type GetArgTypesDataOptions,
-  extractArgTypesFromDocgen,
-} from './componentManifest/reactDocgen/extractDocgenInfo';
+import { extractArgTypesFromDocgen } from './componentManifest/reactDocgen/extractReactDocgenInfo';
+import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo';
+import type {
+  GetArgTypesDataOptions,
+  ReactDocgenConfig,
+} from './componentManifest/reactDocgen/utils';
+
+type TypescriptOptionsWithDocgen = {
+  reactDocgen?: ReactDocgenConfig;
+  reactDocgenTypescriptOptions?: Record<string, unknown>;
+};
+
+interface InternalGetArgTypesDataOptions extends GetArgTypesDataOptions {
+  presets?: Options['presets'];
+}
 
 export const addons: PresetProperty<'addons'> = [
   import.meta.resolve('@storybook/react-dom-shim/preset'),
@@ -75,31 +86,52 @@ export const resolvedReact = async (existing: any) => {
 
 export async function internal_getArgTypesData(
   _input: unknown,
-  options: GetArgTypesDataOptions
+  options: InternalGetArgTypesDataOptions
 ): Promise<ArgTypes | null> {
-  const { componentFilePath, componentExportName } = (options ?? {}) as GetArgTypesDataOptions;
+  const { componentFilePath, componentExportName, presets } = (options ??
+    {}) as InternalGetArgTypesDataOptions;
 
   if (!componentFilePath) {
     return null;
   }
 
-  const argTypesData = extractArgTypesFromDocgen({
-    componentFilePath: path.isAbsolute(componentFilePath)
-      ? componentFilePath
-      : join(getProjectRoot(), componentFilePath),
-    componentExportName,
-  });
-  if (!argTypesData?.props) {
+  // Get typescript options from presets to determine which docgen to use
+  let typescriptOptions: TypescriptOptionsWithDocgen = {};
+  if (presets) {
+    try {
+      const appliedOptions = await presets.apply('typescript', {});
+      typescriptOptions = appliedOptions as TypescriptOptionsWithDocgen;
+    } catch {
+      // If typescript preset is not available, use defaults
+    }
+  }
+
+  const { reactDocgen = 'react-docgen', reactDocgenTypescriptOptions } = typescriptOptions;
+
+  // If docgen is disabled, return null
+  if (reactDocgen === false) {
     return null;
   }
 
-  const argTypes: ArgTypes = {};
-  for (const [propName, propInfo] of Object.entries(argTypesData.props)) {
-    argTypes[propName] = {
-      name: propName,
-      type: propInfo.required ? { ...propInfo.type, required: true } : propInfo.type,
-    };
+  const resolvedFilePath = path.isAbsolute(componentFilePath)
+    ? componentFilePath
+    : join(getProjectRoot(), componentFilePath);
+
+  // Choose the appropriate extractor based on the reactDocgen option
+  let argTypesData;
+  if (reactDocgen === 'react-docgen-typescript') {
+    argTypesData = await extractArgTypesFromDocgenTypescript({
+      componentFilePath: resolvedFilePath,
+      componentExportName,
+      reactDocgenTypescriptOptions,
+    });
+  } else {
+    // Default to 'react-docgen'
+    argTypesData = extractArgTypesFromDocgen({
+      componentFilePath: resolvedFilePath,
+      componentExportName,
+    });
   }
 
-  return argTypes;
+  return argTypesData;
 }

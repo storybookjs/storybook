@@ -79,11 +79,15 @@ export class PNPMProxy extends JsPackageManager {
 
   public runPackageCommand({
     args,
+    useRemotePkg = false,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ResultPromise {
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     return executeCommand({
       command: 'pnpm',
-      args: ['exec', ...args],
+      args: [useRemotePkg ? 'dlx' : 'exec', ...args],
       ...options,
     });
   }
@@ -103,9 +107,14 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
+    // pnpm 10.7.1+ falls back to npm for certain config keys (including registry)
+    // https://github.com/pnpm/pnpm/pull/9346
+    // "npm config" commands are not allowed in workspaces per default
+    // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
     const childProcess = await executeCommand({
-      command: 'pnpm',
-      args: ['config', 'get', 'registry'],
+      command: 'npm',
+      cwd: this.cwd,
+      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
     });
     const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;

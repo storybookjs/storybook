@@ -552,24 +552,13 @@ export class CsfFile {
               const id = declPath.node.id;
 
               if (t.isIdentifier(id)) {
-                let storyIsFactory = false;
                 const { name: exportName } = id;
                 if (exportName === '__namedExportsOrder' && declPath.isVariableDeclarator()) {
                   self._namedExportsOrder = parseExportsOrder(declPath.node.init as t.Expression);
                   return;
                 }
-                self._storyExports[exportName] = decl;
-                self._storyDeclarationPath[exportName] = declPath;
-                self._storyPaths[exportName] = path;
-                self._storyStatements[exportName] = node;
-                let name = storyNameFromExport(exportName);
-                if (self._storyAnnotations[exportName]) {
-                  logger.warn(
-                    `Unexpected annotations for "${exportName}" before story declaration`
-                  );
-                } else {
-                  self._storyAnnotations[exportName] = {};
-                }
+
+                // Determine the story node, unwrapping TS expressions
                 let storyNode;
                 if (t.isVariableDeclarator(decl)) {
                   if (
@@ -591,6 +580,9 @@ export class CsfFile {
                 } else {
                   storyNode = decl;
                 }
+
+                // Check if this is a factory story (meta.story() or meta.extend())
+                let storyIsFactory = false;
                 if (
                   t.isCallExpression(storyNode) &&
                   t.isMemberExpression(storyNode.callee) &&
@@ -601,13 +593,13 @@ export class CsfFile {
                   storyIsFactory = true;
                   storyNode = storyNode.arguments[0];
                 }
+
+                // Skip non-factory exports in factory files
                 if (self._metaIsFactory && !storyIsFactory) {
-                  throw new MixedFactoryError(
-                    'expected factory story',
-                    storyNode as t.Node,
-                    self._options.fileName
-                  );
-                } else if (!self._metaIsFactory && storyIsFactory) {
+                  return;
+                }
+
+                if (!self._metaIsFactory && storyIsFactory) {
                   if (self._metaNode) {
                     throw new MixedFactoryError(
                       'expected non-factory story',
@@ -622,6 +614,21 @@ export class CsfFile {
                     );
                   }
                 }
+
+                // Now we know this is a valid story, register it
+                self._storyExports[exportName] = decl;
+                self._storyDeclarationPath[exportName] = declPath;
+                self._storyPaths[exportName] = path;
+                self._storyStatements[exportName] = node;
+                let name = storyNameFromExport(exportName);
+                if (self._storyAnnotations[exportName]) {
+                  logger.warn(
+                    `Unexpected annotations for "${exportName}" before story declaration`
+                  );
+                } else {
+                  self._storyAnnotations[exportName] = {};
+                }
+
                 const parameters: { [key: string]: any } = {};
                 if (t.isObjectExpression(storyNode)) {
                   parameters.__isArgsStory = true; // assume default render is an args story
@@ -851,7 +858,10 @@ export class CsfFile {
                     : callee.property.name;
                   const metaNode = node.arguments[0] as t.ObjectExpression;
                   self._parseMeta(metaNode, self._ast.program);
-                } else {
+                } else if (rootObject.name === 'preview') {
+                  // Only throw if the variable is named "preview" - this indicates
+                  // the user is trying to use CSF Factories but with a wrong import path.
+                  // Other .meta() calls (e.g., Zod v4's .meta()) are silently ignored.
                   throw new BadMetaError(
                     'meta() factory must be imported from .storybook/preview configuration',
                     configParent,

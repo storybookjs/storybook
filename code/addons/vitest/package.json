@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.2.0-alpha.18",
+  "version": "10.3.0-alpha.4",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -40,6 +40,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./constants": {
@@ -61,6 +62,7 @@
     "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
+      "code": "./src/vitest-plugin/index.ts",
       "default": "./dist/vitest-plugin/index.js"
     }
   },

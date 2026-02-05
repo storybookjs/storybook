@@ -78,6 +78,13 @@ export interface SelectProps extends Omit<
   onSelect?: (option: Value) => void;
   onDeselect?: (option: Value) => void;
   onChange?: (selected: Value[]) => void;
+  /**
+   * Legacy option for ToolbarMenuSelect. Do not use in new code. Controls whether to show the
+   * selected option's title.
+   *
+   * @default true
+   */
+  showSelectedOptionTitle?: boolean;
 }
 
 function valueToId(parentId: string, { value }: InternalOption | ResetOption): string {
@@ -208,6 +215,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       onChange,
       tooltip,
       ariaLabel,
+      showSelectedOptionTitle = true,
       ...props
     },
     ref
@@ -251,11 +259,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       (option: InternalOption | ResetOption) => {
         // Reset option case. We check value === undefined for cleaner type handling in the other branch.
         if (option.type === 'reset') {
-          if (selectedOptions.length) {
-            onChange?.([]);
-            onReset?.();
-            setSelectedOptions([]);
-          }
+          onChange?.([]);
+          onReset?.();
+          setSelectedOptions([]);
         } else if (multiSelect) {
           setSelectedOptions((previous) => {
             let newSelected: InternalOption[] = [];
@@ -283,7 +289,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           });
         }
       },
-      [multiSelect, onChange, onSelect, onDeselect, onReset, selectedOptions]
+      [multiSelect, onChange, onSelect, onDeselect, onReset]
     );
 
     // Reset option appears if a handler is defined and there are selected options.
@@ -524,7 +530,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           {!multiSelect && (
             <>
               {icon}
-              {selectedOptions[0]?.title ?? children}
+              {(showSelectedOptionTitle && selectedOptions[0]?.title) || children}
             </>
           )}
 

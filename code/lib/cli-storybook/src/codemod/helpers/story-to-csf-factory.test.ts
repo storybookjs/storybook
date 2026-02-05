@@ -45,6 +45,28 @@ describe('stories codemod', () => {
       `);
     });
 
+    it('should preserve leading comments when adding import', async () => {
+      await expect(
+        transform(dedent`
+            // @ts-check
+            /**
+             * @license MIT
+             * Copyright 2024
+             */
+            const meta = { title: 'Component' };
+            export default meta;
+            export const A = {};
+          `)
+      ).resolves.toMatchInlineSnapshot(`
+        // @ts-check
+        /** @license MIT Copyright 2024 */
+        import preview from '#.storybook/preview';
+
+        const meta = preview.meta({ title: 'Component' });
+        export const A = meta.story();
+      `);
+    });
+
     it('should transform and wrap inline default exported meta', async () => {
       await expect(
         transform(dedent`
@@ -270,6 +292,62 @@ describe('stories codemod', () => {
             return JSON.stringify({
               ...myMeta.input.argTypes,
             });
+          },
+        });
+      `);
+    });
+
+    it('migrate cross-file story imports from `ImportedStories.Story.xyz` to `ImportedStories.Story.input.xyz`', async () => {
+      await expect(
+        transform(dedent`
+            import * as BaseStories from './Button.stories';
+            import { Primary as ImportedPrimary } from './Card.stories';
+
+            export default { title: 'Component' };
+
+            export const A = {
+              args: BaseStories.Primary.args,
+            };
+
+            export const B = {
+              ...BaseStories.Secondary,
+              args: {
+                ...BaseStories.Secondary.args,
+                label: 'Custom',
+              },
+            };
+
+            export const C = {
+              args: {
+                ...ImportedPrimary.args,
+              },
+            };
+          `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+
+        import * as BaseStories from './Button.stories';
+        import { Primary as ImportedPrimary } from './Card.stories';
+
+        const meta = preview.meta({
+          title: 'Component',
+        });
+
+        export const A = meta.story({
+          args: BaseStories.Primary.input.args,
+        });
+
+        export const B = meta.story({
+          ...BaseStories.Secondary.input,
+          args: {
+            ...BaseStories.Secondary.input.args,
+            label: 'Custom',
+          },
+        });
+
+        export const C = meta.story({
+          args: {
+            ...ImportedPrimary.input.args,
           },
         });
       `);

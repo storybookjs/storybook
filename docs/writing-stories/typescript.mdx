@@ -6,6 +6,16 @@ Writing your stories in [TypeScript](https://www.typescriptlang.org/) makes you 
 
 Storybook has built-in TypeScript support, so you can get started with zero configuration required.
 
+<If renderer={['react', 'vue', 'angular', 'web-components']}>
+
+<Callout variant="positive" icon="💡">
+  [CSF Next](../api/csf/csf-next.mdx) (currently in preview) provides significantly improved TypeScript support, which infers component types automatically and requires no explicit typing for most cases. We recommend using CSF Next for all new TypeScript stories. 
+
+  You only need to add types when using [custom args](#typing-custom-args).
+</Callout>
+
+</If>
+
 ## Typing stories with `Meta` and `StoryObj`
 
 When writing stories, there are two aspects that are helpful to type. The first is the [component meta](./index.mdx#default-export), which describes and configures the component and its stories. In a [CSF file](../api/csf.mdx), this is the default export. The second is the [stories themselves](./index.mdx#defining-stories).
@@ -24,7 +34,7 @@ Storybook provides utility types for each of these, named `Meta` and `StoryObj`.
 
 The example above passes a component type. See [**Typing custom args**](#typing-custom-args) for an example of passing a props type.
 
-## Using `satisfies` for better type safety
+### Using `satisfies` for better type safety
 
 <IfRenderer renderer={['angular', 'web-components']}>
   <Callout variant="info">
@@ -59,36 +69,61 @@ Sometimes stories need to define args that aren’t included in the component's 
 {/* prettier-ignore-end */}
 
 <IfRenderer renderer="vue">
-  ### Vue specific tips
 
-  Vue has excellent support for TypeScript, and we have done our utmost to take advantage of that in the stories files. For example, consider the following strongly typed Vue 3 single file component (SFC):
+## Vue specific tips
 
-  ```html
-  <script setup lang="ts">
-    defineProps<{ count: number; disabled: boolean }>();
+Vue has excellent support for TypeScript, and we have done our utmost to take advantage of that in the stories files. For example, consider the following strongly typed Vue 3 single file component (SFC):
 
-    const emit = defineEmits<{
-      (e: 'increaseBy', amount: number): void;
-      (e: 'decreaseBy', amount: number): void;
-    }>();
-  </script>
+```html
+<script setup lang="ts">
+  defineProps<{ count: number; disabled: boolean }>();
 
-  <template>
-    <div class="card">
-      {{ count }}
-      <button @click="emit('increaseBy', 1)" :disabled="disabled">Increase by 1</button>
-      <button @click="$emit('decreaseBy', 1)" :disabled="disabled">Decrease by 1</button>
-    </div>
-  </template>
-  ```
+  const emit = defineEmits<{
+    (e: 'increaseBy', amount: number): void;
+    (e: 'decreaseBy', amount: number): void;
+  }>();
+</script>
 
-  You can type check SFC files with vue-tsc and get editor support in VSCode by installing the official [Vue](https://marketplace.visualstudio.com/items?itemName=Vue.volar) extension.
+<template>
+  <div class="card">
+    {{ count }}
+    <button @click="emit('increaseBy', 1)" :disabled="disabled">Increase by 1</button>
+    <button @click="$emit('decreaseBy', 1)" :disabled="disabled">Decrease by 1</button>
+  </div>
+</template>
+```
 
-  This setup will add type support for `*.vue` imports to your `*.stories.ts` files, providing the same type safety and autocomplete features.
+You can type check SFC files with `vue-tsc` and get editor support in VSCode by installing the official [Vue extension](https://marketplace.visualstudio.com/items?itemName=Vue.volar).
+
+This setup will add type support for `*.vue` imports to your `*.stories.ts` files, providing the same type safety and autocomplete features.
+
+[CSF Next](../api/csf/csf-next.mdx) adds support for [Generic Vue components](https://vuejs.org/api/sfc-script-setup.html#generics) (using `<script lang="ts" setup generic="T">`). Simply pass the type parameter directly to the component:
+
+```ts title="GenericList.stories.ts"
+import preview from '../.storybook/preview';
+
+import GenericList from './GenericList.vue';
+
+const meta = preview.meta({
+  // 👇 Pass the type parameter directly
+  component: GenericList<{ id: number; name: string }>,
+});
+
+export const Example = meta.story({
+  args: {
+    items: [{ id: 1, name: 'John Doe' }],
+    // 👇 item is correctly typed as { id: number; name: string }
+    getLabel: (item) => item.name,
+  },
+});
+```
+
+Prior CSF versions suffer from a [long-standing type inference issue](https://github.com/storybookjs/storybook/issues/24238) where the generic type `T` would default to `unknown`.
+
 </IfRenderer>
 
 <IfRenderer renderer="svelte">
-  ### Svelte specific tips
+  ## Svelte specific tips
 
   Svelte offers excellent TypeScript support for .svelte files. For example, consider the following component. You can run type checks using svelte-check and add VSCode editor support with the [Svelte for VSCode extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
 
@@ -115,3 +150,65 @@ Sometimes stories need to define args that aren’t included in the component's 
 
   The same setup works with Svelte stories files too, providing both type safety and autocompletion.
 </IfRenderer>
+
+<If renderer="angular">
+
+## Angular specific tips
+
+[CSF 3](../api/csf/index.mdx) offers basic TypeScript support for Angular components, but it does not infer component types.
+
+[CSF Next](../api/csf/csf-next.mdx) is able to infer types for Angular components, but the inferred types will be optional (i.e. `Partial<T>`). In other words, required props will not be enforced.
+
+If you wish to have required props enforced, you can explicitly provide the component's props type to `preview.type` as shown in the following example:
+
+```ts
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+interface MyComponentProps {
+  requiredProp: string;
+  optionalProp?: number;
+}
+
+const meta = preview.type<{ args: MyComponentProps }>().meta({
+  component: 'MyComponent',
+});
+```
+
+</If>
+
+<If renderer="web-components">
+
+## Web Components specific tips
+
+[CSF 3](../api/csf/index.mdx) offers basic TypeScript support for web components, but it does not infer component types and provides no type generics for `Meta` and `StoryObj`.
+
+[CSF Next](../api/csf/csf-next.mdx) is able to infer types for web components, but only if the [custom element is declared in the global `HTMLElementTagNameMap` interface](https://lit.dev/docs/components/defining/#typescript-typings). You can do this by adding a declaration like the following to your project:
+
+```ts
+declare global {
+  interface HTMLElementTagNameMap {
+    "my-element": MyElement;
+  }
+}
+```
+
+Additionally, the inferred types will be optional (i.e. `Partial<T>`). In other words, required props will not be enforced.
+
+If you wish to have required props enforced, you can explicitly provide the component's props type to `preview.type` as shown in the following example:
+
+```ts
+import preview from '../.storybook/preview';
+
+interface MyElementProps {
+  requiredProp: string;
+  optionalProp?: number;
+}
+
+const meta = preview.type<{ args: MyElementProps }>().meta({
+  component: 'my-element',
+});
+```
+
+</If>

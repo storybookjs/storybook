@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "10.2.0-alpha.18",
+  "version": "10.3.0-alpha.4",
   "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
     "docs",
@@ -40,34 +40,41 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./angular": {
       "types": "./dist/angular/index.d.ts",
+      "code": "./src/angular/index.ts",
       "default": "./dist/angular/index.js"
     },
     "./blocks": {
       "types": "./dist/blocks.d.ts",
+      "code": "./src/blocks.ts",
       "default": "./dist/blocks.js"
     },
     "./ember": {
       "types": "./dist/ember/index.d.ts",
+      "code": "./src/ember/index.ts",
       "default": "./dist/ember/index.js"
     },
     "./manager": "./dist/manager.js",
     "./mdx-loader": "./dist/mdx-loader.js",
     "./mdx-react-shim": {
       "types": "./dist/mdx-react-shim.d.ts",
+      "code": "./src/mdx-react-shim.ts",
       "default": "./dist/mdx-react-shim.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
       "default": "./dist/preview.js"
     },
     "./web-components": {
       "types": "./dist/web-components/index.d.ts",
+      "code": "./src/web-components/index.ts",
       "default": "./dist/web-components/index.js"
     }
   },

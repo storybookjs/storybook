@@ -432,6 +432,154 @@ describe('runStoryTestsTool', () => {
 		`);
 	});
 
+	it('should not report stories as passing when unhandled errors block the run', async () => {
+		const testContext = createTestContext();
+
+		// Simulate a case where tests couldn't run at all (e.g., Playwright not installed)
+		// componentTestCount.error is 0 because no actual test failures occurred
+		// but unhandled errors exist because the test runner couldn't start
+		setupChannelResponse({
+			status: 'completed',
+			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
+				storyIds: ['button--primary'],
+				totalTestCount: 1,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
+				componentTestCount: { success: 0, error: 0 },
+				a11yCount: { success: 0, warning: 0, error: 0 },
+				componentTestStatuses: [],
+				a11yStatuses: [],
+				a11yReports: {},
+				unhandledErrors: [
+					{
+						name: 'Error',
+						message:
+							"browserType.launch: Executable doesn't exist at /path/to/chromium",
+						stack:
+							"Error: browserType.launch: Executable doesn't exist\n    at Browser.ts:100:5",
+						VITEST_TEST_PATH: '/src/Button.stories.tsx',
+						VITEST_TEST_NAME: 'Button > Primary',
+					},
+				],
+			},
+		});
+
+		const response = await callTool(
+			[{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+			testContext,
+		);
+
+		// Should NOT contain "Passing Stories" section since tests couldn't run
+		expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "## Unhandled Errors
+
+			### Error
+
+			**Error message**: browserType.launch: Executable doesn't exist at /path/to/chromium
+			**Path**: /src/Button.stories.tsx
+			**Test name**: Button > Primary
+			**Stack trace**:
+			Error: browserType.launch: Executable doesn't exist
+			    at Browser.ts:100:5",
+			      "type": "text",
+			    },
+			  ],
+			}
+		`);
+	});
+
+	it('should show passing stories AND unhandled errors when some tests pass but others have errors', async () => {
+		const testContext = createTestContext();
+
+		// Simulate: 3 tests passed, 1 had an unhandled error (e.g., component import failed)
+		setupChannelResponse({
+			status: 'completed',
+			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
+				storyIds: [
+					'button--primary',
+					'button--secondary',
+					'button--disabled',
+					'button--loading',
+				],
+				totalTestCount: 4,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
+				componentTestCount: { success: 3, error: 0 },
+				a11yCount: { success: 0, warning: 0, error: 0 },
+				componentTestStatuses: [
+					{
+						storyId: 'button--primary',
+						typeId: 'storybook/component-test',
+						value: 'status-value:success',
+						title: 'Component Test',
+						description: '',
+					},
+					{
+						storyId: 'button--secondary',
+						typeId: 'storybook/component-test',
+						value: 'status-value:success',
+						title: 'Component Test',
+						description: '',
+					},
+					{
+						storyId: 'button--disabled',
+						typeId: 'storybook/component-test',
+						value: 'status-value:success',
+						title: 'Component Test',
+						description: '',
+					},
+					// button--loading has no status because it had an unhandled error
+				],
+				a11yStatuses: [],
+				a11yReports: {},
+				unhandledErrors: [
+					{
+						name: 'SyntaxError',
+						message: 'Cannot find module ./LoadingSpinner',
+						stack:
+							'SyntaxError: Cannot find module ./LoadingSpinner\n    at Button.tsx:5:1',
+						VITEST_TEST_PATH: '/src/Button.stories.tsx',
+						VITEST_TEST_NAME: 'Button > Loading',
+					},
+				],
+			},
+		});
+
+		const response = await callTool(
+			[{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+			testContext,
+		);
+
+		// Should show both passing stories AND unhandled errors
+		expect(response.result?.content[0].text).toMatchInlineSnapshot(`
+			"## Passing Stories
+
+			- button--primary
+			- button--secondary
+			- button--disabled
+
+			## Unhandled Errors
+
+			### SyntaxError
+
+			**Error message**: Cannot find module ./LoadingSpinner
+			**Path**: /src/Button.stories.tsx
+			**Test name**: Button > Loading
+			**Stack trace**:
+			SyntaxError: Cannot find module ./LoadingSpinner
+			    at Button.tsx:5:1"
+		`);
+	});
+
 	it('should return error when no stories found', async () => {
 		const testContext = createTestContext();
 

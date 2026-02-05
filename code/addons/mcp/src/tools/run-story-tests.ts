@@ -104,33 +104,27 @@ export async function addRunStoryTestsTool(
 
 				const sections: string[] = [];
 
-				if (testResults.componentTestCount.error === 0) {
-					sections.push(`## Passing Stories\n\n- ${storyIds.join('\n- ')}`);
-				} else {
-					const componentTestStatuses = testResults.componentTestStatuses;
+				const componentTestStatuses = testResults.componentTestStatuses;
 
-					const passingStories = componentTestStatuses.filter(
-						(status) => status.value === 'status-value:success',
+				const passingStories = componentTestStatuses.filter(
+					(status) => status.value === 'status-value:success',
+				);
+				const failingStories = componentTestStatuses.filter(
+					(status) => status.value === 'status-value:error',
+				);
+
+				if (passingStories.length > 0) {
+					sections.push(
+						`## Passing Stories\n\n- ${passingStories.map((status) => status.storyId).join('\n- ')}`,
 					);
-					const failingStories = componentTestStatuses.filter(
-						(status) => status.value === 'status-value:error',
+				}
+
+				if (failingStories.length > 0) {
+					sections.push(
+						`## Failing Stories\n\n${failingStories
+							.map((status) => `### ${status.storyId}\n\n${status.description}`)
+							.join('\n\n')}`,
 					);
-
-					if (passingStories.length > 0) {
-						sections.push(
-							`## Passing Stories\n\n- ${passingStories.map((status) => status.storyId).join('\n- ')}`,
-						);
-					}
-
-					if (failingStories.length > 0) {
-						sections.push(
-							`## Failing Stories\n\n${failingStories
-								.map(
-									(status) => `### ${status.storyId}\n\n${status.description}`,
-								)
-								.join('\n\n')}`,
-						);
-					}
 				}
 
 				const a11yReports = testResults.a11yReports as Record<

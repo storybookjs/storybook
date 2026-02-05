@@ -163,10 +163,7 @@ describe('findStoryIds', () => {
 		const result = findStoryIds(mockStoryIndex, stories);
 
 		expect(result.found).toHaveLength(2);
-		expect(result.found.map((f) => f.id)).toEqual([
-			'button--primary',
-			'input--default',
-		]);
+		expect(result.found.map((f) => f.id)).toEqual(['button--primary', 'input--default']);
 		expect(result.notFound).toHaveLength(1);
 		expect(result.notFound[0]!.input.exportName).toBe('NonExistent');
 	});

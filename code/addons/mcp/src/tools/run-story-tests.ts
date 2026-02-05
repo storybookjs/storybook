@@ -28,9 +28,7 @@ export async function getAddonVitestConstants() {
 const RunStoryTestsInput = v.object({
 	stories: StoryInputArray,
 });
-export async function addRunStoryTestsTool(
-	server: McpServer<any, AddonContext>,
-) {
+export async function addRunStoryTestsTool(server: McpServer<any, AddonContext>) {
 	const addonVitestConstants = await getAddonVitestConstants();
 
 	server.tool(
@@ -70,9 +68,7 @@ export async function addRunStoryTestsTool(
 				const storyIds = found.map((story) => story.id);
 
 				if (storyIds.length === 0) {
-					const errorMessages = notFound
-						.map((story) => story.errorMessage)
-						.join('\n');
+					const errorMessages = notFound.map((story) => story.errorMessage).join('\n');
 					return {
 						content: [
 							{
@@ -123,10 +119,8 @@ export async function addRunStoryTestsTool(
 					);
 				}
 
-				const a11yReports = testResults.a11yReports as Record<
-					StoryId,
-					A11yReport[]
-				>;
+				console.log({ testResults });
+				const a11yReports = testResults.a11yReports as Record<StoryId, A11yReport[]>;
 				if (a11yReports && Object.keys(a11yReports).length > 0) {
 					const a11yViolationSections: string[] = [];
 
@@ -134,9 +128,7 @@ export async function addRunStoryTestsTool(
 						for (const report of reports) {
 							// Check if report is an error
 							if ('error' in report && report.error) {
-								a11yViolationSections.push(
-									`### ${storyId} - Error\n\n${report.error.message}`,
-								);
+								a11yViolationSections.push(`### ${storyId} - Error\n\n${report.error.message}`);
 								continue;
 							}
 
@@ -146,9 +138,7 @@ export async function addRunStoryTestsTool(
 								for (const violation of violations) {
 									const nodes = violation.nodes
 										.map((node: any) => {
-											const inspectLink = node.linkPath
-												? `${origin}${node.linkPath}`
-												: undefined;
+											const inspectLink = node.linkPath ? `${origin}${node.linkPath}` : undefined;
 											const parts = [] as string[];
 
 											if (node.impact) {
@@ -156,14 +146,10 @@ export async function addRunStoryTestsTool(
 											}
 
 											if (node.failureSummary || node.message) {
-												parts.push(
-													`  **Message**: ${node.failureSummary || node.message}`,
-												);
+												parts.push(`  **Message**: ${node.failureSummary || node.message}`);
 											}
 
-											parts.push(
-												`  **Element**: ${node.html || '(no html available)'}`,
-											);
+											parts.push(`  **Element**: ${node.html || '(no html available)'}`);
 
 											if (inspectLink) {
 												parts.push(`  **Inspect**: ${inspectLink}`);
@@ -182,9 +168,7 @@ export async function addRunStoryTestsTool(
 					}
 
 					if (a11yViolationSections.length > 0) {
-						sections.push(
-							`## Accessibility Violations\n\n${a11yViolationSections.join('\n\n')}`,
-						);
+						sections.push(`## Accessibility Violations\n\n${a11yViolationSections.join('\n\n')}`);
 					}
 				}
 
@@ -245,11 +229,7 @@ function triggerTestRun(
 					}
 					break;
 				case 'error':
-					reject(
-						new Error(
-							payload.error?.message ?? 'Test run failed with unknown error',
-						),
-					);
+					reject(new Error(payload.error?.message ?? 'Test run failed with unknown error'));
 					break;
 				case 'cancelled':
 					reject(new Error('Test run was cancelled'));

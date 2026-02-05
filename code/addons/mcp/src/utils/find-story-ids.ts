@@ -26,10 +26,7 @@ export interface FindStoryIdsResult {
  * @param stories - Array of story inputs to search for
  * @returns Object containing found stories with their IDs and not-found stories with error messages
  */
-export function findStoryIds(
-	index: StoryIndex,
-	stories: StoryInput[],
-): FindStoryIdsResult {
+export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStoryIdsResult {
 	const entriesList = Object.values(index.entries);
 	const result: FindStoryIdsResult = {
 		found: [],
@@ -51,9 +48,7 @@ export function findStoryIds(
 		const foundEntry = entriesList.find(
 			(entry) =>
 				entry.importPath === relativePath &&
-				[explicitStoryName, storyNameFromExport(exportName)].includes(
-					entry.name,
-				),
+				[explicitStoryName, storyNameFromExport(exportName)].includes(entry.name),
 		);
 
 		if (foundEntry) {

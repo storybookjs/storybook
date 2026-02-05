@@ -1,18 +1,12 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import {
-	addRunStoryTestsTool,
-	RUN_STORY_TESTS_TOOL_NAME,
-	getAddonVitestConstants,
-} from './run-story-tests.ts';
+import { addRunStoryTestsTool, getAddonVitestConstants } from './run-story-tests.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
-import type {
-	TestRunResult,
-	TriggerTestRunResponsePayload,
-} from '@storybook/addon-vitest/constants';
+import type { TriggerTestRunResponsePayload } from '@storybook/addon-vitest/constants';
+import { RUN_STORY_TESTS_TOOL_NAME } from './tool-names.ts';
 
 vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,
@@ -157,9 +151,7 @@ describe('runStoryTestsTool', () => {
 		await addRunStoryTestsTool(server);
 
 		// Mock fetchStoryIndex to return the fixture
-		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(
-			smallStoryIndexFixture as any,
-		);
+		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(smallStoryIndexFixture as any);
 	});
 
 	it('should return passing stories when all tests pass', async () => {
@@ -456,10 +448,8 @@ describe('runStoryTestsTool', () => {
 				unhandledErrors: [
 					{
 						name: 'Error',
-						message:
-							"browserType.launch: Executable doesn't exist at /path/to/chromium",
-						stack:
-							"Error: browserType.launch: Executable doesn't exist\n    at Browser.ts:100:5",
+						message: "browserType.launch: Executable doesn't exist at /path/to/chromium",
+						stack: "Error: browserType.launch: Executable doesn't exist\n    at Browser.ts:100:5",
 						VITEST_TEST_PATH: '/src/Button.stories.tsx',
 						VITEST_TEST_NAME: 'Button > Primary',
 					},
@@ -503,12 +493,7 @@ describe('runStoryTestsTool', () => {
 			result: {
 				triggeredBy: 'external:addon-mcp',
 				config: { coverage: false, a11y: false },
-				storyIds: [
-					'button--primary',
-					'button--secondary',
-					'button--disabled',
-					'button--loading',
-				],
+				storyIds: ['button--primary', 'button--secondary', 'button--disabled', 'button--loading'],
 				totalTestCount: 4,
 				startedAt: Date.now(),
 				finishedAt: Date.now(),
@@ -545,8 +530,7 @@ describe('runStoryTestsTool', () => {
 					{
 						name: 'SyntaxError',
 						message: 'Cannot find module ./LoadingSpinner',
-						stack:
-							'SyntaxError: Cannot find module ./LoadingSpinner\n    at Button.tsx:5:1',
+						stack: 'SyntaxError: Cannot find module ./LoadingSpinner\n    at Button.tsx:5:1',
 						VITEST_TEST_PATH: '/src/Button.stories.tsx',
 						VITEST_TEST_NAME: 'Button > Loading',
 					},

@@ -637,20 +637,31 @@ describe('MCP Endpoint E2E Tests', () => {
 				},
 			});
 
-			expect(response.result).toHaveProperty('content');
-			expect(response.result.content).toHaveLength(1);
+			expect(response.result).toMatchInlineSnapshot(`
+				{
+				  "content": [
+				    {
+				      "text": "## Passing Stories
 
-			const text = response.result.content[0].text;
+				- example-button--with-a-11-y-violation
 
-			// Should show the story passes component tests
-			expect(text).toContain('## Passing Stories');
-			expect(text).toContain('example-button--with-a-11-y-violation');
+				## Accessibility Violations
 
-			// Should report accessibility violations
-			expect(text).toContain('## Accessibility Violations');
-			expect(text).toContain('color-contrast');
-			expect(text).toContain('**Impact**:');
-			expect(text).toContain('**Element**:');
+				### example-button--with-a-11-y-violation - color-contrast
+
+				Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds
+
+				#### Affected Elements
+				- **Impact**: serious
+				  **Message**: Fix any of the following:
+				  Element has insufficient color contrast of 1.6 (foreground color: #ffffff, background color: #cccccc, font size: 10.5pt (14px), font weight: bold). Expected contrast ratio of 4.5:1
+				  **Element**: <button type="button" class="storybook-button storybook-button--medium storybook-button--primary" style="background-color: rgb(204, 204, 204);">Button</button>
+				  **Inspect**: http://localhost:6006/?path=/story/example-button--with-a-11-y-violation&addonPanel=storybook/a11y/panel&a11ySelection=violations.color-contrast.1",
+				      "type": "text",
+				    },
+				  ],
+				}
+			`);
 		});
 
 		it('should run tests for multiple stories', async () => {
@@ -675,13 +686,46 @@ describe('MCP Endpoint E2E Tests', () => {
 				},
 			});
 
-			expect(response.result).toHaveProperty('content');
-			const text = response.result.content[0].text;
+			expect(response.result).toMatchInlineSnapshot(`
+				{
+				  "content": [
+				    {
+				      "text": "## Passing Stories
 
-			// Should show passing stories
-			expect(text).toContain('## Passing Stories');
-			expect(text).toContain('example-button--primary');
-			expect(text).toContain('example-button--secondary');
+				- example-button--primary
+				- example-button--secondary
+				- example-button--large
+				- example-button--small
+				- example-button--with-a-11-y-violation
+
+				## Accessibility Violations
+
+				### example-button--primary - color-contrast
+
+				Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds
+
+				#### Affected Elements
+				- **Impact**: serious
+				  **Message**: Fix any of the following:
+				  Element has insufficient color contrast of 2.62 (foreground color: #ffffff, background color: #1ea7fd, font size: 10.5pt (14px), font weight: bold). Expected contrast ratio of 4.5:1
+				  **Element**: <button type="button" class="storybook-button storybook-button--medium storybook-button--primary">Button</button>
+				  **Inspect**: http://localhost:6006/?path=/story/example-button--primary&addonPanel=storybook/a11y/panel&a11ySelection=violations.color-contrast.1
+
+				### example-button--with-a-11-y-violation - color-contrast
+
+				Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds
+
+				#### Affected Elements
+				- **Impact**: serious
+				  **Message**: Fix any of the following:
+				  Element has insufficient color contrast of 1.6 (foreground color: #ffffff, background color: #cccccc, font size: 10.5pt (14px), font weight: bold). Expected contrast ratio of 4.5:1
+				  **Element**: <button type="button" class="storybook-button storybook-button--medium storybook-button--primary" style="background-color: rgb(204, 204, 204);">Button</button>
+				  **Inspect**: http://localhost:6006/?path=/story/example-button--with-a-11-y-violation&addonPanel=storybook/a11y/panel&a11ySelection=violations.color-contrast.1",
+				      "type": "text",
+				    },
+				  ],
+				}
+			`);
 		});
 
 		it('should return error for non-existent story', async () => {
@@ -697,9 +741,18 @@ describe('MCP Endpoint E2E Tests', () => {
 				},
 			});
 
-			expect(response.result).toHaveProperty('content');
-			const text = response.result.content[0].text;
-			expect(text).toContain('No stories found matching the provided input');
+			expect(response.result).toMatchInlineSnapshot(`
+				{
+				  "content": [
+				    {
+				      "text": "No stories found matching the provided input.
+
+				No story found for export name "NonExistent" with absolute file path "/Users/jeppe/dev/work/storybook/mcp/apps/internal-storybook/stories/components/NonExistent.stories.ts" (did you forget to pass the explicit story name?)",
+				      "type": "text",
+				    },
+				  ],
+				}
+			`);
 		});
 	});
 

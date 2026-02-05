@@ -64,15 +64,13 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 
 				// Conditionally append story testing instructions if test toolset is enabled and addon-vitest is available
 				const testToolsetAvailable =
-					(server.ctx.custom?.toolsets?.test ?? true) &&
-					!!(await getAddonVitestConstants());
+					(server.ctx.custom?.toolsets?.test ?? true) && !!(await getAddonVitestConstants());
 
 				if (testToolsetAvailable) {
-					const storyTestingInstructions =
-						storyTestingInstructionsTemplate.replaceAll(
-							'{{RUN_STORY_TESTS_TOOL_NAME}}',
-							RUN_STORY_TESTS_TOOL_NAME,
-						);
+					const storyTestingInstructions = storyTestingInstructionsTemplate.replaceAll(
+						'{{RUN_STORY_TESTS_TOOL_NAME}}',
+						RUN_STORY_TESTS_TOOL_NAME,
+					);
 					uiInstructions = `${uiInstructions}\n\n${storyTestingInstructions}`;
 				}
 

@@ -1,12 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import {
-	addGetUIBuildingInstructionsTool,
-	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-} from './get-storybook-story-instructions.ts';
+import { addGetUIBuildingInstructionsTool } from './get-storybook-story-instructions.ts';
 import type { AddonContext } from '../types.ts';
-import { PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
+import { PREVIEW_STORIES_TOOL_NAME, GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 
 describe('getUIBuildingInstructionsTool', () => {
 	let server: McpServer<any, AddonContext>;

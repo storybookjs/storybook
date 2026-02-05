@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { addPreviewStoriesTool, PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
+import { addPreviewStoriesTool } from './preview-stories.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
+import { PREVIEW_STORIES_TOOL_NAME } from './tool-names.ts';
 
 vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,

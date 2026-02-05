@@ -27,7 +27,6 @@ export function vitePluginNextSwc(
   let isServerEnvironment: boolean;
   let isDev: boolean;
   let isEsmProject: boolean;
-  let packageJson: { type: string };
   const filter = createFilter(included, excluded);
 
   const resolvedDir = resolve(rootDir);
@@ -40,7 +39,6 @@ export function vitePluginNextSwc(
       nextDirectories = NextUtils.findNextDirectories(resolvedDir);
       loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
       isDev = env.mode !== "production";
-      packageJson = await NextUtils.loadClosestPackageJson(resolvedDir);
       isEsmProject = true;
       // TODO: Setting isEsmProject to false errors. Need to investigate further.
       // isEsmProject = packageJson.type === "module";

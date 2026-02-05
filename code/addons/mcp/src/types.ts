@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import type { Options } from 'storybook/internal/types';
 import type { StorybookContext } from '@storybook/mcp';
-import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tools/get-storybook-story-instructions';
+import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tools/tool-names.ts';
 
 export const AddonOptions = v.object({
 	toolsets: v.optional(

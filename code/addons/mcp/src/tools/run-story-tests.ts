@@ -10,8 +10,7 @@ import type { TriggerTestRunResponsePayload } from '@storybook/addon-vitest/cons
 import type Channel from 'storybook/internal/channels';
 import type { StoryId } from 'storybook/internal/csf';
 import type { A11yReport } from '@storybook/addon-a11y';
-
-export const RUN_STORY_TESTS_TOOL_NAME = 'run-story-tests';
+import { RUN_STORY_TESTS_TOOL_NAME } from './tool-names.ts';
 
 /**
  * Check if addon-vitest is available by trying to import its constants.
@@ -29,9 +28,6 @@ export async function getAddonVitestConstants() {
 const RunStoryTestsInput = v.object({
 	stories: StoryInputArray,
 });
-
-type RunStoryTestsInput = v.InferOutput<typeof RunStoryTestsInput>;
-
 export async function addRunStoryTestsTool(
 	server: McpServer<any, AddonContext>,
 ) {
@@ -50,7 +46,7 @@ export async function addRunStoryTestsTool(
 				return server.ctx.custom?.toolsets?.test ?? true;
 			},
 		},
-		async (input: RunStoryTestsInput) => {
+		async (input: v.InferOutput<typeof RunStoryTestsInput>) => {
 			try {
 				const { origin, options } = server.ctx.custom ?? {};
 

@@ -1,17 +1,15 @@
 import type { McpServer } from 'tmcp';
-import {
-	getAddonVitestConstants,
-	RUN_STORY_TESTS_TOOL_NAME,
-} from './run-story-tests.ts';
-import { PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
+import { getAddonVitestConstants } from './run-story-tests.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import storyInstructionsTemplate from '../storybook-story-instructions.md';
 import storyTestingInstructionsTemplate from '../story-testing-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
-
-export const GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME =
-	'get-storybook-story-instructions';
+import {
+	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+	PREVIEW_STORIES_TOOL_NAME,
+	RUN_STORY_TESTS_TOOL_NAME,
+} from './tool-names.ts';
 
 export async function addGetUIBuildingInstructionsTool(
 	server: McpServer<any, AddonContext>,

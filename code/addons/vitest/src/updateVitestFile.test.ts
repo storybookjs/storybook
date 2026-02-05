@@ -293,7 +293,7 @@ describe('updateConfigFile', () => {
 
   it('updates config which is not exported immediately', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',

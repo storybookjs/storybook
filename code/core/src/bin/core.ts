@@ -2,7 +2,7 @@ import { getEnvConfig, optionalEnvToBoolean, parseList } from 'storybook/interna
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
-import { program } from 'commander';
+import { Option, program } from 'commander';
 import leven from 'leven';
 import picocolors from 'picocolors';
 
@@ -45,7 +45,11 @@ const command = (name: string) =>
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
-    .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
+    .addOption(
+      new Option('--loglevel <level>', 'Define log level')
+        .choices(['trace', 'debug', 'info', 'warn', 'error', 'silent'])
+        .default('info')
+    )
     .option(
       '--logfile [path]',
       'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
@@ -53,9 +57,8 @@ const command = (name: string) =>
     .hook('preAction', async (self) => {
       try {
         const options = self.opts();
-        if (options.loglevel) {
-          logger.setLogLevel(options.loglevel);
-        }
+        const loglevel = options.debug ? 'debug' : options.loglevel;
+        logger.setLogLevel(loglevel);
 
         if (options.logfile) {
           logTracker.enableLogWriting();

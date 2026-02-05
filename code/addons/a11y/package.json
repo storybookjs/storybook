@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "10.2.6",
+  "version": "10.2.7",
   "description": "Storybook Addon A11y: Test UI component compliance with WCAG web accessibility standards",
   "keywords": [
     "a11y",

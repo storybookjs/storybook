@@ -17,6 +17,22 @@ export type { LogLevel } from './logger/logger';
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621
 npmLog.stream = process.stdout;
 
+const toNpmLogLevel = (level: newLogger.LogLevel): string => {
+  switch (level) {
+    case 'trace':
+      return 'silly';
+    case 'debug':
+      return 'verbose';
+    default:
+      return level;
+  }
+};
+
+const setLoggerLevel = (level: newLogger.LogLevel = 'info'): void => {
+  npmLog.level = toNpmLogLevel(level);
+  newLogger.setLogLevel(level);
+};
+
 function hex(hexColor: string) {
   // Ensure the hex color is 6 characters long and starts with '#'
   if (!/^#?[0-9A-Fa-f]{6}$/.test(hexColor)) {
@@ -57,10 +73,8 @@ export const logger = {
   warn: (message: string): void => newLogger.warn(message),
   trace: ({ message, time }: { message: string; time: [number, number] }): void =>
     newLogger.debug(`${message} (${colors.purple(prettyTime(time))})`),
-  setLevel: (level: newLogger.LogLevel = 'info'): void => {
-    npmLog.level = level;
-    newLogger.setLogLevel(level);
-  },
+  setLevel: setLoggerLevel,
+  setLogLevel: setLoggerLevel,
   error: (message: unknown): void => {
     let msg: string;
     if (message instanceof Error && message.stack) {

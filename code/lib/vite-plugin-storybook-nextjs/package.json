@@ -73,7 +73,7 @@
     "@types/node": "^18",
     "@types/react": "^18",
     "@types/semver": "^7.5.8",
-    "auto": "^11.2.0",
+    "auto": "^11.3.6",
     "lefthook": "^1.6.16",
     "next": "16.0.0",
     "pathe": "^2.0.3",

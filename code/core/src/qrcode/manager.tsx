@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
+import { SHARE_STORY_LINK } from 'storybook/internal/core-events';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -52,6 +53,7 @@ const ShareProviderRender = ({ api }: { api: API }) => {
 
   const copyLink = () => {
     copy(networkHrefs.managerHref);
+    api.emit(SHARE_STORY_LINK);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

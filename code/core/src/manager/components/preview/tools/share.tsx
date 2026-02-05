@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Button, Modal, TabsView } from 'storybook/internal/components';
+import {
+  SHARE_ISOLATE_MODE,
+  SHARE_POPOVER_OPENED,
+  SHARE_STORY_LINK,
+} from 'storybook/internal/core-events';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { ShareAltIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
-import type { Combo } from 'storybook/manager-api';
+import type { API, Combo } from 'storybook/manager-api';
 
 const ejectMapper = ({ api, state }: Combo) => {
   const { storyId, refId } = state;
@@ -14,7 +19,7 @@ const ejectMapper = ({ api, state }: Combo) => {
 };
 
 const shareMapper = ({ api, state }: Combo) => {
-  const { storyId, refId } = state;
+  const { storyId } = state;
 
   const items = Object.values(api.getElements(Addon_TypesEnum.experimental_SHARE_PROVIDER))
     .map((registeredShareProvider) => {
@@ -23,15 +28,21 @@ const shareMapper = ({ api, state }: Combo) => {
     })
     .sort((a, b) => a.order - b.order);
 
-  return { items, storyId };
+  return { items, storyId, api };
 };
 
-function Share({ items }: { items: ReturnType<typeof shareMapper>['items'] }) {
+function Share({ items, api }: { items: ReturnType<typeof shareMapper>['items']; api: API }) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (items.length === 0) {
     return null;
   }
+
+  useEffect(() => {
+    if (isOpen) {
+      api.emit(SHARE_POPOVER_OPENED);
+    }
+  }, [isOpen]);
 
   return (
     <>
@@ -69,6 +80,7 @@ export const ejectTool: Addon_BaseType = {
               href={api.getStoryHrefs(storyId, { base: 'origin', refId }).previewHref}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => api.emit(SHARE_ISOLATE_MODE)}
             >
               <ShareAltIcon />
             </a>
@@ -86,7 +98,7 @@ export const shareTool: Addon_BaseType = {
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: () => (
     <Consumer filter={shareMapper}>
-      {({ storyId, items }) => (storyId ? <Share items={items} /> : null)}
+      {({ storyId, items, api }) => (storyId ? <Share items={items} api={api} /> : null)}
     </Consumer>
   ),
 };

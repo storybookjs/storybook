@@ -16,7 +16,7 @@ jobs:
         run: git fetch --unshallow --tags
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
       - uses: pnpm/action-setup@v4
         with:
           version: 10.28.2

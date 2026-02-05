@@ -1,6 +1,10 @@
 {
   "name": "vite-plugin-storybook-nextjs",
   "version": "3.1.10",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/vite-plugin-storybook-nextjs.git"
+  },
   "description": "",
   "keywords": [
     "vite-plugin",

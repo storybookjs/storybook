@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
@@ -76,11 +76,14 @@ const ShareMenu = React.memo(function ShareMenu({
   const copyStoryLink = shortcutKeys?.copyStoryLink;
   const openInIsolation = shortcutKeys?.openInIsolation;
 
+  useEffect(() => {
+    api.emit(SHARE_POPOVER_OPENED);
+  }, [api]);
+
   const links = useMemo(() => {
     const copyTitle = copied ? 'Copied!' : 'Copy story link';
     const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
     const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
-    api.emit(SHARE_POPOVER_OPENED);
 
     return [
       [

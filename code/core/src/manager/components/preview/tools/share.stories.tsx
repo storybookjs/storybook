@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { global } from '@storybook/global';
-
 import type { StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
@@ -37,8 +35,8 @@ const managerContext = {
   },
 } as any;
 
-const ManagerDecorator = (Story: any) => (
-  <ManagerContext.Provider value={managerContext}>
+const ManagerDecorator = (Story: any, { parameters }: { parameters: { managerContext: any } }) => (
+  <ManagerContext.Provider value={parameters.managerContext || managerContext}>
     <div style={{ padding: 24 }}>{Story()}</div>
   </ManagerContext.Provider>
 );
@@ -65,3 +63,33 @@ export const Open: Story = {
     });
   },
 };
+
+export const MultipleProviders: Story = {
+  parameters: {
+    managerContext: {
+      ...managerContext,
+      api: {
+        ...managerContext.api,
+        getElements: () => ({
+          id: {
+            title: 'Tab1',
+            render: () => (
+              <div style={{ backgroundColor: 'white', padding: 10, borderRadius: 5 }}>
+                Placeholder shareprovider content
+              </div>
+            ),
+          },
+          id2: {
+            title: 'Tab2',
+            render: () => (
+              <div style={{ backgroundColor: 'white', padding: 10, borderRadius: 5 }}>
+                Placeholder shareprovider content
+              </div>
+            ),
+          },
+        }),
+      },
+    },
+  },
+  ...Open,
+} as Story;

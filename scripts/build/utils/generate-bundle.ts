@@ -4,10 +4,10 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
+import { raw as rawPlugin } from 'esbuild-raw-plugin';
 import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
-import {raw as rawPlugin} from 'esbuild-raw-plugin';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info';
 import {
@@ -142,7 +142,6 @@ export async function generateBundle({
       'storybook/test': './src/test',
       'storybook/internal': './src',
       'storybook/outline': './src/outline',
-      'storybook/qrcode': './src/qrcode',
       'storybook/backgrounds': './src/backgrounds',
       'storybook/highlight': './src/highlight',
       'storybook/measure': './src/measure',

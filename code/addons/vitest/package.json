@@ -45,6 +45,7 @@
     },
     "./constants": {
       "types": "./dist/constants.d.ts",
+      "code": "./src/constants.ts",
       "default": "./dist/constants.js"
     },
     "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
@@ -57,6 +58,7 @@
     "./preset": "./dist/preset.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
       "default": "./dist/preview.js"
     },
     "./vitest": "./dist/node/vitest.js",

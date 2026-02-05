@@ -7,12 +7,12 @@ import {
   loadPreviewOrConfigFile,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
-import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import {
   type StoryIndexGenerator,
   experimental_UniversalStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type {
   Options,
@@ -25,6 +25,7 @@ import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { shouldLog } from '../../../core/src/node-logger/logger';
 import {
   ADDON_ID,
   COVERAGE_DIRECTORY,
@@ -114,9 +115,16 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   });
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
 
-  channel.on(STORY_INDEX_INVALIDATED, async () => {
-    const index = await storyIndexGenerator.getIndex();
-    store.setState((s) => ({ ...s, index }));
+  storyIndexGenerator.onInvalidated(async () => {
+    try {
+      const index = await storyIndexGenerator.getIndex();
+      store.setState((s) => ({ ...s, index }));
+    } catch (error) {
+      logger.debug('Failed to update story index after invalidation');
+      if (shouldLog('debug')) {
+        logger.error(error);
+      }
+    }
   });
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {

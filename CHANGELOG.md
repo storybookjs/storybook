@@ -1,3 +1,10 @@
+## 10.2.7
+
+- CSF: Fix cross-file story imports in csf-factories codemod  - [#33723](https://github.com/storybookjs/storybook/pull/33723), thanks @yatishgoel!
+- Core: Fix rendering of View Transitions in Firefox - [#33651](https://github.com/storybookjs/storybook/pull/33651), thanks @ghengeveld!
+- Globals: Repair dynamicTitle: false for user-defined tools - [#33284](https://github.com/storybookjs/storybook/pull/33284), thanks @ia319!
+- Logger: Honor --loglevel for npmlog output - [#33776](https://github.com/storybookjs/storybook/pull/33776), thanks @LouisLau-art!
+
 ## 10.2.6
 
 - Addon-Vitest: Skip postinstall setup when configured - [#33712](https://github.com/storybookjs/storybook/pull/33712), thanks @valentinpalkovic!

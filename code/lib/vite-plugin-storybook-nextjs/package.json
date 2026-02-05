@@ -86,7 +86,7 @@
     "vite": "^5.0.0",
     "vitest": "^3.0.0"
   },
-  "packageManager": "pnpm@9.4.0",
+  "packageManager": "pnpm@10.28.2",
   "dependencies": {
     "@next/env": "16.0.0",
     "image-size": "^2.0.0",

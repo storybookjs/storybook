@@ -13,7 +13,7 @@ import {
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
-import { readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
@@ -215,7 +215,14 @@ export const features: PresetProperty<'features'> = async (existing) => ({
 
 export const csfIndexer: Indexer = {
   test: /(stories|story)\.(m?js|ts)x?$/,
-  createIndex: async (fileName, options) => (await readCsf(fileName, options)).parse().indexInputs,
+  createIndex: async (fileName, options) => {
+    const code = (await readFile(fileName, 'utf-8')).toString();
+    if (code.trim().length === 0) {
+      logger.debug(`The file ${fileName} is empty. Skipping indexing.`);
+      return [];
+    }
+    return loadCsf(code, { ...options, fileName }).parse().indexInputs;
+  },
 };
 
 export const experimental_indexers: PresetProperty<'experimental_indexers'> = (existingIndexers) =>

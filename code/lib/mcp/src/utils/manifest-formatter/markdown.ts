@@ -1,9 +1,5 @@
 import type { ComponentManifest, Story } from '../../types.ts';
-import {
-	MAX_SUMMARY_LENGTH,
-	MAX_STORIES_TO_SHOW,
-	type ManifestFormatter,
-} from './types.ts';
+import { MAX_SUMMARY_LENGTH, MAX_STORIES_TO_SHOW, type ManifestFormatter } from './types.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
 import { dedent } from '../dedent.ts';
 import { extractDocsSummary } from './extract-docs-summary.ts';
@@ -31,10 +27,7 @@ function extractSummary(
  * Formats a story's content (description + code snippet) into markdown.
  * Reusable helper for both formatComponentManifest and formatStoryDocumentation.
  */
-function formatStoryContent(
-	story: Story,
-	importStatement: string | undefined,
-): string[] {
+function formatStoryContent(story: Story, importStatement: string | undefined): string[] {
 	const parts: string[] = [];
 
 	if (story.description) {
@@ -79,9 +72,7 @@ export const markdownFormatter: ManifestFormatter = {
 			parts.push('## Stories');
 			parts.push('');
 
-			const storiesWithSnippets = componentManifest.stories.filter(
-				(s) => s.snippet,
-			);
+			const storiesWithSnippets = componentManifest.stories.filter((s) => s.snippet);
 
 			// Check if component has props - if not, show all stories fully
 			const hasProps =
@@ -91,9 +82,7 @@ export const markdownFormatter: ManifestFormatter = {
 			const storiesToShow = hasProps
 				? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
 				: storiesWithSnippets;
-			const remainingStories = hasProps
-				? storiesWithSnippets.slice(MAX_STORIES_TO_SHOW)
-				: [];
+			const remainingStories = hasProps ? storiesWithSnippets.slice(MAX_STORIES_TO_SHOW) : [];
 
 			// Show first X stories in full detail (or all if no props)
 			for (const story of storiesToShow) {
@@ -182,9 +171,7 @@ export const markdownFormatter: ManifestFormatter = {
 		parts.push('# Components');
 		parts.push('');
 
-		for (const component of Object.values(
-			manifests.componentManifest.components,
-		)) {
+		for (const component of Object.values(manifests.componentManifest.components)) {
 			const summary = extractSummary(component);
 
 			if (summary) {

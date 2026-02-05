@@ -80,9 +80,7 @@ describe('parseReactDocgen', () => {
 								name: 'signature',
 								type: 'object',
 								signature: {
-									properties: [
-										{ key: 'a', value: { name: 'string', required: true } },
-									],
+									properties: [{ key: 'a', value: { name: 'string', required: true } }],
 								},
 							},
 						],

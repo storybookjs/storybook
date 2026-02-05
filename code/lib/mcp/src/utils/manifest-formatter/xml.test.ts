@@ -1,27 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { xmlFormatter } from './xml.ts';
-import type {
-	AllManifests,
-	ComponentManifest,
-	ComponentManifestMap,
-} from '../../types.ts';
+import type { AllManifests, ComponentManifest, ComponentManifestMap } from '../../types.ts';
 import fullManifestFixture from '../../../fixtures/full-manifest.fixture.json' with { type: 'json' };
 import withErrorsFixture from '../../../fixtures/with-errors.fixture.json' with { type: 'json' };
 
 describe('XmlFormatter - formatComponentManifest', () => {
 	it('formats all full fixtures', () => {
 		expect(
-			xmlFormatter.formatComponentManifest(
-				fullManifestFixture.components.button,
-			),
+			xmlFormatter.formatComponentManifest(fullManifestFixture.components.button),
 		).toMatchSnapshot();
 		expect(
 			xmlFormatter.formatComponentManifest(fullManifestFixture.components.card),
 		).toMatchSnapshot();
 		expect(
-			xmlFormatter.formatComponentManifest(
-				fullManifestFixture.components.input,
-			),
+			xmlFormatter.formatComponentManifest(fullManifestFixture.components.input),
 		).toMatchSnapshot();
 	});
 
@@ -258,8 +250,7 @@ describe('XmlFormatter - formatComponentManifest', () => {
 					{
 						name: 'Primary',
 						description: 'The primary button variant.',
-						snippet:
-							'const Primary = () => <Button variant="primary">Click Me</Button>',
+						snippet: 'const Primary = () => <Button variant="primary">Click Me</Button>',
 					},
 					{
 						name: 'WithSizes',
@@ -592,8 +583,7 @@ describe('XmlFormatter - formatManifestsToLists', () => {
 							name: 'Button',
 							path: 'src/components/Button.tsx',
 							summary: 'Short summary',
-							description:
-								'This is a longer description that should be ignored',
+							description: 'This is a longer description that should be ignored',
 						},
 					},
 				},
@@ -994,8 +984,7 @@ describe('XmlFormatter - formatManifestsToLists', () => {
 
 	describe('with-errors fixture', () => {
 		it('should format success component with mixed stories (only successful ones)', () => {
-			const component =
-				withErrorsFixture.components['success-component-with-mixed-stories'];
+			const component = withErrorsFixture.components['success-component-with-mixed-stories'];
 			const result = xmlFormatter.formatComponentManifest(component);
 			expect(result).toMatchInlineSnapshot(`
 				"<component>
@@ -1039,8 +1028,7 @@ describe('XmlFormatter - formatManifestsToLists', () => {
 		});
 
 		it('should format error component with success stories', () => {
-			const component =
-				withErrorsFixture.components['error-component-with-success-stories'];
+			const component = withErrorsFixture.components['error-component-with-success-stories'];
 			const result = xmlFormatter.formatComponentManifest(component);
 			expect(result).toMatchInlineSnapshot(`
 				"<component>

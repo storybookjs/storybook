@@ -270,8 +270,7 @@ describe('mcpServerHandler', () => {
 				},
 				serverInfo: {
 					name: '@storybook/addon-mcp',
-					description:
-						'Help agents automatically write and test stories for your UI components',
+					description: 'Help agents automatically write and test stories for your UI components',
 				},
 			},
 		});
@@ -367,8 +366,7 @@ describe('mcpServerHandler', () => {
 				params: {},
 			},
 		});
-		const { response: listResponse, getResponseData } =
-			createMockServerResponse();
+		const { response: listResponse, getResponseData } = createMockServerResponse();
 
 		await mcpServerHandler({
 			req: listToolsReq,

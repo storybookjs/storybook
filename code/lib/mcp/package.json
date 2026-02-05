@@ -3,16 +3,19 @@
 	"version": "0.2.1",
 	"description": "MCP server that serves knowledge about your components based on your Storybook stories and documentation",
 	"keywords": [
-		"storybook",
-		"mcp"
+		"mcp",
+		"storybook"
 	],
 	"homepage": "https://github.com/storybookjs/mcp/blob/main/packages/mcp/README.md",
+	"license": "MIT",
+	"author": "Storybook Core Team",
 	"repository": {
 		"url": "git+https://github.com/storybookjs/mcp.git",
 		"directory": "packages/mcp"
 	},
-	"license": "MIT",
-	"author": "Storybook Core Team",
+	"files": [
+		"dist"
+	],
 	"type": "module",
 	"exports": {
 		".": {
@@ -21,9 +24,6 @@
 		},
 		"./package.json": "./package.json"
 	},
-	"files": [
-		"dist"
-	],
 	"scripts": {
 		"build": "tsdown",
 		"dev": "node --watch ./serve.ts",

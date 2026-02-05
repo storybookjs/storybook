@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import {
-	addListAllDocumentationTool,
-	LIST_TOOL_NAME,
-} from './list-all-documentation.ts';
+import { addListAllDocumentationTool, LIST_TOOL_NAME } from './list-all-documentation.ts';
 import type { StorybookContext } from '../types.ts';
 import smallManifestFixture from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
 import smallDocsManifestFixture from '../../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };

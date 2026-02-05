@@ -1,8 +1,4 @@
-import {
-	MAX_SUMMARY_LENGTH,
-	MAX_STORIES_TO_SHOW,
-	type ManifestFormatter,
-} from './types.ts';
+import { MAX_SUMMARY_LENGTH, MAX_STORIES_TO_SHOW, type ManifestFormatter } from './types.ts';
 import { extractDocsSummary } from './extract-docs-summary.ts';
 import { dedent } from '../dedent.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
@@ -29,9 +25,7 @@ export const xmlFormatter: ManifestFormatter = {
 
 		// Stories section - only if there are stories
 		if (componentManifest.stories && componentManifest.stories.length > 0) {
-			const storiesWithSnippets = componentManifest.stories.filter(
-				(s) => s.snippet,
-			);
+			const storiesWithSnippets = componentManifest.stories.filter((s) => s.snippet);
 			const storiesToShow = storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW);
 			const remainingStories = storiesWithSnippets.slice(MAX_STORIES_TO_SHOW);
 
@@ -92,15 +86,11 @@ export const xmlFormatter: ManifestFormatter = {
 					}
 
 					if (propInfo.required !== undefined) {
-						parts.push(
-							dedent`<prop_required>${propInfo.required}</prop_required>`,
-						);
+						parts.push(dedent`<prop_required>${propInfo.required}</prop_required>`);
 					}
 
 					if (propInfo.defaultValue !== undefined) {
-						parts.push(
-							dedent`<prop_default>${propInfo.defaultValue}</prop_default>`,
-						);
+						parts.push(dedent`<prop_default>${propInfo.defaultValue}</prop_default>`);
 					}
 
 					parts.push('</prop>');
@@ -128,9 +118,7 @@ export const xmlFormatter: ManifestFormatter = {
 
 		parts.push('<components>');
 
-		for (const component of Object.values(
-			manifests.componentManifest.components,
-		)) {
+		for (const component of Object.values(manifests.componentManifest.components)) {
 			parts.push(dedent`<component>
 				<id>${component.id}</id>
 				<name>${component.name}</name>`);

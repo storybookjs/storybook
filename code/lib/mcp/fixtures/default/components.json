@@ -64,9 +64,7 @@
 							"name": "signature",
 							"type": "function",
 							"signature": {
-								"arguments": [
-									{ "name": "event", "type": { "name": "MouseEvent" } }
-								],
+								"arguments": [{ "name": "event", "type": { "name": "MouseEvent" } }],
 								"return": { "name": "void" }
 							}
 						}
@@ -235,9 +233,7 @@
 							"name": "signature",
 							"type": "function",
 							"signature": {
-								"arguments": [
-									{ "name": "event", "type": { "name": "MouseEvent" } }
-								],
+								"arguments": [{ "name": "event", "type": { "name": "MouseEvent" } }],
 								"return": { "name": "void" }
 							}
 						}

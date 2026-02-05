@@ -11,9 +11,7 @@ import {
 	RUN_STORY_TESTS_TOOL_NAME,
 } from './tool-names.ts';
 
-export async function addGetUIBuildingInstructionsTool(
-	server: McpServer<any, AddonContext>,
-) {
+export async function addGetUIBuildingInstructionsTool(server: McpServer<any, AddonContext>) {
 	server.tool(
 		{
 			name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
@@ -56,9 +54,7 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 
 				const frameworkPreset = await options.presets.apply('framework');
 				const framework =
-					typeof frameworkPreset === 'string'
-						? frameworkPreset
-						: frameworkPreset?.name;
+					typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
 				const renderer = frameworkToRendererMap[framework!];
 
 				let uiInstructions = storyInstructionsTemplate

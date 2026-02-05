@@ -2,16 +2,11 @@ import { describe, it } from 'vitest';
 import { x } from 'tinyexec';
 import path from 'node:path';
 
-const PACKAGES_TO_CHECK = [
-	'@storybook/addon-docs',
-	'@storybook/react-vite',
-	'storybook',
-];
+const PACKAGES_TO_CHECK = ['@storybook/addon-docs', '@storybook/react-vite', 'storybook'];
 
 describe('Storybook Dependencies', () => {
 	it('should be using latest versions from registry', async () => {
-		const outdated: Array<{ pkg: string; current: string; latest: string }> =
-			[];
+		const outdated: Array<{ pkg: string; current: string; latest: string }> = [];
 
 		for (const pkg of PACKAGES_TO_CHECK) {
 			// Get local version
@@ -21,8 +16,7 @@ describe('Storybook Dependencies', () => {
 
 			const listData = JSON.parse(listResult.stdout);
 			const currentVersion =
-				listData[0]?.devDependencies?.[pkg]?.version ||
-				listData[0]?.dependencies?.[pkg]?.version;
+				listData[0]?.devDependencies?.[pkg]?.version || listData[0]?.dependencies?.[pkg]?.version;
 
 			// Get registry version for @next tag
 			const viewResult = await x('pnpm', ['view', `${pkg}@next`, 'version'], {

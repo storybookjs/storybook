@@ -16,16 +16,12 @@ export async function fetchStoryIndex(origin: string): Promise<StoryIndex> {
 	const response = await fetch(indexUrl);
 
 	if (!response.ok) {
-		throw new Error(
-			`Failed to fetch story index: ${response.status} ${response.statusText}`,
-		);
+		throw new Error(`Failed to fetch story index: ${response.status} ${response.statusText}`);
 	}
 
 	const index = (await response.json()) as StoryIndex;
 
-	logger.debug(
-		`Story index entries found: ${Object.keys(index.entries).length}`,
-	);
+	logger.debug(`Story index entries found: ${Object.keys(index.entries).length}`);
 
 	return index;
 }

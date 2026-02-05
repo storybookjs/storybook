@@ -2,10 +2,7 @@ import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { ComponentManifest, Doc, StorybookContext } from '../types.ts';
 import { getManifests, errorToMCPContent } from '../utils/get-manifest.ts';
-import {
-	formatComponentManifest,
-	formatDocsManifest,
-} from '../utils/format-manifest.ts';
+import { formatComponentManifest, formatDocsManifest } from '../utils/format-manifest.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 import { MAX_STORIES_TO_SHOW } from '../utils/manifest-formatter/types.ts';
 import { GET_STORY_TOOL_NAME } from './get-documentation-for-story.ts';

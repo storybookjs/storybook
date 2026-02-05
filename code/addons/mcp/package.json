@@ -3,21 +3,15 @@
 	"version": "0.2.2",
 	"description": "Help agents automatically write and test stories for your UI components",
 	"keywords": [
-		"storybook-addon",
+		"ai",
 		"mcp",
-		"ai"
+		"storybook-addon"
 	],
+	"license": "MIT",
+	"author": "Storybook Core Team",
 	"repository": {
 		"url": "git+https://github.com/storybookjs/mcp.git",
 		"directory": "packages/addon-mcp"
-	},
-	"license": "MIT",
-	"author": "Storybook Core Team",
-	"type": "module",
-	"exports": {
-		"./preset": "./dist/preset.js",
-		"./internal/preview-stories-app-script": "./dist/preview-stories-app-script.js",
-		"./package.json": "./package.json"
 	},
 	"files": [
 		"dist/**/*",
@@ -25,6 +19,15 @@
 		"*.js",
 		"*.d.ts"
 	],
+	"type": "module",
+	"exports": {
+		"./preset": "./dist/preset.js",
+		"./internal/preview-stories-app-script": "./dist/preview-stories-app-script.js",
+		"./package.json": "./package.json"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
 	"scripts": {
 		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
 		"build": "tsdown",
@@ -54,9 +57,6 @@
 		"@storybook/addon-vitest": {
 			"optional": true
 		}
-	},
-	"publishConfig": {
-		"access": "public"
 	},
 	"bundler": {
 		"nodeEntries": [

@@ -6,21 +6,21 @@ import { getManifestStatus } from './tools/is-manifest-available.ts';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 
-export const previewAnnotations: PresetPropertyFn<
-	'previewAnnotations'
-> = async (existingAnnotations = []) => {
+export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
+	existingAnnotations = [],
+) => {
 	return [...existingAnnotations, path.join(import.meta.dirname, 'preview.js')];
 };
 
-export const experimental_devServer: PresetPropertyFn<
-	'experimental_devServer'
-> = async (app, options) => {
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
+	app,
+	options,
+) => {
 	// There is no error handling here. This can make the whole storybook app crash with:
 	// ValiError: Invalid type: Expected boolean but received "false"
 	const addonOptions = v.parse(AddonOptions, {
 		toolsets: 'toolsets' in options ? options.toolsets : {},
-		experimentalFormat:
-			'experimentalFormat' in options ? options.experimentalFormat : 'markdown',
+		experimentalFormat: 'experimentalFormat' in options ? options.experimentalFormat : 'markdown',
 	});
 
 	app!.post('/mcp', (req, res) =>
@@ -35,8 +35,7 @@ export const experimental_devServer: PresetPropertyFn<
 	const manifestStatus = await getManifestStatus(options);
 
 	const isDevEnabled = addonOptions.toolsets?.dev ?? true;
-	const isDocsEnabled =
-		manifestStatus.available && (addonOptions.toolsets?.docs ?? true);
+	const isDocsEnabled = manifestStatus.available && (addonOptions.toolsets?.docs ?? true);
 
 	app!.get('/mcp', (req, res) => {
 		if (!req.headers['accept']?.includes('text/html')) {

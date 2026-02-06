@@ -754,6 +754,78 @@ describe('MCP Endpoint E2E Tests', () => {
 				}
 			`);
 		});
+
+		it('should sequentialize 4 concurrent calls to run-story-tests', async () => {
+			const cwd = process.cwd();
+			const storyPath = cwd.endsWith('/apps/internal-storybook')
+				? `${cwd}/stories/components/Button.stories.ts`
+				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
+
+			// Make 4 concurrent calls with different story exports
+			const promise1 = mcpRequest('tools/call', {
+				name: 'run-story-tests',
+				arguments: {
+					stories: [{ exportName: 'Primary', absoluteStoryPath: storyPath }],
+				},
+			});
+
+			const promise2 = mcpRequest('tools/call', {
+				name: 'run-story-tests',
+				arguments: {
+					stories: [{ exportName: 'Secondary', absoluteStoryPath: storyPath }],
+				},
+			});
+
+			const promise3 = mcpRequest('tools/call', {
+				name: 'run-story-tests',
+				arguments: {
+					stories: [{ exportName: 'Large', absoluteStoryPath: storyPath }],
+				},
+			});
+
+			const promise4 = mcpRequest('tools/call', {
+				name: 'run-story-tests',
+				arguments: {
+					stories: [{ exportName: 'Small', absoluteStoryPath: storyPath }],
+				},
+			});
+
+			// All calls should complete successfully
+			const [result1, result2, result3, result4] = await Promise.all([
+				promise1,
+				promise2,
+				promise3,
+				promise4,
+			]);
+
+			// Verify call 1 completed with Primary story
+			expect(result1.result).toBeDefined();
+			expect(result1.result.content).toBeDefined();
+			expect(result1.result.content.length).toBeGreaterThan(0);
+			expect(result1.result.content[0].text).toContain('example-button--primary');
+			expect(result1.result.content[0].text).toContain('Passing Stories');
+
+			// Verify call 2 completed with Secondary story
+			expect(result2.result).toBeDefined();
+			expect(result2.result.content).toBeDefined();
+			expect(result2.result.content.length).toBeGreaterThan(0);
+			expect(result2.result.content[0].text).toContain('example-button--secondary');
+			expect(result2.result.content[0].text).toContain('Passing Stories');
+
+			// Verify call 3 completed with Large story
+			expect(result3.result).toBeDefined();
+			expect(result3.result.content).toBeDefined();
+			expect(result3.result.content.length).toBeGreaterThan(0);
+			expect(result3.result.content[0].text).toContain('example-button--large');
+			expect(result3.result.content[0].text).toContain('Passing Stories');
+
+			// Verify call 4 completed with Small story
+			expect(result4.result).toBeDefined();
+			expect(result4.result.content).toBeDefined();
+			expect(result4.result.content.length).toBeGreaterThan(0);
+			expect(result4.result.content[0].text).toContain('example-button--small');
+			expect(result4.result.content[0].text).toContain('Passing Stories');
+		});
 	});
 
 	describe('Toolset Filtering', () => {

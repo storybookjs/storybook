@@ -298,7 +298,7 @@ describe('runStoryTestsTool', () => {
 
 			### button--secondary
 
-			Expected button text to be \"Secondary\""
+			Expected button text to be "Secondary""
 		`);
 	});
 
@@ -630,5 +630,220 @@ describe('runStoryTestsTool', () => {
 			  "isError": true,
 			}
 		`);
+	});
+
+	describe('queue behavior', () => {
+		it('should process concurrent calls in order', async () => {
+			const testContext = createTestContext();
+			const executionOrder: string[] = [];
+			const completionOrder: string[] = [];
+
+			// Set up channel to track execution order and respond immediately
+			// Must call ALL registered handlers since concurrent calls register multiple handlers
+			mockChannel.emit.mockImplementation((event, payload: any) => {
+				if (event === 'storybook/test/trigger-test-run-request') {
+					const storyId = payload.storyIds[0];
+					executionOrder.push(storyId);
+
+					// Call all registered response handlers (they filter by requestId internally)
+					const responseHandlers = mockChannel.on.mock.calls
+						.filter((call) => call[0] === 'storybook/test/trigger-test-run-response')
+						.map((call) => call[1]);
+
+					const response = {
+						requestId: payload.requestId,
+						status: 'completed',
+						result: {
+							triggeredBy: 'external:addon-mcp',
+							config: { coverage: false, a11y: false },
+							storyIds: [storyId],
+							totalTestCount: 1,
+							startedAt: Date.now(),
+							finishedAt: Date.now(),
+							coverageSummary: undefined,
+							componentTestCount: { success: 1, error: 0 },
+							a11yCount: { success: 0, warning: 0, error: 0 },
+							componentTestStatuses: [
+								{
+									storyId,
+									typeId: 'storybook/component-test',
+									value: 'status-value:success',
+									title: 'Component Test',
+									description: '',
+								},
+							],
+							a11yStatuses: [],
+							a11yReports: {},
+							unhandledErrors: [],
+						},
+					};
+
+					responseHandlers.forEach((handler) => handler(response));
+				}
+			});
+
+			// Fire 4 calls concurrently - they should execute in FIFO order due to queue
+			const call1 = callTool(
+				[{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+				testContext,
+			).then((r) => {
+				completionOrder.push('button--primary');
+				return r;
+			});
+			const call2 = callTool(
+				[{ exportName: 'Secondary', relativePath: 'src/Button.stories.tsx' }],
+				testContext,
+			).then((r) => {
+				completionOrder.push('button--secondary');
+				return r;
+			});
+			const call3 = callTool(
+				[{ exportName: 'Default', relativePath: 'src/Input.stories.tsx' }],
+				testContext,
+			).then((r) => {
+				completionOrder.push('input--default');
+				return r;
+			});
+			const call4 = callTool(
+				[{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+				testContext,
+			).then((r) => {
+				completionOrder.push('button--primary-2');
+				return r;
+			});
+
+			// Wait for all calls to complete
+			const results = await Promise.all([call1, call2, call3, call4]);
+
+			// All calls should succeed
+			expect(results.every((r) => r.result?.content[0]?.text?.includes('Passing Stories'))).toBe(
+				true,
+			);
+
+			// Execution order should match call order (FIFO)
+			expect(executionOrder).toEqual([
+				'button--primary',
+				'button--secondary',
+				'input--default',
+				'button--primary',
+			]);
+
+			// Completion order should also match call order
+			expect(completionOrder).toEqual([
+				'button--primary',
+				'button--secondary',
+				'input--default',
+				'button--primary-2',
+			]);
+		});
+
+		it('should timeout waiting for previous operation and allow next operation to proceed', async () => {
+			vi.useFakeTimers();
+
+			try {
+				const testContext = createTestContext();
+				let firstCallStarted = false;
+				let secondCallCompleted = false;
+
+				// Set up channel: first call never responds, second call responds immediately
+				mockChannel.emit.mockImplementation((event, payload: any) => {
+					if (event === 'storybook/test/trigger-test-run-request') {
+						if (!firstCallStarted) {
+							// First call - record it started but never respond (simulate hung operation)
+							firstCallStarted = true;
+							// Don't call any handlers - simulating the test run hanging
+						} else {
+							// Second call - respond to all handlers
+							const responseHandlers = mockChannel.on.mock.calls
+								.filter((call) => call[0] === 'storybook/test/trigger-test-run-response')
+								.map((call) => call[1]);
+
+							const storyId = payload.storyIds[0];
+							const response = {
+								requestId: payload.requestId,
+								status: 'completed',
+								result: {
+									triggeredBy: 'external:addon-mcp',
+									config: { coverage: false, a11y: false },
+									storyIds: [storyId],
+									totalTestCount: 1,
+									startedAt: Date.now(),
+									finishedAt: Date.now(),
+									coverageSummary: undefined,
+									componentTestCount: { success: 1, error: 0 },
+									a11yCount: { success: 0, warning: 0, error: 0 },
+									componentTestStatuses: [
+										{
+											storyId,
+											typeId: 'storybook/component-test',
+											value: 'status-value:success',
+											title: 'Component Test',
+											description: '',
+										},
+									],
+									a11yStatuses: [],
+									a11yReports: {},
+									unhandledErrors: [],
+								},
+							};
+
+							responseHandlers.forEach((handler) => handler(response));
+						}
+					}
+				});
+
+				// Start first call (will hang forever because channel never responds)
+				let firstCallCompleted = false;
+				void callTool(
+					[{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+					testContext,
+				).then(() => {
+					firstCallCompleted = true;
+				});
+
+				// Let first call start executing (get past queue.wait() to the channel emit)
+				await vi.advanceTimersByTimeAsync(0);
+
+				// Verify first call started (emitted to channel)
+				expect(firstCallStarted).toBe(true);
+
+				// Start second call (will wait for first call's done() which never comes)
+				const secondCall = callTool(
+					[{ exportName: 'Secondary', relativePath: 'src/Button.stories.tsx' }],
+					testContext,
+				).then((r) => {
+					secondCallCompleted = true;
+					return r;
+				});
+
+				// Let second call start waiting in queue
+				await vi.advanceTimersByTimeAsync(0);
+
+				// Second call should not have completed yet (waiting for first)
+				expect(secondCallCompleted).toBe(false);
+				// First call should also not have completed (waiting for channel response)
+				expect(firstCallCompleted).toBe(false);
+
+				// Advance time past the 15-second timeout
+				await vi.advanceTimersByTimeAsync(15_000);
+
+				// Now second call should have timed out waiting and failed
+				const secondResult = await secondCall;
+
+				expect(secondCallCompleted).toBe(true);
+
+				// The timeout error is thrown outside the try/catch in the tool handler,
+				// so tmcp converts it to a JSONRPC error response
+				expect(secondResult.error).toBeDefined();
+				expect(secondResult.error?.message).toContain('Timed out waiting for previous operation');
+
+				// First call should still be pending (channel never responded)
+				expect(firstCallCompleted).toBe(false);
+				// Only first call emitted to channel (second call timed out before reaching emit)
+				expect(mockChannel.emit).toHaveBeenCalledTimes(1);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
 	});
 });

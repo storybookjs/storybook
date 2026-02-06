@@ -28,8 +28,55 @@ export async function getAddonVitestConstants() {
 const RunStoryTestsInput = v.object({
 	stories: StoryInputArray,
 });
+
+const QUEUE_TIMEOUT_MS = 15_000;
+
+/**
+ * Creates a queue that ensures concurrent calls are executed in sequence.
+ * Call `wait()` to wait for your turn (with a timeout), then call the
+ * returned `done()` function when done to unblock the next caller.
+ */
+function createAsyncQueue() {
+	let tail: Promise<void> = Promise.resolve();
+
+	/**
+	 * Wait for all previously queued operations to complete, then return
+	 * a `done` function that must be called when the current operation finishes.
+	 */
+	async function wait(): Promise<() => void> {
+		let done!: () => void;
+		const gate = new Promise<void>((resolve) => {
+			done = resolve;
+		});
+
+		const previousTail = tail;
+		tail = gate;
+
+		// Wait for the previous operation to finish, with a timeout
+		await Promise.race([
+			previousTail.catch(() => {}),
+			new Promise<never>((_, reject) =>
+				setTimeout(
+					() =>
+						reject(
+							new Error(
+								`Timed out waiting for previous operation to complete (${QUEUE_TIMEOUT_MS / 1000}s). Please try again.`,
+							),
+						),
+					QUEUE_TIMEOUT_MS,
+				),
+			),
+		]);
+
+		return done;
+	}
+
+	return { wait };
+}
+
 export async function addRunStoryTestsTool(server: McpServer<any, AddonContext>) {
 	const addonVitestConstants = await getAddonVitestConstants();
+	const testRunQueue = createAsyncQueue();
 
 	server.tool(
 		{
@@ -45,6 +92,7 @@ export async function addRunStoryTestsTool(server: McpServer<any, AddonContext>)
 			},
 		},
 		async (input: v.InferOutput<typeof RunStoryTestsInput>) => {
+			const done = await testRunQueue.wait();
 			try {
 				const { origin, options } = server.ctx.custom ?? {};
 
@@ -194,6 +242,8 @@ export async function addRunStoryTestsTool(server: McpServer<any, AddonContext>)
 				};
 			} catch (error) {
 				return errorToMCPContent(error);
+			} finally {
+				done();
 			}
 		},
 	);

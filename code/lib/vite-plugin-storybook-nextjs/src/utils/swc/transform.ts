@@ -33,20 +33,13 @@ export const getVitestSWCTransformConfig = ({
   isDev,
   isEsmProject,
 }: VitestSWCTransformConfigParams) => {
-  const { compilerOptions, ...restJSConfig } = loadedJSConfig.jsConfig ?? {};
-  const { paths, ...restCompilerOptions } = compilerOptions ?? {};
   const baseOptions = getBaseSWCOptions({
     filename,
     development: isDev,
     hasReactRefresh: false,
     globalWindow: !isServerEnvironment,
     modularizeImports: nextConfig.modularizeImports,
-    jsConfig: {
-      ...restJSConfig,
-      compilerOptions: {
-        ...restCompilerOptions,
-      },
-    },
+    jsConfig: loadedJSConfig.jsConfig,
     resolvedBaseUrl: loadedJSConfig.resolvedBaseUrl,
     swcPlugins: nextConfig.experimental.swcPlugins,
     compiler: nextConfig?.compiler,

@@ -10,7 +10,6 @@ import { vitePluginNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
 
 import "./polyfills/promise-with-resolvers";
-import loadJsConfig from "next/dist/build/load-jsconfig.js";
 import nextServerConfig from "next/dist/server/config.js";
 import {
   PHASE_DEVELOPMENT_SERVER,
@@ -54,39 +53,22 @@ function VitePlugin({
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
-  const nodeEnv = process.env.NODE_ENV;
-  const phase =
-    nodeEnv === "development"
-      ? PHASE_DEVELOPMENT_SERVER
-      : nodeEnv === "test"
-        ? PHASE_TEST
-        : PHASE_PRODUCTION_BUILD;
-
-  loadConfig(phase, resolvedDir).then((nextConfig) => {
-    nextConfigResolver.resolve(nextConfig);
-  });
-
   return [
-    nextConfigResolver.promise.then(async (nextConfig) => {
-      const loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
-      loadedJSConfig.jsConfigPath;
-
-      const { enforce, ...tsconfigPathConfig } = tsconfigPaths({
-        root: resolvedDir,
-        ...(loadedJSConfig.jsConfigPath
-          ? { projects: [loadedJSConfig.jsConfigPath] }
-          : {}),
-      });
-
-      return {
-        ...tsconfigPathConfig,
-      };
-    }),
+    tsconfigPaths({ root: resolvedDir }),
     {
       name: "vite-plugin-storybook-nextjs",
       enforce: "pre" as const,
-      async config(config) {
+      async config(config, env) {
+        const phase =
+          env.mode === "development"
+            ? PHASE_DEVELOPMENT_SERVER
+            : env.mode === "test"
+              ? PHASE_TEST
+              : PHASE_PRODUCTION_BUILD;
+
         const isNext16orNewer = getNextjsMajorVersion() >= 16;
+
+        nextConfigResolver.resolve(await loadConfig(phase, resolvedDir));
 
         const executionEnvironment = getExecutionEnvironment(config);
 

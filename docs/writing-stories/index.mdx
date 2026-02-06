@@ -34,7 +34,7 @@ components/
 
 <If renderer="svelte">
 
-  We can define stories according to the [Component Story Format](../api/csf.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools, or rely on the community-led project [`Svelte CSF`](https://storybook.js.org/addons/@storybook/addon-svelte-csf) which provides a similar experience. 
+  We can define stories according to the [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools, or rely on the community-led project [`Svelte CSF`](https://storybook.js.org/addons/@storybook/addon-svelte-csf) which provides a similar experience. 
    
   With Svelte CSF, the essential elements are the `defineMeta` function, which describes the component, and the `Story` component, which describes the stories. This pattern is different from the standard CSF, which uses a [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export) and [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_named_exports) to apply the same concepts.
   
@@ -42,7 +42,7 @@ components/
 
 <If notRenderer="svelte">
 
-  We define stories according to the [Component Story Format](../api/csf.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools.
+  We define stories according to the [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools.
 
   The key ingredients are the meta (or [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export)) that describes the component, and [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_named_exports) that describe the stories.
 
@@ -323,7 +323,7 @@ You can also use the Controls panel to edit or save a new story after adjusting 
 
   <Callout variant="info">
 
-    This feature is not supported with the Svelte CSF. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../api/csf.mdx).
+    This feature is not supported with the Svelte CSF. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../api/csf/index.mdx).
   
   </Callout>
   

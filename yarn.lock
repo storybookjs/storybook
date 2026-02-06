@@ -10765,6 +10765,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/expect@patch:@vitest/expect@npm%3A4.0.18#~/.yarn/patches/@vitest-expect-npm-4.0.18-03919ccd0b.patch":
+  version: 4.0.18
+  resolution: "@vitest/expect@patch:@vitest/expect@npm%3A4.0.18#~/.yarn/patches/@vitest-expect-npm-4.0.18-03919ccd0b.patch::version=4.0.18&hash=fef55e"
+  dependencies:
+    "@standard-schema/spec": "npm:^1.0.0"
+    "@types/chai": "npm:^5.2.2"
+    "@vitest/spy": "npm:4.0.18"
+    "@vitest/utils": "npm:4.0.18"
+    chai: "npm:^6.2.1"
+    tinyrainbow: "npm:^3.0.3"
+  checksum: 10c0/cdbd3f01b21e0897083380fcf5c35dfae497e17673e0f617f36dd3d1fb6ca20fe6d9a9ef7e29d4f4adfb344b36490be9bf52bb967185f89c0695e49686c82fb5
+  languageName: node
+  linkType: hard
+
 "@vitest/mocker@npm:4.0.18":
   version: 4.0.18
   resolution: "@vitest/mocker@npm:4.0.18"

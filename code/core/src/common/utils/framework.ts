@@ -37,7 +37,6 @@ export const frameworkToRenderer: Record<
   [SupportedRenderer.SVELTE]: SupportedRenderer.SVELTE,
   [SupportedRenderer.VUE3]: SupportedRenderer.VUE3,
   [SupportedRenderer.WEB_COMPONENTS]: SupportedRenderer.WEB_COMPONENTS,
-  [SupportedRenderer.STENCIL]: SupportedRenderer.STENCIL,
 };
 
 export const frameworkToBuilder: Record<SupportedFramework, SupportedBuilder> = {

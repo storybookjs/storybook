@@ -838,7 +838,6 @@ export const baseTemplates = {
   'stencil/default-ts': {
     name: 'StencilJS CLI Latest (Vite | TypeScript)',
     script: 'npm init stencil@latest component {{beforeDir}}',
-    // TODO: The community template does not provide standard stories, which is required for e2e tests. Reenable once it does.
     inDevelopment: true,
     expected: {
       framework: '@stencil/storybook-plugin',

@@ -84,6 +84,7 @@ export type TriggerRunEvent = {
   payload: {
     storyIds?: string[] | undefined;
     triggeredBy: RunTrigger;
+    configOverride?: StoreState['config'];
   };
 };
 

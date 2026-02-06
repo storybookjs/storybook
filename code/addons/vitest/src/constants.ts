@@ -75,6 +75,7 @@ export type TriggerTestRunRequestPayload = {
   requestId: string;
   actor: string;
   storyIds?: string[];
+  config?: Partial<StoreState['config']>;
 };
 
 export type TestRunResult = CurrentRun;

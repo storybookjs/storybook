@@ -208,7 +208,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
   // Programmatic test run trigger API
   channel.on(TRIGGER_TEST_RUN_REQUEST, async (payload: TriggerTestRunRequestPayload) => {
-    const { requestId, actor, storyIds } = payload;
+    const { requestId, actor, storyIds, config: configOverride } = payload;
 
     const sendResponse = (response: Omit<TriggerTestRunResponsePayload, 'requestId'>) => {
       channel.emit(TRIGGER_TEST_RUN_RESPONSE, { requestId, ...response });
@@ -218,6 +218,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
     const {
       currentRun: { startedAt, finishedAt },
+      config,
     } = store.getState();
     if (startedAt && !finishedAt) {
       sendResponse({
@@ -232,6 +233,9 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       payload: {
         storyIds,
         triggeredBy: `external:${actor}`,
+        ...(configOverride && {
+          configOverride: { ...config, ...configOverride },
+        }),
       },
     });
 

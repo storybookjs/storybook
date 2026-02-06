@@ -91,6 +91,7 @@ export class TestManager {
     await this.runTestsWithState({
       storyIds: event.payload.storyIds,
       triggeredBy: event.payload.triggeredBy,
+      configOverride: event.payload.configOverride,
       callback: async () => {
         try {
           await this.vitestManager.vitestRestartPromise;
@@ -123,14 +124,18 @@ export class TestManager {
   async runTestsWithState({
     storyIds,
     triggeredBy,
+    configOverride,
     callback,
   }: {
     storyIds?: string[];
     triggeredBy: RunTrigger;
+    configOverride?: StoreState['config'];
     callback: () => Promise<void>;
   }) {
     this.componentTestStatusStore.unset(storyIds);
     this.a11yStatusStore.unset(storyIds);
+
+    const runConfig = configOverride ?? this.store.getState().config;
 
     this.store.setState((s) => ({
       ...s,
@@ -139,12 +144,12 @@ export class TestManager {
         triggeredBy,
         startedAt: Date.now(),
         storyIds: storyIds,
-        config: s.config,
+        config: runConfig,
       },
     }));
     // set the config at the start of a test run,
     // so that changing the config during the test run does not affect the currently running test run
-    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(this.store.getState().config);
+    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(runConfig);
 
     await this.testProviderStore.runWithState(async () => {
       await callback();

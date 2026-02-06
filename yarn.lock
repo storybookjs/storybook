@@ -8951,10 +8951,10 @@ __metadata:
 
 "@testing-library/user-event@patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch":
   version: 14.6.1
-  resolution: "@testing-library/user-event@patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch::version=14.6.1&hash=228211"
+  resolution: "@testing-library/user-event@patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch::version=14.6.1&hash=4faa83"
   peerDependencies:
     "@testing-library/dom": ">=7.21.4"
-  checksum: 10c0/837761d0a6f87268e0e4c69c1afaf14ddadea51aab44e82d22a12e1ae7c970f9af900b7d7379ed672132b76694c32f8cbd786020300261e805b499898b8f20f4
+  checksum: 10c0/b3d9c3351e7a3bb9169bd5262aaad7911647cf38d4f24d217561481a028fe3a5d0fbd9e6320017a264c4ef2bd52947079e3c665bd6a768ff85780da1012e3672
   languageName: node
   linkType: hard
 

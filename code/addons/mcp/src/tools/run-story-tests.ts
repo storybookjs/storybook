@@ -119,7 +119,6 @@ export async function addRunStoryTestsTool(server: McpServer<any, AddonContext>)
 					);
 				}
 
-				console.log({ testResults });
 				const a11yReports = testResults.a11yReports as Record<StoryId, A11yReport[]>;
 				if (a11yReports && Object.keys(a11yReports).length > 0) {
 					const a11yViolationSections: string[] = [];

@@ -91,6 +91,7 @@ describe('runStoryTestsTool', () => {
 	const callTool = async (
 		stories: Array<{ exportName: string; relativePath: string }>,
 		context: AddonContext,
+		options?: { a11y?: boolean },
 	) => {
 		const request = {
 			jsonrpc: '2.0' as const,
@@ -103,6 +104,7 @@ describe('runStoryTestsTool', () => {
 						exportName: s.exportName,
 						absoluteStoryPath: `${process.cwd()}/${s.relativePath}`,
 					})),
+					...(options?.a11y !== undefined && { a11y: options.a11y }),
 				},
 			},
 		};
@@ -199,6 +201,58 @@ describe('runStoryTestsTool', () => {
 			expect.objectContaining({
 				actor: 'addon-mcp',
 				storyIds: ['button--primary'],
+				config: { coverage: false, a11y: true },
+			}),
+		);
+	});
+
+	it('should pass a11y: false in config when disabled via input', async () => {
+		const testContext = createTestContext();
+
+		setupChannelResponse({
+			status: 'completed',
+			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
+				storyIds: ['button--primary'],
+				totalTestCount: 1,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
+				componentTestCount: { success: 1, error: 0 },
+				a11yCount: { success: 0, warning: 0, error: 0 },
+				componentTestStatuses: [
+					{
+						storyId: 'button--primary',
+						typeId: 'storybook/component-test',
+						value: 'status-value:success',
+						title: 'Component Test',
+						description: '',
+					},
+				],
+				a11yStatuses: [],
+				a11yReports: {},
+				unhandledErrors: [],
+			},
+		});
+
+		const response = await callTool(
+			[{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+			testContext,
+			{ a11y: false },
+		);
+
+		expect(response.result?.content[0].text).toMatchInlineSnapshot(`
+			"## Passing Stories
+
+			- button--primary"
+		`);
+		expect(mockChannel.emit).toHaveBeenCalledWith(
+			'storybook/test/trigger-test-run-request',
+			expect.objectContaining({
+				actor: 'addon-mcp',
+				storyIds: ['button--primary'],
+				config: { coverage: false, a11y: false },
 			}),
 		);
 	});

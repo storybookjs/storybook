@@ -6,7 +6,10 @@ import { findStoryIds } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 import { StoryInputArray } from '../types.ts';
-import type { TriggerTestRunResponsePayload } from '@storybook/addon-vitest/constants';
+import type {
+	TriggerTestRunRequestPayload,
+	TriggerTestRunResponsePayload,
+} from '@storybook/addon-vitest/constants';
 import type Channel from 'storybook/internal/channels';
 import type { StoryId } from 'storybook/internal/csf';
 import type { A11yReport } from '@storybook/addon-a11y';
@@ -27,6 +30,15 @@ export async function getAddonVitestConstants() {
 
 const RunStoryTestsInput = v.object({
 	stories: StoryInputArray,
+	a11y: v.optional(
+		v.pipe(
+			v.boolean(),
+			v.description(
+				'Whether to run accessibility tests. Defaults to true. Disable if you only need component test results.',
+			),
+		),
+		true,
+	),
 });
 
 const QUEUE_TIMEOUT_MS = 15_000;
@@ -100,7 +112,7 @@ Results will include passing/failing status` +
 				return server.ctx.custom?.toolsets?.test ?? true;
 			},
 		},
-		async (input: v.InferOutput<typeof RunStoryTestsInput>) => {
+		async (input: v.InferInput<typeof RunStoryTestsInput>) => {
 			const done = await testRunQueue.wait();
 			try {
 				const { origin, options } = server.ctx.custom ?? {};
@@ -144,6 +156,7 @@ Results will include passing/failing status` +
 					addonVitestConstants!.TRIGGER_TEST_RUN_REQUEST,
 					addonVitestConstants!.TRIGGER_TEST_RUN_RESPONSE,
 					storyIds,
+					{ a11y: input.a11y ?? true },
 				);
 
 				const testResults = responsePayload.result;
@@ -177,7 +190,7 @@ Results will include passing/failing status` +
 				}
 
 				const a11yReports = testResults.a11yReports as Record<StoryId, A11yReport[]>;
-				if (a11yReports && Object.keys(a11yReports).length > 0) {
+				if (input.a11y && a11yReports && Object.keys(a11yReports).length > 0) {
 					const a11yViolationSections: string[] = [];
 
 					for (const [storyId, reports] of Object.entries(a11yReports)) {
@@ -267,6 +280,7 @@ function triggerTestRun(
 	triggerTestRunRequestEventName: string,
 	triggerTestRunResponseEventName: string,
 	storyIds: string[],
+	config?: TriggerTestRunRequestPayload['config'],
 ): Promise<TriggerTestRunResponsePayload> {
 	return new Promise((resolve, reject) => {
 		const requestId = `mcp-${Date.now()}`;
@@ -303,7 +317,8 @@ function triggerTestRun(
 			requestId,
 			actor: 'addon-mcp',
 			storyIds,
-		} as const;
+			config,
+		} as TriggerTestRunRequestPayload;
 
 		channel.emit(triggerTestRunRequestEventName, request);
 	});

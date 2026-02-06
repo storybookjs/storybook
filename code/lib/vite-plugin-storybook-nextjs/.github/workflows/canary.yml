@@ -1,9 +1,10 @@
 name: Canary Release
 
 on:
-  issue_comment:
-    types:
-      - created
+  pull_request:
+    branches:
+      - main
+      - next
 
 jobs:
   canary:
@@ -11,10 +12,8 @@ jobs:
       contents: read
       pull-requests: write
       id-token: write # required for provenance and oidc publish
-    # Only run on PR comments containing "/canary" from non-fork PRs
-    if: >-
-      github.repository == 'storybookjs/vite-plugin-storybook-nextjs' &&
-      github.event.issue.pull_request
+    # prevents this action from running on forks
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Canary Release
     runs-on: ubuntu-latest
     steps:
@@ -24,24 +23,10 @@ jobs:
           app-id: ${{ vars.STORYBOOK_BOT_APP_ID }}
           private-key: ${{ secrets.STORYBOOK_BOT_APP_PRIVATE_KEY }}
 
-      - name: Get PR branch
-        id: pr
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ steps.app-token.outputs.token }}
-          script: |
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-            });
-            core.setOutput('ref', pr.data.head.ref);
-            core.setOutput('sha', pr.data.head.sha);
-
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          ref: ${{ steps.pr.outputs.ref }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - uses: actions/setup-node@v6
         with:

@@ -1,3 +1,11 @@
+## 10.3.0-alpha.5
+
+- CLI: Support addon-vitest setup when --skip-install is passed - [#33718](https://github.com/storybookjs/storybook/pull/33718), thanks @valentinpalkovic!
+- CSF: Fix cross-file story imports in csf-factories codemod  - [#33723](https://github.com/storybookjs/storybook/pull/33723), thanks @yatishgoel!
+- Core: Ignore empty files when indexing - [#33782](https://github.com/storybookjs/storybook/pull/33782), thanks @JReinhold!
+- Globals: Repair dynamicTitle: false for user-defined tools - [#33284](https://github.com/storybookjs/storybook/pull/33284), thanks @ia319!
+- Logger: Honor --loglevel for npmlog output - [#33776](https://github.com/storybookjs/storybook/pull/33776), thanks @LouisLau-art!
+
 ## 10.3.0-alpha.4
 
 - Addon-Vitest: Support vite/vitest config with deferred export - [#33755](https://github.com/storybookjs/storybook/pull/33755), thanks @valentinpalkovic!

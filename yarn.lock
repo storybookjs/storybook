@@ -8514,6 +8514,7 @@ __metadata:
     empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.43.0"
     esbuild: "npm:^0.27.0"
+    esbuild-raw-plugin: "npm:^0.3.1"
     eslint: "npm:^8.57.1"
     eslint-config-airbnb-typescript: "npm:^18.0.0"
     eslint-config-prettier: "npm:^9.1.2"
@@ -15927,6 +15928,13 @@ __metadata:
   peerDependencies:
     webpack: ^4.40.0 || ^5.0.0
   checksum: 10c0/75a68ec38ee0151722d0725554f034780baad046891b5e8cd149e99d9cb550015d83721ce8c4c88ddeb199df0e7556c4fa365bae2b28bd848f616c5d47fcc385
+  languageName: node
+  linkType: hard
+
+"esbuild-raw-plugin@npm:^0.3.1":
+  version: 0.3.1
+  resolution: "esbuild-raw-plugin@npm:0.3.1"
+  checksum: 10c0/25f8934cdddfc49bd1942a76d9d742e0abf50d85729ba506c1804475e318672143781039dc0614b47c7eb01aa1a797901245cc37fb1ce968974a038f8846b9d2
   languageName: node
   linkType: hard
 

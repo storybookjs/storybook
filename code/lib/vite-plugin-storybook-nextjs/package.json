@@ -1,6 +1,10 @@
 {
   "name": "vite-plugin-storybook-nextjs",
   "version": "3.1.10",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/vite-plugin-storybook-nextjs.git"
+  },
   "description": "",
   "keywords": [
     "vite-plugin",
@@ -60,7 +64,8 @@
     "dev": "pnpm build --watch",
     "check": "biome check",
     "check:write": "biome check --write",
-    "release": "auto shipit"
+    "changeset": "changeset",
+    "release": "pnpm build && changeset publish"
   },
   "peerDependencies": {
     "next": "^14.1.0 || ^15.0.0 || ^16.0.0",
@@ -69,11 +74,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.1",
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
     "@rollup/pluginutils": "^5.3.0",
     "@types/node": "^18",
     "@types/react": "^18",
     "@types/semver": "^7.5.8",
-    "auto": "^11.2.0",
     "lefthook": "^1.6.16",
     "next": "16.0.0",
     "pathe": "^2.0.3",
@@ -86,7 +92,7 @@
     "vite": "^5.0.0",
     "vitest": "^3.0.0"
   },
-  "packageManager": "pnpm@9.4.0",
+  "packageManager": "pnpm@10.28.2",
   "dependencies": {
     "@next/env": "16.0.0",
     "image-size": "^2.0.0",

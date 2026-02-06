@@ -41,6 +41,7 @@ export const metaFrameworks = {
   '@tanstack/react-router': 'tanstack-react',
   '@react-router/dev': 'react-router',
   '@remix-run/dev': 'remix',
+  expo: 'expo',
 } as Record<string, string>;
 
 export const sanitizeAddonName = (name: string) => {

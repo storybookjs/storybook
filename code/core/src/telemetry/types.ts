@@ -19,6 +19,7 @@ export type EventType =
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
+  | 'exit'
   | 'error'
   | 'error-metadata'
   | 'version-update'

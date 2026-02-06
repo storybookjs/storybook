@@ -120,10 +120,10 @@
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-vue": "^4.4.0",
-    "@vitest/browser": "^4.0.14",
-    "@vitest/browser-playwright": "^4.0.14",
-    "@vitest/coverage-istanbul": "^4.0.14",
-    "@vitest/coverage-v8": "^4.0.14",
+    "@vitest/browser": "^4.0.18",
+    "@vitest/browser-playwright": "^4.0.18",
+    "@vitest/coverage-istanbul": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
     "chromatic": "^13.3.4",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
@@ -152,7 +152,7 @@
     "uuid": "^11.1.0",
     "vite": "^7.0.4",
     "vite-plugin-inspect": "^11.0.0",
-    "vitest": "^4.0.14",
+    "vitest": "^4.0.18",
     "wait-on": "^8.0.3"
   },
   "dependenciesMeta": {

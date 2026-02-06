@@ -17,7 +17,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@types/babel__traverse@npm:^7.18.0',
   '@types/node',
   '@types/react',
-  '@vitest/expect@npm:3.2.4',
+  '@vitest/expect@npm:4.0.18',
   'aria-query@5.3.0',
   'esbuild',
   'playwright',

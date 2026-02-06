@@ -174,7 +174,7 @@ export const configureYarn2ForVerdaccio = async ({
     // Discard all YN0013 - FETCH_NOT_CACHED messages
     // Error on YN0060 - INCOMPATIBLE_PEER_DEPENDENCY
     command.push(
-      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"error\\"}]"`
+      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"discard\\"}]"`
     );
   }
 

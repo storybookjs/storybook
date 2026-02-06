@@ -1,6 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
+import {
+  SHARE_ISOLATE_MODE,
+  SHARE_POPOVER_OPENED,
+  SHARE_STORY_LINK,
+} from 'storybook/internal/core-events';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -71,6 +76,10 @@ const ShareMenu = React.memo(function ShareMenu({
   const copyStoryLink = shortcutKeys?.copyStoryLink;
   const openInIsolation = shortcutKeys?.openInIsolation;
 
+  useEffect(() => {
+    api.emit(SHARE_POPOVER_OPENED);
+  }, [api]);
+
   const links = useMemo(() => {
     const copyTitle = copied ? 'Copied!' : 'Copy story link';
     const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
@@ -84,6 +93,7 @@ const ShareMenu = React.memo(function ShareMenu({
           icon: <LinkIcon />,
           right: enableShortcuts ? <Shortcut keys={copyStoryLink} /> : null,
           onClick: () => {
+            api.emit(SHARE_STORY_LINK, originHrefs.managerHref);
             copy(originHrefs.managerHref);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
@@ -94,6 +104,9 @@ const ShareMenu = React.memo(function ShareMenu({
           title: 'Open in isolation mode',
           icon: <ShareAltIcon />,
           right: enableShortcuts ? <Shortcut keys={openInIsolation} /> : null,
+          onClick: () => {
+            api.emit(SHARE_ISOLATE_MODE, originHrefs.previewHref);
+          },
           href: originHrefs.previewHref,
           target: '_blank',
           rel: 'noopener noreferrer',

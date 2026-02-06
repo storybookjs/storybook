@@ -14,8 +14,7 @@ jobs:
     # Only run on PR comments containing "/canary" from non-fork PRs
     if: >-
       github.repository == 'storybookjs/vite-plugin-storybook-nextjs' &&
-      github.event.issue.pull_request &&
-      contains(github.event.comment.body, '/canary')
+      github.event.issue.pull_request
     name: Canary Release
     runs-on: ubuntu-latest
     steps:

@@ -1,10 +1,12 @@
 import type { McpServer } from 'tmcp';
 import { getAddonVitestConstants } from './run-story-tests.ts';
 import { collectTelemetry } from '../telemetry.ts';
-import storyInstructionsTemplate from '../storybook-story-instructions.md';
-import storyTestingInstructionsTemplate from '../story-testing-instructions.md';
+import storyInstructionsTemplate from '../instructions/storybook-story-instructions.md';
+import storyTestingInstructionsTemplate from '../instructions/story-testing-instructions.md';
+import a11yInstructionsTemplate from '../instructions/a11y-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
+import { isAddonA11yEnabled } from '../utils/is-addon-a11y-enabled.ts';
 import {
 	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 	PREVIEW_STORIES_TOOL_NAME,
@@ -67,11 +69,17 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 					(server.ctx.custom?.toolsets?.test ?? true) && !!(await getAddonVitestConstants());
 
 				if (testToolsetAvailable) {
-					const storyTestingInstructions = storyTestingInstructionsTemplate.replaceAll(
-						'{{RUN_STORY_TESTS_TOOL_NAME}}',
-						RUN_STORY_TESTS_TOOL_NAME,
-					);
-					uiInstructions = `${uiInstructions}\n\n${storyTestingInstructions}`;
+					const a11yEnabled = await isAddonA11yEnabled(options);
+					const a11yFixSuffix = a11yEnabled ? ' (see a11y guidelines below)' : '';
+
+					const storyTestingInstructions = storyTestingInstructionsTemplate
+						.replaceAll('{{RUN_STORY_TESTS_TOOL_NAME}}', RUN_STORY_TESTS_TOOL_NAME)
+						.replace('{{A11Y_FIX_SUFFIX}}', a11yFixSuffix);
+
+					uiInstructions += `\n\n${storyTestingInstructions}`;
+					if (a11yEnabled) {
+						uiInstructions += `\n${a11yInstructionsTemplate}`;
+					}
 				}
 
 				return {

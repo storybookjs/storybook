@@ -148,7 +148,7 @@ describe('runStoryTestsTool', () => {
 			},
 		);
 
-		await addRunStoryTestsTool(server);
+		await addRunStoryTestsTool(server, { a11yEnabled: true });
 
 		// Mock fetchStoryIndex to return the fixture
 		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(smallStoryIndexFixture as any);

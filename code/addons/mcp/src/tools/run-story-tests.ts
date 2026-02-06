@@ -74,15 +74,24 @@ function createAsyncQueue() {
 	return { wait };
 }
 
-export async function addRunStoryTestsTool(server: McpServer<any, AddonContext>) {
+export async function addRunStoryTestsTool(
+	server: McpServer<any, AddonContext>,
+	{ a11yEnabled }: { a11yEnabled: boolean },
+) {
 	const addonVitestConstants = await getAddonVitestConstants();
 	const testRunQueue = createAsyncQueue();
+
+	const description =
+		`Run tests for one or more stories.
+Use this continously to monitor test results as you work on your UI components and stories.
+Results will include passing/failing status` +
+		(a11yEnabled ? ', and accessibility violation reports.' : '');
 
 	server.tool(
 		{
 			name: RUN_STORY_TESTS_TOOL_NAME,
 			title: 'Storybook Tests',
-			description: `Run tests for one or more stories.`,
+			description,
 			schema: RunStoryTestsInput,
 			enabled: () => {
 				if (!addonVitestConstants) {

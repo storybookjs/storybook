@@ -14,6 +14,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
 import { addRunStoryTestsTool } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
+import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -51,7 +52,8 @@ const initializeMCPServer = async (options: Options) => {
 	await addGetUIBuildingInstructionsTool(server);
 
 	// Register test addon tools
-	await addRunStoryTestsTool(server);
+	const a11yEnabled = await isAddonA11yEnabled(options);
+	await addRunStoryTestsTool(server, { a11yEnabled });
 
 	// Only register the additional tools if the component manifest feature is enabled
 	const manifestStatus = await getManifestStatus(options);

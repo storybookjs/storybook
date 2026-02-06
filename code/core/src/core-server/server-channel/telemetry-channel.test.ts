@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { makePayload } from './preview-initialized-channel';
+import { makePayload } from './telemetry-channel';
 
 describe('makePayload', () => {
   beforeEach(() => {

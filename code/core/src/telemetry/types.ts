@@ -43,6 +43,7 @@ export type EventType =
   | 'migrate'
   | 'preview-first-load'
   | 'doctor'
+  | 'share'
   | 'ghost-stories';
 export interface Dependency {
   version: string | undefined;

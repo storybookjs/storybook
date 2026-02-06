@@ -64,7 +64,8 @@
     "dev": "pnpm build --watch",
     "check": "biome check",
     "check:write": "biome check --write",
-    "release": "auto shipit"
+    "changeset": "changeset",
+    "release": "pnpm build && changeset publish"
   },
   "peerDependencies": {
     "next": "^14.1.0 || ^15.0.0 || ^16.0.0",
@@ -73,11 +74,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.1",
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
     "@rollup/pluginutils": "^5.3.0",
     "@types/node": "^18",
     "@types/react": "^18",
     "@types/semver": "^7.5.8",
-    "auto": "^11.3.6",
     "lefthook": "^1.6.16",
     "next": "16.0.0",
     "pathe": "^2.0.3",

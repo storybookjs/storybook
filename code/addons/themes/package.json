@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "10.3.0-alpha.2",
+  "version": "10.3.0-alpha.4",
   "description": "Storybook Themes addon: Switch between themes from the toolbar",
   "keywords": [
     "css",
@@ -36,6 +36,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
@@ -43,6 +44,7 @@
     "./postinstall": "./dist/postinstall.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
       "default": "./dist/preview.js"
     }
   },

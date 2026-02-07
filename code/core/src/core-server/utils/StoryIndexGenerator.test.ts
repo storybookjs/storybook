@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { toId } from 'storybook/internal/csf';
-import { getStorySortParameter, readCsf } from 'storybook/internal/csf-tools';
+import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
 
@@ -34,13 +34,13 @@ vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   const csfTools = await importOriginal<typeof import('storybook/internal/csf-tools')>();
   return {
     ...csfTools,
-    readCsf: vi.fn(csfTools.readCsf),
+    loadCsf: vi.fn(csfTools.loadCsf),
     getStorySortParameter: vi.fn(csfTools.getStorySortParameter),
   };
 });
 
 const toIdMock = vi.mocked(toId);
-const readCsfMock = vi.mocked(readCsf);
+const loadCsfMock = vi.mocked(loadCsf);
 const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
@@ -55,7 +55,7 @@ describe('StoryIndexGenerator', () => {
     vi.mocked(logger.warn).mockClear();
     vi.mocked(once.warn).mockClear();
     toIdMock.mockClear();
-    readCsfMock.mockClear();
+    loadCsfMock.mockClear();
     getStorySortParameterMock.mockClear();
     StoryIndexGenerator.clearFindMatchingFilesCache();
   });
@@ -216,6 +216,25 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
+            "v": 5,
+          }
+        `);
+      });
+    });
+    describe('empty or whitespace-only files', () => {
+      it('ignores story files that only contain whitespace (e.g. just a newline)', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/Empty.stories.ts',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
+          {
+            "entries": {},
             "v": 5,
           }
         `);
@@ -2135,16 +2154,16 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
-        expect(readCsfMock).toHaveBeenCalledTimes(0);
+        loadCsfMock.mockClear();
+        expect(loadCsfMock).toHaveBeenCalledTimes(0);
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).not.toHaveBeenCalled();
+        expect(loadCsfMock).not.toHaveBeenCalled();
       });
 
       it('does not extract docs files a second time', async () => {
@@ -2156,8 +2175,8 @@ describe('StoryIndexGenerator', () => {
           './src/docs2/*.mdx',
           options
         );
-        readCsfMock.mockClear();
-        expect(readCsfMock).toHaveBeenCalledTimes(0);
+        loadCsfMock.mockClear();
+        expect(loadCsfMock).toHaveBeenCalledTimes(0);
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
@@ -2194,17 +2213,17 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate('./src/B.stories.ts', false);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(1);
+        expect(loadCsfMock).toHaveBeenCalledTimes(1);
       });
 
       it('calls extract docs file for just the one file', async () => {
@@ -2279,17 +2298,17 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate('./src/B.stories.ts', true);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).not.toHaveBeenCalled();
+        expect(loadCsfMock).not.toHaveBeenCalled();
       });
 
       it('does call the sort function a second time', async () => {
@@ -2318,11 +2337,11 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate('./src/B.stories.ts', true);
 

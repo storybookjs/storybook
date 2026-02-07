@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "10.3.0-alpha.2",
+  "version": "10.3.0-alpha.4",
   "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",
@@ -29,6 +29,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json"

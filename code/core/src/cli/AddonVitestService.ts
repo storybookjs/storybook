@@ -115,7 +115,11 @@ export class AddonVitestService {
    * @returns Array of error messages if installation fails
    */
   async installPlaywright(
-    options: { yes?: boolean } = {}
+    options: {
+      yes?: boolean;
+      /** Is set to true if Storybook didn't install the dependencies yet */
+      useRemotePkg?: boolean;
+    } = {}
   ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
@@ -148,6 +152,7 @@ export class AddonVitestService {
           (signal) =>
             this.packageManager.runPackageCommand({
               args: playwrightCommand,
+              useRemotePkg: options.useRemotePkg,
               stdio: ['inherit', 'pipe', 'pipe'],
               signal,
             }),

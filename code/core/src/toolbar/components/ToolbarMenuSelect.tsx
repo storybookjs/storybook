@@ -29,7 +29,14 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   id,
   name,
   description,
-  toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle, shortcuts },
+  toolbar: {
+    icon: _icon,
+    items,
+    title: _title,
+    preventDynamicIcon,
+    dynamicTitle = true,
+    shortcuts,
+  },
 }) => {
   const api = useStorybookApi();
   const [globals, updateGlobals, storyGlobals] = useGlobals();
@@ -132,6 +139,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
       onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
       onSelect={(selected) => updateGlobals({ [id]: selected })}
       icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
+      showSelectedOptionTitle={dynamicTitle}
     >
       {title}
     </Select>

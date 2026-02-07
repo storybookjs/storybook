@@ -29,6 +29,10 @@ const config: BuildEntries = {
         entryPoint: './src/export-mocks/navigation/index.ts',
       },
       {
+        exportEntries: ['./link.mock'],
+        entryPoint: './src/export-mocks/link/index.tsx',
+      },
+      {
         exportEntries: ['./router.mock'],
         entryPoint: './src/export-mocks/router/index.ts',
       },

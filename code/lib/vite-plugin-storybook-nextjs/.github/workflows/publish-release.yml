@@ -1,0 +1,34 @@
+name: Publish preview
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - next
+
+env:
+  TURBO_ENV_MODE: loose
+
+jobs:
+  release-preview:
+    name: Publish preview releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+          run_install: true
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish preview releases
+        run: pnpm pkg-pr-new publish --pnpm --no-template

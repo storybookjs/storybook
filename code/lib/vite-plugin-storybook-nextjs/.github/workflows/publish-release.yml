@@ -54,7 +54,7 @@ jobs:
 
             const commitUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/commit/${sha}`;
 
-            const body = `## Custom Publish Message
+            const body = `## Preview Release
 
             ### Published Packages:
 
@@ -66,7 +66,7 @@ jobs:
 
             [View Commit](${commitUrl})`;
 
-            const botCommentIdentifier = '## Custom Publish Message';
+            const botCommentIdentifier = '## Preview Release';
 
             async function findBotComment(issueNumber) {
               if (!issueNumber) return null;

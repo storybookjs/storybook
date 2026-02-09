@@ -1,13 +1,44 @@
 import React from 'react';
-
 import { fn } from 'storybook/test';
 
-// Mock implementation for next/link
-const mockLink = fn().mockName('next/link::Link');
+const linkAction = fn().mockName('next/link::Link');
 
-const linkExports = {
-  default: mockLink,
-};
+const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
+  {
+    href,
+    as: _as,
+    replace,
+    scroll,
+    shallow,
+    prefetch,
+    passHref,
+    legacyBehavior,
+    locale,
+    onClick,
+    children,
+    ...rest
+  },
+  ref
+) {
+  const hrefString =
+    typeof href === 'object'
+      ? `${href.pathname || ''}${href.query ? '?' + new URLSearchParams(href.query).toString() : ''}${href.hash || ''}`
+      : href;
 
-export default linkExports.default;
-export { mockLink as Link };
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    onClick?.(e);
+    linkAction(hrefString, { replace, scroll, shallow, prefetch, locale });
+  };
+
+  return (
+    <a ref={ref} href={hrefString} onClick={handleClick} {...rest}>
+      {children}
+    </a>
+  );
+});
+
+MockLink.displayName = 'NextLink';
+
+export default MockLink;
+export { MockLink as Link };

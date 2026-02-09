@@ -5,6 +5,10 @@
 - Core: Ignore empty files when indexing - [#33782](https://github.com/storybookjs/storybook/pull/33782), thanks @JReinhold!
 - Globals: Repair dynamicTitle: false for user-defined tools - [#33284](https://github.com/storybookjs/storybook/pull/33284), thanks @ia319!
 - Logger: Honor --loglevel for npmlog output - [#33776](https://github.com/storybookjs/storybook/pull/33776), thanks @LouisLau-art!
+- Telemetry: Add Expo metaframework - [#33783](https://github.com/storybookjs/storybook/pull/33783), thanks @copilot-swe-agent!
+- Telemetry: Add init exit event - [#33773](https://github.com/storybookjs/storybook/pull/33773), thanks @valentinpalkovic!
+- Telemetry: Add share events - [#33766](https://github.com/storybookjs/storybook/pull/33766), thanks @ndelangen!
+- Test: Update event creation logic in user-event package - [#33787](https://github.com/storybookjs/storybook/pull/33787), thanks @valentinpalkovic!
 
 ## 10.3.0-alpha.4
 

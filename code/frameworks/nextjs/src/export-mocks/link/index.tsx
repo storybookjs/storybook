@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { fn } from 'storybook/test';
 
 const linkAction = fn().mockName('next/link::Link');

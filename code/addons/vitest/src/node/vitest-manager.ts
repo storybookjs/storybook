@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import type {
   CoverageOptions,
@@ -13,7 +13,7 @@ import { Tag } from 'storybook/internal/core-server';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
-import path, { dirname, join, normalize } from 'pathe';
+import path, { dirname, join, normalize, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
@@ -75,19 +75,40 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    const vitestWorkspaceConfig = find.any(
-      [
-        ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
-        ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
-      ],
-      { last: getProjectRoot() }
-    );
+    // In monorepos, the Storybook configDir (e.g. packages/web-app/.storybook) identifies
+    // the sub-package. We start the Vitest config search from its parent (the package root)
+    // and traverse upward to the project root, so configs in both sub-packages and the
+    // monorepo root are found. Without this, find.any defaults to process.cwd() which may
+    // be the monorepo root and would miss sub-package configs entirely.
+    const configDir = this.testManager.storybookOptions.configDir;
+    const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
+
+    const configFiles = [
+      ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
+      ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [
+        `vitest.config.${ext}`,
+        `vite.config.${ext}`,
+      ]),
+    ];
+
+    let vitestWorkspaceConfig: string | undefined;
+
+    for (const file of configFiles) {
+      const maybe = find.any([file], { cwd: packageRoot, last: getProjectRoot() });
+      if (maybe && existsSync(maybe)) {
+        const content = readFileSync(maybe, 'utf8');
+        if (content.includes('storybookTest')) {
+          vitestWorkspaceConfig = maybe;
+          break;
+        }
+      }
+    }
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
 
     try {
       this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
+        root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : packageRoot || process.cwd(),
         watch: true,
         passWithNoTests: false,
         project: [projectName],

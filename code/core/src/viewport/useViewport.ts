@@ -194,6 +194,11 @@ export const useViewport = () => {
   }, [storyGlobals, update]);
 
   useEffect(() => {
+    // Skip if parameter not loaded to avoid race condition with default MINIMAL_VIEWPORTS
+    if (!parameter) {
+      return;
+    }
+
     // Reset the viewport to the story global value if the URL state defines an invalid option
     if (option) {
       if (Object.hasOwn(options, option)) {
@@ -203,7 +208,7 @@ export const useViewport = () => {
         update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
       }
     }
-  }, [storyGlobals, options, option, update]);
+  }, [parameter, storyGlobals, options, option, update]);
 
   useEffect(() => {
     api.setAddonShortcut(ADDON_ID, {

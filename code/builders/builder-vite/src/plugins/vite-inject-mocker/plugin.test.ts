@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 /**
- * Unit-tests for the vite-inject-mocker plugin, focused on the
- * `transformIndexHtml` hook which must emit a **relative** `src`
- * during production builds (so Storybook artifacts load when hosted
- * at non-root paths, e.g. GitHub Pages) and an **absolute** `src`
- * during development (so Vite's dev-server `resolveId` can match it).
+ * Unit-tests for the vite-inject-mocker plugin, focused on the `transformIndexHtml` hook which must
+ * emit a **relative** `src` during production builds (so Storybook artifacts load when hosted at
+ * non-root paths, e.g. GitHub Pages) and an **absolute** `src` during development (so Vite's
+ * dev-server `resolveId` can match it).
  *
  * @see https://github.com/storybookjs/storybook/issues/32428
  */

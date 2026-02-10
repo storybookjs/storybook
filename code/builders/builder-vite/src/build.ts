@@ -4,7 +4,6 @@ import type { Options } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 import type { InlineConfig } from 'vite';
 
-import { sanitizeEnvVars } from './envs';
 import { createViteLogger } from './logger';
 import type { WebpackStatsPlugin } from './plugins';
 import { hasVitePlugins } from './utils/has-vite-plugins';
@@ -90,7 +89,7 @@ export async function build(options: Options) {
 
   finalConfig.customLogger ??= await createViteLogger();
 
-  await viteBuild(await sanitizeEnvVars(options, finalConfig));
+  await viteBuild(finalConfig);
 
   const statsPlugin = findPlugin(
     finalConfig,

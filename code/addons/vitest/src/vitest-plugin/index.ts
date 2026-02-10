@@ -30,8 +30,9 @@ import path from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
+import type { PluginOption } from 'vite';
 
-// ! Relative import to prebundle it without needing to depend on the Vite builder
+// Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
 
@@ -194,27 +195,27 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
   const stories = await presets.apply('stories', []);
 
-  // We can probably add more config here. See code/builders/builder-vite/src/vite-config.ts
-  // This one is specifically needed for code/builders/builder-vite/src/preset.ts
   const commonConfig = { root: resolve(finalOptions.configDir, '..') };
 
   const [
+    corePlugins,
     { storiesGlobs },
     framework,
     viteConfigFromStorybook,
     staticDirs,
     previewLevelTags,
     core,
-    extraOptimizeDeps,
     features,
   ] = await Promise.all([
+    // Core Storybook Vite plugins from builder-vite's preset
+    // (resolve conditions, envPrefix, fs.allow, project annotations, docgen, external globals)
+    presets.apply<PluginOption[]>('viteCorePlugins', []),
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
     presets.apply<{ plugins?: Plugin[]; root: string }>('viteFinal', commonConfig),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
     presets.apply('core'),
-    presets.apply('optimizeViteDeps', []),
     presets.apply('features', {}),
   ]);
 
@@ -230,7 +231,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   }
 
   // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
-  const plugins = await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], pluginsToIgnore);
+  const plugins: Plugin[] = [
+    ...(corePlugins as Plugin[]),
+    ...(await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], pluginsToIgnore)),
+  ];
 
   if (finalOptions.disableAddonDocs) {
     plugins.push(mdxStubPlugin);
@@ -382,26 +386,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
         },
 
-        envPrefix: Array.from(
-          new Set([...(nonMutableInputConfig.envPrefix || []), 'STORYBOOK_', 'VITE_'])
-        ),
-
-        resolve: {
-          conditions: [
-            'storybook',
-            'stories',
-            'test',
-            // copying straight from https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts#L60
-            // to avoid having to maintain Vite as a dependency just for this
-            'module',
-            'browser',
-            'development|production',
-          ],
-        },
-
         optimizeDeps: {
           include: [
-            ...extraOptimizeDeps,
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
@@ -419,11 +405,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
       };
 
-      // Merge config from storybook with the plugin config
-      const config: Omit<ViteUserConfig, 'plugins'> = mergeConfig(
-        baseConfig,
-        viteConfigFromStorybook
-      );
+      const config = mergeConfig(baseConfig, viteConfigFromStorybook);
 
       // alert the user of problems
       if ((nonMutableInputConfig.test?.include?.length ?? 0) > 0) {

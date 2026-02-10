@@ -127,6 +127,7 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
   
   ${options.isCsf4 ? previewFileImport : imports.join('\n')}
+  // Use import { getProjectAnnotations } from '${SB_VIRTUAL_FILES.VIRTUAL_PROJECT_ANNOTATIONS_FILE}'; instead
   ${getPreviewAnnotationsFunction}
   
   window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);

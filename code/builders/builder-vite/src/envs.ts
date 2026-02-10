@@ -39,22 +39,3 @@ export function stringifyProcessEnvs(raw: Builder_EnvsRaw, envPrefix: ViteConfig
 
   return envs;
 }
-
-// Sanitize environment variables if needed
-export async function sanitizeEnvVars(options: Options, config: ViteConfig) {
-  const { presets } = options;
-  const envsRaw = await presets.apply<Promise<Builder_EnvsRaw>>('env');
-  let { define } = config;
-  if (Object.keys(envsRaw).length) {
-    // Stringify env variables after getting `envPrefix` from the  config
-    const envs = stringifyProcessEnvs(envsRaw, config.envPrefix);
-    define = {
-      ...define,
-      ...envs,
-    };
-  }
-  return {
-    ...config,
-    define,
-  } as ViteConfig;
-}

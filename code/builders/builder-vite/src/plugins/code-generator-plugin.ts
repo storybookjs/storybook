@@ -17,7 +17,7 @@ import {
   getResolvedVirtualModuleId,
 } from '../virtual-file-names';
 
-export function codeGeneratorPlugin(options: Options): Plugin {
+export function codeGeneratorPlugin(options: Options) {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
   let iframeId: string;
   let projectRoot: string;
@@ -57,7 +57,10 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
-      if (SB_VIRTUAL_FILE_IDS.includes(source)) {
+      if (
+        source !== SB_VIRTUAL_FILES.VIRTUAL_PROJECT_ANNOTATIONS_FILE &&
+        SB_VIRTUAL_FILE_IDS.includes(source)
+      ) {
         return getResolvedVirtualModuleId(source);
       }
       if (source === iframePath) {
@@ -94,5 +97,5 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       }
       return transformIframeHtml(html, options);
     },
-  };
+  } satisfies Plugin;
 }

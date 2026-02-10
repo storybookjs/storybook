@@ -54,7 +54,6 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 			name: PREVIEW_STORIES_RESOURCE_URI,
 			description: 'App resource for the Preview Stories tool',
 			uri: PREVIEW_STORIES_RESOURCE_URI,
-			//@ts-expect-error tmcp types doesn't know this is valid
 			mimeType: 'text/html;profile=mcp-app',
 		},
 		() => {

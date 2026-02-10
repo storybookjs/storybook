@@ -19,8 +19,11 @@ type JsonTreeProps = ComponentProps<typeof JsonTree>;
 const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
-  flexWrap: 'wrap',
   isolation: 'isolate',
+
+  '@media (max-width: 400px)': {
+    flexDirection: 'column' as const,
+  },
 
   '.rejt-tree': {
     marginLeft: '1rem',
@@ -119,11 +122,16 @@ const Input = styled.input(({ theme, placeholder }) => ({
 }));
 
 const RawButton = styled(ToggleButton)({
-  flexShrink: 0,
+  position: 'absolute',
+  zIndex: 2,
+  top: 2,
+  right: 2,
   gap: '4px',
 
-  // Hide text on small screens, show only icon for accessibility (WCAG 2.1 Reflow)
+  // On small screens: remove absolute positioning, show only icon (WCAG 2.1 Reflow)
   '@media (max-width: 400px)': {
+    position: 'static',
+    alignSelf: 'flex-end',
     '& > span': {
       display: 'none',
     },

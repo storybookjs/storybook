@@ -1175,7 +1175,7 @@ export default meta;`}
               </p>
               <CodeSnippet language="jsx">
                 {`{ /* introduction.mdx */ }
-import { Meta, Title, Subtitle, Description } from '@storybook/addon-docs/blocks';
+import { Meta, Title, Subtitle } from '@storybook/addon-docs/blocks';
 
 <Meta title="Get started" />
  
@@ -1183,10 +1183,8 @@ import { Meta, Title, Subtitle, Description } from '@storybook/addon-docs/blocks
 
 <Subtitle>It's really awesome</Subtitle>
 
-<Description>
-  My Awesome Project is designed to work with Your Awesome Project seamlessly.
-  Follow this guide and you'll be ready in no time.
-</Description>
+My Awesome Project is designed to work with Your Awesome Project seamlessly.
+Follow this guide and you'll be ready in no time.
 
 ## Install
 

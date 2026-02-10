@@ -102,6 +102,7 @@ export async function build(options: Options) {
         logger.error(event.error);
       }
     });
+    return watcher;
   }
   const statsPlugin = findPlugin(
     finalConfig,

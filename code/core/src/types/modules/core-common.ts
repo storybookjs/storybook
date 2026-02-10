@@ -32,7 +32,7 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<TelejsonOptions>;
+  channelOptions?: Partial<TelejsonOptions> & { wsToken?: string };
   /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**

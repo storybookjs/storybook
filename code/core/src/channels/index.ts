@@ -7,7 +7,7 @@ import { PostMessageTransport } from './postmessage';
 import type { ChannelTransport, Config } from './types';
 import { WebsocketTransport } from './websocket';
 
-const { CONFIG_TYPE } = global;
+const { CHANNEL_OPTIONS, CONFIG_TYPE } = global;
 
 export * from './main';
 
@@ -35,7 +35,8 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
   if (CONFIG_TYPE === 'DEVELOPMENT') {
     const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
     const { hostname, port } = window.location;
-    const channelUrl = `${protocol}://${hostname}:${port}/storybook-server-channel`;
+    const { token } = CHANNEL_OPTIONS || {};
+    const channelUrl = `${protocol}://${hostname}:${port}/storybook-server-channel?token=${token}`;
 
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));
   }

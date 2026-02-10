@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
@@ -190,8 +191,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
  * ...existing, someConfig })`, just overwriting everything and not merging with the existing
  * values.
  */
+const token = randomUUID();
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
+  channelOptions: { ...existing.channelOptions, token },
   disableTelemetry: options.disableTelemetry === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
@@ -255,6 +258,10 @@ export const managerHead = async (_: any, options: Options) => {
   }
 
   return '';
+};
+
+export const channelToken = async (value: string | undefined) => {
+  return value;
 };
 
 export const experimental_serverChannel = async (

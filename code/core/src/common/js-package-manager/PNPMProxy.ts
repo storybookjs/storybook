@@ -79,11 +79,15 @@ export class PNPMProxy extends JsPackageManager {
 
   public runPackageCommand({
     args,
+    useRemotePkg = false,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ResultPromise {
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     return executeCommand({
       command: 'pnpm',
-      args: ['exec', ...args],
+      args: [useRemotePkg ? 'dlx' : 'exec', ...args],
       ...options,
     });
   }

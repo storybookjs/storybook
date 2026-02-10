@@ -154,7 +154,7 @@ export const check = defineJob(
   (workflowName) => ({
     executor: {
       name: 'sb_node_22_classic',
-      class: 'xlarge',
+      class: 'medium+',
     },
     steps: [
       ...workflow.restoreLinux(),
@@ -184,15 +184,22 @@ export const lint = defineJob(
   () => ({
     executor: {
       name: 'sb_node_22_classic',
-      class: 'xlarge',
+      class: 'large',
     },
     steps: [
       ...workflow.restoreLinux(),
       {
         run: {
-          name: 'Lint code',
+          name: 'Lint code JS',
           working_directory: `code`,
-          command: 'yarn lint',
+          command: 'yarn lint:js',
+        },
+      },
+      {
+        run: {
+          name: 'Lint code Other',
+          working_directory: `code`,
+          command: 'yarn lint:other',
         },
       },
       {
@@ -321,7 +328,7 @@ export const benchmarkPackages = defineJob(
   () => ({
     executor: {
       name: 'sb_node_22_classic',
-      class: 'large',
+      class: 'medium+',
     },
     steps: [
       ...workflow.restoreLinux(),

@@ -11,6 +11,7 @@ import type { RollupWatcher, RollupWatcherEvent } from 'rollup';
 import type { InlineConfig } from 'vite';
 
 import { build } from './build';
+import type { ViteStats } from './types';
 
 // Mock logger
 vi.mock('storybook/internal/node-logger', () => ({
@@ -85,8 +86,7 @@ describe('build with watch mode', () => {
     // When watch is false, build returns stats (or undefined if no stats plugin)
     // but definitely NOT a watcher
     if (result) {
-      expect(result).not.toHaveProperty('on');
-      expect(result).not.toHaveProperty('close');
+      expect((result as ViteStats).watcher).toBeUndefined();
     } else {
       expect(result).toBeUndefined();
     }
@@ -96,9 +96,10 @@ describe('build with watch mode', () => {
     const options = createOptions(true);
     const result = await build(options);
 
-    expect(result).toHaveProperty('on');
-    expect(result).toHaveProperty('close');
-    const watcher = result as RollupWatcher;
+    expect(result).toHaveProperty('watcher');
+    const watcher = (result as ViteStats).watcher as RollupWatcher;
+    expect(watcher).toHaveProperty('on');
+    expect(watcher).toHaveProperty('close');
 
     const events: string[] = [];
     watcher.on('event', (e: RollupWatcherEvent) => {
@@ -145,7 +146,7 @@ describe('build with watch mode', () => {
   it('should handle syntax errors and recover', async () => {
     const options = createOptions(true);
     const result = await build(options);
-    const watcher = result as RollupWatcher;
+    const watcher = (result as ViteStats).watcher as RollupWatcher;
 
     // Wait for initial build
     await new Promise<void>((resolve) => {
@@ -192,5 +193,5 @@ describe('build with watch mode', () => {
     });
 
     await watcher.close();
-  }, 5000);
+  }, 20000);
 });

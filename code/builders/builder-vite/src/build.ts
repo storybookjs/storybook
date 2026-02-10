@@ -8,6 +8,7 @@ import type { InlineConfig } from 'vite';
 import { sanitizeEnvVars } from './envs';
 import { createViteLogger } from './logger';
 import type { WebpackStatsPlugin } from './plugins';
+import type { ViteStats } from './types';
 import { hasVitePlugins } from './utils/has-vite-plugins';
 import { withoutVitePlugins } from './utils/without-vite-plugins';
 import { commonConfig } from './vite-config';
@@ -102,7 +103,14 @@ export async function build(options: Options) {
         logger.error(event.error);
       }
     });
-    return watcher;
+
+    const statsPlugin = findPlugin(
+      finalConfig,
+      'storybook:rollup-plugin-webpack-stats'
+    ) as WebpackStatsPlugin;
+    const stats = statsPlugin?.storybookGetStats() ?? { toJson: () => ({}) };
+
+    return { ...stats, watcher } as ViteStats;
   }
   const statsPlugin = findPlugin(
     finalConfig,

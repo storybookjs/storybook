@@ -176,15 +176,13 @@ export function matchComponentDoc(
   if (docs.length === 1) {
     return docs[0];
   }
-  return (
-    docs.find(
-      (doc) =>
-        doc.exportName === importName ||
-        doc.exportName === localImportName ||
-        doc.displayName === importName ||
-        doc.displayName === localImportName ||
-        doc.displayName === componentName
-    ) ?? docs[0]
+  return docs.find(
+    (doc) =>
+      doc.exportName === importName ||
+      doc.exportName === localImportName ||
+      doc.displayName === importName ||
+      doc.displayName === localImportName ||
+      doc.displayName === componentName
   );
 }
 

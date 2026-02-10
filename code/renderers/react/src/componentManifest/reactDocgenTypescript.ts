@@ -10,12 +10,27 @@ import { cached, findTsconfigPath } from './utils';
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
 /**
- * Check if a prop is inherited from a React built-in Attributes interface (e.g. HTMLAttributes,
- * AriaAttributes, DOMAttributes, ButtonHTMLAttributes). This also catches module augmentations
- * (e.g. Next.js extending HTMLAttributes).
+ * Check if a prop is inherited from a built-in interface that should be filtered out:
+ * - React built-in interfaces from @types/react (HTMLAttributes, DOMAttributes, AriaAttributes, etc.)
+ * - DOM built-in interfaces from lib.dom.d.ts (HTMLElement, Node, Element, GlobalEventHandlers, etc.)
+ *   These leak through when wrapping Web Components (e.g. @github/relative-time-element).
  */
-const isReactBuiltinProp = (prop: { parent?: { name: string } }): boolean =>
-  prop.parent?.name?.endsWith('Attributes') ?? false;
+const isBuiltinProp = (prop: { parent?: { name: string; fileName: string } }): boolean => {
+  const fileName = prop.parent?.fileName;
+  if (!fileName) {
+    return false;
+  }
+  // React *Attributes interfaces (HTMLAttributes, DOMAttributes, etc.) from node_modules —
+  // catches @types/react and third-party augmentations (e.g. Next.js adding `tw` via @vercel/og)
+  if (prop.parent?.name?.endsWith('Attributes') && fileName.includes('node_modules')) {
+    return true;
+  }
+  // DOM built-in interfaces (HTMLElement, Node, Element, GlobalEventHandlers, etc.)
+  if (fileName.endsWith('lib.dom.d.ts')) {
+    return true;
+  }
+  return false;
+};
 
 /**
  * Find `Identifier.displayName = 'value'` assignments in a source file. Returns the string value if
@@ -209,7 +224,7 @@ export const parseWithReactDocgenTypescript = cached(
         exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
         // Filter out React built-in HTML/DOM/Aria props, keep third-party and custom props
         props: Object.fromEntries(
-          Object.entries(doc.props).filter(([, prop]) => !isReactBuiltinProp(prop))
+          Object.entries(doc.props).filter(([, prop]) => !isBuiltinProp(prop))
         ),
       }))
       .filter((doc) => /^[A-Z]/.test(doc.displayName));

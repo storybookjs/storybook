@@ -35,8 +35,8 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
   if (CONFIG_TYPE === 'DEVELOPMENT') {
     const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
     const { hostname, port } = window.location;
-    const { token } = CHANNEL_OPTIONS || {};
-    const channelUrl = `${protocol}://${hostname}:${port}/storybook-server-channel?token=${token}`;
+    const { wsToken } = CHANNEL_OPTIONS || {};
+    const channelUrl = `${protocol}://${hostname}:${port}/storybook-server-channel?token=${wsToken}`;
 
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));
   }

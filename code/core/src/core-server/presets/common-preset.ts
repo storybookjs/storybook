@@ -191,10 +191,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
  * ...existing, someConfig })`, just overwriting everything and not merging with the existing
  * values.
  */
-const token = randomUUID();
+const wsToken = randomUUID();
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
-  channelOptions: { ...existing.channelOptions, token },
+  channelOptions: { ...(existing?.channelOptions ?? {}), wsToken },
   disableTelemetry: options.disableTelemetry === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),

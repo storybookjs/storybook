@@ -18,24 +18,53 @@ const isReactBuiltinProp = (prop: { parent?: { name: string } }): boolean =>
   prop.parent?.name?.endsWith('Attributes') ?? false;
 
 /**
- * Get the ordered list of export names for symbols that react-docgen-typescript would recognize as
- * components. react-docgen-typescript processes exports in order and skips non-components, so the
- * Nth doc corresponds to the Nth component-export.
+ * Find `Identifier.displayName = 'value'` assignments in a source file. Returns the string value if
+ * the identifier matches the given name, otherwise undefined.
+ */
+function findDisplayNameAssignment(
+  sourceFile: ts.SourceFile,
+  identifierName: string
+): string | undefined {
+  for (const statement of sourceFile.statements) {
+    if (!ts.isExpressionStatement(statement)) {
+      continue;
+    }
+    const expr = statement.expression;
+    if (
+      ts.isBinaryExpression(expr) &&
+      expr.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+      ts.isPropertyAccessExpression(expr.left) &&
+      expr.left.name.text === 'displayName' &&
+      ts.isIdentifier(expr.left.expression) &&
+      expr.left.expression.text === identifierName &&
+      ts.isStringLiteral(expr.right)
+    ) {
+      return expr.right.text;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Build a map from possible displayName values to the public export name for component exports.
+ * react-docgen-typescript computes displayName from:
  *
- * This replicates the component detection heuristic from react-docgen-typescript's Parser:
+ * 1. An explicit `.displayName` static property
+ * 2. The resolved symbol name (e.g. "Card" for `export { Card as RenamedCard }`)
+ * 3. The filename (for default exports)
  *
- * - ExtractPropsFromTypeIfStatelessComponent: call signatures with a "props" param
- * - ExtractPropsFromTypeIfStatefulComponent: construct signatures with 'props' on the instance
+ * We map all of these to the correct export name so we can match docs by displayName.
  *
  * @see https://github.com/styleguidist/react-docgen-typescript/blob/master/src/parser.ts
  */
-function getComponentExportNames(checker: ts.TypeChecker, sourceFile: ts.SourceFile): string[] {
+function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): Map<string, string> {
   const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
   if (!moduleSymbol) {
-    return [];
+    return new Map();
   }
 
-  const result: string[] = [];
+  const result = new Map<string, string>();
+  const fileName = sourceFile.fileName.replace(/.*\//, '').replace(/\.[^.]+$/, '');
 
   for (const exportSymbol of checker.getExportsOfModule(moduleSymbol)) {
     const resolved =
@@ -62,7 +91,23 @@ function getComponentExportNames(checker: ts.TypeChecker, sourceFile: ts.SourceF
     );
 
     if (isStateless || isStateful) {
-      result.push(exportSymbol.getName());
+      const exportName = exportSymbol.getName();
+      const resolvedName = resolved.getName();
+
+      // Map resolved symbol name → export name (handles aliased re-exports)
+      result.set(resolvedName, exportName);
+
+      // For default exports, RDT uses the filename as displayName
+      if (exportName === 'default') {
+        result.set(fileName, 'default');
+      }
+
+      // If the component has a static .displayName assignment (e.g. Foo.displayName = 'Bar'),
+      // RDT uses that value. Map it → export name so we can match it.
+      const displayNameValue = findDisplayNameAssignment(sourceFile, resolvedName);
+      if (displayNameValue) {
+        result.set(displayNameValue, exportName);
+      }
     }
   }
 
@@ -154,12 +199,16 @@ export const parseWithReactDocgenTypescript = cached(
     const sourceFile = program.getSourceFile(filePath);
 
     const docs = fileParser.parseWithProgramProvider(filePath, () => program);
-    const exportNames = sourceFile ? getComponentExportNames(checker, sourceFile) : [];
+    // Map from resolved (original) name → public export name.
+    // e.g. for `export { Card as RenamedCard }`: "Card" → "RenamedCard"
+    const exportNameMap = sourceFile ? getExportNameMap(checker, sourceFile) : new Map();
 
     return docs
-      .map((doc, i) => ({
+      .map((doc) => ({
         ...doc,
-        exportName: exportNames[i] ?? doc.displayName,
+        // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
+        // export map to get the public export name. Falls back to displayName when not aliased.
+        exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
         // Filter out React built-in HTML/DOM/Aria props, keep third-party and custom props
         props: Object.fromEntries(
           Object.entries(doc.props).filter(([, prop]) => !isReactBuiltinProp(prop))

@@ -1605,6 +1605,85 @@ describe('parseFile', () => {
       `);
   });
 
+  test('RenamedExport (export { Foo as Bar } — displayName differs from exportName)', () => {
+    const result = normalize(parseWithReactDocgenTypescript(fixture('RenamedExport.ts')));
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "description": "",
+          "displayName": "Alert",
+          "exportName": "NotificationBanner",
+          "filePath": "RenamedExport.ts",
+          "methods": [],
+          "props": {
+            "message": {
+              "declarations": [
+                {
+                  "fileName": "RenamedExport.ts",
+                  "name": "AlertProps",
+                },
+              ],
+              "defaultValue": null,
+              "description": "",
+              "name": "message",
+              "parent": {
+                "fileName": "RenamedExport.ts",
+                "name": "AlertProps",
+              },
+              "required": true,
+              "type": {
+                "name": "string",
+              },
+            },
+            "severity": {
+              "declarations": [
+                {
+                  "fileName": "RenamedExport.ts",
+                  "name": "AlertProps",
+                },
+              ],
+              "defaultValue": null,
+              "description": "",
+              "name": "severity",
+              "parent": {
+                "fileName": "RenamedExport.ts",
+                "name": "AlertProps",
+              },
+              "required": false,
+              "type": {
+                "name": "enum",
+                "raw": ""info" | "warning" | "error"",
+                "value": [
+                  {
+                    "value": ""info"",
+                  },
+                  {
+                    "value": ""warning"",
+                  },
+                  {
+                    "value": ""error"",
+                  },
+                ],
+              },
+            },
+          },
+          "tags": {},
+        },
+      ]
+    `);
+    // Key assertion: displayName is the internal name, exportName is what consumers import
+    expect(result[0].displayName).toBe('Alert');
+    expect(result[0].exportName).toBe('NotificationBanner');
+  });
+
+  test('DisplayNameOverride (component.displayName set explicitly)', () => {
+    const result = normalize(parseWithReactDocgenTypescript(fixture('DisplayNameOverride.ts')));
+    // The export name should be "Modal" (the export alias), not "InternalModal" or "FancyModal"
+    expect(result[0].exportName).toBe('Modal');
+    expect(result[0].props).toHaveProperty('title');
+    expect(result[0].props).toHaveProperty('open');
+  });
+
   test('Barrel (export * from barrel index)', () => {
     expect(normalize(parseWithReactDocgenTypescript(fixture('barrel/index.ts'))))
       .toMatchInlineSnapshot(`

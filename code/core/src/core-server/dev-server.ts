@@ -30,7 +30,7 @@ export async function storybookDevServer(options: Options) {
 
   const serverChannel = await options.presets.apply(
     'experimental_serverChannel',
-    getServerChannel(server, core?.channelOptions?.token)
+    getServerChannel(server, core?.channelOptions?.wsToken)
   );
 
   const workingDir = process.cwd();

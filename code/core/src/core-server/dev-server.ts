@@ -30,7 +30,7 @@ export async function storybookDevServer(options: Options) {
 
   const serverChannel = await options.presets.apply(
     'experimental_serverChannel',
-    getServerChannel(server)
+    getServerChannel(server, core?.channelOptions?.token)
   );
 
   const workingDir = process.cwd();
@@ -52,8 +52,6 @@ export async function storybookDevServer(options: Options) {
     options.extendServer(server);
   }
 
-  // CORS middleware must be registered BEFORE route handlers to ensure all routes
-  // (including /index.json) receive proper CORS headers for Storybook Composition
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 

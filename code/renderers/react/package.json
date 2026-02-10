@@ -74,6 +74,7 @@
     "prop-types": "^15.7.2",
     "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
     "require-from-string": "^2.0.2",
+    "styled-components": "^6.3.9",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"
   },

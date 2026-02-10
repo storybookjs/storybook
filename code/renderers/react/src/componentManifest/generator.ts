@@ -17,10 +17,12 @@ import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
 import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
+  reactDocgenTypescript?: ComponentDocWithExportName;
 }
 
 function findMatchingComponent(
@@ -105,6 +107,7 @@ export const manifests: PresetPropertyFn<
   { manifestEntries: IndexEntry[] }
 > = async (existingManifests = {}, { manifestEntries }) => {
   invalidateCache();
+  invalidateParser();
 
   const startPerformance = performance.now();
 
@@ -193,6 +196,9 @@ export const manifests: PresetPropertyFn<
         summary,
         import: imports,
         reactDocgen: docgen,
+        ...(component.reactDocgenTypescript
+          ? { reactDocgenTypescript: component.reactDocgenTypescript }
+          : {}),
         jsDocTags,
         error: docgenResult.type === 'error' ? docgenResult.error : undefined,
       };

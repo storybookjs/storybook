@@ -5,6 +5,11 @@ import { type CsfFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
+import {
+  type ComponentDocWithExportName,
+  matchComponentDoc,
+  parseWithReactDocgenTypescript,
+} from './reactDocgenTypescript';
 import { cachedResolveImport } from './utils';
 
 // Public component metadata type used across passes
@@ -18,6 +23,7 @@ export type ComponentRef = {
   path?: string;
   isPackage: boolean;
   reactDocgen?: ReturnType<typeof getReactDocgen>;
+  reactDocgenTypescript?: ComponentDocWithExportName;
 };
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
@@ -215,10 +221,22 @@ export const getComponents = ({
 
       if (path) {
         const reactDocgen = getReactDocgen(path, componentWithPackage);
+
+        let reactDocgenTypescript: ComponentDocWithExportName | undefined;
+        try {
+          reactDocgenTypescript = matchComponentDoc(
+            parseWithReactDocgenTypescript(path),
+            component
+          );
+        } catch (e) {
+          logger.debug(`react-docgen-typescript failed for ${path}: ${e}`);
+        }
+
         return {
           ...componentWithPackage,
           path,
           reactDocgen,
+          ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
           importOverride:
             reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
         };

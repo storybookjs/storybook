@@ -58,6 +58,21 @@ describe('build with watch mode', () => {
     vi.clearAllMocks();
   });
 
+  const waitForEvent = (
+    emitter: RollupWatcher,
+    code: RollupWatcherEvent['code']
+  ): Promise<void> => {
+    return new Promise((resolve) => {
+      const handler = (e: RollupWatcherEvent) => {
+        if (e.code === code) {
+          emitter.off('event', handler);
+          resolve();
+        }
+      };
+      emitter.on('event', handler);
+    });
+  };
+
   const createOptions = (watch: boolean): Options =>
     ({
       outputDir: path.join(tmpDir, 'dist'),
@@ -107,34 +122,15 @@ describe('build with watch mode', () => {
     });
 
     // Wait for initial build to complete
-    await new Promise<void>((resolve) => {
-      const handler = (e: RollupWatcherEvent) => {
-        if (e.code === 'END') {
-          watcher.off('event', handler);
-          resolve();
-        }
-      };
-      watcher.on('event', handler);
-    });
+    await waitForEvent(watcher, 'END');
 
     // Clear initial events
     events.length = 0;
 
-    // Modify file
+    // Attach listener for the NEXT 'END' event BEFORE writing to the file
+    const rebuildPromise = waitForEvent(watcher, 'END');
     await fs.writeFile(storyFilePath, 'export const Primary = () => "Hello World";');
-
-    // Wait for rebuild
-    await new Promise<void>((resolve) => {
-      setTimeout(() => {
-        const handler = (e: RollupWatcherEvent) => {
-          if (e.code === 'END') {
-            watcher.off('event', handler);
-            resolve();
-          }
-        };
-        watcher.on('event', handler);
-      }, 100);
-    });
+    await rebuildPromise;
 
     expect(events).toContain('START');
     expect(events).toContain('BUNDLE_END');
@@ -149,48 +145,30 @@ describe('build with watch mode', () => {
     const watcher = (result as ViteStats).watcher as RollupWatcher;
 
     // Wait for initial build
-    await new Promise<void>((resolve) => {
-      const handler = (e: RollupWatcherEvent) => {
-        if (e.code === 'END') {
-          watcher.off('event', handler);
-          resolve();
-        }
-      };
-      watcher.on('event', handler);
-    });
+    await waitForEvent(watcher, 'END');
+
+    // Listen for error before triggering it
+    const errorPromise = waitForEvent(watcher, 'ERROR');
 
     // Introduce Syntax Error
     await fs.writeFile(storyFilePath, 'export const Primary = () => "Hello"; \n const a = ;');
 
     // Wait for Error
-    await new Promise<void>((resolve) => {
-      const handler = (e: RollupWatcherEvent) => {
-        if (e.code === 'ERROR') {
-          watcher.off('event', handler);
-          resolve();
-        }
-      };
-      watcher.on('event', handler);
-    });
+    await errorPromise;
 
     // Check if logger.error was called
     expect(logger.error).toHaveBeenCalledWith('Error during build:');
     // We expect at least 2 calls
     expect((logger.error as Mock).mock.calls.length).toBeGreaterThanOrEqual(2);
 
+    // Listen for recovery before triggering it
+    const recoveryPromise = waitForEvent(watcher, 'END');
+
     // Fix Syntax Error
     await fs.writeFile(storyFilePath, 'export const Primary = () => "Hello Fixed";');
 
     // Wait for Recovery (END)
-    await new Promise<void>((resolve) => {
-      const handler = (e: RollupWatcherEvent) => {
-        if (e.code === 'END') {
-          watcher.off('event', handler);
-          resolve();
-        }
-      };
-      watcher.on('event', handler);
-    });
+    await recoveryPromise;
 
     await watcher.close();
   }, 20000);

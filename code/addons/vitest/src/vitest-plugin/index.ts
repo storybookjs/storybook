@@ -29,6 +29,7 @@ import { join, normalize, relative, resolve, sep } from 'pathe';
 import path from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
+import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
 // ! Relative import to prebundle it without needing to depend on the Vite builder
@@ -278,28 +279,24 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       // Use normalized stories which have paths relative to workingDir (process.cwd())
       // normalizeStories already resolves story paths correctly relative to workingDir
-      const includeStories = normalizedStories
-        .map((normalizedStory) => {
-          // Build the story pattern from normalized directory and files
-          // Note: normalizeStories uses slash() to normalize separators to forward slashes
-          // and removes trailing slashes from directory, so string concatenation is safe
-          const storyPattern = `${normalizedStory.directory}/${normalizedStory.files}`;
+      const includeStories = normalizedStories.map((normalizedStory) => {
+        // Build the story pattern from normalized directory and files
+        // Note: normalizeStories uses slash() to normalize separators to forward slashes
+        // and removes trailing slashes from directory, so string concatenation is safe
+        let storyPattern = `${normalizedStory.directory}/${normalizedStory.files}`;
 
-          // If vitestRoot is different from workingDir, adjust the path
-          if (finalOptions.vitestRoot !== WORKING_DIR) {
-            const absolutePath = resolve(WORKING_DIR, storyPattern);
-            const relativePath = relative(finalOptions.vitestRoot, absolutePath);
-            // Normalize path separators: relative() returns platform-specific separators,
-            // but we need forward slashes for Vitest patterns
-            return relativePath.replaceAll(sep, '/');
-          }
+        // If vitestRoot is different from workingDir, adjust the path
+        if (finalOptions.vitestRoot !== WORKING_DIR) {
+          const absolutePath = resolve(WORKING_DIR, storyPattern);
+          const relativePath = relative(finalOptions.vitestRoot, absolutePath);
+          // Normalize path separators: relative() returns platform-specific separators,
+          // but we need forward slashes for Vitest patterns
+          storyPattern = slash(relativePath);
+        }
 
-          return storyPattern;
-        })
-        .map((pattern) => {
-          // Remove leading ./ for cleaner patterns
-          return pattern.replace(/^\.\//, '');
-        });
+        // Remove leading ./ for cleaner patterns (consistent across all paths)
+        return storyPattern.replace(/^\.\//, '');
+      });
 
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);

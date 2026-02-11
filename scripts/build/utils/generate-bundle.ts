@@ -4,10 +4,10 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
+import { raw as rawPlugin } from 'esbuild-raw-plugin';
 import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
-import {raw as rawPlugin} from 'esbuild-raw-plugin';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info';
 import {
@@ -130,7 +130,7 @@ export async function generateBundle({
       // The following modules are conditionally called inside of @vitest/mocker
       // The actual function which calls these modules is not imported
       // and therefore we can externalize them.
-      'msw/browser', 
+      'msw/browser',
       'msw/core/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
     alias: {

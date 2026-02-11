@@ -8,6 +8,7 @@ import type {
   Addon_Elements,
   Addon_Loaders,
   Addon_PageType,
+  Addon_ShareProviderType,
   Addon_TestProviderType,
   Addon_Type,
   Addon_Types,
@@ -69,6 +70,7 @@ export class AddonStore {
     T extends
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
+      | Addon_TypesEnum.experimental_SHARE_PROVIDER
       | Addon_TypesEnum.experimental_TEST_PROVIDER,
   >(type: T): Addon_Collection<Addon_TypesMapping[T]> | any {
     if (!this.elements[type]) {
@@ -88,6 +90,7 @@ export class AddonStore {
     id: string,
     addon:
       | Addon_BaseType
+      | Omit<Addon_ShareProviderType, 'id'>
       | Omit<Addon_TestProviderType, 'id'>
       | Omit<Addon_PageType, 'id'>
       | Omit<Addon_WrapperType, 'id'>

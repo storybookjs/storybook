@@ -259,6 +259,7 @@ export const ChecklistWidget = () => {
                   </CollapseToggle>
                   {loaded && (
                     <PopoverProvider
+                      ariaLabel="Onboarding guide menu"
                       padding={0}
                       popover={({ onHide }) => (
                         <ActionList>

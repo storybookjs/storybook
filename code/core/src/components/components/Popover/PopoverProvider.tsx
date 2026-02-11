@@ -1,5 +1,7 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { useCallback, useState } from 'react';
+import React, { cloneElement, useCallback, useState } from 'react';
+
+import { deprecate } from 'storybook/internal/client-logger';
 
 import { Pressable } from '@react-aria/interactions';
 import { DialogTrigger } from 'react-aria-components/patched-dist/Dialog';
@@ -9,6 +11,12 @@ import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/ove
 import { Popover } from './Popover';
 
 export interface PopoverProviderProps {
+  /**
+   * An accessible label for the popover dialog, announced by screen readers. This prop will become
+   * mandatory in Storybook 11. Provide a concise description of the popover's purpose.
+   */
+  ariaLabel?: string;
+
   /** Whether to display the Popover in a prestyled container. True by default. */
   hasChrome?: boolean;
 
@@ -53,6 +61,7 @@ export interface PopoverProviderProps {
 }
 
 export const PopoverProvider = ({
+  ariaLabel,
   placement: placementProp = 'bottom-start',
   hasChrome = true,
   hasCloseButton = false,
@@ -66,6 +75,12 @@ export const PopoverProvider = ({
   onVisibleChange,
   ...props
 }: PopoverProviderProps) => {
+  if (!ariaLabel) {
+    deprecate(
+      "The 'ariaLabel' prop on 'PopoverProvider' will become mandatory in Storybook 11. Provide a concise, accessible label describing the popover's purpose."
+    );
+  }
+
   // Map Popper.js placement to react-aria placement best we can.
   const placement = convertToReactAriaPlacement(placementProp);
 
@@ -86,8 +101,22 @@ export const PopoverProvider = ({
       onOpenChange={onOpenChange}
       {...props}
     >
-      <Pressable>{children}</Pressable>
-      <PopoverUpstream placement={placement} offset={offset} style={{ outline: 'none' }}>
+      <Pressable>
+        {
+          /* React-aria does not inject aria-haspopup='dialog' to support legacy screen readers, so we do it ourselves. */
+          cloneElement(
+            children,
+            // @ts-expect-error aria-haspopup is a valid ARIA attribute but cloneElement types are too strict
+            { 'aria-haspopup': 'dialog' }
+          )
+        }
+      </Pressable>
+      <PopoverUpstream
+        aria-label={ariaLabel}
+        placement={placement}
+        offset={offset}
+        style={{ outline: 'none' }}
+      >
         <Popover
           hasChrome={hasChrome}
           hideLabel={closeLabel}

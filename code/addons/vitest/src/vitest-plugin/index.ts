@@ -277,21 +277,26 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
 
       // Use normalized stories which have paths relative to workingDir (process.cwd())
+      // normalizeStories already resolves story paths correctly relative to workingDir
       const includeStories = normalizedStories
         .map((normalizedStory) => {
-          // normalizedStory.directory is already relative to workingDir
-          // We need to make it relative to vitestRoot
+          // Build the story pattern from normalized directory and files
+          // Note: normalizedStory.directory already uses forward slashes (from normalizeStories)
           const storyPattern = `${normalizedStory.directory}/${normalizedStory.files}`;
+
           // If vitestRoot is different from workingDir, adjust the path
           if (finalOptions.vitestRoot !== WORKING_DIR) {
             const absolutePath = resolve(WORKING_DIR, storyPattern);
-            return relative(finalOptions.vitestRoot, absolutePath);
+            const relativePath = relative(finalOptions.vitestRoot, absolutePath);
+            // Normalize path separators to forward slashes for consistency
+            return relativePath.replaceAll(sep, '/');
           }
+
           return storyPattern;
         })
         .map((pattern) => {
-          // Normalize path separators and remove leading ./
-          return pattern.replace(/^\.\//, '').replaceAll(sep, '/');
+          // Remove leading ./ for cleaner patterns
+          return pattern.replace(/^\.\//, '');
         });
 
       finalOptions.includeStories = includeStories;

@@ -1,5 +1,11 @@
 # v3.1.10 (Tue Jan 27 2026)
 
+## 3.1.11
+
+### Patch Changes
+
+- [#87](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/87) [`60468b6`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/60468b61633491202ba02a57d7b755e4f2a91b59) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Support vite resolve.alias config
+
 #### 🐛 Bug Fix
 
 - Support latest prerelease [#85](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/85) ([@valentinpalkovic](https://github.com/valentinpalkovic))
@@ -760,8 +766,6 @@
 ---
 
 # v0.0.4 (Tue Jul 30 2024)
-
-
 
 ---
 

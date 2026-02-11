@@ -1,4 +1,6 @@
 import path from "node:path";
+import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import type { PluginContext } from "rollup";
 import { describe, expect, it, vi } from "vitest";
 
 const requireResolveMock = vi.hoisted(() => vi.fn());
@@ -13,10 +15,13 @@ import { vitePluginNextImage } from "./plugin";
 
 describe("vitePluginNextImage resolveId", () => {
   const nextConfigResolver = {
-    promise: Promise.resolve({}),
+    promise: Promise.resolve({} as NextConfigComplete),
     resolve: vi.fn(),
     reject: vi.fn(),
-  } as PromiseWithResolvers<unknown>;
+  } as PromiseWithResolvers<NextConfigComplete>;
+
+  const createContext = (resolve: PluginContext["resolve"]) =>
+    ({ resolve }) as PluginContext;
 
   it("resolves relative image imports against importer", async () => {
     const plugin = vitePluginNextImage(nextConfigResolver);
@@ -24,7 +29,7 @@ describe("vitePluginNextImage resolveId", () => {
     const importer = "/project/src/Component.tsx";
 
     const result = await plugin.resolveId!.call(
-      { resolve },
+      createContext(resolve),
       "./images/avatar.png",
       importer,
     );
@@ -44,7 +49,7 @@ describe("vitePluginNextImage resolveId", () => {
     const resolve = vi.fn().mockResolvedValue({ id: resolvedPath });
 
     const result = await plugin.resolveId!.call(
-      { resolve },
+      createContext(resolve),
       "@myorg/assets/images/avatar.png",
       "/project/src/Component.tsx",
     );
@@ -66,7 +71,7 @@ describe("vitePluginNextImage resolveId", () => {
     requireResolveMock.mockReturnValueOnce(resolvedPath);
 
     const result = await plugin.resolveId!.call(
-      { resolve },
+      createContext(resolve),
       "@myorg/assets/images/avatar.png",
       importer,
     );

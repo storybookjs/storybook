@@ -34,9 +34,7 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
 
       const index: StoryIndex = await storyIndexGenerator.getIndex();
 
-      const { plugins, ...configToResolve } = config;
-
-      const resolvedConfig = await resolveConfig(configToResolve, 'serve', 'development');
+      const resolvedConfig = await resolveConfig({}, 'serve', 'development');
 
       const resolve = resolvedConfig.createResolver({ asSrc: false });
       const include = await asyncFilter([...extraOptimizeDeps, ...INCLUDE_CANDIDATES], async (id) =>

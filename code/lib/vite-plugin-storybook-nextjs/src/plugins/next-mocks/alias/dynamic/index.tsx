@@ -75,7 +75,8 @@ export default function dynamic<P = Record<string, unknown>>(
   dynamicOptions: DynamicOptions<P> | Loader<P>,
   options?: DynamicOptions<P>,
 ): React.ComponentType<P> {
-  const loadableFn = Loadable as LoadableFn<P>;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const loadableFn = ((Loadable as any)?.default ?? Loadable) as LoadableFn<P>;
 
   let loadableOptions: LoadableOptions<P> = {
     // A loading component is not required, so we default it

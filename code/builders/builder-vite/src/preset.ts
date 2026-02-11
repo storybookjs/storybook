@@ -7,7 +7,6 @@ import type { PluginOption } from 'vite';
 import { storybookConfigPlugin } from './plugins/storybook-config-plugin';
 import { storybookOptimizeDepsPlugin } from './plugins/storybook-optimize-deps-plugin';
 import { storybookProjectAnnotationsPlugin } from './plugins/storybook-project-annotations-plugin';
-import { storybookRuntimePlugin } from './plugins/storybook-runtime-plugin';
 import { viteInjectMockerRuntime } from './plugins/vite-inject-mocker/plugin';
 import { viteMockPlugin } from './plugins/vite-mock/plugin';
 
@@ -43,7 +42,6 @@ export async function viteCorePlugins(
   }
 
   return [
-    ...(await storybookRuntimePlugin(options)),
     ...storybookConfigPlugin({ configDir: options.configDir, setRoot: false }),
     storybookOptimizeDepsPlugin(options),
     storybookProjectAnnotationsPlugin(options),

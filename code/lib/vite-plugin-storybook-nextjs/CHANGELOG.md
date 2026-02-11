@@ -1,5 +1,3 @@
-## 3.1.11
-
 ## 3.1.12
 
 ### Patch Changes
@@ -7,6 +5,8 @@
 - [#91](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/91) [`a671255`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/a671255a12f8376a1ab343ae26013f67bb9ba719) Thanks [@ButterflyBug](https://github.com/ButterflyBug)! - Support unstable_rethrow from next/navigation
 
 - [#90](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/90) [`76b6d17`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/76b6d17f96d4347ee0712886eb4ece19118291e4) Thanks [@yannbf](https://github.com/yannbf)! - Fix loadable import in ESM environments
+
+## 3.1.11
 
 ### Patch Changes
 

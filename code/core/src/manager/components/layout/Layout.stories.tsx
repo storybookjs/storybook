@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { startCase } from 'es-toolkit/string';
 import { action } from 'storybook/actions';
 import { ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { isChromatic } from '../../../../../.storybook/isChromatic';
@@ -24,7 +24,7 @@ const PlaceholderBlock = styled.div({
   overflow: 'hidden',
 });
 
-const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
+const PlaceholderClock: FC<{ id: string } & PropsWithChildren> = ({ children, id }) => {
   const [count, setCount] = React.useState(0);
   React.useEffect(() => {
     if (isChromatic()) {
@@ -38,18 +38,21 @@ const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
   return (
     <PlaceholderBlock>
       <h2 data-chromatic="ignore">{count}</h2>
+      <button data-testid={id} className="sb-sr-only">
+        Focusable
+      </button>
       {children}
     </PlaceholderBlock>
   );
 };
 
-const MockSidebar: FC<any> = () => <PlaceholderClock />;
+const MockSidebar: FC<any> = () => <PlaceholderClock id="sidebar" />;
 
-const MockPreview: FC<any> = () => <PlaceholderClock />;
+const MockPreview: FC<any> = () => <PlaceholderClock id="preview" />;
 
-const MockPanel: FC<any> = () => <PlaceholderClock />;
+const MockPanel: FC<any> = () => <PlaceholderClock id="panel" />;
 
-const MockPage: FC<any> = () => <PlaceholderClock />;
+const MockPage: FC<any> = () => <PlaceholderClock id="page" />;
 
 const defaultState = {
   navSize: 150,
@@ -145,17 +148,70 @@ export const DesktopHorizontal: Story = {
   args: {
     managerLayoutState: { ...defaultState, panelPosition: 'right' },
   },
+  play: async ({ canvas, step }) => {
+    await step('Verify preview can be focused', async () => {
+      const preview = canvas.getByTestId('preview');
+      preview.focus();
+      expect(preview).toHaveFocus();
+    });
+    await step('Verify panel can be focused', async () => {
+      const panel = canvas.getByTestId('panel');
+      panel.focus();
+      expect(panel).toHaveFocus();
+    });
+  },
+};
+
+export const DesktopCollapsedPanel: Story = {
+  args: {
+    managerLayoutState: { ...defaultState, bottomPanelHeight: 0 },
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify panel is rendered but collapsed', async () => {
+      const panel = canvas.getByTestId('panel');
+      expect(panel.clientHeight).toBe(0);
+    });
+
+    await step('Verify panel cannot be focused', async () => {
+      const panel = canvas.getByTestId('panel');
+      panel.focus();
+      expect(panel).not.toHaveFocus();
+    });
+  },
 };
 
 export const DesktopDocs: Story = {
   args: {
     managerLayoutState: { ...defaultState, viewMode: 'docs' },
   },
+  play: async ({ canvas, step }) => {
+    await step('Verify pages main landmark is not rendered', async () => {
+      const pagesMain = canvas.queryByRole('main', { name: 'Main content' });
+      expect(pagesMain).not.toBeInTheDocument();
+    });
+    await step('Verify preview area is  rendered', async () => {
+      const preview = canvas.getByTestId('preview');
+      expect(preview).toBeInTheDocument();
+    });
+  },
 };
 
 export const DesktopPages: Story = {
   args: {
     managerLayoutState: { ...defaultState, viewMode: 'settings' },
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify pages main landmark is rendered', async () => {
+      const pagesMain = canvas.queryByRole('main', { name: 'Main content' });
+      expect(pagesMain).toBeInTheDocument();
+      const page = canvas.getByTestId('page');
+      page.focus();
+      expect(page).toHaveFocus();
+    });
+    await step('Verify preview area is not rendered', async () => {
+      const preview = canvas.queryByTestId('preview');
+      expect(preview).not.toBeInTheDocument();
+    });
   },
 };
 

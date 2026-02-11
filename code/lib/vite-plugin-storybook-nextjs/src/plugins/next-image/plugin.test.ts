@@ -1,7 +1,7 @@
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
-const requireResolveMock = vi.fn();
+const requireResolveMock = vi.hoisted(() => vi.fn());
 
 vi.mock("node:module", () => ({
   createRequire: () => ({

@@ -1,3 +1,5 @@
+import { resolve } from 'node:url';
+
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Options, StoryIndex } from 'storybook/internal/types';
 
@@ -34,11 +36,19 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
 
       const index: StoryIndex = await storyIndexGenerator.getIndex();
 
-      const resolvedConfig = await resolveConfig({}, 'serve', 'development');
-
-      const resolve = resolvedConfig.createResolver({ asSrc: false });
+      const resolvedConfig = await resolveConfig(
+        {
+          root: resolve(options.configDir, '..'),
+        },
+        'serve',
+        'development',
+        undefined,
+        undefined,
+        undefined
+      );
+      const resolveId = await (await resolvedConfig).createResolver({ asSrc: false });
       const include = await asyncFilter([...extraOptimizeDeps, ...INCLUDE_CANDIDATES], async (id) =>
-        Boolean(await resolve(id))
+        Boolean(await resolveId(id))
       );
 
       return {

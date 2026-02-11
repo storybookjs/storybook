@@ -6,6 +6,7 @@ import { dedent } from 'ts-dedent';
 import type { InlineConfig, ServerOptions } from 'vite';
 
 import { createViteLogger } from './logger';
+import { getOptimizeDeps } from './optimizeDeps';
 import { commonConfig } from './vite-config';
 
 export async function createViteServer(options: Options, devServer: Server) {
@@ -13,9 +14,15 @@ export async function createViteServer(options: Options, devServer: Server) {
 
   const commonCfg = await commonConfig(options, 'development');
 
+  const optimizeDeps = await getOptimizeDeps(commonCfg);
+
   const config: InlineConfig & { server: ServerOptions } = {
     ...commonCfg,
     // Set up dev server
+    optimizeDeps: {
+      ...commonCfg.optimizeDeps,
+      include: [...(commonCfg.optimizeDeps?.include || []), ...optimizeDeps.include],
+    },
     server: {
       middlewareMode: true,
       hmr: {

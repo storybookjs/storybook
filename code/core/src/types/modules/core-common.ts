@@ -215,6 +215,7 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  localAddress?: string;
   networkAddress?: string;
 }
 

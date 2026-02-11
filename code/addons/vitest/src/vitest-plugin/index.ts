@@ -72,6 +72,7 @@ const getStoryGlobsAndFiles = async (
 
   return {
     storiesGlobs: stories,
+    normalizedStories,
     storiesFiles: StoryIndexGenerator.storyFileNames(
       new Map(matchingStoryFiles.map(([specifier, cache]) => [specifier, cache]))
     ),
@@ -199,7 +200,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   const commonConfig = { root: resolve(finalOptions.configDir, '..') };
 
   const [
-    { storiesGlobs },
+    { storiesGlobs, normalizedStories },
     framework,
     viteConfigFromStorybook,
     staticDirs,
@@ -275,20 +276,22 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.vitestRoot =
         testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
 
-      const includeStories = stories
-        .map((story) => {
-          let storyPath;
-
-          if (typeof story === 'string') {
-            storyPath = story;
-          } else {
-            storyPath = `${story.directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
+      // Use normalized stories which have paths relative to workingDir (process.cwd())
+      const includeStories = normalizedStories
+        .map((normalizedStory) => {
+          // normalizedStory.directory is already relative to workingDir
+          // We need to make it relative to vitestRoot
+          const storyPattern = `${normalizedStory.directory}/${normalizedStory.files}`;
+          // If vitestRoot is different from workingDir, adjust the path
+          if (finalOptions.vitestRoot !== WORKING_DIR) {
+            const absolutePath = resolve(WORKING_DIR, storyPattern);
+            return relative(finalOptions.vitestRoot, absolutePath);
           }
-
-          return join(finalOptions.configDir, storyPath);
+          return storyPattern;
         })
-        .map((story) => {
-          return relative(finalOptions.vitestRoot, story);
+        .map((pattern) => {
+          // Normalize path separators and remove leading ./
+          return pattern.replace(/^\.\//, '').replaceAll(sep, '/');
         });
 
       finalOptions.includeStories = includeStories;

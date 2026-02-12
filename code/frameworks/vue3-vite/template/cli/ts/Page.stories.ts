@@ -1,15 +1,27 @@
-import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import type { Meta, StoryObj, WithCustomArgs } from '@storybook/vue3-vite';
 
 import { expect, userEvent, within } from 'storybook/test';
 
 import MyPage from './Page.vue';
 
+// Example of using custom args that don't map to component props
+type PageArgs = WithCustomArgs<typeof MyPage, { footer?: string }>;
+
 const meta = {
   title: 'Example/Page',
   component: MyPage,
-  render: () => ({
+  render: (args) => ({
     components: { MyPage },
-    template: '<my-page />',
+    setup() {
+      return { args };
+    },
+    template: `
+      <my-page v-bind="args">
+        <template v-slot:footer>
+          <footer v-if="args.footer" v-html="args.footer" />
+        </template>
+      </my-page>
+    `,
   }),
   parameters: {
     // More on how to position stories at: https://storybook.js.org/docs/configure/story-layout
@@ -17,10 +29,16 @@ const meta = {
   },
   // This component will have an automatically generated docsPage entry: https://storybook.js.org/docs/writing-docs/autodocs
   tags: ['autodocs'],
-} satisfies Meta<typeof MyPage>;
+} satisfies Meta<PageArgs>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+export const WithCustomFooter: Story = {
+  args: {
+    footer: 'Built with Storybook',
+  },
+};
 
 // More on component testing: https://storybook.js.org/docs/writing-tests/interaction-testing
 export const LoggedIn: Story = {

@@ -168,6 +168,28 @@ describe('AddonVitestService', () => {
       expect(result.reasons).toBeUndefined();
     });
 
+    it('should return compatible when vitest prerelease >= 3.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('3.0.0-beta.1') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(true);
+      expect(result.reasons).toBeUndefined();
+    });
+
+    it('should return compatible when vitest canary is used', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('0.0.0-833c515fa25cef20905a7f9affb156dfa6f151ab') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(true);
+      expect(result.reasons).toBeUndefined();
+    });
+
     it('should return compatible when vitest >=4.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce('4.0.0') // vitest

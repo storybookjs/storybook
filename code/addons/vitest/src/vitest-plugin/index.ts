@@ -207,8 +207,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     core,
     features,
   ] = await Promise.all([
-    // Core Storybook Vite plugins from builder-vite's preset
-    // (resolve conditions, envPrefix, fs.allow, project annotations, docgen, external globals)
     presets.apply<PluginOption[]>('viteCorePlugins', []),
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),

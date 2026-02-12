@@ -1,9 +1,9 @@
 diff --git a/dist/index.js b/dist/index.js
-index db037119d94c99375829ae8b8c91e9a67a3ca845..4ebf87ff561d9d94af71e61cc52afe37f40a3c62 100644
+index ec7e5f9b3436a099cedd9362eea7a4cf8a9f5bfd..c8762a81af718a5a3e4b24c1ce036973bfef04f4 100644
 --- a/dist/index.js
 +++ b/dist/index.js
-@@ -6,7 +6,9 @@ import { processError } from '@vitest/utils/error';
- import { use, util } from 'chai';
+@@ -9,7 +9,9 @@ import * as chai from 'chai';
+ export { chai };
  
  const MATCHERS_OBJECT = Symbol.for("matchers-object");
 -const JEST_MATCHERS_OBJECT = Symbol.for("$$jest-matchers-object");
@@ -13,9 +13,12 @@ index db037119d94c99375829ae8b8c91e9a67a3ca845..4ebf87ff561d9d94af71e61cc52afe37
  const GLOBAL_EXPECT = Symbol.for("expect-global");
  const ASYMMETRIC_MATCHERS_OBJECT = Symbol.for("asymmetric-matchers-object");
  
-@@ -660,18 +662,22 @@ function getObjectSubset(object, subset, customTesters) {
+@@ -671,20 +673,24 @@ function isStandardSchema(obj) {
+ 	return !!obj && (typeof obj === "object" || typeof obj === "function") && obj["~standard"] && typeof obj["~standard"].validate === "function";
+ }
  
- if (!Object.prototype.hasOwnProperty.call(globalThis, MATCHERS_OBJECT)) {
+-if (!Object.hasOwn(globalThis, MATCHERS_OBJECT)) {
++if (!Object.prototype.hasOwnProperty.call(globalThis, MATCHERS_OBJECT)) {
  	const globalState = new WeakMap();
 -	const matchers = Object.create(null);
 -	const customEqualityTesters = [];

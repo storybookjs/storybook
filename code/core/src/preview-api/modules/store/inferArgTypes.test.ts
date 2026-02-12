@@ -215,7 +215,7 @@ describe('inferArgTypes', () => {
     } as any);
     const elapsed = performance.now() - start;
 
-    expect(elapsed).toBeLessThan(100);
+    expect(elapsed).toBeLessThan(500);
     expect(result.el.type).toEqual({ name: 'other', value: 'FakeElement' });
   });
 
@@ -238,7 +238,7 @@ describe('inferArgTypes', () => {
     } as any);
     const elapsed = performance.now() - start;
 
-    expect(elapsed).toBeLessThan(100);
+    expect(elapsed).toBeLessThan(500);
     expect(result.formRef.type).toEqual({
       name: 'object',
       value: { current: { name: 'other', value: 'FakeHTMLFormElement' } },

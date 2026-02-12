@@ -7,7 +7,7 @@ export * from './build-dev';
 export * from './build-index';
 export * from './withTelemetry';
 export { default as build } from './standalone';
-export { mapStaticDir, useStaticDirs, sirvMiddleware } from './utils/server-statics';
+export { mapStaticDir } from './utils/server-statics';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 export { generateStoryFile } from './utils/generate-story';
 export type { GenerateStoryResult, GenerateStoryOptions } from './utils/generate-story';

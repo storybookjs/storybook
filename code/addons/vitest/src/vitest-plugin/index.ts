@@ -16,7 +16,7 @@ import {
   StoryIndexGenerator,
   Tag,
   experimental_loadStorybook,
-  useStaticDirs,
+  mapStaticDir,
 } from 'storybook/internal/core-server';
 import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
@@ -28,10 +28,11 @@ import { match } from 'micromatch';
 import { join, normalize, relative, resolve, sep } from 'pathe';
 import path from 'pathe';
 import picocolors from 'picocolors';
+import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 import type { PluginOption } from 'vite';
 
-// ! Relative import to prebundle it without needing to depend on the Vite builder
+// Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
 
@@ -404,9 +405,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { plugins: _, ...viteConfig } = viteConfigFromStorybook;
-      const config = mergeConfig(baseConfig, viteConfig);
+      const config = mergeConfig(baseConfig, viteConfigFromStorybook);
 
       // alert the user of problems
       if ((nonMutableInputConfig.test?.include?.length ?? 0) > 0) {
@@ -449,9 +448,21 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     async configureServer(server) {
       if (staticDirs) {
-        useStaticDirs(staticDirs, directories.configDir, (endpoint, handler) =>
-          server.middlewares.use(endpoint, handler)
-        );
+        for (const staticDir of staticDirs) {
+          try {
+            const { staticPath, targetEndpoint } = mapStaticDir(staticDir, directories.configDir);
+            server.middlewares.use(
+              targetEndpoint,
+              sirv(staticPath, {
+                dev: true,
+                etag: true,
+                extensions: [],
+              })
+            );
+          } catch (e) {
+            console.warn(e);
+          }
+        }
       }
     },
     async transform(code, id) {

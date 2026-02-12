@@ -1,12 +1,12 @@
 import { cp, rm, writeFile } from 'node:fs/promises';
 
 import { stringifyProcessEnvs } from 'storybook/internal/common';
-import { sirvMiddleware } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { resolveModulePath } from 'exsolve';
 import { join, parse } from 'pathe';
+import sirv from 'sirv';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
@@ -171,8 +171,22 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  router.use('/sb-addons', sirvMiddleware(addonsDir, { maxAge: 300000, immutable: true }));
-  router.use('/sb-manager', sirvMiddleware(CORE_DIR_ORIGIN, { maxAge: 300000, immutable: true }));
+  router.use(
+    '/sb-addons',
+    sirv(addonsDir, {
+      maxAge: 300000,
+      dev: true,
+      immutable: true,
+    })
+  );
+  router.use(
+    '/sb-manager',
+    sirv(CORE_DIR_ORIGIN, {
+      maxAge: 300000,
+      dev: true,
+      immutable: true,
+    })
+  );
 
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
 

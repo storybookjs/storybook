@@ -1,6 +1,6 @@
 import { existsSync, statSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
-import { basename, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
+import { basename, dirname, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
 
 import {
   getDirectoryFromWorkingDir,
@@ -14,7 +14,6 @@ import { relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Polka } from 'polka';
 import sirv from 'sirv';
-import type { RequestHandler } from 'sirv';
 import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../../shared/utils/module';
@@ -110,12 +109,12 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
     }
 
     req.url = `/${faviconFile}`;
-    return sirvMiddleware(faviconDir)(req, res, next);
+    return sirvWorkaround(faviconDir)(req, res, next);
   });
 
-  for (const dir of staticDirs) {
+  staticDirs.map((dir) => {
     try {
-      const { staticDir, targetEndpoint } = mapStaticDir(dir, options.configDir);
+      const { staticDir, staticPath, targetEndpoint } = mapStaticDir(dir, options.configDir);
 
       // Don't log for internal static dirs
       if (!targetEndpoint.startsWith('/sb-') && !staticDir.startsWith(cacheDir)) {
@@ -124,51 +123,34 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
           `Serving static files from ${CLI_COLORS.info(relativeStaticDir)} at ${CLI_COLORS.info(targetEndpoint)}`
         );
       }
-    } catch {
-      // already handled in useStaticDirs
-    }
-  }
-
-  useStaticDirs(staticDirs, options.configDir, (endpoint, handler) => app.use(endpoint, handler));
-}
-
-export function useStaticDirs(
-  staticDirs: NonNullable<StorybookConfigRaw['staticDirs']>,
-  configDir: string,
-  use: (endpoint: string, handler: RequestHandler) => void
-): void {
-  for (const dir of staticDirs) {
-    try {
-      const { staticPath, targetEndpoint } = mapStaticDir(dir, configDir);
 
       if (existsSync(staticPath) && statSync(staticPath).isFile()) {
         // sirv doesn't support serving single files, so we need to pass the file's directory to sirv instead
         const staticPathDir = resolve(staticPath, '..');
         const staticPathFile = basename(staticPath);
-        use(targetEndpoint, (req, res, next) => {
+        app.use(targetEndpoint, (req, res, next) => {
           // Rewrite the URL to match the file's name, ensuring that we only ever serve the file
           // even when sirv is passed the full directory
           req.url = `/${staticPathFile}`;
-          sirvMiddleware(staticPathDir)(req, res, next);
+          sirvWorkaround(staticPathDir)(req, res, next);
         });
       } else {
-        use(targetEndpoint, sirvMiddleware(staticPath));
+        app.use(targetEndpoint, sirvWorkaround(staticPath));
       }
     } catch (e) {
       if (e instanceof Error) {
         logger.warn(e.message);
       }
     }
-  }
+  });
 }
 
 /**
- * Wrapper around sirv that works around sirv breaking when serving multiple directories on the same
- * endpoint.
+ * This is a workaround for sirv breaking when serving multiple directories on the same endpoint.
  *
  * @see https://github.com/lukeed/polka/issues/218
  */
-export const sirvMiddleware: typeof sirv =
+const sirvWorkaround: typeof sirv =
   (dir, opts = {}) =>
   (req, res, next) => {
     // polka+sirv will modify the request URL, so we need to restore it after sirv is done

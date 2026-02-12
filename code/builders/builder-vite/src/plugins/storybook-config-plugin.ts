@@ -2,15 +2,7 @@ import { isPreservingSymlinks, resolvePathInStorybookCache } from 'storybook/int
 
 import type { Plugin } from 'vite';
 
-/**
- * Options for the Storybook config plugin.
- *
- * This plugin provides the base Storybook-specific Vite configuration, including resolve
- * conditions, environment variable prefixes, and filesystem access rules. It is designed to be
- * shared between `@storybook/builder-vite` and `@storybook/addon-vitest`.
- */
 export interface StorybookConfigPluginOptions {
-  /** The Storybook configuration directory (e.g., '.storybook') */
   configDir: string;
 }
 
@@ -19,8 +11,6 @@ export interface StorybookConfigPluginOptions {
  *
  * This handles:
  *
- * - Optionally setting the project root to the parent of the Storybook config directory
- * - Optionally configuring the Vite cache directory
  * - Adding Storybook resolve conditions (`storybook`, `stories`, `test`)
  * - Setting up environment variable prefixes (`VITE_`, `STORYBOOK_`)
  * - Allowing the Storybook config directory in Vite's filesystem restrictions

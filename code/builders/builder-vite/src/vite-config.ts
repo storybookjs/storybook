@@ -11,8 +11,7 @@ import type {
   InlineConfig as ViteInlineConfig,
 } from 'vite';
 
-import { pluginWebpackStats, storybookEntryPlugin } from './plugins';
-import { storybookDocgenPlugin } from './plugins/storybook-docgen-plugin';
+import { csfPlugin, pluginWebpackStats, storybookEntryPlugin } from './plugins';
 import { storybookRuntimePlugin } from './plugins/storybook-runtime-plugin';
 import { viteCorePlugins as corePlugins } from './preset';
 import type { BuilderOptions } from './types';
@@ -75,7 +74,7 @@ export async function pluginConfig(options: Options) {
     // Shared core plugins (resolve conditions, envPrefix, fs.allow, docgen, externals, etc.)
     ...(await corePlugins([], options)),
     ...(await storybookRuntimePlugin(options)),
-    await storybookDocgenPlugin(options),
+    await csfPlugin(options),
     // Builder-specific: root, base, and cacheDir
     {
       name: 'storybook:builder-vite-config',

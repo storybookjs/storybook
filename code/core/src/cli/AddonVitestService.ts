@@ -243,8 +243,9 @@ export class AddonVitestService {
     // Check Vitest version (>=3.0.0 - stricter requirement from postinstall)
     const vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
     const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
+    const isCanary = coercedVitestVersion?.version.startsWith('0.0.0') ?? false;
 
-    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0')) {
+    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0') && !isCanary) {
       reasons.push(
         `The addon requires Vitest 3.0.0 or higher. You are currently using ${vitestVersionSpecifier}.`
       );

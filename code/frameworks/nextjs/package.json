@@ -44,6 +44,11 @@
     "./image-context": "./dist/image-context.js",
     "./images/next-image": "./dist/images/next-image.js",
     "./images/next-legacy-image": "./dist/images/next-legacy-image.js",
+    "./link.mock": {
+      "types": "./dist/export-mocks/link/index.d.ts",
+      "code": "./src/export-mocks/link/index.tsx",
+      "default": "./dist/export-mocks/link/index.js"
+    },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
       "default": "./dist/export-mocks/navigation/index.js"

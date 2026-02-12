@@ -256,7 +256,8 @@ describe('mcpServerHandler', () => {
 		const { body } = getResponseData();
 		expect(response.end).toHaveBeenCalled();
 
-		const responseText = body.replace(/^data: /, '').trim();
+		const dataLine = body.split('\n').find((line) => line.startsWith('data: '));
+		const responseText = dataLine!.replace(/^data: /, '').trim();
 		const parsedResponse = JSON.parse(responseText);
 
 		expect(parsedResponse).toMatchObject({
@@ -379,7 +380,8 @@ describe('mcpServerHandler', () => {
 
 		// Parse the SSE response
 		const { body } = getResponseData();
-		const responseText = body.replace(/^data: /, '').trim();
+		const dataLine = body.split('\n').find((line) => line.startsWith('data: '));
+		const responseText = dataLine!.replace(/^data: /, '').trim();
 		const parsedResponse = JSON.parse(responseText);
 
 		// Verify component manifest tools are included

@@ -14,7 +14,7 @@ import { viteMockPlugin } from './plugins/vite-mock/plugin';
  * `@storybook/addon-vitest`.
  */
 export async function viteCorePlugins(
-  existing: PluginOption[],
+  _: PluginOption[],
   options: Options
 ): Promise<PluginOption[]> {
   const previewConfigPath = findConfigFile('preview', options.configDir);

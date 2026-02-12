@@ -30,10 +30,11 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
   // See https://github.com/vitejs/vite/blob/67d164392e8e9081dc3f0338c4b4b8eea6c5f7da/packages/vite/src/node/optimizer/index.ts#L182-L199
   const resolve = resolvedConfig.createResolver({ asSrc: false });
   const include = await asyncFilter(INCLUDE_CANDIDATES, async (id) => Boolean(await resolve(id)));
+  const entries = config.optimizeDeps?.entries || [];
 
   const optimizeDeps: UserConfig['optimizeDeps'] = {
     ...config.optimizeDeps,
-    entries: [...getUniqueImportPaths(index), ...(config.optimizeDeps?.entries || [])],
+    entries: [...getUniqueImportPaths(index), ...(Array.isArray(entries) ? entries : [entries])],
     // We need Vite to precompile these dependencies, because they contain non-ESM code that would break
     // if we served it directly to the browser.
     include: [...include, ...extraOptimizeDeps, ...(config.optimizeDeps?.include || [])],

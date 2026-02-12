@@ -1,6 +1,6 @@
-import { isPreservingSymlinks, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { isPreservingSymlinks } from 'storybook/internal/common';
 
-import type { Plugin } from 'vite';
+import { type Plugin } from 'vite';
 
 export interface StorybookConfigPluginOptions {
   configDir: string;
@@ -37,7 +37,6 @@ export function storybookConfigPlugin(options: StorybookConfigPluginOptions): Pl
           : ['VITE_', 'STORYBOOK_'];
 
         return {
-          cacheDir: resolvePathInStorybookCache('sb-vite'),
           resolve: {
             conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
             preserveSymlinks: isPreservingSymlinks(),

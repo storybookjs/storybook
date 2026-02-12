@@ -1,5 +1,5 @@
 import { stringifyEnvs } from 'storybook/internal/common';
-import type { Builder_EnvsRaw, Options } from 'storybook/internal/types';
+import type { Builder_EnvsRaw } from 'storybook/internal/types';
 
 import type { UserConfig as ViteConfig } from 'vite';
 

@@ -5,7 +5,7 @@ import type { Plugin } from 'vite';
 import { generateProjectAnnotationsCode } from '../codegen-project-annotations';
 import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from '../virtual-file-names';
 
-const VIRTUAL_ID = SB_VIRTUAL_FILES.VIRTUAL_PROJECT_ANNOTATIONS_FILE;
+const VIRTUAL_ID = 'virtual:/@storybook/builder-vite/project-annotations.js';
 const RESOLVED_VIRTUAL_ID = getResolvedVirtualModuleId(VIRTUAL_ID);
 
 /**

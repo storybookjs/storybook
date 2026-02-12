@@ -57,10 +57,7 @@ export function codeGeneratorPlugin(options: Options) {
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
-      if (
-        source !== SB_VIRTUAL_FILES.VIRTUAL_PROJECT_ANNOTATIONS_FILE &&
-        SB_VIRTUAL_FILE_IDS.includes(source)
-      ) {
+      if (SB_VIRTUAL_FILE_IDS.includes(source)) {
         return getResolvedVirtualModuleId(source);
       }
       if (source === iframePath) {

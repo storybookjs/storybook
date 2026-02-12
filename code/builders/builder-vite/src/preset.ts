@@ -12,20 +12,6 @@ import { viteMockPlugin } from './plugins/vite-mock/plugin';
 /**
  * Preset that provides the core Storybook Vite plugins shared between `@storybook/builder-vite` and
  * `@storybook/addon-vitest`.
- *
- * Includes:
- *
- * - **Config plugin**: Resolve conditions (`storybook`, `stories`, `test`), environment variable
- *   prefixes (`VITE_`, `STORYBOOK_`), symlink preservation, and `fs.allow` for the config
- *   directory
- * - **Project annotations plugin**: Virtual module serving `getProjectAnnotations`
- * - **Docgen plugin**: CSF processing and component metadata extraction
- * - **Runtime plugin**: External globals transformation for pre-bundled Storybook modules
- * - **Mocking plugins**: Injects the mocker runtime script into the HTML and sets up rules to swap
- *   modules based on sb.mock() calls.
- *
- * Consumers can override builder-specific settings (root, base, cacheDir) by adding their own Vite
- * plugins on top.
  */
 export async function viteCorePlugins(
   existing: PluginOption[],

@@ -8,22 +8,7 @@ import { dedent } from 'ts-dedent';
 
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
 
-/**
- * Generates the code for the `PROJECT_ANNOTATIONS_FILE` virtual module.
- *
- * This virtual module encapsulates the `getProjectAnnotations` function which composes all preview
- * annotations (from addons, frameworks, and the user's preview file) into a single configuration
- * object used by Storybook's runtime.
- *
- * The generated module can be imported as:
- *
- * ```ts
- * import { getProjectAnnotations } from 'virtual:/@storybook/builder-vite/project-annotations.js';
- * ```
- *
- * This decouples the project annotations logic from the main iframe entry script, making it
- * reusable by other consumers (e.g., addon-vitest).
- */
+/** Generates the code for the `PROJECT_ANNOTATIONS_FILE` virtual module. */
 export async function generateProjectAnnotationsCode(options: Options, projectRoot: string) {
   const { presets, configDir } = options;
   const frameworkName = await getFrameworkName(options);

@@ -5,18 +5,7 @@ import { type Plugin } from 'vite';
 
 import { getUniqueImportPaths } from '../utils/unique-import-paths';
 
-/**
- * A Vite plugin that configures dependency optimization for Storybook's dev server.
- *
- * This handles:
- *
- * - Setting optimizeDeps entries from the story index (so Vite knows which stories to pre-bundle)
- * - Including known CJS dependencies that need to be pre-compiled to ESM
- * - Merging extra optimization dependencies from Storybook presets
- *
- * This plugin only applies in development mode (`command === 'serve'`). In production builds,
- * Rollup handles dependency bundling differently.
- */
+/** A Vite plugin that configures dependency optimization for Storybook's dev server. */
 export function storybookOptimizeDepsPlugin(options: Options): Plugin {
   return {
     name: 'storybook:optimize-deps-plugin',

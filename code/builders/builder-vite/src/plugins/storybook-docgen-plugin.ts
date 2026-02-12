@@ -7,13 +7,6 @@ import type { Plugin } from 'vite';
 /**
  * A Vite plugin that handles the extraction of component metadata (argTypes, descriptions) for
  * Storybook's documentation features.
- *
- * This wraps `@storybook/csf-plugin` and configures it based on Storybook's addon-docs options and
- * CSF enrichment settings. The plugin processes CSF (Component Story Format) files to extract
- * component metadata that powers Storybook's docs pages and controls.
- *
- * This plugin is designed to be shared between `@storybook/builder-vite` and
- * `@storybook/addon-vitest`.
  */
 export async function storybookDocgenPlugin(options: Options): Promise<Plugin> {
   const { presets } = options;

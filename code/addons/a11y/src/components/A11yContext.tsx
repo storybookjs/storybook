@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from 'react';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   STORY_CHANGED,
@@ -126,6 +126,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     (allStatuses) => allStatuses[storyId]?.[STATUS_TYPE_ID_A11Y]?.value
   );
 
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const unsubscribe = experimental_getStatusStore('storybook/component-test').onAllStatusChange(
       (statuses, previousStatuses) => {
@@ -202,7 +204,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       if (storyId === id) {
         setState((prev) => ({ ...prev, status: 'ran', results: axeResults }));
 
-        setTimeout(() => {
+        // Clear any existing timeout before setting a new one
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = setTimeout(() => {
           setState((prev) => {
             if (prev.status === 'ran') {
               return { ...prev, status: 'ready' };
@@ -216,6 +223,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
             }
             return prev;
           });
+          timeoutRef.current = null;
         }, 900);
       }
     },
@@ -427,6 +435,16 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       });
     }
   }, [isInitial, emit, ui.highlighted, results, ui.tab, selectedItems]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const discrepancy: TestDiscrepancy = useMemo(() => {
     if (!currentStoryA11yStatusValue) {

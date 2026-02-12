@@ -1,5 +1,4 @@
 import { findConfigFile } from 'storybook/internal/common';
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
 
 import type { PluginOption } from 'vite';
@@ -33,13 +32,6 @@ export async function viteCorePlugins(
   options: Options
 ): Promise<PluginOption[]> {
   const previewConfigPath = findConfigFile('preview', options.configDir);
-
-  const build = await options.presets.apply('build');
-  const externals: Record<string, string> = { ...globalsNameReferenceMap };
-
-  if (build?.test?.disableBlocks) {
-    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
-  }
 
   return [
     ...storybookConfigPlugin({ configDir: options.configDir }),

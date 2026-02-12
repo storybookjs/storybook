@@ -55,7 +55,16 @@ export interface StorybookRuntimePluginOptions {
  * @returns An array of Vite plugins
  */
 export async function storybookRuntimePlugin(options: Options): Promise<Plugin[]> {
-  const plugins: Plugin[] = [await externalGlobalsPlugin(globalsNameReferenceMap)];
+  const build = await options.presets.apply('build');
+
+  const externals: typeof globalsNameReferenceMap & Record<string, string> =
+    globalsNameReferenceMap;
+
+  if (build?.test?.disableBlocks) {
+    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+  }
+
+  const plugins: Plugin[] = [await externalGlobalsPlugin(externals)];
   const envs = await options.presets.apply<Builder_EnvsRaw>('env');
 
   if (envs && Object.keys(envs).length > 0) {

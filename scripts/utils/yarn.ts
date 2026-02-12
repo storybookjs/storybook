@@ -125,7 +125,7 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
     // Override vite to v8 beta for vite-based sandboxes to test Vite 8 compatibility
-    // ...(isViteSandbox(key) ? { vite: '8.0.0-beta.13' } : {}),
+    ...(isViteSandbox(key) ? { vite: '8.0.0-beta.13' } : {}),
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));

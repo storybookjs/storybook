@@ -10,39 +10,14 @@ import {
 import { CLI_COLORS, logger, once } from 'storybook/internal/node-logger';
 import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
-import type { Stats } from 'fs';
-import type { IncomingMessage, ServerResponse } from 'http';
 import { relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Polka } from 'polka';
 import sirv from 'sirv';
+import type { RequestHandler } from 'sirv';
 import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../../shared/utils/module';
-
-type Arrayable<T> = T | T[];
-
-interface SirvOptions {
-  dev?: boolean;
-  etag?: boolean;
-  maxAge?: number;
-  immutable?: boolean;
-  single?: string | boolean;
-  ignores?: false | Arrayable<string | RegExp>;
-  extensions?: string[];
-  dotfiles?: boolean;
-  brotli?: boolean;
-  gzip?: boolean;
-  onNoMatch?: (req: IncomingMessage, res: ServerResponse) => void;
-  setHeaders?: (res: ServerResponse, pathname: string, stats: Stats) => void;
-}
-
-export type NextHandler = () => void | Promise<void>;
-export type RequestHandler = (
-  req: IncomingMessage,
-  res: ServerResponse,
-  next?: NextHandler
-) => void;
 
 const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
 
@@ -193,10 +168,7 @@ export function useStaticDirs(
  *
  * @see https://github.com/lukeed/polka/issues/218
  */
-export const sirvMiddleware: (
-  dir?: string | undefined,
-  opts?: SirvOptions | undefined
-) => RequestHandler =
+export const sirvMiddleware: typeof sirv =
   (dir, opts = {}) =>
   (req, res, next) => {
     // polka+sirv will modify the request URL, so we need to restore it after sirv is done

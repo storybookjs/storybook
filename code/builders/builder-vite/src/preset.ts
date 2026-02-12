@@ -20,9 +20,9 @@ export async function viteCorePlugins(
   const previewConfigPath = findConfigFile('preview', options.configDir);
 
   return [
+    storybookProjectAnnotationsPlugin(options),
     ...storybookConfigPlugin({ configDir: options.configDir }),
     storybookOptimizeDepsPlugin(options),
-    storybookProjectAnnotationsPlugin(options),
     ...(previewConfigPath
       ? [
           viteInjectMockerRuntime({ previewConfigPath }),

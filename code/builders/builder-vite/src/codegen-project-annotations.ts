@@ -66,6 +66,16 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
     `.trim();
   }
 
+  const hmrCode = [
+    'if (import.meta.hot) {',
+    '  import.meta.hot.accept((newModule) => {',
+    '    window.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({',
+    '      getProjectAnnotations: newModule.getProjectAnnotations,',
+    '    });',
+    '  });',
+    '}',
+  ].join('\n');
+
   return dedent`
     import { composeConfigs } from 'storybook/preview-api';
 
@@ -74,6 +84,8 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
     export function getProjectAnnotations() {
       return composeConfigs([${variables.join(', ')}]);
     }
+
+    ${hmrCode}
   `.trim();
 }
 

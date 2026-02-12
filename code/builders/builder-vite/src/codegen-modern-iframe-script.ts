@@ -4,7 +4,7 @@ import type { Options } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { RESOLVED_VIRTUAL_ID } from './plugins/storybook-project-annotations-plugin';
+import { VIRTUAL_ID as PROJECT_ANNOTATIONS_VIRTUAL_ID } from './plugins/storybook-project-annotations-plugin';
 import { SB_VIRTUAL_FILES } from './virtual-file-names';
 
 export async function generateModernIframeScriptCode(options: Options) {
@@ -60,7 +60,7 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
   import { isPreview } from 'storybook/internal/csf';
   import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
-  import { getProjectAnnotations } from '${RESOLVED_VIRTUAL_ID}';
+  import { getProjectAnnotations } from '${PROJECT_ANNOTATIONS_VIRTUAL_ID}';
     
   window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
   

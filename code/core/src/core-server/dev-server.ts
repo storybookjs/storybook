@@ -28,9 +28,18 @@ export async function storybookDevServer(options: Options) {
   const [server, core] = await Promise.all([getServer(options), options.presets.apply('core')]);
   const app = polka({ server });
 
+  const { port, host, initialPath } = options;
+  invariant(port, 'expected options to have a port');
+  const proto = options.https ? 'https' : 'http';
+  const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
+
+  // Expose addresses on options for the manager builder to surface in globals, important for QR code link sharing
+  options.localAddress = address;
+  options.networkAddress = networkAddress;
+
   const serverChannel = await options.presets.apply(
     'experimental_serverChannel',
-    getServerChannel(server, core?.channelOptions?.wsToken)
+    getServerChannel(server, options, core?.channelOptions?.wsToken)
   );
 
   const workingDir = process.cwd();
@@ -68,14 +77,6 @@ export async function storybookDevServer(options: Options) {
 
   // Apply experimental_devServer preset to allow addons/frameworks to extend the dev server with middlewares, etc.
   await options.presets.apply('experimental_devServer', app);
-
-  const { port, host, initialPath } = options;
-  invariant(port, 'expected options to have a port');
-  const proto = options.https ? 'https' : 'http';
-  const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
-
-  // Expose addresses on options for the manager builder to surface in globals, important for QR code link sharing
-  options.networkAddress = networkAddress;
 
   if (!core?.builder) {
     throw new MissingBuilderError();

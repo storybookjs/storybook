@@ -8,7 +8,9 @@ import type { Args, StoryAnnotations, StrictArgs } from 'storybook/internal/type
 
 import { expectTypeOf } from 'expect-type';
 import { h } from 'preact';
-import type { FunctionComponent, VNode } from 'preact';
+import type { FunctionComponent } from 'preact';
+import { fn } from 'storybook/test';
+import type { Mock } from 'storybook/test';
 import type { SetOptional } from 'type-fest';
 
 import type { Decorator, Meta, StoryObj } from './public-types';
@@ -202,4 +204,30 @@ describe('Story args can be inferred', () => {
     type Expected = PreactStory<Props, SetOptional<Props, 'disabled'>>;
     expectTypeOf(Basic).toEqualTypeOf<Expected>();
   });
+});
+
+it('Infer mock function given to args in meta.', () => {
+  type Props = { label: string; onClick: () => void; onRender: () => void };
+  const TestButton: FunctionComponent<Props> = () => h('div', null);
+
+  const meta = {
+    component: TestButton,
+    args: { label: 'label', onClick: fn(), onRender: () => {} },
+  } satisfies Meta<typeof TestButton>;
+
+  type Story = StoryObj<typeof meta>;
+
+  const Basic: Story = {
+    play: async ({ args }) => {
+      expectTypeOf(args.onClick).toEqualTypeOf<Mock>();
+      expectTypeOf(args.onRender).toEqualTypeOf<() => void>();
+    },
+  };
+  type Expected = StoryAnnotations<
+    PreactRenderer,
+    Props & { onClick: Mock },
+    Partial<Props>
+  >;
+
+  expectTypeOf(Basic).toEqualTypeOf<Expected>();
 });

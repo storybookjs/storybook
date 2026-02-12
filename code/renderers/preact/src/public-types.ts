@@ -54,11 +54,24 @@ export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
       (Component extends ComponentType<any> ? ComponentProps<Component> : unknown) &
         ArgsFromMeta<PreactRenderer, TMetaOrCmpOrArgs>
     > extends infer TArgs
-    ? StoryAnnotations<PreactRenderer, TArgs, SetOptional<TArgs, keyof TArgs & keyof DefaultArgs>>
+    ? StoryAnnotations<
+        PreactRenderer,
+        AddMocks<TArgs, DefaultArgs>,
+        SetOptional<TArgs, keyof TArgs & keyof DefaultArgs>
+      >
     : never
   : TMetaOrCmpOrArgs extends ComponentType<any>
     ? StoryAnnotations<PreactRenderer, ComponentProps<TMetaOrCmpOrArgs>>
     : StoryAnnotations<PreactRenderer, TMetaOrCmpOrArgs>;
+
+// This performs a downcast to function types that are mocks, when a mock fn is given to meta args.
+export type AddMocks<TArgs, DefaultArgs> = Simplify<{
+  [T in keyof TArgs]: T extends keyof DefaultArgs
+    ? DefaultArgs[T] extends (...args: any) => any & { mock: {} } // allow any function with a mock object
+      ? DefaultArgs[T]
+      : TArgs[T]
+    : TArgs[T];
+}>;
 
 export type Decorator<TArgs = StrictArgs> = DecoratorFunction<PreactRenderer, TArgs>;
 export type Loader<TArgs = StrictArgs> = LoaderFunction<PreactRenderer, TArgs>;

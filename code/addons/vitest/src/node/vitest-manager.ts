@@ -13,6 +13,7 @@ import { Tag } from 'storybook/internal/core-server';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
+import * as walk from 'empathic/walk';
 import path, { dirname, join, normalize, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
@@ -91,24 +92,37 @@ export class VitestManager {
       ]),
     ];
 
-    let vitestWorkspaceConfig: string | undefined;
+    const potentialConfigFileLocations = walk.up(packageRoot || process.cwd(), {
+      last: getProjectRoot(),
+    });
 
-    for (const file of configFiles) {
-      const maybe = find.any([file], { cwd: packageRoot, last: getProjectRoot() });
-      if (maybe && existsSync(maybe)) {
-        const content = readFileSync(maybe, 'utf8');
-        if (content.includes('storybookTest')) {
-          vitestWorkspaceConfig = maybe;
-          break;
+    let vitestWorkspaceConfig: string | undefined;
+    let firstVitestConfig: string | undefined;
+
+    for (const location of potentialConfigFileLocations) {
+      for (const file of configFiles) {
+        const maybe = find.any([file], { cwd: location, last: getProjectRoot() });
+        if (maybe && existsSync(maybe)) {
+          firstVitestConfig ??= maybe;
+          const content = readFileSync(maybe, 'utf8');
+          if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
+            vitestWorkspaceConfig = dirname(maybe);
+            break;
+          }
         }
+      }
+      if (vitestWorkspaceConfig) {
+        break;
       }
     }
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
 
+    const vitestConfigFallbackLocation = firstVitestConfig || packageRoot || process.cwd();
+
     try {
       this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : packageRoot || process.cwd(),
+        root: vitestWorkspaceConfig ?? vitestConfigFallbackLocation,
         watch: true,
         passWithNoTests: false,
         project: [projectName],

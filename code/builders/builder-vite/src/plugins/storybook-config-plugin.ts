@@ -1,5 +1,3 @@
-import { resolve } from 'node:path';
-
 import { isPreservingSymlinks, resolvePathInStorybookCache } from 'storybook/internal/common';
 
 import type { Plugin } from 'vite';
@@ -14,21 +12,6 @@ import type { Plugin } from 'vite';
 export interface StorybookConfigPluginOptions {
   /** The Storybook configuration directory (e.g., '.storybook') */
   configDir: string;
-  /**
-   * Cache key for the Vite cache directory. When set, cacheDir is resolved via Storybook's cache
-   * using the `sb-vite` prefix. Omit to let the caller handle cache directory configuration.
-   */
-  cacheKey?: string;
-  /**
-   * Base public path for the Vite dev server. When set, overrides Vite's default base. For
-   * builder-vite, this is typically './'. Omit to keep the existing base from the user's config.
-   */
-  base?: string;
-  /**
-   * Whether to set the Vite root to the parent of the config directory. Defaults to `true`. Set to
-   * `false` when the root is managed externally (e.g., by vitest).
-   */
-  setRoot?: boolean;
 }
 
 /**
@@ -44,8 +27,6 @@ export interface StorybookConfigPluginOptions {
  * - Preserving symlinks when applicable
  */
 export function storybookConfigPlugin(options: StorybookConfigPluginOptions): Plugin[] {
-  const projectRoot = resolve(options.configDir, '..');
-
   return [
     {
       name: 'storybook:config-plugin',
@@ -53,19 +34,25 @@ export function storybookConfigPlugin(options: StorybookConfigPluginOptions): Pl
       async config(config) {
         const { defaultClientConditions = [] } = await import('vite');
 
+        const existingEnvPrefix = config.envPrefix;
+        const mergedEnvPrefix = existingEnvPrefix
+          ? Array.from(
+              new Set([
+                ...(Array.isArray(existingEnvPrefix) ? existingEnvPrefix : [existingEnvPrefix]),
+                'STORYBOOK_',
+              ])
+            )
+          : ['VITE_', 'STORYBOOK_'];
+
         return {
-          ...(options.cacheKey
-            ? { cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey) }
-            : {}),
-          ...(options.setRoot !== false ? { root: projectRoot } : {}),
-          ...(options.base !== undefined ? { base: options.base } : {}),
+          cacheDir: resolvePathInStorybookCache('sb-vite'),
           resolve: {
             conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
             preserveSymlinks: isPreservingSymlinks(),
           },
           // If an envPrefix is specified in the user's vite config, add STORYBOOK_ to it.
           // Otherwise, add both VITE_ and STORYBOOK_ so that Vite doesn't lose its default.
-          envPrefix: config.envPrefix ? ['STORYBOOK_'] : ['VITE_', 'STORYBOOK_'],
+          envPrefix: mergedEnvPrefix,
         };
       },
     },

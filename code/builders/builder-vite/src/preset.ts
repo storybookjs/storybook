@@ -42,7 +42,7 @@ export async function viteCorePlugins(
   }
 
   return [
-    ...storybookConfigPlugin({ configDir: options.configDir, setRoot: false }),
+    ...storybookConfigPlugin({ configDir: options.configDir }),
     storybookOptimizeDepsPlugin(options),
     storybookProjectAnnotationsPlugin(options),
     ...(previewConfigPath

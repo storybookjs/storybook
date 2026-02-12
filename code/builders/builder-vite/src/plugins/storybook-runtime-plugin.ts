@@ -56,7 +56,7 @@ export interface StorybookRuntimePluginOptions {
  */
 export async function storybookRuntimePlugin(options: Options): Promise<Plugin[]> {
   const plugins: Plugin[] = [await externalGlobalsPlugin(globalsNameReferenceMap)];
-  const envs = await options.presets.apply<Promise<Builder_EnvsRaw>>('env');
+  const envs = await options.presets.apply<Builder_EnvsRaw>('env');
 
   if (envs && Object.keys(envs).length > 0) {
     plugins.push({

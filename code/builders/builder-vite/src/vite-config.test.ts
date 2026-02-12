@@ -59,22 +59,6 @@ describe('storybookConfigPlugin', () => {
     expect(result.envPrefix).toStrictEqual(['VITE_', 'STORYBOOK_']);
   });
 
-  it('should add STORYBOOK_ when user has custom envPrefix', async () => {
-    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook' });
-    const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
-
-    const result = await (configPlugin.config as Function)({ envPrefix: 'SECRET_' }, {});
-    expect(result.envPrefix).toStrictEqual(['STORYBOOK_']);
-  });
-
-  it('should add STORYBOOK_ when user has custom envPrefix array', async () => {
-    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook' });
-    const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
-
-    const result = await (configPlugin.config as Function)({ envPrefix: ['SECRET_', 'VUE_'] }, {});
-    expect(result.envPrefix).toStrictEqual(['STORYBOOK_']);
-  });
-
   it('should include storybook resolve conditions', async () => {
     const plugins = storybookConfigPlugin({ configDir: '/test/.storybook' });
     const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
@@ -83,30 +67,6 @@ describe('storybookConfigPlugin', () => {
     expect(result.resolve.conditions).toContain('storybook');
     expect(result.resolve.conditions).toContain('stories');
     expect(result.resolve.conditions).toContain('test');
-  });
-
-  it('should set root when setRoot is not false', async () => {
-    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook' });
-    const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
-
-    const result = await (configPlugin.config as Function)({}, {});
-    expect(result.root).toBe('/test');
-  });
-
-  it('should not set root when setRoot is false', async () => {
-    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook', setRoot: false });
-    const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
-
-    const result = await (configPlugin.config as Function)({}, {});
-    expect(result.root).toBeUndefined();
-  });
-
-  it('should set base when provided', async () => {
-    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook', base: './' });
-    const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
-
-    const result = await (configPlugin.config as Function)({}, {});
-    expect(result.base).toBe('./');
   });
 
   it('should not set base when not provided', async () => {

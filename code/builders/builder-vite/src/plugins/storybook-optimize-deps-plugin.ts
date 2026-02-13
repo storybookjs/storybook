@@ -25,7 +25,12 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
       return {
         optimizeDeps: {
           // Story file paths as entry points for the optimizer
-          entries: getUniqueImportPaths(index),
+          entries: [
+            ...(typeof config.optimizeDeps?.entries === 'string'
+              ? [config.optimizeDeps.entries]
+              : []),
+            ...getUniqueImportPaths(index),
+          ],
           // Known CJS dependencies that need to be pre-compiled to ESM,
           // plus any extra deps from Storybook presets.
           include: [...extraOptimizeDeps, ...(config.optimizeDeps?.include || [])],

@@ -223,11 +223,7 @@ it('Infer mock function given to args in meta.', () => {
       expectTypeOf(args.onRender).toEqualTypeOf<() => void>();
     },
   };
-  type Expected = StoryAnnotations<
-    PreactRenderer,
-    Props & { onClick: Mock },
-    Partial<Props>
-  >;
+  type Expected = StoryAnnotations<PreactRenderer, Props & { onClick: Mock }, Partial<Props>>;
 
   expectTypeOf(Basic).toEqualTypeOf<Expected>();
 });

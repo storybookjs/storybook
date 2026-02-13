@@ -63,7 +63,7 @@ export async function loadStorybook(
   const builderName = typeof builder === 'string' ? builder : builder?.name;
 
   if (builderName) {
-    corePresets.push(join(dirname(builderName), 'preset.js'));
+    corePresets.push(join(resolvePackageDir(builderName), 'preset.js'));
   }
 
   // Load second pass: all presets are applied in order

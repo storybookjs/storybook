@@ -2,7 +2,6 @@ import { recast } from 'storybook/internal/babel';
 import { Tag } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
   type ComponentManifest,
@@ -17,10 +16,12 @@ import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
 import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
+  reactDocgenTypescript?: ComponentDocWithExportName;
 }
 
 function findMatchingComponent(
@@ -105,8 +106,7 @@ export const manifests: PresetPropertyFn<
   { manifestEntries: IndexEntry[] }
 > = async (existingManifests = {}, { manifestEntries }) => {
   invalidateCache();
-
-  const startPerformance = performance.now();
+  invalidateParser();
 
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
@@ -193,13 +193,14 @@ export const manifests: PresetPropertyFn<
         summary,
         import: imports,
         reactDocgen: docgen,
+        ...(component.reactDocgenTypescript
+          ? { reactDocgenTypescript: component.reactDocgenTypescript }
+          : {}),
         jsDocTags,
         error: docgenResult.type === 'error' ? docgenResult.error : undefined,
       };
     })
     .filter((component) => component !== undefined);
-
-  logger.verbose(`Component manifest generation took ${performance.now() - startPerformance}ms`);
 
   return {
     ...existingManifests,

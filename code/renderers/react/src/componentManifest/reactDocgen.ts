@@ -2,10 +2,9 @@ import { existsSync } from 'node:fs';
 import { dirname, sep } from 'node:path';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
-import { getProjectRoot, supportedExtensions } from 'storybook/internal/common';
+import { supportedExtensions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import * as find from 'empathic/find';
 import {
   type Documentation,
   builtinHandlers as docgenHandlers,
@@ -21,7 +20,7 @@ import { extractJSDocInfo } from './jsdocTags';
 import actualNameHandler from './reactDocgen/actualNameHandler';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver';
 import exportNameHandler from './reactDocgen/exportNameHandler';
-import { cached, cachedReadFileSync, cachedResolveImport } from './utils';
+import { cached, cachedReadFileSync, cachedResolveImport, findTsconfigPath } from './utils';
 
 export type DocObj = Documentation & {
   actualName: string;
@@ -76,7 +75,7 @@ export function matchPath(id: string, basedir?: string) {
 
 export const getTsConfig = cached(
   (cwd: string) => {
-    const tsconfigPath = find.up('tsconfig.json', { cwd, last: getProjectRoot() });
+    const tsconfigPath = findTsconfigPath(cwd);
     return TsconfigPaths.loadConfig(tsconfigPath);
   },
   { name: 'getTsConfig' }

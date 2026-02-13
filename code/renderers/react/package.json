@@ -54,7 +54,8 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/react-dom-shim": "workspace:*",
-    "react-docgen": "^8.0.2"
+    "react-docgen": "^8.0.2",
+    "react-docgen-typescript": "^2.2.2"
   },
   "devDependencies": {
     "@types/babel-plugin-react-docgen": "^4.2.3",
@@ -74,6 +75,7 @@
     "prop-types": "^15.7.2",
     "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
     "require-from-string": "^2.0.2",
+    "styled-components": "^6.3.9",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"
   },

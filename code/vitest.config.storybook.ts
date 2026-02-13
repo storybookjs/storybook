@@ -41,6 +41,7 @@ export default defineProject({
     browser: {
       enabled: true,
       provider: playwright({}),
+      trace: 'retain-on-failure',
       instances: [
         {
           browser: 'chromium',

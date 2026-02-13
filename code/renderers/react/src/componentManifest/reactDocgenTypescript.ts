@@ -270,7 +270,7 @@ export const parseWithReactDocgenTypescript = cached(
           ),
         };
       })
-      .filter((doc) => /^[A-Z]/.test(doc.displayName));
+;
   },
   { name: 'parseWithReactDocgenTypescript' }
 );

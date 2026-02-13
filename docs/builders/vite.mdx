@@ -68,6 +68,29 @@ By default, the Vite builder in Storybook searches for the Vite configuration fi
   If you do not want Storybook to load the Vite configuration file automatically, you can use the `viteConfigPath` option to point to a non-existent file.
 </Callout>
 
+### Watch mode for production builds
+
+The Vite builder supports watch mode for production builds, which automatically rebuilds your Storybook when files change. This is useful for development workflows where you need to continuously build and test the production output.
+
+To enable watch mode, configure the `build.watch` option in your `viteFinal` configuration:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="vite-builder-watch-mode.md" />
+
+{/* prettier-ignore-end */}
+
+When watch mode is enabled:
+
+* The builder monitors your source files for changes
+* Changes trigger automatic rebuilds
+* Build errors are logged to the console
+* The process continues watching until manually stopped
+
+<Callout variant="info" icon="💡">
+  Watch mode is primarily intended for development and CI/CD workflows. For regular development, use `storybook dev` which provides hot module replacement (HMR) for a faster development experience.
+</Callout>
+
 ### TypeScript
 
 If you need, you can also configure Storybook's Vite builder using TypeScript. Rename your `.storybook/main.js` to `.storybook/main.ts` and adjust it as follows:

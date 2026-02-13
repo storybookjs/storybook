@@ -1,3 +1,17 @@
+# v5.0.11 (Fri Feb 13 2026)
+
+#### 🐛 Bug Fix
+
+- Chore: Upgrade internal dependencies [#338](https://github.com/storybookjs/addon-svelte-csf/pull/338) ([@yannbf](https://github.com/yannbf))
+- Update peerDependencies for Storybook [#336](https://github.com/storybookjs/addon-svelte-csf/pull/336) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 2
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v5.0.10 (Fri Oct 03 2025)
 
 #### 🐛 Bug Fix

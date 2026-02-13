@@ -26,9 +26,10 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   children,
 }) => {
   let toc;
+  let meta;
 
   try {
-    const meta = context.resolveOf('meta', ['meta']);
+    meta = context.resolveOf('meta', ['meta']);
     toc = meta.preparedMeta.parameters?.docs?.toc;
   } catch (err) {
     // No meta, falling back to project annotations
@@ -53,23 +54,20 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
     }
   });
 
+  // It's not possible to disable toc in unattached MDX files, so we make it possible
+  // to globally disable the toc for only those files in preview.ts. We use lack of
+  // resolved meta to determine if the file is unattached.
+  const shouldDisableMdx = toc?.disableUnattachedMdx && !meta;
+  const tocComponent =
+    toc && !shouldDisableMdx ? (
+      <TableOfContents className="sbdocs sbdocs-toc--custom" channel={context.channel} {...toc} />
+    ) : null;
+
   return (
     <DocsContext.Provider value={context}>
       <SourceContainer channel={context.channel}>
         <ThemeProvider theme={ensureTheme(theme as ThemeVars)}>
-          <DocsPageWrapper
-            toc={
-              toc ? (
-                <TableOfContents
-                  className="sbdocs sbdocs-toc--custom"
-                  channel={context.channel}
-                  {...toc}
-                />
-              ) : null
-            }
-          >
-            {children}
-          </DocsPageWrapper>
+          <DocsPageWrapper toc={tocComponent}>{children}</DocsPageWrapper>
         </ThemeProvider>
       </SourceContainer>
     </DocsContext.Provider>

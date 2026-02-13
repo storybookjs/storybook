@@ -175,12 +175,7 @@ export const useViewport = () => {
       const w = width.replace(/px$/, '').replace(/%$/, 'pct');
       const h = height.replace(/px$/, '').replace(/%$/, 'pct');
       const value = isRotated ? `${h}-${w}` : `${w}-${h}`;
-      const [match, vx, ux, vy, uy] = value.match(URL_VALUE_PATTERN) || [];
-
-      // Don't update to pixel values less than 40
-      if (match && (ux || Number(vx) >= 40) && (uy || Number(vy) >= 40)) {
-        update({ value: match, isRotated });
-      }
+      update({ value, isRotated });
     },
     [update, isRotated]
   );

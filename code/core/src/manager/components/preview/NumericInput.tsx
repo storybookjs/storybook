@@ -46,6 +46,9 @@ const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
         outline: 'none',
       },
     },
+    'input:disabled': {
+      background: 'transparent',
+    },
     'input + div': {
       paddingInline: 0,
       fontSize: 'inherit',
@@ -53,6 +56,10 @@ const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
     '&:has(input:focus-visible)': {
       outline: `2px solid ${theme.color.secondary}`,
       outlineOffset: -2,
+    },
+    '&:has(input:disabled)': {
+      background: theme.base === 'light' ? theme.color.lighter : theme.input.background,
+      cursor: 'not-allowed',
     },
     ...(after && { paddingRight: 2 }),
     ...(before && { paddingLeft: 2 }),

@@ -1,21 +1,30 @@
-import React, { Fragment, useRef } from 'react';
+import React, { Fragment, useCallback, useMemo, useRef } from 'react';
 
 import { ActionList, Form } from 'storybook/internal/components';
-import type { API_PreparedIndexEntry } from 'storybook/internal/types';
+import type { FilterFunction, StoryIndex, Tag } from 'storybook/internal/types';
 
 import {
   BatchAcceptIcon,
+  BeakerIcon,
   DeleteIcon,
   DocumentIcon,
+  PlayHollowIcon,
   ShareAltIcon,
   SweepIcon,
   UndoIcon,
 } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { color, styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+
+type Filter = {
+  id: string;
+  type: string;
+  title: string;
+  count: number;
+};
 
 export const groupByType = (filters: Filter[]) =>
   filters.reduce(
@@ -40,61 +49,131 @@ const MutedText = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-export type FilterFunction = (entry: API_PreparedIndexEntry, excluded?: boolean) => boolean;
-export type Filter = {
-  id: string;
-  type: string;
-  title: string;
-  count: number;
-  filterFn: FilterFunction;
-};
-
 interface TagsFilterPanelProps {
   api: API;
-  filtersById: { [id: string]: Filter };
-  includedFilters: Set<string>;
-  excludedFilters: Set<string>;
-  toggleFilter: (key: string, selected: boolean, excluded?: boolean) => void;
-  setAllFilters: (selected: boolean) => void;
-  resetFilters: () => void;
-  isDefaultSelection: boolean;
-  hasDefaultSelection: boolean;
+  indexJson: StoryIndex;
 }
 
-export const TagsFilterPanel = ({
-  api,
-  filtersById,
-  includedFilters,
-  excludedFilters,
-  toggleFilter,
-  setAllFilters,
-  resetFilters,
-  isDefaultSelection,
-  hasDefaultSelection,
-}: TagsFilterPanelProps) => {
+const BUILT_IN_TAGS = new Set([
+  'dev',
+  'test',
+  'autodocs',
+  'attached-mdx',
+  'unattached-mdx',
+  'play-fn',
+  'test-fn',
+]);
+
+// This equality check works on the basis that there are no duplicates in the arrays.
+// We use arrays because we need arrays for data persistence in the layout module.
+const equal = (left: string[], right: string[]) =>
+  left.length === right.length && new Set([...left, ...right]).size === left.length;
+
+export const TagsFilterPanel = ({ api, indexJson }: TagsFilterPanelProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  const renderLink = ({
-    id,
-    type,
-    title,
-    icon,
-    count,
-  }: {
-    id: string;
-    type: string;
-    title: string;
-    icon?: React.ReactNode;
-    count: number;
-  }): Link | undefined => {
+  const defaultIncluded = api.getDefaultIncludedTagFilters();
+  const defaultExcluded = api.getDefaultExcludedTagFilters();
+  const includedFilters = api.getIncludedTagFilters();
+  const excludedFilters = api.getExcludedTagFilters();
+
+  const filtersById = useMemo<{ [id: string]: Filter }>(() => {
+    const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
+      (acc, entry) => {
+        entry.tags?.forEach((tag: Tag) => {
+          if (!BUILT_IN_TAGS.has(tag)) {
+            acc[tag] = (acc[tag] || 0) + 1;
+          }
+        });
+        return acc;
+      },
+      {}
+    );
+
+    const userFilters = Object.fromEntries(
+      Object.entries(userTagsCounts).map(([tag, count]) => {
+        return [tag, { id: tag, type: 'tag', title: tag, count }];
+      })
+    );
+
+    const getBuiltInCount = (filterFn: FilterFunction | null) =>
+      Object.values(indexJson.entries).filter((entry) => filterFn?.(entry)).length;
+
+    const builtInFilters = {
+      _docs: {
+        id: '_docs',
+        type: 'built-in',
+        title: 'Documentation',
+        icon: <DocumentIcon color={color.gold} />,
+        count: getBuiltInCount(api.getFilterFunction('_docs')),
+      },
+      _play: {
+        id: '_play',
+        type: 'built-in',
+        title: 'Play',
+        icon: <PlayHollowIcon color={color.seafoam} />,
+        count: getBuiltInCount(api.getFilterFunction('_play')),
+      },
+      _test: {
+        id: '_test',
+        type: 'built-in',
+        title: 'Testing',
+        icon: <BeakerIcon color={color.green} />,
+        count: getBuiltInCount(api.getFilterFunction('_test')),
+      },
+    };
+
+    return { ...userFilters, ...builtInFilters };
+  }, [api, indexJson.entries]);
+
+  const toggleFilter = useCallback(
+    (id: string, selected: boolean, excluded?: boolean) => {
+      if (excluded !== undefined) {
+        api.addTagFilters([id], excluded);
+      } else if (selected) {
+        api.addTagFilters([id], false);
+      } else {
+        api.removeTagFilters([id]);
+      }
+    },
+    [api]
+  );
+
+  const setAllFilters = useCallback(
+    (selected: boolean) => {
+      api.setAllTagFilters(selected ? Object.keys(filtersById) : [], []);
+    },
+    [api, filtersById]
+  );
+
+  const isDefaultSelection = useMemo(() => {
+    return equal(includedFilters, defaultIncluded) && equal(excludedFilters, defaultExcluded);
+  }, [includedFilters, excludedFilters, defaultIncluded, defaultExcluded]);
+
+  const hasDefaultSelection = useMemo(() => {
+    return defaultIncluded.length > 0 || defaultExcluded.length > 0;
+  }, [defaultIncluded, defaultExcluded]);
+
+  const builtInFilterIcons = useMemo(
+    () => ({
+      _docs: <DocumentIcon color={color.gold} />,
+      _play: <PlayHollowIcon color={color.seafoam} />,
+      _test: <BeakerIcon color={color.green} />,
+    }),
+    []
+  );
+
+  const renderLink = ({ id, type, title, count }: Filter): Link | undefined => {
     const onToggle = (selected: boolean, excluded?: boolean) =>
       toggleFilter(id, selected, excluded);
-    const isIncluded = includedFilters.has(id);
-    const isExcluded = excludedFilters.has(id);
+    const isIncluded = includedFilters.includes(id);
+    const isExcluded = excludedFilters.includes(id);
     const isChecked = isIncluded || isExcluded;
     const toggleLabel = `${type} filter: ${isExcluded ? `exclude ${title}` : title}`;
     const toggleTooltip = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
     const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
+    const icon =
+      type === 'built-in' ? builtInFilterIcons[id as keyof typeof builtInFilterIcons] : null;
 
     // for built-in filters (docs, play, test), don't show if there are no matches
     if (count === 0 && type === 'built-in') {
@@ -147,7 +226,7 @@ export const TagsFilterPanel = ({
 
   const hasItems = links.length > 0;
   const hasUserTags = Object.values(filtersById).some(({ type }) => type === 'tag');
-  const isNothingSelectedYet = includedFilters.size === 0 && excludedFilters.size === 0;
+  const isNothingSelectedYet = includedFilters.length === 0 && excludedFilters.length === 0;
 
   return (
     <Wrapper ref={ref}>
@@ -179,7 +258,7 @@ export const TagsFilterPanel = ({
               <ActionList.Button
                 id="reset-filters"
                 key="reset-filters"
-                onClick={resetFilters}
+                onClick={() => api.resetTagFilters()}
                 ariaLabel="Reset filters"
                 tooltip="Reset to default selection"
                 disabled={isDefaultSelection}

@@ -194,7 +194,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
 const wsToken = randomUUID();
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
-  channelOptions: { ...(existing?.channelOptions ?? {}), wsToken },
+  channelOptions: {
+    ...(existing?.channelOptions ?? {}),
+    ...(options.configType === 'DEVELOPMENT' ? { wsToken } : {}),
+  },
   disableTelemetry: options.disableTelemetry === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),

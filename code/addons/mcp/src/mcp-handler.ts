@@ -21,6 +21,7 @@ let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
+let a11yEnabled: boolean | undefined;
 
 const initializeMCPServer = async (options: Options) => {
 	const core = await options.presets.apply('core', {});
@@ -52,7 +53,7 @@ const initializeMCPServer = async (options: Options) => {
 	await addGetUIBuildingInstructionsTool(server);
 
 	// Register test addon tools
-	const a11yEnabled = await isAddonA11yEnabled(options);
+	a11yEnabled = await isAddonA11yEnabled(options);
 	await addRunStoryTestsTool(server, { a11yEnabled });
 
 	// Only register the additional tools if the component manifest feature is enabled
@@ -103,6 +104,7 @@ export const mcpServerHandler = async ({
 		format: addonOptions.experimentalFormat,
 		origin: origin!,
 		disableTelemetry: disableTelemetry!,
+		a11yEnabled,
 		request: webRequest,
 		// Telemetry handlers for component manifest tools
 		...(!disableTelemetry && {

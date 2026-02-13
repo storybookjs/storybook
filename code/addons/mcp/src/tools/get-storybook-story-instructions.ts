@@ -14,18 +14,39 @@ import {
 } from './tool-names.ts';
 
 export async function addGetUIBuildingInstructionsTool(server: McpServer<any, AddonContext>) {
+	const addonVitestAvailable = !!(await getAddonVitestConstants());
+
 	server.tool(
 		{
 			name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 			title: 'Storybook Story Development Instructions',
-			description: `Get comprehensive instructions for writing and updating Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
+			get description() {
+				const testToolsetAvailable =
+					(server.ctx.custom?.toolsets?.test ?? true) && addonVitestAvailable;
+				const a11yAvailable = testToolsetAvailable && (server.ctx.custom?.a11yEnabled ?? false);
+
+				const criticalTestBullets = testToolsetAvailable
+					? `
+- Running story tests or fixing test failures`
+					: '';
+				const criticalA11yBullets = a11yAvailable
+					? `
+- Fixing accessibility (a11y) violations found in stories`
+					: '';
+
+				const testAndA11yGuidance = testToolsetAvailable
+					? `
+- How to handle test failures${a11yAvailable ? ' and accessibility violations' : ''}`
+					: '';
+
+				return `Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
 
 CRITICAL: You MUST call this tool before:
 - Creating new Storybook stories or story files
 - Updating or modifying existing Storybook stories
 - Adding new story variants or exports to story files
 - Editing any file matching *.stories.* patterns
-- Writing components that will need stories
+- Writing components that will need stories${criticalTestBullets}${criticalA11yBullets}
 
 This tool provides essential Storybook-specific guidance including:
 - How to structure stories correctly for Storybook 9
@@ -34,9 +55,10 @@ This tool provides essential Storybook-specific guidance including:
 - Story naming conventions and best practices
 - Play function patterns for interactive testing
 - Mocking strategies for external dependencies
-- Story variants and coverage requirements
+- Story variants and coverage requirements${testAndA11yGuidance}
 
-Even if you're familiar with Storybook, call this tool to ensure you're following the correct patterns, import paths, and conventions for this specific Storybook setup.`,
+Even if you're familiar with Storybook, call this tool to ensure you're following the correct patterns, import paths, and conventions for this specific Storybook setup.`;
+			},
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 		},
 		async () => {

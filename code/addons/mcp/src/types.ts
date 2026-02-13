@@ -45,6 +45,12 @@ export type AddonContext = StorybookContext & {
 	 */
 	disableTelemetry: boolean;
 
+	/**
+	 * Whether @storybook/addon-a11y is enabled.
+	 * Used to dynamically tailor tool descriptions and guidance.
+	 */
+	a11yEnabled?: boolean;
+
 	toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
 };
 

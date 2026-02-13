@@ -9,6 +9,8 @@ interface TextInputProps {
   onChange?: (value: string) => void;
 }
 
-export const TextInput = forwardRef<HTMLInputElement, TextInputProps>((props, ref) => {
-  return null;
-});
+export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
+  function TextInput(props, ref) {
+    return null;
+  }
+);

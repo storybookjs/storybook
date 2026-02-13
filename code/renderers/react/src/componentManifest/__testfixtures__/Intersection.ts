@@ -8,10 +8,11 @@ type WithMeta = {
   archived?: boolean;
 };
 
-type ItemProps = Base & WithMeta & {
-  title: string;
-  onSave: () => Promise<void>;
-};
+type ItemProps = Base &
+  WithMeta & {
+    title: string;
+    onSave: () => Promise<void>;
+  };
 
 export function Item(props: ItemProps) {
   return null;

@@ -158,14 +158,16 @@ let parser: { program: ts.Program; fileParser: FileParser } | undefined;
 /** Rebuild the TS program incrementally so that file changes are picked up on the next parse. */
 export function invalidateParser() {
   parser = undefined;
+  compilerOptions = undefined;
+  fileNames = undefined;
 }
 
 function getParser() {
   if (!parser) {
     const configPath = findTsconfigPath(process.cwd());
-    compilerOptions ??= { noErrorTruncation: true, strict: true };
+    compilerOptions = { noErrorTruncation: true, strict: true };
 
-    if (configPath && !fileNames) {
+    if (configPath) {
       const { config } = ts.readConfigFile(configPath, ts.sys.readFile);
       const parsed = ts.parseJsonConfigFileContent(config, ts.sys, dirname(configPath));
       compilerOptions = { ...parsed.options, noErrorTruncation: true };

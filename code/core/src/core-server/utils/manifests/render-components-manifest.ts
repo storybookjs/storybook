@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import { groupBy } from 'storybook/internal/common';
+
 import type { ComponentDoc, PropItem } from 'react-docgen-typescript';
 
 import type { ComponentManifest, ComponentsManifest } from '../../../types';

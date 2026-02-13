@@ -6,12 +6,14 @@ import { parseWithReactDocgenTypescript } from './reactDocgenTypescript';
 
 const fixture = (name: string) => join(__dirname, '__testfixtures__', name);
 
-// Strip absolute paths so snapshots are portable across machines
+// Strip absolute paths so snapshots are portable across machines and CI environments
 function normalize(results: any[]) {
   return JSON.parse(
     JSON.stringify(results, (key, value) => {
       if ((key === 'filePath' || key === 'fileName') && typeof value === 'string') {
-        return value.replace(/.*__testfixtures__\//, '');
+        return value
+          .replace(/.*__testfixtures__[\\/]/, '')
+          .replace(/.*node_modules[\\/]/, 'node_modules/');
       }
       return value;
     })
@@ -1219,7 +1221,7 @@ describe('parseFile', () => {
               "inert": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/experimental.d.ts",
+                    "fileName": "node_modules/@types/react/experimental.d.ts",
                     "name": "HTMLAttributes",
                   },
                 ],
@@ -1227,7 +1229,7 @@ describe('parseFile', () => {
                 "description": "@see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/inert",
                 "name": "inert",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/experimental.d.ts",
+                  "fileName": "node_modules/@types/react/experimental.d.ts",
                   "name": "HTMLAttributes",
                 },
                 "required": false,
@@ -1238,7 +1240,7 @@ describe('parseFile', () => {
               "onBeforeToggle": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "HTMLAttributes",
                   },
                 ],
@@ -1246,7 +1248,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "onBeforeToggle",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "HTMLAttributes",
                 },
                 "required": false,
@@ -1257,7 +1259,7 @@ describe('parseFile', () => {
               "onToggle": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "HTMLAttributes",
                   },
                 ],
@@ -1265,7 +1267,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "onToggle",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "HTMLAttributes",
                 },
                 "required": false,
@@ -1276,7 +1278,7 @@ describe('parseFile', () => {
               "onTransitionCancel": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "DOMAttributes",
                   },
                 ],
@@ -1284,7 +1286,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "onTransitionCancel",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "DOMAttributes",
                 },
                 "required": false,
@@ -1295,7 +1297,7 @@ describe('parseFile', () => {
               "onTransitionCancelCapture": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "DOMAttributes",
                   },
                 ],
@@ -1303,7 +1305,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "onTransitionCancelCapture",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "DOMAttributes",
                 },
                 "required": false,
@@ -1314,7 +1316,7 @@ describe('parseFile', () => {
               "onTransitionRun": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "DOMAttributes",
                   },
                 ],
@@ -1322,7 +1324,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "onTransitionRun",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "DOMAttributes",
                 },
                 "required": false,
@@ -1333,7 +1335,7 @@ describe('parseFile', () => {
               "onTransitionRunCapture": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "DOMAttributes",
                   },
                 ],
@@ -1341,7 +1343,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "onTransitionRunCapture",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "DOMAttributes",
                 },
                 "required": false,
@@ -1352,7 +1354,7 @@ describe('parseFile', () => {
               "onTransitionStart": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "DOMAttributes",
                   },
                 ],
@@ -1360,7 +1362,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "onTransitionStart",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "DOMAttributes",
                 },
                 "required": false,
@@ -1371,7 +1373,7 @@ describe('parseFile', () => {
               "onTransitionStartCapture": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "DOMAttributes",
                   },
                 ],
@@ -1379,7 +1381,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "onTransitionStartCapture",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "DOMAttributes",
                 },
                 "required": false,
@@ -1390,7 +1392,7 @@ describe('parseFile', () => {
               "popover": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "HTMLAttributes",
                   },
                 ],
@@ -1398,7 +1400,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "popover",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "HTMLAttributes",
                 },
                 "required": false,
@@ -1424,7 +1426,7 @@ describe('parseFile', () => {
               "popoverTarget": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "HTMLAttributes",
                   },
                 ],
@@ -1432,7 +1434,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "popoverTarget",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "HTMLAttributes",
                 },
                 "required": false,
@@ -1443,7 +1445,7 @@ describe('parseFile', () => {
               "popoverTargetAction": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "fileName": "node_modules/@types/react/canary.d.ts",
                     "name": "HTMLAttributes",
                   },
                 ],
@@ -1451,7 +1453,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "popoverTargetAction",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "fileName": "node_modules/@types/react/canary.d.ts",
                   "name": "HTMLAttributes",
                 },
                 "required": false,
@@ -1474,7 +1476,7 @@ describe('parseFile', () => {
               "tw": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/next/dist/compiled/@vercel/og/types.d.ts",
+                    "fileName": "node_modules/next/dist/compiled/@vercel/og/types.d.ts",
                     "name": "HTMLAttributes",
                   },
                 ],
@@ -1488,7 +1490,7 @@ describe('parseFile', () => {
         - \`tw='text-[80px]'\`",
                 "name": "tw",
                 "parent": {
-                  "fileName": "storybook/node_modules/next/dist/compiled/@vercel/og/types.d.ts",
+                  "fileName": "node_modules/next/dist/compiled/@vercel/og/types.d.ts",
                   "name": "HTMLAttributes",
                 },
                 "required": false,
@@ -1545,11 +1547,11 @@ describe('parseFile', () => {
               "as": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1564,11 +1566,11 @@ describe('parseFile', () => {
               "forwardedAs": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1583,7 +1585,7 @@ describe('parseFile', () => {
               "style": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1598,11 +1600,11 @@ describe('parseFile', () => {
               "theme": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1627,11 +1629,11 @@ describe('parseFile', () => {
               "as": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1646,11 +1648,11 @@ describe('parseFile', () => {
               "forwardedAs": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1665,7 +1667,7 @@ describe('parseFile', () => {
               "style": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1680,11 +1682,11 @@ describe('parseFile', () => {
               "theme": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1709,11 +1711,11 @@ describe('parseFile', () => {
               "as": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1728,11 +1730,11 @@ describe('parseFile', () => {
               "forwardedAs": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1747,7 +1749,7 @@ describe('parseFile', () => {
               "style": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1762,11 +1764,11 @@ describe('parseFile', () => {
               "theme": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                   {
-                    "fileName": "storybook/node_modules/styled-components/dist/types.d.ts",
+                    "fileName": "node_modules/styled-components/dist/types.d.ts",
                     "name": "TypeLiteral",
                   },
                 ],
@@ -1824,7 +1826,7 @@ describe('parseFile', () => {
               "key": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/index.d.ts",
+                    "fileName": "node_modules/@types/react/index.d.ts",
                     "name": "Attributes",
                   },
                 ],
@@ -1832,7 +1834,7 @@ describe('parseFile', () => {
                 "description": "",
                 "name": "key",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/index.d.ts",
+                  "fileName": "node_modules/@types/react/index.d.ts",
                   "name": "Attributes",
                 },
                 "required": false,
@@ -1900,7 +1902,7 @@ describe('parseFile', () => {
               "ref": {
                 "declarations": [
                   {
-                    "fileName": "storybook/node_modules/@types/react/index.d.ts",
+                    "fileName": "node_modules/@types/react/index.d.ts",
                     "name": "RefAttributes",
                   },
                 ],
@@ -1911,7 +1913,7 @@ describe('parseFile', () => {
         @see {@link https://react.dev/learn/referencing-values-with-refs#refs-and-the-dom React Docs}",
                 "name": "ref",
                 "parent": {
-                  "fileName": "storybook/node_modules/@types/react/index.d.ts",
+                  "fileName": "node_modules/@types/react/index.d.ts",
                   "name": "RefAttributes",
                 },
                 "required": false,

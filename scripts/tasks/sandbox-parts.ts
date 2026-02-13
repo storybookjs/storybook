@@ -497,8 +497,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   if (shouldUseCsf4) {
     await writeFile(
       setupFilePath,
-      dedent`import { beforeAll } from 'vitest'
-      import { setProjectAnnotations } from '${storybookPackage}'
+      dedent`import { setProjectAnnotations } from '${storybookPackage}'
       import projectAnnotations from './preview'
 
       // setProjectAnnotations still kept to support non-CSF4 story tests
@@ -508,7 +507,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   } else {
     await writeFile(
       setupFilePath,
-      dedent`import { beforeAll } from 'vitest'
+      dedent`
       import { setProjectAnnotations } from '${storybookPackage}'
       import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'

@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';

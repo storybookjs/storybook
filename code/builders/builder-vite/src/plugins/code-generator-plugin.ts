@@ -17,7 +17,7 @@ import {
   getResolvedVirtualModuleId,
 } from '../virtual-file-names';
 
-export function codeGeneratorPlugin(options: Options): Plugin {
+export function codeGeneratorPlugin(options: Options) {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
   let iframeId: string;
   let projectRoot: string;
@@ -94,5 +94,5 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       }
       return transformIframeHtml(html, options);
     },
-  };
+  } satisfies Plugin;
 }

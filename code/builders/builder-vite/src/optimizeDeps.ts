@@ -1,10 +1,6 @@
-import type { StoryIndexGenerator } from 'storybook/internal/core-server';
-import type { Options, StoryIndex } from 'storybook/internal/types';
-
 import { type UserConfig, type InlineConfig as ViteInlineConfig, resolveConfig } from 'vite';
 
 import { INCLUDE_CANDIDATES } from './constants';
-import { getUniqueImportPaths } from './utils/unique-import-paths';
 
 /**
  * Helper function which allows us to `filter` with an async predicate. Uses Promise.all for
@@ -15,14 +11,7 @@ const asyncFilter = async (arr: string[], predicate: (val: string) => Promise<bo
 
 // TODO: This function should be reworked. The code it uses is outdated and we need to investigate
 // More info: https://github.com/storybookjs/storybook/issues/32462#issuecomment-3421326557
-export async function getOptimizeDeps(config: ViteInlineConfig, options: Options) {
-  const [extraOptimizeDeps, storyIndexGenerator] = await Promise.all([
-    options.presets.apply('optimizeViteDeps', []),
-    options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
-  ]);
-
-  const index: StoryIndex = await storyIndexGenerator.getIndex();
-
+export async function getOptimizeDeps(config: ViteInlineConfig) {
   // TODO: check if resolveConfig takes a lot of time, possible optimizations here
   const resolvedConfig = await resolveConfig(config, 'serve', 'development');
 
@@ -31,13 +20,11 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
   const resolve = resolvedConfig.createResolver({ asSrc: false });
   const include = await asyncFilter(INCLUDE_CANDIDATES, async (id) => Boolean(await resolve(id)));
 
-  const optimizeDeps: UserConfig['optimizeDeps'] = {
-    ...config.optimizeDeps,
-    entries: getUniqueImportPaths(index),
+  const optimizeDeps = {
     // We need Vite to precompile these dependencies, because they contain non-ESM code that would break
     // if we served it directly to the browser.
-    include: [...include, ...extraOptimizeDeps, ...(config.optimizeDeps?.include || [])],
-  };
+    include: [...include, ...(config.optimizeDeps?.include || [])],
+  } satisfies UserConfig['optimizeDeps'];
 
   return optimizeDeps;
 }

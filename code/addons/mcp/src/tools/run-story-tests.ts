@@ -94,7 +94,7 @@ export async function addRunStoryTestsTool(
 	const testRunQueue = createAsyncQueue();
 
 	const description =
-		`Run tests for one or more stories.
+		`Run tests for one or more stories and report accessibility issues. For visual/design accessibility violations (for example color contrast), ask the user before changing styles.
 Use this continously to monitor test results as you work on your UI components and stories.
 Results will include passing/failing status` +
 		(a11yEnabled ? ', and accessibility violation reports.' : '');

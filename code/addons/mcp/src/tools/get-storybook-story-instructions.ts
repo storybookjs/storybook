@@ -31,7 +31,7 @@ export async function addGetUIBuildingInstructionsTool(server: McpServer<any, Ad
 					: '';
 				const criticalA11yBullets = a11yAvailable
 					? `
-- Fixing accessibility (a11y) violations found in stories`
+- Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)`
 					: '';
 
 				const testAndA11yGuidance = testToolsetAvailable

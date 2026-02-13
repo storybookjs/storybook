@@ -156,6 +156,28 @@ describe('runStoryTestsTool', () => {
 		vi.spyOn(fetchStoryIndex, 'fetchStoryIndex').mockResolvedValue(smallStoryIndexFixture as any);
 	});
 
+	it('should include visual a11y handling guidance in tool description', async () => {
+		const response = await server.receive(
+			{
+				jsonrpc: '2.0' as const,
+				id: 100,
+				method: 'tools/list',
+				params: {},
+			},
+			{
+				sessionId: 'test-session',
+				custom: createTestContext(),
+			},
+		);
+
+		const tools = response.result?.tools ?? [];
+		const runStoryTestsTool = tools.find((tool: any) => tool.name === RUN_STORY_TESTS_TOOL_NAME);
+
+		expect(runStoryTestsTool?.description).toContain(
+			'For visual/design accessibility violations (for example color contrast), ask the user before changing styles.',
+		);
+	});
+
 	it('should return passing stories when all tests pass', async () => {
 		const testContext = createTestContext();
 
@@ -201,7 +223,7 @@ describe('runStoryTestsTool', () => {
 			expect.objectContaining({
 				actor: 'addon-mcp',
 				storyIds: ['button--primary'],
-				config: { coverage: false, a11y: true },
+				config: { a11y: true },
 			}),
 		);
 	});
@@ -252,7 +274,7 @@ describe('runStoryTestsTool', () => {
 			expect.objectContaining({
 				actor: 'addon-mcp',
 				storyIds: ['button--primary'],
-				config: { coverage: false, a11y: false },
+				config: { a11y: false },
 			}),
 		);
 	});

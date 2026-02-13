@@ -95,7 +95,9 @@ describe('getUIBuildingInstructionsTool', () => {
 		});
 
 		expect(description).toContain('Running story tests or fixing test failures');
-		expect(description).toContain('Fixing accessibility (a11y) violations found in stories');
+		expect(description).toContain(
+			'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)',
+		);
 		expect(description).toContain('How to handle test failures and accessibility violations');
 	});
 
@@ -119,7 +121,9 @@ describe('getUIBuildingInstructionsTool', () => {
 		});
 
 		expect(description).not.toContain('Running story tests or fixing test failures');
-		expect(description).not.toContain('Fixing accessibility (a11y) violations found in stories');
+		expect(description).not.toContain(
+			'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)',
+		);
 		expect(description).not.toContain('How to handle test failures');
 	});
 
@@ -145,7 +149,9 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(description).toContain('Running story tests or fixing test failures');
 		expect(description).toContain('How to handle test failures');
 		expect(description).not.toContain('How to handle test failures and accessibility violations');
-		expect(description).not.toContain('Fixing accessibility (a11y) violations found in stories');
+		expect(description).not.toContain(
+			'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)',
+		);
 	});
 
 	it('should return UI building instructions with framework placeholders replaced', async () => {

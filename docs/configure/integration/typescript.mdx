@@ -87,6 +87,98 @@ Now, when you define a story or update an existing one, you'll automatically get
 
 {/* prettier-ignore-end */}
 
+## Generating TypeScript declaration files
+
+If you're building a library and have `"declaration": true` in your tsconfig, you may encounter errors like these when your stories are included in the build:
+
+```
+TS2742: The inferred type of 'Foo' cannot be named without a reference to
+'some-lib/node_modules/some-internal-module'. This is likely not portable.
+A type annotation is necessary.
+
+TS4023: Exported variable 'Foo' has or is using name 'Bar' from external module
+"some-lib/internal" but cannot be named.
+```
+
+This happens because Storybook's types sometimes reference internal modules that TypeScript cannot include in portable declaration files. We've fixed many of these issues over the years by re-exporting internal types, but new ones keep appearing as the API evolves—and we don't want to expose all our internal types.
+
+With CSF3, this can sometimes be worked around by explicitly importing the missing types. However, we recommend typing meta with `satisfies Meta<...>` for better type safety, and `satisfies` doesn't provide an explicit type annotation. With [CSF factories](../../api/csf/csf-next.mdx), explicit type annotations aren't feasible since the API is designed around type inference. If you use the [`isolatedDeclarations`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#isolated-declarations) option, the problem becomes unavoidable since it requires explicit annotations for all exports—which neither `satisfies` nor CSF factories provide.
+
+### Solution
+
+We recommend excluding story files from your declaration build. Stories are development-time assets—consumers of your package interact with your components, not your stories, so they don't need story type definitions. Your IDE and type checking continue to work normally.
+
+There are two ways to achieve this:
+
+### Option 1: Separate build config
+
+The simpler approach is to set `declaration: false` in your base config and create a separate `tsconfig.build.json` for generating declarations:
+
+```diff
+// tsconfig.json
+{
+  "compilerOptions": {
++   "declaration": false
+  }
+}
+```
+
+```json
+// tsconfig.build.json (new file)
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true
+  },
+  "exclude": ["**/*.stories.*", "**/*.story.*", ".storybook/**"]
+}
+```
+
+Then update your build script to use the build config:
+
+```bash
+tsc -p tsconfig.build.json
+```
+
+### Option 2: Project references
+
+Using [TypeScript project references](https://www.typescriptlang.org/docs/handbook/project-references.html) separates your app code from Storybook files. This is the approach used by `create-vite` and other modern tooling. The advantage over Option 1 is that your IDE will also show declaration build errors. The downside is that project references are more complex to set up.
+
+```json
+// tsconfig.json
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.build.json" },
+    { "path": "./tsconfig.storybook.json" }
+  ]
+}
+
+// tsconfig.build.json - your app code, generates declarations
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true
+    // ...other options
+  },
+  "include": ["src"],
+  "exclude": ["**/*.stories.*", "**/*.story.*"]
+}
+
+// tsconfig.storybook.json - stories and Storybook config
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": false
+  },
+  "include": ["src/**/*.stories.*", ".storybook/**"],
+  "references": [
+    { "path": "./tsconfig.build.json" }
+  ]
+}
+```
+
 ## Troubleshooting
 
 ### The `satisfies` operator is not working as expected

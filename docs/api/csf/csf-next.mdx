@@ -546,4 +546,12 @@ Yes, the [doc blocks](../../writing-docs/doc-blocks.mdx) used to reference stori
 
 For more information on this experimental format's original proposal, refer to its [RFC on GitHub](https://github.com/storybookjs/storybook/discussions/30112). We welcome your comments!
 
+### Why do I get TypeScript errors when generating declaration files?
+
+Storybook's types sometimes reference internal modules, which can cause errors like `TS2742` or `TS4023` when generating `.d.ts` files.
+
+Additionally, if you use TypeScript's `isolatedDeclarations` option, it requires explicit type annotations for all exports. Since CSF factories are designed around type inference, explicit annotations aren't feasible.
+
+We recommend excluding stories from your declaration build. Stories are development-time assets—consumers of your package don't need their type definitions. Your IDE and type checking continue to work normally. See [Generating TypeScript declaration files](../../configure/integration/typescript.mdx#generating-typescript-declaration-files) for instructions.
+
 </If>

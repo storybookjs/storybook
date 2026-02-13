@@ -34,16 +34,17 @@ export type FrameworkOptions = {
     | {
         plugin: 'vue-component-meta';
         /**
-         * Tsconfig filename to use. Should be set if your main `tsconfig.json` includes references
-         * to other tsconfig files like `tsconfig.app.json`. Otherwise docgen might not be generated
-         * correctly (e.g. import aliases are not resolved).
+         * Tsconfig path to use. Should be set if your main `tsconfig.json` includes references to
+         * other tsconfig files like `tsconfig.app.json`. Otherwise docgen might not be generated
+         * correctly (e.g. import aliases are not resolved). The path is resolved relative to
+         * project root.
          *
          * For further information, see our
          * [docs](https://storybook.js.org/docs/get-started/vue3-vite#override-the-default-configuration).
          *
          * @default 'tsconfig.json'
          */
-        tsconfig: `tsconfig${string}.json`;
+        tsconfig: `${string}/tsconfig${string}.json` | `tsconfig${string}.json`;
       };
 };
 

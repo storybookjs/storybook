@@ -110,6 +110,22 @@ Out of the box, Storybook supports the `satisfies` operator for almost every fra
 
   {/* prettier-ignore-end */}
 
+  ### Inherited props are missing for components from workspace packages
+
+  If you're using `react-docgen-typescript` in a monorepo with npm/yarn/pnpm workspaces, you may find that components imported from a workspace package are missing inherited props (e.g., MUI's `ButtonProps`), while the same component imported locally works fine.
+
+  This happens because the underlying Vite plugin creates a TypeScript program from files matching its `include` glob (default: `**/**.tsx`), resolved from the Storybook project's directory. Workspace package files are outside that directory and aren't included in the program, so inherited types can't be resolved.
+
+  To fix this, add your workspace package source files to the `include` option:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="storybook-main-rdt-monorepo-include.md" />
+
+  {/* prettier-ignore-end */}
+
+  Adjust the path (`../../packages/ui/src/**/*.tsx`) to match your monorepo layout. Note that `tsconfigPath` only affects compiler options — it does not change which files are included in the TypeScript program.
+
   ### The types are not being generated for my component
 
   If you're working with a React project, type inference is automatically enabled for your components using the `react-docgen` library for improved build times and type safety. However, you may run into a situation where some options may not work as expected (e.g., [`Enums`](https://www.typescriptlang.org/docs/handbook/enums.html), React's [`forwardRef`](https://react.dev/reference/react/forwardRef)). This is primarily due to how the `react-docgen` package is implemented, making it difficult for Storybook to infer the component's metadata and generate types automatically. To solve this, you can update the `typescript` configuration option in your Storybook configuration file to use `react-docgen-typescript` instead. For example:

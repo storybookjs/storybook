@@ -2,9 +2,13 @@
 
 ## Supported Versions
 
-We release patches for fixing security vulnerabilities, primarily focusing on the latest release only. 
+We release patches for security vulnerabilities, primarily focusing on the latest major version.
 
-In the event of a high-risk vulnerability, we may backport the security fixes to the minor versions of the software, starting from the latest minor version up to the latest major release. The decision to backport security fixes to older versions will be made based on a risk assessment and the feasibility of implementing the patch in those versions.
+Security fixes are backported to the previous two major versions only for vulnerabilities with High or Critical CVSS scores (7.0+). The decision to backport is made based on severity assessment and the feasibility of implementing the patch in those versions.
+
+- Latest major version: All security vulnerabilities
+- Previous two major versions: High or Critical CVSS scores only
+- Older versions: Not supported (Users should upgrade to a supported version)
 
 ## Reporting a Vulnerability
 

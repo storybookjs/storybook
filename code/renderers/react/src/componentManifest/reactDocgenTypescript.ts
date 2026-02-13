@@ -38,10 +38,11 @@ const isBuiltinProp = (prop: { parent?: { name: string; fileName: string } }): b
 };
 
 /**
- * Auto-detect "system props" contributed in bulk by a single source file from node_modules.
+ * Auto-detect "system props" contributed in bulk by a single source file.
  * CSS-in-JS libraries (Panda CSS, styled-system, Stitches, etc.) inject hundreds of style props
- * from one type definition file. When a single node_modules source contributes more than
- * {@link SYSTEM_PROP_SOURCE_THRESHOLD} props, all props from that source are filtered out.
+ * from one type definition file — either in node_modules or as in-project generated `.d.ts` files.
+ * When a single such source contributes more than {@link SYSTEM_PROP_SOURCE_THRESHOLD} props,
+ * all props from that source are filtered out. User-authored `.ts` files are never filtered.
  */
 const SYSTEM_PROP_SOURCE_THRESHOLD = 30;
 
@@ -52,7 +53,7 @@ const getSystemPropSources = (props: Record<string, PropItem>): Set<string> => {
   const countBySource = new Map<string, number>();
   for (const prop of Object.values(props)) {
     const source = getPropSource(prop);
-    if (source?.includes('node_modules')) {
+    if (source?.includes('node_modules') || source?.endsWith('.d.ts')) {
       countBySource.set(source, (countBySource.get(source) ?? 0) + 1);
     }
   }

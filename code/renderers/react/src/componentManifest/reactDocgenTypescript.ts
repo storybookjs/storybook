@@ -2,7 +2,12 @@ import { dirname } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { type ComponentDoc, type FileParser, withCompilerOptions } from 'react-docgen-typescript';
+import {
+  type ComponentDoc,
+  type FileParser,
+  type PropItem,
+  withCompilerOptions,
+} from 'react-docgen-typescript';
 import ts from 'typescript';
 
 import { cached, findTsconfigPath } from './utils';
@@ -30,6 +35,34 @@ const isBuiltinProp = (prop: { parent?: { name: string; fileName: string } }): b
     return true;
   }
   return false;
+};
+
+/**
+ * Auto-detect "system props" contributed in bulk by a single source file from node_modules.
+ * CSS-in-JS libraries (Panda CSS, styled-system, Stitches, etc.) inject hundreds of style props
+ * from one type definition file. When a single node_modules source contributes more than
+ * {@link SYSTEM_PROP_SOURCE_THRESHOLD} props, all props from that source are filtered out.
+ */
+const SYSTEM_PROP_SOURCE_THRESHOLD = 30;
+
+const getPropSource = (prop: PropItem): string | undefined =>
+  prop.parent?.fileName ?? prop.declarations?.[0]?.fileName;
+
+const getSystemPropSources = (props: Record<string, PropItem>): Set<string> => {
+  const countBySource = new Map<string, number>();
+  for (const prop of Object.values(props)) {
+    const source = getPropSource(prop);
+    if (source?.includes('node_modules')) {
+      countBySource.set(source, (countBySource.get(source) ?? 0) + 1);
+    }
+  }
+  const systemSources = new Set<string>();
+  for (const [source, count] of countBySource) {
+    if (count > SYSTEM_PROP_SOURCE_THRESHOLD) {
+      systemSources.add(source);
+    }
+  }
+  return systemSources;
 };
 
 /**
@@ -217,16 +250,26 @@ export const parseWithReactDocgenTypescript = cached(
     const exportNameMap = sourceFile ? getExportNameMap(checker, sourceFile) : new Map();
 
     return docs
-      .map((doc) => ({
-        ...doc,
-        // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
-        // export map to get the public export name. Falls back to displayName when not aliased.
-        exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
-        // Filter out React built-in HTML/DOM/Aria props, keep third-party and custom props
-        props: Object.fromEntries(
-          Object.entries(doc.props).filter(([, prop]) => !isBuiltinProp(prop))
-        ),
-      }))
+      .map((doc) => {
+        const systemSources = getSystemPropSources(doc.props);
+        return {
+          ...doc,
+          // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
+          // export map to get the public export name. Falls back to displayName when not aliased.
+          exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
+          // Filter out:
+          // 1. React built-in HTML/DOM/Aria props
+          // 2. System props (CSS-in-JS style props contributed in bulk from one node_modules source)
+          props: Object.fromEntries(
+            Object.entries(doc.props).filter(([, prop]) => {
+              if (isBuiltinProp(prop)) return false;
+              const source = getPropSource(prop);
+              if (source && systemSources.has(source)) return false;
+              return true;
+            })
+          ),
+        };
+      })
       .filter((doc) => /^[A-Z]/.test(doc.displayName));
   },
   { name: 'parseWithReactDocgenTypescript' }

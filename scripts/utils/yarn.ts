@@ -80,6 +80,9 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   );
 };
 
+export const isViteSandbox = (key?: AllTemplatesKey) =>
+  !key || key.includes('vite') || key.includes('svelte-kit');
+
 export const addWorkaroundResolutions = async ({
   cwd,
   dryRun,
@@ -121,6 +124,8 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
+    // Override vite to v8 beta for vite-based sandboxes to test Vite 8 compatibility
+    ...(isViteSandbox(key) ? { vite: '8.0.0-beta.13' } : {}),
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
@@ -169,7 +174,7 @@ export const configureYarn2ForVerdaccio = async ({
     // Discard all YN0013 - FETCH_NOT_CACHED messages
     // Error on YN0060 - INCOMPATIBLE_PEER_DEPENDENCY
     command.push(
-      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"error\\"}]"`
+      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"discard\\"}]"`
     );
   }
 

@@ -11,6 +11,7 @@ import { generateImportFnScriptCode } from '../codegen-importfn-script';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel';
 import { transformIframeHtml } from '../transform-iframe-html';
+import { bundlerOptionsKey, ensureRolldownOptions } from '../utils/vite-features';
 import {
   SB_VIRTUAL_FILES,
   SB_VIRTUAL_FILE_IDS,
@@ -46,10 +47,17 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         if (!config.build) {
           config.build = {};
         }
-        config.build.rollupOptions = {
-          ...config.build.rollupOptions,
+        // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
+        const build = config.build as Record<string, any>;
+
+        // shared options between rollup/rolldown
+        build[bundlerOptionsKey] = {
+          ...build[bundlerOptionsKey],
           input: iframePath,
         };
+
+        // necessary rolldown specific overrides
+        ensureRolldownOptions(config);
       }
     },
     configResolved(config) {

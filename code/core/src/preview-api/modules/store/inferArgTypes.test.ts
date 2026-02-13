@@ -143,4 +143,122 @@ describe('inferArgTypes', () => {
       },
     });
   });
+
+  it('handles Date, RegExp, and Error without warnings', () => {
+    vi.mocked(logger.warn).mockClear();
+    expect(
+      inferArgTypes({
+        initialArgs: {
+          a: new Date('2024-01-01'),
+          b: /test/gi,
+          c: new Error('test'),
+        },
+      } as any)
+    ).toEqual({
+      a: { name: 'a', type: { name: 'other', value: 'Date' } },
+      b: { name: 'b', type: { name: 'other', value: 'RegExp' } },
+      c: { name: 'c', type: { name: 'other', value: 'Error' } },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('warns for Map and Set instances', () => {
+    vi.mocked(logger.warn).mockClear();
+    expect(
+      inferArgTypes({
+        initialArgs: {
+          a: new Map([['key', 'value']]),
+          b: new Set([1, 2, 3]),
+        },
+      } as any)
+    ).toEqual({
+      a: { name: 'a', type: { name: 'other', value: 'Map' } },
+      b: { name: 'b', type: { name: 'other', value: 'Set' } },
+    });
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('non-serializable value'));
+  });
+
+  it('warns and skips non-plain objects (class instances)', () => {
+    class MyClass {
+      value = 42;
+    }
+    vi.mocked(logger.warn).mockClear();
+    expect(
+      inferArgTypes({
+        initialArgs: {
+          a: new MyClass(),
+        },
+      } as any)
+    ).toEqual({
+      a: { name: 'a', type: { name: 'other', value: 'MyClass' } },
+    });
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('non-serializable value'));
+  });
+
+  it('does not hang on DOM-like structures with many properties', () => {
+    class FakeElement {
+      nodeType = 1;
+      nodeName = 'DIV';
+      [key: string]: any;
+      constructor() {
+        for (let i = 0; i < 200; i++) {
+          this[`attr${i}`] = `value${i}`;
+        }
+        this.__reactFiber = { child: this };
+      }
+    }
+    const domLike = new FakeElement();
+
+    const start = performance.now();
+    const result = inferArgTypes({
+      initialArgs: { el: domLike },
+    } as any);
+    const elapsed = performance.now() - start;
+
+    expect(elapsed).toBeLessThan(500);
+    expect(result.el.type).toEqual({ name: 'other', value: 'FakeElement' });
+  });
+
+  it('does not hang on mutable refs pointing to complex objects', () => {
+    class FakeHTMLFormElement {
+      parentNode: any;
+      __reactFiber: any;
+      constructor() {
+        this.parentNode = { childNodes: [this] };
+        this.__reactFiber = { stateNode: this, return: {}, child: {} };
+      }
+    }
+    const fakeDOM = new FakeHTMLFormElement();
+    const ref = { current: fakeDOM };
+
+    vi.mocked(logger.warn).mockClear();
+    const start = performance.now();
+    const result = inferArgTypes({
+      initialArgs: { formRef: ref },
+    } as any);
+    const elapsed = performance.now() - start;
+
+    expect(elapsed).toBeLessThan(500);
+    expect(result.formRef.type).toEqual({
+      name: 'object',
+      value: { current: { name: 'other', value: 'FakeHTMLFormElement' } },
+    });
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('non-serializable value'));
+  });
+
+  it('handles null and undefined args gracefully', () => {
+    vi.mocked(logger.warn).mockClear();
+    expect(
+      inferArgTypes({
+        initialArgs: {
+          nullArg: null,
+          undefinedArg: undefined,
+        },
+      } as any)
+    ).toEqual({
+      nullArg: { name: 'nullArg', type: { name: 'object', value: {} } },
+      undefinedArg: { name: 'undefinedArg', type: { name: 'object', value: {} } },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
 });

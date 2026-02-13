@@ -2,6 +2,7 @@ import { logger } from 'storybook/internal/client-logger';
 import type { ArgTypesEnhancer, Renderer, SBType } from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit/object';
+import { isPlainObject } from 'es-toolkit/predicate';
 import { dedent } from 'ts-dedent';
 
 import { combineParameters } from './parameters';
@@ -37,7 +38,23 @@ const inferType = (value: any, name: string, visited: Set<any>): SBType => {
           : { name: 'other', value: 'unknown' };
       return { name: 'array', value: childType };
     }
-    const fieldTypes = mapValues(value, (field) => inferType(field, name, new Set(visited)));
+    if (value instanceof Date || value instanceof RegExp || value instanceof Error) {
+      return { name: 'other', value: value.constructor.name };
+    }
+    if (!isPlainObject(value)) {
+      const constructorName = value.constructor?.name || 'unknown';
+      logger.warn(dedent`
+        Arg '${name}' is a non-serializable value of type '${constructorName}'. Args should be JSON-serializable.
+
+        Consider using the mapping feature or fully custom args:
+        - Mapping: https://storybook.js.org/docs/writing-stories/args#mapping-to-complex-arg-values
+        - Custom args: https://storybook.js.org/docs/essentials/controls#fully-custom-args
+      `);
+      return { name: 'other', value: constructorName };
+    }
+    const fieldTypes = mapValues(value as Record<string, unknown>, (field) =>
+      inferType(field, name, new Set(visited))
+    );
     return { name: 'object', value: fieldTypes };
   }
   return { name: 'object', value: {} };

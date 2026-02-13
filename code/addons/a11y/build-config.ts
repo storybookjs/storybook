@@ -23,6 +23,11 @@ const config: BuildEntries = {
         entryPoint: './src/postinstall.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./preset'],
+        entryPoint: './src/preset.ts',
+        dts: false,
+      },
     ],
   },
 };

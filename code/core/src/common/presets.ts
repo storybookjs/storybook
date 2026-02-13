@@ -15,6 +15,7 @@ import type {
 import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import type { Channel } from '../channels';
 import { importModule, safeResolveModule } from '../shared/utils/module';
 import { getInterpretedFile } from './utils/interpret-files';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
@@ -335,6 +336,7 @@ export async function loadAllPresets(
       /** Whether preset failures should be critical or not */
       isCritical?: boolean;
       build?: StorybookConfigRaw['build'];
+      channel: Channel;
     }
 ) {
   const { corePresets = [], overridePresets = [], ...restOptions } = options;

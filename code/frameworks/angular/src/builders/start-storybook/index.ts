@@ -32,6 +32,7 @@ import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
 import type { StandaloneOptions } from '../utils/standalone-options';
 import { VERSION } from '@angular/core';
+import { Channel } from 'storybook/internal/channels';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -238,7 +239,12 @@ async function runInstance(options: StandaloneOptions) {
       'dev',
       {
         cliOptions: options,
-        presetOptions: { ...options, corePresets: [], overridePresets: [] },
+        presetOptions: {
+          ...options,
+          corePresets: [],
+          overridePresets: [],
+          channel: new Channel({}),
+        },
         printError: printErrorDetails,
       },
       () => {

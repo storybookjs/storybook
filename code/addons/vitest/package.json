@@ -43,6 +43,11 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "code": "./src/constants.ts",
+      "default": "./dist/constants.js"
+    },
     "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
@@ -51,6 +56,11 @@
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js",
     "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
+      "default": "./dist/preview.js"
+    },
     "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
@@ -74,6 +84,7 @@
     "@storybook/icons": "^2.0.1"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "workspace:*",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",

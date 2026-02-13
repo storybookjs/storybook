@@ -96,7 +96,7 @@ describe('registerIndexJsonRoute', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
@@ -496,7 +496,7 @@ describe('registerIndexJsonRoute', () => {
 
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
@@ -527,7 +527,7 @@ describe('registerIndexJsonRoute', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
@@ -564,7 +564,7 @@ describe('registerIndexJsonRoute', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
@@ -610,7 +610,7 @@ describe('registerIndexJsonRoute', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),

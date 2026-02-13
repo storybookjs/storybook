@@ -17,6 +17,7 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
+import Channel from '../channels';
 import { resolvePackageDir } from '../shared/utils/module';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
@@ -68,16 +69,25 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     .resolve('storybook/internal/core-server/presets/common-override-preset');
 
   logger.step('Loading presets');
+
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],
     isCritical: true,
+    channel,
     ...options,
   });
 
   const { renderer } = await presets.apply('core', {});
   const build = await presets.apply('build', {});
-  const [previewBuilder, managerBuilder] = await getBuilders({ ...options, presets, build });
+  const [previewBuilder, managerBuilder] = await getBuilders({
+    ...options,
+    presets,
+    build,
+    channel,
+  });
 
   const resolvedRenderer = renderer
     ? resolveAddonName(options.configDir, renderer, options)
@@ -91,8 +101,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       ...corePresets,
     ],
     overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
-    ...options,
     build,
+    channel,
+    ...options,
   });
 
   const [features, core, staticDirs] = await Promise.all([
@@ -110,6 +121,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const fullOptions: Options = {
     ...options,
+    channel,
     presets,
     features,
     build,

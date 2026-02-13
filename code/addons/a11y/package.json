@@ -43,6 +43,7 @@
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js",
+    "./preset": "./dist/preset.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",

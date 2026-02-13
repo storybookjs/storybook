@@ -54,7 +54,8 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/react-dom-shim": "workspace:*",
-    "react-docgen": "^8.0.2"
+    "react-docgen": "^8.0.2",
+    "react-docgen-typescript": "^2.2.2"
   },
   "devDependencies": {
     "@types/babel-plugin-react-docgen": "^4.2.3",

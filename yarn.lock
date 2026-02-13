@@ -8432,6 +8432,7 @@ __metadata:
     html-tags: "npm:^3.1.0"
     prop-types: "npm:^15.7.2"
     react-docgen: "npm:^8.0.2"
+    react-docgen-typescript: "npm:^2.2.2"
     react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
     require-from-string: "npm:^2.0.2"
     styled-components: "npm:^6.3.9"

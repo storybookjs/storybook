@@ -25,15 +25,18 @@ npm create storybook@next
 
 ## Supported Versions
 
-We actively maintain the latest major version of Storybook. Within the current major, we patch only the latest minor version. Most fixes and new work go into the next minor (or sometimes major) and are not backported. Critical security fixes may be backported more broadly across the current major version, and in rare cases (such as for a short period immediately following a new major), to the previous major.
+We actively maintain the latest major version of Storybook. Within the current major, we patch only the latest minor version. Most fixes and new work go into the next minor (or sometimes major) and are not backported. Critical security fixes may be backported more broadly based on severity:
+- Latest major: Receives all security fixes
+- Previous two majors: Receive security patches for **High or Critical CVSS vulnerabilities only**
+- Older versions: No longer recieves any patches
 
-For example, if the latest version is `9.2.1`:
+For example, if the latest version is `10.2.1`:
 
-- We support `9.x.x` versions and release `9.2.x` patch versions
-- Most fixes and new work will be released as `9.3.0-alpha.x` versions
-  - If the next release is a major version, it would be `10.0.0-alpha.x`
-- We will backport critical security fixes to `9.1.x` or `9.0.x`
-- Rarely, we may backport critical fixes to `8.6.x` as necessary
+- We support `10.x.x` versions and release `10.2.x` patch versions
+- Most fixes and new work will be released as `10.3.0-alpha.x` versions
+  - If the next release is a major version, it would be `11.0.0-alpha.x`
+- We will backport **High or Critical** security fixes to the latest minor of `9.x.x` and `8.x.x`
+- Versions `7.x.x` and older will not receive security patches
 
 For compatibility with other libraries and tools in the JavaScript ecosystem, please refer to the [compatibility tracker](https://github.com/storybookjs/storybook/issues/23279).
 

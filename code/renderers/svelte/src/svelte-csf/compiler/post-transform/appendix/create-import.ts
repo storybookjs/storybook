@@ -26,5 +26,6 @@ export function createRuntimeStoriesImport(): ESTreeAST.ImportDeclaration {
         local: imported,
       },
     ],
+    attributes: [],
   };
 }

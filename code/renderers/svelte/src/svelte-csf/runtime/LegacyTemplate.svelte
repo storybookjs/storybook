@@ -18,8 +18,8 @@ Vite pre-transform hook does codemod where this component gets transformed into 
   type $$Props = TemplateProps;
   type $$Slots = Slots;
 
-  let args: $$Slots['default']['args'];
-  let context: $$Slots['default']['context'];
+  let args!: $$Slots['default']['args'];
+  let context!: $$Slots['default']['context'];
 </script>
 
 <slot {context} {args} />

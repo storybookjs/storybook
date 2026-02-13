@@ -75,7 +75,6 @@ export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotati
           return delegate(storyContext);
         }
 
-        // @ts-expect-error WARN: It should not affect user perspective- the problem lies in this addon's type `SvelteRenderer` missing type constrains or default generic parameter type
         return play(storyContext);
       };
     }

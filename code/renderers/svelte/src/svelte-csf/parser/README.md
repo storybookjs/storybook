@@ -4,7 +4,6 @@
   and get specific piece of data needed for further processing.
 
 - `extract/` directory is for functions to extract AST nodes:
-
   1. From original Svelte source code,
      before transformation with `vite` plugins begins.
      Powered by `svelte/compiler`.

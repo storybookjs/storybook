@@ -24,6 +24,7 @@ export function createASTAttribute(
   name: string,
   value: SvelteAST.Attribute['value'] = true
 ): SvelteAST.Attribute {
+  // @ts-expect-error - name_loc is required but not used
   return {
     type: 'Attribute',
     name,

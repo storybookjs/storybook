@@ -13,6 +13,7 @@ export function createNamedExportStories(
     type: 'ExportNamedDeclaration',
     specifiers: params.storiesIdentifiers.map(createExportSpecifier),
     declaration: null,
+    attributes: [],
   };
 }
 

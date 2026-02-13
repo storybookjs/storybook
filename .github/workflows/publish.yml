@@ -4,8 +4,14 @@ run-name: Publish new version on ${{ github.ref_name }}, triggered by ${{ github
 on:
   push:
     branches:
-      - latest-release
-      - next-release
+      - v7
+  workflow_dispatch:
+    # Manual canary releases on PRs
+    inputs:
+      pr:
+        description: "⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for"
+        required: true
+        type: number
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -22,7 +28,11 @@ jobs:
   publish:
     name: Publish new version
     runs-on: ubuntu-latest
-    environment: release
+    if: |
+      github.event_name == 'push' &&
+      (github.ref_name == 'v7') &&
+      contains(github.event.head_commit.message, '[skip ci]') != true
+    environment: Release
     defaults:
       run:
         working-directory: scripts
@@ -37,18 +47,18 @@ jobs:
           gh run watch ${{ github.run_id }}
 
       - name: Checkout ${{ github.ref_name }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 100
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
         with:
-          node-version-file: '.nvmrc'
+          install-code-deps: true
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.yarn/berry/cache
@@ -57,15 +67,6 @@ jobs:
             yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
             yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
             yarn-v1
-
-      - name: Install script dependencies
-        run: |
-          yarn install
-
-      - name: Cancel all release preparation runs
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:cancel-preparation-runs
 
       - name: Apply deferred version bump and commit
         working-directory: .
@@ -95,47 +96,26 @@ jobs:
         id: publish-needed
         run: yarn release:is-version-published ${{ steps.version.outputs.current-version }}
 
-      - name: Check release vs prerelease
-        if: steps.publish-needed.outputs.published == 'false'
-        id: is-prerelease
-        run: yarn release:is-prerelease ${{ steps.version.outputs.current-version }} --verbose
-
-      - name: Install code dependencies
-        if: steps.publish-needed.outputs.published == 'false'
-        working-directory: .
-        run: yarn task --task=install --start-from=install
-
       - name: Publish
         if: steps.publish-needed.outputs.published == 'false'
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
-
-      - name: Get target branch
-        id: target
-        run: echo "target=${{ github.ref_name == 'next-release' && 'next' || 'main' }}" >> $GITHUB_OUTPUT
+        run: yarn release:publish --tag v7 --verbose
 
       - name: Get changelog for ${{ steps.version.outputs.current-version }}
         if: steps.publish-needed.outputs.published == 'false'
         id: changelog
         run: yarn release:get-changelog-from-file ${{ steps.version.outputs.current-version }}
 
-      # tags are needed to get list of patches to label as picked
-      - name: Fetch git tags
-        if: github.ref_name == 'latest-release'
-        run: git fetch --tags origin
-
-      # when this is a patch release from main, label any patch PRs included in the release
-      - name: Label patch PRs as picked
-        if: github.ref_name == 'latest-release'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:label-patches
-
       - name: Create GitHub Release
         if: steps.publish-needed.outputs.published == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+          REPOSITORY: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+          IS_PRERELEASE: false
         run: |
           gh release create \
           v${{ steps.version.outputs.current-version }} \
@@ -145,51 +125,16 @@ jobs:
             --notes "${{ steps.changelog.outputs.changelog }}" \
             ${{ steps.is-prerelease.outputs.prerelease == 'true' && '--prerelease' || '' }}
 
-      - name: Merge ${{ github.ref_name }} into ${{ steps.target.outputs.target }}
-        run: |
-          git config --global user.name "storybook-bot"
-          git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
-          git fetch origin ${{ steps.target.outputs.target }}
-          git checkout ${{ steps.target.outputs.target }}
-          git merge ${{ github.ref_name }}
-          git push origin ${{ steps.target.outputs.target }}
-
-      - name: Ensure `next` is a minor version ahead of `main`
-        if: steps.target.outputs.target == 'main'
-        run: |
-          git checkout next
-          git pull
-
-          yarn release:ensure-next-ahead --main-version "${{ steps.version.outputs.current-version }}"
-
-          git add ..
-          git diff --staged --quiet || git commit -m "Bump next to be one minor ahead of main [skip ci]"
-          git push origin next
-
-      - name: Sync CHANGELOG.md from `main` to `next`
-        if: steps.target.outputs.target == 'main'
-        working-directory: .
-        run: |
-          git fetch origin next
-          git checkout next
-          git pull
-          git checkout origin/main ./CHANGELOG.md
-          git add ./CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for v${{ steps.version.outputs.current-version }} [skip ci]" || true
-          git push origin next
-
-      - name: Sync version JSONs from `next-release` to `main`
-        if: github.ref_name == 'next-release'
-        working-directory: .
-        run: |
-          VERSION_FILE="./docs/versions/${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }}.json"
-          git fetch origin main
-          git checkout main
-          git pull
-          git checkout origin/next-release $VERSION_FILE
-          git add $VERSION_FILE
-          git commit -m "Update $VERSION_FILE for v${{ steps.version.outputs.current-version }}"
-          git push origin main
+      - name: Create Sentry release
+        if: steps.publish-needed.outputs.published == 'false'
+        uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          release: ${{ steps.version.outputs.current-version }}
+          environment: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'prerelease' || 'latest' }}
 
       - name: Report job failure to Discord
         if: failure()
@@ -197,4 +142,102 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@master
         with:
-          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  publish-canary:
+    name: Publish canary version
+    runs-on: ubuntu-latest
+    if: |
+      github.repository_owner == 'storybookjs' &&
+      github.event_name == 'workflow_dispatch' &&
+      contains(github.event.head_commit.message, '[skip ci]') != true
+    environment: Release
+    steps:
+      - name: Fail if triggering actor is not administrator
+        uses: prince-chrismc/check-actor-permissions-action@87c6d9b36c730377858fd9719fbbac1b58fa678d
+        with:
+          permission: admin
+
+      - name: Get pull request information
+        id: info
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          PR_INFO=$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json isCrossRepository,headRefOid,headRefName,headRepository,headRepositoryOwner --jq '{isFork: .isCrossRepository, owner: .headRepositoryOwner.login, repoName: .headRepository.name, branch: .headRefName, sha: .headRefOid}')
+          echo $PR_INFO
+          # Loop through each key-value pair in PR_INFO and set as step output
+          for key in $(echo "$PR_INFO" | jq -r 'keys[]'); do
+            value=$(echo "$PR_INFO" | jq -r ".$key")
+            echo "$key=$value" >> "$GITHUB_OUTPUT"
+          done
+          echo "repository=$(echo "$PR_INFO" | jq -r ".owner")/$(echo "$PR_INFO" | jq -r ".repoName")" >> $GITHUB_OUTPUT
+          echo "shortSha=$(echo "$PR_INFO" | jq -r ".sha" | cut -c 1-8)" >> $GITHUB_OUTPUT
+          echo "date=$(date)" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
+          ref: ${{ steps.info.outputs.sha }}
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: Set version
+        id: version
+        working-directory: scripts
+        env:
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          SHORT_SHA: ${{ steps.info.outputs.shortSha }}
+        run: |
+          yarn release:version --exact "0.0.0-pr-$PR_NUMBER-sha-$SHORT_SHA" --verbose
+
+      - name: Publish v${{ steps.version.outputs.next-version }}
+        working-directory: scripts
+        run: yarn release:publish --tag v7-canary --verbose
+
+      - name: Replace Pull Request Body
+        uses: ivangabriele/find-and-replace-pull-request-body@042438c6cbfbacf6a4701d6042f59b1f73db2fd8
+        with:
+          githubToken: ${{ secrets.GH_TOKEN }}
+          prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || '' }}
+          find: "CANARY_RELEASE_SECTION"
+          isHtmlCommentTag: true
+          replace: |
+            This pull request has been released as version `${{ steps.version.outputs.next-version }}`. Try it out in a new sandbox by running `npx storybook@${{ steps.version.outputs.next-version }} sandbox` or in an existing project with `npx storybook@${{ steps.version.outputs.next-version }} upgrade`.
+            <details>
+            <summary>More information</summary>
+
+            | | |
+            | --- | --- |
+            | **Published version** | [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/storybook/v/${{ steps.version.outputs.next-version }}) |
+            | **Triggered by** | @${{ github.triggering_actor }} |
+            | **Repository** | [${{ steps.info.outputs.repository }}](https://github.com/${{ steps.info.outputs.repository }}) |
+            | **Branch** | [`${{ steps.info.outputs.branch }}`](https://github.com/${{ steps.info.outputs.repository }}/tree/${{ steps.info.outputs.branch }}) |
+            | **Commit** | [`${{ steps.info.outputs.shortSha }}`](https://github.com/${{ steps.info.outputs.repository }}/commit/${{ steps.info.outputs.sha }}) |
+            | **Datetime** | ${{ steps.info.outputs.date }} (`${{ steps.info.outputs.timestamp }}`) |
+            | **Workflow run** | [${{ github.run_id }}](https://github.com/storybookjs/storybook/actions/runs/${{ github.run_id }}) |
+
+            To request a new release of this pull request, mention the `@storybookjs/core` team.
+
+            _core team members can create a new canary release [here](https://github.com/storybookjs/storybook/actions/workflows/publish.yml) or locally with `gh workflow run --repo storybookjs/storybook publish.yml --field pr=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}`_
+            </details>
+
+      - name: Create failing comment on PR
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          gh pr comment "$PR_NUMBER"\
+            --repo "$REPOSITORY"\
+            --body "Failed to publish canary version of this pull request, triggered by @$TRIGGERING_ACTOR. See the failed workflow run at: https://github.com/$REPOSITORY/actions/runs/$RUN_ID"

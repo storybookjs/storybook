@@ -52,10 +52,10 @@ jobs:
           fetch-depth: 100
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
         with:
-          node-version-file: ".nvmrc"
+          install-code-deps: true
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -67,10 +67,6 @@ jobs:
             yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
             yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
             yarn-v1
-
-      - name: Install script dependencies
-        run: |
-          yarn install
 
       - name: Apply deferred version bump and commit
         working-directory: .
@@ -102,6 +98,8 @@ jobs:
 
       - name: Publish
         if: steps.publish-needed.outputs.published == 'false'
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: yarn release:publish --tag v8 --verbose
 
       - name: Get changelog for ${{ steps.version.outputs.current-version }}

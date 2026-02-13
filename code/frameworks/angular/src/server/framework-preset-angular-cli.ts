@@ -130,6 +130,15 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
     browserTargetOptions = await builderContext.getTargetOptions(browserTarget);
   }
 
+  if (
+    Object.keys(options.frameworkOptions?.angularBuilderOptions || {}).length > 0
+  ) {
+    options.angularBuilderOptions = deepMerge(
+      options.frameworkOptions.angularBuilderOptions,
+      (options.angularBuilderOptions || {}), // allow override by CLI if present
+    );
+  }
+
   // `options.angularBuilderOptions` implicitly adds all options a target can have
   // To figure out what user-land actually has explicitly defined in their target options, we
   // manually need to read them

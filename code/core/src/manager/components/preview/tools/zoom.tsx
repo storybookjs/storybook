@@ -81,15 +81,16 @@ export const Zoom = memo<{
                   </ActionList.Button>
                 }
                 after={
-                  <ActionList.Button
-                    size="small"
-                    padding="small"
-                    disabled={value === INITIAL_ZOOM_LEVEL}
-                    onClick={() => zoomTo(INITIAL_ZOOM_LEVEL)}
-                    ariaLabel="Reset zoom"
-                  >
-                    <UndoIcon />
-                  </ActionList.Button>
+                  value !== INITIAL_ZOOM_LEVEL && (
+                    <ActionList.Button
+                      size="small"
+                      padding="small"
+                      onClick={() => zoomTo(INITIAL_ZOOM_LEVEL)}
+                      ariaLabel="Reset zoom"
+                    >
+                      <UndoIcon />
+                    </ActionList.Button>
+                  )
                 }
                 value={`${Math.round(value * 100)}%`}
                 minValue={1}

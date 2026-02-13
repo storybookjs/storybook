@@ -1,8 +1,8 @@
 ```js filename="your-addon-register-file.js" renderer="common" language="js"
 import React, { useCallback } from 'react';
 import { OutlineIcon } from '@storybook/icons';
-import { useGlobals } from 'storybook/manager-api';
-import { addons } from 'storybook/preview-api';
+import { useGlobals } from '@storybook/manager-api';
+import { addons } from '@storybook/preview-api';
 import { ToggleButton } from 'storybook/internal/components';
 import { FORCE_RE_RENDER } from 'storybook/internal/core-events';
 

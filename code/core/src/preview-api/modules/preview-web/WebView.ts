@@ -46,7 +46,26 @@ export class WebView implements View<HTMLElement> {
 
   private preparingTimeout?: ReturnType<typeof setTimeout>;
 
+  /**
+   * Fix for issue #33112: Prevent decorator mutations from bleeding into Docs
+   *
+   * Some decorators mutate document.documentElement (e.g., setting dir, lang, data-theme) to apply
+   * global styles for stories. Without cleanup, these mutations persist when navigating from Canvas
+   * to Docs, causing visual corruption.
+   *
+   * Solution: Snapshot documentElement attributes before rendering a story, then restore the
+   * original state when switching to Docs view. This ensures decorators can freely mutate the
+   * document for Canvas rendering without affecting Docs pages.
+   *
+   * Tracked attributes: dir, lang, class, data-theme, data-mode, style
+   */
+  private documentElementSnapshot: Map<string, string | null> = new Map();
+
   constructor() {
+    // Snapshot the initial clean state of documentElement before any stories render
+    // This gives us a baseline to restore to when switching to Docs mode
+    this.snapshotDocumentElement();
+
     // Special code for testing situations
     if (typeof document !== 'undefined') {
       const { __SPECIAL_TEST_PARAMETER__ } = parse(document.location.search.slice(1));
@@ -74,6 +93,8 @@ export class WebView implements View<HTMLElement> {
     document.documentElement.scrollTop = 0;
     document.documentElement.scrollLeft = 0;
 
+    // Don't snapshot here - decorators haven't run yet and might mutate after this point
+
     return this.storyRoot();
   }
 
@@ -88,6 +109,10 @@ export class WebView implements View<HTMLElement> {
 
     document.documentElement.scrollTop = 0;
     document.documentElement.scrollLeft = 0;
+
+    // Restore documentElement to initial clean state (captured in constructor)
+    // This cleans up any modifications made by story decorators (fixes issue #33112)
+    this.restoreDocumentElement();
 
     return this.docsRoot();
   }
@@ -204,5 +229,57 @@ export class WebView implements View<HTMLElement> {
     // See https://github.com/storybookjs/storybook/issues/16847 and
     //   http://localhost:9011/?path=/story/core-rendering--auto-focus (official SB)
     document.body.classList.add(classes.MAIN);
+  }
+
+  /**
+   * Snapshot the current state of document.documentElement attributes. Called on WebView
+   * initialization to capture the clean baseline state for restoration when switching view modes
+   * (e.g., Canvas to Docs).
+   */
+  private snapshotDocumentElement() {
+    // Safety check: Exit if not in a browser environment (SSR, Node.js tests, etc.)
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    this.documentElementSnapshot.clear();
+
+    const documentElement = document.documentElement;
+    if (documentElement) {
+      // Capture commonly modified attributes that decorators might change
+      // Added 'data-mode' per review to ensure theme mode signals are also isolated.
+      const attributesToTrack = ['dir', 'lang', 'class', 'data-theme', 'data-mode', 'style'];
+      attributesToTrack.forEach((attr) => {
+        this.documentElementSnapshot.set(attr, documentElement.getAttribute(attr));
+      });
+    }
+  }
+
+  /**
+   * Restore document.documentElement to its state before the story was rendered. This cleans up any
+   * modifications made by decorators to prevent bleed into Docs mode. Fixes issue #33112:
+   * https://github.com/storybookjs/storybook/issues/33112
+   */
+  private restoreDocumentElement() {
+    // Safety check: Exit if not in a browser environment
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const documentElement = document.documentElement;
+    if (documentElement && this.documentElementSnapshot.size > 0) {
+      this.documentElementSnapshot.forEach((originalValue, attr) => {
+        const currentValue = documentElement.getAttribute(attr);
+
+        // Only restore if the value changed (decorator modified it)
+        if (currentValue !== originalValue) {
+          if (originalValue === null) {
+            documentElement.removeAttribute(attr);
+          } else {
+            documentElement.setAttribute(attr, originalValue);
+          }
+        }
+      });
+    }
   }
 }

@@ -104,7 +104,7 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const transport = new ServerChannelTransport(server, mockToken);
+    new ServerChannelTransport(server, mockToken);
 
     // Simulate upgrade request with wrong token
     const request = {

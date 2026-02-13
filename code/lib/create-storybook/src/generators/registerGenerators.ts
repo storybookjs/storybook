@@ -13,6 +13,7 @@ import reactNativeWebGenerator from './REACT_NATIVE_WEB';
 import reactScriptsGenerator from './REACT_SCRIPTS';
 import serverGenerator from './SERVER';
 import solidGenerator from './SOLID';
+import stencilGenerator from './STENCIL';
 import svelteGenerator from './SVELTE';
 import svelteKitGenerator from './SVELTEKIT';
 import vue3Generator from './VUE3';
@@ -38,6 +39,7 @@ const setOfGenerators = new Set<GeneratorModule>([
   solidGenerator,
   serverGenerator,
   qwikGenerator,
+  stencilGenerator,
 ]);
 
 /** Register all framework generators with the central registry */

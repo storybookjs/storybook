@@ -281,5 +281,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "9.1.18"
 }

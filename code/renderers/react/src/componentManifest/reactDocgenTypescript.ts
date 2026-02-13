@@ -1,7 +1,5 @@
 import { dirname } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
-
 import {
   type ComponentDoc,
   type FileParser,
@@ -15,34 +13,17 @@ import { cached, findTsconfigPath } from './utils';
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
 /**
- * Check if a prop is inherited from a built-in interface that should be filtered out:
- * - React built-in interfaces from @types/react (HTMLAttributes, DOMAttributes, AriaAttributes, etc.)
- * - DOM built-in interfaces from lib.dom.d.ts (HTMLElement, Node, Element, GlobalEventHandlers, etc.)
- *   These leak through when wrapping Web Components (e.g. @github/relative-time-element).
- */
-const isBuiltinProp = (prop: { parent?: { name: string; fileName: string } }): boolean => {
-  const fileName = prop.parent?.fileName;
-  if (!fileName) {
-    return false;
-  }
-  // React *Attributes interfaces (HTMLAttributes, DOMAttributes, etc.) from node_modules —
-  // catches @types/react and third-party augmentations (e.g. Next.js adding `tw` via @vercel/og)
-  if (prop.parent?.name?.endsWith('Attributes') && fileName.includes('node_modules')) {
-    return true;
-  }
-  // DOM built-in interfaces (HTMLElement, Node, Element, GlobalEventHandlers, etc.)
-  if (fileName.endsWith('lib.dom.d.ts')) {
-    return true;
-  }
-  return false;
-};
-
-/**
- * Auto-detect "system props" contributed in bulk by a single source file.
- * CSS-in-JS libraries (Panda CSS, styled-system, Stitches, etc.) inject hundreds of style props
- * from one type definition file — either in node_modules or as in-project generated `.d.ts` files.
- * When a single such source contributes more than {@link SYSTEM_PROP_SOURCE_THRESHOLD} props,
- * all props from that source are filtered out. User-authored `.ts` files are never filtered.
+ * Auto-detect bulk props contributed by a single non-user source file and filter them out.
+ *
+ * This catches:
+ *
+ * - React built-in props (HTMLAttributes, DOMAttributes, AriaAttributes from @types/react)
+ * - DOM built-in props (HTMLElement, GlobalEventHandlers from lib.dom.d.ts)
+ * - CSS-in-JS system props (Panda CSS, styled-system, Stitches style props)
+ *
+ * The heuristic: when a single source file in `node_modules` or ending in `.d.ts` contributes more
+ * than {@link SYSTEM_PROP_SOURCE_THRESHOLD} props, all props from that source are filtered.
+ * User-authored `.ts` files are never filtered.
  */
 const SYSTEM_PROP_SOURCE_THRESHOLD = 30;
 
@@ -191,11 +172,7 @@ function getParser() {
       fileNames = parsed.fileNames;
     }
 
-    const start = Date.now();
     const program = ts.createProgram(fileNames ?? [], compilerOptions, undefined, previousProgram);
-    logger.verbose(
-      `[react-docgen-typescript] ts.createProgram took ${Date.now() - start}ms (incremental: ${!!previousProgram})`
-    );
     previousProgram = program;
 
     parser = {
@@ -250,28 +227,22 @@ export const parseWithReactDocgenTypescript = cached(
     // e.g. for `export { Card as RenamedCard }`: "Card" → "RenamedCard"
     const exportNameMap = sourceFile ? getExportNameMap(checker, sourceFile) : new Map();
 
-    return docs
-      .map((doc) => {
-        const systemSources = getSystemPropSources(doc.props);
-        return {
-          ...doc,
-          // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
-          // export map to get the public export name. Falls back to displayName when not aliased.
-          exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
-          // Filter out:
-          // 1. React built-in HTML/DOM/Aria props
-          // 2. System props (CSS-in-JS style props contributed in bulk from one node_modules source)
-          props: Object.fromEntries(
-            Object.entries(doc.props).filter(([, prop]) => {
-              if (isBuiltinProp(prop)) return false;
-              const source = getPropSource(prop);
-              if (source && systemSources.has(source)) return false;
-              return true;
-            })
-          ),
-        };
-      })
-;
+    return docs.map((doc) => {
+      const systemSources = getSystemPropSources(doc.props);
+      return {
+        ...doc,
+        // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
+        // export map to get the public export name. Falls back to displayName when not aliased.
+        exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
+        // Filter out bulk props from non-user sources (React built-ins, DOM, CSS-in-JS system props)
+        props: Object.fromEntries(
+          Object.entries(doc.props).filter(([, prop]) => {
+            const source = getPropSource(prop);
+            return !source || !systemSources.has(source);
+          })
+        ),
+      };
+    });
   },
   { name: 'parseWithReactDocgenTypescript' }
 );

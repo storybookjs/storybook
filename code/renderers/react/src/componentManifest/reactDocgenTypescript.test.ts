@@ -1216,6 +1216,286 @@ describe('parseFile', () => {
             "filePath": "DtsComponent.tsx",
             "methods": [],
             "props": {
+              "inert": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/experimental.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "@see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/inert",
+                "name": "inert",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/experimental.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "boolean",
+                },
+              },
+              "onBeforeToggle": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onBeforeToggle",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "ToggleEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onToggle": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onToggle",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "ToggleEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionCancel": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionCancel",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionCancelCapture": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionCancelCapture",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionRun": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionRun",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionRunCapture": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionRunCapture",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionStart": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionStart",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionStartCapture": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionStartCapture",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "popover": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "popover",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "enum",
+                  "raw": """ | "auto" | "manual" | "hint"",
+                  "value": [
+                    {
+                      "value": """",
+                    },
+                    {
+                      "value": ""auto"",
+                    },
+                    {
+                      "value": ""manual"",
+                    },
+                    {
+                      "value": ""hint"",
+                    },
+                  ],
+                },
+              },
+              "popoverTarget": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "popoverTarget",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "string",
+                },
+              },
+              "popoverTargetAction": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "popoverTargetAction",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "enum",
+                  "raw": ""toggle" | "show" | "hide"",
+                  "value": [
+                    {
+                      "value": ""toggle"",
+                    },
+                    {
+                      "value": ""show"",
+                    },
+                    {
+                      "value": ""hide"",
+                    },
+                  ],
+                },
+              },
+              "tw": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/next/dist/compiled/@vercel/og/types.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "Specify styles using Tailwind CSS classes. This feature is currently experimental.
+        If \`style\` prop is also specified, styles generated with \`tw\` prop will be overridden.
+
+        Example:
+        - \`tw='w-full h-full bg-blue-200'\`
+        - \`tw='text-9xl'\`
+        - \`tw='text-[80px]'\`",
+                "name": "tw",
+                "parent": {
+                  "fileName": "storybook/node_modules/next/dist/compiled/@vercel/og/types.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "{string}",
+                },
+              },
               "variant": {
                 "declarations": [
                   {
@@ -1541,6 +1821,25 @@ describe('parseFile', () => {
             "filePath": "ForwardRef.tsx",
             "methods": [],
             "props": {
+              "key": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/index.d.ts",
+                    "name": "Attributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "key",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/index.d.ts",
+                  "name": "Attributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "Key | null",
+                },
+              },
               "label": {
                 "declarations": [
                   {
@@ -1596,6 +1895,28 @@ describe('parseFile', () => {
                 "required": false,
                 "type": {
                   "name": "string",
+                },
+              },
+              "ref": {
+                "declarations": [
+                  {
+                    "fileName": "storybook/node_modules/@types/react/index.d.ts",
+                    "name": "RefAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "Allows getting a ref to the component instance.
+        Once the component unmounts, React will set \`ref.current\` to \`null\`
+        (or call the ref with \`null\` if you passed a callback ref).
+        @see {@link https://react.dev/learn/referencing-values-with-refs#refs-and-the-dom React Docs}",
+                "name": "ref",
+                "parent": {
+                  "fileName": "storybook/node_modules/@types/react/index.d.ts",
+                  "name": "RefAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "LegacyRef<HTMLInputElement>",
                 },
               },
             },

@@ -2,7 +2,6 @@ import { recast } from 'storybook/internal/babel';
 import { Tag } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
   type ComponentManifest,
@@ -109,8 +108,6 @@ export const manifests: PresetPropertyFn<
   invalidateCache();
   invalidateParser();
 
-  const startPerformance = performance.now();
-
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
       (entry) =>
@@ -204,8 +201,6 @@ export const manifests: PresetPropertyFn<
       };
     })
     .filter((component) => component !== undefined);
-
-  logger.verbose(`Component manifest generation took ${performance.now() - startPerformance}ms`);
 
   return {
     ...existingManifests,

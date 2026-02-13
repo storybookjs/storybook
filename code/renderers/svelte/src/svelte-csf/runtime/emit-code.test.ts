@@ -155,7 +155,7 @@ describe('Emit Code', () => {
         {"second"}
         {someUnnamedFn}
         {namedFunc}
-        {() => {}}
+        {vi.fn()}
         {namedMockFn}
         {someFunction("yup")}
         {someFunction(!true ? "literal yes" : "nope")}

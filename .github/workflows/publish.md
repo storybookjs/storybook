@@ -11,3 +11,8 @@
 7. Test the canary release
 8. Merge `hotfix/v<next-patcn-release-version>` into `v9`
 9. Observe the `publish-normal` job
+
+
+## Prepare major release branch for publishing
+
+1. Go to `https://github.com/storybookjs/storybook/settings/environments/1012979736/edit` (release environment) and add the major release branch (e.g. v9)

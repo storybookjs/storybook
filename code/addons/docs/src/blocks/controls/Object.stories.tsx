@@ -112,3 +112,31 @@ export const ReadonlyAndUndefined: Story = {
     argType: { table: { readonly: true } },
   },
 };
+
+export const ObjectSmallViewport: Story = {
+  args: {
+    value: {
+      name: 'Michael',
+      someDate: new Date('2022-10-30T12:31:11'),
+      nested: { someBool: true, someNumber: 22 },
+    },
+  },
+  parameters: {
+    chromatic: { viewports: [320] },
+  },
+};
+
+export const ArraySmallViewport: Story = {
+  args: {
+    value: [
+      'someString',
+      22,
+      true,
+      new Date('2022-10-30T12:31:11'),
+      { someBool: true, someNumber: 22 },
+    ],
+  },
+  parameters: {
+    chromatic: { viewports: [320] },
+  },
+};

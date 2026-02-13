@@ -583,6 +583,165 @@ describe('configureEslintPlugin', () => {
         export default someCustomConfig({}, [{}]);"
       `);
     });
+
+    it('should configure ESLint plugin correctly with array containing spread elements', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import js from '@eslint/js';
+        export default [
+          ...js.configs.recommended,
+        ]
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+
+        import js from '@eslint/js';
+        export default [...js.configs.recommended, ...storybook.configs["flat/recommended"]];"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with tseslint.config called with array argument', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import tseslint from 'typescript-eslint';
+        export default tseslint.config([
+          {
+            rules: {
+              'no-console': 'error'
+            }
+          }
+        ]);
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+
+        import tseslint from 'typescript-eslint';
+        export default tseslint.config([
+          {
+            rules: {
+              'no-console': 'error'
+            }
+          }
+        ], storybook.configs["flat/recommended"]);"
+      `);
+    });
+
+    it('should just add an import if config is imported from another module', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import myConfig from './my-eslint-config.js';
+        export default myConfig;
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+
+        import myConfig from './my-eslint-config.js';
+        export default myConfig;"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with CommonJS module.exports array', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        const js = require('@eslint/js');
+        module.exports = [
+          js.configs.recommended,
+        ];
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.cjs',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        const storybook = require("eslint-plugin-storybook");
+
+        const js = require('@eslint/js');
+        module.exports = [js.configs.recommended, ...storybook.configs["flat/recommended"]];"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with CommonJS module.exports and tseslint.config', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        const tseslint = require('typescript-eslint');
+        module.exports = tseslint.config({
+          rules: {
+            'no-console': 'error'
+          }
+        });
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.cjs',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        const storybook = require("eslint-plugin-storybook");
+
+        const tseslint = require('typescript-eslint');
+        module.exports = tseslint.config({
+          rules: {
+            'no-console': 'error'
+          }
+        }, storybook.configs["flat/recommended"]);"
+      `);
+    });
   });
 });
 

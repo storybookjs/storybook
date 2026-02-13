@@ -58,6 +58,7 @@ export const configureFlatConfig = async (code: string) => {
   let tsEslintLocalName = '';
   let eslintDefineConfigLocalName = '';
   let eslintConfigExpression: any = null;
+  let isCommonJS = false;
 
   /**
    * What this supports:
@@ -65,10 +66,8 @@ export const configureFlatConfig = async (code: string) => {
    * 1. Export default []
    * 2. Const config; export default config
    * 3. Export default tseslint.config()
-   *
-   * What this does NOT support:
-   *
-   * 1. Module.exports = [] Though it will add the import and a code comment that points to the docs
+   * 4. Module.exports = []
+   * 5. Module.exports = tseslint.config()
    */
   traverse(ast, {
     ImportDeclaration(path) {
@@ -85,6 +84,18 @@ export const configureFlatConfig = async (code: string) => {
         if (defineConfigSpecifier && t.isImportSpecifier(defineConfigSpecifier)) {
           eslintDefineConfigLocalName = defineConfigSpecifier.local.name;
         }
+      }
+    },
+
+    VariableDeclarator(path) {
+      // Handle const tseslint = require('typescript-eslint')
+      if (
+        t.isCallExpression(path.node.init) &&
+        t.isIdentifier(path.node.init.callee, { name: 'require' }) &&
+        t.isStringLiteral(path.node.init.arguments[0], { value: 'typescript-eslint' }) &&
+        t.isIdentifier(path.node.id)
+      ) {
+        tsEslintLocalName = path.node.id.name;
       }
     },
 
@@ -159,25 +170,123 @@ export const configureFlatConfig = async (code: string) => {
       }
     },
 
+    AssignmentExpression(path) {
+      // Handle module.exports = ...
+      if (
+        t.isMemberExpression(path.node.left) &&
+        t.isIdentifier(path.node.left.object, { name: 'module' }) &&
+        t.isIdentifier(path.node.left.property, { name: 'exports' })
+      ) {
+        isCommonJS = true;
+        const assignedValue = unwrapTSExpression(path.node.right);
+
+        const storybookConfig = t.memberExpression(
+          t.memberExpression(t.identifier('storybook'), t.identifier('configs')),
+          t.stringLiteral('flat/recommended'),
+          true
+        );
+
+        // Case 4: module.exports = []
+        if (t.isArrayExpression(assignedValue)) {
+          assignedValue.elements.push(t.spreadElement(storybookConfig));
+        }
+
+        // Case 5: module.exports = tseslint.config(...)
+        if (
+          t.isCallExpression(assignedValue) &&
+          t.isMemberExpression(assignedValue.callee) &&
+          tsEslintLocalName &&
+          t.isIdentifier(assignedValue.callee.object, { name: tsEslintLocalName }) &&
+          t.isIdentifier(assignedValue.callee.property, { name: 'config' })
+        ) {
+          assignedValue.arguments.push(storybookConfig);
+        }
+
+        // Case 6: module.exports = identifier (resolve to array)
+        if (t.isIdentifier(assignedValue)) {
+          const binding = path.scope.getBinding(assignedValue.name);
+          if (binding && t.isVariableDeclarator(binding.path.node)) {
+            const init = unwrapTSExpression(binding.path.node.init);
+
+            if (t.isArrayExpression(init)) {
+              init.elements.push(t.spreadElement(storybookConfig));
+            }
+          }
+        }
+      }
+    },
+
     Program(path) {
+      // Check if file uses CommonJS by looking for module.exports or if all imports use require()
+      const hasModuleExports = path.node.body.some(
+        (node) =>
+          t.isExpressionStatement(node) &&
+          t.isAssignmentExpression(node.expression) &&
+          t.isMemberExpression(node.expression.left) &&
+          t.isIdentifier(node.expression.left.object, { name: 'module' }) &&
+          t.isIdentifier(node.expression.left.property, { name: 'exports' })
+      );
+
+      const hasRequire = path.node.body.some(
+        (node) =>
+          t.isVariableDeclaration(node) &&
+          node.declarations.some(
+            (decl) =>
+              t.isCallExpression(decl.init) && t.isIdentifier(decl.init.callee, { name: 'require' })
+          )
+      );
+
+      const hasImport = path.node.body.some((node) => t.isImportDeclaration(node));
+
+      // Consider it CommonJS if it has module.exports OR has require() but no ES6 imports
+      isCommonJS = hasModuleExports || (hasRequire && !hasImport);
+
       const alreadyImported = path.node.body.some(
-        (node) => t.isImportDeclaration(node) && node.source.value === 'eslint-plugin-storybook'
+        (node) =>
+          (t.isImportDeclaration(node) && node.source.value === 'eslint-plugin-storybook') ||
+          (t.isVariableDeclaration(node) &&
+            node.declarations.some(
+              (decl) =>
+                t.isCallExpression(decl.init) &&
+                t.isIdentifier(decl.init.callee, { name: 'require' }) &&
+                t.isStringLiteral(decl.init.arguments[0], { value: 'eslint-plugin-storybook' })
+            ))
       );
 
       if (!alreadyImported) {
-        // Add import: import storybook from 'eslint-plugin-storybook'
-        const importDecl = t.importDeclaration(
-          [t.importDefaultSpecifier(t.identifier('storybook'))],
-          t.stringLiteral('eslint-plugin-storybook')
-        );
-        (importDecl as any).comments = [
-          {
-            type: 'CommentLine',
-            value:
-              ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
-          },
-        ];
-        path.node.body.unshift(importDecl);
+        if (isCommonJS) {
+          // Add require: const storybook = require('eslint-plugin-storybook')
+          const requireDecl = t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier('storybook'),
+              t.callExpression(t.identifier('require'), [
+                t.stringLiteral('eslint-plugin-storybook'),
+              ])
+            ),
+          ]);
+          (requireDecl as any).comments = [
+            {
+              type: 'CommentLine',
+              value:
+                ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
+            },
+          ];
+          path.node.body.unshift(requireDecl);
+        } else {
+          // Add import: import storybook from 'eslint-plugin-storybook'
+          const importDecl = t.importDeclaration(
+            [t.importDefaultSpecifier(t.identifier('storybook'))],
+            t.stringLiteral('eslint-plugin-storybook')
+          );
+          (importDecl as any).comments = [
+            {
+              type: 'CommentLine',
+              value:
+                ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
+            },
+          ];
+          path.node.body.unshift(importDecl);
+        }
       }
     },
   });

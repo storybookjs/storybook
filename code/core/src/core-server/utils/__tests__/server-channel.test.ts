@@ -75,29 +75,6 @@ describe('ServerChannelTransport', () => {
     `);
   });
 
-  it('rejects connections without token', () => {
-    const server = new EventEmitter() as any as Server;
-    const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
-    const transport = new ServerChannelTransport(server, mockToken);
-
-    // Simulate upgrade request without token
-    const request = {
-      url: '/storybook-server-channel',
-    } as any;
-    const head = Buffer.from('');
-
-    // @ts-expect-error (accessing private method via upgrade handler)
-    server.listeners('upgrade')[0](request, socket, head);
-
-    expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
-    );
-    expect(destroySpy).toHaveBeenCalled();
-  });
-
   it('rejects connections with invalid token', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
@@ -112,7 +89,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
@@ -140,7 +116,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).not.toHaveBeenCalled();

@@ -1,5 +1,12 @@
 {
   "mcpServers": {
+    "nx": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "nx-mcp@latest"
+      ]
+    },
     "wallaby": {
       "command": "node",
       "args": [

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
@@ -84,8 +85,9 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
 
   const { tsConfig } = await setup(options, context);
 
+  const pathToConfigDir = path.join(context.workspaceRoot, options.configDir);
   const docTSConfig = find.up('tsconfig.doc.json', {
-    cwd: options.configDir,
+    cwd: pathToConfigDir,
     last: getProjectRoot(),
   });
 
@@ -178,10 +180,11 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
     );
   }
 
+  const pathToConfigDir = path.join(context.workspaceRoot, options.configDir);
   return {
     tsConfig:
       options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
+      find.up('tsconfig.json', { cwd: pathToConfigDir, last: getProjectRoot() }) ??
       browserOptions.tsConfig,
   };
 }

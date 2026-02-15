@@ -266,7 +266,15 @@ const runGenerators = async (
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
           // Now move the created before dir into it's final location and add storybook
-          await rename(createBeforeDir, beforeDir);
+          try {
+            await rename(createBeforeDir, beforeDir);
+          } catch (_error) {
+            const error = _error as NodeJS.ErrnoException;
+            if (error?.code !== 'EXDEV') throw error;
+
+            await cp(createBeforeDir, beforeDir, { recursive: true });
+            await rm(createBeforeDir, { recursive: true, force: true });
+          }
 
           // Make sure there are no git projects in the folder
           await rm(join(beforeDir, '.git'), { recursive: true, force: true });
@@ -323,12 +331,13 @@ const runGenerators = async (
 
   if (!isCI || process.env.STORYBOOK_SANDBOX_GENERATE) {
     if (hasGenerationErrors) {
+      const failedGenerators = generationResults
+        .map((result, index) => ({ result, index }))
+        .filter(({ result }) => result.status === 'rejected')
+        .map(({ result, index }) => [ generators[index], (result as PromiseRejectedResult).reason ]);
+
       console.log('failed:');
-      console.log(
-        generationResults
-          .filter((result) => result.status === 'rejected')
-          .map((_, index) => generators[index].name)
-      );
+      console.log(failedGenerators.map(([ generator, reason ]) => [ generator.name, reason ]));
       throw new Error(`Some sandboxes failed to generate`);
     }
     return;

@@ -835,6 +835,18 @@ export const baseTemplates = {
       type: ProjectType.REACT_NATIVE_WEB,
     },
   },
+  'stencil/default-ts': {
+    name: 'StencilJS CLI Latest (Vite | TypeScript)',
+    script: 'npm init stencil@latest component {{beforeDir}}',
+    inDevelopment: true,
+    expected: {
+      framework: '@stencil/storybook-plugin',
+      renderer: '@stencil/storybook-plugin',
+      builder: '@storybook/builder-vite',
+    },
+    // TODO: The community template does not provide standard stories, which is required for e2e tests.
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+  },
 } satisfies Record<string, BaseTemplates>;
 
 /**
@@ -1058,6 +1070,7 @@ export const daily: TemplateKey[] = [
   'lit-rsbuild/default-ts',
   'html-rsbuild/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
+  // 'stencil/default-ts',
 ];
 
 export const templatesByCadence = { normal, merged, daily };

@@ -9,6 +9,7 @@ import { dedent } from 'ts-dedent';
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
 const rsbuildConfigFiles = ['rsbuild.config.ts', 'rsbuild.config.js', 'rsbuild.config.mjs'];
+const stencilConfigFiles = ['stencil.config.ts'];
 
 export class FrameworkDetectionService {
   constructor(private jsPackageManager: JsPackageManager) {}
@@ -31,16 +32,18 @@ export class FrameworkDetectionService {
     const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
     const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
     const rsbuildConfig = find.any(rsbuildConfigFiles, { last: getProjectRoot() });
+    const stencilConfig = find.any(stencilConfigFiles, { last: getProjectRoot() });
     const dependencies = this.jsPackageManager.getAllDependencies();
 
     // Detect which builders are present
     const hasVite = viteConfig || !!dependencies.vite;
     const hasWebpack = webpackConfig || !!dependencies.webpack;
     const hasRsbuild = rsbuildConfig || !!dependencies['@rsbuild/core'];
+    const hasStencil = stencilConfig || !!dependencies['@stencil/core'];
 
     const detectedBuilders: SupportedBuilder[] = [];
 
-    if (hasVite) {
+    if (hasVite || hasStencil) {
       detectedBuilders.push(SupportedBuilder.VITE);
     }
 

@@ -367,6 +367,7 @@ export const ColorControl: FC<ColorControlProps> = ({
   presetColors,
   startOpen = false,
   argType,
+  idPrefix,
 }) => {
   const debouncedOnChange = useCallback(debounce(onChange, 200), [onChange]);
   const { value, realValue, updateValue, color, colorSpace, cycleColorSpace } = useColorInput(
@@ -377,7 +378,7 @@ export const ColorControl: FC<ColorControlProps> = ({
   const Picker = ColorPicker[colorSpace];
 
   const readOnly = !!argType?.table?.readonly;
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, idPrefix);
 
   return (
     <Wrapper>

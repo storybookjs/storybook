@@ -8,6 +8,11 @@ export interface ControlProps<T> {
   onChange: (value?: T) => T | void;
   onFocus?: (evt: any) => void;
   onBlur?: (evt: any) => void;
+  /**
+   * Optional prefix to ensure unique IDs when multiple Controls blocks
+   * are rendered on the same page. Typically the story ID.
+   */
+  idPrefix?: string;
 }
 
 export type BooleanValue = boolean;

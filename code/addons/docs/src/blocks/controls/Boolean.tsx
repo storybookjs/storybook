@@ -121,6 +121,7 @@ export const BooleanControl: FC<BooleanProps> = ({
   onBlur,
   onFocus,
   argType,
+  idPrefix,
 }) => {
   const onSetFalse = useCallback(() => onChange(false), [onChange]);
   const readonly = !!argType?.table?.readonly;
@@ -130,7 +131,7 @@ export const BooleanControl: FC<BooleanProps> = ({
         ariaLabel={false}
         variant="outline"
         size="medium"
-        id={getControlSetterButtonId(name)}
+        id={getControlSetterButtonId(name, idPrefix)}
         onClick={onSetFalse}
         disabled={readonly}
       >
@@ -138,7 +139,7 @@ export const BooleanControl: FC<BooleanProps> = ({
       </Button>
     );
   }
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, idPrefix);
 
   const parsedValue = typeof value === 'string' ? parse(value) : value;
 

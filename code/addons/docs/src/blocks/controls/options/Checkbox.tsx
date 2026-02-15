@@ -61,6 +61,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
   onChange,
   isInline,
   argType,
+  idPrefix,
 }) => {
   if (!options) {
     logger.warn(`Checkbox with no options: ${name}`);
@@ -88,7 +89,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
     setSelected(selectedKeys(value || [], options));
   }, [value]);
 
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, idPrefix);
 
   return (
     <Wrapper $isInline={isInline}>

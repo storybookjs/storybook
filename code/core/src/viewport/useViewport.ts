@@ -78,13 +78,17 @@ const parseGlobals = (
     };
   }
 
-  // Ensure URL-defined viewports (user globals) override story globals.
-  // Spreading is not sufficient here, because undefined would still override defined values.
-  const global = normalizeGlobal(globals?.[PARAM_KEY]);
-  const userGlobal = normalizeGlobal(userGlobals?.[PARAM_KEY]);
-  const storyGlobal = normalizeGlobal(storyGlobals?.[PARAM_KEY]);
-  const value = userGlobal?.value ?? storyGlobal?.value ?? global?.value;
-  const isRotated = userGlobal?.isRotated ?? storyGlobal?.isRotated ?? global?.isRotated ?? false;
+  const global = normalizeGlobal(globals?.[PARAM_KEY], false);
+  const userGlobal = normalizeGlobal(userGlobals?.[PARAM_KEY], false);
+  const storyGlobal = normalizeGlobal(storyGlobals?.[PARAM_KEY], false);
+  const storyHasViewport = PARAM_KEY in storyGlobals;
+
+  // Story-level viewport globals override user globals for the current story.
+  const primaryGlobal = storyHasViewport ? storyGlobal : userGlobal;
+  const secondaryGlobal = storyHasViewport ? userGlobal : storyGlobal;
+  const value = primaryGlobal?.value ?? secondaryGlobal?.value ?? global?.value;
+  const isRotated =
+    primaryGlobal?.isRotated ?? secondaryGlobal?.isRotated ?? global?.isRotated ?? false;
 
   const keys = Object.keys(options);
   const isLocked = disable || PARAM_KEY in storyGlobals || !keys.length;
@@ -186,26 +190,20 @@ export const useViewport = () => {
   );
 
   useEffect(() => {
-    // Reset the viewport to the story global value if the story defines one, regardless of URL state
-    if (PARAM_KEY in storyGlobals) {
-      update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
-      lastSelectedOption.current = undefined;
-    }
-  }, [storyGlobals, update]);
-
-  useEffect(() => {
     // Skip if parameter not loaded to avoid race condition with default MINIMAL_VIEWPORTS
     if (!parameter) {
       return;
     }
 
-    // Reset the viewport to the story global value if the URL state defines an invalid option
+    // Track valid options; if invalid and no story-level viewport is set, reset to default
     if (option) {
       if (Object.hasOwn(options, option)) {
         lastSelectedOption.current = option;
       } else {
         lastSelectedOption.current = undefined;
-        update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
+        if (!(PARAM_KEY in storyGlobals)) {
+          update({ value: undefined, isRotated: false });
+        }
       }
     }
   }, [parameter, storyGlobals, options, option, update]);

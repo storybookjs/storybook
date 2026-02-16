@@ -1,3 +1,10 @@
+## 10.3.0-alpha.6
+
+- Addon-Vitest: Improve config file detection in monorepos - [#33814](https://github.com/storybookjs/storybook/pull/33814), thanks @valentinpalkovic!
+- Addon-Vitest: Support Vitest canaries - [#33833](https://github.com/storybookjs/storybook/pull/33833), thanks @valentinpalkovic!
+- Builder-Vite: Update dependencies react-vite framework - [#33810](https://github.com/storybookjs/storybook/pull/33810), thanks @valentinpalkovic!
+- Next.js: Fix Link component override in appDirectory configuration - [#31251](https://github.com/storybookjs/storybook/pull/31251), thanks @yatishgoel!
+
 ## 10.3.0-alpha.5
 
 - Builder-Vite: Use relative path for mocker entry in production builds - [#33792](https://github.com/storybookjs/storybook/pull/33792), thanks @DukeDeSouth!

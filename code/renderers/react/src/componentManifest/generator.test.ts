@@ -20,222 +20,228 @@ test('manifests generates correct id, name, description and examples ', async ()
   const result = await manifests(undefined, { manifestEntries } as any);
 
   expect(result?.components).toMatchInlineSnapshot(`
-  {
-    "components": {
-      "example-button": {
-        "description": "Primary UI component for user interaction",
-        "error": undefined,
-        "id": "example-button",
-        "import": "import { Button } from "@design-system/components/override";",
-        "jsDocTags": {
-          "import": [
-            "import { Button } from '@design-system/components/override';",
+    {
+      "components": {
+        "example-button": {
+          "description": "Primary UI component for user interaction",
+          "error": undefined,
+          "id": "example-button",
+          "import": "import { Button } from "@design-system/components/override";",
+          "jsDocTags": {
+            "import": [
+              "import { Button } from '@design-system/components/override';",
+            ],
+          },
+          "name": "Button",
+          "path": "./src/stories/Button.stories.ts",
+          "reactDocgen": {
+            "actualName": "Button",
+            "definedInFile": "./src/stories/Button.tsx",
+            "description": "Primary UI component for user interaction
+    @import import { Button } from '@design-system/components/override';",
+            "displayName": "Button",
+            "exportName": "Button",
+            "methods": [],
+            "props": {
+              "backgroundColor": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "string",
+                },
+              },
+              "label": {
+                "description": "",
+                "required": true,
+                "tsType": {
+                  "name": "string",
+                },
+              },
+              "onClick": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
+                  },
+                  "type": "function",
+                },
+              },
+              "primary": {
+                "defaultValue": {
+                  "computed": false,
+                  "value": "false",
+                },
+                "description": "Description of primary",
+                "required": false,
+                "tsType": {
+                  "name": "boolean",
+                },
+              },
+              "size": {
+                "defaultValue": {
+                  "computed": false,
+                  "value": "'medium'",
+                },
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "elements": [
+                    {
+                      "name": "literal",
+                      "value": "'small'",
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'medium'",
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'large'",
+                    },
+                  ],
+                  "name": "union",
+                  "raw": "'small' | 'medium' | 'large'",
+                },
+              },
+            },
+          },
+          "stories": [
+            {
+              "description": undefined,
+              "id": "example-button--primary",
+              "name": "Primary",
+              "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
+              "summary": undefined,
+            },
+            {
+              "description": undefined,
+              "id": "example-button--secondary",
+              "name": "Secondary",
+              "snippet": "const Secondary = () => <Button onClick={fn()} label="Button" />;",
+              "summary": undefined,
+            },
+            {
+              "description": undefined,
+              "id": "example-button--large",
+              "name": "Large",
+              "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button" />;",
+              "summary": undefined,
+            },
+            {
+              "description": undefined,
+              "id": "example-button--small",
+              "name": "Small",
+              "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button" />;",
+              "summary": undefined,
+            },
           ],
+          "summary": undefined,
         },
-        "name": "Button",
-        "path": "./src/stories/Button.stories.ts",
-        "reactDocgen": {
-          "actualName": "Button",
-          "definedInFile": "./src/stories/Button.tsx",
-          "description": "Primary UI component for user interaction
-  @import import { Button } from '@design-system/components/override';",
-          "displayName": "Button",
-          "exportName": "Button",
-          "methods": [],
-          "props": {
-            "backgroundColor": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "string",
-              },
-            },
-            "label": {
-              "description": "",
-              "required": true,
-              "tsType": {
-                "name": "string",
-              },
-            },
-            "onClick": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
+        "example-header": {
+          "description": "Description from meta and very long.",
+          "error": undefined,
+          "id": "example-header",
+          "import": "import { Header } from "some-package";",
+          "jsDocTags": {
+            "summary": [
+              "Component summary",
+            ],
+          },
+          "name": "Header",
+          "path": "./src/stories/Header.stories.ts",
+          "reactDocgen": {
+            "actualName": "",
+            "definedInFile": "./src/stories/Header.tsx",
+            "description": "",
+            "exportName": "default",
+            "methods": [],
+            "props": {
+              "onCreateAccount": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
                   },
+                  "type": "function",
                 },
-                "type": "function",
+              },
+              "onLogin": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
+                  },
+                  "type": "function",
+                },
+              },
+              "onLogout": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
+                  },
+                  "type": "function",
+                },
+              },
+              "user": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "User",
+                },
               },
             },
-            "primary": {
-              "defaultValue": {
-                "computed": false,
-                "value": "false",
-              },
-              "description": "Description of primary",
-              "required": false,
-              "tsType": {
-                "name": "boolean",
-              },
+          },
+          "stories": [
+            {
+              "description": undefined,
+              "id": "example-header--logged-in",
+              "name": "Logged In",
+              "snippet": "const LoggedIn = () => <Header
+        onLogin={fn()}
+        onLogout={fn()}
+        onCreateAccount={fn()}
+        user={{ name: 'Jane Doe' }} />;",
+              "summary": undefined,
             },
-            "size": {
-              "defaultValue": {
-                "computed": false,
-                "value": "'medium'",
-              },
-              "description": "",
-              "required": false,
-              "tsType": {
-                "elements": [
-                  {
-                    "name": "literal",
-                    "value": "'small'",
-                  },
-                  {
-                    "name": "literal",
-                    "value": "'medium'",
-                  },
-                  {
-                    "name": "literal",
-                    "value": "'large'",
-                  },
-                ],
-                "name": "union",
-                "raw": "'small' | 'medium' | 'large'",
-              },
+            {
+              "description": undefined,
+              "id": "example-header--logged-out",
+              "name": "Logged Out",
+              "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()} />;",
+              "summary": undefined,
             },
-          },
-        },
-        "stories": [
-          {
-            "description": undefined,
-            "name": "Primary",
-            "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
-            "summary": undefined,
-          },
-          {
-            "description": undefined,
-            "name": "Secondary",
-            "snippet": "const Secondary = () => <Button onClick={fn()} label="Button" />;",
-            "summary": undefined,
-          },
-          {
-            "description": undefined,
-            "name": "Large",
-            "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button" />;",
-            "summary": undefined,
-          },
-          {
-            "description": undefined,
-            "name": "Small",
-            "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button" />;",
-            "summary": undefined,
-          },
-        ],
-        "summary": undefined,
-      },
-      "example-header": {
-        "description": "Description from meta and very long.",
-        "error": undefined,
-        "id": "example-header",
-        "import": "import { Header } from "some-package";",
-        "jsDocTags": {
-          "summary": [
-            "Component summary",
           ],
+          "summary": "Component summary",
         },
-        "name": "Header",
-        "path": "./src/stories/Header.stories.ts",
-        "reactDocgen": {
-          "actualName": "",
-          "definedInFile": "./src/stories/Header.tsx",
-          "description": "",
-          "exportName": "default",
-          "methods": [],
-          "props": {
-            "onCreateAccount": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
-                  },
-                },
-                "type": "function",
-              },
-            },
-            "onLogin": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
-                  },
-                },
-                "type": "function",
-              },
-            },
-            "onLogout": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
-                  },
-                },
-                "type": "function",
-              },
-            },
-            "user": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "User",
-              },
-            },
-          },
-        },
-        "stories": [
-          {
-            "description": undefined,
-            "name": "LoggedIn",
-            "snippet": "const LoggedIn = () => <Header
-      onLogin={fn()}
-      onLogout={fn()}
-      onCreateAccount={fn()}
-      user={{ name: 'Jane Doe' }} />;",
-            "summary": undefined,
-          },
-          {
-            "description": undefined,
-            "name": "LoggedOut",
-            "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()} />;",
-            "summary": undefined,
-          },
-        ],
-        "summary": "Component summary",
       },
-    },
-    "v": 0,
-  }
-`);
+      "v": 0,
+    }
+  `);
 });
 
 async function getManifestForStory(code: string) {
@@ -346,6 +352,7 @@ test('fall back to index title when no component name', async () => {
       "stories": [
         {
           "description": undefined,
+          "id": "example-button--primary",
           "name": "Primary",
           "snippet": "const Primary = () => <Button csf1="story" />;",
           "summary": undefined,
@@ -400,6 +407,7 @@ test('component exported from other file', async () => {
          | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
             "name": "SyntaxError",
           },
+          "id": "example-button--primary",
           "name": "Primary",
         },
       ],
@@ -452,6 +460,7 @@ test('unknown expressions', async () => {
          |                        ^^^^^^^^^^^^^^^^^^^",
             "name": "SyntaxError",
           },
+          "id": "example-button--primary",
           "name": "Primary",
         },
       ],
@@ -563,5 +572,29 @@ test('should create component manifest when only attached-mdx docs have manifest
         "v": 0,
       },
     }
+  `);
+});
+
+test('should extract story description and summary from JSDoc comments', async () => {
+  const code = withCSF3(dedent`
+    /**
+     * This is a longer description of the Primary story
+     * 
+     * @summary This is a brief summary
+     */
+    export const Primary = () => <Button onClick={fn()} primary label="Button" />;
+  `);
+  const manifest = await getManifestForStory(code);
+
+  expect(manifest?.stories).toMatchInlineSnapshot(`
+    [
+      {
+        "description": "This is a longer description of the Primary story",
+        "id": "example-button--primary",
+        "name": "Primary",
+        "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
+        "summary": "This is a brief summary",
+      },
+    ]
   `);
 });

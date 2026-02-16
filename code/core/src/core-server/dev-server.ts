@@ -46,6 +46,17 @@ export async function storybookDevServer(options: Options) {
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
+  app.use(compression({ level: 1 }));
+
+  if (typeof options.extendServer === 'function') {
+    options.extendServer(server);
+  }
+
+  // CORS middleware must be registered BEFORE route handlers to ensure all routes
+  // (including /index.json) receive proper CORS headers for Storybook Composition
+  app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
+  app.use(getCachingMiddleware());
+
   registerIndexJsonRoute({
     app,
     storyIndexGeneratorPromise,
@@ -54,15 +65,6 @@ export async function storybookDevServer(options: Options) {
     workingDir,
     configDir,
   });
-
-  app.use(compression({ level: 1 }));
-
-  if (typeof options.extendServer === 'function') {
-    options.extendServer(server);
-  }
-
-  app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
-  app.use(getCachingMiddleware());
 
   (await getMiddleware(options.configDir))(app);
 

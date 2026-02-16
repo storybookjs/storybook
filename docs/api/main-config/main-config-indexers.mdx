@@ -119,7 +119,7 @@ Type: `string`
 
 Default: The original [`fileName`](#filename) passed to the `createIndex` function
 
-The file to import from, e.g. the [CSF](../csf.mdx) file.
+The file to import from, e.g. the [CSF](../csf/index.mdx) file.
 
 It is likely that the [`fileName`](#filename) being indexed is not CSF, in which you will need to [transpile it to CSF](#transpiling-to-csf) so that Storybook can read it in the browser.
 
@@ -203,7 +203,7 @@ Only use this if you need to override the auto-generated id.
 
 ## Transpiling to CSF
 
-The value of [`importPath`](#importpath) in an [`IndexInput`](#indexinput) must resolve to a [CSF](../csf.mdx) file. Most custom indexers, however, are only necessary because the input is *not* CSF. Therefore, you will likely need to transpile the input to CSF, so that Storybook can read it in the browser and render your stories.
+The value of [`importPath`](#importpath) in an [`IndexInput`](#indexinput) must resolve to a [CSF](../csf/index.mdx) file. Most custom indexers, however, are only necessary because the input is *not* CSF. Therefore, you will likely need to transpile the input to CSF, so that Storybook can read it in the browser and render your stories.
 
 Transpiling the custom source format to CSF is beyond the scope of this documentation. This transpilation is often done at the builder level ([Vite](../../builders/vite.mdx) and/or [Webpack](../../builders/webpack.mdx)), and we recommend using [unplugin](https://github.com/unjs/unplugin) to create plugins for multiple builders.
 

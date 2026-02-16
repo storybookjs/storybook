@@ -170,8 +170,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
-          ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
 

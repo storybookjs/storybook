@@ -209,7 +209,7 @@
     "verdaccio": "^5.19.1",
     "verdaccio-auth-memory": "^10.2.0"
   },
-  "packageManager": "yarn@4.0.0",
+  "packageManager": "yarn@4.10.3",
   "engines": {
     "node": ">=18.0.0"
   }

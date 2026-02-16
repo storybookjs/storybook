@@ -12,5 +12,5 @@
     "test": "cd code; yarn test",
     "upload-bench": "cd scripts; yarn upload-bench"
   },
-  "packageManager": "yarn@4.0.0"
+  "packageManager": "yarn@4.10.3"
 }

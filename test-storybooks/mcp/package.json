@@ -21,6 +21,7 @@
 		"@types/react-dom": "^18.2.21",
 		"@vitejs/plugin-react": "^5.1.1",
 		"@vitest/browser-playwright": "catalog:",
+		"playwright": "catalog:",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"storybook": "catalog:",

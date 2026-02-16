@@ -173,6 +173,7 @@ jobs:
           repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
           ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install

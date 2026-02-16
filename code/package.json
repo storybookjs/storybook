@@ -257,7 +257,7 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.10.3",
+  "packageManager": "yarn@4.12.0",
   "engines": {
     "node": ">=18.0.0"
   },

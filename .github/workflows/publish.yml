@@ -50,7 +50,7 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
+        uses: ./.github/actions/setup-node-and-install/action.yml
         with:
           install-code-deps: true
 
@@ -175,7 +175,7 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
+        uses: ./.github/actions/setup-node-and-install/action.yml
         with:
           install-code-deps: true
 

@@ -1681,6 +1681,7 @@ __metadata:
     "@verdaccio/types": "npm:^10.8.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
     ansi-regex: "npm:^6.0.1"
+    baseline-browser-mapping: "npm:^2.9.19"
     chromatic: "npm:^11.28.2"
     codecov: "npm:^3.8.1"
     commander: "npm:^12.1.0"
@@ -3449,6 +3450,15 @@ __metadata:
   version: 1.5.1
   resolution: "base64-js@npm:1.5.1"
   checksum: 10c0/f23823513b63173a001030fae4f2dabe283b99a9d324ade3ad3d148e218134676f1ee8568c877cd79ec1c53158dcf2d2ba527a97c606618928ba99dd930102bf
+  languageName: node
+  linkType: hard
+
+"baseline-browser-mapping@npm:^2.9.19":
+  version: 2.9.19
+  resolution: "baseline-browser-mapping@npm:2.9.19"
+  bin:
+    baseline-browser-mapping: dist/cli.js
+  checksum: 10c0/569928db78bcd081953d7db79e4243a59a579a34b4ae1806b9b42d3b7f84e5bc40e6e82ae4fa06e7bef8291bf747b33b3f9ef5d3c6e1e420cb129d9295536129
   languageName: node
   linkType: hard
 

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
@@ -181,7 +182,7 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
   }
   return { ...extension, removeAddon };
 };
-
+const wsToken = randomUUID();
 /**
  * If for some reason this config is not applied, the reason is that likely there is an addon that
  * does `export core = () => ({ someConfig })`, instead of `export core = (existing) => ({
@@ -191,6 +192,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
   disableTelemetry: options.disableTelemetry === true,
+  channelOptions: {
+    ...(existing?.channelOptions ?? {}),
+    ...(options.configType === 'DEVELOPMENT' ? { wsToken } : {}),
+  },
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
@@ -245,6 +250,10 @@ export const managerHead = async (_: any, options: Options) => {
   }
 
   return '';
+};
+
+export const channelToken = async (value: string | undefined) => {
+  return value;
 };
 
 export const experimental_serverChannel = async (

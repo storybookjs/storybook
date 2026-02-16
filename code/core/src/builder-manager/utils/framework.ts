@@ -33,10 +33,15 @@ export const pluckThirdPartyPackageFromPath = (packagePath: string) =>
 export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const globals: Record<string, any> = {};
 
-  const { builder } = await options.presets.apply('core');
+  const { builder, channelOptions } = await options.presets.apply('core');
 
   const frameworkName = await getFrameworkName(options);
   const rendererName = await extractProperRendererNameFromFramework(frameworkName);
+
+  if (options.configType === 'DEVELOPMENT') {
+    // Manager only needs the token currently, so we don't pass any other channel options.
+    globals.CHANNEL_OPTIONS = { wsToken: channelOptions?.wsToken };
+  }
 
   if (rendererName) {
     globals.STORYBOOK_RENDERER =

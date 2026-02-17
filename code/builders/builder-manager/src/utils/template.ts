@@ -53,7 +53,7 @@ export const renderHTML = async (
   if (configType === 'DEVELOPMENT') {
     const coreOptions = await presets.apply('core');
     // Manager only needs the token currently, so we don't pass any other channel options.
-    globals.CHANNEL_OPTIONS = { wsToken: coreOptions?.channelOptions?.wsToken };
+    globals.CHANNEL_OPTIONS = JSON.stringify({ wsToken: coreOptions?.channelOptions?.wsToken }, null, 2);
   }
 
   return render(templateRef, {

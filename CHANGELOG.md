@@ -1,3 +1,7 @@
+## 9.1.18
+
+- No-op release. No changes.
+
 ## 9.1.16
 
 - CLI: Fix Nextjs project creation in empty directories - [#32828](https://github.com/storybookjs/storybook/pull/32828), thanks @yannbf!

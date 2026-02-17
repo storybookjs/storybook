@@ -105,7 +105,6 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           REF_NAME: ${{ github.ref_name }}
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
-          IS_PRERELEASE: false
         run: |
           gh release create \
           "v$CURRENT_VERSION" \
@@ -113,8 +112,6 @@ jobs:
             --target "$REF_NAME" \
             --title "v$CURRENT_VERSION" \
             --notes "$CHANGELOG" \
-            $IS_PRERELEASE
-
       - name: Create Sentry release
         if: steps.publish-needed.outputs.published == 'false'
         uses: getsentry/action-release@v3

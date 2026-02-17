@@ -1,3 +1,7 @@
+## 7.6.23
+
+- Harden websocke connection
+
 ## 7.6.22
 
 - No-op release. No changes.

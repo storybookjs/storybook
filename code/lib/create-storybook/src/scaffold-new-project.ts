@@ -34,9 +34,9 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create vite@latest . -- --template react-ts',
-      yarn: 'yarn create vite@latest . --template react-ts',
-      pnpm: 'pnpm create vite@latest . --template react-ts',
+      npm: 'npm create vite@6 . -- --template react-ts',
+      yarn: 'yarn create vite@6 . --template react-ts',
+      pnpm: 'pnpm create vite@6 . --template react-ts',
     },
   },
   'nextjs-ts': {
@@ -45,10 +45,10 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create next-app . -- --turbopack --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      npm: 'npm create next-app@15 . -- --turbopack --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
       // yarn doesn't support version ranges, so we have to use npx
-      yarn: 'npx create-next-app . --turbopack --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      pnpm: 'pnpm create next-app . --turbopack --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      yarn: 'npx create-next-app@15 . --turbopack --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      pnpm: 'pnpm create next-app@15 . --turbopack --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
     },
   },
   'vue-vite-ts': {
@@ -58,9 +58,9 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create vite@latest . -- --template vue-ts',
-      yarn: 'yarn create vite@latest . --template vue-ts',
-      pnpm: 'pnpm create vite@latest . --template vue-ts',
+      npm: 'npm create vite@6 . -- --template vue-ts',
+      yarn: 'yarn create vite@6 . --template vue-ts',
+      pnpm: 'pnpm create vite@6 . --template vue-ts',
     },
   },
   'angular-cli': {
@@ -69,9 +69,9 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npx -p @angular/cli@latest ng new angular-latest --directory . --routing=true --minimal=true --style=scss --strict --skip-git --skip-install',
-      yarn: 'yarn dlx -p @angular/cli ng new angular-latest --directory . --routing=true --minimal=true --style=scss --strict --skip-git --package-manager=yarn --skip-install && touch yarn.lock && yarn set version berry && yarn config set nodeLinker node-modules',
-      pnpm: 'pnpm --package @angular/cli dlx ng new angular-latest --directory . --routing=true --minimal=true --style=scss --strict --skip-git --package-manager=pnpm --skip-install',
+      npm: 'npx -p @angular/cli@19 ng new angular-latest --directory . --routing=true --minimal=true --style=scss --strict --skip-git --skip-install',
+      yarn: 'yarn dlx -p @angular/cli@19 ng new angular-latest --directory . --routing=true --minimal=true --style=scss --strict --skip-git --package-manager=yarn --skip-install && touch yarn.lock && yarn set version berry && yarn config set nodeLinker node-modules',
+      pnpm: 'pnpm --package @angular/cli@19 dlx ng new angular-latest --directory . --routing=true --minimal=true --style=scss --strict --skip-git --package-manager=pnpm --skip-install',
     },
   },
   'lit-vite-ts': {
@@ -81,9 +81,9 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create vite@latest . -- --template lit-ts',
-      yarn: 'yarn create vite@latest . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
-      pnpm: 'pnpm create vite@latest . --template lit-ts',
+      npm: 'npm create vite@6 . -- --template lit-ts',
+      yarn: 'yarn create vite@6 . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
+      pnpm: 'pnpm create vite@6 . --template lit-ts',
     },
   },
 };

@@ -4,6 +4,7 @@ import * as v from 'valibot';
 import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
 import { findStoryIds } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
+import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
 import { StoryInputArray } from '../types.ts';
 import type {
@@ -132,7 +133,7 @@ Results will include passing/failing status` +
 				done = await testRunQueue.wait();
 				const runA11y = input.a11y ?? true;
 
-				const { origin, options } = server.ctx.custom ?? {};
+				const { origin, options, disableTelemetry } = server.ctx.custom ?? {};
 
 				if (!origin) {
 					throw new Error('Origin is required in addon context');
@@ -155,11 +156,29 @@ Results will include passing/failing status` +
 
 				if (storyIds.length === 0) {
 					const errorMessages = notFound.map((story) => story.errorMessage).join('\n');
+
+					if (!disableTelemetry) {
+						await collectTelemetry({
+							event: 'tool:runStoryTests',
+							server,
+							toolset: 'test',
+							runA11y,
+							inputStoryCount: input.stories.length,
+							matchedStoryCount: 0,
+							passingStoryCount: 0,
+							failingStoryCount: 0,
+							a11yViolationCount: 0,
+							unhandledErrorCount: 0,
+						});
+					}
+
 					return {
 						content: [
 							{
 								type: 'text',
-								text: `No stories found matching the provided input.\n\n${errorMessages}`,
+								text: `No stories found matching the provided input.
+
+${errorMessages}`,
 							},
 						],
 					};
@@ -181,101 +200,29 @@ Results will include passing/failing status` +
 					throw new Error('Test run response missing result data');
 				}
 
-				const sections: string[] = [];
+				const { text, summary } = formatRunStoryTestResults({
+					testResults,
+					runA11y,
+					origin,
+				});
 
-				const componentTestStatuses = testResults.componentTestStatuses;
-
-				const passingStories = componentTestStatuses.filter(
-					(status) => status.value === 'status-value:success',
-				);
-				const failingStories = componentTestStatuses.filter(
-					(status) => status.value === 'status-value:error',
-				);
-
-				if (passingStories.length > 0) {
-					sections.push(
-						`## Passing Stories\n\n- ${passingStories.map((status) => status.storyId).join('\n- ')}`,
-					);
+				if (!disableTelemetry) {
+					await collectTelemetry({
+						event: 'tool:runStoryTests',
+						server,
+						toolset: 'test',
+						runA11y,
+						inputStoryCount: input.stories.length,
+						matchedStoryCount: storyIds.length,
+						...summary,
+					});
 				}
-
-				if (failingStories.length > 0) {
-					sections.push(
-						`## Failing Stories\n\n${failingStories
-							.map((status) => `### ${status.storyId}\n\n${status.description}`)
-							.join('\n\n')}`,
-					);
-				}
-
-				const a11yReports = testResults.a11yReports as Record<StoryId, A11yReport[]>;
-				if (runA11y && a11yReports && Object.keys(a11yReports).length > 0) {
-					const a11yViolationSections: string[] = [];
-
-					for (const [storyId, reports] of Object.entries(a11yReports)) {
-						for (const report of reports) {
-							// Check if report is an error
-							if ('error' in report && report.error) {
-								a11yViolationSections.push(`### ${storyId} - Error\n\n${report.error.message}`);
-								continue;
-							}
-
-							const violations = (report as any).violations || [];
-
-							if (violations.length > 0) {
-								for (const violation of violations) {
-									const nodes = violation.nodes
-										.map((node: any) => {
-											const inspectLink = node.linkPath ? `${origin}${node.linkPath}` : undefined;
-											const parts = [] as string[];
-
-											if (node.impact) {
-												parts.push(`- **Impact**: ${node.impact}`);
-											}
-
-											if (node.failureSummary || node.message) {
-												parts.push(`  **Message**: ${node.failureSummary || node.message}`);
-											}
-
-											parts.push(`  **Element**: ${node.html || '(no html available)'}`);
-
-											if (inspectLink) {
-												parts.push(`  **Inspect**: ${inspectLink}`);
-											}
-
-											return parts.join('\n');
-										})
-										.join('\n');
-
-									a11yViolationSections.push(
-										`### ${storyId} - ${violation.id}\n\n${violation.description}\n\n#### Affected Elements\n${nodes}`,
-									);
-								}
-							}
-						}
-					}
-
-					if (a11yViolationSections.length > 0) {
-						sections.push(`## Accessibility Violations\n\n${a11yViolationSections.join('\n\n')}`);
-					}
-				}
-
-				if (testResults.unhandledErrors.length > 0) {
-					sections.push(
-						`## Unhandled Errors\n\n${testResults.unhandledErrors
-							.map(
-								(unhandledError) =>
-									`### ${unhandledError.name || 'Unknown Error'}\n\n**Error message**: ${unhandledError.message || 'No message available'}\n**Path**: ${unhandledError.VITEST_TEST_PATH || 'No path available'}\n**Test name**: ${unhandledError.VITEST_TEST_NAME || 'No test name available'}\n**Stack trace**:\n${unhandledError.stack || 'No stack trace available'}`,
-							)
-							.join('\n\n')}`,
-					);
-				}
-
-				const textResult = sections.join('\n\n');
 
 				return {
 					content: [
 						{
 							type: 'text',
-							text: textResult,
+							text,
 						},
 					],
 				};
@@ -406,4 +353,228 @@ function triggerTestRun(
 			settle(() => reject(error instanceof Error ? error : new Error(String(error))));
 		}
 	});
+}
+
+interface RunStoryTestsSummary {
+	passingStoryCount: number;
+	failingStoryCount: number;
+	a11yViolationCount: number;
+	unhandledErrorCount: number;
+}
+
+interface A11yViolationNode {
+	impact?: string;
+	failureSummary?: string;
+	message?: string;
+	html?: string;
+	linkPath?: string;
+}
+
+interface A11yViolation {
+	id: string;
+	description: string;
+	nodes: A11yViolationNode[];
+}
+
+type TestRunResult = NonNullable<TriggerTestRunResponsePayload['result']>;
+
+function formatRunStoryTestResults({
+	testResults,
+	runA11y,
+	origin,
+}: {
+	testResults: TestRunResult;
+	runA11y: boolean;
+	origin: string;
+}): { text: string; summary: RunStoryTestsSummary } {
+	const sections: string[] = [];
+	const componentTestStatuses = testResults.componentTestStatuses;
+
+	const passingStories = componentTestStatuses.filter(
+		(status) => status.value === 'status-value:success',
+	);
+	const failingStories = componentTestStatuses.filter(
+		(status) => status.value === 'status-value:error',
+	);
+
+	if (passingStories.length > 0) {
+		sections.push(formatPassingStoriesSection(passingStories));
+	}
+
+	if (failingStories.length > 0) {
+		sections.push(formatFailingStoriesSection(failingStories));
+	}
+
+	const a11yReports = testResults.a11yReports as Record<StoryId, A11yReport[]>;
+	const a11yViolationCount = countA11yViolations(a11yReports);
+	if (runA11y && a11yReports && Object.keys(a11yReports).length > 0) {
+		const a11ySection = formatA11yReportsSection({ a11yReports, origin });
+		if (a11ySection) {
+			sections.push(a11ySection);
+		}
+	}
+
+	if (testResults.unhandledErrors.length > 0) {
+		sections.push(formatUnhandledErrorsSection(testResults.unhandledErrors));
+	}
+
+	return {
+		text: sections.join('\n\n'),
+		summary: {
+			passingStoryCount: passingStories.length,
+			failingStoryCount: failingStories.length,
+			a11yViolationCount,
+			unhandledErrorCount: testResults.unhandledErrors.length,
+		},
+	};
+}
+
+function formatPassingStoriesSection(passingStories: Array<{ storyId: string }>): string {
+	return `## Passing Stories
+
+- ${passingStories.map((status) => status.storyId).join('\n- ')}`;
+}
+
+function formatFailingStoriesSection(
+	statuses: Array<{ storyId: string; description?: string }>,
+): string {
+	const entries = statuses.map(
+		(status) =>
+			`### ${status.storyId}
+
+${status.description || 'No failure details available.'}`,
+	);
+
+	return `## Failing Stories
+
+${entries.join('\n\n')}`;
+}
+
+function formatA11yReportsSection({
+	a11yReports,
+	origin,
+}: {
+	a11yReports: Record<StoryId, A11yReport[]>;
+	origin: string;
+}): string | undefined {
+	const a11yViolationSections: string[] = [];
+
+	for (const [storyId, reports] of Object.entries(a11yReports)) {
+		for (const report of reports) {
+			if ('error' in report && report.error) {
+				a11yViolationSections.push(`### ${storyId} - Error
+
+${report.error.message}`);
+				continue;
+			}
+
+			const violations = getA11yViolations(report);
+			if (violations.length === 0) {
+				continue;
+			}
+
+			for (const violation of violations) {
+				const nodes = violation.nodes
+					.map((node) => {
+						const inspectLink = node.linkPath ? `${origin}${node.linkPath}` : undefined;
+						const parts = [] as string[];
+
+						if (node.impact) {
+							parts.push(`- **Impact**: ${node.impact}`);
+						}
+
+						if (node.failureSummary || node.message) {
+							parts.push(`  **Message**: ${node.failureSummary || node.message}`);
+						}
+
+						parts.push(`  **Element**: ${node.html || '(no html available)'}`);
+
+						if (inspectLink) {
+							parts.push(`  **Inspect**: ${inspectLink}`);
+						}
+
+						return parts.join('\n');
+					})
+					.join('\n');
+
+				a11yViolationSections.push(`### ${storyId} - ${violation.id}
+
+${violation.description}
+
+#### Affected Elements
+${nodes}`);
+			}
+		}
+	}
+
+	if (a11yViolationSections.length === 0) {
+		return undefined;
+	}
+
+	return `## Accessibility Violations
+
+${a11yViolationSections.join('\n\n')}`;
+}
+
+function formatUnhandledErrorsSection(
+	errors: Array<{
+		name?: string;
+		message?: string;
+		stack?: string;
+		VITEST_TEST_PATH?: string;
+		VITEST_TEST_NAME?: string;
+	}>,
+): string {
+	const formattedErrors = errors.map(
+		(unhandledError) =>
+			`### ${unhandledError.name || 'Unknown Error'}
+
+**Error message**: ${unhandledError.message || 'No message available'}
+**Path**: ${unhandledError.VITEST_TEST_PATH || 'No path available'}
+**Test name**: ${unhandledError.VITEST_TEST_NAME || 'No test name available'}
+**Stack trace**:
+${unhandledError.stack || 'No stack trace available'}`,
+	);
+
+	return `## Unhandled Errors
+
+${formattedErrors.join('\n\n')}`;
+}
+
+function countA11yViolations(a11yReports: Record<StoryId, A11yReport[]>): number {
+	let count = 0;
+
+	for (const reports of Object.values(a11yReports ?? {})) {
+		for (const report of reports) {
+			if ('error' in report && report.error) {
+				continue;
+			}
+
+			count += getA11yViolations(report).length;
+		}
+	}
+
+	return count;
+}
+
+function getA11yViolations(report: A11yReport): A11yViolation[] {
+	if (!('violations' in report)) {
+		return [];
+	}
+
+	const { violations } = report;
+	if (!Array.isArray(violations)) {
+		return [];
+	}
+
+	return violations.map((violation) => ({
+		id: violation.id,
+		description: violation.description,
+		nodes: violation.nodes.map((node) => ({
+			impact: typeof node.impact === 'string' ? node.impact : undefined,
+			failureSummary: typeof node.failureSummary === 'string' ? node.failureSummary : undefined,
+			html: typeof node.html === 'string' ? node.html : undefined,
+			linkPath: typeof node.linkPath === 'string' ? node.linkPath : undefined,
+		})),
+	}));
 }

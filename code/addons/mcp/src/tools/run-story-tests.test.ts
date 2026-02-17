@@ -506,6 +506,81 @@ describe('runStoryTestsTool', () => {
 		expect(response.result?.content[0].text).toContain('## Accessibility Violations');
 	});
 
+	it('should collect telemetry with result counts when enabled', async () => {
+		const { telemetry } = await import('storybook/internal/telemetry');
+		const testContext = {
+			...createTestContext(),
+			disableTelemetry: false,
+		};
+
+		setupChannelResponse({
+			status: 'completed',
+			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: true },
+				storyIds: ['button--primary'],
+				totalTestCount: 1,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
+				componentTestCount: { success: 1, error: 0 },
+				a11yCount: { success: 0, warning: 1, error: 0 },
+				componentTestStatuses: [
+					{
+						storyId: 'button--primary',
+						typeId: 'storybook/component-test',
+						value: 'status-value:success',
+						title: 'Component Test',
+						description: '',
+					},
+				],
+				a11yStatuses: [],
+				a11yReports: {
+					'button--primary': [
+						{
+							violations: [
+								{
+									id: 'color-contrast',
+									description: 'Color contrast ratio is insufficient',
+									nodes: [
+										{
+											html: '<button>Click me</button>',
+											impact: 'critical',
+											failureSummary: '2.5:1 (required: 4.5:1)',
+											linkPath: '/inspect/button--primary?inspectPath=button.0',
+										},
+									],
+								},
+							],
+						},
+					],
+				},
+				unhandledErrors: [],
+			},
+		});
+
+		await callTool(
+			[{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+			testContext,
+		);
+
+		expect(telemetry).toHaveBeenCalledWith(
+			'addon-mcp',
+			expect.objectContaining({
+				event: 'tool:runStoryTests',
+				mcpSessionId: 'test-session',
+				toolset: 'test',
+				runA11y: true,
+				inputStoryCount: 1,
+				matchedStoryCount: 1,
+				passingStoryCount: 1,
+				failingStoryCount: 0,
+				a11yViolationCount: 1,
+				unhandledErrorCount: 0,
+			}),
+		);
+	});
+
 	it('should handle unhandled errors', async () => {
 		const testContext = createTestContext();
 

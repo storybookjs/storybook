@@ -51,7 +51,6 @@ export const sandbox = async (
   const borderColor = isOutdated ? '#FC521F' : '#F1618C';
 
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
-  const branch = isPrerelease ? 'next' : 'main';
 
   const messages = {
     welcome: `Creating a Storybook ${chalk.bold(currentVersion)} sandbox..`,

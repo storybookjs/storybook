@@ -1,3 +1,7 @@
+## 7.6.22
+
+- No-op release. No changes.
+
 ## 7.6.20
 
 - Core: Replace ip function to address security concerns [#27529](https://github.com/storybookjs/storybook/pull/27529), thanks @tony19 

@@ -164,12 +164,12 @@ jobs:
           echo "shortSha=$(echo "$PR_INFO" | jq -r ".sha" | cut -c 1-8)" >> $GITHUB_OUTPUT
           echo "date=$(date)" >> $GITHUB_OUTPUT
           echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
+          ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
-          fetch-depth: 0
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install

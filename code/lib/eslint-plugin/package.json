@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "10.2.8",
+  "version": "10.2.9",
   "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",

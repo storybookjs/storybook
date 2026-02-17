@@ -25,6 +25,6 @@ export const buildIndex = async (
     corePresets: [],
     overridePresets: [],
     channel: new Channel({}),
-  };
+  } as unknown as Parameters<typeof withTelemetry>[1]['presetOptions'];
   await withTelemetry('index', { cliOptions, presetOptions }, () => buildIndexStandalone(options));
 };

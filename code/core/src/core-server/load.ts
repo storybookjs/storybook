@@ -1,3 +1,4 @@
+import { Channel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
   loadAllPresets,
@@ -12,7 +13,6 @@ import { global } from '@storybook/global';
 
 import { dirname, join, relative, resolve } from 'pathe';
 
-import { Channel } from '../channels';
 import { resolvePackageDir } from '../shared/utils/module';
 
 export async function loadStorybook(
@@ -59,7 +59,7 @@ export async function loadStorybook(
     ],
     ...options,
     isCritical: true,
-    channel,
+    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
   });
 
   const { renderer, builder } = await presets.apply('core', {});
@@ -82,7 +82,7 @@ export async function loadStorybook(
     overridePresets: [
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    channel,
+    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
     ...options,
   });
 

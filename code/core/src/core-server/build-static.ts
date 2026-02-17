@@ -1,11 +1,11 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 
+import { Channel } from 'storybook/internal/channels';
 import {
   loadAllPresets,
   loadMainConfig,
   logConfig,
-  normalizeStories,
   resolveAddonName,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -17,7 +17,6 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
-import Channel from '../channels';
 import { resolvePackageDir } from '../shared/utils/module';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
@@ -76,7 +75,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],
     isCritical: true,
-    channel,
+    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
     ...options,
   });
 
@@ -86,7 +85,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ...options,
     presets,
     build,
-    channel,
+    channel: channel as unknown as Options['channel'],
   });
 
   const resolvedRenderer = renderer
@@ -102,7 +101,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ],
     overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
     build,
-    channel,
+    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
     ...options,
   });
 
@@ -121,7 +120,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const fullOptions: Options = {
     ...options,
-    channel,
+    channel: channel as unknown as Options['channel'],
     presets,
     features,
     build,

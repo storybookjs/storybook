@@ -74,7 +74,7 @@ describe('ServerChannelTransport', () => {
       }
     `);
   });
-  
+
   it('skips telejson classes and functions in data', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();

@@ -1,6 +1,7 @@
+import type { IncomingMessage } from 'node:http';
+
 import type { ChannelHandler } from 'storybook/internal/channels';
 import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
-import type { IncomingMessage } from 'node:http';
 
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';

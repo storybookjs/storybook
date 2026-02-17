@@ -3,6 +3,7 @@ import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
 import type { StoryInput } from '../types.ts';
+import { slash } from './slash.ts';
 
 export interface FoundStory {
 	id: string;
@@ -35,7 +36,9 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 
 	for (const storyInput of stories) {
 		const { exportName, explicitStoryName, absoluteStoryPath } = storyInput;
-		const relativePath = `./${path.relative(process.cwd(), absoluteStoryPath)}`;
+		const normalizedCwd = slash(process.cwd());
+		const normalizedAbsolutePath = slash(absoluteStoryPath);
+		const relativePath = `./${path.posix.relative(normalizedCwd, normalizedAbsolutePath)}`;
 
 		logger.debug('Searching for:');
 		logger.debug({

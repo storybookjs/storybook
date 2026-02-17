@@ -20,12 +20,15 @@ import { RUN_STORY_TESTS_TOOL_NAME } from './tool-names.ts';
  * Returns the constants if available, undefined otherwise.
  */
 export async function getAddonVitestConstants() {
-	return await import('@storybook/addon-vitest/constants')
-		.then((mod) => ({
+	try {
+		const mod = await import('@storybook/addon-vitest/constants');
+		return {
 			TRIGGER_TEST_RUN_REQUEST: mod.TRIGGER_TEST_RUN_REQUEST,
 			TRIGGER_TEST_RUN_RESPONSE: mod.TRIGGER_TEST_RUN_RESPONSE,
-		}))
-		.catch(() => undefined);
+		};
+	} catch {
+		return undefined;
+	}
 }
 
 const RunStoryTestsInput = v.object({
@@ -42,6 +45,7 @@ const RunStoryTestsInput = v.object({
 });
 
 const QUEUE_TIMEOUT_MS = 15_000;
+const TEST_RUN_TIMEOUT_MS = 15_000;
 
 /**
  * Creates a queue that ensures concurrent calls are executed in sequence.
@@ -62,23 +66,33 @@ function createAsyncQueue() {
 		});
 
 		const previousTail = tail;
-		tail = gate;
+		tail = previousTail.then(
+			() => gate,
+			() => gate,
+		);
 
-		// Wait for the previous operation to finish, with a timeout
-		await Promise.race([
-			previousTail.catch(() => {}),
-			new Promise<never>((_, reject) =>
-				setTimeout(
-					() =>
-						reject(
-							new Error(
-								`Timed out waiting for previous operation to complete (${QUEUE_TIMEOUT_MS / 1000}s). Please try again.`,
+		try {
+			// Wait for the previous operation to finish, with a timeout
+			await Promise.race([
+				previousTail.catch(() => {}),
+				new Promise<never>((_, reject) =>
+					setTimeout(
+						() =>
+							reject(
+								new Error(
+									`Timed out waiting for previous operation to complete (${QUEUE_TIMEOUT_MS / 1000}s). Please try again.`,
+								),
 							),
-						),
-					QUEUE_TIMEOUT_MS,
+						QUEUE_TIMEOUT_MS,
+					),
 				),
-			),
-		]);
+			]);
+		} catch (error) {
+			// If we fail before entering the critical section, release our gate so
+			// the queue can continue once previous operations settle.
+			done();
+			throw error;
+		}
 
 		return done;
 	}
@@ -95,7 +109,7 @@ export async function addRunStoryTestsTool(
 
 	const description =
 		`Run tests for one or more stories and report accessibility issues. For visual/design accessibility violations (for example color contrast), ask the user before changing styles.
-Use this continously to monitor test results as you work on your UI components and stories.
+Use this continuously to monitor test results as you work on your UI components and stories.
 Results will include passing/failing status` +
 		(a11yEnabled ? ', and accessibility violation reports.' : '');
 
@@ -113,8 +127,11 @@ Results will include passing/failing status` +
 			},
 		},
 		async (input: v.InferInput<typeof RunStoryTestsInput>) => {
-			const done = await testRunQueue.wait();
+			let done: (() => void) | undefined;
 			try {
+				done = await testRunQueue.wait();
+				const runA11y = input.a11y ?? true;
+
 				const { origin, options } = server.ctx.custom ?? {};
 
 				if (!origin) {
@@ -156,7 +173,7 @@ Results will include passing/failing status` +
 					addonVitestConstants!.TRIGGER_TEST_RUN_REQUEST,
 					addonVitestConstants!.TRIGGER_TEST_RUN_RESPONSE,
 					storyIds,
-					{ a11y: input.a11y ?? true },
+					{ a11y: runA11y },
 				);
 
 				const testResults = responsePayload.result;
@@ -190,7 +207,7 @@ Results will include passing/failing status` +
 				}
 
 				const a11yReports = testResults.a11yReports as Record<StoryId, A11yReport[]>;
-				if (input.a11y && a11yReports && Object.keys(a11yReports).length > 0) {
+				if (runA11y && a11yReports && Object.keys(a11yReports).length > 0) {
 					const a11yViolationSections: string[] = [];
 
 					for (const [storyId, reports] of Object.entries(a11yReports)) {
@@ -265,7 +282,11 @@ Results will include passing/failing status` +
 			} catch (error) {
 				return errorToMCPContent(error);
 			} finally {
-				done();
+				try {
+					done?.();
+				} catch (error) {
+					logger.warn(`Failed to release test run queue: ${String(error)}`);
+				}
 			}
 		},
 	);
@@ -282,35 +303,90 @@ function triggerTestRun(
 	storyIds: string[],
 	config?: TriggerTestRunRequestPayload['config'],
 ): Promise<TriggerTestRunResponsePayload> {
+	/*
+	Flow overview:
+	1) Create a unique request ID for this invocation.
+	2) Subscribe to the response event and emit a request event.
+	3) Wait for exactly one terminal outcome for this request ID:
+	   - completed (with result)
+	   - error
+	   - cancelled
+	   - timeout
+	   - emit failure
+	4) On the first terminal outcome, run cleanup once and settle once.
+	*/
 	return new Promise((resolve, reject) => {
 		const requestId = `mcp-${Date.now()}`;
+		/*
+		Guard to ensure we never resolve/reject more than once.
+		This protects against races between timeout, responses, and emit failures.
+		*/
+		let settled = false;
+
+		/* Always remove listeners and timer when this request is done. */
+		const cleanup = () => {
+			channel.off(triggerTestRunResponseEventName, handleResponse);
+			clearTimeout(timeoutId);
+		};
+
+		/*
+		Single exit point for all terminal states.
+		It guarantees cleanup happens exactly once before resolve/reject.
+		*/
+		const settle = (callback: () => void) => {
+			if (settled) {
+				return;
+			}
+
+			settled = true;
+			cleanup();
+			callback();
+		};
 
 		const handleResponse = (payload: TriggerTestRunResponsePayload) => {
+			/* Ignore responses from other trigger requests. */
 			if (payload.requestId !== requestId) {
 				return;
 			}
 
-			channel.off(triggerTestRunResponseEventName, handleResponse);
-
+			/* Map protocol response status to one terminal settlement path. */
 			switch (payload.status) {
 				case 'completed':
+					/* Completed without result is considered malformed/incomplete. */
 					if (payload.result) {
-						resolve(payload);
+						settle(() => resolve(payload));
 					} else {
-						reject(new Error('Test run completed but no result was returned'));
+						settle(() => reject(new Error('Test run completed but no result was returned')));
 					}
 					break;
 				case 'error':
-					reject(new Error(payload.error?.message ?? 'Test run failed with unknown error'));
+					settle(() =>
+						reject(new Error(payload.error?.message ?? 'Test run failed with unknown error')),
+					);
 					break;
 				case 'cancelled':
-					reject(new Error('Test run was cancelled'));
+					settle(() => reject(new Error('Test run was cancelled')));
 					break;
 				default:
-					reject(new Error('Unexpected test run response'));
+					settle(() => reject(new Error('Unexpected test run response')));
 			}
 		};
 
+		/*
+		Fails fast if no matching response arrives.
+		This avoids hanging forever and ensures queued callers can make progress.
+		*/
+		const timeoutId = setTimeout(() => {
+			settle(() =>
+				reject(
+					new Error(
+						`Timed out waiting for test run response (${TEST_RUN_TIMEOUT_MS / 1000}s). Please try again.`,
+					),
+				),
+			);
+		}, TEST_RUN_TIMEOUT_MS);
+
+		/* Subscribe before emit so immediate/synchronous responders are not missed. */
 		channel.on(triggerTestRunResponseEventName, handleResponse);
 
 		const request = {
@@ -320,6 +396,14 @@ function triggerTestRun(
 			config,
 		} as TriggerTestRunRequestPayload;
 
-		channel.emit(triggerTestRunRequestEventName, request);
+		try {
+			/*
+			Start the run. If emit throws synchronously, settle through the same
+			path so cleanup still runs and callers get a proper rejection.
+			*/
+			channel.emit(triggerTestRunRequestEventName, request);
+		} catch (error) {
+			settle(() => reject(error instanceof Error ? error : new Error(String(error))));
+		}
 	});
 }

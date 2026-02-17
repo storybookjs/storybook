@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { findStoryIds } from './find-story-ids.ts';
 import type { StoryIndex } from 'storybook/internal/types';
 
@@ -45,10 +45,6 @@ describe('findStoryIds', () => {
 			},
 		},
 	};
-
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
 
 	it('should find a single story by export name', () => {
 		const stories = [
@@ -187,5 +183,24 @@ describe('findStoryIds', () => {
 
 		expect(result.found).toHaveLength(0);
 		expect(result.notFound).toHaveLength(1);
+	});
+
+	it('should match stories when cwd and absolute path use Windows separators', () => {
+		const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(String.raw`C:\repo`);
+
+		const stories = [
+			{
+				exportName: 'Primary',
+				absoluteStoryPath: String.raw`C:\repo\src\Button.stories.tsx`,
+			},
+		];
+
+		const result = findStoryIds(mockStoryIndex, stories);
+
+		expect(result.found).toHaveLength(1);
+		expect(result.found[0]!.id).toBe('button--primary');
+		expect(result.notFound).toHaveLength(0);
+
+		cwdSpy.mockRestore();
 	});
 });

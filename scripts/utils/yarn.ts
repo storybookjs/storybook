@@ -15,7 +15,11 @@ export type YarnOptions = {
 
 const logger = console;
 
-export const addPackageResolutions = async ({ cwd, dryRun, key }: YarnOptions & { key: TemplateKey }) => {
+export const addPackageResolutions = async ({
+  cwd,
+  dryRun,
+  key,
+}: YarnOptions & { key: TemplateKey }) => {
   logger.info(`🔢 Adding package resolutions:`);
   if (dryRun) return;
 
@@ -30,16 +34,17 @@ export const addPackageResolutions = async ({ cwd, dryRun, key }: YarnOptions & 
     '@playwright/test': '1.36.0',
   };
 
-  if(key.includes('preact-vite')) {
+  if (key.includes('preact-vite')) {
     packageJson.resolutions = {
       ...packageJson.resolutions,
       '@preact/preset-vite': '2.8.1',
     };
   }
-  if(key === 'angular-cli/default-ts') {
+  if (key === 'angular-cli/default-ts') {
     packageJson.resolutions = {
       ...packageJson.resolutions,
-      'cheerio': '1.0.0',
+      '@compodoc/compodoc': '1.1.23',
+      cheerio: '1.0.0',
     };
   }
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });

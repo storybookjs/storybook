@@ -1,5 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/swcrc",
+  "env": {
+    "targets": {
+      "chrome": 100,
+      "safari": 15,
+      "firefox": 91,
+      "node": 22
+    }
+  },
   "jsc": {
     "parser": {
       "syntax": "typescript",
@@ -14,7 +22,6 @@
         "development": false
       }
     },
-    "target": "es2020",
     "loose": false,
     "externalHelpers": false,
     "keepClassNames": false

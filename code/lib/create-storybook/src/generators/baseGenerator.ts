@@ -288,7 +288,7 @@ export async function baseGenerator(
   const compiler = webpackCompiler ? webpackCompiler({ builder }) : undefined;
 
   if (features.includes('test')) {
-    extraAddons.push('@chromatic-com/storybook');
+    extraAddons.push('@chromatic-com/storybook@^4');
   }
 
   if (features.includes('docs')) {
@@ -299,6 +299,8 @@ export async function baseGenerator(
     extraAddons.push('@storybook/addon-onboarding');
   }
 
+  const compilerVersion = compiler === 'babel' ? '^3.0.6' : '^4.0.0';
+
   // added to main.js
   const addons = [
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
@@ -307,7 +309,7 @@ export async function baseGenerator(
 
   // added to package.json
   const addonPackages = [
-    ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
+    ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}@${compilerVersion}`] : []),
     ...extraAddons,
   ].filter(Boolean);
 

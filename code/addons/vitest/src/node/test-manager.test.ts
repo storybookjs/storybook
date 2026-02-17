@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { Tag, experimental_MockUniversalStore } from 'storybook/internal/core-server';
 import type {
   Options,
@@ -52,16 +51,60 @@ vi.mock('vitest/node', async (importOriginal) => ({
 // Use the mock function directly
 const createVitest = mockCreateVitest;
 
-const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
-
 beforeEach(() => {
   createVitest.mockResolvedValue(vitest);
 });
-const mockChannel = new Channel({ transport });
+
+const mockIndex = {
+  v: 5,
+  entries: {
+    'story--one': {
+      type: 'story',
+      subtype: 'story',
+      id: 'story--one',
+      name: 'One',
+      title: 'story/one',
+      importPath: 'path/to/file',
+      tags: [Tag.TEST],
+    },
+    'another--one': {
+      type: 'story',
+      subtype: 'story',
+      id: 'another--one',
+      name: 'One',
+      title: 'another/one',
+      importPath: 'path/to/another/file',
+      tags: [Tag.TEST],
+    },
+    'parent--story': {
+      type: 'story',
+      subtype: 'story',
+      id: 'parent--story',
+      name: 'Parent story',
+      title: 'parent/story',
+      importPath: 'path/to/parent/file',
+      tags: [Tag.TEST],
+    },
+    'parent--story:test': {
+      type: 'story',
+      subtype: Tag.TEST,
+      id: 'parent--story:test',
+      name: 'Test name',
+      title: 'parent/story',
+      parent: 'parent--story',
+      importPath: 'path/to/parent/file',
+      tags: [Tag.TEST, Tag.TEST_FN],
+    },
+  },
+} as StoryIndex;
+
 const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
   {
     ...storeOptions,
-    initialState: { ...storeOptions.initialState, indexUrl: 'http://localhost:6006/index.json' },
+    initialState: {
+      ...storeOptions.initialState,
+      index: mockIndex,
+    },
   },
   vi
 );
@@ -101,54 +144,6 @@ const tests = [
     moduleId: path.join(process.cwd(), 'path/to/another/file'),
   },
 ];
-
-global.fetch = vi.fn().mockResolvedValue({
-  json: () =>
-    new Promise((resolve) =>
-      resolve({
-        v: 5,
-        entries: {
-          'story--one': {
-            type: 'story',
-            subtype: 'story',
-            id: 'story--one',
-            name: 'One',
-            title: 'story/one',
-            importPath: 'path/to/file',
-            tags: [Tag.TEST],
-          },
-          'another--one': {
-            type: 'story',
-            subtype: 'story',
-            id: 'another--one',
-            name: 'One',
-            title: 'another/one',
-            importPath: 'path/to/another/file',
-            tags: [Tag.TEST],
-          },
-          'parent--story': {
-            type: 'story',
-            subtype: 'story',
-            id: 'parent--story',
-            name: 'Parent story',
-            title: 'parent/story',
-            importPath: 'path/to/parent/file',
-            tags: [Tag.TEST],
-          },
-          'parent--story:test': {
-            type: 'story',
-            subtype: Tag.TEST,
-            id: 'parent--story:test',
-            name: 'Test name',
-            title: 'parent/story',
-            parent: 'parent--story',
-            importPath: 'path/to/parent/file',
-            tags: [Tag.TEST, Tag.TEST_FN],
-          },
-        },
-      } as StoryIndex)
-    ),
-});
 
 const options: TestManagerOptions = {
   store: mockStore,

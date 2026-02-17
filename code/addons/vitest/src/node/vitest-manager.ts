@@ -221,7 +221,14 @@ export class VitestManager {
   private getStories(requestStoryIds?: string[]): StoryIndexEntry[] {
     const index = this.testManager.store.getState().index;
     if (requestStoryIds) {
-      return requestStoryIds.map((id) => index.entries[id]) as StoryIndexEntry[];
+      const stories: StoryIndexEntry[] = [];
+      for (const id of requestStoryIds) {
+        const entry = index.entries[id];
+        if (entry?.type === 'story') {
+          stories.push(entry);
+        }
+      }
+      return stories;
     }
     return Object.values(index.entries).filter((entry) => entry.type === 'story');
   }

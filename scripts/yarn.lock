@@ -3175,6 +3175,7 @@ __metadata:
     jest-serializer-html: "npm:^7.1.0"
     jest-watch-typeahead: "npm:^2.2.1"
     jest_workaround: "npm:^0.79.19"
+    jiti: "npm:^2.6.1"
     json5: "npm:^2.2.3"
     junit-xml: "npm:^1.2.0"
     lint-staged: "npm:^10.5.4"
@@ -10776,6 +10777,15 @@ __metadata:
     "@swc/core": ^1.3.68
     "@swc/jest": ^0.2.26
   checksum: 10c0/387ce514e7ef60129891a4647e5431f1e4179bde70de100d50fa4acc8a4f3c072db9cf65c8a7d971ab11437ace78aa77959c65cdb2e55e718c971905c55e62fd
+  languageName: node
+  linkType: hard
+
+"jiti@npm:^2.6.1":
+  version: 2.6.1
+  resolution: "jiti@npm:2.6.1"
+  bin:
+    jiti: lib/jiti-cli.mjs
+  checksum: 10c0/79b2e96a8e623f66c1b703b98ec1b8be4500e1d217e09b09e343471bbb9c105381b83edbb979d01cef18318cc45ce6e153571b6c83122170eefa531c64b6789b
   languageName: node
   linkType: hard
 

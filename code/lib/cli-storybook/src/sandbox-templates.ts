@@ -226,7 +226,7 @@ export const baseTemplates = {
       extraDependencies: [
         'server-only',
         '@storybook/experimental-nextjs-vite',
-        'vite',
+        'vite@6',
         'prop-types',
       ],
     },

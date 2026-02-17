@@ -1,3 +1,7 @@
+## 8.6.16
+
+- No-op release. No changes.
+
 ## 8.6.14
 
 - CLI: Add skip onboarding, recommended/minimal config - [#30930](https://github.com/storybookjs/storybook/pull/30930), thanks @shilman!

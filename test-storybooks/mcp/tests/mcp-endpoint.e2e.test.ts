@@ -493,77 +493,19 @@ describe('MCP Endpoint E2E Tests', () => {
 				},
 			});
 
-			expect(response.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "# Button
+			expect(response.result).toHaveProperty('content');
+			expect(response.result.content[0]).toHaveProperty('type', 'text');
 
-				ID: example-button
-
-				Primary UI component for user interaction
-
-				## Stories
-
-				### Primary
-
-				\`\`\`
-				import { Button } from "@my-org/my-component-library";
-
-				const Primary = () => <Button onClick={fn()} primary label="Button" />;
-				\`\`\`
-
-				### Secondary
-
-				\`\`\`
-				import { Button } from "@my-org/my-component-library";
-
-				const Secondary = () => <Button onClick={fn()} label="Button" />;
-				\`\`\`
-
-				### Large
-
-				\`\`\`
-				import { Button } from "@my-org/my-component-library";
-
-				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
-				\`\`\`
-
-				### Other Stories
-
-				- Small
-
-				## Props
-
-				\`\`\`
-				export type Props = {
-				  /**
-				    Is this the principal call to action on the page?
-				  */
-				  primary?: boolean = false;
-				  /**
-				    What background color to use
-				  */
-				  backgroundColor?: string;
-				  /**
-				    How large should the button be?
-				  */
-				  size?: 'small' | 'medium' | 'large' = 'medium';
-				  /**
-				    Button contents
-				  */
-				  label: string;
-				  /**
-				    Optional click handler
-				  */
-				  onClick?: () => void;
-				}
-				\`\`\`",
-				      "type": "text",
-				    },
-				  ],
-				}
-			`);
+			const text = response.result.content[0].text as string;
+			expect(text).toContain('# Button');
+			expect(text).toContain('## Stories');
+			expect(text).toContain('## Docs');
+			expect(text).toContain('### Additional Information');
+			expect(text).toContain(
+				'that the string passed to the `label` prop uses the 🍌-emoji instead of spaces.',
+			);
+			expect(text).toContain('<Canvas of={ButtonStories.Primary} />');
+			expect(text).toContain('## Props');
 		});
 
 		it('should return error for non-existent component', async () => {

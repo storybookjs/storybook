@@ -156,6 +156,26 @@ export const markdownFormatter: ManifestFormatter = {
 			}
 		}
 
+		// Attached docs section
+		if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {
+			const docsWithContent = Object.values(componentManifest.docs).filter(
+				(doc) => doc.content.trim().length > 0,
+			);
+
+			if (docsWithContent.length > 0) {
+				parts.push('## Docs');
+				parts.push('');
+
+				for (const doc of docsWithContent) {
+					parts.push(`### ${doc.name}`);
+					parts.push('');
+
+					parts.push(doc.content);
+					parts.push('');
+				}
+			}
+		}
+
 		return parts.join('\n').trim();
 	},
 

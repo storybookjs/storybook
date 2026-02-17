@@ -385,6 +385,94 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 		});
 	});
 
+	describe('attached docs section', () => {
+		it('should include attached docs', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				path: 'src/components/Button.tsx',
+				stories: [
+					{
+						name: 'Primary',
+						snippet: '<Button>Primary</Button>',
+					},
+				],
+				docs: {
+					'button--additional-information': {
+						id: 'button--additional-information',
+						name: 'Additional Information',
+						title: 'Button',
+						path: 'src/components/Button.mdx',
+						content: 'Detailed docs content',
+					},
+				},
+				reactDocgen: {
+					props: {
+						size: {
+							type: { name: 'string' },
+						},
+					},
+				},
+			};
+
+			const result = markdownFormatter.formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"# Button
+
+				ID: button
+
+				## Stories
+
+				### Primary
+
+				\`\`\`
+				<Button>Primary</Button>
+				\`\`\`
+
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  size: string;
+				}
+				\`\`\`
+
+				## Docs
+
+				### Additional Information
+
+				Detailed docs content"
+			`);
+
+			expect(result.indexOf('## Docs')).toBeGreaterThan(result.indexOf('## Stories'));
+			expect(result.indexOf('## Docs')).toBeGreaterThan(result.indexOf('## Props'));
+			expect(result).not.toContain('ID: button--additional-information');
+		});
+
+		it('should not include docs section when all attached docs have empty trimmed content', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				path: 'src/components/Button.tsx',
+				docs: {
+					'button--blank': {
+						id: 'button--blank',
+						name: 'Blank Doc',
+						title: 'Button',
+						path: 'src/components/ButtonBlank.mdx',
+						content: '   \n\t  ',
+					},
+				},
+			};
+
+			const result = markdownFormatter.formatComponentManifest(manifest);
+
+			expect(result).not.toContain('## Docs');
+			expect(result).not.toContain('### Blank Doc');
+		});
+	});
+
 	describe('props section - table format', () => {
 		it('should format props with rich metadata as table', () => {
 			const manifest: ComponentManifest = {

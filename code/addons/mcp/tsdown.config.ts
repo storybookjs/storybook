@@ -11,6 +11,7 @@ export default defineConfig([
 	{
 		...sharedNodeConfig,
 		entry: 'src/preset.ts',
+		external: [/^@storybook\/addon-vitest/, /^@storybook\/addon-a11y/],
 	},
 	{
 		...browserConfig,

@@ -85,24 +85,10 @@ jobs:
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
         run: yarn release:is-version-published "$CURRENT_VERSION"
-      - name: Build all packages
-        if: steps.publish-needed.outputs.published == 'false'
-        run: yarn task --task=compile --start-from=compile --no-link
-
-      - name: Setup newer Node.js for trusted publishing
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.21.1
-
 
       - name: Publish
         if: steps.publish-needed.outputs.published == 'false'
         run: yarn release:publish --tag v7 --verbose
-
-      - name: Setup Node.js back to default
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
 
       - name: Get changelog for ${{ steps.version.outputs.current-version }}
         if: steps.publish-needed.outputs.published == 'false'

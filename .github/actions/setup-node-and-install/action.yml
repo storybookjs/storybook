@@ -15,6 +15,10 @@ runs:
       with:
         node-version-file: ".nvmrc"
 
+    - name: Update npm to latest
+      shell: bash
+      run: npm install -g npm@latest
+
     - name: Cache dependencies
       uses: actions/cache@v4
       with:

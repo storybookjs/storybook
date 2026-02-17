@@ -107,6 +107,16 @@ const isCurrentVersionPublished = async ({
   return true;
 };
 
+const buildAllPackages = async () => {
+  console.log(`🏗️ Building all packages...`);
+  await execaCommand('yarn task --task=compile --start-from=compile --no-link', {
+    stdio: 'inherit',
+    cleanup: true,
+    cwd: CODE_DIR_PATH,
+  });
+  console.log(`🏗️ Packages successfully built`);
+};
+
 const publishAllPackages = async ({
   tag,
   verbose,
@@ -172,6 +182,7 @@ export const run = async (options: unknown) => {
       `⛔ Current version (${chalk.green(currentVersion)}) is already published, aborting.`
     );
   }
+  await buildAllPackages();
   await publishAllPackages({ tag, verbose, dryRun });
 
   console.log(

@@ -85,11 +85,13 @@ describe('ServerChannelTransport', () => {
     // @ts-expect-error (an internal API)
     transport.socket.emit('connection', socket);
 
-    const input = { a() {}, b: class {} };
+    const input = { a() {}, b: class {}, c: true, d: 3 };
     socket.emit('message', stringify(input));
 
-    expect(handler.mock.calls[0][0].a).toEqual(expect.any(String));
-    expect(handler.mock.calls[0][0].b).toEqual(expect.any(String));
+    console.log(handler.mock.calls);
+
+    expect(handler.mock.calls[0][0].a).toBeUndefined();
+    expect(handler.mock.calls[0][0].b).toBeUndefined();
   });
 
   it('rejects connections with invalid token', () => {

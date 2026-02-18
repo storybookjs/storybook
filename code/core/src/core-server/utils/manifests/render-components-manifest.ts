@@ -712,6 +712,7 @@ export function renderComponentsManifest(
   reactDocgen: 'react-docgen-typescript',
 }</code></pre>
             Note: <code>react-docgen-typescript</code> can be slower. If performance is acceptable for your project, it generally produces better results.
+            <a href="https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen" target="_blank">Learn more</a>
           </div>`
         : activeEngine === 'react-docgen-typescript' && durationMs != null && durationMs > 7500
           ? `<div class="note err" style="margin-bottom: 16px;">
@@ -719,6 +720,7 @@ export function renderComponentsManifest(
               <pre><code>typescript: {
   reactDocgen: 'react-docgen',
 }</code></pre>
+              <a href="https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen" target="_blank">Learn more</a>
             </div>`
           : durationMs != null
             ? `<div class="note ok" style="margin-bottom: 16px;">

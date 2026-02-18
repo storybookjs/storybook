@@ -89,7 +89,7 @@ function extractStories(
 
 function extractComponentDescription(
   csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
-  docgen: DocObj | undefined
+  docgen: { description?: string } | undefined
 ) {
   const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
   const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
@@ -204,7 +204,7 @@ export const manifests: PresetPropertyFn<
       const docgenDescription = docgen?.description ?? rdtDoc?.description;
       const { description, summary, jsDocTags } = extractComponentDescription(
         csf,
-        docgenDescription ? ({ description: docgenDescription } as DocObj) : undefined
+        docgenDescription ? { description: docgenDescription } : undefined
       );
 
       return {

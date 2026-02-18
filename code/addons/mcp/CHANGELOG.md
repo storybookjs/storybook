@@ -1,5 +1,18 @@
 # @storybook/addon-mcp
 
+## 0.2.3
+
+### Patch Changes
+
+- [#141](https://github.com/storybookjs/mcp/pull/141) [`03e957d`](https://github.com/storybookjs/mcp/commit/03e957d013d6e240b82e3106dd2790068fe058e1) Thanks [@shilman](https://github.com/shilman)! - Upgrade deprecated MCP server methods
+
+- [#160](https://github.com/storybookjs/mcp/pull/160) [`bab8ec9`](https://github.com/storybookjs/mcp/commit/bab8ec9ece4f89661b458fbecd59b0a560948192) Thanks [@JReinhold](https://github.com/JReinhold)! - Render component-attached MDX docs entries in markdown output for `get-documentation`.
+
+  This fixes a regression where docs attached to components via `component.docs` in `components.json` were not included in markdown responses. The markdown formatter now emits a `## Docs` section below stories (and before props).
+
+- Updated dependencies [[`b7aeb40`](https://github.com/storybookjs/mcp/commit/b7aeb40c32d831618774c13e316596e9ff840aa7), [`bab8ec9`](https://github.com/storybookjs/mcp/commit/bab8ec9ece4f89661b458fbecd59b0a560948192)]:
+  - @storybook/mcp@0.2.2
+
 ## 0.2.2
 
 ### Patch Changes
@@ -19,6 +32,7 @@
 - [#118](https://github.com/storybookjs/mcp/pull/118) [`bafbfc6`](https://github.com/storybookjs/mcp/commit/bafbfc661f93f32024ce75d553f2b7bc90954508) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Renamed tool `get-ui-building-instructions` to `get-storybook-story-instructions` to increase the likelihood of Agents calling the MCP tool.
 
   Further updates:
+
   - Updated storybook-story building instructions template to be more specific about what a good story is.
   - Added an extensive description for the `get-storybook-story-instructions` tool to give agents more information of when to call the MCP tool
 
@@ -163,6 +177,7 @@ EDIT: The above is not true anymore, see version [0.1.1](#011) of this package.
 - [#33](https://github.com/storybookjs/mcp/pull/33) [`ae6ab44`](https://github.com/storybookjs/mcp/commit/ae6ab44e4c4bdf9797facab69c6748bc7a52ba9a) Thanks [@JReinhold](https://github.com/JReinhold)! - Add tools to get documentation for components, based on the component manifest being generated in the Storybook dev server.
 
   Requirements:
+
   1. That the **experimental** feature flag `features.experimentalComponentsManifest` is set to `true` in the main config.
   2. Only React-based frameworks supports component manifest generation for now.
   3. Requires Storybook v10.1 (prereleases), which at the time of writing is available as a canary version `0.0.0-pr-32810-sha-af0645cd`.
@@ -205,6 +220,7 @@ EDIT: The above is not true anymore, see version [0.1.1](#011) of this package.
 ### Patch Changes
 
 - [#11](https://github.com/storybookjs/addon-mcp/pull/11) [`bba9b8c`](https://github.com/storybookjs/addon-mcp/commit/bba9b8c683acdd5dfa835d4dea848dce7355ee82) Thanks [@JReinhold](https://github.com/JReinhold)! - - Improved UI Building Instructions
+
   - Improved output format of Get Story URLs tool
 
 - [#9](https://github.com/storybookjs/addon-mcp/pull/9) [`e5e2adf`](https://github.com/storybookjs/addon-mcp/commit/e5e2adf7192d5e12f21229056b644e7aa32287ed) Thanks [@JReinhold](https://github.com/JReinhold)! - Add basic telemetry for sessions and tool calls

@@ -1,0 +1,21 @@
+{
+	"v": 5,
+	"entries": {
+		"design-system-components-button--primary": {
+			"id": "design-system-components-button--primary",
+			"title": "Design System / Components / Button",
+			"name": "Primary",
+			"importPath": "../../packages/design-system/components/Button/Button.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"app-stories-button--primary": {
+			"id": "app-stories-button--primary",
+			"title": "App / Button",
+			"name": "Primary",
+			"importPath": "./stories/Button.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		}
+	}
+}

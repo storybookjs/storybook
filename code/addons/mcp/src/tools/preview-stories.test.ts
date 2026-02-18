@@ -4,6 +4,7 @@ import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { addPreviewStoriesTool, PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
+import monorepoStoryIndexFixture from '../../fixtures/monorepo-story-index.fixture.json' with { type: 'json' };
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
 
 vi.mock('storybook/internal/csf', () => ({
@@ -628,6 +629,101 @@ describe('previewStoriesTool', () => {
 							title: 'Button',
 							name: 'Primary',
 							previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+						},
+					],
+				},
+			});
+		});
+	});
+
+	describe('Monorepo path resolution', () => {
+		it('should match stories when index.json importPath has no leading ./', async () => {
+			// Simulate monorepo setup where Storybook runs from apps/storybook
+			// but stories live in packages/ — index.json uses ../../packages/...
+			fetchStoryIndexSpy.mockResolvedValue(monorepoStoryIndexFixture);
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'Primary',
+								absoluteStoryPath: `${process.cwd()}/../../packages/design-system/components/Button/Button.stories.tsx`,
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result).toEqual({
+				content: [
+					{
+						type: 'text',
+						text: 'http://localhost:6006/?path=/story/design-system-components-button--primary',
+					},
+				],
+				structuredContent: {
+					stories: [
+						{
+							title: 'Design System / Components / Button',
+							name: 'Primary',
+							previewUrl:
+								'http://localhost:6006/?path=/story/design-system-components-button--primary',
+						},
+					],
+				},
+			});
+		});
+
+		it('should match stories when index.json importPath has leading ./ and computed path does not', async () => {
+			// Simulate running Storybook from root where index.json uses ./stories/...
+			// The computed relative path also starts with ./stories/...
+			fetchStoryIndexSpy.mockResolvedValue(monorepoStoryIndexFixture);
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'Primary',
+								absoluteStoryPath: `${process.cwd()}/stories/Button.stories.tsx`,
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result).toEqual({
+				content: [
+					{
+						type: 'text',
+						text: 'http://localhost:6006/?path=/story/app-stories-button--primary',
+					},
+				],
+				structuredContent: {
+					stories: [
+						{
+							title: 'App / Button',
+							name: 'Primary',
+							previewUrl: 'http://localhost:6006/?path=/story/app-stories-button--primary',
 						},
 					],
 				},

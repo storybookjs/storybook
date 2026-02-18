@@ -49,6 +49,17 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 	);
 
 	const appHtml = appTemplate.replace('// APP_SCRIPT_PLACEHOLDER', previewStoryAppScript);
+
+	/**
+	 * Strips the leading './' from a path if present.
+	 *
+	 * Storybook's index.json may or may not include a './' prefix on importPath
+	 * depending on how Storybook was started (e.g. from the monorepo root vs
+	 * from the Storybook app directory). Stripping the prefix from both sides
+	 * ensures reliable comparison regardless of the working directory.
+	 */
+	const normalizeImportPath = (importPath: string): string => importPath.replace(/^\.\//, '');
+
 	server.resource(
 		{
 			name: PREVIEW_STORIES_RESOURCE_URI,
@@ -123,7 +134,7 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 
 					const foundStory = entriesList.find(
 						(entry) =>
-							entry.importPath === relativePath &&
+							normalizeImportPath(entry.importPath) === normalizeImportPath(relativePath) &&
 							[explicitStoryName, storyNameFromExport(exportName)].includes(entry.name),
 					);
 

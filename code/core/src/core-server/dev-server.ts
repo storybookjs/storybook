@@ -5,6 +5,7 @@ import { logger } from '@storybook/core/node-logger';
 import { MissingBuilderError } from '@storybook/core/server-errors';
 
 import compression from '@polka/compression';
+import assert from 'assert';
 import polka from 'polka';
 import invariant from 'tiny-invariant';
 
@@ -25,9 +26,11 @@ export async function storybookDevServer(options: Options) {
   const [server, core] = await Promise.all([getServer(options), options.presets.apply('core')]);
   const app = polka({ server });
 
+  assert(core?.channelOptions?.wsToken, 'wsToken is required for securing the server channel');
+
   const serverChannel = await options.presets.apply(
     'experimental_serverChannel',
-    getServerChannel(server)
+    getServerChannel(server, core.channelOptions.wsToken)
   );
 
   let indexError: Error | undefined;

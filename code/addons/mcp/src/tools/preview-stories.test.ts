@@ -684,9 +684,9 @@ describe('previewStoriesTool', () => {
 			});
 		});
 
-		it('should match stories when index.json importPath has leading ./ and computed path does not', async () => {
+		it('should match stories when both index.json importPath and computed path have leading ./ and normalization still works', async () => {
 			// Simulate running Storybook from root where index.json uses ./stories/...
-			// The computed relative path also starts with ./stories/...
+			// The computed relative path also starts with ./stories/... and normalization preserves the match
 			fetchStoryIndexSpy.mockResolvedValue(monorepoStoryIndexFixture);
 
 			const request = {

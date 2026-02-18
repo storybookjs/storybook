@@ -98,34 +98,46 @@ export const addWorkaroundResolutions = async ({
   const content = await readFile(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(content);
 
-  const additionalReact19Resolutions = [
-    'nextjs/default-ts',
-    'nextjs/prerelease',
-    'react-native-web-vite/expo-ts',
-  ].includes(key)
-    ? {
-        react: '^19.0.0',
-        'react-dom': '^19.0.0',
-      }
-    : key === 'react-webpack/prerelease-ts'
-      ? {
-          react: packageJson.dependencies.react,
-          'react-dom': packageJson.dependencies['react-dom'],
-        }
-      : key === 'react-rsbuild/default-ts'
-        ? {
-            'react-docgen': '^8.0.2',
-          }
-        : {};
+  let additionalResolutions = {};
+
+  // add additional resolutions for React 19
+  if (
+    [
+      'nextjs/default-ts',
+      'nextjs/prerelease',
+      'react-native-web-vite/expo-ts',
+    ].includes(key)
+  ) {
+    additionalResolutions = {
+      react: '^19.0.0',
+      'react-dom': '^19.0.0',
+    };
+  } else if (key === 'react-webpack/prerelease-ts') {
+    additionalResolutions = {
+      react: packageJson.dependencies.react,
+      'react-dom': packageJson.dependencies['react-dom'],
+    };
+  } else if (key === 'react-rsbuild/default-ts') {
+    additionalResolutions = {
+      'react-docgen': '^8.0.2',
+    };
+  }
+
+  // Next.js v14 and v15 are currently not rolldown compatible so we downgrade to Vite 7
+  if(key === 'nextjs-vite/14-ts' || key === 'nextjs/15-ts') {
+    additionalResolutions = {
+      vite: '^7.3.1',
+    };
+  }
 
   packageJson.resolutions = {
     ...packageJson.resolutions,
-    ...additionalReact19Resolutions,
+    ...additionalResolutions,
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
     // Override vite to v8 beta for vite-based sandboxes to test Vite 8 compatibility
-    ...(isViteSandbox(key) ? { vite: '8.0.0-beta.13' } : {}),
+    ...(isViteSandbox(key) ? { vite: '8.0.0-beta.14' } : {}),
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));

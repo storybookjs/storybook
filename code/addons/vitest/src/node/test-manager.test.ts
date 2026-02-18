@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TestResult } from 'vitest/node';
 
 import { Tag, experimental_MockUniversalStore } from 'storybook/internal/core-server';
 import type {
@@ -73,6 +74,24 @@ const mockIndex = {
       id: 'another--one',
       name: 'One',
       title: 'another/one',
+      importPath: 'path/to/another/file',
+      tags: [Tag.TEST],
+    },
+    'story--two': {
+      type: 'story',
+      subtype: 'story',
+      id: 'story--two',
+      name: 'Two',
+      title: 'story/two',
+      importPath: 'path/to/file',
+      tags: [Tag.TEST],
+    },
+    'another--two': {
+      type: 'story',
+      subtype: 'story',
+      id: 'another--two',
+      name: 'Two B',
+      title: 'another/two',
       importPath: 'path/to/another/file',
       tags: [Tag.TEST],
     },
@@ -255,6 +274,111 @@ describe('TestManager', () => {
       },
     });
     expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^Parent story${DOUBLE_SPACES}`));
+  });
+
+  it('should trigger only selected stories in the same file', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one', 'story--two'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+
+    const regex = setTestNamePattern.mock.calls.find(([arg]) => arg instanceof RegExp)?.[0] as
+      | RegExp
+      | undefined;
+
+    expect(regex).toBeDefined();
+    expect(regex?.test('One')).toBe(true);
+    expect(regex?.test('Two')).toBe(true);
+    expect(regex?.test('Parent story  Test name')).toBe(false);
+  });
+
+  it('should trigger only selected stories across multiple files', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one', 'another--two'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests, true);
+
+    const regex = setTestNamePattern.mock.calls.find(([arg]) => arg instanceof RegExp)?.[0] as
+      | RegExp
+      | undefined;
+
+    expect(regex).toBeDefined();
+    expect(regex?.test('One')).toBe(true);
+    expect(regex?.test('Two B')).toBe(true);
+    expect(regex?.test('Two')).toBe(false);
+  });
+
+  it('should ignore non-requested same-name story results after run', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = { state: 'passed', errors: [] } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one', 'another--two'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'story--one',
+          testResult: passedResult,
+        });
+        testManager.onTestCaseResult({
+          storyId: 'another--one',
+          testResult: passedResult,
+        });
+        testManager.onTestRunEnd({
+          totalTestCount: 2,
+          unhandledErrors: [],
+        });
+      },
+    });
+
+    expect(mockComponentTestStatusStore.set).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ storyId: 'story--one' })])
+    );
+    expect(mockComponentTestStatusStore.set).not.toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ storyId: 'another--one' })])
+    );
+    expect(mockStore.getState().currentRun.totalTestCount).toBe(1);
+  });
+
+  it('should keep child test results when parent story is requested', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = { state: 'passed', errors: [] } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['parent--story'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'parent--story:test',
+          testResult: passedResult,
+        });
+        testManager.onTestRunEnd({
+          totalTestCount: 1,
+          unhandledErrors: [],
+        });
+      },
+    });
+
+    expect(mockComponentTestStatusStore.set).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ storyId: 'parent--story:test' })])
+    );
+    expect(mockStore.getState().currentRun.totalTestCount).toBe(1);
   });
 
   it('should restart Vitest before a test run if coverage is enabled', async () => {

@@ -179,8 +179,24 @@ export class TestManager {
       return;
     }
 
+    const requestedStoryIds = this.store.getState().currentRun.storyIds;
+    if (requestedStoryIds && !this.isRequestedStoryOrChild(storyId, requestedStoryIds)) {
+      // In focused runs, Vitest name filtering can still pick up same-named tests in other files.
+      // Drop those results here so status stores and run summaries only reflect requested stories.
+      return;
+    }
+
     this.batchedTestCaseResults.push({ storyId, testResult, reports });
     this.throttledFlushTestCaseResults();
+  }
+
+  private isRequestedStoryOrChild(storyId: string, requestedStoryIds: string[]) {
+    if (requestedStoryIds.includes(storyId)) {
+      return true;
+    }
+
+    const entry = this.store.getState().index.entries[storyId];
+    return entry?.type === 'story' && !!entry.parent && requestedStoryIds.includes(entry.parent);
   }
 
   /**
@@ -286,18 +302,22 @@ export class TestManager {
 
   onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
     this.throttledFlushTestCaseResults.flush();
-    this.store.setState((s) => ({
-      ...s,
-      currentRun: {
-        ...s.currentRun,
-        // when the test run is finished, we can set the totalTestCount to the actual number of tests run
-        // this number can be lower than the total number of tests we anticipated upfront
-        // e.g. when some tests where skipped without us knowing about it upfront
-        totalTestCount: endResult.totalTestCount,
-        unhandledErrors: endResult.unhandledErrors,
-        finishedAt: Date.now(),
-      },
-    }));
+    this.store.setState((s) => {
+      const focusedRunTotal =
+        s.currentRun.componentTestCount.success + s.currentRun.componentTestCount.error;
+
+      return {
+        ...s,
+        currentRun: {
+          ...s.currentRun,
+          // For focused runs, keep totals aligned with filtered case results.
+          // For full runs, use Vitest's reported total.
+          totalTestCount: s.currentRun.storyIds ? focusedRunTotal : endResult.totalTestCount,
+          unhandledErrors: endResult.unhandledErrors,
+          finishedAt: Date.now(),
+        },
+      };
+    });
   }
 
   onCoverageCollected(coverageSummary: StoreState['currentRun']['coverageSummary']) {

@@ -57,7 +57,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         };
 
         // necessary rolldown specific overrides
-        ensureRolldownOptions(config);
+        // ensureRolldownOptions(config);
       }
     },
     configResolved(config) {

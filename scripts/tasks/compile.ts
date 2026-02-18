@@ -7,7 +7,7 @@ import { exec } from '../utils/exec';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
 
 // The amount of VCPUs for the check task on CI is 4 (large resource)
-const amountOfVCPUs = 3;
+const amountOfVCPUs = 2;
 
 const parallel = `--parallel=${process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks}`;
 

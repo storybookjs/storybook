@@ -1,3 +1,7 @@
+## 8.6.17
+
+- Harden websocket connection
+
 ## 8.6.16
 
 - No-op release. No changes.

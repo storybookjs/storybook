@@ -13,7 +13,8 @@ export function isValidToken(token: string | null, expectedToken: string): boole
   const a = Buffer.from(token, 'utf8');
   const b = Buffer.from(expectedToken, 'utf8');
   try {
-    return a.length === b.length && timingSafeEqual(a, b);
+    // TODO: Remove any types as soon as @types/node is updated
+    return a.length === b.length && timingSafeEqual(a as any, b as any);
   } catch {
     return false;
   }

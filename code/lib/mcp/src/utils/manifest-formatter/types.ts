@@ -1,4 +1,4 @@
-import type { AllManifests, ComponentManifest, Doc } from '../../types.ts';
+import type { AllManifests, ComponentManifest, Doc, SourceManifests } from '../../types.ts';
 
 /**
  * Maximum length for a summary before truncation.
@@ -33,6 +33,14 @@ export interface ManifestFormatter {
 	 * @returns Formatted string representation of the component list
 	 */
 	formatManifestsToLists(manifests: AllManifests): string;
+
+	/**
+	 * Format multi-source manifests into grouped lists.
+	 * Each source is displayed with a heading and its components/docs listed underneath.
+	 * @param manifests - The multi-source manifests to format
+	 * @returns Formatted string representation grouped by source
+	 */
+	formatMultiSourceManifestsToLists(manifests: SourceManifests[]): string;
 
 	/**
 	 * Format a single story's documentation.

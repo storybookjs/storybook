@@ -9,14 +9,28 @@ import { GET_STORY_TOOL_NAME } from './get-documentation-for-story.ts';
 
 export const GET_TOOL_NAME = 'get-documentation';
 
-const GetDocumentationInput = v.object({
-	id: v.string(),
-});
+const BaseInput = {
+	id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
+};
+
+const StorybookIdField = {
+	storybookId: v.pipe(
+		v.string(),
+		v.description(
+			'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.',
+		),
+	),
+};
 
 export async function addGetDocumentationTool(
 	server: McpServer<any, StorybookContext>,
 	enabled?: Parameters<McpServer<any, StorybookContext>['tool']>[0]['enabled'],
+	options?: { multiSource?: boolean },
 ) {
+	const schema = options?.multiSource
+		? v.object({ ...BaseInput, ...StorybookIdField })
+		: v.object(BaseInput);
+
 	server.tool(
 		{
 			name: GET_TOOL_NAME,
@@ -26,22 +40,61 @@ export async function addGetDocumentationTool(
 Returns the first ${MAX_STORIES_TO_SHOW} stories with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${GET_STORY_TOOL_NAME} tool to fetch the story documentation for the specific story variant you need.
 
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`,
-			schema: GetDocumentationInput,
+			schema,
 			enabled,
 		},
-		async (input: v.InferOutput<typeof GetDocumentationInput>) => {
+		async (input: { id: string; storybookId?: string }) => {
 			try {
+				const ctx = server.ctx.custom;
+				const format = ctx?.format ?? 'markdown';
+				const { id, storybookId } = input;
+				const sources = ctx?.sources;
+				const isMultiSource = sources && sources.some((s) => s.url);
+
+				// In multi-source mode, validate and resolve the source
+				let source;
+				if (isMultiSource) {
+					if (!storybookId) {
+						const availableSources = sources.map((s) => s.id).join(', ');
+						return {
+							content: [
+								{
+									type: 'text' as const,
+									text: `storybookId is required. Available sources: ${availableSources}. Use the ${LIST_TOOL_NAME} tool to see available sources.`,
+								},
+							],
+							isError: true,
+						};
+					}
+
+					source = sources.find((s) => s.id === storybookId);
+					if (!source) {
+						const availableSources = sources.map((s) => s.id).join(', ');
+						return {
+							content: [
+								{
+									type: 'text' as const,
+									text: `Storybook source not found: "${storybookId}". Available sources: ${availableSources}. Use the ${LIST_TOOL_NAME} tool to see available sources.`,
+								},
+							],
+							isError: true,
+						};
+					}
+				}
+
 				const { componentManifest, docsManifest } = await getManifests(
-					server.ctx.custom?.request,
-					server.ctx.custom?.manifestProvider,
+					ctx?.request,
+					ctx?.manifestProvider,
+					source,
 				);
 
-				const component = componentManifest.components[input.id];
-				const docsEntry = docsManifest?.docs[input.id];
+				const component = componentManifest.components[id];
+				const docsEntry = docsManifest?.docs[id];
 
 				if (!component && !docsEntry) {
-					await server.ctx.custom?.onGetDocumentation?.({
-						context: server.ctx.custom,
+					const suffix = storybookId ? ` in source "${storybookId}"` : '';
+					await ctx?.onGetDocumentation?.({
+						context: ctx,
 						input,
 					});
 
@@ -49,7 +102,7 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 						content: [
 							{
 								type: 'text' as const,
-								text: `Component or Docs Entry not found: "${input.id}". Use the ${LIST_TOOL_NAME} tool to see available components and documentation entries.`,
+								text: `Component or Docs Entry not found: "${id}"${suffix}. Use the ${LIST_TOOL_NAME} tool to see available components and documentation entries.`,
 							},
 						],
 						isError: true,
@@ -57,14 +110,12 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 				}
 
 				const documentation = component ?? docsEntry!;
-
-				const format = server.ctx.custom?.format ?? 'markdown';
 				const text = component
 					? formatComponentManifest(documentation as ComponentManifest, format)
 					: formatDocsManifest(documentation as Doc, format);
 
-				await server.ctx.custom?.onGetDocumentation?.({
-					context: server.ctx.custom,
+				await ctx?.onGetDocumentation?.({
+					context: ctx,
 					input,
 					foundDocumentation: documentation,
 					resultText: text,

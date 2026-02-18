@@ -7,6 +7,29 @@ import * as v from 'valibot';
 export type OutputFormat = 'xml' | 'markdown';
 
 /**
+ * Represents a single Storybook source (local or remote).
+ */
+export type Source = {
+	/** Unique identifier for this source (e.g., 'local', 'tetra') */
+	id: string;
+	/** Human-readable title (e.g., 'Local', 'Tetra Design System') */
+	title: string;
+	/** Remote URL, undefined for local source */
+	url?: string;
+};
+
+/**
+ * All manifests for a single source.
+ */
+export type SourceManifests = {
+	source: Source;
+	componentManifest: ComponentManifestMap;
+	docsManifest?: DocsManifestMap;
+	/** Error message if fetching this source failed */
+	error?: string;
+};
+
+/**
  * Custom context passed to MCP server and tools.
  * Contains the request object and optional manifest provider.
  */
@@ -23,13 +46,22 @@ export type StorybookContext = {
 	/**
 	 * Optional function to provide custom manifest retrieval logic.
 	 * If provided, this function will be called instead of the default fetch-based provider.
-	 * The function receives the request object and a path to the manifest file,
-	 * and should return the manifest as a string.
+	 * The function receives the request object, a path to the manifest file, and optionally
+	 * a source (in multi-source mode).
 	 * The default provider requires a request object and constructs the manifest URL from the request origin,
 	 * replacing /mcp with /manifests/components.json.
 	 * Custom providers can use the request parameter to determine the manifest source, or ignore it entirely.
 	 */
-	manifestProvider?: (request: Request | undefined, path: string) => Promise<string>;
+	manifestProvider?: (
+		request: Request | undefined,
+		path: string,
+		source?: Source,
+	) => Promise<string>;
+	/**
+	 * Sources configuration for multi-source mode.
+	 * When provided, tools will fetch and display manifests grouped by source.
+	 */
+	sources?: Source[];
 	/**
 	 * Optional handler called when list-all-documentation tool is invoked.
 	 * Receives the context and the component manifest.
@@ -38,6 +70,8 @@ export type StorybookContext = {
 		context: StorybookContext;
 		manifests: AllManifests;
 		resultText: string;
+		/** Present in multi-source mode — all source manifests including errors */
+		sources?: SourceManifests[];
 	}) => void | Promise<void>;
 	/**
 	 * Optional handler called when get-documentation tool is invoked.
@@ -46,7 +80,7 @@ export type StorybookContext = {
 	onGetDocumentation?: (
 		params: {
 			context: StorybookContext;
-			input: { id: string };
+			input: { id: string; storybookId?: string };
 		} & (
 			| { foundDocumentation: ComponentManifest | Doc; resultText: string }
 			| { foundDocumentation?: never; resultText?: never }

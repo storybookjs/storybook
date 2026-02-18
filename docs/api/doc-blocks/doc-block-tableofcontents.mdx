@@ -1,0 +1,95 @@
+---
+title: 'TableOfContents'
+sidebar: 
+    order: 18
+    title: TableOfContents
+---
+
+The `TableOfContents` doc block displays an automatically generated list of links to other headings on the current page in the format of a table.
+
+<Callout variant="info">
+    To use the storybook "sidebar" table of contents layout, it should be configured with `parameters.doc.toc`
+</Callout>
+
+{/* prettier-ignore-start */}
+
+```md title="ButtonDocs.mdx"
+import { Meta, TableOfContents } from '@storybook/addon-docs/blocks';
+
+<Meta title="Docs/TableOfContents">
+
+## Table of Contents
+
+<TableOfContents title="Example Toc" headingSelector="h2,h3"/>
+
+## Section 1
+
+## Section 2
+
+```
+
+{/* prettier-ignore-end */}
+
+### `TableOfContents`
+
+```js
+import { TableOfContents } from '@storybook/addon-docs/blocks';
+```
+
+TableOfContents accepts the following props:
+
+### `title`
+
+Type: `string | JSX.Element`
+
+Determine the title to be displayed above the table of contents. 
+
+
+### `disable`
+
+Type: `boolean`
+
+Enables or disables the rendering of the table.
+
+
+### `headingSelector`
+
+Type: `string`
+Default: `h3`
+
+CSS selector to determine which headings to include in the table of contents.
+
+### `contentsSelector`
+
+Type: `string`
+Default: `.sbdocs-content`
+
+CSS selector to determine the container that holds the content to be scanned for headings.
+
+### `ignoreSelector`
+
+Type: `string`
+Default: `.docs-story *, .skip-toc`
+
+CSS selector to determine which elements to ignore when scanning for headings.
+
+### `className`
+
+Type: `string`
+
+Apply custom CSS classes to the table of contents' wrapping element.
+
+### `unsafeTocbotOptions`
+
+Type: `object`
+
+Additional options to be passed directly to the underlying Tocbot. 
+Use as an escape hatch for features not yet supported by the TableOfContents component. 
+
+### `channel`
+
+Type: `Channel`
+
+Storybook's event channel to be used for navigation when clicking items in the table.
+
+

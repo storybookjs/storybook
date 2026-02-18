@@ -100,6 +100,13 @@ export const addWorkaroundResolutions = async ({
 
   let additionalResolutions = {};
 
+  if(isViteSandbox(key)) {
+    // Override vite to v8 beta for vite-based sandboxes to test Vite 8 compatibility
+    additionalResolutions = {
+      vite: '8.0.0-beta.14',
+    };
+  }
+
   // add additional resolutions for React 19
   if (
     [
@@ -124,7 +131,7 @@ export const addWorkaroundResolutions = async ({
   }
 
   // Next.js v14 and v15 are currently not rolldown compatible so we downgrade to Vite 7
-  if(key === 'nextjs-vite/14-ts' || key === 'nextjs/15-ts') {
+  if(key === 'nextjs-vite/14-ts' || key === 'nextjs-vite/15-ts') {
     additionalResolutions = {
       vite: '^7.3.1',
     };
@@ -132,12 +139,10 @@ export const addWorkaroundResolutions = async ({
 
   packageJson.resolutions = {
     ...packageJson.resolutions,
-    ...additionalResolutions,
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
-    // Override vite to v8 beta for vite-based sandboxes to test Vite 8 compatibility
-    ...(isViteSandbox(key) ? { vite: '8.0.0-beta.14' } : {}),
+    ...additionalResolutions,
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));

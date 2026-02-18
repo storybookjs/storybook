@@ -22,6 +22,7 @@ export function ensureRolldownOptions(config: UserConfig) {
     return;
   }
 
+  config.build ??= {};
   // @ts-expect-error - rolldownOptions will only exist with Vite 8+
   const rolldown = (config.build.rolldownOptions ??= {});
   const output = (rolldown.output ??= {});

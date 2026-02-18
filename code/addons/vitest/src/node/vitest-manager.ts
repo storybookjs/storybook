@@ -103,7 +103,7 @@ export class VitestManager {
       for (const file of configFiles) {
         const maybe = find.any([file], { cwd: location, last: getProjectRoot() });
         if (maybe && existsSync(maybe)) {
-          firstVitestConfig ??= maybe;
+          firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
             vitestWorkspaceConfig = dirname(maybe);

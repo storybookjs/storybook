@@ -729,5 +729,96 @@ describe('previewStoriesTool', () => {
 				},
 			});
 		});
+
+		it('should match stories when index.json importPath has no ./ and computed path has ./', async () => {
+			// index.json stores "stories/Utils/Helpers.stories.tsx" (no ./ prefix)
+			// computed relative path would be "./stories/Utils/Helpers.stories.tsx"
+			fetchStoryIndexSpy.mockResolvedValue(monorepoStoryIndexFixture);
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'Default',
+								absoluteStoryPath: `${process.cwd()}/stories/Utils/Helpers.stories.tsx`,
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result).toEqual({
+				content: [
+					{
+						type: 'text',
+						text: 'http://localhost:6006/?path=/story/utils-helpers--default',
+					},
+				],
+				structuredContent: {
+					stories: [
+						{
+							title: 'Utils / Helpers',
+							name: 'Default',
+							previewUrl: 'http://localhost:6006/?path=/story/utils-helpers--default',
+						},
+					],
+				},
+			});
+		});
+
+		it('should match stories when path has dot-segments like ./stories/../stories/', async () => {
+			// dot-segments should be canonicalized: ./stories/../stories/Button.stories.tsx -> ./stories/Button.stories.tsx
+			fetchStoryIndexSpy.mockResolvedValue(monorepoStoryIndexFixture);
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'Primary',
+								absoluteStoryPath: `${process.cwd()}/stories/../stories/Button.stories.tsx`,
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result).toEqual({
+				content: [
+					{
+						type: 'text',
+						text: 'http://localhost:6006/?path=/story/app-stories-button--primary',
+					},
+				],
+				structuredContent: {
+					stories: [
+						{
+							title: 'App / Button',
+							name: 'Primary',
+							previewUrl: 'http://localhost:6006/?path=/story/app-stories-button--primary',
+						},
+					],
+				},
+			});
+		});
 	});
 });

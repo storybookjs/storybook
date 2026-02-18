@@ -1,6 +1,7 @@
 import type { McpServer } from 'tmcp';
 import path from 'node:path';
 import url from 'node:url';
+import { normalizeStoryPath } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
@@ -50,9 +51,13 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 
 	const appHtml = appTemplate.replace('// APP_SCRIPT_PLACEHOLDER', previewStoryAppScript);
 
-	// Normalize so it matches index.json entries in monorepo setups
-	// Eg './../../packages/Button.stories.tsx' -> '../../packages/Button.stories.tsx'
-	const normalizeImportPath = (importPath: string): string => importPath.replace(/^\.\//, '');
+	// Keep normalization consistent with Storybook core importPath handling:
+	// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L403
+	// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L434-L441
+	const normalizeImportPath = (importPath: string): string => {
+		const normalized = path.posix.normalize(slash(importPath));
+		return slash(normalizeStoryPath(normalized));
+	};
 
 	server.resource(
 		{
@@ -116,7 +121,9 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 
 					const normalizedCwd = slash(process.cwd());
 					const normalizedAbsolutePath = slash(absoluteStoryPath);
-					const relativePath = `./${path.posix.relative(normalizedCwd, normalizedAbsolutePath)}`;
+					const relativePath = normalizeImportPath(
+						path.posix.relative(normalizedCwd, normalizedAbsolutePath),
+					);
 
 					logger.debug('Searching for:');
 					logger.debug({
@@ -128,7 +135,7 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 
 					const foundStory = entriesList.find(
 						(entry) =>
-							normalizeImportPath(entry.importPath) === normalizeImportPath(relativePath) &&
+							normalizeImportPath(entry.importPath) === relativePath &&
 							[explicitStoryName, storyNameFromExport(exportName)].includes(entry.name),
 					);
 

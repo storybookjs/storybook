@@ -16,6 +16,14 @@
 			"importPath": "./stories/Button.stories.tsx",
 			"type": "story",
 			"tags": ["component"]
+		},
+		"utils-helpers--default": {
+			"id": "utils-helpers--default",
+			"title": "Utils / Helpers",
+			"name": "Default",
+			"importPath": "stories/Utils/Helpers.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
 		}
 	}
 }

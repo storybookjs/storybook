@@ -18,8 +18,9 @@ test('manifests generates correct id, name, description and examples ', async ()
     (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
   const result = await manifests(undefined, { manifestEntries } as any);
+  const { meta, ...components } = result?.components ?? {};
 
-  expect(result?.components).toMatchInlineSnapshot(`
+  expect(components).toMatchInlineSnapshot(`
     {
       "components": {
         "example-button": {
@@ -525,7 +526,9 @@ test('should create component manifest when only attached-mdx docs have manifest
     },
   ];
 
-  expect(await manifests(undefined, { manifestEntries } as any)).toMatchInlineSnapshot(`
+  const result = await manifests(undefined, { manifestEntries } as any);
+  const { meta: _meta, ...components } = result?.components ?? {};
+  expect({ components }).toMatchInlineSnapshot(`
     {
       "components": {
         "components": {

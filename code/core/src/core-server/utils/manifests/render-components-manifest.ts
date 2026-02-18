@@ -58,6 +58,13 @@ export function renderComponentsManifest(
     docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
 
+  // Read generation meta from manifest
+  const meta = (manifest as Record<string, any>)?.meta as
+    | { reactDocgen?: string; durationMs?: number }
+    | undefined;
+  const activeEngine = meta?.reactDocgen ?? 'react-docgen';
+  const durationMs = meta?.durationMs;
+
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
   const allPill = `<a class="filter-pill all" data-k="all" href="#filter-all">All</a>`;
   const compErrorsPill =
@@ -367,8 +374,7 @@ export function renderComponentsManifest(
       .tg-stories:checked + label.as-toggle,
       .tg-docs:checked + label.as-toggle,
       .tg-content:checked + label.as-toggle,
-      .tg-props:checked + label.as-toggle,
-      .tg-rdt:checked + label.as-toggle {
+      .tg-props:checked + label.as-toggle {
           box-shadow: 0 0 0 var(--active-ring) currentColor;
           border-color: currentColor;
       }
@@ -408,10 +414,6 @@ export function renderComponentsManifest(
       }
 
       .tg-props:checked ~ .panels .panel-props {
-          display: grid;
-      }
-
-      .tg-rdt:checked ~ .panels .panel-rdt {
           display: grid;
       }
 
@@ -638,8 +640,7 @@ export function renderComponentsManifest(
       .card > .tg-stories:checked ~ .panels,
       .card > .tg-docs:checked ~ .panels,
       .card > .tg-content:checked ~ .panels,
-      .card > .tg-props:checked ~ .panels,
-      .card > .tg-rdt:checked ~ .panels {
+      .card > .tg-props:checked ~ .panels {
           margin: 10px 0;
       }
 
@@ -650,8 +651,7 @@ export function renderComponentsManifest(
           .card:has(.tg-stories:checked) label[for$='-stories'],
           .card:has(.tg-docs:checked) label[for$='-docs'],
           .card:has(.tg-content:checked) label[for$='-content'],
-          .card:has(.tg-props:checked) label[for$='-props'],
-          .card:has(.tg-rdt:checked) label[for$='-rdt'] {
+          .card:has(.tg-props:checked) label[for$='-props'] {
               box-shadow: 0 0 0 1px currentColor;
               border-color: currentColor;
           }
@@ -704,6 +704,28 @@ export function renderComponentsManifest(
 </header>
 <main>
   <div class="wrap">
+    ${
+      activeEngine === 'react-docgen'
+        ? `<div class="note info" style="margin-bottom: 16px;">
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default).${durationMs != null ? ` Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>.` : ''} For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <pre><code>typescript: {
+  reactDocgen: 'react-docgen-typescript',
+}</code></pre>
+            Note: <code>react-docgen-typescript</code> can be slower. If performance is acceptable for your project, it generally produces better results.
+          </div>`
+        : activeEngine === 'react-docgen-typescript' && durationMs != null && durationMs > 7500
+          ? `<div class="note err" style="margin-bottom: 16px;">
+              <strong>Performance warning:</strong> <code>react-docgen-typescript</code> took <strong>${(durationMs / 1000).toFixed(1)}s</strong> to generate the manifest. This delay applies every time the manifest is used by an agent. Consider switching to the faster <code>react-docgen</code> in your <code>main.ts</code>:
+              <pre><code>typescript: {
+  reactDocgen: 'react-docgen',
+}</code></pre>
+            </div>`
+          : durationMs != null
+            ? `<div class="note ok" style="margin-bottom: 16px;">
+                Using <code>${activeEngine}</code>. Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>.
+              </div>`
+            : ''
+    }
     ${
       grid
         ? `<h2 class="section-title">Components</h2>
@@ -896,24 +918,30 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
       ? `<label for="${slug}-docs" class="badge ${a.docsErrors > 0 ? 'err' : 'ok'} as-toggle">${a.docsErrors > 0 ? `${a.docsErrors}/${a.totalDocs} doc errors` : `${a.totalDocs} ${plural(a.totalDocs, 'doc')}`}</label>`
       : '';
 
-  // When there is no prop type error, try to read prop types from reactDocgen if present
+  // Determine which docgen engine produced results (they are now mutually exclusive)
   const reactDocgen =
     !a.hasPropTypeError && 'reactDocgen' in c ? (c.reactDocgen as DocgenDoc) : undefined;
+  const reactDocgenTypescriptData =
+    !a.hasPropTypeError && 'reactDocgenTypescript' in c
+      ? (c.reactDocgenTypescript as RdtComponentDoc)
+      : undefined;
+
   const parsedDocgen = reactDocgen ? parseReactDocgen(reactDocgen) : undefined;
-  const propEntries = parsedDocgen ? Object.entries(parsedDocgen.props ?? {}) : [];
+  const parsedReactDocgenTypescript = reactDocgenTypescriptData
+    ? parseReactDocgenTypescript(reactDocgenTypescriptData)
+    : undefined;
+
+  // Use whichever engine is active
+  const activeParsed = parsedDocgen ?? parsedReactDocgenTypescript;
+  const activeEngine = parsedDocgen
+    ? 'react-docgen'
+    : parsedReactDocgenTypescript
+      ? 'react-docgen-typescript'
+      : '';
+  const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
       ? `<label for="${slug}-props" class="badge ok as-toggle">${propEntries.length} ${plural(propEntries.length, 'prop type')}</label>`
-      : '';
-
-  // react-docgen-typescript results (alongside react-docgen)
-  const rdtData =
-    'reactDocgenTypescript' in c ? (c.reactDocgenTypescript as RdtComponentDoc) : undefined;
-  const parsedRdt = rdtData ? parseReactDocgenTypescript(rdtData) : undefined;
-  const rdtPropEntries = parsedRdt ? Object.entries(parsedRdt.props ?? {}) : [];
-  const rdtBadge =
-    rdtPropEntries.length > 0
-      ? `<label for="${slug}-rdt" class="badge ok as-toggle">${rdtPropEntries.length} rdt ${plural(rdtPropEntries.length, 'prop')}</label>`
       : '';
 
   const primaryBadge = componentErrorBadge || propTypesBadge;
@@ -931,25 +959,6 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
             const doc =
               ['/**', ...description.split('\n').map((line) => ` * ${line}`), ' */'].join('\n') +
               '\n';
-            return `${description ? doc : ''}${propName}${optional}: ${t}${def}`;
-          })
-          .join('\n\n')
-      : '';
-
-  const rdtPropsCode =
-    rdtPropEntries.length > 0
-      ? rdtPropEntries
-          .sort(([aName], [bName]) => aName.localeCompare(bName))
-          .map(([propName, info]) => {
-            const description = (info?.description ?? '').trim();
-            const t = (info?.type ?? 'any').trim();
-            const optional = info?.required ? '' : '?';
-            const defaultVal = (info?.defaultValue ?? '').trim();
-            const def = defaultVal ? ` = ${defaultVal}` : '';
-            const doc =
-              ['/**', ...description.split('\n').map((line: string) => ` * ${line}`), ' */'].join(
-                '\n'
-              ) + '\n';
             return `${description ? doc : ''}${propName}${optional}: ${t}${def}`;
           })
           .join('\n\n')
@@ -981,7 +990,6 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
       <h2><span class="status-dot ${statusDot}"></span> ${esc(c.name || key)}</h2>
       <div class="badges">
         ${primaryBadge}
-        ${rdtBadge}
         ${infosBadge}
         ${storiesBadge}
         ${docsBadge}
@@ -999,7 +1007,6 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
   ${a.totalStories > 0 ? `<input id="${slug}-stories" class="tg tg-stories" type="checkbox" hidden />` : ''}
   ${a.totalDocs > 0 ? `<input id="${slug}-docs" class="tg tg-docs" type="checkbox" hidden />` : ''}
   ${!a.hasPropTypeError && propEntries.length > 0 ? `<input id="${slug}-props" class="tg tg-props" type="checkbox" hidden />` : ''}
-  ${rdtPropEntries.length > 0 ? `<input id="${slug}-rdt" class="tg tg-rdt" type="checkbox" hidden />` : ''}
 
   <div class="panels">
     ${
@@ -1024,28 +1031,24 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
         <div class="panel panel-props">
           <div class="note ok">
             <div class="row">
-              <span class="ex-name">Prop types <small>(react-docgen)</small></span>
+              <span class="ex-name">Prop types <small>(${activeEngine})</small></span>
               <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
             </div>
-            <pre><code>Component: ${reactDocgen?.definedInFile ? esc(path.relative(process.cwd(), reactDocgen.definedInFile)) : ''}${reactDocgen?.exportName ? '::' + esc(reactDocgen?.exportName) : ''}</code></pre>
+            <pre><code>Component: ${
+              reactDocgen?.definedInFile
+                ? esc(path.relative(process.cwd(), reactDocgen.definedInFile))
+                : reactDocgenTypescriptData?.filePath
+                  ? esc(path.relative(process.cwd(), reactDocgenTypescriptData.filePath))
+                  : ''
+            }${
+              reactDocgen?.exportName
+                ? '::' + esc(reactDocgen.exportName)
+                : reactDocgenTypescriptData?.exportName
+                  ? '::' + esc(reactDocgenTypescriptData.exportName)
+                  : ''
+            }</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>${esc(propsCode)}</code></pre>
-          </div>
-        </div>`
-        : ''
-    }
-    ${
-      rdtPropEntries.length > 0
-        ? `
-        <div class="panel panel-rdt">
-          <div class="note ok">
-            <div class="row">
-              <span class="ex-name">Prop types <small>(react-docgen-typescript)</small></span>
-              <span class="badge ok">${rdtPropEntries.length} ${plural(rdtPropEntries.length, 'prop')}</span>
-            </div>
-            <pre><code>Component: ${rdtData?.filePath ? esc(path.relative(process.cwd(), rdtData.filePath)) : ''}${rdtData?.exportName ? '::' + esc(rdtData.exportName) : ''} (displayName: ${esc(rdtData?.displayName ?? '')})</code></pre>
-            <pre><code>Props:</code></pre>
-            <pre><code>${esc(rdtPropsCode)}</code></pre>
           </div>
         </div>`
         : ''

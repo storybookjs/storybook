@@ -293,7 +293,7 @@ export function getReactDocgenImporter() {
   });
 }
 
-export function getImportTag(docgen: DocObj) {
+export function getImportTag(docgen: { description?: string }) {
   const jsdocComment = docgen?.description;
   const tags = jsdocComment ? extractJSDocInfo(jsdocComment).tags : undefined;
   return tags?.import?.[0];

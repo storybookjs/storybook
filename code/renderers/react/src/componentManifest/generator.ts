@@ -13,7 +13,7 @@ import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
-import { getComponents, getImports } from './getComponentImports';
+import { type TypescriptOptions, getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
 import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
@@ -104,9 +104,15 @@ export const manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[] }
-> = async (existingManifests = {}, { manifestEntries }) => {
+> = async (existingManifests = {}, options) => {
+  const { manifestEntries, presets } = options;
+  const typescriptOptions =
+    (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
+
   invalidateCache();
   invalidateParser();
+
+  const startTime = performance.now();
 
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
@@ -136,7 +142,11 @@ export const manifests: PresetPropertyFn<
       const id = entry.id.split('--')[0];
       const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-      const allComponents = getComponents({ csf, storyFilePath: absoluteImportPath });
+      const allComponents = getComponents({
+        csf,
+        storyFilePath: absoluteImportPath,
+        typescriptOptions,
+      });
       const component = findMatchingComponent(
         allComponents,
         componentName,
@@ -160,7 +170,9 @@ export const manifests: PresetPropertyFn<
         jsDocTags: {},
       } satisfies Partial<ComponentManifest>;
 
-      if (!component?.reactDocgen) {
+      const hasDocgen = component?.reactDocgen || component?.reactDocgenTypescript;
+
+      if (!hasDocgen) {
         const error = !csf._meta?.component
           ? {
               name: 'No component found',
@@ -183,30 +195,42 @@ export const manifests: PresetPropertyFn<
         };
       }
 
+      // Extract description from whichever engine is active
       const docgenResult = component.reactDocgen;
-      const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
-      const { description, summary, jsDocTags } = extractComponentDescription(csf, docgen);
+      const docgen = docgenResult?.type === 'success' ? docgenResult.data : undefined;
+      const rdtDoc = component.reactDocgenTypescript;
+
+      // Use react-docgen description if available, fall back to RDT description
+      const docgenDescription = docgen?.description ?? rdtDoc?.description;
+      const { description, summary, jsDocTags } = extractComponentDescription(
+        csf,
+        docgenDescription ? ({ description: docgenDescription } as DocObj) : undefined
+      );
 
       return {
         ...base,
         description,
         summary,
         import: imports,
-        reactDocgen: docgen,
-        ...(component.reactDocgenTypescript
-          ? { reactDocgenTypescript: component.reactDocgenTypescript }
-          : {}),
+        ...(docgen ? { reactDocgen: docgen } : {}),
+        ...(rdtDoc ? { reactDocgenTypescript: rdtDoc } : {}),
         jsDocTags,
-        error: docgenResult.type === 'error' ? docgenResult.error : undefined,
+        error: docgenResult?.type === 'error' ? docgenResult.error : undefined,
       };
     })
     .filter((component) => component !== undefined);
+
+  const durationMs = Math.round(performance.now() - startTime);
 
   return {
     ...existingManifests,
     components: {
       v: 0,
       components: Object.fromEntries(components.map((component) => [component.id, component])),
+      meta: {
+        reactDocgen: typescriptOptions.reactDocgen ?? 'react-docgen',
+        durationMs,
+      },
     },
   };
 };

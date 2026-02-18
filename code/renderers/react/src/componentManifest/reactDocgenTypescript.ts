@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import {
   type ComponentDoc,
   type FileParser,
+  type ParserOptions,
   type PropItem,
   withCompilerOptions,
 } from 'react-docgen-typescript';
@@ -22,15 +23,15 @@ export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
  * - CSS-in-JS system props (Panda CSS, styled-system, Stitches style props)
  *
  * The heuristic: when a single source file in `node_modules` or ending in `.d.ts` contributes more
- * than {@link SYSTEM_PROP_SOURCE_THRESHOLD} props, all props from that source are filtered.
+ * than {@link LARGE_NON_USER_SOURCE_THRESHOLD} props, all props from that source are filtered.
  * User-authored `.ts` files are never filtered.
  */
-const SYSTEM_PROP_SOURCE_THRESHOLD = 30;
+const LARGE_NON_USER_SOURCE_THRESHOLD = 30;
 
 const getPropSource = (prop: PropItem): string | undefined =>
   prop.parent?.fileName ?? prop.declarations?.[0]?.fileName;
 
-const getSystemPropSources = (props: Record<string, PropItem>): Set<string> => {
+const getLargeNonUserPropSources = (props: Record<string, PropItem>): Set<string> => {
   const countBySource = new Map<string, number>();
   for (const prop of Object.values(props)) {
     const source = getPropSource(prop);
@@ -38,13 +39,13 @@ const getSystemPropSources = (props: Record<string, PropItem>): Set<string> => {
       countBySource.set(source, (countBySource.get(source) ?? 0) + 1);
     }
   }
-  const systemSources = new Set<string>();
+  const largeNonUserSources = new Set<string>();
   for (const [source, count] of countBySource) {
-    if (count > SYSTEM_PROP_SOURCE_THRESHOLD) {
-      systemSources.add(source);
+    if (count > LARGE_NON_USER_SOURCE_THRESHOLD) {
+      largeNonUserSources.add(source);
     }
   }
-  return systemSources;
+  return largeNonUserSources;
 };
 
 /**
@@ -150,41 +151,58 @@ function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): M
  * modified files are re-parsed. This keeps prop extraction correct across HMR cycles without the
  * cost of a full program rebuild.
  */
-let compilerOptions: ts.CompilerOptions | undefined;
-let fileNames: string[] | undefined;
+let cachedCompilerOptions: ts.CompilerOptions | undefined;
+let cachedFileNames: string[] | undefined;
 let previousProgram: ts.Program | undefined;
 let parser: { program: ts.Program; fileParser: FileParser } | undefined;
+let cachedParserOptionsKey: string | undefined;
 
 /** Rebuild the TS program incrementally so that file changes are picked up on the next parse. */
 export function invalidateParser() {
   parser = undefined;
-  compilerOptions = undefined;
-  fileNames = undefined;
+  cachedCompilerOptions = undefined;
+  cachedFileNames = undefined;
 }
 
-function getParser() {
+function getParser(userOptions?: ParserOptions) {
+  // Rebuild parser if options changed
+  const optionsKey = JSON.stringify(userOptions ?? {});
+  if (parser && cachedParserOptionsKey !== optionsKey) {
+    parser = undefined;
+  }
+
   if (!parser) {
     const configPath = findTsconfigPath(process.cwd());
-    compilerOptions = { noErrorTruncation: true, strict: true };
+    cachedCompilerOptions = { noErrorTruncation: true, strict: true };
 
     if (configPath) {
       const { config } = ts.readConfigFile(configPath, ts.sys.readFile);
       const parsed = ts.parseJsonConfigFileContent(config, ts.sys, dirname(configPath));
-      compilerOptions = { ...parsed.options, noErrorTruncation: true };
-      fileNames = parsed.fileNames;
+      cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
+      cachedFileNames = parsed.fileNames;
     }
 
-    const program = ts.createProgram(fileNames ?? [], compilerOptions, undefined, previousProgram);
+    const program = ts.createProgram(
+      cachedFileNames ?? [],
+      cachedCompilerOptions,
+      undefined,
+      previousProgram
+    );
     previousProgram = program;
+
+    const parserOptions: ParserOptions = {
+      shouldExtractLiteralValuesFromEnum: true,
+      shouldRemoveUndefinedFromOptional: true,
+      ...userOptions,
+      // Always force savePropValueAsString so default values are in a consistent format
+      savePropValueAsString: true,
+    };
 
     parser = {
       program,
-      fileParser: withCompilerOptions(compilerOptions, {
-        shouldExtractLiteralValuesFromEnum: true,
-        shouldRemoveUndefinedFromOptional: true,
-        savePropValueAsString: true,
-      }) as FileParser,
+      fileParser: withCompilerOptions(cachedCompilerOptions, parserOptions) as FileParser,
     };
+    cachedParserOptionsKey = optionsKey;
   }
   return parser;
 }
@@ -219,8 +237,8 @@ export function matchComponentDoc(
  * `invalidateCache()`. The underlying TS program is a long-lived singleton.
  */
 export const parseWithReactDocgenTypescript = cached(
-  (filePath: string): ComponentDocWithExportName[] => {
-    const { program, fileParser } = getParser();
+  (filePath: string, userOptions?: ParserOptions): ComponentDocWithExportName[] => {
+    const { program, fileParser } = getParser(userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
@@ -230,7 +248,7 @@ export const parseWithReactDocgenTypescript = cached(
     const exportNameMap = sourceFile ? getExportNameMap(checker, sourceFile) : new Map();
 
     return docs.map((doc) => {
-      const systemSources = getSystemPropSources(doc.props);
+      const largeNonUserSources = getLargeNonUserPropSources(doc.props);
       return {
         ...doc,
         // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
@@ -240,7 +258,7 @@ export const parseWithReactDocgenTypescript = cached(
         props: Object.fromEntries(
           Object.entries(doc.props).filter(([, prop]) => {
             const source = getPropSource(prop);
-            return !source || !systemSources.has(source);
+            return !source || !largeNonUserSources.has(source);
           })
         ),
       };

@@ -1,3 +1,7 @@
+## 9.1.19
+
+- Harden websocket connection
+
 ## 9.1.18
 
 - No-op release. No changes.

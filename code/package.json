@@ -329,5 +329,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "7.6.23"
 }

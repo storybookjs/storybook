@@ -2,6 +2,9 @@ import WebSocket, { WebSocketServer } from 'ws';
 import { isJSON, parse, stringify } from 'telejson';
 import type { ChannelHandler } from '@storybook/channels';
 import { Channel } from '@storybook/channels';
+import type { IncomingMessage } from 'node:http';
+
+import { isValidToken } from './validate-websocket-token';
 
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 
@@ -14,14 +17,27 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
-  constructor(server: Server) {
+  private token: string;
+
+  constructor(server: Server, token: string) {
+    this.token = token;
     this.socket = new WebSocketServer({ noServer: true });
 
-    server.on('upgrade', (request, socket, head) => {
-      if (request.url === '/storybook-server-channel') {
-        this.socket.handleUpgrade(request, socket, head, (ws) => {
-          this.socket.emit('connection', ws, request);
-        });
+    server.on('upgrade', (request: IncomingMessage, socket, head) => {
+      if (request.url) {
+        const url = new URL(request.url, 'http://localhost');
+        if (url.pathname === '/storybook-server-channel') {
+          const requestToken = url.searchParams.get('token');
+          if (!isValidToken(requestToken, this.token)) {
+            socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+            socket.destroy();
+            return;
+          }
+
+          this.socket.handleUpgrade(request, socket, head, (ws) => {
+            this.socket.emit('connection', ws, request);
+          });
+        }
       }
     });
     this.socket.on('connection', (wss) => {
@@ -49,8 +65,8 @@ export class ServerChannelTransport {
   }
 }
 
-export function getServerChannel(server: Server) {
-  const transports = [new ServerChannelTransport(server)];
+export function getServerChannel(server: Server, token: string) {
+  const transports = [new ServerChannelTransport(server, token)];
 
   return new Channel({ transports, async: true });
 }

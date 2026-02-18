@@ -1,5 +1,7 @@
 import express from 'express';
 import compression from 'compression';
+
+import assert from 'assert';
 import invariant from 'tiny-invariant';
 
 import type { CoreConfig, Options, StorybookConfig } from '@storybook/types';
@@ -33,9 +35,11 @@ export async function storybookDevServer(options: Options) {
     options.presets.apply<CoreConfig>('core'),
   ]);
 
+  assert(core?.channelOptions?.wsToken, 'wsToken is required for securing the server channel');
+
   const serverChannel = await options.presets.apply(
     'experimental_serverChannel',
-    getServerChannel(server)
+    getServerChannel(server, core.channelOptions.wsToken)
   );
 
   if (features?.storyStoreV7 === false) {

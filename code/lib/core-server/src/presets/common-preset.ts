@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import fs, { pathExists, readFile } from 'fs-extra';
 import { deprecate, logger } from '@storybook/node-logger';
 import { telemetry } from '@storybook/telemetry';
@@ -160,6 +161,8 @@ const optionalEnvToBoolean = (input: string | undefined): boolean | undefined =>
   return undefined;
 };
 
+const wsToken = randomUUID();
+
 /**
  * If for some reason this config is not applied, the reason is that
  * likely there is an addon that does `export core = () => ({ someConfig })`,
@@ -168,6 +171,10 @@ const optionalEnvToBoolean = (input: string | undefined): boolean | undefined =>
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
+  channelOptions: {
+    ...(existing?.channelOptions ?? {}),
+    ...(options.configType === 'DEVELOPMENT' ? { wsToken } : {}),
+  },
   disableTelemetry: options.disableTelemetry === true || options.test === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
@@ -259,6 +266,10 @@ type WhatsNewResponse = {
 };
 
 type OptionsWithRequiredCache = Exclude<Options, 'cache'> & Required<Pick<Options, 'cache'>>;
+
+export const channelToken = async (value: string | undefined) => {
+  return value;
+};
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (

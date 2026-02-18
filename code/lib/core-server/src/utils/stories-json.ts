@@ -48,6 +48,8 @@ export function useStoriesJson({
       const generator = await initializedStoryIndexGenerator;
       const index = await generator.getIndex();
       res.header('Content-Type', 'application/json');
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
       res.send(JSON.stringify(index));
     } catch (err) {
       res.status(500);
@@ -60,6 +62,8 @@ export function useStoriesJson({
       const generator = await initializedStoryIndexGenerator;
       const index = convertToIndexV3(await generator.getIndex());
       res.header('Content-Type', 'application/json');
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
       res.send(JSON.stringify(index));
     } catch (err) {
       res.status(500);

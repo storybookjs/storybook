@@ -1,6 +1,7 @@
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
+  SIDEBAR_OPEN_CONTEXT_MENU,
   STORIES_COLLAPSE_ALL,
   STORIES_EXPAND_ALL,
 } from 'storybook/internal/core-events';
@@ -166,7 +167,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   copyStoryLink: ['alt', 'shift', 'L'],
   goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
   goToNextLandmark: ['F6'], // hardcoded in react-aria
-  contextMenu: [controlOrMetaKey(), 'shift', 'm'],
+  contextMenu: [controlOrMetaKey(), 'shift', 'u'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
@@ -454,6 +455,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
         case 'expandAll': {
           fullAPI.emit(STORIES_EXPAND_ALL);
+          break;
+        }
+        case 'contextMenu': {
+          fullAPI.emit(SIDEBAR_OPEN_CONTEXT_MENU);
           break;
         }
         case 'remount': {

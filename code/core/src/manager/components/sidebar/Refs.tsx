@@ -152,6 +152,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           {state === 'empty' && <EmptyBlock isMain={isMain} hasEntries={hasEntries} />}
           {state === 'ready' && (
             <Tree
+              api={api}
               allStatuses={allStatuses}
               isBrowsing={isBrowsing}
               isDevelopment={isDevelopment}

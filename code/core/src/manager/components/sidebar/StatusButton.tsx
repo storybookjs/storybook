@@ -75,3 +75,26 @@ export const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>((pr
   return <StyledButton variant="ghost" padding="small" {...props} ref={ref} />;
 });
 StatusButton.displayName = 'StatusButton';
+
+const StyledIconContainer = styled.span<{
+  status: StatusValue;
+  selectedItem?: boolean;
+}>(withStatusColor, ({ theme }) => ({
+  transition: 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+
+  '[data-selected="true"] &': {
+    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+    boxShadow: `0 0 5px 5px ${theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary}`,
+  },
+}));
+
+export type StatusIconContainerProps = ComponentProps<typeof StyledIconContainer>;
+
+export const StatusIconContainer = (props: StatusIconContainerProps) => {
+  // Keep aria-live off to avoid spam, we'll rely on a single aria-live
+  // announcer for the test widget instead.
+  return <StyledIconContainer role="status" aria-live="off" {...props} />;
+};

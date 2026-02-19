@@ -138,6 +138,7 @@ const shortcutLabels = {
   copyStoryLink: 'Copy story link to clipboard',
   goToPreviousLandmark: 'Go to previous landmark',
   goToNextLandmark: 'Go to next landmark',
+  contextMenu: 'Open actions menu in sidebar',
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: 'Copy story name to clipboard',
 };

@@ -1,92 +1,137 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button, TooltipProvider } from 'storybook/internal/components';
-import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import type {
-  API_HashEntry,
-  API_TreeEntry,
-  StatusByTypeId,
-  StatusValue,
-  StoryId,
-} from 'storybook/internal/types';
+import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
 
-import { TrashIcon } from '@storybook/icons';
+import { ChevronSmallDownIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
-import { TreeItem as AriaTreeItem } from 'react-aria-components/patched-dist/Tree';
+import { darken } from 'polished';
+import { TreeItem, TreeItemContent } from 'react-aria-components/patched-dist/Tree';
+import type { HashEntry } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { shortcutMatchesShortcut, shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
-import { getGroupStatus, getMostCriticalStatusValue, getStatus } from '../../utils/status.tsx';
+import { getMostCriticalStatusValue, getStatus } from '../../utils/status.tsx';
 import {
+  type TreeEntry,
   createId,
   getAncestorIds,
   getDescendantIds,
   getLink,
-  isStoryHoistable,
 } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { useContextMenu } from './ContextMenu.tsx';
-import { IconSymbols, UseSymbol } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
-import { StatusButton } from './StatusButton.tsx';
-import { StatusContext } from './StatusContext.tsx';
-import { CollapseIcon } from './components/CollapseIcon.tsx';
+import { StatusIconContainer } from './StatusButton.tsx';
 import { StatusIconMap } from './components/StatusIcon.tsx';
-import type { Highlight, Item } from './types.ts';
-import type { ExpandAction, ExpandedState } from './useExpanded.ts';
-import { useExpanded } from './useExpanded.ts';
+import { TypeIconWithSymbol } from './components/TypeIcon.tsx';
+import type { Item } from './types.ts';
 
-export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'group' | 'docs' }>(
-  ({ theme, type }) => ({
-    width: 14,
-    height: 14,
-    flex: '0 0 auto',
-    color: (() => {
-      if (type === 'group') {
-        return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
-      }
+const StyledTreeItem = styled(TreeItem)<{ $level: number; $textColor: string | null }>(
+  ({ $level, theme, $textColor }) => ({
+    /* Indent based on tree level */
+    paddingInlineStart: `calc(${$level} * 20px)`,
 
-      if (type === 'component') {
-        return theme.color.secondary;
-      }
+    position: 'relative',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    background: 'transparent',
+    minHeight: 28,
+    borderRadius: 4,
+    overflow: 'hidden',
+    a: { color: $textColor ?? 'currentColor' },
 
-      if (type === 'docs') {
-        return theme.base === 'dark' ? theme.color.gold : '#ff8300';
-      }
+    /* Color handling. */
+    color: $textColor ?? theme.color.defaultText,
+    '--tree-node-background-hover': theme.background.content,
+    [MEDIA_DESKTOP_BREAKPOINT]: {
+      '--tree-node-background-hover': theme.background.app,
+    },
 
-      if (type === 'story') {
-        return theme.color.seafoam;
-      }
+    '&:hover, &:focus': {
+      '--tree-node-background-hover': theme.background.hoverable,
+      background: 'var(--tree-node-background-hover)',
+      outline: 'none',
+    },
 
-      if (type === 'test') {
-        return theme.color.green;
-      }
+    '&[data-selected="true"]': {
+      color: theme.color.lightest,
+      background:
+        theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+      fontWeight: theme.typography.weight.bold,
 
-      return 'currentColor';
-    })(),
+      '&&:hover, &&:focus': {
+        background:
+          theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+      },
+      svg: { color: theme.color.lightest },
+    },
+
+    '&:focus-visible': {
+      outline: `2px solid ${theme.color.secondary}`,
+      outlineOffset: 2,
+    },
+
+    /* ContextMenu and StatusIcon visibility.
+     * ContextMenu is shown on hover/focus and when already open,
+     * StatusIcon is hidden when ContextMenu is visible. */
+    '& [data-displayed="off"]': {
+      visibility: 'hidden',
+    },
+
+    '&:hover [data-displayed="off"]': {
+      visibility: 'visible',
+    },
+
+    '& [data-displayed="on"] + *': {
+      visibility: 'hidden',
+    },
+
+    '&:hover [data-displayed="off"] + *': {
+      visibility: 'hidden',
+    },
+
+    '.hover-only': {
+      display: 'none',
+    },
+    '&:hover .hover-only, &:focus-visible .hover-only': {
+      display: 'flex',
+      alignContent: 'center',
+      alignItems: 'center',
+    },
+    '.static-only': {
+      display: 'flex',
+      alignContent: 'center',
+      alignItems: 'center',
+    },
+    '&:hover .static-only, &:focus-visible .static-only': {
+      display: 'none',
+    },
   })
 );
 
-const StyledTreeItem = styled(AriaTreeItem)(({ theme }) => ({
-  '--tree-node-background-hover': 'var(--background-hover, var(--background-app))',
-  [MEDIA_DESKTOP_BREAKPOINT]: {
-    '--tree-node-background-hover': 'var(--background-app)',
-  },
+const StyledContent = styled.div({
+  // NOTE: we don't use gap because of the invisible SkipLink
+  display: 'flex',
+  minWidth: 28,
+  minHeight: 28,
+  padding: 2,
+  paddingInlineStart: 7,
+  justifyContent: 'center',
+  alignItems: 'center',
+  flex: '1 0 0',
+});
 
-  // TODO find css class name
-  '& .collapse-button': {
-    fontSize: `${theme.typography.size.s1 - 1}px`,
-    fontWeight: theme.typography.weight.bold,
-    letterSpacing: '0.16em',
-    textTransform: 'uppercase',
-    color: theme.textMutedColor,
-    padding: '0 8px',
-  },
-}));
+const StyledLabel = styled.span({
+  flex: '1 1 auto',
+  marginInlineStart: 6,
+});
 
 const SkipToContentLink = styled(Button)(({ theme }) => ({
   display: 'none',
@@ -110,16 +155,6 @@ const SkipToContentLink = styled(Button)(({ theme }) => ({
   },
 }));
 
-export const TypeIconWithSymbol = React.memo<{
-  type: 'component' | 'story' | 'test' | 'group' | 'docs';
-}>(function TypeIconWithSymbol({ type }) {
-  return (
-    <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={type}>
-      <UseSymbol type={type} />
-    </TypeIcon>
-  );
-});
-
 const statusOrder: StatusValue[] = [
   'status-value:success',
   'status-value:error',
@@ -128,30 +163,20 @@ const statusOrder: StatusValue[] = [
   'status-value:unknown',
 ];
 
-// TODO use this?
-const FloatingStatusButton = styled(StatusButton)({
-  background: 'var(--tree-node-background-hover)',
-  boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
-  position: 'absolute',
-  right: 0,
-  zIndex: 1,
-});
-
-interface TreeNodeProps {
-  item: API_TreeEntry;
+export interface TreeNodeProps {
+  item: TreeEntry;
   refId: string;
   docsMode: boolean;
   isDevelopment: boolean;
   isOrphan: boolean;
-  selectedStoryId: string | null;
   isSelected: boolean;
   isExpanded: boolean;
-  setExpanded: (action: ExpandAction) => void;
+  setExpanded: (expanded: boolean) => void;
   onSelectStoryId: (itemId: string) => void;
   statuses: StatusByTypeId;
-  groupStatus: Record<StoryId, StatusValue>;
   api: API;
-  data: Record<string, API_HashEntry>;
+  data: Record<string, HashEntry>;
+  children?: React.ReactNode;
 }
 
 function guardHasChildren(item: Item): item is Item & { children: string[] } {
@@ -173,17 +198,17 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   docsMode,
   isDevelopment,
   isOrphan,
-  selectedStoryId,
   isSelected,
   isExpanded,
   setExpanded,
   onSelectStoryId,
   statuses,
-  groupStatus,
   api,
   data,
+  children,
 }) {
   const theme = useTheme();
+  const id = useMemo(() => createId(refId, item.id), [refId, item.id]);
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
   const [contextMenuEntryMethod, setContextMenuEntryMethod] = useState<'mouse' | 'keyboard'>(
     'mouse'
@@ -203,33 +228,57 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
           'aria-label': `Test status for ${status.title}: ${status.value}`,
           icon: StatusIconMap[status.value],
           onClick: () => {
-            onSelectStoryId(item.id);
+            onSelectStoryId(id);
             fullStatusStore.selectStatuses([status]);
           },
         }));
     }
     return [];
-  }, [item.id, item.type, onSelectStoryId, statuses]);
-
-  const id = createId(item.id, refId);
+  }, [id, item.type, onSelectStoryId, statuses]);
 
   // Should only have a context menu on non-composed storybooks? TODO: verify requirement with team
-  const contextMenu = refId === DEFAULT_REF_ID ? useContextMenu(item, statusLinks, api) : null;
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
 
-  const statusValue = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const [statusIcon] = getStatus(theme, statusValue);
+  useEffect(() => {
+    if (!api || !isSelected) {
+      return;
+    }
 
-  const hasChildren = guardHasChildren(item);
+    const openContextMenu = () => setContextMenuOpen(true);
+
+    api.on(SIDEBAR_OPEN_CONTEXT_MENU, openContextMenu);
+
+    return () => {
+      api.off(SIDEBAR_OPEN_CONTEXT_MENU, openContextMenu);
+    };
+  }, [api, isSelected]);
+
+  const contextMenu =
+    refId === DEFAULT_REF_ID
+      ? useContextMenu(item, contextMenuOpen, setContextMenuOpen, statusLinks, api)
+      : null;
+
+  const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
+  const [statusIcon, statusTextColor] = getStatus(theme, itemStatus);
+
+  const showBranchStatus = itemStatus === 'status-value:error' || status === 'status-value:warning';
+  const isBranch = guardHasChildren(item);
   const hasContextMenu = guardHasContextMenu(contextMenu);
 
   const ariaLabel = useMemo(() => {
     let label = item.renderAriaLabel?.(item, api, renderContext) || item.name;
+
+    if (itemStatus !== 'status-value:unknown' && (!isBranch || showBranchStatus)) {
+      label += `. Test status: ${itemStatus.replace('status-value:', '')}`;
+    }
+
     if (hasContextMenu) {
+      console.log(api.getShortcutKeys());
       const shortcut = shortcutToHumanString(api.getShortcutKeys().contextMenu);
       label += `. Press ${shortcut} for more actions`;
     }
     return label;
-  }, [item, api, renderContext, hasContextMenu]);
+  }, [item, api, renderContext, hasContextMenu, itemStatus, isBranch, showBranchStatus]);
 
   const tooltipContent = useMemo(() => {
     if (hasContextMenu) {
@@ -243,19 +292,28 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     return null;
   }, [hasContextMenu, api]);
 
-  // const handleKeyDown = useCallback(
-  //   (event: React.KeyboardEvent) => {
-  //     if (shortcutMatchesShortcut(event as any, api.getShortcutKeys().contextMenu)) {
-  //       event.preventDefault();
-  //       setContextMenuEntryMethod('keyboard');
-  //       // The context menu will open via its own handlers
-  //     }
-  //   },
-  //   [api]
-  // );
+  const collapseAction = useMemo(() => {
+    if (!isBranch) {
+      return null;
+    }
 
+    return isExpanded ? <ChevronSmallDownIcon /> : <ChevronSmallRightIcon />;
+  }, [isBranch, isExpanded]);
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      console.log('event', event);
+      if (shortcutMatchesShortcut([event.key], api.getShortcutKeys().contextMenu)) {
+        event.preventDefault();
+        console.log('TODO: open context menu on kb');
+      }
+    },
+    [api]
+  );
+
+  // TODO: either do it here with ExpandAction or in Tree renderNode.
   // const handleExpandedChange = useCallback(() => {
-  //   setExpanded({ ids: [item.id], value: !isExpanded });
+  //   setExpanded({ ids: [item.id], append: true, value: !isExpanded });
   // }, [item.id, isExpanded, setExpanded]);
 
   // TODO: on leaf selection within the tree
@@ -299,27 +357,28 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     }
   }, [contextMenu, item, api, refId]);
 
+  const finalType = useMemo(
+    () =>
+      item.type === 'story' && 'subtype' in item && item.subtype === 'test' ? 'test' : item.type,
+
+    [item.type]
+  );
+
   const itemContent = (
-    <AriaTreeItem
+    <StyledTreeItem
+      $level={item.depth}
+      $textColor={statusTextColor}
       textValue={item.name}
       aria-label={ariaLabel}
       id={id}
-
-      // PRIMER ONLY
-      // expanded={hasChildren ? isExpanded : undefined}
-      // onExpandedChange={
-      //   hasChildren ? () => setExpanded({ ids: [item.id], value: !isExpanded }) : undefined
-      // }
-      // current={isSelected}
-
+      data-item-id={item.id}
+      data-ref-id={refId}
       // FIXME: we can't pass these events, must review the preloading strat
       // onFocus={handleFocus}
       // onMouseEnter={handleMouseEnter}
       // FIXME: make this a global kb shortcut and have it identify the currently highlighted item
       // onKeyDown={handleKeyDown}
-      // data-selected={isSelected}
       // data-ref-id={refId}
-      // data-item-id={item.id}
       // data-parent-id={(item as any).parent}
       // data-nodetype={
       //   item.type === 'story' && (item as any).subtype === 'test'
@@ -333,80 +392,56 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       //           : ('story' as const)
       // }
     >
-      {/* {item.type !== 'root' && (
-        <div className="leading-visual">
-          <TypeIconWithSymbol
-            type={
-              item.type === 'story' && 'subtype' in item && item.subtype === 'test'
-                ? 'test'
-                : item.type
-            }
-          />
-        </div>
-      )} */}
-
-      {item.renderLabel?.(item || [], api, renderContext) || item.name}
-
-      {/* {(statusIcon || hasContextMenu) && (
-        <div className="trailing-visual">
-          {statusIcon && (
-            <StatusButton
-              ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
-              data-testid="tree-status-button"
-              type="button"
-              status={statusValue}
-              selectedItem={isSelected}
-            >
-              {statusIcon}
-            </StatusButton>
+      <TreeItemContent>
+        <StyledContent>
+          {finalType === 'root' ? (
+            collapseAction
+          ) : (
+            <>
+              <span className="hover-only">{collapseAction}</span>
+              <span className={isBranch ? 'static-only' : undefined}>
+                <TypeIconWithSymbol type={finalType} />
+              </span>
+            </>
           )}
-          {hasContextMenu && contextMenu.node}
-        </div>
-      )}
 
-      {isSelected && (
-        <SkipToContentLink asChild ariaLabel={false}>
-          <a href="#storybook-preview-wrapper">Skip to content</a>
-        </SkipToContentLink>
-      )}
+          <StyledLabel>
+            {item.renderLabel?.(item || [], api, renderContext) || item.name}
+          </StyledLabel>
 
-      {hasChildren && isExpanded && (
-        <div className="subtree">
-          {item.resolvedChildren?.map((childItem) => {
-            return (
-              <TreeNode
-                key={childItem.id}
-                item={childItem}
-                refId={refId}
-                docsMode={docsMode}
-                isDevelopment={isDevelopment}
-                isOrphan={false}
-                isSelected={selectedStoryId === childItem.id}
-                selectedStoryId={selectedStoryId}
-                isExpanded={isExpanded}
-                setExpanded={setExpanded}
-                onSelectStoryId={onSelectStoryId}
-                statuses={statuses}
-                groupStatus={groupStatus}
-                api={api}
-                data={data}
-              />
-            );
-          })}
-        </div>
-      )} */}
-    </AriaTreeItem>
+          {hasContextMenu && <span className="hover-only">{contextMenu.node}</span>}
+          {statusIcon && (!isBranch || showBranchStatus) && (
+            <span className="static-only">
+              <StatusIconContainer
+                data-testid="tree-status-button"
+                status={itemStatus}
+                selectedItem={isSelected}
+              >
+                {statusIcon}
+              </StatusIconContainer>
+            </span>
+          )}
+
+          {isSelected && (
+            <SkipToContentLink asChild ariaLabel={false}>
+              <a href="#storybook-preview-wrapper">Skip to content</a>
+            </SkipToContentLink>
+          )}
+        </StyledContent>
+      </TreeItemContent>
+      {children}
+    </StyledTreeItem>
   );
 
   // FIXME not working with the TreeView.Item component
   // TODO: use useTooltip lower level hook
-  // if (tooltipContent) {
-  //   return (
-  //     <TooltipProvider triggerOnFocusOnly={true} tooltip={tooltipContent}>
-  //       {itemContent}
-  //     </TooltipProvider>
-  //   );
-  // }
+  if (tooltipContent) {
+    return (
+      <TooltipProvider triggerOnFocusOnly={true} tooltip={tooltipContent}>
+        {itemContent}
+      </TooltipProvider>
+    );
+  }
 
   return itemContent;
 });

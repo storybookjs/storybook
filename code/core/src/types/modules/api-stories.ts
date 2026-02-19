@@ -34,7 +34,7 @@ export interface API_ComponentEntry extends API_BaseEntry {
 
 export interface API_DocsEntry extends API_BaseEntry {
   type: 'docs';
-  parent: StoryId;
+  parent?: StoryId;
   title: ComponentTitle;
   importPath: Path;
   prepared: boolean;
@@ -46,7 +46,7 @@ export interface API_DocsEntry extends API_BaseEntry {
 export interface API_StoryEntry extends API_BaseEntry {
   type: 'story';
   subtype: 'story';
-  parent: StoryId;
+  parent?: StoryId;
   title: ComponentTitle;
   importPath: Path;
   exportName: string;
@@ -60,7 +60,8 @@ export interface API_StoryEntry extends API_BaseEntry {
   children?: StoryId[];
 }
 
-export interface API_TestEntry extends Omit<API_StoryEntry, 'subtype' | 'children'> {
+export interface API_TestEntry extends Omit<API_StoryEntry, 'subtype' | 'children' | 'parent'> {
+  parent: StoryId;
   subtype: 'test';
 }
 
@@ -81,13 +82,6 @@ export type API_HashEntry =
 export interface API_IndexHash {
   [id: string]: API_HashEntry;
 }
-
-/**
- * The `IndexTree` is a hierarchical representation of `IndexHash`, that can be navigated from roots
- * to leaves. It is useful when rendering tree structures from the index (e.g. the sidebar Tree).
- */
-export type API_TreeEntry = API_HashEntry & { resolvedChildren?: API_TreeEntry[] };
-export type API_IndexTree = API_TreeEntry[];
 
 // We used to received a bit more data over the channel on the SET_STORIES event, including
 // the full parameters for each story.

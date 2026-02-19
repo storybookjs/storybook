@@ -23,7 +23,6 @@ import { Shortcut } from '../Shortcut.tsx';
 import { UseSymbol } from './IconSymbols.tsx';
 import { StatusButton } from './StatusButton.tsx';
 import { StatusContext } from './StatusContext.tsx';
-import type { ExcludesNull } from './Tree.tsx';
 
 const empty = {
   onMouseEnter: () => {},
@@ -41,9 +40,14 @@ const FloatingStatusButton = styled(StatusButton)({
   },
 });
 
-export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
+export const useContextMenu = (
+  context: API_HashEntry,
+  isOpen: boolean,
+  setIsOpen: (open: boolean) => void,
+  links: Link[],
+  api: API
+) => {
   const [hoverCount, setHoverCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
   const [copyText, setCopyText] = React.useState('Copy story name');
   const { allStatuses, groupStatus } = useContext(StatusContext);
 
@@ -101,11 +105,8 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         event.stopPropagation();
         setIsOpen(true);
       },
-      onClose: () => {
-        setIsOpen(false);
-      },
     };
-  }, []);
+  }, [setIsOpen]);
   /**
    * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
    * instead of a simple boolean to ensure that the links are recalculated
@@ -218,7 +219,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         </PopoverProvider>
       ) : null,
     };
-  }, [context, handlers, isOpen, shouldRender, links, topLinks, itemStatus, MenuIcon]);
+  }, [context, handlers, isOpen, setIsOpen, shouldRender, links, topLinks, itemStatus, MenuIcon]);
 };
 
 /**
@@ -249,6 +250,7 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
   return <TooltipLinkList {...rest} links={all} />;
 };
 
+type ExcludesNull = <T>(x: T | null) => x is T;
 export function generateTestProviderLinks(
   registeredTestProviders: Addon_Collection<Addon_TestProviderType>,
   context: API_HashEntry

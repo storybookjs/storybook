@@ -154,8 +154,6 @@ const Actions = styled.div({
   gap: 2,
 });
 
-const FocusContainer = styled.div({ outline: 0 });
-
 export type SearchProps = {
   children: SearchChildrenFn;
   dataset: CombinedDataset;
@@ -433,7 +431,7 @@ export const Search = React.memo<SearchProps>(function Search({
               </SearchField>
               {searchBarContent}
             </SearchBar>
-            <FocusContainer tabIndex={0} id="storybook-explorer-menu">
+            <div>
               {children({
                 query: input,
                 results,
@@ -445,7 +443,7 @@ export const Search = React.memo<SearchProps>(function Search({
                 getItemProps,
                 highlightedIndex,
               })}
-            </FocusContainer>
+            </div>
           </>
         );
       }}

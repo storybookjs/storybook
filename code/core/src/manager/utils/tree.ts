@@ -3,7 +3,13 @@ import type { SyntheticEvent } from 'react';
 import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
-import type { HashEntry, IndexHash } from 'storybook/manager-api';
+import type {
+  ComponentEntry,
+  GroupEntry,
+  HashEntry,
+  IndexHash,
+  StoryEntry,
+} from 'storybook/manager-api';
 
 import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar.tsx';
 import type { Dataset, Item, RefType, SearchItem } from '../components/sidebar/types.ts';
@@ -133,3 +139,89 @@ export const removeNoiseFromName = (storyName: string) => storyName.replaceAll(/
 
 export const isStoryHoistable = (storyName: string, componentName: string) =>
   removeNoiseFromName(storyName) === removeNoiseFromName(componentName);
+
+export const collapseSingleStoryComponents = (data: IndexHash): IndexHash => {
+  {
+    // Create a list of component IDs which should be collapsed into their (only) child.
+    const singleStoryComponents: ComponentEntry[] = Object.values(data).filter(
+      (entry): entry is ComponentEntry => {
+        if (entry.type !== 'component') {
+          return false;
+        }
+
+        const { children = [], name } = entry;
+
+        if (children.length !== 1) {
+          return false;
+        }
+
+        const onlyChild = data[children[0]];
+
+        if (onlyChild.type === 'docs') {
+          return true;
+        }
+
+        if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
+          return isStoryHoistable(onlyChild.name, name);
+        }
+        return false;
+      }
+    );
+
+    /* Replace each single-child component with its child story in the data set. */
+    return singleStoryComponents.reduce(
+      (acc, entry) => {
+        const { children, parent, name } = entry;
+        const [childId] = children;
+        if (parent) {
+          const parentEntry = data[parent] as GroupEntry;
+          const siblings = [...parentEntry.children];
+          siblings[siblings.indexOf(entry.id)] = childId;
+          acc[parent] = { ...parentEntry, children: siblings };
+        }
+        acc[childId] = {
+          ...(data[childId] as StoryEntry),
+          name,
+          parent,
+          depth: data[childId].depth - 1,
+        };
+        return acc;
+      },
+      { ...data }
+    );
+  }
+};
+
+/**
+ * The `IndexTree` is a hierarchical representation of `IndexHash`, that can be navigated from roots
+ * to leaves. It is useful when rendering tree structures from the index (e.g. the sidebar Tree).
+ */
+export type TreeEntry = HashEntry & { resolvedChildren?: TreeEntry[] };
+export type IndexTree = TreeEntry[];
+
+export const indexToTree = (index: IndexHash): IndexTree => {
+  const tree: IndexTree = [];
+  const children: Record<string, HashEntry[]> = {};
+  const processingQueue: IndexTree = [];
+
+  // First pass over index to identify every node's children, and add root nodes to tree
+  for (const item of Object.values(index)) {
+    if (item.type === 'root' || !item.parent) {
+      tree.push({ ...item, resolvedChildren: [] });
+    } else {
+      children[item.parent] = children[item.parent] || [];
+      children[item.parent].push(item);
+    }
+  }
+
+  // Now browse through tree to add every node's children to it
+  processingQueue.push(...tree);
+  while (processingQueue.length > 0) {
+    const current = processingQueue.shift()!;
+    const currentChildren = children[current.id] || [];
+    current.resolvedChildren = currentChildren;
+    processingQueue.push(...currentChildren);
+  }
+
+  return tree;
+};

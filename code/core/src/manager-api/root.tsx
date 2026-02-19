@@ -21,6 +21,7 @@ import {
 } from 'storybook/internal/core-events';
 import type { RouterData } from 'storybook/internal/router';
 import type {
+  API_BaseEntry,
   API_ComponentEntry,
   API_ComposedRef,
   API_DocsEntry,
@@ -303,11 +304,13 @@ export type {
   /** @deprecated Now IndexHash */
   API_IndexHash as StoriesHash,
   API_IndexHash as IndexHash,
+  API_BaseEntry as BaseEntry,
   API_RootEntry as RootEntry,
   API_GroupEntry as GroupEntry,
   API_ComponentEntry as ComponentEntry,
   API_DocsEntry as DocsEntry,
   API_StoryEntry as StoryEntry,
+  API_TestEntry as TestEntry,
   API_HashEntry as HashEntry,
   API_LeafEntry as LeafEntry,
   API_ComposedRef as ComposedRef,

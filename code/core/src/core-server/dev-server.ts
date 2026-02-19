@@ -50,8 +50,6 @@ export async function storybookDevServer(
     options.extendServer(server);
   }
 
-  // CORS middleware must be registered BEFORE route handlers to ensure all routes
-  // (including /index.json) receive proper CORS headers for Storybook Composition
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 

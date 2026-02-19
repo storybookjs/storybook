@@ -2,14 +2,13 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
 
 import * as pkg from 'empathic/package';
 import { init, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
 import type { Alias, Plugin } from 'vite';
-
-import { globalsNameReferenceMap } from '../../../../core/src/manager/globals/globals';
 
 const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 const defaultImportRegExp = 'import ([^*{}]+) from';

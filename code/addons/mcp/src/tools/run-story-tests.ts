@@ -54,12 +54,9 @@ and only omit this when you explicitly need to run all tests for comprehensive v
 	),
 });
 
-const QUEUE_TIMEOUT_MS = 15_000;
-const TEST_RUN_TIMEOUT_MS = 15_000;
-
 /**
  * Creates a queue that ensures concurrent calls are executed in sequence.
- * Call `wait()` to wait for your turn (with a timeout), then call the
+ * Call `wait()` to wait for your turn, then call the
  * returned `done()` function when done to unblock the next caller.
  */
 function createAsyncQueue() {
@@ -81,28 +78,7 @@ function createAsyncQueue() {
 			() => gate,
 		);
 
-		try {
-			// Wait for the previous operation to finish, with a timeout
-			await Promise.race([
-				previousTail.catch(() => {}),
-				new Promise<never>((_, reject) =>
-					setTimeout(
-						() =>
-							reject(
-								new Error(
-									`Timed out waiting for previous operation to complete (${QUEUE_TIMEOUT_MS / 1000}s). Please try again.`,
-								),
-							),
-						QUEUE_TIMEOUT_MS,
-					),
-				),
-			]);
-		} catch (error) {
-			// If we fail before entering the critical section, release our gate so
-			// the queue can continue once previous operations settle.
-			done();
-			throw error;
-		}
+		await previousTail.catch(() => {});
 
 		return done;
 	}
@@ -280,7 +256,6 @@ function triggerTestRun(
 	   - completed (with result)
 	   - error
 	   - cancelled
-	   - timeout
 	   - emit failure
 	4) On the first terminal outcome, run cleanup once and settle once.
 	*/
@@ -295,7 +270,6 @@ function triggerTestRun(
 		/* Always remove listeners and timer when this request is done. */
 		const cleanup = () => {
 			channel.off(triggerTestRunResponseEventName, handleResponse);
-			clearTimeout(timeoutId);
 		};
 
 		/*
@@ -340,20 +314,6 @@ function triggerTestRun(
 					settle(() => reject(new Error('Unexpected test run response')));
 			}
 		};
-
-		/*
-		Fails fast if no matching response arrives.
-		This avoids hanging forever and ensures queued callers can make progress.
-		*/
-		const timeoutId = setTimeout(() => {
-			settle(() =>
-				reject(
-					new Error(
-						`Timed out waiting for test run response (${TEST_RUN_TIMEOUT_MS / 1000}s). Please try again.`,
-					),
-				),
-			);
-		}, TEST_RUN_TIMEOUT_MS);
 
 		/* Subscribe before emit so immediate/synchronous responders are not missed. */
 		channel.on(triggerTestRunResponseEventName, handleResponse);

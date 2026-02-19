@@ -26,6 +26,7 @@ import { dedent } from 'ts-dedent';
 import { detectPnp } from '../cli/detect';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
+import { getWsToken } from './presets/wsToken';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getServerChannel } from './utils/get-server-channel';
@@ -145,7 +146,7 @@ export async function buildDevStandalone(
   } catch (e) {}
 
   const server = await getServer(options);
-  const channel = getServerChannel(server);
+  const channel = getServerChannel(server, getWsToken());
 
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account

@@ -255,8 +255,8 @@ export const getComponents = ({
             ...componentWithPackage,
             path,
             ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+            ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
             importOverride,
-            reactDocgenTypescriptError,
           };
         }
 

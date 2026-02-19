@@ -85,14 +85,23 @@ describe('runStoryTestsTool', () => {
 	};
 
 	/**
-	 * Calls the run-story-tests tool with the given stories.
+	 * Calls the run-story-tests tool with optional focused stories.
 	 * Uses relative paths from 'src/' to avoid absolute path issues in snapshots.
 	 */
 	const callTool = async (
-		stories: Array<{ exportName: string; relativePath: string }>,
+		stories: Array<{ exportName: string; relativePath: string }> | undefined,
 		context: AddonContext,
 		options?: { a11y?: boolean },
 	) => {
+		const storyArguments = stories
+			? {
+					stories: stories.map((story) => ({
+						exportName: story.exportName,
+						absoluteStoryPath: `${process.cwd()}/${story.relativePath}`,
+					})),
+				}
+			: {};
+
 		const request = {
 			jsonrpc: '2.0' as const,
 			id: 1,
@@ -100,10 +109,7 @@ describe('runStoryTestsTool', () => {
 			params: {
 				name: RUN_STORY_TESTS_TOOL_NAME,
 				arguments: {
-					stories: stories.map((s) => ({
-						exportName: s.exportName,
-						absoluteStoryPath: `${process.cwd()}/${s.relativePath}`,
-					})),
+					...storyArguments,
 					...(options?.a11y !== undefined && { a11y: options.a11y }),
 				},
 			},
@@ -221,6 +227,57 @@ describe('runStoryTestsTool', () => {
 			expect.objectContaining({
 				actor: 'addon-mcp',
 				storyIds: ['button--primary'],
+				config: { a11y: true },
+			}),
+		);
+	});
+
+	it('should run all tests when stories input is omitted', async () => {
+		const testContext = createTestContext();
+
+		setupChannelResponse({
+			status: 'completed',
+			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
+				storyIds: ['button--primary', 'input--default'],
+				totalTestCount: 2,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
+				componentTestCount: { success: 2, error: 0 },
+				a11yCount: { success: 2, warning: 0, error: 0 },
+				componentTestStatuses: [
+					{
+						storyId: 'button--primary',
+						typeId: 'storybook/component-test',
+						value: 'status-value:success',
+						title: 'Component Test',
+						description: '',
+					},
+					{
+						storyId: 'input--default',
+						typeId: 'storybook/component-test',
+						value: 'status-value:success',
+						title: 'Component Test',
+						description: '',
+					},
+				],
+				a11yStatuses: [],
+				a11yReports: {},
+				unhandledErrors: [],
+			},
+		});
+
+		const response = await callTool(undefined, testContext);
+
+		expect(response.result?.content[0].text).toContain('button--primary');
+		expect(response.result?.content[0].text).toContain('input--default');
+		expect(mockChannel.emit).toHaveBeenCalledWith(
+			'storybook/test/trigger-test-run-request',
+			expect.objectContaining({
+				actor: 'addon-mcp',
+				storyIds: undefined,
 				config: { a11y: true },
 			}),
 		);

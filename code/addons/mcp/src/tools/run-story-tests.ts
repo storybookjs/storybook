@@ -33,7 +33,16 @@ export async function getAddonVitestConstants() {
 }
 
 const RunStoryTestsInput = v.object({
-	stories: StoryInputArray,
+	stories: v.optional(
+		v.pipe(
+			StoryInputArray,
+			v.description(
+				`Stories to test for focused feedback. Omit this field to run tests for all available stories.
+Prefer running tests for specific stories while developing to get faster feedback,
+and only omit this when you explicitly need to run all tests for comprehensive verification.`,
+			),
+		),
+	),
 	a11y: v.optional(
 		v.pipe(
 			v.boolean(),
@@ -109,10 +118,15 @@ export async function addRunStoryTestsTool(
 	const testRunQueue = createAsyncQueue();
 
 	const description =
-		`Run tests for one or more stories and report accessibility issues. For visual/design accessibility violations (for example color contrast), ask the user before changing styles.
+		`Run story tests.
+Provide stories for focused runs (faster while iterating),
+or omit stories to run all tests for full-project verification.
 Use this continuously to monitor test results as you work on your UI components and stories.
 Results will include passing/failing status` +
-		(a11yEnabled ? ', and accessibility violation reports.' : '');
+		(a11yEnabled
+			? `, and accessibility violation reports.
+For visual/design accessibility violations (for example color contrast), ask the user before changing styles.`
+			: '.');
 
 	server.tool(
 		{
@@ -149,42 +163,50 @@ Results will include passing/failing status` +
 					throw new Error('Channel is not available');
 				}
 
-				const index = await fetchStoryIndex(origin);
-				const { found, notFound } = findStoryIds(index, input.stories);
+				let storyIds: string[] | undefined;
+				let inputStoryCount = 0;
 
-				const storyIds = found.map((story) => story.id);
+				if (input.stories) {
+					const index = await fetchStoryIndex(origin);
+					const { found, notFound } = findStoryIds(index, input.stories);
 
-				if (storyIds.length === 0) {
-					const errorMessages = notFound.map((story) => story.errorMessage).join('\n');
+					storyIds = found.map((story) => story.id);
+					inputStoryCount = input.stories.length;
 
-					if (!disableTelemetry) {
-						await collectTelemetry({
-							event: 'tool:runStoryTests',
-							server,
-							toolset: 'test',
-							runA11y,
-							inputStoryCount: input.stories.length,
-							matchedStoryCount: 0,
-							passingStoryCount: 0,
-							failingStoryCount: 0,
-							a11yViolationCount: 0,
-							unhandledErrorCount: 0,
-						});
-					}
+					if (storyIds.length === 0) {
+						const errorMessages = notFound.map((story) => story.errorMessage).join('\n');
 
-					return {
-						content: [
-							{
-								type: 'text',
-								text: `No stories found matching the provided input.
+						if (!disableTelemetry) {
+							await collectTelemetry({
+								event: 'tool:runStoryTests',
+								server,
+								toolset: 'test',
+								runA11y,
+								inputStoryCount,
+								matchedStoryCount: 0,
+								passingStoryCount: 0,
+								failingStoryCount: 0,
+								a11yViolationCount: 0,
+								unhandledErrorCount: 0,
+							});
+						}
+
+						return {
+							content: [
+								{
+									type: 'text',
+									text: `No stories found matching the provided input.
 
 ${errorMessages}`,
-							},
-						],
-					};
-				}
+								},
+							],
+						};
+					}
 
-				logger.info(`Running tests for story IDs: ${storyIds.join(', ')}`);
+					logger.info(`Running focused tests for story IDs: ${storyIds.join(', ')}`);
+				} else {
+					logger.info('Running tests for all stories');
+				}
 
 				// Trigger test run via channel events
 				const responsePayload = await triggerTestRun(
@@ -212,8 +234,8 @@ ${errorMessages}`,
 						server,
 						toolset: 'test',
 						runA11y,
-						inputStoryCount: input.stories.length,
-						matchedStoryCount: storyIds.length,
+						inputStoryCount,
+						matchedStoryCount: testResults.storyIds?.length ?? storyIds?.length ?? 0,
 						...summary,
 					});
 				}
@@ -247,7 +269,7 @@ function triggerTestRun(
 	channel: Channel,
 	triggerTestRunRequestEventName: string,
 	triggerTestRunResponseEventName: string,
-	storyIds: string[],
+	storyIds: string[] | undefined,
 	config?: TriggerTestRunRequestPayload['config'],
 ): Promise<TriggerTestRunResponsePayload> {
 	/*

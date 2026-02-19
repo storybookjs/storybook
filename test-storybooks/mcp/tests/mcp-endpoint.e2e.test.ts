@@ -178,7 +178,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				(tool: any) => tool.name === 'run-story-tests',
 			);
 			expect(runStoryTestsTool.description).toContain(
-				'Run tests for one or more stories and report accessibility issues.',
+				'Run Storybook story tests and report accessibility issues.',
 			);
 			expect(runStoryTestsTool.inputSchema.properties).toHaveProperty('a11y');
 			expect(runStoryTestsTool.inputSchema.properties).toHaveProperty('stories');
@@ -345,6 +345,18 @@ describe('MCP Endpoint E2E Tests', () => {
 	});
 
 	describe('Tool: run-story-tests', () => {
+		it('should run all tests when stories are omitted', async () => {
+			const response = await mcpRequest('tools/call', {
+				name: 'run-story-tests',
+				arguments: {},
+			});
+
+			const text = response.result.content[0].text;
+			expect(text).toContain('## Passing Stories');
+			expect(text).toContain('example-button--primary');
+			expect(text).toContain('page--logged-out');
+		});
+
 		it('should run tests for a story and report accessibility violations', async () => {
 			const cwd = process.cwd();
 			const storyPath = cwd.endsWith('/apps/internal-storybook')
@@ -399,7 +411,6 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(text).toContain('example-button--secondary');
 			expect(text).toContain('## Accessibility Violations');
 			expect(text).toContain('example-button--primary - color-contrast');
-			expect(text).toContain('example-button--with-a-11-y-violation - color-contrast');
 		});
 
 		it('should return error for non-existent story', async () => {

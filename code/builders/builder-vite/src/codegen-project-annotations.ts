@@ -2,7 +2,7 @@ import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/co
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
-import { genImport, genSafeVariableName } from 'knitwork';
+import { genArrayFromRaw, genImport, genSafeVariableName } from 'knitwork';
 import { filename } from 'pathe/utils';
 import { dedent } from 'ts-dedent';
 
@@ -53,6 +53,7 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
     imports.push(genImport(previewAnnotation, { name: '*', as: variable }));
   }
 
+  const previewFileURL = previewAnnotationURLs[previewAnnotationURLs.length - 1];
   const previewFileVariable = variables[variables.length - 1];
   const previewFileImport = imports[imports.length - 1];
 
@@ -60,32 +61,47 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
     return dedent`
       ${previewFileImport}
 
-      export function getProjectAnnotations() {
-        return ${previewFileVariable}.default.composed;
+      export function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
+        const preview = hmrPreviewAnnotationModules[0] ?? ${previewFileVariable};
+        return preview.default.composed;
+      }
+
+      if (import.meta.hot) {
+        import.meta.hot.accept([${JSON.stringify(previewFileURL)}], (previewAnnotationModules) => {
+          // getProjectAnnotations has changed so we need to patch the new one in
+          window?.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({
+            getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules),
+          });
+        });
       }
     `.trim();
   }
-
-  const hmrCode = [
-    'if (import.meta.hot) {',
-    '  import.meta.hot.accept((newModule) => {',
-    '    window.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({',
-    '      getProjectAnnotations: newModule.getProjectAnnotations,',
-    '    });',
-    '  });',
-    '}',
-  ].join('\n');
 
   return dedent`
     import { composeConfigs } from 'storybook/preview-api';
 
     ${imports.join('\n')}
 
-    export function getProjectAnnotations() {
-      return composeConfigs([${variables.join(', ')}]);
+    export function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
+      const configs = ${genArrayFromRaw(
+        variables.map(
+          (previewAnnotation, index) =>
+            // Prefer the updated module from an HMR update, otherwise the original module
+            `hmrPreviewAnnotationModules[${index}] ?? ${previewAnnotation}`
+        ),
+        '  '
+      )};
+      return composeConfigs(configs);
     }
 
-    ${hmrCode}
+    if (import.meta.hot) {
+      import.meta.hot.accept(${JSON.stringify(previewAnnotationURLs)}, (previewAnnotationModules) => {
+        // getProjectAnnotations has changed so we need to patch the new one in
+        window?.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({
+          getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules),
+        });
+      });
+    }
   `.trim();
 }
 

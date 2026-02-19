@@ -57,8 +57,7 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   
   setup();
   
-  import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
-  import { isPreview } from 'storybook/internal/csf';
+  import { PreviewWeb } from 'storybook/preview-api';
   import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
   import { getProjectAnnotations } from '${PROJECT_ANNOTATIONS_VIRTUAL_ID}';
     

@@ -247,7 +247,7 @@ export const ChecklistWidget = () => {
                   <CollapseToggle
                     {...toggleProps}
                     id="checklist-module-collapse-toggle"
-                    ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+                    ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding guide`}
                   >
                     <ChevronSmallUpIcon
                       style={{

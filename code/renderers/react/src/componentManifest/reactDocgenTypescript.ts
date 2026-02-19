@@ -200,7 +200,7 @@ function getParser(userOptions?: ParserOptions) {
 
     parser = {
       program,
-      fileParser: withCompilerOptions(cachedCompilerOptions, parserOptions) as FileParser,
+      fileParser: withCompilerOptions(cachedCompilerOptions, parserOptions),
     };
     cachedParserOptionsKey = optionsKey;
   }

@@ -58,12 +58,9 @@ export function renderComponentsManifest(
     docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
 
-  // Read generation meta from manifest
-  const meta = (manifest as Record<string, any>)?.meta as
-    | { reactDocgen?: string; durationMs?: number }
-    | undefined;
-  const activeEngine = meta?.reactDocgen ?? 'react-docgen';
-  const durationMs = meta?.durationMs;
+  const { meta } = manifest;
+  const activeEngine = meta.reactDocgen;
+  const durationMs = meta.durationMs;
 
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
   const allPill = `<a class="filter-pill all" data-k="all" href="#filter-all">All</a>`;
@@ -707,14 +704,14 @@ export function renderComponentsManifest(
     ${
       activeEngine === 'react-docgen'
         ? `<div class="note info" style="margin-bottom: 16px;">
-            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default).${durationMs != null ? ` Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>.` : ''} For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
             <pre><code>typescript: {
   reactDocgen: 'react-docgen-typescript',
 }</code></pre>
             Note: <code>react-docgen-typescript</code> can be slower. If performance is acceptable for your project, it generally produces better results.
             <a href="https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen" target="_blank">Learn more</a>
           </div>`
-        : activeEngine === 'react-docgen-typescript' && durationMs != null && durationMs > 7500
+        : activeEngine === 'react-docgen-typescript' && durationMs > 7500
           ? `<div class="note err" style="margin-bottom: 16px;">
               <strong>Performance warning:</strong> <code>react-docgen-typescript</code> took <strong>${(durationMs / 1000).toFixed(1)}s</strong> to generate the manifest. This delay applies every time the manifest is used by an agent. Consider switching to the faster <code>react-docgen</code> in your <code>main.ts</code>:
               <pre><code>typescript: {
@@ -722,11 +719,9 @@ export function renderComponentsManifest(
 }</code></pre>
               <a href="https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen" target="_blank">Learn more</a>
             </div>`
-          : durationMs != null
-            ? `<div class="note ok" style="margin-bottom: 16px;">
-                Using <code>${activeEngine}</code>. Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>.
-              </div>`
-            : ''
+          : `<div class="note ok" style="margin-bottom: 16px;">
+              Using <code>${activeEngine}</code>. Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>.
+            </div>`
     }
     ${
       grid
@@ -977,7 +972,6 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
           .join('')
       : '';
 
-  esc(c.error?.message || 'Unknown error');
   return `
 <article
   class="card 

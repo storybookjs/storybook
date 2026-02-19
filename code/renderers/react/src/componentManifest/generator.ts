@@ -215,7 +215,9 @@ export const manifests: PresetPropertyFn<
         ...(docgen ? { reactDocgen: docgen } : {}),
         ...(rdtDoc ? { reactDocgenTypescript: rdtDoc } : {}),
         jsDocTags,
-        error: docgenResult?.type === 'error' ? docgenResult.error : undefined,
+        error:
+          (docgenResult?.type === 'error' ? docgenResult.error : undefined) ??
+          component.reactDocgenTypescriptError,
       };
     })
     .filter((component) => component !== undefined);

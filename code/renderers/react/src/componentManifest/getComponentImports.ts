@@ -34,6 +34,7 @@ export type ComponentRef = {
   isPackage: boolean;
   reactDocgen?: ReturnType<typeof getReactDocgen>;
   reactDocgenTypescript?: ComponentDocWithExportName;
+  reactDocgenTypescriptError?: { name: string; message: string };
 };
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
@@ -230,13 +231,19 @@ export const getComponents = ({
       if (path) {
         if (reactDocgenConfig === 'react-docgen-typescript') {
           let reactDocgenTypescript: ComponentDocWithExportName | undefined;
+          let reactDocgenTypescriptError: { name: string; message: string } | undefined;
           try {
             reactDocgenTypescript = matchComponentDoc(
               parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
               component
             );
           } catch (e) {
-            logger.debug(`react-docgen-typescript failed for ${path}: ${e}`);
+            const message = e instanceof Error ? e.message : String(e);
+            logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
+            reactDocgenTypescriptError = {
+              name: 'react-docgen-typescript parse error',
+              message: `File: ${path}\n${message}`,
+            };
           }
 
           // Extract importOverride from RDT's description (same JSDoc parsing as react-docgen)
@@ -249,6 +256,7 @@ export const getComponents = ({
             path,
             ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
             importOverride,
+            reactDocgenTypescriptError,
           };
         }
 

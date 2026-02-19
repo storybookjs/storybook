@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 import MockDate from 'mockdate';
 
-import { Page } from './Page';
+import { Page } from './Page.component';
 
 const meta: Meta<Page> = {
   component: Page,
@@ -33,7 +33,7 @@ import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
 
-import { Page } from './Page';
+import { Page } from './Page.component';
 
 const meta = preview.meta({
   component: Page,
@@ -63,7 +63,7 @@ export const Basic = meta.story({
 
   import Page from './Page.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Page,
     // 👇 Set the value of Date for every story in the file
     async beforeEach() {
@@ -141,7 +141,7 @@ export const Basic = {
 
   import Page from './Page.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Page,
     // 👇 Set the value of Date for every story in the file
     async beforeEach() {

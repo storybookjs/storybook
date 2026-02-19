@@ -166,6 +166,7 @@ export const Baz = meta.story();
 
 ```js filename="FooBar.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Foo } from './Foo';
 
 const meta = preview.meta({
@@ -201,6 +202,7 @@ export const Baz = meta.story();
 
 ```js filename="FooBar.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import Foo from './Foo.vue';
 
 const meta = preview.meta({

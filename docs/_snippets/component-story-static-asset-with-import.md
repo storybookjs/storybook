@@ -459,6 +459,7 @@ export const WithAnImage = meta.story({
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { MyComponent } from './MyComponent';
 
 import imageFile from './static/image.png';

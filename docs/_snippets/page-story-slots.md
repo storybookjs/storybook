@@ -166,7 +166,7 @@ export const CustomFooter = {
 </Story>
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
@@ -427,6 +427,7 @@ export const CustomFooter = meta.story({
 
 ```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Page } from './Page';
 
 const meta = preview.meta({

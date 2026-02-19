@@ -68,7 +68,7 @@ test.describe('preview-api', () => {
     await expect(labelControl).toBeVisible();
 
     await labelControl.fill('');
-    await labelControl.type('Changed arg', { delay: 50 });
+    await labelControl.pressSequentially('Changed arg', { delay: 50 });
     await labelControl.blur();
 
     await expect(root.getByText('Loaded. Changed arg')).toBeVisible();

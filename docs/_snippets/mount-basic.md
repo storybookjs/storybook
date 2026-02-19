@@ -49,14 +49,14 @@ export const ChristmasUI = meta.story({
 });
 ```
 
-```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Calendar from './Calendar.svelte';
+  import Page from './Page.svelte';
 
   const { Story } = defineMeta({
-    component: Calendar,
+    component: Page,
   });
 </script>
 
@@ -71,7 +71,7 @@ export const ChristmasUI = meta.story({
 />
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -86,14 +86,14 @@ export const ChristmasUI: Story = {
 };
 ```
 
-```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Calendar from './Calendar.svelte';
+  import Page from './Page.svelte';
 
   const { Story } = defineMeta({
-    component: Calendar,
+    component: Page,
   });
 </script>
 
@@ -108,7 +108,7 @@ export const ChristmasUI: Story = {
 />
 ```
 
-```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 // ...rest of story file

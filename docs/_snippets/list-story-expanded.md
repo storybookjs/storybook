@@ -331,7 +331,7 @@ export const ManyItems: Story = {
 };
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
@@ -364,7 +364,7 @@ export const ManyItems: Story = {
 </Story>
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
@@ -749,6 +749,7 @@ export const ManyItems = meta.story({
 
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { List } from './List';
 import { ListItem } from './ListItem';
 

@@ -31,6 +31,7 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { outputStartupInformation } from './utils/output-startup-information';
 import { outputStats } from './utils/output-stats';
 import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { stripCommentsAndStrings } from './utils/strip-comments-and-strings';
 import { updateCheck } from './utils/update-check';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
@@ -186,7 +187,8 @@ export async function buildDevStandalone(
     // Regex that matches any CommonJS-specific syntax, stolen from Vite: https://github.com/vitejs/vite/blob/91a18c2f7da796ff8217417a4bf189ddda719895/packages/vite/src/node/ssr/ssrExternal.ts#L87
     const CJS_CONTENT_REGEX =
       /\bmodule\.exports\b|\bexports[.[]|\brequire\s*\(|\bObject\.(?:defineProperty|defineProperties|assign)\s*\(\s*exports\b/;
-    if (CJS_CONTENT_REGEX.test(mainJsContent)) {
+    const strippedContent = stripCommentsAndStrings(mainJsContent);
+    if (CJS_CONTENT_REGEX.test(strippedContent)) {
       deprecate(deprecationMessage);
     }
   }

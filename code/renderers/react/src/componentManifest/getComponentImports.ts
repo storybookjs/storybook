@@ -15,7 +15,7 @@ import {
 } from './reactDocgenTypescript';
 import { cachedResolveImport } from './utils';
 
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
+export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgen: ReactDocgenConfig;
@@ -78,8 +78,9 @@ export const getComponents = ({
   storyFilePath?: string;
   typescriptOptions: Partial<TypescriptOptions>;
 }): ComponentRef[] => {
-  const { reactDocgen: reactDocgenConfig = 'react-docgen', reactDocgenTypescriptOptions } =
-    typescriptOptions;
+  const { reactDocgen = 'react-docgen', reactDocgenTypescriptOptions } = typescriptOptions;
+  // For the manifest, false (docgen disabled) defaults to react-docgen
+  const reactDocgenConfig = reactDocgen || 'react-docgen';
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
@@ -271,8 +272,6 @@ export const getComponents = ({
           };
         }
 
-        // reactDocgenConfig === false — skip docgen entirely
-        return { ...componentWithPackage, path };
       }
       return componentWithPackage;
     })

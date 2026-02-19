@@ -1,14 +1,14 @@
 /**
  * This is a way to start the @storybook/mcp server as a stdio MCP server, which is sometimes easier for testing.
  * You can run it like this:
- *   node bin.ts --manifestsDir ./path/to/manifests/dir/ --format markdown
+ *   node bin.ts --manifestsDir ./path/to/manifests/dir/
  *
  * Or when configuring it as an MCP server:
  * {
  *   "storybook-mcp": {
  *     "type": "stdio",
  *     "command": "node",
- *     "args": ["bin.ts", "--manifestsDir", "./path/to/manifests/dir/", "--format", "markdown"]
+ *     "args": ["bin.ts", "--manifestsDir", "./path/to/manifests/dir/"]
  *   }
  * }
  */

@@ -42,10 +42,6 @@ if (import.meta.main) {
 				type: 'string',
 				default: './fixtures/default',
 			},
-			format: {
-				type: 'string',
-				default: 'markdown',
-			},
 		},
 	});
 	await serveMcp(Number(args.values.port), args.values.manifestsDir);

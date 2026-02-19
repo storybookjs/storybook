@@ -77,7 +77,7 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
 }
 
 /**
- * Format a single component manifest into the target format.
+ * Format a single component manifest into markdown.
  */
 export function formatComponentManifest(componentManifest: ComponentManifest): string {
 	const parts: string[] = [];
@@ -207,7 +207,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 }
 
 /**
- * Format a single doc manifest into the target format.
+ * Format a single doc manifest into markdown.
  */
 export function formatDocsManifest(doc: Doc): string {
 	return dedent`# ${doc.title}
@@ -216,7 +216,7 @@ export function formatDocsManifest(doc: Doc): string {
 }
 
 /**
- * Format a component manifest map into a list in the target format.
+ * Format a component manifest map into a markdown list.
  * @param manifest - The component manifest map to format
  * @returns Formatted string representation of the component list
  */

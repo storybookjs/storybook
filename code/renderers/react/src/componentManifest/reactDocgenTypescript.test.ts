@@ -1208,52 +1208,329 @@ describe('parseFile', () => {
   });
 
   test('DtsComponent (extends React.ButtonHTMLAttributes from .d.ts)', () => {
-    const results = normalize(parseWithReactDocgenTypescript(fixture('DtsComponent.tsx')));
-
-    expect(results).toHaveLength(1);
-    expect(results[0].displayName).toBe('HtmlButton');
-    expect(results[0].exportName).toBe('HtmlButton');
-
-    // User-defined prop should always be present
-    expect(results[0].props.variant).toMatchInlineSnapshot(`
-      {
-        "declarations": [
+    expect(normalize(parseWithReactDocgenTypescript(fixture('DtsComponent.tsx'))))
+      .toMatchInlineSnapshot(`
+        [
           {
-            "fileName": "DtsComponent.tsx",
-            "name": "HtmlButtonProps",
-          },
-        ],
-        "defaultValue": null,
-        "description": "The button variant",
-        "name": "variant",
-        "parent": {
-          "fileName": "DtsComponent.tsx",
-          "name": "HtmlButtonProps",
-        },
-        "required": false,
-        "type": {
-          "name": "enum",
-          "raw": ""solid" | "outline"",
-          "value": [
-            {
-              "value": ""solid"",
-            },
-            {
-              "value": ""outline"",
-            },
-          ],
-        },
-      }
-    `);
+            "description": "",
+            "displayName": "HtmlButton",
+            "exportName": "HtmlButton",
+            "filePath": "DtsComponent.tsx",
+            "methods": [],
+            "props": {
+              "inert": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/experimental.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "@see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/inert",
+                "name": "inert",
+                "parent": {
+                  "fileName": "node_modules/@types/react/experimental.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "boolean",
+                },
+              },
+              "onBeforeToggle": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onBeforeToggle",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "ToggleEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onToggle": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onToggle",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "ToggleEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionCancel": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionCancel",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionCancelCapture": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionCancelCapture",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionRun": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionRun",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionRunCapture": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionRunCapture",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionStart": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionStart",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "onTransitionStartCapture": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "DOMAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onTransitionStartCapture",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "DOMAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "TransitionEventHandler<HTMLButtonElement>",
+                },
+              },
+              "popover": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "popover",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "enum",
+                  "raw": """ | "auto" | "manual" | "hint"",
+                  "value": [
+                    {
+                      "value": """",
+                    },
+                    {
+                      "value": ""auto"",
+                    },
+                    {
+                      "value": ""manual"",
+                    },
+                    {
+                      "value": ""hint"",
+                    },
+                  ],
+                },
+              },
+              "popoverTarget": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "popoverTarget",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "string",
+                },
+              },
+              "popoverTargetAction": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/canary.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "popoverTargetAction",
+                "parent": {
+                  "fileName": "node_modules/@types/react/canary.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "enum",
+                  "raw": ""toggle" | "show" | "hide"",
+                  "value": [
+                    {
+                      "value": ""toggle"",
+                    },
+                    {
+                      "value": ""show"",
+                    },
+                    {
+                      "value": ""hide"",
+                    },
+                  ],
+                },
+              },
+              "tw": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/next/dist/compiled/@vercel/og/types.d.ts",
+                    "name": "HTMLAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "Specify styles using Tailwind CSS classes. This feature is currently experimental.
+        If \`style\` prop is also specified, styles generated with \`tw\` prop will be overridden.
 
-    // Bulk system props (>30 from one .d.ts source) should be filtered out
-    // The exact set of remaining small-source props varies by @types/react version,
-    // so we only assert the structural invariant
-    const propNames = Object.keys(results[0].props);
-    expect(propNames).toContain('variant');
-    expect(propNames).not.toContain('className');
-    expect(propNames).not.toContain('onClick');
-    expect(propNames).not.toContain('children');
+        Example:
+        - \`tw='w-full h-full bg-blue-200'\`
+        - \`tw='text-9xl'\`
+        - \`tw='text-[80px]'\`",
+                "name": "tw",
+                "parent": {
+                  "fileName": "node_modules/next/dist/compiled/@vercel/og/types.d.ts",
+                  "name": "HTMLAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "{string}",
+                },
+              },
+              "variant": {
+                "declarations": [
+                  {
+                    "fileName": "DtsComponent.tsx",
+                    "name": "HtmlButtonProps",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "The button variant",
+                "name": "variant",
+                "parent": {
+                  "fileName": "DtsComponent.tsx",
+                  "name": "HtmlButtonProps",
+                },
+                "required": false,
+                "type": {
+                  "name": "enum",
+                  "raw": ""solid" | "outline"",
+                  "value": [
+                    {
+                      "value": ""solid"",
+                    },
+                    {
+                      "value": ""outline"",
+                    },
+                  ],
+                },
+              },
+            },
+            "tags": {},
+          },
+        ]
+      `);
   });
 
   test('StyledComponent', () => {

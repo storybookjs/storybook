@@ -157,7 +157,7 @@ export async function buildDevStandalone(
     ],
     ...options,
     isCritical: true,
-    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
+    channel,
   });
 
   const { renderer, builder, disableTelemetry } = await presets.apply('core', {});
@@ -215,7 +215,7 @@ export async function buildDevStandalone(
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
-    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
+    channel,
   });
 
   const features = await presets.apply('features');
@@ -226,7 +226,7 @@ export async function buildDevStandalone(
     ...options,
     presets,
     features,
-    channel: channel as unknown as Options['channel'],
+    channel,
   };
 
   const { address, networkAddress, managerResult, previewResult } = await buildOrThrow(async () =>

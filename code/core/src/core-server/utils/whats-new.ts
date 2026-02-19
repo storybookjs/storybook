@@ -105,7 +105,7 @@ export function initializeWhatsNew(
               ...options,
               corePresets: [],
               overridePresets: [],
-            } as unknown as Parameters<typeof sendTelemetryError>[2]['presetOptions'],
+            },
             skipPrompt: true,
           });
         }
@@ -123,7 +123,7 @@ export function initializeWhatsNew(
           ...options,
           corePresets: [],
           overridePresets: [],
-        } as unknown as Parameters<typeof sendTelemetryError>[2]['presetOptions'],
+        },
         skipPrompt: true,
       });
     }

@@ -75,7 +75,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],
     isCritical: true,
-    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
+    channel,
     ...options,
   });
 
@@ -85,7 +85,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ...options,
     presets,
     build,
-    channel: channel as unknown as Options['channel'],
+    channel,
   });
 
   const resolvedRenderer = renderer
@@ -101,7 +101,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ],
     overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
     build,
-    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
+    channel,
     ...options,
   });
 
@@ -120,7 +120,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const fullOptions: Options = {
     ...options,
-    channel: channel as unknown as Options['channel'],
+    channel,
     presets,
     features,
     build,

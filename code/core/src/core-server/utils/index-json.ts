@@ -8,7 +8,7 @@ import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
-import type { ServerChannel } from './get-server-channel';
+import type { ChannelLike } from 'storybook/internal/channels';
 import { watchStorySpecifiers } from './watch-story-specifiers';
 import { watchConfig } from './watchConfig';
 
@@ -33,7 +33,7 @@ export function registerIndexJsonRoute({
 }: {
   app: Polka;
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
-  channel: ServerChannel;
+  channel: ChannelLike;
   workingDir?: string;
   configDir?: string;
   normalizedStories: NormalizedStoriesSpecifier[];

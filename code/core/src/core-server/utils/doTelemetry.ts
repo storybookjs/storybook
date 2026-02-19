@@ -32,7 +32,7 @@ export async function doTelemetry(
           ...options,
           corePresets: [],
           overridePresets: [],
-        } as unknown as Parameters<typeof sendTelemetryError>[2]['presetOptions'],
+        },
       });
       return;
     }

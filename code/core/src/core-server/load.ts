@@ -59,7 +59,7 @@ export async function loadStorybook(
     ],
     ...options,
     isCritical: true,
-    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
+    channel,
   });
 
   const { renderer, builder } = await presets.apply('core', {});
@@ -82,7 +82,7 @@ export async function loadStorybook(
     overridePresets: [
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    channel: channel as unknown as Parameters<typeof loadAllPresets>[0]['channel'],
+    channel,
     ...options,
   });
 

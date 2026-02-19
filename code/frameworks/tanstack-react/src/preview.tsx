@@ -250,7 +250,7 @@ const TanStackProvider: React.FC<{
       routerOptions.mode ??
       (routerOptions.instance
         ? 'instance'
-        : routerOptions.routeTree
+        : routerOptions.routeTree || routerOptions.createRouteTree
           ? 'routeTree'
           : routerOptions.enabled
             ? 'story'

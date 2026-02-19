@@ -11,6 +11,8 @@ import type { TanStackTypes } from './types';
 export * from '@storybook/react';
 export * from './types';
 export * from './router-helpers';
+export { getRouter, getRouterForStory } from './preview';
+export { createStorySearchParams } from './router-helpers';
 
 export function definePreview<Addons extends PreviewAddon<never>[]>(
   preview: {

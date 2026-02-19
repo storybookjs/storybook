@@ -198,10 +198,10 @@ export const manifests: PresetPropertyFn<
       // Extract description from whichever engine is active
       const docgenResult = component.reactDocgen;
       const docgen = docgenResult?.type === 'success' ? docgenResult.data : undefined;
-      const rdtDoc = component.reactDocgenTypescript;
+      const reactDocgenTypescriptDoc = component.reactDocgenTypescript;
 
       // Use react-docgen description if available, fall back to RDT description
-      const docgenDescription = docgen?.description ?? rdtDoc?.description;
+      const docgenDescription = docgen?.description ?? reactDocgenTypescriptDoc?.description;
       const { description, summary, jsDocTags } = extractComponentDescription(
         csf,
         docgenDescription ? { description: docgenDescription } : undefined
@@ -213,7 +213,7 @@ export const manifests: PresetPropertyFn<
         summary,
         import: imports,
         ...(docgen ? { reactDocgen: docgen } : {}),
-        ...(rdtDoc ? { reactDocgenTypescript: rdtDoc } : {}),
+        ...(reactDocgenTypescriptDoc ? { reactDocgenTypescript: reactDocgenTypescriptDoc } : {}),
         jsDocTags,
         error:
           (docgenResult?.type === 'error' ? docgenResult.error : undefined) ??

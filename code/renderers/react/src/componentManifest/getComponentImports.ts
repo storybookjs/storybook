@@ -271,7 +271,6 @@ export const getComponents = ({
               reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
           };
         }
-
       }
       return componentWithPackage;
     })

@@ -929,7 +929,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
 
   // Use whichever engine is active
   const activeParsed = parsedDocgen ?? parsedReactDocgenTypescript;
-  const activeEngine = parsedDocgen
+  const cardEngine = parsedDocgen
     ? 'react-docgen'
     : parsedReactDocgenTypescript
       ? 'react-docgen-typescript'
@@ -1026,7 +1026,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
         <div class="panel panel-props">
           <div class="note ok">
             <div class="row">
-              <span class="ex-name">Prop types <small>(${activeEngine})</small></span>
+              <span class="ex-name">Prop types <small>(${cardEngine})</small></span>
               <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
             </div>
             <pre><code>Component: ${

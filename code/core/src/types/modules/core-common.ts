@@ -371,7 +371,7 @@ export interface ComponentManifest {
 export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
-  meta: {
+  meta?: {
     reactDocgen: string;
     durationMs: number;
   };

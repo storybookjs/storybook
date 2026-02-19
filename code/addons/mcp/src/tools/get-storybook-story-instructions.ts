@@ -91,7 +91,7 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 					(server.ctx.custom?.toolsets?.test ?? true) && !!(await getAddonVitestConstants());
 
 				if (testToolsetAvailable) {
-					const a11yEnabled = await isAddonA11yEnabled(options);
+					const a11yEnabled = server.ctx.custom?.a11yEnabled ?? false;
 					const a11yFixSuffix = a11yEnabled ? ' (see a11y guidelines below)' : '';
 
 					const storyTestingInstructions = storyTestingInstructionsTemplate

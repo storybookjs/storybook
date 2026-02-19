@@ -14,6 +14,7 @@ export default defineConfig({
 		projects: [
 			// E2E tests project (for MCP endpoint testing)
 			{
+				extends: true,
 				test: {
 					name: 'e2e',
 					include: ['tests/**/*.e2e.test.ts'],
@@ -21,6 +22,7 @@ export default defineConfig({
 			},
 			// Storybook browser tests project
 			{
+				extends: true,
 				plugins: [
 					// The plugin will run tests for the stories defined in your Storybook config
 					// See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest

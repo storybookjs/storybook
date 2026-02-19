@@ -25,7 +25,6 @@ import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { shouldLog } from '../../../core/src/node-logger/logger';
 import {
   ADDON_ID,
   COVERAGE_DIRECTORY,
@@ -120,10 +119,8 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       const index = await storyIndexGenerator.getIndex();
       store.setState((s) => ({ ...s, index }));
     } catch (error) {
-      logger.debug('Failed to update story index after invalidation');
-      if (shouldLog('debug')) {
-        logger.error(error);
-      }
+      logger.debug('Failed to update story index after invalidation, Error:');
+      logger.debug(error);
     }
   });
 

@@ -1,10 +1,7 @@
 import type { McpServer } from 'tmcp';
 import type { StorybookContext } from '../types.ts';
 import { getManifests, getMultiSourceManifests, errorToMCPContent } from '../utils/get-manifest.ts';
-import {
-	formatManifestsToLists,
-	formatMultiSourceManifestsToLists,
-} from '../utils/format-manifest.ts';
+import { markdownFormatter } from '../utils/manifest-formatter/markdown.ts';
 
 export const LIST_TOOL_NAME = 'list-all-documentation';
 
@@ -22,7 +19,6 @@ export async function addListAllDocumentationTool(
 		async () => {
 			try {
 				const ctx = server.ctx.custom;
-				const format = ctx?.format ?? 'markdown';
 
 				// Multi-source mode: when sources are configured
 				if (ctx?.sources?.some((s) => s.url)) {
@@ -32,7 +28,7 @@ export async function addListAllDocumentationTool(
 						ctx.manifestProvider,
 					);
 
-					const lists = formatMultiSourceManifestsToLists(multiSourceManifests, format);
+					const lists = markdownFormatter.formatMultiSourceManifestsToLists(multiSourceManifests);
 
 					const firstSuccess = multiSourceManifests.find((m) => !m.error);
 					if (firstSuccess) {
@@ -60,7 +56,7 @@ export async function addListAllDocumentationTool(
 				// Single-source mode: existing behavior
 				const manifests = await getManifests(ctx?.request, ctx?.manifestProvider);
 
-				const lists = formatManifestsToLists(manifests, format);
+				const lists = markdownFormatter.formatManifestsToLists(manifests);
 
 				await ctx?.onListAllDocumentation?.({
 					context: ctx,

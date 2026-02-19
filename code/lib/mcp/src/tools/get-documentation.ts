@@ -2,10 +2,10 @@ import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { ComponentManifest, Doc, StorybookContext } from '../types.ts';
 import { getManifests, errorToMCPContent } from '../utils/get-manifest.ts';
-import { formatComponentManifest, formatDocsManifest } from '../utils/format-manifest.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 import { MAX_STORIES_TO_SHOW } from '../utils/manifest-formatter/types.ts';
 import { GET_STORY_TOOL_NAME } from './get-documentation-for-story.ts';
+import { markdownFormatter } from '../utils/manifest-formatter/markdown.ts';
 
 export const GET_TOOL_NAME = 'get-documentation';
 
@@ -46,7 +46,6 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 		async (input: { id: string; storybookId?: string }) => {
 			try {
 				const ctx = server.ctx.custom;
-				const format = ctx?.format ?? 'markdown';
 				const { id, storybookId } = input;
 				const sources = ctx?.sources;
 				const isMultiSource = sources && sources.some((s) => s.url);
@@ -111,8 +110,8 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 
 				const documentation = component ?? docsEntry!;
 				const text = component
-					? formatComponentManifest(documentation as ComponentManifest, format)
-					: formatDocsManifest(documentation as Doc, format);
+					? markdownFormatter.formatComponentManifest(documentation as ComponentManifest)
+					: markdownFormatter.formatDocsManifest(documentation as Doc);
 
 				await ctx?.onGetDocumentation?.({
 					context: ctx,

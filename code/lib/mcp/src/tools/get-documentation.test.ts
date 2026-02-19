@@ -288,48 +288,6 @@ describe('getDocumentationTool', () => {
 		`);
 	});
 
-	it('should format component as XML when format is "xml"', async () => {
-		const request = {
-			jsonrpc: '2.0' as const,
-			id: 1,
-			method: 'tools/call',
-			params: {
-				name: GET_TOOL_NAME,
-				arguments: {
-					id: 'button',
-				},
-			},
-		};
-
-		const mockHttpRequest = new Request('https://example.com/mcp');
-		const response = await server.receive(request, {
-			custom: { request: mockHttpRequest, format: 'xml' as const },
-		});
-
-		expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "<component>
-			<id>button</id>
-			<name>Button</name>
-			<story>
-			<story_name>Primary</story_name>
-			<story_description>
-			The primary button variant.
-			</story_description>
-			<story_code>
-			const Primary = () => <Button variant="primary">Click Me</Button>
-			</story_code>
-			</story>
-			</component>",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
-	});
-
 	describe('multi-source mode', () => {
 		const sources = [
 			{ id: 'local', title: 'Local' },
@@ -626,53 +584,6 @@ describe('getDocumentationTool', () => {
 			// Should return the component, not the docs entry
 			expect((response.result as any).content[0].text).toContain('## Stories');
 			expect((response.result as any).content[0].text).toContain('Primary');
-		});
-
-		it('should format docs entry as XML when format is "xml"', async () => {
-			const request = {
-				jsonrpc: '2.0' as const,
-				id: 1,
-				method: 'tools/call',
-				params: {
-					name: GET_TOOL_NAME,
-					arguments: {
-						id: 'getting-started',
-					},
-				},
-			};
-
-			const mockHttpRequest = new Request('https://example.com/mcp');
-			const response = await server.receive(request, {
-				custom: { request: mockHttpRequest, format: 'xml' as const },
-			});
-
-			expect(response.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "<doc>
-				<title>Getting Started Guide</title>
-				<content>
-				# Getting Started
-
-				Welcome to the component library. This guide will help you get up and running.
-
-				## Installation
-
-				\`\`\`bash
-				npm install my-component-library
-				\`\`\`
-
-				## Usage
-
-				Import components and use them in your application.
-				</content>
-				</doc>",
-				      "type": "text",
-				    },
-				  ],
-				}
-			`);
 		});
 
 		it('should call onGetDocumentation handler with docs entry when found', async () => {

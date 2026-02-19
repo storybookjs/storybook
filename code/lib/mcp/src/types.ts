@@ -2,11 +2,6 @@ import type { Documentation } from 'react-docgen';
 import * as v from 'valibot';
 
 /**
- * Supported output formats for component manifest formatting.
- */
-export type OutputFormat = 'xml' | 'markdown';
-
-/**
  * Represents a single Storybook source (local or remote).
  */
 export type Source = {
@@ -38,11 +33,6 @@ export type StorybookContext = {
 	 * The incoming HTTP request being processed.
 	 */
 	request?: Request;
-	/**
-	 * Output format for component manifests.
-	 * @default 'markdown'
-	 */
-	format?: OutputFormat;
 	/**
 	 * Optional function to provide custom manifest retrieval logic.
 	 * If provided, this function will be called instead of the default fetch-based provider.

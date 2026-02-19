@@ -19,7 +19,7 @@ import pkgJson from './package.json' with { type: 'json' };
 import { addListAllDocumentationTool } from './src/tools/list-all-documentation.ts';
 import { addGetStoryDocumentationTool } from './src/tools/get-documentation-for-story.ts';
 import { addGetDocumentationTool } from './src/tools/get-documentation.ts';
-import type { StorybookContext, OutputFormat } from './src/types.ts';
+import type { StorybookContext } from './src/types.ts';
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs/promises';
 import { basename } from 'node:path';
@@ -50,17 +50,10 @@ const args = parseArgs({
 			type: 'string',
 			default: './fixtures/default',
 		},
-		format: {
-			type: 'string',
-			default: 'markdown',
-		},
 	},
 });
 
-const format = args.values.format as OutputFormat;
-
 transport.listen({
-	format,
 	manifestProvider: async (_request, path) => {
 		const { manifestsDir } = args.values;
 		const fullPath = `${manifestsDir}/${basename(path)}`;

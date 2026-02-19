@@ -171,6 +171,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 				### Other Stories
 
 				- Small
+				- With A 11 Y Violation
 
 				## Props
 

@@ -6,7 +6,7 @@
 	"scripts": {
 		"build-storybook": "storybook build",
 		"storybook": "storybook dev --port 6006 --loglevel debug --no-open",
-		"test": "cd ../.. && pnpm vitest --project=e2e",
+		"test": "vitest --project=e2e",
 		"test:storybook": "vitest run --project=storybook",
 		"storybook:composition": "storybook dev --port 6007 -c .storybook-composition --loglevel debug --no-open",
 		"storybook:composition:auth": "storybook dev --port 6008 -c .storybook-composition-auth --loglevel debug --no-open",

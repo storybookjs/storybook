@@ -102,31 +102,285 @@ describe('MCP Endpoint E2E Tests', () => {
 			// Dev, docs, and test tools should be present
 			expect(response.result.tools).toHaveLength(5);
 
-			const toolNames = response.result.tools.map((tool: any) => tool.name);
-			expect(toolNames).toEqual([
-				'preview-stories',
-				'get-storybook-story-instructions',
-				'run-story-tests',
-				'list-all-documentation',
-				'get-documentation',
-			]);
+			expect(response.result.tools).toMatchInlineSnapshot(`
+				[
+				  {
+				    "_meta": {
+				      "ui": {
+				        "resourceUri": "ui://preview-stories/preview.html",
+				      },
+				    },
+				    "description": "Use this tool to preview one or more stories, rendering them as an MCP App using the UI Resource or returning the raw URL for users to visit.",
+				    "inputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "stories": {
+				          "items": {
+				            "properties": {
+				              "absoluteStoryPath": {
+				                "type": "string",
+				              },
+				              "explicitStoryName": {
+				                "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				Otherwise don't set this.",
+				                "type": "string",
+				              },
+				              "exportName": {
+				                "type": "string",
+				              },
+				              "globals": {
+				                "additionalProperties": {},
+				                "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                "propertyNames": {
+				                  "type": "string",
+				                },
+				                "type": "object",
+				              },
+				              "props": {
+				                "additionalProperties": {},
+				                "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                "propertyNames": {
+				                  "type": "string",
+				                },
+				                "type": "object",
+				              },
+				            },
+				            "required": [
+				              "exportName",
+				              "absoluteStoryPath",
+				            ],
+				            "type": "object",
+				          },
+				          "type": "array",
+				        },
+				      },
+				      "required": [
+				        "stories",
+				      ],
+				      "type": "object",
+				    },
+				    "name": "preview-stories",
+				    "outputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "stories": {
+				          "items": {
+				            "anyOf": [
+				              {
+				                "properties": {
+				                  "name": {
+				                    "type": "string",
+				                  },
+				                  "previewUrl": {
+				                    "type": "string",
+				                  },
+				                  "title": {
+				                    "type": "string",
+				                  },
+				                },
+				                "required": [
+				                  "title",
+				                  "name",
+				                  "previewUrl",
+				                ],
+				                "type": "object",
+				              },
+				              {
+				                "properties": {
+				                  "error": {
+				                    "type": "string",
+				                  },
+				                  "input": {
+				                    "properties": {
+				                      "absoluteStoryPath": {
+				                        "type": "string",
+				                      },
+				                      "explicitStoryName": {
+				                        "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				Otherwise don't set this.",
+				                        "type": "string",
+				                      },
+				                      "exportName": {
+				                        "type": "string",
+				                      },
+				                      "globals": {
+				                        "additionalProperties": {},
+				                        "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                        "propertyNames": {
+				                          "type": "string",
+				                        },
+				                        "type": "object",
+				                      },
+				                      "props": {
+				                        "additionalProperties": {},
+				                        "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                        "propertyNames": {
+				                          "type": "string",
+				                        },
+				                        "type": "object",
+				                      },
+				                    },
+				                    "required": [
+				                      "exportName",
+				                      "absoluteStoryPath",
+				                    ],
+				                    "type": "object",
+				                  },
+				                },
+				                "required": [
+				                  "input",
+				                  "error",
+				                ],
+				                "type": "object",
+				              },
+				            ],
+				          },
+				          "type": "array",
+				        },
+				      },
+				      "required": [
+				        "stories",
+				      ],
+				      "type": "object",
+				    },
+				    "title": "Preview stories",
+				  },
+				  {
+				    "description": "Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
 
-			const storyInstructionsTool = response.result.tools.find(
-				(tool: any) => tool.name === 'get-storybook-story-instructions',
-			);
-			expect(storyInstructionsTool.description).toContain(
-				'Get comprehensive instructions for writing, testing, and fixing Storybook stories',
-			);
-			expect(storyInstructionsTool.description).toContain(
-				'Handling accessibility (a11y) violations in stories',
-			);
+				CRITICAL: You MUST call this tool before:
+				- Creating new Storybook stories or story files
+				- Updating or modifying existing Storybook stories
+				- Adding new story variants or exports to story files
+				- Editing any file matching *.stories.* patterns
+				- Writing components that will need stories
+				- Running story tests or fixing test failures
+				- Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)
 
-			const runStoryTestsTool = response.result.tools.find(
-				(tool: any) => tool.name === 'run-story-tests',
-			);
-			expect(runStoryTestsTool.description).toContain('Run story tests.');
-			expect(runStoryTestsTool.inputSchema.properties).toHaveProperty('a11y');
-			expect(runStoryTestsTool.inputSchema.properties).toHaveProperty('stories');
+				This tool provides essential Storybook-specific guidance including:
+				- How to structure stories correctly for Storybook 9
+				- Required imports (Meta, StoryObj from framework package)
+				- Test utility imports (from 'storybook/test')
+				- Story naming conventions and best practices
+				- Play function patterns for interactive testing
+				- Mocking strategies for external dependencies
+				- Story variants and coverage requirements
+				- How to handle test failures and accessibility violations
+
+				Even if you're familiar with Storybook, call this tool to ensure you're following the correct patterns, import paths, and conventions for this specific Storybook setup.",
+				    "inputSchema": {
+				      "properties": {},
+				      "type": "object",
+				    },
+				    "name": "get-storybook-story-instructions",
+				    "title": "Storybook Story Development Instructions",
+				  },
+				  {
+				    "description": "Run story tests.
+				Provide stories for focused runs (faster while iterating),
+				or omit stories to run all tests for full-project verification.
+				Use this continuously to monitor test results as you work on your UI components and stories.
+				Results will include passing/failing status, and accessibility violation reports.
+				For visual/design accessibility violations (for example color contrast), ask the user before changing styles.",
+				    "inputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "a11y": {
+				          "default": true,
+				          "description": "Whether to run accessibility tests. Defaults to true. Disable if you only need component test results.",
+				          "type": "boolean",
+				        },
+				        "stories": {
+				          "description": "Stories to test for focused feedback. Omit this field to run tests for all available stories.
+				Prefer running tests for specific stories while developing to get faster feedback,
+				and only omit this when you explicitly need to run all tests for comprehensive verification.",
+				          "items": {
+				            "properties": {
+				              "absoluteStoryPath": {
+				                "type": "string",
+				              },
+				              "explicitStoryName": {
+				                "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				Otherwise don't set this.",
+				                "type": "string",
+				              },
+				              "exportName": {
+				                "type": "string",
+				              },
+				              "globals": {
+				                "additionalProperties": {},
+				                "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                "propertyNames": {
+				                  "type": "string",
+				                },
+				                "type": "object",
+				              },
+				              "props": {
+				                "additionalProperties": {},
+				                "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                "propertyNames": {
+				                  "type": "string",
+				                },
+				                "type": "object",
+				              },
+				            },
+				            "required": [
+				              "exportName",
+				              "absoluteStoryPath",
+				            ],
+				            "type": "object",
+				          },
+				          "type": "array",
+				        },
+				      },
+				      "required": [],
+				      "type": "object",
+				    },
+				    "name": "run-story-tests",
+				    "title": "Storybook Tests",
+				  },
+				  {
+				    "description": "List all available UI components and documentation entries from the Storybook",
+				    "inputSchema": {
+				      "properties": {},
+				      "type": "object",
+				    },
+				    "name": "list-all-documentation",
+				    "title": "List All Documentation",
+				  },
+				  {
+				    "description": "Get documentation for a UI component or docs entry.
+
+				Returns the first 3 stories with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the get-documentation-for-story tool to fetch the story documentation for the specific story variant you need.
+
+				Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.",
+				    "inputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "id": {
+				          "description": "The component or docs entry ID (e.g., "button")",
+				          "type": "string",
+				        },
+				      },
+				      "required": [
+				        "id",
+				      ],
+				      "type": "object",
+				    },
+				    "name": "get-documentation",
+				    "title": "Get Documentation",
+				  },
+				]
+			`);
 		});
 	});
 
@@ -267,6 +521,12 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(text).toContain('### Secondary');
 			expect(text).toContain('## Props');
 			expect(text).toContain('export type Props =');
+			expect(text).toContain('## Docs');
+			expect(text).toContain('### Additional Information');
+			expect(text).toContain(
+				'that the string passed to the `label` prop uses the 🍌-emoji instead of spaces.',
+			);
+			expect(text).toContain('<Canvas of={ButtonStories.Primary} />');
 		});
 
 		it('should return error for non-existent component', async () => {

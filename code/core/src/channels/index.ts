@@ -49,4 +49,10 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
   return channel;
 }
 
-export type { Listener, ChannelEvent, ChannelTransport, ChannelHandler, ChannelLike } from './types';
+export type {
+  Listener,
+  ChannelEvent,
+  ChannelTransport,
+  ChannelHandler,
+  ChannelLike,
+} from './types';

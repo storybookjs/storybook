@@ -30,8 +30,8 @@ export interface EventsKeyValue {
 }
 
 /**
- * Structural interface for Channel, used in type declarations to avoid
- * nominal incompatibility between source and dist Channel class declarations.
+ * Structural interface for Channel, used in type declarations to avoid nominal incompatibility
+ * between source and dist Channel class declarations.
  */
 export interface ChannelLike {
   readonly isAsync: boolean;

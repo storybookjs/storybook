@@ -177,9 +177,7 @@ describe('MCP Endpoint E2E Tests', () => {
 			const runStoryTestsTool = response.result.tools.find(
 				(tool: any) => tool.name === 'run-story-tests',
 			);
-			expect(runStoryTestsTool.description).toContain(
-				'Run Storybook story tests and report accessibility issues.',
-			);
+			expect(runStoryTestsTool.description).toContain('Run story tests.');
 			expect(runStoryTestsTool.inputSchema.properties).toHaveProperty('a11y');
 			expect(runStoryTestsTool.inputSchema.properties).toHaveProperty('stories');
 		});

@@ -18,10 +18,9 @@ import {
   getResolvedVirtualModuleId,
 } from '../virtual-file-names';
 
-export function codeGeneratorPlugin(options: Options): Plugin {
+export function codeGeneratorPlugin(options: Options) {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
   let iframeId: string;
-  let projectRoot: string;
   const storyIndexGeneratorPromise: Promise<StoryIndexGenerator> =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
@@ -61,7 +60,6 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       }
     },
     configResolved(config) {
-      projectRoot = config.root;
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
@@ -86,7 +84,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
           return generateAddonSetupCode();
         }
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE): {
-          return generateModernIframeScriptCode(options, projectRoot);
+          return generateModernIframeScriptCode(options);
         }
         case iframeId: {
           return readFileSync(
@@ -102,5 +100,5 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       }
       return transformIframeHtml(html, options);
     },
-  };
+  } satisfies Plugin;
 }

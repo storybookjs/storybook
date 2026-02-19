@@ -58,9 +58,8 @@ export function renderComponentsManifest(
     docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
 
-  const { meta } = manifest;
-  const activeEngine = meta.reactDocgen;
-  const durationMs = meta.durationMs;
+  const activeEngine = manifest?.meta?.reactDocgen ?? 'react-docgen';
+  const durationMs = manifest?.meta?.durationMs ?? 0;
 
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
   const allPill = `<a class="filter-pill all" data-k="all" href="#filter-all">All</a>`;

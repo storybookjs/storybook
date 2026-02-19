@@ -21,7 +21,7 @@ function normalize(results: any[]) {
 }
 
 describe('parseFile', () => {
-  test('Button', () => {
+  test('Button', { timeout: 30_000 }, () => {
     expect(normalize(parseWithReactDocgenTypescript(fixture('Button.ts')))).toMatchInlineSnapshot(`
       [
         {

@@ -26,7 +26,7 @@ test.describe('preview-api', () => {
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
     // wait for the play function to complete
-    await sbPage.viewAddonPanel('Interactions');
+    await sbPage.viewAddonPanel('Interaactions');
     const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();

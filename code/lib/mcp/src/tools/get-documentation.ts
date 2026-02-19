@@ -3,9 +3,12 @@ import type { McpServer } from 'tmcp';
 import type { ComponentManifest, Doc, StorybookContext } from '../types.ts';
 import { getManifests, errorToMCPContent } from '../utils/get-manifest.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
-import { MAX_STORIES_TO_SHOW } from '../utils/manifest-formatter/types.ts';
+import {
+	formatComponentManifest,
+	formatDocsManifest,
+	MAX_STORIES_TO_SHOW,
+} from '../utils/manifest-formatter/markdown.ts';
 import { GET_STORY_TOOL_NAME } from './get-documentation-for-story.ts';
-import { markdownFormatter } from '../utils/manifest-formatter/markdown.ts';
 
 export const GET_TOOL_NAME = 'get-documentation';
 
@@ -110,8 +113,8 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 
 				const documentation = component ?? docsEntry!;
 				const text = component
-					? markdownFormatter.formatComponentManifest(documentation as ComponentManifest)
-					: markdownFormatter.formatDocsManifest(documentation as Doc);
+					? formatComponentManifest(documentation as ComponentManifest)
+					: formatDocsManifest(documentation as Doc);
 
 				await ctx?.onGetDocumentation?.({
 					context: ctx,

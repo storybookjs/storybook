@@ -1,4 +1,4 @@
-import { MAX_SUMMARY_LENGTH } from './types.ts';
+import { MAX_SUMMARY_LENGTH } from './markdown.ts';
 
 /**
  * Extracts a summary from MDX content.

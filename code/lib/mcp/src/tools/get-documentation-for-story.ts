@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { StorybookContext } from '../types.ts';
 import { errorToMCPContent, getManifests } from '../utils/get-manifest.ts';
-import { markdownFormatter } from '../utils/manifest-formatter/markdown.ts';
+import { formatStoryDocumentation } from '../utils/manifest-formatter/markdown.ts';
 
 export const GET_STORY_TOOL_NAME = 'get-documentation-for-story';
 
@@ -66,7 +66,7 @@ export async function addGetStoryDocumentationTool(
 					content: [
 						{
 							type: 'text' as const,
-							text: markdownFormatter.formatStoryDocumentation(component, input.storyName),
+							text: formatStoryDocumentation(component, input.storyName),
 						},
 					],
 				};

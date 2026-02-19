@@ -1,19 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { markdownFormatter } from './markdown.ts';
 import type { AllManifests, ComponentManifest, ComponentManifestMap } from '../../types.ts';
 import fullManifestFixture from '../../../fixtures/full-manifest.fixture.json' with { type: 'json' };
+import { formatComponentManifest, formatManifestsToLists } from './markdown.ts';
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
 	it('formats all full fixtures', () => {
-		expect(
-			markdownFormatter.formatComponentManifest(fullManifestFixture.components.button),
-		).toMatchSnapshot();
-		expect(
-			markdownFormatter.formatComponentManifest(fullManifestFixture.components.card),
-		).toMatchSnapshot();
-		expect(
-			markdownFormatter.formatComponentManifest(fullManifestFixture.components.input),
-		).toMatchSnapshot();
+		expect(formatComponentManifest(fullManifestFixture.components.button)).toMatchSnapshot();
+		expect(formatComponentManifest(fullManifestFixture.components.card)).toMatchSnapshot();
+		expect(formatComponentManifest(fullManifestFixture.components.input)).toMatchSnapshot();
 	});
 
 	describe('component header', () => {
@@ -24,7 +18,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				name: 'TestComponent',
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# TestComponent
@@ -43,7 +37,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				description: 'A simple button component',
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Button
@@ -61,7 +55,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				path: 'src/components/Button.tsx',
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).not.toContain('A simple button component');
 			expect(result).toMatchInlineSnapshot(`
@@ -87,7 +81,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				],
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Button
@@ -124,7 +118,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				],
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toContain('### Default');
 			expect(result).toContain('### Primary');
@@ -167,7 +161,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				],
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toContain('The primary action button style');
 			expect(result).toMatchInlineSnapshot(`
@@ -194,7 +188,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				path: 'src/components/Button.tsx',
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).not.toContain('## Stories');
 		});
@@ -207,7 +201,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				stories: [],
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).not.toContain('## Stories');
 		});
@@ -254,7 +248,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Button
@@ -333,7 +327,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				// No reactDocgen means no props - all stories should be shown fully
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Button
@@ -415,7 +409,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Button
@@ -466,7 +460,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).not.toContain('## Docs');
 			expect(result).not.toContain('### Blank Doc');
@@ -497,7 +491,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Button
@@ -540,7 +534,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Button
@@ -577,7 +571,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Button
@@ -609,7 +603,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				description: 'A button component',
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).not.toContain('## Props');
 		});
@@ -624,7 +618,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatComponentManifest(manifest);
+			const result = formatComponentManifest(manifest);
 
 			expect(result).not.toContain('## Props');
 		});
@@ -655,7 +649,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			},
 		};
 
-		const result = markdownFormatter.formatComponentManifest(manifest);
+		const result = formatComponentManifest(manifest);
 
 		expect(result).toMatchInlineSnapshot(`
 			"# Button
@@ -680,7 +674,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 describe('MarkdownFormatter - formatManifestsToLists', () => {
 	it('formats the full manifest fixture', () => {
-		const result = markdownFormatter.formatManifestsToLists({
+		const result = formatManifestsToLists({
 			componentManifest: fullManifestFixture as ComponentManifestMap,
 		});
 		expect(result).toMatchSnapshot();
@@ -701,7 +695,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -734,7 +728,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -762,7 +756,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -787,7 +781,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toContain('Button summary');
 			expect(result).not.toContain('Button description');
@@ -808,7 +802,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -833,7 +827,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toContain('...');
 			expect(result).toMatchInlineSnapshot(`
@@ -858,7 +852,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).not.toContain('...');
 			expect(result).toContain('A button component for user interactions');
@@ -878,7 +872,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -915,7 +909,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -961,7 +955,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toContain('# Components');
 			expect(result).toContain('# Docs');
@@ -983,7 +977,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).not.toContain('# Docs');
 		});
@@ -1016,7 +1010,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -1055,7 +1049,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				},
 			};
 
-			const result = markdownFormatter.formatManifestsToLists(manifests);
+			const result = formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components

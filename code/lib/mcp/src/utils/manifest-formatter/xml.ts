@@ -1,7 +1,49 @@
+import type { ComponentManifest, Doc } from '../../types.ts';
 import { MAX_SUMMARY_LENGTH, MAX_STORIES_TO_SHOW, type ManifestFormatter } from './types.ts';
 import { extractDocsSummary } from './extract-docs-summary.ts';
 import { dedent } from '../dedent.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
+
+function formatComponentListItem(component: ComponentManifest): string {
+	const parts: string[] = [];
+	parts.push(dedent`<component>
+		<id>${component.id}</id>
+		<name>${component.name}</name>`);
+
+	const summary =
+		component.summary ??
+		(component.description
+			? component.description.length > MAX_SUMMARY_LENGTH
+				? `${component.description.slice(0, MAX_SUMMARY_LENGTH)}...`
+				: component.description
+			: undefined);
+
+	if (summary) {
+		parts.push(dedent`<summary>
+			${summary}
+			</summary>`);
+	}
+
+	parts.push('</component>');
+	return parts.join('\n');
+}
+
+function formatDocListItem(doc: Doc): string {
+	const parts: string[] = [];
+	const summary = doc.summary ?? extractDocsSummary(doc.content);
+	parts.push(dedent`<doc>
+		<id>${doc.id}</id>
+		<title>${doc.title}</title>`);
+
+	if (summary) {
+		parts.push(dedent`<summary>
+			${summary}
+			</summary>`);
+	}
+
+	parts.push('</doc>');
+	return parts.join('\n');
+}
 
 /**
  * XML formatter for component manifests.
@@ -117,29 +159,9 @@ export const xmlFormatter: ManifestFormatter = {
 		const parts: string[] = [];
 
 		parts.push('<components>');
-
 		for (const component of Object.values(manifests.componentManifest.components)) {
-			parts.push(dedent`<component>
-				<id>${component.id}</id>
-				<name>${component.name}</name>`);
-
-			const summary =
-				component.summary ??
-				(component.description
-					? component.description.length > MAX_SUMMARY_LENGTH
-						? `${component.description.slice(0, MAX_SUMMARY_LENGTH)}...`
-						: component.description
-					: undefined);
-
-			if (summary) {
-				parts.push(dedent`<summary>
-					${summary}
-					</summary>`);
-			}
-
-			parts.push('</component>');
+			parts.push(formatComponentListItem(component));
 		}
-
 		parts.push('</components>');
 
 		if (!manifests.docsManifest) {
@@ -147,23 +169,49 @@ export const xmlFormatter: ManifestFormatter = {
 		}
 
 		parts.push('<docs>');
-
 		for (const doc of Object.values(manifests.docsManifest.docs)) {
-			const summary = doc.summary ?? extractDocsSummary(doc.content);
-			parts.push(dedent`<doc>
-				<id>${doc.id}</id>
-				<title>${doc.title}</title>`);
+			parts.push(formatDocListItem(doc));
+		}
+		parts.push('</docs>');
 
-			if (summary) {
-				parts.push(dedent`<summary>
-					${summary}
-					</summary>`);
+		return parts.join('\n');
+	},
+
+	formatMultiSourceManifestsToLists(manifests) {
+		const parts: string[] = [];
+
+		parts.push('<sources>');
+
+		for (const { source, componentManifest, docsManifest, error } of manifests) {
+			parts.push(`<source id="${source.id}" title="${source.title}">`);
+
+			if (error) {
+				parts.push(`<error>${error}</error>`);
+				parts.push('</source>');
+				continue;
 			}
 
-			parts.push('</doc>');
+			const components = Object.values(componentManifest.components);
+			if (components.length > 0) {
+				parts.push('<components>');
+				for (const component of components) {
+					parts.push(formatComponentListItem(component));
+				}
+				parts.push('</components>');
+			}
+
+			if (docsManifest && Object.keys(docsManifest.docs).length > 0) {
+				parts.push('<docs>');
+				for (const doc of Object.values(docsManifest.docs)) {
+					parts.push(formatDocListItem(doc));
+				}
+				parts.push('</docs>');
+			}
+
+			parts.push('</source>');
 		}
 
-		parts.push('</docs>');
+		parts.push('</sources>');
 
 		return parts.join('\n');
 	},

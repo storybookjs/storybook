@@ -1,5 +1,9 @@
 import { defineMain } from '@storybook/react-vite/node';
 
+/**
+ * Single-source Storybook configuration (no refs/composition).
+ * For multi-source/composition tests, see .storybook-composition/
+ */
 const config = defineMain({
 	stories: [
 		'../stories/**/*.mdx',
@@ -17,23 +21,17 @@ const config = defineMain({
 		'@storybook/addon-themes',
 		{
 			name: '@storybook/addon-mcp',
-			options: {
-				// toolsets: {
-				// 	dev: true,
-				// 	docs: true,
-				// 	test: true,
-				// },
-			},
+			options: {},
 		},
 	],
 	framework: '@storybook/react-vite',
-	// logLevel: 'debug',
 	core: {
 		disableTelemetry: true,
 	},
 	features: {
 		experimentalComponentsManifest: true,
 	},
+	// No refs - single source mode
 });
 
 export default config;

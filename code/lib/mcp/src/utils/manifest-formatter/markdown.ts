@@ -1,8 +1,28 @@
-import type { ComponentManifest, Story } from '../../types.ts';
+import type { ComponentManifest, Doc, Story } from '../../types.ts';
 import { MAX_SUMMARY_LENGTH, MAX_STORIES_TO_SHOW, type ManifestFormatter } from './types.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
 import { dedent } from '../dedent.ts';
 import { extractDocsSummary } from './extract-docs-summary.ts';
+
+function formatComponentLine(component: ComponentManifest): string {
+	const summary =
+		component.summary ??
+		(component.description
+			? component.description.length > MAX_SUMMARY_LENGTH
+				? `${component.description.slice(0, MAX_SUMMARY_LENGTH)}...`
+				: component.description
+			: undefined);
+
+	if (summary) {
+		return `- ${component.name} (${component.id}): ${summary}`;
+	}
+	return `- ${component.name} (${component.id})`;
+}
+
+function formatDocLine(doc: Doc): string {
+	const summary = doc.summary ?? extractDocsSummary(doc.content);
+	return `- ${doc.title} (${doc.id})${summary ? `: ${summary}` : ''}`;
+}
 
 /**
  * Extracts a summary from an object with optional summary and description fields.
@@ -156,6 +176,26 @@ export const markdownFormatter: ManifestFormatter = {
 			}
 		}
 
+		// Attached docs section
+		if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {
+			const docsWithContent = Object.values(componentManifest.docs).filter(
+				(doc) => doc.content.trim().length > 0,
+			);
+
+			if (docsWithContent.length > 0) {
+				parts.push('## Docs');
+				parts.push('');
+
+				for (const doc of docsWithContent) {
+					parts.push(`### ${doc.name}`);
+					parts.push('');
+
+					parts.push(doc.content);
+					parts.push('');
+				}
+			}
+		}
+
 		return parts.join('\n').trim();
 	},
 
@@ -170,17 +210,9 @@ export const markdownFormatter: ManifestFormatter = {
 
 		parts.push('# Components');
 		parts.push('');
-
 		for (const component of Object.values(manifests.componentManifest.components)) {
-			const summary = extractSummary(component);
-
-			if (summary) {
-				parts.push(`- ${component.name} (${component.id}): ${summary}`);
-			} else {
-				parts.push(`- ${component.name} (${component.id})`);
-			}
+			parts.push(formatComponentLine(component));
 		}
-
 		parts.push('');
 
 		if (!manifests.docsManifest) {
@@ -189,10 +221,45 @@ export const markdownFormatter: ManifestFormatter = {
 
 		parts.push('# Docs');
 		parts.push('');
-
 		for (const doc of Object.values(manifests.docsManifest.docs)) {
-			const summary = doc.summary ?? extractDocsSummary(doc.content);
-			parts.push(`- ${doc.title} (${doc.id})${summary ? `: ${summary}` : ''}`);
+			parts.push(formatDocLine(doc));
+		}
+
+		return parts.join('\n').trim();
+	},
+
+	formatMultiSourceManifestsToLists(manifests) {
+		const parts: string[] = [];
+
+		for (const { source, componentManifest, docsManifest, error } of manifests) {
+			parts.push(`# ${source.title}`);
+			parts.push(`id: ${source.id}`);
+			parts.push('');
+
+			if (error) {
+				parts.push(`error: ${error}`);
+				parts.push('');
+				continue;
+			}
+
+			const components = Object.values(componentManifest.components);
+			if (components.length > 0) {
+				parts.push('## Components');
+				parts.push('');
+				for (const component of components) {
+					parts.push(formatComponentLine(component));
+				}
+				parts.push('');
+			}
+
+			if (docsManifest && Object.keys(docsManifest.docs).length > 0) {
+				parts.push('## Docs');
+				parts.push('');
+				for (const doc of Object.values(docsManifest.docs)) {
+					parts.push(formatDocLine(doc));
+				}
+				parts.push('');
+			}
 		}
 
 		return parts.join('\n').trim();

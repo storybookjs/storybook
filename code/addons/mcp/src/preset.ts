@@ -7,6 +7,9 @@ import { getAddonVitestConstants } from './tools/run-story-tests.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import htmlTemplate from './template.html';
 import path from 'node:path';
+import { CompositionAuth, extractBearerToken, type ComposedRef } from './auth/index.ts';
+import { logger } from 'storybook/internal/node-logger';
+import type { Source } from '@storybook/mcp';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
 	existingAnnotations = [],
@@ -25,14 +28,75 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 		experimentalFormat: 'experimentalFormat' in options ? options.experimentalFormat : 'markdown',
 	});
 
-	app!.post('/mcp', (req, res) =>
-		mcpServerHandler({
+	const origin = `http://localhost:${options.port}`;
+
+	// Get composed Storybook refs from config
+	const refs = await getRefsFromConfig(options);
+	const compositionAuth = new CompositionAuth();
+
+	// Build sources and manifest provider only if refs are configured
+	let sources: Source[] | undefined;
+	let manifestProvider:
+		| ((request: Request | undefined, path: string, source?: Source) => Promise<string>)
+		| undefined;
+
+	if (refs.length > 0) {
+		logger.info(`Initializing composition with ${refs.length} remote Storybook(s)`);
+		await compositionAuth.initialize(refs);
+		if (compositionAuth.requiresAuth) {
+			logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
+		}
+
+		// Build sources array (local + refs)
+		sources = compositionAuth.buildSources();
+		logger.info(`Sources: ${sources.map((s) => s.id).join(', ')}`);
+
+		// Create manifest provider that handles multi-source
+		manifestProvider = compositionAuth.createManifestProvider(origin);
+	}
+
+	// Serve .well-known/oauth-protected-resource for MCP auth
+	app!.get('/.well-known/oauth-protected-resource', (_req, res) => {
+		const wellKnown = compositionAuth.buildWellKnown(origin);
+		if (!wellKnown) {
+			res.writeHead(404);
+			res.end('Not found');
+			return;
+		}
+
+		res.writeHead(200, { 'Content-Type': 'application/json' });
+		res.end(JSON.stringify(wellKnown));
+	});
+
+	const requireAuth = (
+		req: import('node:http').IncomingMessage,
+		res: import('node:http').ServerResponse,
+	): boolean => {
+		const token = extractBearerToken(req.headers['authorization']);
+		if (compositionAuth.requiresAuth && !token) {
+			res.writeHead(401, {
+				'Content-Type': 'text/plain',
+				'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
+			});
+			res.end('401 - Unauthorized');
+			return true;
+		}
+		return false;
+	};
+
+	app!.post('/mcp', (req, res) => {
+		if (requireAuth(req, res)) return;
+
+		return mcpServerHandler({
 			req,
 			res,
 			options,
 			addonOptions,
-		}),
-	);
+			sources,
+			manifestProvider,
+			compositionAuth,
+		});
+	});
 
 	const manifestStatus = await getManifestStatus(options);
 	const addonVitestConstants = await getAddonVitestConstants();
@@ -44,7 +108,17 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 
 	app!.get('/mcp', (req, res) => {
 		if (!req.headers['accept']?.includes('text/html')) {
-			return mcpServerHandler({ req, res, options, addonOptions });
+			if (requireAuth(req, res)) return;
+
+			return mcpServerHandler({
+				req,
+				res,
+				options,
+				addonOptions,
+				sources,
+				manifestProvider,
+				compositionAuth,
+			});
 		}
 
 		// Browser request - send HTML with redirect
@@ -95,3 +169,29 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	});
 	return app;
 };
+
+/**
+ * Get composed Storybook refs from Storybook config.
+ * See: https://storybook.js.org/docs/sharing/storybook-composition
+ */
+async function getRefsFromConfig(options: any): Promise<ComposedRef[]> {
+	try {
+		// Get refs from Storybook presets
+		const refs = await options.presets.apply('refs', {});
+
+		if (!refs || typeof refs !== 'object') {
+			return [];
+		}
+
+		// Convert refs object to array, using the config key as the stable ID
+		return Object.entries(refs)
+			.map(([key, value]: [string, any]) => ({
+				id: key,
+				title: value.title || key,
+				url: value.url,
+			}))
+			.filter((ref) => ref.url); // Only include refs with URLs
+	} catch {
+		return [];
+	}
+}

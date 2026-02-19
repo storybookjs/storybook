@@ -1,4 +1,10 @@
-import { ComponentManifestMap, DocsManifestMap, type AllManifests } from '../types.ts';
+import {
+	ComponentManifestMap,
+	DocsManifestMap,
+	type AllManifests,
+	type Source,
+	type SourceManifests,
+} from '../types.ts';
 import * as v from 'valibot';
 
 /**
@@ -89,29 +95,40 @@ ${error instanceof v.ValiError ? error.issues.map((i) => i.message).join('\n') :
  *
  * @param request - The HTTP request to get the manifest for (optional when using custom manifestProvider)
  * @param manifestProvider - Optional custom function to get the manifest
+ * @param source - Optional source for multi-source mode
  * @returns A promise that resolves to the parsed ComponentManifestMap
  * @throws {ManifestGetError} If getting the manifest fails or the response is invalid
  */
 export async function getManifests(
 	request?: Request,
-	manifestProvider?: (request: Request | undefined, path: string) => Promise<string>,
+	manifestProvider?: (
+		request: Request | undefined,
+		path: string,
+		source?: Source,
+	) => Promise<string>,
+	source?: Source,
 ): Promise<AllManifests> {
 	const provider = manifestProvider ?? defaultManifestProvider;
 
 	// Fetch both component and docs manifests in parallel
 	const [componentResult, docsResult] = await Promise.allSettled([
-		provider(request, COMPONENT_MANIFEST_PATH),
-		provider(request, DOCS_MANIFEST_PATH),
+		provider(request, COMPONENT_MANIFEST_PATH, source),
+		provider(request, DOCS_MANIFEST_PATH, source),
 	]);
 
 	const getUrl = (path: string) =>
 		request ? getManifestUrlFromRequest(request, path) : 'Unknown manifest source';
 
 	if (componentResult.status === 'rejected') {
+		const reason = componentResult.reason;
+		const is404 = reason instanceof ManifestGetError && reason.message.includes('404');
+		const hint = is404
+			? `\nHint: The Storybook at this URL may not have the component manifest enabled. Add \`features: { experimentalComponentsManifest: true }\` to its main.ts config.`
+			: '';
 		throw new ManifestGetError(
-			`Failed to get component manifest: ${componentResult.reason instanceof Error ? componentResult.reason.message : String(componentResult.reason)}`,
+			`Failed to get component manifest: ${reason instanceof Error ? reason.message : String(reason)}${hint}`,
 			getUrl(COMPONENT_MANIFEST_PATH),
-			componentResult.reason instanceof Error ? componentResult.reason : undefined,
+			reason instanceof Error ? reason : undefined,
 		);
 	}
 
@@ -187,4 +204,57 @@ async function defaultManifestProvider(
 		);
 	}
 	return response.text();
+}
+
+/**
+ * Gets manifests from multiple sources.
+ * Returns an array of source manifests, each containing the source info and its manifests.
+ * Failures for individual sources are captured as errors rather than failing the entire request.
+ *
+ * @param sources - Array of source configurations
+ * @param request - The HTTP request (used for local source)
+ * @param manifestProvider - Function to fetch manifests, receives source as third parameter
+ * @returns Promise resolving to array of source manifests
+ * @throws {ManifestGetError} If no sources could be fetched successfully
+ */
+export async function getMultiSourceManifests(
+	sources: Source[],
+	request?: Request,
+	manifestProvider?: (
+		request: Request | undefined,
+		path: string,
+		source?: Source,
+	) => Promise<string>,
+): Promise<SourceManifests[]> {
+	// Fetch all sources in parallel
+	const results = await Promise.all(
+		sources.map(async (source) => {
+			try {
+				const manifests = await getManifests(request, manifestProvider, source);
+				return {
+					source,
+					componentManifest: manifests.componentManifest,
+					docsManifest: manifests.docsManifest,
+				};
+			} catch (error) {
+				// Capture error but don't fail the entire request
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				return {
+					source,
+					componentManifest: { v: 1, components: {} },
+					error: errorMessage,
+				};
+			}
+		}),
+	);
+
+	// Check if at least one source succeeded
+	const successCount = results.filter((r) => !r.error).length;
+	if (successCount === 0) {
+		throw new ManifestGetError(
+			`Failed to fetch manifests from any source. Errors:\n${results.map((r) => `- ${r.source.title}: ${r.error}`).join('\n')}`,
+		);
+	}
+
+	return results;
 }

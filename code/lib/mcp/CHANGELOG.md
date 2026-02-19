@@ -1,5 +1,17 @@
 # @storybook/mcp
 
+## 0.2.2
+
+### Patch Changes
+
+- [#123](https://github.com/storybookjs/mcp/pull/123) [`b7aeb40`](https://github.com/storybookjs/mcp/commit/b7aeb40c32d831618774c13e316596e9ff840aa7) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Minimize token usage by only including the 3 first stories in component documentation.
+
+  ... if there are already prop types. If there are no prop types, include all stories. Additional stories can be fetched individually using a new `get-documentation-for-story` tool.
+
+- [#160](https://github.com/storybookjs/mcp/pull/160) [`bab8ec9`](https://github.com/storybookjs/mcp/commit/bab8ec9ece4f89661b458fbecd59b0a560948192) Thanks [@JReinhold](https://github.com/JReinhold)! - Render component-attached MDX docs entries in markdown output for `get-documentation`.
+
+  This fixes a regression where docs attached to components via `component.docs` in `components.json` were not included in markdown responses. The markdown formatter now emits a `## Docs` section below stories (and before props).
+
 ## 0.2.1
 
 ### Patch Changes
@@ -15,6 +27,7 @@
   # Breaking Changes
 
   This change introduces a number of minor breaking changes to `@storybook/mcp`:
+
   1. The lower level tool adder functions have been renamed:
   2. `addGetComponentDocumentationTool` -> `addGetDocumentationTool`
   3. `addListAllComponentsTool` -> `addListAllDocumentationTool`

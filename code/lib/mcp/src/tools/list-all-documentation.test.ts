@@ -82,6 +82,148 @@ describe('listAllDocumentationTool', () => {
 		`);
 	});
 
+	describe('multi-source mode', () => {
+		const sources = [
+			{ id: 'local', title: 'Local' },
+			{ id: 'remote', title: 'Remote', url: 'http://remote.example.com' },
+		];
+
+		const remoteManifest = {
+			v: 1,
+			components: {
+				badge: {
+					id: 'badge',
+					path: 'src/Badge.tsx',
+					name: 'Badge',
+					summary: 'A badge component',
+				},
+			},
+		};
+
+		it('should return grouped output from multiple sources', async () => {
+			const getMultiSourceManifestsSpy = vi.spyOn(getManifest, 'getMultiSourceManifests');
+			getMultiSourceManifestsSpy.mockResolvedValue([
+				{
+					source: sources[0]!,
+					componentManifest: smallManifestFixture,
+				},
+				{
+					source: sources[1]!,
+					componentManifest: remoteManifest,
+				},
+			]);
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: LIST_TOOL_NAME,
+					arguments: {},
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			const text = (response.result as any).content[0].text;
+			expect(text).toContain('# Local');
+			expect(text).toContain('id: local');
+			expect(text).toContain('Button (button)');
+			expect(text).toContain('# Remote');
+			expect(text).toContain('id: remote');
+			expect(text).toContain('Badge (badge)');
+
+			getMultiSourceManifestsSpy.mockRestore();
+		});
+
+		it('should call onListAllDocumentation with first successful source', async () => {
+			const getMultiSourceManifestsSpy = vi.spyOn(getManifest, 'getMultiSourceManifests');
+			getMultiSourceManifestsSpy.mockResolvedValue([
+				{
+					source: sources[0]!,
+					componentManifest: smallManifestFixture,
+				},
+				{
+					source: sources[1]!,
+					componentManifest: remoteManifest,
+				},
+			]);
+
+			const handler = vi.fn();
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: LIST_TOOL_NAME,
+					arguments: {},
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			await server.receive(request, {
+				custom: {
+					request: mockHttpRequest,
+					sources,
+					onListAllDocumentation: handler,
+				},
+			});
+
+			expect(handler).toHaveBeenCalledTimes(1);
+			expect(handler).toHaveBeenCalledWith(
+				expect.objectContaining({
+					manifests: {
+						componentManifest: smallManifestFixture,
+					},
+					resultText: expect.any(String),
+				}),
+			);
+
+			getMultiSourceManifestsSpy.mockRestore();
+		});
+
+		it('should show error for failed sources while displaying successful ones', async () => {
+			const getMultiSourceManifestsSpy = vi.spyOn(getManifest, 'getMultiSourceManifests');
+			getMultiSourceManifestsSpy.mockResolvedValue([
+				{
+					source: sources[0]!,
+					componentManifest: smallManifestFixture,
+				},
+				{
+					source: sources[1]!,
+					componentManifest: { v: 1, components: {} },
+					error: 'Failed to fetch manifest: 401 Unauthorized',
+				},
+			]);
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: LIST_TOOL_NAME,
+					arguments: {},
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			const text = (response.result as any).content[0].text;
+			expect(text).toContain('# Local');
+			expect(text).toContain('Button (button)');
+			expect(text).toContain('# Remote');
+			expect(text).toContain('error: Failed to fetch manifest: 401 Unauthorized');
+
+			getMultiSourceManifestsSpy.mockRestore();
+		});
+	});
+
 	it('should handle fetch errors gracefully', async () => {
 		getManifestsSpy.mockRejectedValue(
 			new getManifest.ManifestGetError(

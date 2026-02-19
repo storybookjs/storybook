@@ -9,4 +9,4 @@ export { injectExportOrderPlugin } from './inject-export-order-plugin';
 export { stripStoryHMRBoundary } from './strip-story-hmr-boundaries';
 export { codeGeneratorPlugin } from './code-generator-plugin';
 export { csfPlugin } from './csf-plugin';
-export { externalGlobalsPlugin, rewriteImport } from './external-globals-plugin';
+export { storybookExternalGlobalsPlugin } from './storybook-external-globals-plugin';

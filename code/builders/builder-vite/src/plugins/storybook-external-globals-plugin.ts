@@ -2,10 +2,14 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import type { Options } from 'storybook/internal/types';
+
 import * as pkg from 'empathic/package';
 import { init, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
 import type { Alias, Plugin } from 'vite';
+
+import { globalsNameReferenceMap } from '../../../../core/src/manager/globals/globals';
 
 const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 const defaultImportRegExp = 'import ([^*{}]+) from';
@@ -38,7 +42,17 @@ const replacementMap = new Map([
  * https://github.com/eight04/rollup-plugin-external-globals, but simplified to meet our simple
  * needs.
  */
-export async function externalGlobalsPlugin(externals: Record<string, string>): Promise<Plugin> {
+
+export async function storybookExternalGlobalsPlugin(options: Options): Promise<Plugin> {
+  const build = await options.presets.apply('build');
+
+  const externals: typeof globalsNameReferenceMap & Record<string, string> =
+    globalsNameReferenceMap;
+
+  if (build?.test?.disableBlocks) {
+    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+  }
+
   await init;
   const { mergeAlias } = await import('vite');
 

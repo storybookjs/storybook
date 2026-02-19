@@ -162,7 +162,6 @@ export function invalidateParser() {
   parser = undefined;
   cachedCompilerOptions = undefined;
   cachedFileNames = undefined;
-  previousProgram = undefined;
 }
 
 function getParser(userOptions?: ParserOptions) {

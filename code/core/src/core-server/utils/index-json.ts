@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
+import type { ChannelLike } from 'storybook/internal/channels';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
@@ -8,7 +9,6 @@ import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
-import type { ChannelLike } from 'storybook/internal/channels';
 import { watchStorySpecifiers } from './watch-story-specifiers';
 import { watchConfig } from './watchConfig';
 

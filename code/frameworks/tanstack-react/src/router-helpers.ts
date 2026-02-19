@@ -49,22 +49,22 @@ export const createStoryMemoryRouter = (options: StoryMemoryRouterOptions): Rout
 };
 
 /**
- * Type-safe helper for creating search params that match a route's search type.
+ * Type-safe helper for providing default search params in stories. Pass your route type as the
+ * generic argument to get autocomplete and type errors against the route's validateSearch schema.
  *
- * Ensures that search parameters passed to navigation or used in a story conform to the route's
- * `useSearch()` hook. This is an identity function at runtime but provides full TypeScript
-**
- * Validation.  c  ```
- *@e 
+ * This is an identity function at runtime — it returns params unchanged. The generic constraint
+ * provides full IDE autocomplete and type errors. x ```ts createStorySearchParams } from
+ * '@storybook/tanstack-react'; import { Route as PostsRoute } from './routes/posts';
  *
- * @template TRoute - A route type with a `useSearch()` method
- * @param params - The search parameters matching the route's search schema
- * @returns The same params, with type safety verifiedmplate TRoute - A route type with a `useSearch()` method
- * @param params - The search parameters matching the route's search schema
- * @returns The same params, with type safety verified
- * ```
+ * Const search = createStorySearchParams<typeof PostsRoute="">({ page: 1, query: 'hello' });
+ *
+ * @template TRoute - A route object with a useSearch() method (e.g. typeof MyRoute) @template
+ * TRoute - A route object with a useSearch() method (e.g. typeof MyRoute) @param params - The
+ * search parameters matching the route's validated search type @param params - The search
+ * parameters matching the route's validated search type @returns The same params, typed as the
+ * route's validated search type @returns The same params, typed as the route's validated search
+ * type
  */
 export const createStorySearchParams = <TRoute extends { useSearch: () => any }>(
   params: ReturnType<TRoute['useSearch']>
- * ```
 ): ReturnType<TRoute['useSearch']> => params;

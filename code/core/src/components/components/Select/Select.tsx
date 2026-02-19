@@ -78,6 +78,13 @@ export interface SelectProps extends Omit<
   onSelect?: (option: Value) => void;
   onDeselect?: (option: Value) => void;
   onChange?: (selected: Value[]) => void;
+  /**
+   * Legacy option for ToolbarMenuSelect. Do not use in new code. Controls whether to show the
+   * selected option's title.
+   *
+   * @default true
+   */
+  showSelectedOptionTitle?: boolean;
 }
 
 function valueToId(parentId: string, { value }: InternalOption | ResetOption): string {
@@ -208,6 +215,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       onChange,
       tooltip,
       ariaLabel,
+      showSelectedOptionTitle = true,
       ...props
     },
     ref
@@ -522,7 +530,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           {!multiSelect && (
             <>
               {icon}
-              {selectedOptions[0]?.title ?? children}
+              {(showSelectedOptionTitle && selectedOptions[0]?.title) || children}
             </>
           )}
 

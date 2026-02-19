@@ -35,7 +35,7 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
 
     const playwrightCommand = process.env.DEBUG
       ? `yarn playwright test --project=chromium --ui ${testFiles.join(' ')}`
-      : `yarn playwright test preview-api`;
+      : `yarn playwright test ${testFiles.join(' ')}`;
 
     await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
     await exec(

@@ -1006,21 +1006,21 @@ export const normal: TemplateKey[] = [
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-ts',
   'react-vite/default-ts',
-  // 'angular-cli/default-ts',
-  // 'vue3-vite/default-ts',
-  // // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
-  // 'lit-vite/default-ts',
-  // 'svelte-vite/default-ts',
-  // 'svelte-kit/skeleton-ts',
-  // 'nextjs/default-ts',
-  // 'nextjs-vite/default-ts',
-  // 'bench/react-vite-default-ts',
-  // 'bench/react-webpack-18-ts',
-  // 'bench/react-vite-default-ts-nodocs',
-  // 'bench/react-vite-default-ts-test-build',
-  // 'bench/react-webpack-18-ts-test-build',
-  // // 'ember/default-js',
-  // 'react-rsbuild/default-ts',
+  'angular-cli/default-ts',
+  'vue3-vite/default-ts',
+  // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
+  'lit-vite/default-ts',
+  'svelte-vite/default-ts',
+  'svelte-kit/skeleton-ts',
+  'nextjs/default-ts',
+  'nextjs-vite/default-ts',
+  'bench/react-vite-default-ts',
+  'bench/react-webpack-18-ts',
+  'bench/react-vite-default-ts-nodocs',
+  'bench/react-vite-default-ts-test-build',
+  'bench/react-webpack-18-ts-test-build',
+  // 'ember/default-js',
+  'react-rsbuild/default-ts',
 ];
 
 export const merged: TemplateKey[] = [

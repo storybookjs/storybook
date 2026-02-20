@@ -204,9 +204,16 @@ export class ConfigFile {
           self.hasDefaultExport = true;
           let decl = self._resolveDeclaration(node.declaration as t.Node, parent);
 
-          // csf factory
-          if (t.isCallExpression(decl) && t.isObjectExpression(decl.arguments[0])) {
-            decl = decl.arguments[0];
+          // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
+          while (t.isCallExpression(decl)) {
+            if (t.isObjectExpression(decl.arguments[0])) {
+              decl = decl.arguments[0];
+              break;
+            } else if (t.isMemberExpression(decl.callee) && t.isCallExpression(decl.callee.object)) {
+              decl = decl.callee.object;
+            } else {
+              break;
+            }
           }
 
           if (t.isObjectExpression(decl)) {

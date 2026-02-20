@@ -4,7 +4,7 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addPreviewStoriesTool } from './tools/preview-stories.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-storybook-story-instructions.ts';
-import { addListAllDocumentationTool, addGetDocumentationTool } from '@storybook/mcp';
+import { addListAllDocumentationTool, addGetDocumentationTool, type Source } from '@storybook/mcp';
 import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
@@ -13,6 +13,7 @@ import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
+import type { CompositionAuth } from './auth/index.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -20,7 +21,7 @@ let origin: string | undefined;
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
 
-const initializeMCPServer = async (options: Options) => {
+const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const core = await options.presets.apply('core', {});
 	disableTelemetry = core?.disableTelemetry ?? false;
 
@@ -55,7 +56,7 @@ const initializeMCPServer = async (options: Options) => {
 		logger.info('Experimental components manifest feature detected - registering component tools');
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
 		await addListAllDocumentationTool(server, contextAwareEnabled);
-		await addGetDocumentationTool(server, contextAwareEnabled);
+		await addGetDocumentationTool(server, contextAwareEnabled, { multiSource });
 	}
 
 	transport = new HttpTransport(server, { path: null });
@@ -74,6 +75,16 @@ type McpServerHandlerParams = {
 	res: ServerResponse;
 	options: Options;
 	addonOptions: AddonOptionsOutput;
+	/** Sources for multi-source mode (when refs are configured) */
+	sources?: Source[];
+	/** Optional custom manifest provider, receives source as third param in multi-source mode */
+	manifestProvider?: (
+		request: Request | undefined,
+		path: string,
+		source?: Source,
+	) => Promise<string>;
+	/** Composition auth handler for multi-source mode */
+	compositionAuth: CompositionAuth;
 };
 
 export const mcpServerHandler = async ({
@@ -81,10 +92,16 @@ export const mcpServerHandler = async ({
 	res,
 	options,
 	addonOptions,
+	sources,
+	manifestProvider,
+	compositionAuth,
 }: McpServerHandlerParams) => {
 	// Initialize MCP server and transport on first request, with concurrency safety
 	if (!initialize) {
-		initialize = initializeMCPServer(options);
+		initialize = initializeMCPServer(
+			options,
+			sources?.some((s) => s.url),
+		);
 	}
 	const server = await initialize;
 
@@ -94,13 +111,14 @@ export const mcpServerHandler = async ({
 	const addonContext: AddonContext = {
 		options,
 		toolsets: getToolsets(webRequest, addonOptions),
-		format: addonOptions.experimentalFormat,
 		origin: origin!,
 		disableTelemetry: disableTelemetry!,
 		request: webRequest,
+		sources,
+		manifestProvider,
 		// Telemetry handlers for component manifest tools
 		...(!disableTelemetry && {
-			onListAllDocumentation: async ({ manifests, resultText }) => {
+			onListAllDocumentation: async ({ manifests, resultText, sources: sourceManifests }) => {
 				await collectTelemetry({
 					event: 'tool:listAllDocumentation',
 					server,
@@ -108,6 +126,7 @@ export const mcpServerHandler = async ({
 					componentCount: Object.keys(manifests.componentManifest.components).length,
 					docsCount: Object.keys(manifests.docsManifest?.docs || {}).length,
 					resultTokenCount: estimateTokens(resultText),
+					sourceCount: sourceManifests?.length,
 				});
 			},
 			onGetDocumentation: async ({ input, foundDocumentation, resultText }) => {
@@ -124,10 +143,23 @@ export const mcpServerHandler = async ({
 	};
 
 	const response = await transport!.respond(webRequest, addonContext);
-
-	// Convert Web API Response to Node.js response
 	if (response) {
-		await webResponseToServerResponse(response, res);
+		// Buffer body first — tool execution happens lazily during stream consumption
+		// (tmcp's transport fires handle() without awaiting it). Only after the body
+		// is fully consumed can we check whether a tool hit an auth error.
+		const body = await response.arrayBuffer();
+
+		const finalResponse = compositionAuth.hadAuthError(webRequest)
+			? new Response('401 - Unauthorized', {
+					status: 401,
+					headers: {
+						'Content-Type': 'text/plain',
+						'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin!),
+					},
+				})
+			: new Response(body, { status: response.status, headers: response.headers });
+
+		await webResponseToServerResponse(finalResponse, res);
 	}
 };
 

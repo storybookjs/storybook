@@ -288,46 +288,210 @@ describe('getDocumentationTool', () => {
 		`);
 	});
 
-	it('should format component as XML when format is "xml"', async () => {
-		const request = {
-			jsonrpc: '2.0' as const,
-			id: 1,
-			method: 'tools/call',
-			params: {
-				name: GET_TOOL_NAME,
-				arguments: {
-					id: 'button',
+	describe('multi-source mode', () => {
+		const sources = [
+			{ id: 'local', title: 'Local' },
+			{ id: 'remote', title: 'Remote', url: 'http://remote.example.com' },
+		];
+
+		const remoteManifest = {
+			v: 1,
+			components: {
+				badge: {
+					id: 'badge',
+					path: 'src/Badge.tsx',
+					name: 'Badge',
+					summary: 'A badge component',
 				},
 			},
 		};
 
-		const mockHttpRequest = new Request('https://example.com/mcp');
-		const response = await server.receive(request, {
-			custom: { request: mockHttpRequest, format: 'xml' as const },
+		// Re-create server with multiSource schema so storybookId is in the schema
+		beforeEach(async () => {
+			const adapter = new ValibotJsonSchemaAdapter();
+			server = new McpServer(
+				{
+					name: 'test-server',
+					version: '1.0.0',
+					description: 'Test server for get tool',
+				},
+				{
+					adapter,
+					capabilities: { tools: { listChanged: true } },
+				},
+			).withContext<StorybookContext>();
+
+			await server.receive(
+				{
+					jsonrpc: '2.0',
+					id: 1,
+					method: 'initialize',
+					params: {
+						protocolVersion: '2025-06-18',
+						capabilities: {},
+						clientInfo: { name: 'test', version: '1.0.0' },
+					},
+				},
+				{ sessionId: 'test-session' },
+			);
+			await addGetDocumentationTool(server, undefined, { multiSource: true });
+
+			getManifestsSpy = vi.spyOn(getManifest, 'getManifests');
+			getManifestsSpy.mockResolvedValue({
+				componentManifest: smallManifestFixture,
+			});
 		});
 
-		expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "<component>
-			<id>button</id>
-			<name>Button</name>
-			<story>
-			<story_name>Primary</story_name>
-			<story_description>
-			The primary button variant.
-			</story_description>
-			<story_code>
-			const Primary = () => <Button variant="primary">Click Me</Button>
-			</story_code>
-			</story>
-			</component>",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
+		it('should return schema validation error when storybookId is missing', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'button' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			// storybookId is required in multi-source mode — schema validation rejects it
+			expect((response.result as any).isError).toBe(true);
+			expect((response.result as any).content[0].text).toContain('storybookId');
+		});
+
+		it('should return error when storybookId is invalid', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'button', storybookId: 'nonexistent' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			expect((response.result as any).isError).toBe(true);
+			expect((response.result as any).content[0].text).toContain(
+				'Storybook source not found: "nonexistent"',
+			);
+			expect((response.result as any).content[0].text).toContain('local, remote');
+		});
+
+		it('should fetch documentation with storybookId', async () => {
+			getManifestsSpy.mockResolvedValue({
+				componentManifest: smallManifestFixture,
+			});
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'button', storybookId: 'local' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			expect((response.result as any).content[0].text).toContain('# Button');
+			expect(getManifestsSpy).toHaveBeenCalledWith(mockHttpRequest, undefined, sources[0]);
+		});
+
+		it('should pass remote source to getManifests', async () => {
+			getManifestsSpy.mockResolvedValue({
+				componentManifest: remoteManifest,
+			});
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'badge', storybookId: 'remote' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			expect((response.result as any).content[0].text).toContain('# Badge');
+			expect(getManifestsSpy).toHaveBeenCalledWith(mockHttpRequest, undefined, sources[1]);
+		});
+
+		it('should include source in not-found error message', async () => {
+			getManifestsSpy.mockResolvedValue({
+				componentManifest: smallManifestFixture,
+			});
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'nonexistent', storybookId: 'local' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources },
+			});
+
+			expect((response.result as any).isError).toBe(true);
+			expect((response.result as any).content[0].text).toContain('in source "local"');
+		});
+
+		it('should call onGetDocumentation with storybookId', async () => {
+			getManifestsSpy.mockResolvedValue({
+				componentManifest: smallManifestFixture,
+			});
+
+			const handler = vi.fn();
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'button', storybookId: 'local' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			await server.receive(request, {
+				custom: {
+					request: mockHttpRequest,
+					sources,
+					onGetDocumentation: handler,
+				},
+			});
+
+			expect(handler).toHaveBeenCalledTimes(1);
+			expect(handler).toHaveBeenCalledWith(
+				expect.objectContaining({
+					input: { id: 'button', storybookId: 'local' },
+					foundDocumentation: expect.objectContaining({ id: 'button' }),
+					resultText: expect.any(String),
+				}),
+			);
+		});
 	});
 
 	describe('docs manifest entries', () => {
@@ -420,53 +584,6 @@ describe('getDocumentationTool', () => {
 			// Should return the component, not the docs entry
 			expect((response.result as any).content[0].text).toContain('## Stories');
 			expect((response.result as any).content[0].text).toContain('Primary');
-		});
-
-		it('should format docs entry as XML when format is "xml"', async () => {
-			const request = {
-				jsonrpc: '2.0' as const,
-				id: 1,
-				method: 'tools/call',
-				params: {
-					name: GET_TOOL_NAME,
-					arguments: {
-						id: 'getting-started',
-					},
-				},
-			};
-
-			const mockHttpRequest = new Request('https://example.com/mcp');
-			const response = await server.receive(request, {
-				custom: { request: mockHttpRequest, format: 'xml' as const },
-			});
-
-			expect(response.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "<doc>
-				<title>Getting Started Guide</title>
-				<content>
-				# Getting Started
-
-				Welcome to the component library. This guide will help you get up and running.
-
-				## Installation
-
-				\`\`\`bash
-				npm install my-component-library
-				\`\`\`
-
-				## Usage
-
-				Import components and use them in your application.
-				</content>
-				</doc>",
-				      "type": "text",
-				    },
-				  ],
-				}
-			`);
 		});
 
 		it('should call onGetDocumentation handler with docs entry when found', async () => {

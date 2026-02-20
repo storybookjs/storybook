@@ -139,4 +139,132 @@ describe('experimental_devServer', () => {
 		expect(mockApp.post).toHaveBeenCalledWith('/mcp', expect.any(Function));
 		expect(mockApp.get).toHaveBeenCalledWith('/mcp', expect.any(Function));
 	});
+
+	it('should register .well-known endpoint that returns 404 when no auth required', async () => {
+		const handlers: Record<string, any> = {};
+		mockApp.get = vi.fn((path: string, handler: any) => {
+			handlers[path] = handler;
+		});
+
+		await (experimental_devServer as any)(mockApp, mockOptions);
+
+		const wellKnownHandler = handlers['/.well-known/oauth-protected-resource'];
+		expect(wellKnownHandler).toBeDefined();
+
+		const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+		wellKnownHandler({}, mockRes);
+
+		expect(mockRes.writeHead).toHaveBeenCalledWith(404);
+		expect(mockRes.end).toHaveBeenCalledWith('Not found');
+	});
+
+	it('should forward non-HTML GET /mcp requests to MCP handler', async () => {
+		const handlers: Record<string, any> = {};
+		mockApp.get = vi.fn((path: string, handler: any) => {
+			handlers[path] = handler;
+		});
+
+		await (experimental_devServer as any)(mockApp, mockOptions);
+
+		const getMcpHandler = handlers['/mcp'];
+		expect(getMcpHandler).toBeDefined();
+
+		// Non-HTML request (JSON accept) — uses POST method since GET can't have body
+		const mockReq = {
+			method: 'POST',
+			headers: { accept: 'application/json', host: 'localhost:6006' },
+			socket: { encrypted: false },
+			url: '/mcp',
+			[Symbol.asyncIterator]: async function* () {
+				yield Buffer.from(
+					JSON.stringify({
+						jsonrpc: '2.0',
+						id: 1,
+						method: 'initialize',
+						params: {
+							protocolVersion: '2024-11-05',
+							capabilities: {},
+							clientInfo: { name: 'test', version: '1.0.0' },
+						},
+					}),
+				);
+			},
+		} as any;
+
+		const mockRes = {
+			writeHead: vi.fn(),
+			write: vi.fn(),
+			end: vi.fn(),
+			setHeader: vi.fn(),
+			statusCode: 0,
+		} as any;
+
+		await getMcpHandler(mockReq, mockRes);
+
+		// Should NOT serve HTML — goes through MCP handler instead
+		expect(mockRes.writeHead).not.toHaveBeenCalledWith(200, { 'Content-Type': 'text/html' });
+	});
+
+	it('should parse refs from storybook config', async () => {
+		const optionsWithRefs = {
+			port: 6006,
+			presets: {
+				apply: vi.fn((key: string) => {
+					if (key === 'refs') {
+						return Promise.resolve({
+							'my-lib': { title: 'My Library', url: 'https://my-lib.example.com' },
+							'design-system': { url: 'https://ds.example.com' },
+						});
+					}
+					if (key === 'features') {
+						return Promise.resolve({ experimentalComponentsManifest: false });
+					}
+					return Promise.resolve(undefined);
+				}),
+			},
+		} as unknown as Options;
+
+		await (experimental_devServer as any)(mockApp, optionsWithRefs);
+
+		// The preset should have called presets.apply('refs')
+		expect(optionsWithRefs.presets.apply).toHaveBeenCalledWith('refs', {});
+	});
+
+	it('should handle refs config returning non-object gracefully', async () => {
+		const optionsWithBadRefs = {
+			port: 6006,
+			presets: {
+				apply: vi.fn((key: string) => {
+					if (key === 'refs') return Promise.resolve(null);
+					if (key === 'features') {
+						return Promise.resolve({ experimentalComponentsManifest: false });
+					}
+					return Promise.resolve(undefined);
+				}),
+			},
+		} as unknown as Options;
+
+		// Should not throw
+		const result = await (experimental_devServer as any)(mockApp, optionsWithBadRefs);
+		expect(result).toBe(mockApp);
+	});
+
+	it('should handle refs config throwing gracefully', async () => {
+		const optionsWithThrowingRefs = {
+			port: 6006,
+			presets: {
+				apply: vi.fn((key: string) => {
+					if (key === 'refs') return Promise.reject(new Error('Config error'));
+					if (key === 'features') {
+						return Promise.resolve({ experimentalComponentsManifest: false });
+					}
+					return Promise.resolve(undefined);
+				}),
+			},
+		} as unknown as Options;
+
+		// Should not throw
+		const result = await (experimental_devServer as any)(mockApp, optionsWithThrowingRefs);
+		expect(result).toBe(mockApp);
+	});
 });

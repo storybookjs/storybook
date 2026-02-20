@@ -1,33 +1,24 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { x } from 'tinyexec';
+import {
+	STORYBOOK_DIR,
+	createMCPRequestBody,
+	parseMCPResponse,
+	waitForMcpEndpoint,
+	killPort,
+	stopStorybook,
+} from './helpers';
 
-const STORYBOOK_DIR = new URL('..', import.meta.url).pathname;
-const MCP_ENDPOINT = 'http://localhost:6006/mcp';
-const STARTUP_TIMEOUT = 15_000;
+const PORT = 6006;
+const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
+const STARTUP_TIMEOUT = 30_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
 
-/**
- * Helper to create MCP protocol requests
- */
-function createMCPRequestBody(method: string, params: any = {}, id: number = 1) {
-	return {
-		jsonrpc: '2.0',
-		id,
-		method,
-		params,
-	};
-}
-
-/**
- * Helper to make MCP requests
- */
 async function mcpRequest(method: string, params: any = {}, id: number = 1) {
 	const response = await fetch(MCP_ENDPOINT, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
+		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(createMCPRequestBody(method, params, id)),
 	});
 
@@ -35,67 +26,23 @@ async function mcpRequest(method: string, params: any = {}, id: number = 1) {
 		throw new Error(`HTTP error! status: ${response.status}`);
 	}
 
-	// MCP responses come as SSE (Server-Sent Events) format
-	const text = await response.text();
-	// Extract the JSON from the "data: " line in the SSE response
-	const dataLine = text.split('\n').find((line) => line.startsWith('data: '));
-	const jsonText = dataLine!.replace(/^data: /, '').trim();
-	return JSON.parse(jsonText);
-}
-
-/**
- * Wait for MCP endpoint to be ready by polling it directly
- */
-async function waitForMcpEndpoint(maxAttempts = 90, interval = 500): Promise<void> {
-	const { promise, resolve, reject } = Promise.withResolvers<void>();
-	let attempts = 0;
-
-	const intervalId = setInterval(async () => {
-		attempts++;
-		try {
-			const response = await fetch(MCP_ENDPOINT, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(createMCPRequestBody('tools/list')),
-			});
-			if (response.ok) {
-				clearInterval(intervalId);
-				resolve();
-				return;
-			}
-		} catch {
-			// Server not ready yet
-		}
-
-		if (attempts >= maxAttempts) {
-			clearInterval(intervalId);
-			reject(new Error('MCP endpoint failed to start within the timeout period'));
-		}
-	}, interval);
-
-	return promise;
+	return parseMCPResponse(response);
 }
 
 describe('MCP Endpoint E2E Tests', () => {
 	beforeAll(async () => {
+		await killPort(PORT);
 		storybookProcess = x('pnpm', ['storybook'], {
 			nodeOptions: {
 				cwd: STORYBOOK_DIR,
 			},
 		});
 
-		// Wait for MCP endpoint to be ready
-		await waitForMcpEndpoint();
+		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 
 	afterAll(async () => {
-		if (!storybookProcess || !storybookProcess.process) {
-			return;
-		}
-		const kill = Promise.withResolvers<void>();
-		storybookProcess.process.on('exit', kill.resolve);
-		storybookProcess.kill('SIGTERM');
-		await kill.promise;
+		await stopStorybook(storybookProcess);
 		storybookProcess = null;
 	});
 
@@ -350,6 +297,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
 				        "id": {
+				          "description": "The component or docs entry ID (e.g., "button")",
 				          "type": "string",
 				        },
 				      },
@@ -541,12 +489,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				body: JSON.stringify(createMCPRequestBody('tools/list')),
 			});
 
-			const text = await response.text();
-			const dataLine = text.split('\n').find((line) => line.startsWith('data: '));
-			const jsonText = dataLine!.replace(/^data: /, '').trim();
-			const result = JSON.parse(jsonText);
-
-			const toolNames = result.result.tools.map((tool: any) => tool.name);
+			const data = await parseMCPResponse(response);
+			const toolNames = data.result.tools.map((tool: any) => tool.name);
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
@@ -566,12 +510,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				body: JSON.stringify(createMCPRequestBody('tools/list')),
 			});
 
-			const text = await response.text();
-			const dataLine = text.split('\n').find((line) => line.startsWith('data: '));
-			const jsonText = dataLine!.replace(/^data: /, '').trim();
-			const result = JSON.parse(jsonText);
-
-			const toolNames = result.result.tools.map((tool: any) => tool.name);
+			const data = await parseMCPResponse(response);
+			const toolNames = data.result.tools.map((tool: any) => tool.name);
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[

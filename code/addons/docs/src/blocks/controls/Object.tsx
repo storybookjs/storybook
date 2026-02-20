@@ -6,7 +6,7 @@ import { Button, Form, ToggleButton } from 'storybook/internal/components';
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { type Theme, styled, useTheme } from 'storybook/theming';
+import { type Theme, styled, useTheme, srOnlyStyles } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -20,6 +20,11 @@ const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   isolation: 'isolate',
+
+  // Enable container queries for child responsive styles
+  '@supports (container-type: inline-size)': {
+    containerType: 'inline-size',
+  },
 
   '@media (max-width: 400px)': {
     flexDirection: 'column' as const,
@@ -128,13 +133,18 @@ const RawButton = styled(ToggleButton)({
   right: 2,
   gap: '4px',
 
-  // On small screens: remove absolute positioning, show only icon (WCAG 2.1 Reflow)
+  // Container query: respond to component width (WCAG 2.1 Reflow)
+  '@container (max-width: 400px)': {
+    position: 'static',
+    alignSelf: 'flex-end',
+    '& > span': srOnlyStyles,
+  },
+
+  // Fallback for browsers without container query support
   '@media (max-width: 400px)': {
     position: 'static',
     alignSelf: 'flex-end',
-    '& > span': {
-      display: 'none',
-    },
+    '& > span': srOnlyStyles,
   },
 });
 

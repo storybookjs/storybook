@@ -1,5 +1,5 @@
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
@@ -8,8 +8,8 @@ const config: StorybookConfig = {
   typescript: {
     reactDocgen: 'react-docgen-typescript',
     reactDocgenTypescriptOptions: {
-      // Add your workspace package source files so they're included in the TS program
-      include: ['**/**.tsx', '../../packages/ui/src/**/*.tsx'],
+      // 👇 Add your workspace package source files so they're included in the TS program
+      include: ['**/*.tsx', '../../packages/ui/src/**/*.tsx'],
     },
   },
 };
@@ -27,8 +27,8 @@ export default defineMain({
   typescript: {
     reactDocgen: 'react-docgen-typescript',
     reactDocgenTypescriptOptions: {
-      // Add your workspace package source files so they're included in the TS program
-      include: ['**/**.tsx', '../../packages/ui/src/**/*.tsx'],
+      // 👇 Add your workspace package source files so they're included in the TS program
+      include: ['**/*.tsx', '../../packages/ui/src/**/*.tsx'],
     },
   },
 });

@@ -110,9 +110,9 @@ Out of the box, Storybook supports the `satisfies` operator for almost every fra
 
   {/* prettier-ignore-end */}
 
-  ### Inherited props are missing for components from workspace packages
+  ### Inherited args are missing for components from workspace packages
 
-  If you're using `react-docgen-typescript` in a monorepo with npm/yarn/pnpm workspaces, you may find that components imported from a workspace package are missing inherited props (e.g., MUI's `ButtonProps`), while the same component imported locally works fine.
+  If you're using `react-docgen-typescript` in a monorepo with npm/yarn/pnpm workspaces, you may find that components imported from a workspace package are missing inherited args (e.g., MUI's `ButtonProps`), while the same component imported locally works fine.
 
   This happens because the underlying Vite plugin creates a TypeScript program from files matching its `include` glob (default: `**/**.tsx`), resolved from the Storybook project's directory. Workspace package files are outside that directory and aren't included in the program, so inherited types can't be resolved.
 
@@ -124,7 +124,7 @@ Out of the box, Storybook supports the `satisfies` operator for almost every fra
 
   {/* prettier-ignore-end */}
 
-  Adjust the path (`../../packages/ui/src/**/*.tsx`) to match your monorepo layout. Note that `tsconfigPath` only affects compiler options — it does not change which files are included in the TypeScript program.
+  Adjust the path (`../../packages/ui/src/**/*.tsx`) to match your monorepo layout. You might expect that pointing `tsconfigPath` to a tsconfig that includes your workspace packages would solve this, but `tsconfigPath` only affects which compiler options are used. It does not change which files are included in the TypeScript program.
 
   ### The types are not being generated for my component
 

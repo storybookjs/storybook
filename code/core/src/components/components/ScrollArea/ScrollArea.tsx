@@ -11,6 +11,11 @@ export interface ScrollAreaProps {
   offset?: number;
   scrollbarSize?: number;
   scrollPadding?: number | string;
+  /**
+   * Set this to define a tabIndex on the scrollable content; only needed when content has no
+   * interactive elements.
+   */
+  focusable?: boolean;
 }
 
 const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number; offset: number }>(
@@ -89,11 +94,12 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
       scrollbarSize = 6,
       scrollPadding = 0,
       className,
+      focusable = false,
     },
     ref
   ) => (
     <ScrollAreaRoot scrollbarsize={scrollbarSize} offset={offset} className={className}>
-      <ScrollAreaViewport ref={ref} style={{ scrollPadding }}>
+      <ScrollAreaViewport ref={ref} style={{ scrollPadding }} tabIndex={focusable ? 0 : undefined}>
         {children}
       </ScrollAreaViewport>
       {horizontal && (

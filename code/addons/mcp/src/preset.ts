@@ -23,7 +23,6 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	// ValiError: Invalid type: Expected boolean but received "false"
 	const addonOptions = v.parse(AddonOptions, {
 		toolsets: 'toolsets' in options ? options.toolsets : {},
-		experimentalFormat: 'experimentalFormat' in options ? options.experimentalFormat : 'markdown',
 	});
 
 	const origin = `http://localhost:${options.port}`;

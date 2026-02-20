@@ -2,12 +2,10 @@ import { createStorybookMcpHandler } from './src/index.ts';
 import { serve } from 'srvx';
 import fs from 'node:fs/promises';
 import { parseArgs } from 'node:util';
-import type { OutputFormat } from './src/types.ts';
 import { basename } from 'node:path';
 
-async function serveMcp(port: number, manifestsDir: string, format: OutputFormat) {
+async function serveMcp(port: number, manifestsDir: string) {
 	const storybookMcpHandler = await createStorybookMcpHandler({
-		format,
 		// Use the local fixture file via manifestProvider
 		manifestProvider: async (_request, path) => {
 			if (manifestsDir.startsWith('http://') || manifestsDir.startsWith('https://')) {
@@ -44,15 +42,7 @@ if (import.meta.main) {
 				type: 'string',
 				default: './fixtures/default',
 			},
-			format: {
-				type: 'string',
-				default: 'markdown',
-			},
 		},
 	});
-	await serveMcp(
-		Number(args.values.port),
-		args.values.manifestsDir,
-		args.values.format as OutputFormat,
-	);
+	await serveMcp(Number(args.values.port), args.values.manifestsDir);
 }

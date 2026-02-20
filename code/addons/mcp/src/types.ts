@@ -15,7 +15,6 @@ export const AddonOptions = v.object({
 			docs: true,
 		},
 	),
-	experimentalFormat: v.optional(v.picklist(['xml', 'markdown']), 'markdown'),
 });
 
 export type AddonOptionsInput = v.InferInput<typeof AddonOptions>;

@@ -1,4 +1,5 @@
 import type { Documentation } from 'react-docgen';
+import type { ComponentDoc } from 'react-docgen-typescript';
 import * as v from 'valibot';
 
 /**
@@ -115,6 +116,12 @@ const Doc = v.object({
 });
 export type Doc = v.InferOutput<typeof Doc>;
 
+/**
+ * Component documentation from react-docgen-typescript, extended with export name.
+ * Matches the shape produced by Storybook's manifest generator.
+ */
+export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
+
 export const ComponentManifest = v.object({
 	...BaseManifest.entries,
 	id: v.string(),
@@ -124,6 +131,8 @@ export const ComponentManifest = v.object({
 	stories: v.optional(v.array(Story)),
 	// loose schema for react-docgen types, as they are pretty complex
 	reactDocgen: v.optional(v.custom<Documentation>(() => true)),
+	// loose schema for react-docgen-typescript types
+	reactDocgenTypescript: v.optional(v.custom<ComponentDocWithExportName>(() => true)),
 	docs: v.optional(v.record(v.string(), Doc)),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;

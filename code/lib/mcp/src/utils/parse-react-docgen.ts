@@ -1,4 +1,5 @@
 import type { PropDescriptor, Documentation } from 'react-docgen';
+import type { ComponentDoc } from 'react-docgen-typescript';
 
 export type ParsedDocgen = {
 	props: Record<
@@ -79,6 +80,30 @@ export const parseReactDocgen = (reactDocgen: Documentation): ParsedDocgen => {
 				{
 					description: prop.description,
 					type: serializeTsType(prop.tsType ?? prop.type),
+					defaultValue: prop.defaultValue?.value,
+					required: prop.required,
+				},
+			]),
+		),
+	};
+};
+
+/**
+ * Parse react-docgen-typescript output into the same simplified ParsedDocgen format.
+ * RDT uses flat type strings (prop.type.name / prop.type.raw) instead of react-docgen's
+ * nested tsType structure, so no serialization is needed.
+ */
+export const parseReactDocgenTypescript = (reactDocgenTypescript: ComponentDoc): ParsedDocgen => {
+	const props = reactDocgenTypescript.props ?? {};
+	return {
+		props: Object.fromEntries(
+			Object.entries(props).map(([propName, prop]) => [
+				propName,
+				{
+					description: prop.description || undefined,
+					// RDT uses prop.type.name as a flat string (e.g. "() => void", "{ id: string }")
+					// For enums, prefer prop.type.raw which has the full union
+					type: prop.type?.raw ?? prop.type?.name,
 					defaultValue: prop.defaultValue?.value,
 					required: prop.required,
 				},

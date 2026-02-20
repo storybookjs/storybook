@@ -1,5 +1,9 @@
 import type { AllManifests, ComponentManifest, Doc, SourceManifests, Story } from '../../types.ts';
-import { parseReactDocgen } from '../parse-react-docgen.ts';
+import {
+	parseReactDocgen,
+	parseReactDocgenTypescript,
+	type ParsedDocgen,
+} from '../parse-react-docgen.ts';
 import { dedent } from '../dedent.ts';
 import { extractDocsSummary, MAX_SUMMARY_LENGTH } from './extract-docs-summary.ts';
 
@@ -49,6 +53,19 @@ function extractSummary(
 }
 
 /**
+ * Extract parsed docgen from a component manifest, preferring reactDocgen over reactDocgenTypescript.
+ */
+function getParsedDocgen(componentManifest: ComponentManifest): ParsedDocgen | undefined {
+	if (componentManifest.reactDocgen) {
+		return parseReactDocgen(componentManifest.reactDocgen);
+	}
+	if (componentManifest.reactDocgenTypescript) {
+		return parseReactDocgenTypescript(componentManifest.reactDocgenTypescript);
+	}
+	return undefined;
+}
+
+/**
  * Formats a story's content (description + code snippet) into markdown.
  * Reusable helper for both formatComponentManifest and formatStoryDocumentation.
  */
@@ -89,6 +106,9 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 		parts.push('');
 	}
 
+	// Parse docgen data (from either engine)
+	const parsedDocgen = getParsedDocgen(componentManifest);
+
 	// Stories section
 	if (componentManifest.stories && componentManifest.stories.length > 0) {
 		parts.push('## Stories');
@@ -97,9 +117,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 		const storiesWithSnippets = componentManifest.stories.filter((s) => s.snippet);
 
 		// Check if component has props - if not, show all stories fully
-		const hasProps =
-			componentManifest.reactDocgen &&
-			Object.keys(componentManifest.reactDocgen.props ?? {}).length > 0;
+		const hasProps = parsedDocgen && Object.keys(parsedDocgen.props).length > 0;
 
 		const storiesToShow = hasProps
 			? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
@@ -130,8 +148,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 	}
 
 	// Props section
-	if (componentManifest.reactDocgen) {
-		const parsedDocgen = parseReactDocgen(componentManifest.reactDocgen);
+	if (parsedDocgen) {
 		const propEntries = Object.entries(parsedDocgen.props);
 
 		if (propEntries.length > 0) {

@@ -130,7 +130,7 @@ export const manifests: PresetPropertyFn<
             (entry as DocsIndexEntry).storiesImports[0];
       const absoluteImportPath = path.join(process.cwd(), storyFilePath);
       const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
-      const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
+      const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
 
       const componentName = csf._meta?.component;
       const id = entry.id.split('--')[0];

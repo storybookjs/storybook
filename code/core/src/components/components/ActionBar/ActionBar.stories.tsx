@@ -27,6 +27,9 @@ export default {
       </div>
     ),
   ],
+  args: {
+    sb11FlexLayout: true,
+  },
 };
 
 export const SingleItem = () => <ActionBar actionItems={[{ title: 'Clear', onClick: action1 }]} />;

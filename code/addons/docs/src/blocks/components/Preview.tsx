@@ -35,6 +35,10 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
   ({ isColumn, columns, layout }) => ({
     display: isColumn || !columns ? 'block' : 'flex',
     position: 'relative',
+    flex: 1,
+    flexShrink: 0,
+    flexBasis: 'fit-content',
+    maxWidth: '100%',
     flexWrap: 'wrap',
     overflow: 'auto',
     flexDirection: isColumn ? 'column' : 'row',
@@ -172,9 +176,10 @@ const PositionedToolbar = styled(Toolbar)({
   height: 40,
 });
 
-const Relative = styled.div({
+const ActionBarContainer = styled.div({
   overflow: 'hidden',
-  position: 'relative',
+  display: 'flex',
+  flexWrap: 'wrap',
 });
 
 /**
@@ -263,7 +268,7 @@ export const Preview: FC<PreviewProps> = ({
         />
       )}
       <ZoomContext.Provider value={{ scale }}>
-        <Relative className="docs-story" onCopyCapture={withSource && onCopyCapture}>
+        <ActionBarContainer className="docs-story" onCopyCapture={withSource && onCopyCapture}>
           <ChildrenContainer
             isColumn={isColumn || !Array.isArray(children)}
             columns={columns}
@@ -278,8 +283,8 @@ export const Preview: FC<PreviewProps> = ({
               )}
             </Zoom.Element>
           </ChildrenContainer>
-          <ActionBar actionItems={actionItems} />
-        </Relative>
+          <ActionBar actionItems={actionItems} flexLayout />
+        </ActionBarContainer>
       </ZoomContext.Provider>
       {withSource && expanded && source}
     </PreviewContainer>

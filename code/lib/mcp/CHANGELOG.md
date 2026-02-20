@@ -1,5 +1,17 @@
 # @storybook/mcp
 
+## 0.3.0
+
+### Minor Changes
+
+- [#165](https://github.com/storybookjs/mcp/pull/165) [`e088e05`](https://github.com/storybookjs/mcp/commit/e088e0501619b29bf7f38ef2ee2b60c8477c803a) Thanks [@JReinhold](https://github.com/JReinhold)! - Remove support for XML format.
+
+  ## Breaking Change
+
+  The related option to configure XML vs markdown format now has no impact, the output is always formatted as markdown.
+
+- [#140](https://github.com/storybookjs/mcp/pull/140) [`f9fce2a`](https://github.com/storybookjs/mcp/commit/f9fce2a12b691d1187d8bc719c88e912e27e3391) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add multi-source composition with OAuth for private Storybooks
+
 ## 0.2.2
 
 ### Patch Changes

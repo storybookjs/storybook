@@ -58,7 +58,7 @@ export function renderComponentsManifest(
     docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
 
-  const activeEngine = manifest?.meta?.reactDocgen ?? 'react-docgen';
+  const activeEngine = manifest?.meta?.docgen ?? 'react-docgen';
   const durationMs = manifest?.meta?.durationMs ?? 0;
 
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target

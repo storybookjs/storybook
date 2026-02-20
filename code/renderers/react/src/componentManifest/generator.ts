@@ -230,7 +230,7 @@ export const manifests: PresetPropertyFn<
       v: 0,
       components: Object.fromEntries(components.map((component) => [component.id, component])),
       meta: {
-        reactDocgen: typescriptOptions.reactDocgen ?? 'react-docgen',
+        docgen: typescriptOptions.reactDocgen ?? 'react-docgen',
         durationMs,
       },
     },

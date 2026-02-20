@@ -1,5 +1,11 @@
 # @storybook/mcp
 
+## 0.4.0
+
+### Minor Changes
+
+- [#168](https://github.com/storybookjs/mcp/pull/168) [`c0793d4`](https://github.com/storybookjs/mcp/commit/c0793d4dd9b1895f6f67be21a5bf0339a3458e95) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add react-docgen-typescript support for component manifest parsing.
+
 ## 0.3.0
 
 ### Minor Changes

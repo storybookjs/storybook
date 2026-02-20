@@ -215,6 +215,8 @@ const optimizeViteDeps = [
   '@storybook/addon-docs',
   '@storybook/addon-docs/blocks',
   '@storybook/addon-docs > @mdx-js/react',
+  'react-dom/client',
+  'react/jsx-runtime',
 ];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };

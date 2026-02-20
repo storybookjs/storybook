@@ -1,18 +1,13 @@
 import type { AllManifests, ComponentManifest, Doc, SourceManifests, Story } from '../../types.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
 import { dedent } from '../dedent.ts';
-import { extractDocsSummary } from './extract-docs-summary.ts';
+import { extractDocsSummary, MAX_SUMMARY_LENGTH } from './extract-docs-summary.ts';
 
 /**
  * Maximum number of stories to show in full detail in component manifests.
  * Remaining stories will be shown as names only.
  */
 export const MAX_STORIES_TO_SHOW = 3;
-
-/**
- * Maximum length for a summary before truncation.
- */
-export const MAX_SUMMARY_LENGTH = 90;
 
 function formatComponentLine(component: ComponentManifest): string {
 	const summary =

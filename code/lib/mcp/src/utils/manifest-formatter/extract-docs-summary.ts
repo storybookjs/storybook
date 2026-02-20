@@ -1,4 +1,7 @@
-import { MAX_SUMMARY_LENGTH } from './markdown.ts';
+/**
+ * Maximum length for a summary before truncation.
+ */
+export const MAX_SUMMARY_LENGTH = 90;
 
 /**
  * Extracts a summary from MDX content.

@@ -67,6 +67,24 @@ describe('Yarn 2 Proxy', () => {
         })
       );
     });
+
+    it('should use `yarn dlx` when useRemotePkg is true', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+        stdout: '',
+      } as any);
+
+      await yarn2Proxy.runPackageCommand({
+        args: ['storybook@latest', 'automigrate'],
+        useRemotePkg: true,
+      });
+
+      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          command: 'yarn',
+          args: ['dlx', 'storybook@latest', 'automigrate'],
+        })
+      );
+    });
   });
 
   describe('addDependencies', () => {

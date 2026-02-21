@@ -1,8 +1,7 @@
+import net from 'node:net';
 import os from 'node:os';
 
 import { logger } from 'storybook/internal/node-logger';
-
-import detectFreePort from 'detect-port';
 
 export function getServerAddresses(
   port: number,
@@ -29,6 +28,37 @@ export function getServerAddresses(
 
 interface PortOptions {
   exactPort?: boolean;
+}
+
+/**
+ * Checks if a given port is available by attempting to bind a TCP server to it.
+ * Returns the port if available, or rejects with an error if it is in use.
+ * This avoids shelling out to `ps` (which fails on Alpine/BusyBox environments).
+ */
+function checkPort(port: number): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on('error', reject);
+    server.listen(port, () => {
+      const { port: assignedPort } = server.address() as net.AddressInfo;
+      server.close(() => resolve(assignedPort));
+    });
+  });
+}
+
+/**
+ * Finds a free port starting from the given port number.
+ * Falls back to an OS-assigned port (port 0) when the requested port is unavailable.
+ */
+export function detectFreePort(port?: number): Promise<number> {
+  return checkPort(port || 0).catch((err) => {
+    if (err.code === 'EADDRINUSE') {
+      // Let the OS assign a free port
+      return checkPort(0);
+    }
+    return Promise.reject(err);
+  });
 }
 
 export const getServerPort = (port?: number, { exactPort }: PortOptions = {}) =>

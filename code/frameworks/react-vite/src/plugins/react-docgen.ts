@@ -61,39 +61,42 @@ export async function reactDocgen({
   return {
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
-    async transform(src: string, id: string) {
-      if (!filter(relative(cwd, id))) {
-        return;
-      }
-
-      try {
-        const docgenResults = parse(src, {
-          resolver: defaultResolver,
-          handlers,
-          importer: getReactDocgenImporter(matchPath),
-          filename: id,
-        }) as DocObj[];
-        const s = new MagicString(src);
-
-        docgenResults.forEach((info) => {
-          const { actualName, definedInFile, ...docgenInfo } = info;
-          if (actualName && definedInFile == id) {
-            const docNode = JSON.stringify(docgenInfo);
-            s.append(`;${actualName}.__docgenInfo=${docNode}`);
-          }
-        });
-
-        return {
-          code: s.toString(),
-          map: s.generateMap({ hires: true, source: id }),
-        };
-      } catch (e: any) {
-        // Ignore the error when react-docgen cannot find a react component
-        if (e.code === ERROR_CODES.MISSING_DEFINITION) {
+    transform: {
+      filter: { id: { include, exclude } },
+      async handler(src: string, id: string) {
+        if (!filter(relative(cwd, id))) {
           return;
         }
-        throw e;
-      }
+
+        try {
+          const docgenResults = parse(src, {
+            resolver: defaultResolver,
+            handlers,
+            importer: getReactDocgenImporter(matchPath),
+            filename: id,
+          }) as DocObj[];
+          const s = new MagicString(src);
+
+          docgenResults.forEach((info) => {
+            const { actualName, definedInFile, ...docgenInfo } = info;
+            if (actualName && definedInFile == id) {
+              const docNode = JSON.stringify(docgenInfo);
+              s.append(`;${actualName}.__docgenInfo=${docNode}`);
+            }
+          });
+
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: true, source: id }),
+          };
+        } catch (e: any) {
+          // Ignore the error when react-docgen cannot find a react component
+          if (e.code === ERROR_CODES.MISSING_DEFINITION) {
+            return;
+          }
+          throw e;
+        }
+      },
     },
   };
 }

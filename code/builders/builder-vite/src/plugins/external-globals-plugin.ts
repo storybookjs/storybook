@@ -42,6 +42,9 @@ export async function externalGlobalsPlugin(externals: Record<string, string>): 
   await init;
   const { mergeAlias } = await import('vite');
 
+  const globalsList = Object.keys(externals);
+  const globalsCodeFilter = new RegExp(globalsList.map(escapeKeys).join('|'));
+
   return {
     name: 'storybook:external-globals-plugin',
     enforce: 'post',
@@ -75,28 +78,29 @@ export async function externalGlobalsPlugin(externals: Record<string, string>): 
       };
     },
     // Replace imports with variables destructured from global scope
-    async transform(code: string, id: string) {
-      const globalsList = Object.keys(externals);
-
-      if (globalsList.every((glob) => !code.includes(glob))) {
-        return undefined;
-      }
-
-      const [imports] = parse(code);
-      const src = new MagicString(code);
-      imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
-        const packageName = path;
-        if (packageName && globalsList.includes(packageName)) {
-          const importStatement = src.slice(startPosition, endPosition);
-          const transformedImport = rewriteImport(importStatement, externals, packageName);
-          src.update(startPosition, endPosition, transformedImport);
+    transform: {
+      filter: { code: globalsCodeFilter },
+      async handler(code: string, id: string) {
+        if (globalsList.every((glob) => !code.includes(glob))) {
+          return undefined;
         }
-      });
 
-      return {
-        code: src.toString(),
-        map: null,
-      };
+        const [imports] = parse(code);
+        const src = new MagicString(code);
+        imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
+          const packageName = path;
+          if (packageName && globalsList.includes(packageName)) {
+            const importStatement = src.slice(startPosition, endPosition);
+            const transformedImport = rewriteImport(importStatement, externals, packageName);
+            src.update(startPosition, endPosition, transformedImport);
+          }
+        });
+
+        return {
+          code: src.toString(),
+          map: null,
+        };
+      },
     },
   } satisfies Plugin;
 }

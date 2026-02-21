@@ -5,6 +5,7 @@
     "baseUrl": ".",
     "customConditions": ["code"],
     "esModuleInterop": true,
+    // "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
     "ignoreDeprecations": "5.0",
     "incremental": false,

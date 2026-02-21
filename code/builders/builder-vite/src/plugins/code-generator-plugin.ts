@@ -76,30 +76,27 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         return undefined;
       },
     },
-    load: {
-      filter: { id: /\0virtual:\/@storybook\/builder-vite\// },
-      async handler(id) {
-        switch (id) {
-          case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE): {
-            const storyIndexGenerator = await storyIndexGeneratorPromise;
-            const index = await storyIndexGenerator?.getIndex();
-            return generateImportFnScriptCode(index);
-          }
-
-          case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE): {
-            return generateAddonSetupCode();
-          }
-          case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE): {
-            return generateModernIframeScriptCode(options, projectRoot);
-          }
-          case iframeId: {
-            return readFileSync(
-              fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html')),
-              'utf-8'
-            );
-          }
+    async load(id) {
+      switch (id) {
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE): {
+          const storyIndexGenerator = await storyIndexGeneratorPromise;
+          const index = await storyIndexGenerator?.getIndex();
+          return generateImportFnScriptCode(index);
         }
-      },
+
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE): {
+          return generateAddonSetupCode();
+        }
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE): {
+          return generateModernIframeScriptCode(options, projectRoot);
+        }
+        case iframeId: {
+          return readFileSync(
+            fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html')),
+            'utf-8'
+          );
+        }
+      }
     },
     async transformIndexHtml(html, ctx) {
       if (ctx.path !== '/iframe.html') {

@@ -65,6 +65,21 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
   a: {
     color: theme.color.secondary,
     textDecoration: 'none',
+
+    '& code': {
+      color: 'inherit',
+      textDecoration: 'underline',
+      textDecorationThickness: '1px',
+      padding: 0,
+      '&::before': {
+        content: '"\\00a0"',
+        fontSize: '0.5em',
+      },
+      '&::after': {
+        content: '"\\00a0"',
+        fontSize: '0.5em',
+      },
+    },
   },
   'a.absent': {
     color: '#cc0000',

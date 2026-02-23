@@ -749,6 +749,33 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
+  'preact-vite/prerelease-ts': {
+    name: 'Preact Prerelease (Vite | TypeScript)',
+    /**
+     * 1. Create a Vite project with the Preact template
+     * 2. Add Preact beta versions
+     * 3. Add resolutions for preact and @types/preact
+     * 4. Add @types/preact pointing to the beta packages
+     */
+    script: `
+      npm create vite --yes {{beforeDir}} -- --template preact-ts && \
+      cd {{beforeDir}} && \
+      jq '.resolutions += {"@types/preact": "npm:types-preact@beta", "preact": "npm:preact@beta",}' package.json > tmp.json && mv tmp.json package.json && \
+      yarn add preact@beta && \
+      yarn add --dev @types/preact@npm:types-preact@beta
+      `,
+    // TODO: Remove this after publishing to next as the template is not yet usable before reaching that branch.
+    inDevelopment: true,
+    expected: {
+      framework: '@storybook/preact-vite',
+      renderer: '@storybook/preact',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['preact-render-to-string'],
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   /** This is currently broken, we generate components and stories that do not work */
   // 'qwik-vite/default-ts': {
   //   name: 'Qwik CLI Latest (Vite | TypeScript)',

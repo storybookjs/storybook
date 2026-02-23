@@ -49,7 +49,6 @@ export async function vitePluginNextEnv(
       );
 
       const finalConfig = {
-        ...config.define,
         ...publicNextEnvMap,
         ...getDefineEnv({
           isTurbopack: false,

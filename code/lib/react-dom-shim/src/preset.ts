@@ -66,6 +66,13 @@ export const viteFinal = async (config: any, options: Options) => {
 
   return {
     ...config,
+    optimizeDeps: {
+      ...(config?.optimizeDeps ?? {}),
+      include: [
+        ...(config.optimizeDeps?.include || []),
+        ...(isReactVersion18 ? ['react-dom/client'] : []),
+      ],
+    },
     resolve: {
       ...config.resolve,
       alias,

@@ -101,7 +101,11 @@ export function initializeWhatsNew(
         if (isTelemetryEnabled) {
           await sendTelemetryError(error, 'core-config', {
             cliOptions: options,
-            presetOptions: { ...options, corePresets: [], overridePresets: [] },
+            presetOptions: {
+              ...options,
+              corePresets: [],
+              overridePresets: [],
+            },
             skipPrompt: true,
           });
         }
@@ -115,7 +119,11 @@ export function initializeWhatsNew(
     if (isTelemetryEnabled) {
       await sendTelemetryError(error, 'browser', {
         cliOptions: options,
-        presetOptions: { ...options, corePresets: [], overridePresets: [] },
+        presetOptions: {
+          ...options,
+          corePresets: [],
+          overridePresets: [],
+        },
         skipPrompt: true,
       });
     }

@@ -172,7 +172,7 @@ function VitePlugin({
               // Refer to this pnpm issue for more details:
               // https://github.com/vitejs/vite/issues/16293
               "next > styled-jsx/style",
-              ...(nextConfig.compiler.emotion
+              ...(nextConfig.compiler?.emotion
                 ? ["@emotion/react/jsx-dev-runtime"]
                 : []),
               ...(isNext16orNewer ? [] : ["next/config"]),

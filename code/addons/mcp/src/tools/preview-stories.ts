@@ -14,8 +14,8 @@ import { StoryInput, StoryInputArray } from '../types.ts';
 import appTemplate from './preview-stories/preview-stories-app-template.html';
 import fs from 'node:fs/promises';
 import { slash } from '../utils/slash.ts';
+import { PREVIEW_STORIES_TOOL_NAME } from './tool-names.ts';
 
-export const PREVIEW_STORIES_TOOL_NAME = 'preview-stories';
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
 
 const PreviewStoriesInput = v.object({

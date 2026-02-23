@@ -11,6 +11,9 @@ const preview: Preview = {
 				date: /Date$/,
 			},
 		},
+		a11y: {
+			test: 'todo',
+		},
 	},
 	decorators: [
 		withThemeByDataAttribute({

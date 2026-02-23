@@ -140,7 +140,7 @@ play: async ({ canvas }) => {
 
 ### Key Requirements
 
-- **Node.js 20+**, **TypeScript 4.9+**, **Vite 5+**
+- **Node.js 20+**, **TypeScript 4.9+**
 - React Native uses `.rnstorybook` directory
 
 ## Story Linking Agent Behavior

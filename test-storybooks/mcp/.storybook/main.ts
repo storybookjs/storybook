@@ -16,6 +16,8 @@ const config = defineMain({
 	],
 	addons: [
 		'@storybook/addon-docs',
+		'@storybook/addon-a11y',
+		'@storybook/addon-vitest',
 		'@storybook/addon-themes',
 		{
 			name: '@storybook/addon-mcp',

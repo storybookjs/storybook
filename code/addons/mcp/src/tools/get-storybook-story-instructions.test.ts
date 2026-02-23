@@ -1,17 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import {
-	addGetUIBuildingInstructionsTool,
-	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-} from './get-storybook-story-instructions.ts';
+import { getAddonVitestConstants } from './run-story-tests.ts';
+import { addGetUIBuildingInstructionsTool } from './get-storybook-story-instructions.ts';
 import type { AddonContext } from '../types.ts';
-import { PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
+import { PREVIEW_STORIES_TOOL_NAME, GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
+
+vi.mock('./run-story-tests.ts', () => ({
+	getAddonVitestConstants: vi.fn(),
+}));
 
 describe('getUIBuildingInstructionsTool', () => {
 	let server: McpServer<any, AddonContext>;
 
 	beforeEach(async () => {
+		vi.mocked(getAddonVitestConstants).mockResolvedValue({
+			TRIGGER_TEST_RUN_REQUEST: 'TRIGGER_TEST_RUN_REQUEST',
+			TRIGGER_TEST_RUN_RESPONSE: 'TRIGGER_TEST_RUN_RESPONSE',
+		});
+
 		const adapter = new ValibotJsonSchemaAdapter();
 		server = new McpServer(
 			{
@@ -45,6 +52,106 @@ describe('getUIBuildingInstructionsTool', () => {
 		);
 
 		await addGetUIBuildingInstructionsTool(server);
+	});
+
+	async function getToolDescription(context: AddonContext) {
+		const response = await server.receive(
+			{
+				jsonrpc: '2.0' as const,
+				id: 100,
+				method: 'tools/list',
+				params: {},
+			},
+			{
+				sessionId: 'test-session',
+				custom: context,
+			},
+		);
+
+		const tools = response.result?.tools ?? [];
+		const instructionsTool = tools.find(
+			(tool: any) => tool.name === GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+		);
+		return instructionsTool?.description as string;
+	}
+
+	it('should include testing and a11y description when available', async () => {
+		const mockOptions = {
+			presets: {
+				apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
+			},
+		};
+
+		const description = await getToolDescription({
+			origin: 'http://localhost:6006',
+			options: mockOptions as any,
+			disableTelemetry: true,
+			a11yEnabled: true,
+			toolsets: {
+				dev: true,
+				docs: true,
+				test: true,
+			},
+		});
+
+		expect(description).toContain('Running story tests or fixing test failures');
+		expect(description).toContain(
+			'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)',
+		);
+		expect(description).toContain('How to handle test failures and accessibility violations');
+	});
+
+	it('should exclude testing and a11y description when test toolset is disabled', async () => {
+		const mockOptions = {
+			presets: {
+				apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
+			},
+		};
+
+		const description = await getToolDescription({
+			origin: 'http://localhost:6006',
+			options: mockOptions as any,
+			disableTelemetry: true,
+			a11yEnabled: true,
+			toolsets: {
+				dev: true,
+				docs: true,
+				test: false,
+			},
+		});
+
+		expect(description).not.toContain('Running story tests or fixing test failures');
+		expect(description).not.toContain(
+			'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)',
+		);
+		expect(description).not.toContain('How to handle test failures');
+	});
+
+	it('should include testing but exclude a11y description when a11y is disabled', async () => {
+		const mockOptions = {
+			presets: {
+				apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
+			},
+		};
+
+		const description = await getToolDescription({
+			origin: 'http://localhost:6006',
+			options: mockOptions as any,
+			disableTelemetry: true,
+			a11yEnabled: false,
+			toolsets: {
+				dev: true,
+				docs: true,
+				test: true,
+			},
+		});
+
+		expect(description).toContain('Running story tests or fixing test failures');
+		expect(description).toContain('How to handle test failures');
+		expect(description).not.toContain('How to handle test failures and accessibility violations');
+		expect(description).not.toContain(
+			'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)',
+		);
 	});
 
 	it('should return UI building instructions with framework placeholders replaced', async () => {

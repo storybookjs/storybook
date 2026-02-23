@@ -12,7 +12,9 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
+import { addRunStoryTestsTool } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
+import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
@@ -20,6 +22,7 @@ let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
+let a11yEnabled: boolean | undefined;
 
 const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const core = await options.presets.apply('core', {});
@@ -49,6 +52,10 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	// Register dev addon tools
 	await addPreviewStoriesTool(server);
 	await addGetUIBuildingInstructionsTool(server);
+
+	// Register test addon tools
+	a11yEnabled = await isAddonA11yEnabled(options);
+	await addRunStoryTestsTool(server, { a11yEnabled });
 
 	// Only register the additional tools if the component manifest feature is enabled
 	const manifestStatus = await getManifestStatus(options);
@@ -113,6 +120,7 @@ export const mcpServerHandler = async ({
 		toolsets: getToolsets(webRequest, addonOptions),
 		origin: origin!,
 		disableTelemetry: disableTelemetry!,
+		a11yEnabled,
 		request: webRequest,
 		sources,
 		manifestProvider,
@@ -228,6 +236,7 @@ export function getToolsets(
 	const toolsets: AddonOptionsOutput['toolsets'] = {
 		dev: false,
 		docs: false,
+		test: false,
 	};
 
 	// The format of the header is a comma-separated list of enabled toolsets

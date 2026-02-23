@@ -6,23 +6,29 @@
 	"scripts": {
 		"build-storybook": "storybook build",
 		"storybook": "storybook dev --port 6006 --loglevel debug --no-open",
+		"test": "vitest --project=e2e",
+		"test:storybook": "vitest run --project=storybook",
 		"storybook:composition": "storybook dev --port 6007 -c .storybook-composition --loglevel debug --no-open",
 		"storybook:composition:auth": "storybook dev --port 6008 -c .storybook-composition-auth --loglevel debug --no-open",
-		"test": "cd ../.. && pnpm vitest --project=e2e",
 		"typecheck": "tsc"
 	},
 	"devDependencies": {
+		"@storybook/addon-a11y": "catalog:",
 		"@storybook/addon-docs": "catalog:",
 		"@storybook/addon-mcp": "workspace:*",
-		"@storybook/addon-themes": "10.3.0-alpha.5",
+		"@storybook/addon-themes": "catalog:",
+		"@storybook/addon-vitest": "catalog:",
 		"@storybook/react-vite": "catalog:",
 		"@types/react": "^18.2.65",
 		"@types/react-dom": "^18.2.21",
 		"@vitejs/plugin-react": "^5.1.1",
+		"@vitest/browser-playwright": "catalog:",
+		"playwright": "catalog:",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"storybook": "catalog:",
 		"tinyexec": "^1.0.2",
-		"vite": "catalog:"
+		"vite": "catalog:",
+		"vitest": "catalog:"
 	}
 }

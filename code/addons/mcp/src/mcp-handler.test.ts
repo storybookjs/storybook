@@ -403,6 +403,7 @@ describe('getToolsets', () => {
 			toolsets: {
 				dev: true,
 				docs: false,
+				test: true,
 			},
 		};
 
@@ -411,6 +412,7 @@ describe('getToolsets', () => {
 		expect(result).toEqual({
 			dev: true,
 			docs: false,
+			test: true,
 		});
 	});
 
@@ -422,6 +424,7 @@ describe('getToolsets', () => {
 			toolsets: {
 				dev: true,
 				docs: true,
+				test: true,
 			},
 		};
 
@@ -430,6 +433,7 @@ describe('getToolsets', () => {
 		expect(result).toEqual({
 			dev: true,
 			docs: false,
+			test: false,
 		});
 	});
 
@@ -443,6 +447,7 @@ describe('getToolsets', () => {
 			toolsets: {
 				dev: false,
 				docs: false,
+				test: false,
 			},
 		};
 
@@ -451,6 +456,7 @@ describe('getToolsets', () => {
 		expect(result).toEqual({
 			dev: true,
 			docs: true,
+			test: false,
 		});
 	});
 
@@ -464,6 +470,7 @@ describe('getToolsets', () => {
 			toolsets: {
 				dev: false,
 				docs: false,
+				test: false,
 			},
 		};
 
@@ -472,6 +479,7 @@ describe('getToolsets', () => {
 		expect(result).toEqual({
 			dev: true,
 			docs: true,
+			test: false,
 		});
 	});
 
@@ -485,6 +493,7 @@ describe('getToolsets', () => {
 			toolsets: {
 				dev: false,
 				docs: false,
+				test: false,
 			},
 		};
 
@@ -493,6 +502,7 @@ describe('getToolsets', () => {
 		expect(result).toEqual({
 			dev: true,
 			docs: true,
+			test: false,
 		});
 	});
 
@@ -504,6 +514,7 @@ describe('getToolsets', () => {
 			toolsets: {
 				dev: true,
 				docs: true,
+				test: true,
 			},
 		};
 
@@ -512,6 +523,7 @@ describe('getToolsets', () => {
 		expect(result).toEqual({
 			dev: true,
 			docs: true,
+			test: true,
 		});
 	});
 });

@@ -1,5 +1,17 @@
 ## 3.1.12
 
+## 3.2.0
+
+### Minor Changes
+
+- [#95](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/95) [`b24bcc0`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/b24bcc0aed2dbd5c705323edf81b1ebb4d800651) Thanks [@yannbf](https://github.com/yannbf)! - Add support for Vite 8
+
+### Patch Changes
+
+- [#99](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/99) [`333ed7c`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/333ed7ce09a7e75344c5b49fcb19b0c0358aca94) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Add @emotion/react/jsx-dev-runtime to optimize deps
+
+- [#97](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/97) [`b73e921`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/b73e921fd4d875fc8b4a0066bfe0d200b791de31) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Deactivate barrel file handling via Next.js' swc transpiler
+
 ### Patch Changes
 
 - [#91](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/91) [`a671255`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/a671255a12f8376a1ab343ae26013f67bb9ba719) Thanks [@ButterflyBug](https://github.com/ButterflyBug)! - Support unstable_rethrow from next/navigation

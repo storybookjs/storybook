@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.3.0-alpha.7",
+  "version": "10.3.0-alpha.8",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -54,7 +54,8 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/react-dom-shim": "workspace:*",
-    "react-docgen": "^8.0.2"
+    "react-docgen": "^8.0.2",
+    "react-docgen-typescript": "^2.2.2"
   },
   "devDependencies": {
     "@types/babel-plugin-react-docgen": "^4.2.3",

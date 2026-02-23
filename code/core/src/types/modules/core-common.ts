@@ -369,6 +369,10 @@ export interface ComponentManifest {
 export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
+  meta?: {
+    docgen: 'react-docgen' | 'react-docgen-typescript';
+    durationMs: number;
+  };
 }
 
 type ManifestName = string;

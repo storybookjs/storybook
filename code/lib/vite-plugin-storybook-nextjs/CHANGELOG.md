@@ -1,5 +1,11 @@
 ## 3.1.12
 
+## 3.2.1
+
+### Patch Changes
+
+- [#100](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/100) [`f4201b4`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/f4201b48f3c81a5cc1ec570c7057f604bc915076) Thanks [@yannbf](https://github.com/yannbf)! - fix emotion compiler option reference
+
 ## 3.2.0
 
 ### Minor Changes

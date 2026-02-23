@@ -331,6 +331,7 @@ function setSandboxViteFinal(mainConfig: ConfigFile, template: TemplateKey) {
   const viteFinalCode = `
   (config) => ({
     ...config,
+    optimizeDeps: { ...config.optimizeDeps, force: true },
     server: {
       ...config.server,
       fs: {
@@ -492,9 +493,21 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     isTypeScriptSandbox ? '.storybook/vitest.setup.ts' : '.storybook/vitest.setup.js'
   );
 
-  await writeFile(
-    setupFilePath,
-    dedent`
+  const shouldUseCsf4 = template.expected.framework === '@storybook/react-vite';
+  if (shouldUseCsf4) {
+    await writeFile(
+      setupFilePath,
+      dedent`import { setProjectAnnotations } from '${storybookPackage}'
+      import projectAnnotations from './preview'
+
+      // setProjectAnnotations still kept to support non-CSF4 story tests
+      setProjectAnnotations(projectAnnotations.composed)
+      `
+    );
+  } else {
+    await writeFile(
+      setupFilePath,
+      dedent`
       import { setProjectAnnotations } from '${storybookPackage}'
       import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
@@ -510,7 +523,8 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         addonA11yAnnotations,
         projectAnnotations,
       ])`
-  );
+    );
+  }
 
   const opts = { cwd: sandboxDir };
   const viteConfigFile = await findFirstPath(['vite.config.ts', 'vite.config.js'], opts);
@@ -529,15 +543,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     // Insert resolve after plugins
     return `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
   });
-
-  // In linked mode, add server.fs.allow to allow Vite to serve files from the monorepo root
-  if (options.link) {
-    fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
-      // Insert server.fs.allow after plugins (alongside resolve)
-      return `${match}\n  server: {\n    fs: {\n      allow: ['../../..']\n    }\n  },`;
-    });
-  }
-
   // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line
   const storybookTestRegex = /storybookTest\((\{[\s\S]*?\})\)/g;
   fileContent = fileContent.replace(storybookTestRegex, (match, args) => {

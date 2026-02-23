@@ -132,11 +132,14 @@ export const baseTemplates = {
 
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: (config) => {
         const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
         return {
-          features: {},
+          features: {
+            experimentalTestSyntax: true,
+          },
           stories: stories?.map((s) => {
             if (typeof s === 'string') {
               return s.replace(/\|(tsx?|ts)\b|\b(tsx?|ts)\|/g, '');
@@ -163,9 +166,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
   },
@@ -179,10 +185,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -202,10 +210,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -225,10 +235,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -248,10 +260,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -271,11 +285,13 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'vite', 'prop-types'],
@@ -292,11 +308,13 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'vite', 'prop-types'],
@@ -313,11 +331,13 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'vite', 'prop-types'],
@@ -333,10 +353,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -351,12 +373,13 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
-
+          experimentalTestSyntax: true,
           experimentalComponentsManifest: true,
         },
       },
@@ -386,10 +409,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -404,9 +429,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -421,9 +449,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -448,9 +479,12 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -465,8 +499,11 @@ export const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['prop-types'],
+      useCsfFactory: true,
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
       skipMocking: true,
     },
@@ -490,7 +527,9 @@ export const baseTemplates = {
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
     },
-    modifications: {},
+    modifications: {
+      useCsfFactory: true,
+    },
     skipTasks: ['e2e-tests', 'bench'],
   },
   'vue3-vite/default-ts': {
@@ -501,7 +540,9 @@ export const baseTemplates = {
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
     },
-    modifications: {},
+    modifications: {
+      useCsfFactory: true,
+    },
     skipTasks: ['bench'],
   },
   'vue3-rsbuild/default-ts': {
@@ -515,7 +556,9 @@ export const baseTemplates = {
     modifications: {
       extraDependencies: ['storybook-vue3-rsbuild@^3.0.0-beta.1'],
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
       skipMocking: true,
     },
@@ -602,6 +645,7 @@ export const baseTemplates = {
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
       // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
+      useCsfFactory: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -616,6 +660,7 @@ export const baseTemplates = {
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
       extraDependencies: ['@angular/forms@latest'],
+      useCsfFactory: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -644,7 +689,9 @@ export const baseTemplates = {
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
     },
-    modifications: {},
+    modifications: {
+      useCsfFactory: true,
+    },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
   },
@@ -657,7 +704,9 @@ export const baseTemplates = {
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
     },
-    modifications: {},
+    modifications: {
+      useCsfFactory: true,
+    },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
   },
@@ -752,8 +801,11 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
     skipTasks: ['bench', 'vitest-integration'],
@@ -800,13 +852,16 @@ const internalTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['@storybook/addon-webpack5-compiler-babel', 'prop-types'],
       editAddons: (addons) =>
         [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(
           (a) => a !== '@storybook/addon-webpack5-compiler-swc'
         ),
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
     isInternal: true,
@@ -822,9 +877,12 @@ const internalTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
-        features: {},
+        features: {
+          experimentalTestSyntax: true,
+        },
       },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],

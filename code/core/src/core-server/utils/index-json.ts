@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
+import type { ChannelLike } from 'storybook/internal/channels';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
@@ -8,7 +9,6 @@ import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
-import type { ServerChannel } from './get-server-channel';
 import { watchStorySpecifiers } from './watch-story-specifiers';
 import { watchConfig } from './watchConfig';
 
@@ -28,17 +28,17 @@ export function registerIndexJsonRoute({
   storyIndexGeneratorPromise,
   workingDir = process.cwd(),
   configDir,
-  serverChannel,
+  channel,
   normalizedStories,
 }: {
   app: Polka;
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
-  serverChannel: ServerChannel;
+  channel: ChannelLike;
   workingDir?: string;
   configDir?: string;
   normalizedStories: NormalizedStoriesSpecifier[];
 }) {
-  const maybeInvalidate = debounce(() => serverChannel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
+  const maybeInvalidate = debounce(() => channel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
     edges: ['leading', 'trailing'],
   });
   watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed) => {

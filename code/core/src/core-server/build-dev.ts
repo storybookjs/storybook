@@ -26,11 +26,14 @@ import { dedent } from 'ts-dedent';
 import { detectPnp } from '../cli/detect';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
+import { getWsToken } from './presets/wsToken';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
+import { getServerChannel } from './utils/get-server-channel';
 import { outputStartupInformation } from './utils/output-startup-information';
 import { outputStats } from './utils/output-stats';
-import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address';
+import { getServer } from './utils/server-init';
 import { stripCommentsAndStrings } from './utils/strip-comments-and-strings';
 import { updateCheck } from './utils/update-check';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
@@ -88,6 +91,14 @@ export async function buildDevStandalone(
     outputDir = cacheOutputDir;
   }
 
+  invariant(port, 'expected options to have a port');
+  const { address, networkAddress } = getServerAddresses(
+    port,
+    options.host,
+    options.https ? 'https' : 'http',
+    options.initialPath
+  );
+
   options.port = port;
   options.versionCheck = versionCheck;
   options.configType = 'DEVELOPMENT';
@@ -95,6 +106,8 @@ export async function buildDevStandalone(
   options.cacheKey = cacheKey;
   options.outputDir = outputDir;
   options.serverChannelUrl = getServerChannelUrl(port, options);
+  options.localAddress = address;
+  options.networkAddress = networkAddress;
 
   // TODO: Remove in SB11
   options.pnp = await detectPnp();
@@ -142,6 +155,9 @@ export async function buildDevStandalone(
     await warnWhenUsingArgTypesRegex(previewConfigPath, config);
   } catch (e) {}
 
+  const server = await getServer(options);
+  const channel = getServerChannel(server, options, getWsToken());
+
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
@@ -152,6 +168,7 @@ export async function buildDevStandalone(
     ],
     ...options,
     isCritical: true,
+    channel,
   });
 
   const { renderer, builder, disableTelemetry } = await presets.apply('core', {});
@@ -209,19 +226,22 @@ export async function buildDevStandalone(
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
+    channel,
   });
 
   const features = await presets.apply('features');
   global.FEATURES = features;
+  await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {
     ...options,
     presets,
     features,
+    channel,
   };
 
-  const { address, networkAddress, managerResult, previewResult } = await buildOrThrow(async () =>
-    storybookDevServer(fullOptions)
+  const { managerResult, previewResult } = await buildOrThrow(async () =>
+    storybookDevServer(fullOptions, server)
   );
 
   const previewTotalTime = previewResult?.totalTime;

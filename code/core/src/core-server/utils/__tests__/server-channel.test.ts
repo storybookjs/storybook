@@ -120,7 +120,7 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    new ServerChannelTransport(server, options, mockToken);
 
     // Simulate upgrade request with wrong token
     const request = {
@@ -131,7 +131,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
@@ -162,7 +161,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).not.toHaveBeenCalled();

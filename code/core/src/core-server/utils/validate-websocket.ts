@@ -1,10 +1,10 @@
 import { timingSafeEqual } from 'node:crypto';
 
-import type { Options } from 'storybook/internal/types';
+import type { BuilderOptions } from 'storybook/internal/types';
 
 export const isValidOrigin = (
   requestOrigin: string | undefined,
-  { localAddress, networkAddress }: Options
+  { localAddress, networkAddress }: BuilderOptions
 ): boolean => {
   if (!requestOrigin || !localAddress) {
     return false;
@@ -37,8 +37,8 @@ export function isValidToken(token: string | null, expectedToken: string): boole
     return false;
   }
 
-  const a = Buffer.from(token, 'utf8');
-  const b = Buffer.from(expectedToken, 'utf8');
+  const a = new Uint8Array(Buffer.from(token, 'utf8'));
+  const b = new Uint8Array(Buffer.from(expectedToken, 'utf8'));
   try {
     return a.length === b.length && timingSafeEqual(a, b);
   } catch {

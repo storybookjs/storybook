@@ -405,7 +405,6 @@ describe('getToolsets', () => {
 				docs: false,
 				test: true,
 			},
-			experimentalFormat: 'markdown' as const,
 		};
 
 		const result = getToolsets(request, addonOptions);
@@ -427,7 +426,6 @@ describe('getToolsets', () => {
 				docs: true,
 				test: true,
 			},
-			experimentalFormat: 'markdown' as const,
 		};
 
 		const result = getToolsets(request, addonOptions);
@@ -451,7 +449,6 @@ describe('getToolsets', () => {
 				docs: false,
 				test: false,
 			},
-			experimentalFormat: 'markdown' as const,
 		};
 
 		const result = getToolsets(request, addonOptions);
@@ -475,7 +472,6 @@ describe('getToolsets', () => {
 				docs: false,
 				test: false,
 			},
-			experimentalFormat: 'markdown' as const,
 		};
 
 		const result = getToolsets(request, addonOptions);
@@ -499,7 +495,6 @@ describe('getToolsets', () => {
 				docs: false,
 				test: false,
 			},
-			experimentalFormat: 'markdown' as const,
 		};
 
 		const result = getToolsets(request, addonOptions);
@@ -521,7 +516,6 @@ describe('getToolsets', () => {
 				docs: true,
 				test: true,
 			},
-			experimentalFormat: 'markdown' as const,
 		};
 
 		const result = getToolsets(request, addonOptions);

@@ -40,7 +40,6 @@ export const getVitestSWCTransformConfig = ({
     development: isDev,
     hasReactRefresh: false,
     globalWindow: !isServerEnvironment,
-    modularizeImports: nextConfig.modularizeImports,
     jsConfig: {
       ...restJSConfig,
       compilerOptions: {

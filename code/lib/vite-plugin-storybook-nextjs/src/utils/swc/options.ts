@@ -32,7 +32,6 @@ export function getBaseSWCOptions({
   hasReactRefresh,
   globalWindow,
   esm,
-  modularizeImports,
   swcPlugins,
   compiler,
   resolvedBaseUrl,
@@ -44,7 +43,6 @@ export function getBaseSWCOptions({
   hasReactRefresh: boolean;
   globalWindow: boolean;
   esm: boolean;
-  modularizeImports?: NextConfig["modularizeImports"];
   compiler: NextConfig["compiler"];
   swcPlugins: ExperimentalConfig["swcPlugins"];
   resolvedBaseUrl?: ResolvedBaseUrl;
@@ -117,24 +115,6 @@ export function getBaseSWCOptions({
     sourceMaps: true,
     removeConsole: compiler?.removeConsole,
     reactRemoveProperties: false,
-    // Map the k-v map to an array of pairs.
-    modularizeImports: modularizeImports
-      ? Object.fromEntries(
-          Object.entries(modularizeImports).map(([mod, config]) => [
-            mod,
-            {
-              ...config,
-              transform:
-                typeof config.transform === "string"
-                  ? config.transform
-                  : Object.entries(config.transform).map(([key, value]) => [
-                      key,
-                      value,
-                    ]),
-            },
-          ]),
-        )
-      : undefined,
     relay: compiler?.relay,
     // Always transform styled-jsx and error when `client-only` condition is triggered
     styledJsx: {},

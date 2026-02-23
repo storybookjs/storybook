@@ -548,20 +548,22 @@ function extractPropItem(
 // ---------------------------------------------------------------------------
 
 /**
- * Identifies properties from node_modules interfaces with more than
- * LARGE_SOURCE_THRESHOLD properties (e.g. HTMLAttributes). These are
- * filtered to keep the manifest focused on user-defined props.
+ * Identifies properties from declaration files or node_modules interfaces
+ * with more than LARGE_SOURCE_THRESHOLD properties (e.g. HTMLAttributes,
+ * Panda CSS styled-system types). These are filtered to keep the manifest
+ * focused on user-defined props.
  *
- * Only `node_modules` paths are checked — NOT `.d.ts` in general.
- * The `.d.ts` check was too broad and accidentally excluded project-local
- * ambient declarations and compiled package output (e.g. Mantine's BoxProps).
+ * Checks both `node_modules` paths AND `.d.ts` files. The `.d.ts` check
+ * catches generated type systems like Panda CSS's `styled-system/` that
+ * live outside node_modules but still inject hundreds of CSS properties.
+ * Project-local `.d.ts` with fewer than 30 props per file are unaffected.
  */
 function getBulkSourceExclusions(properties: ts.Symbol[]): Set<string> {
   const sourceCount = new Map<string, number>();
 
   for (const prop of properties) {
     const source = getPropSourceFile(prop);
-    if (source && source.includes('node_modules')) {
+    if (source && (source.includes('node_modules') || source.endsWith('.d.ts'))) {
       sourceCount.set(source, (sourceCount.get(source) ?? 0) + 1);
     }
   }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { generateAddonSetupCode } from './codegen-set-addon-channel';
 import { generateModernIframeScriptCodeFromPreviews } from './codegen-modern-iframe-script';
+import { generateAddonSetupCode } from './codegen-set-addon-channel';
 import { optimizeViteDeps } from './preset';
 
 describe('generateModernIframeScriptCodeFromPreviews', () => {
@@ -137,16 +137,21 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
 /**
  * Extract bare package import specifiers from a block of generated JavaScript/TypeScript code.
  * Captures both `import ... from 'pkg'` and `import 'pkg'` forms, excluding:
- * - relative paths (start with `.`)
- * - virtual module IDs (start with `virtual:`)
- * - absolute paths (start with `/`)
+ *
+ * - Relative paths (start with `.`)
+ * - Virtual module IDs (start with `virtual:`)
+ * - Absolute paths (start with `/`)
  */
 function extractPackageImports(code: string): string[] {
   const importRegex = /import\s+(?:[^'"]*\s+from\s+)?['"]([^'"]+)['"]/g;
   const specifiers = new Set<string>();
   for (const match of code.matchAll(importRegex)) {
     const specifier = match[1];
-    if (!specifier.startsWith('.') && !specifier.startsWith('virtual:') && !specifier.startsWith('/')) {
+    if (
+      !specifier.startsWith('.') &&
+      !specifier.startsWith('virtual:') &&
+      !specifier.startsWith('/')
+    ) {
       specifiers.add(specifier);
     }
   }

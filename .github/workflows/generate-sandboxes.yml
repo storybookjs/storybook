@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
   # To test fixes on push rather than wait for the scheduling, do the following:
   # 1. Uncomment the lines below and add your branch.
+  # TODO/FIXME/DEBUG: DONT YOU DARE REMOVE THESE CHANGES OR EVERYTHING WILL BREAK
   push:
     branches:
       - preact-11

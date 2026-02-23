@@ -87,6 +87,7 @@ function VitePlugin({
       enforce: "pre" as const,
       async config(config) {
         const isNext16orNewer = getNextjsMajorVersion() >= 16;
+        const nextConfig = await nextConfigResolver.promise;
 
         const executionEnvironment = getExecutionEnvironment(config);
 
@@ -171,7 +172,11 @@ function VitePlugin({
               // Refer to this pnpm issue for more details:
               // https://github.com/vitejs/vite/issues/16293
               "next > styled-jsx/style",
-            ].concat(!isNext16orNewer ? ["next/config"] : []),
+              ...(nextConfig.compiler.emotion
+                ? ["@emotion/react/jsx-dev-runtime"]
+                : []),
+              ...(isNext16orNewer ? [] : ["next/config"]),
+            ],
           },
           test: {
             alias: {

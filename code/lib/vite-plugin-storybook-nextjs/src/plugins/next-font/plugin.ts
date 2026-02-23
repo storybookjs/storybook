@@ -41,7 +41,7 @@ export function vitePluginNextFont() {
     async config(config, env) {
       devMode = env.mode !== "production";
 
-      return config;
+      return {};
     },
     async resolveId(source, importer) {
       const cwd = process.cwd();

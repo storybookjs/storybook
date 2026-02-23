@@ -12,6 +12,8 @@ import {
 import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { getCodeSnippet } from './generateCodeSnippet';
 import { type TypescriptOptions, getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
@@ -41,7 +43,7 @@ function getPropTypesManager(): Promise<PropExtractionManager | null> {
         const ts = await import('typescript');
         return new PropExtractionManager(ts);
       } catch (error) {
-        console.debug('[reactPropTypes] TypeScript not available, skipping prop extraction', error);
+        logger.debug('[reactPropTypes] TypeScript not available, skipping prop extraction');
         return null;
       }
     })();
@@ -49,36 +51,45 @@ function getPropTypesManager(): Promise<PropExtractionManager | null> {
   return propTypesManagerPromise;
 }
 
-async function getReactPropTypes(
-  componentPath: string,
-  importName: string | undefined,
-  importId: string | undefined,
-  storyFilePath: string
-): Promise<ComponentDoc | undefined> {
-  const manager = await getPropTypesManager();
-  if (!manager) return undefined;
+/**
+ * Context needed for prop extraction, kept separate from the manifest object.
+ * Avoids injecting temp fields onto the manifest and cleaning them up via `any`.
+ */
+interface PropTypesContext {
+  componentPath: string;
+  importName?: string;
+  importId?: string;
+  storyFilePath: string;
+  /**
+   * For compound components (e.g. `<Accordion.Root>`), the sub-property
+   * name detected from the story's JSX usage. Tells the probe to generate
+   * `<Accordion.Root />` instead of `<Accordion />`.
+   */
+  memberAccess?: string;
+}
 
-  try {
-    const isPackageImport = importId && !importId.startsWith('.');
 
-    // Use storyFilePath for project discovery when it's a package import —
-    // the storybook tsconfig may have paths mappings or the right module resolution
-    const projectFile = isPackageImport ? storyFilePath : componentPath;
-    const project = manager.getProjectForFile(projectFile);
-
-    if (isPackageImport && importName) {
-      // Package import: use import specifier directly in probe.
-      // TypeScript resolves via tsconfig paths → source, or node_modules → .d.ts
-      return project.extractDocByImport(importId, importName);
-    }
-
-    // Local file: use file-based extraction
-    const docs = project.extractDocs(componentPath);
-    return docs.find((d) => d.exportName === (importName ?? 'default'));
-  } catch (error) {
-    console.debug('[reactPropTypes] extraction failed for', componentPath, error);
-    return undefined;
+/**
+ * Detect compound component member access from story source.
+ *
+ * Scans the story file for `<ComponentName.SubComponent` JSX patterns.
+ * If found, returns the preferred sub-component name (preferring "Root").
+ * This tells the probe to generate `<Accordion.Root />` instead of `<Accordion />`
+ * so TypeScript resolves the actual component's props via JSX checking.
+ */
+function detectMemberAccess(storySource: string, componentName: string): string | undefined {
+  const escapedName = componentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`<${escapedName}\\.([A-Z]\\w*)`, 'g');
+  const members = new Set<string>();
+  let match;
+  while ((match = regex.exec(storySource)) !== null) {
+    members.add(match[1]);
   }
+  if (members.size === 0) return undefined;
+  // Prefer Root — it's the outermost wrapper component in Ark UI / Radix patterns
+  if (members.has('Root')) return 'Root';
+  // Fall back to first member found
+  return members.values().next().value;
 }
 
 function findMatchingComponent(
@@ -171,6 +182,11 @@ export const manifests: PresetPropertyFn<
 
   const startTime = performance.now();
 
+  // Kick off TypeScript import + manager creation immediately.
+  // This runs in parallel with the docgen pass below, so by the time
+  // the sequential reactPropTypes loop starts, TS is already loaded.
+  const managerWarmup = getPropTypesManager();
+
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
       (entry) =>
@@ -184,157 +200,251 @@ export const manifests: PresetPropertyFn<
     (entry) => entry.id.split('--')[0]
   );
 
-  interface PropTypesContext {
-    componentPath: string;
-    importName?: string;
-    importId?: string;
-    storyFilePath: string;
-  }
+  const docgenStartTime = performance.now();
 
-  const results = await Promise.all(
-    entriesByUniqueComponent.map(
-      async (
-        entry
-      ): Promise<{ manifest: ReactComponentManifest; propTypesCtx?: PropTypesContext } | undefined> => {
-        const storyFilePath =
-          entry.type === 'story'
-            ? entry.importPath
-            : // For attached docs entries, storiesImports[0] points to the stories file being attached to
-              (entry as DocsIndexEntry).storiesImports[0];
-        const absoluteImportPath = path.join(process.cwd(), storyFilePath);
-        const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
-        const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
+  const results = (
+    await Promise.all(
+      entriesByUniqueComponent.map(async (entry): Promise<{ manifest: ReactComponentManifest; propTypesCtx?: PropTypesContext } | undefined> => {
+      const storyFilePath =
+        entry.type === 'story'
+          ? entry.importPath
+          : // For attached docs entries, storiesImports[0] points to the stories file being attached to
+            (entry as DocsIndexEntry).storiesImports[0];
+      const absoluteImportPath = path.join(process.cwd(), storyFilePath);
+      const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
+      const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
 
-        const componentName = csf._meta?.component;
-        const id = entry.id.split('--')[0];
-        const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
+      const componentName = csf._meta?.component;
+      const id = entry.id.split('--')[0];
+      const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-        const allComponents = getComponents({
-          csf,
-          storyFilePath: absoluteImportPath,
-          typescriptOptions,
-        });
-        const component = findMatchingComponent(
-          allComponents,
-          componentName,
-          entry.title.replace(/\s+/g, '')
-        );
+      const allComponents = getComponents({
+        csf,
+        storyFilePath: absoluteImportPath,
+        typescriptOptions,
+      });
+      const component = findMatchingComponent(
+        allComponents,
+        componentName,
+        entry.title.replace(/\s+/g, '')
+      );
 
-        const packageName = getPackageInfo(component?.path, absoluteImportPath);
-        const fallbackImport =
-          packageName && componentName
-            ? `import { ${componentName} } from "${packageName}";`
-            : '';
-        const imports =
-          getImports({ components: allComponents, packageName }).join('\n').trim() ||
-          fallbackImport;
+      const packageName = getPackageInfo(component?.path, absoluteImportPath);
+      const fallbackImport =
+        packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
+      const imports =
+        getImports({ components: allComponents, packageName }).join('\n').trim() || fallbackImport;
 
-        const stories = extractStories(csf, component?.componentName, manifestEntries);
+      const stories = extractStories(csf, component?.componentName, manifestEntries);
 
-        const base = {
-          id,
-          name: componentName ?? title,
-          path: storyFilePath,
-          stories,
-          import: imports,
-          jsDocTags: {},
-        } satisfies Partial<ComponentManifest>;
+      const base = {
+        id,
+        name: componentName ?? title,
+        path: storyFilePath,
+        stories,
+        import: imports,
+        jsDocTags: {},
+      } satisfies Partial<ComponentManifest>;
 
-        const hasDocgen = component?.reactDocgen || component?.reactDocgenTypescript;
+      const hasDocgen = component?.reactDocgen || component?.reactDocgenTypescript;
 
-        if (!hasDocgen) {
-          const error = !csf._meta?.component
-            ? {
-                name: 'No component found',
-                message:
-                  'We could not detect the component from your story file. Specify meta.component.',
-              }
-            : {
-                name: 'No component import found',
-                message: `No component file found for the "${csf.meta.component}" component.`,
-              };
-
-          return {
-            manifest: {
-              ...base,
-              error: {
-                name: error.name,
-                message:
-                  (csf._metaStatementPath?.buildCodeFrameError(error.message).message ??
-                    error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
-              },
-            },
-          };
-        }
-
-        // Extract description from whichever engine is active
-        const docgenResult = component.reactDocgen;
-        const docgen = docgenResult?.type === 'success' ? docgenResult.data : undefined;
-        const reactDocgenTypescriptDoc = component.reactDocgenTypescript;
-
-        // Use react-docgen description if available, fall back to RDT description
-        const docgenDescription = docgen?.description ?? reactDocgenTypescriptDoc?.description;
-        const { description, summary, jsDocTags } = extractComponentDescription(
-          csf,
-          docgenDescription ? { description: docgenDescription } : undefined
-        );
+      if (!hasDocgen) {
+        const error = !csf._meta?.component
+          ? {
+              name: 'No component found',
+              message:
+                'We could not detect the component from your story file. Specify meta.component.',
+            }
+          : {
+              name: 'No component import found',
+              message: `No component file found for the "${csf.meta.component}" component.`,
+            };
 
         return {
           manifest: {
             ...base,
-            description,
-            summary,
-            import: imports,
-            ...(docgen ? { reactDocgen: docgen } : {}),
-            ...(reactDocgenTypescriptDoc
-              ? { reactDocgenTypescript: reactDocgenTypescriptDoc }
-              : {}),
-            jsDocTags,
-            error:
-              (docgenResult?.type === 'error' ? docgenResult.error : undefined) ??
-              component.reactDocgenTypescriptError,
+            error: {
+              name: error.name,
+              message:
+                (csf._metaStatementPath?.buildCodeFrameError(error.message).message ??
+                  error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
+            },
           },
-          propTypesCtx: component.path
-            ? {
-                componentPath: component.path,
-                importName: component.importName,
-                importId: component.importId,
-                storyFilePath: absoluteImportPath,
-              }
-            : undefined,
         };
       }
-    )
-  );
 
-  const defined = results.filter(
-    (r): r is { manifest: ReactComponentManifest; propTypesCtx?: PropTypesContext } =>
-      r !== undefined
-  );
-  const components = defined.map((r) => r.manifest);
+      // Extract description from whichever engine is active
+      const docgenResult = component.reactDocgen;
+      const docgen = docgenResult?.type === 'success' ? docgenResult.data : undefined;
+      const reactDocgenTypescriptDoc = component.reactDocgenTypescript;
+
+      // Use react-docgen description if available, fall back to RDT description
+      const docgenDescription = docgen?.description ?? reactDocgenTypescriptDoc?.description;
+      const { description, summary, jsDocTags } = extractComponentDescription(
+        csf,
+        docgenDescription ? { description: docgenDescription } : undefined
+      );
+
+      return {
+        manifest: {
+          ...base,
+          description,
+          summary,
+          import: imports,
+          ...(docgen ? { reactDocgen: docgen } : {}),
+          ...(reactDocgenTypescriptDoc ? { reactDocgenTypescript: reactDocgenTypescriptDoc } : {}),
+          jsDocTags,
+          error:
+            (docgenResult?.type === 'error' ? docgenResult.error : undefined) ??
+            component.reactDocgenTypescriptError,
+        } satisfies ReactComponentManifest,
+        propTypesCtx: component.path
+          ? {
+              componentPath: component.path,
+              importName: component.importName,
+              importId: component.importId,
+              storyFilePath: absoluteImportPath,
+              memberAccess: componentName
+                ? detectMemberAccess(storyFile, componentName)
+                : undefined,
+            }
+          : undefined,
+      };
+    })
+    )
+  ).filter((r) => r !== undefined);
+
+  const docgenDurationMs = Math.round(performance.now() - docgenStartTime);
+
+  const components = results.map((r) => r.manifest);
+  const componentsById = new Map(components.map((c) => [c.id, c] as const));
   const propTypesContextById = new Map(
-    defined
+    results
       .filter((r) => r.propTypesCtx)
       .map((r) => [r.manifest.id, r.propTypesCtx!] as const)
   );
 
-  // --- reactPropTypes: sequential pass (LanguageService is synchronous) ---
-  const propTypesStart = performance.now();
-  for (const component of components) {
-    const ctx = propTypesContextById.get(component.id);
-    if (!ctx) continue;
+  // --- reactPropTypes: bulk extraction (one probe + one getProgram per project) ---
+  const propTypesStartTime = performance.now();
+  let propTypesCount = 0;
+  const manager = await managerWarmup;
+  const propTypesDebug: Record<string, unknown> = {};
+  if (manager) {
+    const t0 = performance.now();
+    manager.invalidate();
+    propTypesDebug.invalidateMs = Math.round(performance.now() - t0);
 
-    const reactPropTypes = await getReactPropTypes(
-      ctx.componentPath,
-      ctx.importName,
-      ctx.importId,
-      ctx.storyFilePath
-    );
-    if (reactPropTypes) {
-      (component as ReactComponentManifest).reactPropTypes = reactPropTypes;
+    // Group local-file contexts by project for bulk extraction
+    const localByProject = new Map<ReturnType<typeof manager.getProjectForFile>, { id: string; ctx: PropTypesContext }[]>();
+    const packageContexts: { id: string; ctx: PropTypesContext }[] = [];
+
+    const t1 = performance.now();
+    for (const component of components) {
+      const ctx = propTypesContextById.get(component.id);
+      if (!ctx) continue;
+      const isPackageImport = ctx.importId && !ctx.importId.startsWith('.');
+      if (isPackageImport) {
+        packageContexts.push({ id: component.id, ctx });
+        continue;
+      }
+      try {
+        const project = manager.getProjectForFile(ctx.componentPath);
+        let group = localByProject.get(project);
+        if (!group) {
+          group = [];
+          localByProject.set(project, group);
+        }
+        group.push({ id: component.id, ctx });
+      } catch {
+        // skip files that can't find a project
+      }
+    }
+    propTypesDebug.groupingMs = Math.round(performance.now() - t1);
+    propTypesDebug.localProjects = localByProject.size;
+    propTypesDebug.localFiles = [...localByProject.values()].reduce((s, g) => s + g.length, 0);
+    propTypesDebug.packageImports = packageContexts.length;
+
+    // Bulk-extract local files: one probe + one getProgram() per project
+    const bulkDebug: Array<Record<string, unknown>> = [];
+    for (const [project, entries] of localByProject) {
+      try {
+        const filePaths = entries.map((e) => e.ctx.componentPath);
+        const tBulk = performance.now();
+        const bulkResults = project.extractDocsBulk(filePaths);
+        const bulkMs = Math.round(performance.now() - tBulk);
+        bulkDebug.push({ files: filePaths.length, ms: bulkMs, config: project.configPath ?? 'inferred', ...project.lastBulkDebug });
+
+        for (const entry of entries) {
+          const docs = bulkResults.get(entry.ctx.componentPath);
+          const doc = docs?.find((d) => d.exportName === (entry.ctx.importName ?? 'default'));
+          if (doc) {
+            const component = componentsById.get(entry.id);
+            if (component) {
+              (component as ReactComponentManifest).reactPropTypes = doc;
+              propTypesCount++;
+            }
+          }
+        }
+      } catch (error) {
+        logger.debug(`[reactPropTypes] bulk extraction failed`);
+      }
+    }
+    propTypesDebug.bulkExtractions = bulkDebug;
+
+    // Package imports: group by project, then bulk-extract per project
+    const tPkg = performance.now();
+    let pkgCount = 0;
+    const pkgByProject = new Map<ReturnType<typeof manager.getProjectForFile>, { id: string; ctx: PropTypesContext }[]>();
+    for (const entry of packageContexts) {
+      if (!entry.ctx.importName) continue;
+      try {
+        const project = manager.getProjectForFile(entry.ctx.storyFilePath);
+        let group = pkgByProject.get(project);
+        if (!group) {
+          group = [];
+          pkgByProject.set(project, group);
+        }
+        group.push(entry);
+      } catch {
+        // skip
+      }
+    }
+    const pkgBulkDebug: Array<Record<string, unknown>> = [];
+    for (const [project, entries] of pkgByProject) {
+      try {
+        const bulkEntries = entries.map((e) => ({
+          importSpecifier: e.ctx.importId!,
+          exportName: e.ctx.importName!,
+          memberAccess: e.ctx.memberAccess,
+        }));
+        const tBulk = performance.now();
+        const bulkResults = project.extractDocsByImportBulk(bulkEntries);
+        const bulkMs = Math.round(performance.now() - tBulk);
+        pkgBulkDebug.push({ specifiers: bulkEntries.length, ms: bulkMs, config: project.configPath ?? 'inferred' });
+
+        for (const entry of entries) {
+          const mapKey = `${entry.ctx.importId!}::${entry.ctx.importName!}`;
+          const doc = bulkResults.get(mapKey);
+          if (doc) {
+            const component = componentsById.get(entry.id);
+            if (component) {
+              (component as ReactComponentManifest).reactPropTypes = doc;
+              propTypesCount++;
+              pkgCount++;
+            }
+          }
+        }
+      } catch {
+        logger.debug(`[reactPropTypes] bulk package extraction failed`);
+      }
+    }
+    if (packageContexts.length > 0) {
+      propTypesDebug.packageImportsMs = Math.round(performance.now() - tPkg);
+      propTypesDebug.packageImportsExtracted = pkgCount;
+      propTypesDebug.packageBulkExtractions = pkgBulkDebug;
     }
   }
-  const reactPropTypesDurationMs = Math.round(performance.now() - propTypesStart);
+  const propTypesDurationMs = Math.round(performance.now() - propTypesStartTime);
 
   const durationMs = Math.round(performance.now() - startTime);
 
@@ -346,7 +456,12 @@ export const manifests: PresetPropertyFn<
       meta: {
         docgen: typescriptOptions.reactDocgen ?? 'react-docgen',
         durationMs,
-        reactPropTypesDurationMs,
+        timings: {
+          docgen: docgenDurationMs,
+          reactPropTypes: propTypesDurationMs,
+          reactPropTypesComponents: propTypesCount,
+        },
+        debug: propTypesDebug,
       },
     },
   };

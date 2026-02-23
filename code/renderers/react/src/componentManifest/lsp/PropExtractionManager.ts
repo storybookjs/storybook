@@ -32,6 +32,7 @@ export class PropExtractionManager {
   private projects = new Map<string, PropExtractionProject>();
   private inferredProjects = new Map<string, PropExtractionProject>();
   private tsconfigCache = new Map<string, string | null>();
+  private parsedConfigCache = new Map<string, ts.ParsedCommandLine | null>();
 
   /**
    * Shared snapshot cache across all projects.
@@ -125,11 +126,11 @@ export class PropExtractionManager {
     for (const ref of commandLine.projectReferences) {
       let refPath = ref.path.replace(/\\/g, '/');
 
-      // Volar fix for #712: resolve directory references to tsconfig.json
-      if (
-        this.typescript.sys.directoryExists(refPath) ||
-        (!refPath.endsWith('.json') && this.typescript.sys.directoryExists(refPath))
-      ) {
+      // Volar fix for #712: resolve directory references to tsconfig.json.
+      // Project references can point to a directory (e.g. "../core") instead
+      // of a file. Volar checks if the path is a directory and resolves to
+      // tsconfig.json inside it.
+      if (this.typescript.sys.directoryExists(refPath)) {
         const tsconfigInDir = path.join(refPath, 'tsconfig.json');
         if (this.typescript.sys.fileExists(tsconfigInDir)) {
           refPath = tsconfigInDir;
@@ -186,13 +187,21 @@ export class PropExtractionManager {
   }
 
   /**
-   * Parse a tsconfig file with standard TS APIs.
+   * Parse a tsconfig file with standard TS APIs (cached).
+   *
+   * Volar pattern (typescriptProject.ts lines 230-233): Volar caches configs
+   * implicitly by creating projects eagerly. We cache the ParsedCommandLine
+   * directly to avoid re-parsing during project reference chain traversal.
    *
    * Applies Volar's patches:
    * - outDir = undefined (Volar fix for TypeScript#30457 / Volar#1786)
    * - Path normalization to forward slashes
    */
   private parseConfig(configPath: string): ts.ParsedCommandLine | null {
+    if (this.parsedConfigCache.has(configPath)) {
+      return this.parsedConfigCache.get(configPath)!;
+    }
+
     try {
       const config = this.typescript.readJsonConfigFile(
         configPath,
@@ -216,8 +225,10 @@ export class PropExtractionManager {
       // Normalize all file names to forward slashes for consistency.
       parsed.fileNames = parsed.fileNames.map((f) => f.replace(/\\/g, '/'));
 
+      this.parsedConfigCache.set(configPath, parsed);
       return parsed;
     } catch {
+      this.parsedConfigCache.set(configPath, null);
       return null;
     }
   }
@@ -288,11 +299,18 @@ export class PropExtractionManager {
   }
 
   /**
-   * Notify that a file has changed.
+   * Bump projectVersion on all projects for a new extraction cycle.
    *
-   * Volar pattern (createChecker.ts lines 409-431):
-   * Smart version bumping — only bump projects that actually know about this file.
+   * Equivalent of Volar's file watcher → projectVersion++.
+   * Each project bumps its version so the next extractDocsBulk call
+   * will re-check getScriptVersion for all files, detect mtime changes,
+   * and incrementally recompile only what changed.
    */
+  invalidate(): void {
+    for (const project of this.projects.values()) project.invalidate();
+    for (const project of this.inferredProjects.values()) project.invalidate();
+  }
+
   onFileChanged(filePath: string) {
     for (const project of this.projects.values()) {
       project.onFileChanged(filePath, 'changed');
@@ -340,6 +358,7 @@ export class PropExtractionManager {
       this.projects.delete(configPath);
     }
     this.tsconfigCache.clear();
+    this.parsedConfigCache.clear();
   }
 
   dispose() {
@@ -348,6 +367,7 @@ export class PropExtractionManager {
     this.projects.clear();
     this.inferredProjects.clear();
     this.tsconfigCache.clear();
+    this.parsedConfigCache.clear();
     this.sharedSnapshots.clear();
   }
 }

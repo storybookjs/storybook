@@ -1,14 +1,20 @@
 /**
  * Prop extractor using React's own JSX type system for component detection.
  *
- * Component detection uses a single conditional type per export:
+ * Component detection uses JSX elements in a virtual probe file:
  *
- *   typeof X extends JSXElementConstructor<any> ? ComponentProps<typeof X> : never
+ *   export const __el_Button__ = <Button />;
  *
- * If the result is `never`, the export is not a JSX component.
- * Otherwise the resolved type IS the props — as defined by React.
+ * TypeScript resolves props the same way as autocompletion — by calling
+ * `checker.getResolvedSignature()` on the JSX element. For polymorphic
+ * components with generic call signatures (e.g. Mantine's polymorphicFactory),
+ * TypeScript instantiates the generic with its default type parameter,
+ * giving the correct concrete props.
  *
- * This means React is the sole authority on what constitutes a component.
+ * This avoids the `ComponentProps<T>` / `infer P` limitation where
+ * TypeScript cannot infer P from a generic call signature (TS #61133).
+ *
+ * React is the sole authority on what constitutes a component.
  * No manual heuristics are layered on top. Uppercase filtering mirrors
  * how JSX itself distinguishes intrinsic elements (`<div>`) from
  * components (`<Button>`).
@@ -98,25 +104,39 @@ export function getCandidates(
 // ---------------------------------------------------------------------------
 
 /**
- * Generates a virtual TypeScript source that checks each candidate export
- * against React's JSXElementConstructor and extracts ComponentProps.
+ * Generates a virtual TSX source with two mechanisms per candidate:
+ *
+ * 1. **Conditional type alias** — detects whether the export is a valid JSX
+ *    component (`typeof X extends JSXElementConstructor<any> ? true : never`).
+ *    Non-components resolve to `never` → filtered out.
+ *
+ * 2. **JSX self-closing element** — extracts concrete props via
+ *    `checker.getResolvedSignature()`. For polymorphic components with generic
+ *    call signatures (e.g. Mantine's polymorphicFactory), TypeScript
+ *    instantiates the generic with its default type parameter automatically.
+ *    This avoids the `ComponentProps<T>` / `infer P` limitation (TS #61133).
+ *
+ * The conditional type handles detection, JSX handles props — best of both.
  *
  * For a file with `export const Button` and `export default Header`:
- * ```ts
+ * ```tsx
  * import { ComponentProps, JSXElementConstructor } from 'react';
  * import __Default__, { Button } from './Component';
- * export type __Result_default__ = typeof __Default__ extends JSXElementConstructor<any>
- *   ? ComponentProps<typeof __Default__> : never;
- * export type __Result_Button__ = typeof Button extends JSXElementConstructor<any>
- *   ? ComponentProps<typeof Button> : never;
+ * export type __det_default__ = typeof __Default__ extends JSXElementConstructor<any> ? true : never;
+ * export type __det_Button__ = typeof Button extends JSXElementConstructor<any> ? true : never;
+ * export const __el_default__ = <__Default__ />;
+ * export const __el_Button__ = <Button />;
  * ```
  */
 export function generateProbeSource(
   importPath: string,
   candidates: Array<{ exportName: string; isDefault: boolean }>
-): { source: string; typeNameMap: Map<string, string> } {
-  const lines = [`import { ComponentProps, JSXElementConstructor } from 'react';`];
-  const typeNameMap = new Map<string, string>();
+): { source: string; varNameMap: Map<string, string>; detTypeMap: Map<string, string> } {
+  const lines: string[] = [];
+  const varNameMap = new Map<string, string>();
+  const detTypeMap = new Map<string, string>();
+
+  lines.push(`import { JSXElementConstructor } from 'react';`);
 
   const hasDefault = candidates.some((c) => c.isDefault);
   const named = candidates.filter((c) => !c.isDefault);
@@ -130,23 +150,29 @@ export function generateProbeSource(
     lines.push(`import ${parts.join(', ')} from '${importPath}';`);
   }
 
-  // Build conditional type aliases — React decides what is a component
+  // Build detection types + JSX elements
   if (hasDefault) {
-    const typeName = '__Result_default__';
+    const detName = '__det_default__';
+    const varName = '__el_default__';
     lines.push(
-      `export type ${typeName} = typeof __Default__ extends JSXElementConstructor<any> ? ComponentProps<typeof __Default__> : never;`
+      `export type ${detName} = typeof __Default__ extends JSXElementConstructor<any> ? true : never;`
     );
-    typeNameMap.set('default', typeName);
+    lines.push(`export const ${varName} = <__Default__ />;`);
+    detTypeMap.set('default', detName);
+    varNameMap.set('default', varName);
   }
   for (const c of named) {
-    const typeName = `__Result_${c.exportName}__`;
+    const detName = `__det_${c.exportName}__`;
+    const varName = `__el_${c.exportName}__`;
     lines.push(
-      `export type ${typeName} = typeof ${c.exportName} extends JSXElementConstructor<any> ? ComponentProps<typeof ${c.exportName}> : never;`
+      `export type ${detName} = typeof ${c.exportName} extends JSXElementConstructor<any> ? true : never;`
     );
-    typeNameMap.set(c.exportName, typeName);
+    lines.push(`export const ${varName} = <${c.exportName} />;`);
+    detTypeMap.set(c.exportName, detName);
+    varNameMap.set(c.exportName, varName);
   }
 
-  return { source: lines.join('\n'), typeNameMap };
+  return { source: lines.join('\n'), varNameMap, detTypeMap };
 }
 
 // ---------------------------------------------------------------------------
@@ -154,11 +180,16 @@ export function generateProbeSource(
 // ---------------------------------------------------------------------------
 
 /**
- * Resolves the conditional type aliases from a probe source file.
+ * Resolves props types from a probe source file using a hybrid approach:
  *
- * For each entry in `typeNameMap`, looks up the exported type alias in the
- * probe file, evaluates its type, and collects non-`never` results as
- * component props types.
+ * 1. **Detection via conditional types** — checks `__det_X__` type aliases.
+ *    If the alias resolves to `never`, X is not a JSXElementConstructor → skip.
+ *
+ * 2. **Props via JSX elements** — for detected components, walks
+ *    JsxSelfClosingElement nodes and uses `checker.getResolvedSignature()` to
+ *    get concrete props. For polymorphic components with generic call signatures,
+ *    TypeScript instantiates the generic with its default type parameter
+ *    automatically — avoiding the `ComponentProps<T>` / `infer P` limitation.
  *
  * This is the core logic shared between the standalone `detectComponents`
  * and the LanguageService-based `PropExtractionProject`.
@@ -167,33 +198,80 @@ export function resolveProbeTypes(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   probeSourceFile: ts.SourceFile | undefined,
-  typeNameMap: Map<string, string>
+  varNameMap: Map<string, string>,
+  detTypeMap?: Map<string, string>
 ): Map<string, ts.Type> {
   const propsTypes = new Map<string, ts.Type>();
   if (!probeSourceFile) return propsTypes;
 
-  const probeModSym = checker.getSymbolAtLocation(probeSourceFile);
-  if (!probeModSym) return propsTypes;
-
-  const probeExports = checker.getExportsOfModule(probeModSym);
-
-  for (const [exportName, typeName] of typeNameMap) {
-    const sym = probeExports.find((e) => e.getName() === typeName);
-    if (!sym) continue;
-
-    const decls = sym.getDeclarations();
-    if (!decls?.length) continue;
-    const decl = decls[0];
-    if (!typescript.isTypeAliasDeclaration(decl)) continue;
-
-    const resolvedType = checker.getTypeFromTypeNode(decl.type);
-
-    // never → React says this is not a JSXElementConstructor. Skip.
-    if (resolvedType.flags & typescript.TypeFlags.Never) continue;
-
-    propsTypes.set(exportName, resolvedType);
+  // Step 1: Detection — check conditional type aliases to find real components
+  const detectedComponents = new Set<string>();
+  if (detTypeMap) {
+    const probeModSym = checker.getSymbolAtLocation(probeSourceFile);
+    if (probeModSym) {
+      const probeExports = checker.getExportsOfModule(probeModSym);
+      for (const [exportName, detTypeName] of detTypeMap) {
+        const sym = probeExports.find((e) => e.getName() === detTypeName);
+        if (!sym) continue;
+        const decls = sym.getDeclarations();
+        if (!decls?.length) continue;
+        const decl = decls[0];
+        if (!typescript.isTypeAliasDeclaration(decl)) continue;
+        const resolvedType = checker.getTypeFromTypeNode(decl.type);
+        // never → React says this is not a JSXElementConstructor. Skip.
+        if (resolvedType.flags & typescript.TypeFlags.Never) continue;
+        detectedComponents.add(exportName);
+      }
+    }
   }
 
+  // Step 2: Props extraction — walk JSX elements for detected components
+  const reverseMap = new Map<string, string>();
+  for (const [exportName, varName] of varNameMap) {
+    reverseMap.set(varName, exportName);
+  }
+
+  function visit(node: ts.Node) {
+    if (typescript.isJsxSelfClosingElement(node)) {
+      // Find the parent variable declaration to get the var name
+      let varName: string | undefined;
+      let parent = node.parent;
+      while (parent) {
+        if (typescript.isVariableDeclaration(parent) && typescript.isIdentifier(parent.name)) {
+          varName = parent.name.text;
+          break;
+        }
+        parent = parent.parent;
+      }
+
+      if (!varName) return;
+      const exportName = reverseMap.get(varName);
+      if (exportName === undefined) return;
+
+      // If we have detection info, only process detected components
+      if (detTypeMap && !detectedComponents.has(exportName)) return;
+
+      // Get the resolved signature — same mechanism as autocomplete
+      const sig = checker.getResolvedSignature(node);
+      if (!sig) return;
+
+      const params = sig.getParameters();
+      if (params.length === 0) {
+        // Component with no props (e.g. `() => <svg />`)
+        propsTypes.set(exportName, checker.getTypeFromTypeNode(
+          typescript.factory.createTypeLiteralNode([])
+        ));
+        return;
+      }
+
+      // First param = props
+      propsTypes.set(exportName, checker.getTypeOfSymbolAtLocation(params[0], node));
+    }
+
+    typescript.forEachChild(node, visit);
+  }
+
+  visit(probeSourceFile);
   return propsTypes;
 }
 
@@ -262,14 +340,15 @@ function createProbeHost(
 }
 
 /**
- * Detects which exports are React components using React's own JSX type system.
+ * Detects which exports are React components using a hybrid approach:
  *
- * For each candidate export, a conditional type is evaluated:
+ * 1. **Detection** via conditional types: `typeof X extends JSXElementConstructor<any>`
+ *    rejects non-components (plain objects, strings, utility functions).
  *
- *   typeof X extends JSXElementConstructor<any> ? ComponentProps<typeof X> : never
- *
- * If the result is `never`, the export is not a component.
- * Otherwise it IS a component and the resolved type is its props.
+ * 2. **Props extraction** via JSX elements: `<X />` with `getResolvedSignature()`
+ *    correctly handles polymorphic components with generic call signatures
+ *    (e.g. Mantine's polymorphicFactory), avoiding the `ComponentProps<T>` /
+ *    `infer P` limitation (TS #61133).
  *
  * This delegates all component detection logic to React — no manual heuristics.
  */
@@ -285,9 +364,10 @@ export function detectComponents(
 } | undefined {
   const dir = filePath.substring(0, filePath.lastIndexOf('/'));
   const baseName = filePath.split('/').pop()!.replace(/\.(tsx?|jsx?)$/, '');
-  const probeFilePath = `${dir}/__probe_${baseName}__.ts`;
+  // .tsx extension required for JSX elements in the probe
+  const probeFilePath = `${dir}/__probe_${baseName}__.tsx`;
 
-  const { source, typeNameMap } = generateProbeSource(`./${baseName}`, candidates);
+  const { source, varNameMap, detTypeMap } = generateProbeSource(`./${baseName}`, candidates);
 
   const options = originalProgram.getCompilerOptions();
   const host = createProbeHost(typescript, probeFilePath, source, originalProgram, options);
@@ -303,7 +383,7 @@ export function detectComponents(
   const probeSF = probeProgram.getSourceFile(probeFilePath);
   if (!probeSF) return undefined;
 
-  const propsTypes = resolveProbeTypes(typescript, probeChecker, probeSF, typeNameMap);
+  const propsTypes = resolveProbeTypes(typescript, probeChecker, probeSF, varNameMap, detTypeMap);
 
   return { propsTypes, probeChecker, probeProgram };
 }
@@ -471,13 +551,17 @@ function extractPropItem(
  * Identifies properties from node_modules interfaces with more than
  * LARGE_SOURCE_THRESHOLD properties (e.g. HTMLAttributes). These are
  * filtered to keep the manifest focused on user-defined props.
+ *
+ * Only `node_modules` paths are checked — NOT `.d.ts` in general.
+ * The `.d.ts` check was too broad and accidentally excluded project-local
+ * ambient declarations and compiled package output (e.g. Mantine's BoxProps).
  */
 function getBulkSourceExclusions(properties: ts.Symbol[]): Set<string> {
   const sourceCount = new Map<string, number>();
 
   for (const prop of properties) {
     const source = getPropSourceFile(prop);
-    if (source && (source.includes('node_modules') || source.endsWith('.d.ts'))) {
+    if (source && source.includes('node_modules')) {
       sourceCount.set(source, (sourceCount.get(source) ?? 0) + 1);
     }
   }

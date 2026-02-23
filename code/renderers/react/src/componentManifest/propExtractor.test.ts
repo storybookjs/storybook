@@ -240,10 +240,43 @@ describe('detectComponents', () => {
     });
 
     it('detects React.lazy', () => {
-      expect(detect(`
-        import React from 'react';
-        export const LazyButton = React.lazy(() => import('./Button'));
-      `)).toEqual(['LazyButton']);
+      // React.lazy needs the imported module to be resolvable for JSX
+      // checking to determine the props type. We provide a real Button module.
+      const componentFile = path.join(VIRTUAL_ROOT, '__virtual__/Lazy.tsx');
+      const buttonFile = path.join(VIRTUAL_ROOT, '__virtual__/Button.tsx');
+      const files = {
+        [componentFile]: `
+          import React from 'react';
+          export const LazyButton = React.lazy(() => import('./Button'));
+        `,
+        [buttonFile]: `
+          import React from 'react';
+          const Button = (props: { label: string }) => <button />;
+          export default Button;
+        `,
+      };
+      const program = createVirtualProgram(files);
+      const checker = program.getTypeChecker();
+      const sourceFile = program.getSourceFile(componentFile)!;
+      const moduleSymbol = checker.getSymbolAtLocation(sourceFile)!;
+      const exports = checker.getExportsOfModule(moduleSymbol);
+
+      const candidates = exports
+        .filter((exp) => {
+          const name = exp.getName();
+          if (name !== 'default' && !/^[A-Z]/.test(name)) return false;
+          const resolved =
+            exp.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exp) : exp;
+          return !!resolved.valueDeclaration;
+        })
+        .map((exp) => ({
+          exportName: exp.getName(),
+          isDefault: exp.getName() === 'default',
+        }));
+
+      const result = detectComponents(ts, componentFile, candidates, program);
+      expect(result).toBeDefined();
+      expect([...result!.propsTypes.keys()]).toEqual(['LazyButton']);
     });
   });
 
@@ -1599,6 +1632,172 @@ describe('QA: patterns RDT fails on', () => {
       expect(docs[0].props.data.required).toBe(true);
       expect(docs[0].props.searchable.required).toBe(false);
       expect(docs[0].props.value.description).toBe('Currently selected value');
+    });
+  });
+
+  describe('Pattern 8a: polymorphicFactory() with HTML extends (Mantine)', () => {
+    it('extracts user props from polymorphicFactory component extending HTMLButtonElement', () => {
+      const docs = extract({
+        [f('polymorphicFactory.tsx')]: `
+          import React from 'react';
+
+          // Simplified version of Mantine's polymorphic type utilities
+          type ExtendedProps<Props = {}, OverrideProps = {}> = OverrideProps &
+            Omit<Props, keyof OverrideProps>;
+
+          type InheritedProps<C extends React.ElementType, Props = {}> =
+            ExtendedProps<React.ComponentPropsWithoutRef<C>, Props>;
+
+          type PolymorphicComponentProps<C, Props = {}> = C extends React.ElementType
+            ? InheritedProps<C, Props & { component?: C }> & {
+                ref?: C extends React.ElementType
+                  ? React.ComponentPropsWithRef<C>['ref']
+                  : never;
+                renderRoot?: (props: any) => any;
+              }
+            : Props & { component: React.ElementType; renderRoot?: (props: Record<string, any>) => React.ReactNode };
+
+          // Simplified PolymorphicFactoryPayload
+          interface FactoryPayload {
+            props: Record<string, any>;
+            defaultComponent: any;
+            defaultRef: any;
+          }
+
+          // The key type: generic callable (not ForwardRefExoticComponent)
+          type PolymorphicComponent<Payload extends FactoryPayload> =
+            (<C = Payload['defaultComponent']>(
+              props: PolymorphicComponentProps<C, Payload['props']>
+            ) => React.ReactElement) &
+            Omit<React.FunctionComponent<PolymorphicComponentProps<any, Payload['props']>>, never>;
+
+          function polymorphicFactory<Payload extends FactoryPayload>(
+            ui: React.ForwardRefRenderFunction<Payload['defaultRef'], Payload['props']>
+          ): PolymorphicComponent<Payload> {
+            return React.forwardRef(ui) as unknown as PolymorphicComponent<Payload>;
+          }
+
+          // Component-specific types
+          interface ButtonProps {
+            /** Custom variant */
+            variant?: 'primary' | 'secondary' | 'outline';
+            /** Button label text */
+            label: string;
+            /** Whether loading */
+            loading?: boolean;
+          }
+
+          interface ButtonFactory extends FactoryPayload {
+            props: ButtonProps;
+            defaultComponent: 'button';
+            defaultRef: HTMLButtonElement;
+          }
+
+          export const Button = polymorphicFactory<ButtonFactory>((_props, ref) => {
+            return <button ref={ref} />;
+          });
+        `,
+      });
+
+      expect(docs).toHaveLength(1);
+      expect(docs[0].displayName).toBe('Button');
+      // User-defined props should survive the >30 filter
+      expect(docs[0].props).toHaveProperty('variant');
+      expect(docs[0].props).toHaveProperty('label');
+      expect(docs[0].props).toHaveProperty('loading');
+      expect(docs[0].props.variant.description).toBe('Custom variant');
+      expect(docs[0].props.label.required).toBe(true);
+      expect(docs[0].props.loading.required).toBe(false);
+      // HTML button attributes should be filtered (>30 from @types/react)
+      expect(docs[0].props).not.toHaveProperty('onClick');
+      expect(docs[0].props).not.toHaveProperty('className');
+    });
+
+    it('extracts user props from polymorphicFactory with BoxProps-like utility base (40+ props)', () => {
+      const docs = extract({
+        [f('polymorphicWithBox.tsx')]: `
+          import React from 'react';
+
+          // Simulates Mantine's BoxProps — a large utility interface with >30 style props
+          interface BoxProps {
+            m?: string; mt?: string; mb?: string; ml?: string; mr?: string;
+            mx?: string; my?: string;
+            p?: string; pt?: string; pb?: string; pl?: string; pr?: string;
+            px?: string; py?: string;
+            bg?: string; c?: string; opacity?: string;
+            ff?: string; fz?: string; fw?: string; lts?: string; ta?: string;
+            lh?: string; fs?: string; tt?: string; td?: string;
+            w?: string; miw?: string; maw?: string;
+            h?: string; mih?: string; mah?: string;
+            pos?: string; top?: string; left?: string; bottom?: string; right?: string;
+            inset?: string; display?: string;
+          }
+
+          type ExtendedProps<Props = {}, OverrideProps = {}> = OverrideProps &
+            Omit<Props, keyof OverrideProps>;
+
+          type InheritedProps<C extends React.ElementType, Props = {}> =
+            ExtendedProps<React.ComponentPropsWithoutRef<C>, Props>;
+
+          type PolymorphicComponentProps<C, Props = {}> = C extends React.ElementType
+            ? InheritedProps<C, Props & { component?: C }> & {
+                ref?: C extends React.ElementType
+                  ? React.ComponentPropsWithRef<C>['ref']
+                  : never;
+              }
+            : Props & { component: React.ElementType };
+
+          interface FactoryPayload {
+            props: Record<string, any>;
+            defaultComponent: any;
+            defaultRef: any;
+          }
+
+          type PolymorphicComponent<Payload extends FactoryPayload> =
+            (<C = Payload['defaultComponent']>(
+              props: PolymorphicComponentProps<C, Payload['props']>
+            ) => React.ReactElement) &
+            Omit<React.FunctionComponent<PolymorphicComponentProps<any, Payload['props']>>, never>;
+
+          function polymorphicFactory<Payload extends FactoryPayload>(
+            ui: React.ForwardRefRenderFunction<Payload['defaultRef'], Payload['props']>
+          ): PolymorphicComponent<Payload> {
+            return React.forwardRef(ui) as unknown as PolymorphicComponent<Payload>;
+          }
+
+          // Component props extend BoxProps (40+ style utility props)
+          interface ButtonProps extends BoxProps {
+            /** Custom variant */
+            variant?: 'primary' | 'secondary';
+            /** Button size */
+            size?: 'sm' | 'md' | 'lg';
+          }
+
+          interface ButtonFactory extends FactoryPayload {
+            props: ButtonProps;
+            defaultComponent: 'button';
+            defaultRef: HTMLButtonElement;
+          }
+
+          export const Button = polymorphicFactory<ButtonFactory>((_props, ref) => {
+            return <button ref={ref} />;
+          });
+        `,
+      });
+
+      expect(docs).toHaveLength(1);
+      expect(docs[0].displayName).toBe('Button');
+      // Component-specific props must survive
+      expect(docs[0].props).toHaveProperty('variant');
+      expect(docs[0].props).toHaveProperty('size');
+      expect(docs[0].props.variant.description).toBe('Custom variant');
+      // BoxProps are from a local file (not node_modules) — should also be present
+      // even though there are >30 of them
+      expect(docs[0].props).toHaveProperty('m');
+      expect(docs[0].props).toHaveProperty('bg');
+      // HTML button attributes should be filtered (>30 from @types/react node_modules)
+      expect(docs[0].props).not.toHaveProperty('onClick');
+      expect(docs[0].props).not.toHaveProperty('className');
     });
   });
 

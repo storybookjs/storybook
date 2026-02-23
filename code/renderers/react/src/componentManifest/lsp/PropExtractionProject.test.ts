@@ -522,3 +522,146 @@ describe('PropExtractionManager integration', () => {
     expect(cardDoc[0].displayName).toBe('Card');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Compound component detection via memberAccess
+// ---------------------------------------------------------------------------
+
+describe('extractDocsByImportBulk with memberAccess (compound components)', () => {
+  let tempDir: string | undefined;
+
+  afterEach(() => {
+    if (tempDir) {
+      cleanup(tempDir);
+      tempDir = undefined;
+    }
+  });
+
+  it('extracts props for compound component sub-property via memberAccess', () => {
+    // Simulates the Park UI / Ark UI pattern:
+    // A namespace object `Accordion` with sub-components `.Root`, `.Item`, etc.
+    // The story uses `<Accordion.Root>`, so memberAccess = 'Root'.
+    const { projectDir, configPath, filePaths } = createTempProject({
+      'accordion.tsx': `
+        import React from 'react';
+
+        interface RootProps {
+          /** Allow multiple items open */
+          multiple?: boolean;
+          /** Default open items */
+          defaultValue?: string[];
+        }
+        const Root = (props: RootProps) => <div />;
+
+        interface ItemProps {
+          value: string;
+          disabled?: boolean;
+        }
+        const Item = (props: ItemProps) => <div />;
+
+        interface TriggerProps {
+          asChild?: boolean;
+        }
+        const Trigger = (props: TriggerProps) => <button />;
+
+        export const Accordion = { Root, Item, Trigger };
+      `,
+    });
+    tempDir = projectDir;
+
+    const parsed = ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    );
+    const project = new PropExtractionProject(ts, parsed, configPath);
+
+    try {
+      // Without memberAccess: Accordion is a plain object, not a component
+      const withoutMA = project.extractDocsByImportBulk([
+        { importSpecifier: './accordion', exportName: 'Accordion' },
+      ]);
+      // resolveCompoundTypes fallback may or may not find it, but the direct
+      // JSX `<Accordion />` won't resolve (it's not a component).
+      // The key test is that WITH memberAccess it definitely works:
+
+      const withMA = project.extractDocsByImportBulk([
+        { importSpecifier: './accordion', exportName: 'Accordion', memberAccess: 'Root' },
+      ]);
+      const doc = withMA.get('./accordion::Accordion');
+
+      expect(doc).toBeDefined();
+      expect(doc!.props.multiple).toBeDefined();
+      expect(doc!.props.multiple.required).toBe(false);
+      expect(doc!.props.multiple.description).toBe('Allow multiple items open');
+      expect(doc!.props.defaultValue).toBeDefined();
+      // Should NOT have Item or Trigger props
+      expect(doc!.props.value).toBeUndefined();
+      expect(doc!.props.asChild).toBeUndefined();
+    } finally {
+      project.dispose();
+    }
+  });
+
+  it('extracts props for different member accesses per entry', () => {
+    const { projectDir, configPath, filePaths } = createTempProject({
+      'dialog.tsx': `
+        import React from 'react';
+
+        interface RootProps {
+          open?: boolean;
+          onOpenChange?: (open: boolean) => void;
+        }
+        const Root = (props: RootProps) => <div />;
+
+        interface ContentProps {
+          /** Trap focus inside dialog */
+          trapFocus?: boolean;
+        }
+        const Content = (props: ContentProps) => <div />;
+
+        export const Dialog = { Root, Content };
+      `,
+      'button.tsx': `
+        import React from 'react';
+        export interface ButtonProps {
+          label: string;
+          variant?: 'primary' | 'secondary';
+        }
+        export const Button = (props: ButtonProps) => <button />;
+      `,
+    });
+    tempDir = projectDir;
+
+    const parsed = ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    );
+    const project = new PropExtractionProject(ts, parsed, configPath);
+
+    try {
+      // Mix: compound component with memberAccess + regular component
+      const results = project.extractDocsByImportBulk([
+        { importSpecifier: './dialog', exportName: 'Dialog', memberAccess: 'Root' },
+        { importSpecifier: './button', exportName: 'Button' },
+      ]);
+
+      const dialogDoc = results.get('./dialog::Dialog');
+      expect(dialogDoc).toBeDefined();
+      expect(dialogDoc!.props.open).toBeDefined();
+      expect(dialogDoc!.props.onOpenChange).toBeDefined();
+
+      const buttonDoc = results.get('./button::Button');
+      expect(buttonDoc).toBeDefined();
+      expect(buttonDoc!.props.label).toBeDefined();
+      expect(buttonDoc!.props.variant).toBeDefined();
+    } finally {
+      project.dispose();
+    }
+  });
+});

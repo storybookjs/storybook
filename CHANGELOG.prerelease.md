@@ -1,3 +1,7 @@
+## 10.3.0-alpha.9
+
+- React: Add react-docgen-typescript to component manifest - [#33818](https://github.com/storybookjs/storybook/pull/33818), thanks @kasperpeulen!
+
 ## 10.3.0-alpha.8
 
 - A11y: Ensure popover dialogs have an ARIA label - [#33500](https://github.com/storybookjs/storybook/pull/33500), thanks @gayanMatch!

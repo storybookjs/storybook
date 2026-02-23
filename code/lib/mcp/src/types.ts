@@ -1,10 +1,29 @@
 import type { Documentation } from 'react-docgen';
+import type { ComponentDoc } from 'react-docgen-typescript';
 import * as v from 'valibot';
 
 /**
- * Supported output formats for component manifest formatting.
+ * Represents a single Storybook source (local or remote).
  */
-export type OutputFormat = 'xml' | 'markdown';
+export type Source = {
+	/** Unique identifier for this source (e.g., 'local', 'tetra') */
+	id: string;
+	/** Human-readable title (e.g., 'Local', 'Tetra Design System') */
+	title: string;
+	/** Remote URL, undefined for local source */
+	url?: string;
+};
+
+/**
+ * All manifests for a single source.
+ */
+export type SourceManifests = {
+	source: Source;
+	componentManifest: ComponentManifestMap;
+	docsManifest?: DocsManifestMap;
+	/** Error message if fetching this source failed */
+	error?: string;
+};
 
 /**
  * Custom context passed to MCP server and tools.
@@ -16,20 +35,24 @@ export type StorybookContext = {
 	 */
 	request?: Request;
 	/**
-	 * Output format for component manifests.
-	 * @default 'markdown'
-	 */
-	format?: OutputFormat;
-	/**
 	 * Optional function to provide custom manifest retrieval logic.
 	 * If provided, this function will be called instead of the default fetch-based provider.
-	 * The function receives the request object and a path to the manifest file,
-	 * and should return the manifest as a string.
+	 * The function receives the request object, a path to the manifest file, and optionally
+	 * a source (in multi-source mode).
 	 * The default provider requires a request object and constructs the manifest URL from the request origin,
 	 * replacing /mcp with /manifests/components.json.
 	 * Custom providers can use the request parameter to determine the manifest source, or ignore it entirely.
 	 */
-	manifestProvider?: (request: Request | undefined, path: string) => Promise<string>;
+	manifestProvider?: (
+		request: Request | undefined,
+		path: string,
+		source?: Source,
+	) => Promise<string>;
+	/**
+	 * Sources configuration for multi-source mode.
+	 * When provided, tools will fetch and display manifests grouped by source.
+	 */
+	sources?: Source[];
 	/**
 	 * Optional handler called when list-all-documentation tool is invoked.
 	 * Receives the context and the component manifest.
@@ -38,6 +61,8 @@ export type StorybookContext = {
 		context: StorybookContext;
 		manifests: AllManifests;
 		resultText: string;
+		/** Present in multi-source mode — all source manifests including errors */
+		sources?: SourceManifests[];
 	}) => void | Promise<void>;
 	/**
 	 * Optional handler called when get-documentation tool is invoked.
@@ -46,7 +71,7 @@ export type StorybookContext = {
 	onGetDocumentation?: (
 		params: {
 			context: StorybookContext;
-			input: { id: string };
+			input: { id: string; storybookId?: string };
 		} & (
 			| { foundDocumentation: ComponentManifest | Doc; resultText: string }
 			| { foundDocumentation?: never; resultText?: never }
@@ -91,6 +116,12 @@ const Doc = v.object({
 });
 export type Doc = v.InferOutput<typeof Doc>;
 
+/**
+ * Component documentation from react-docgen-typescript, extended with export name.
+ * Matches the shape produced by Storybook's manifest generator.
+ */
+export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
+
 export const ComponentManifest = v.object({
 	...BaseManifest.entries,
 	id: v.string(),
@@ -99,7 +130,9 @@ export const ComponentManifest = v.object({
 	import: v.optional(v.string()),
 	stories: v.optional(v.array(Story)),
 	// loose schema for react-docgen types, as they are pretty complex
-	reactDocgen: v.optional(v.custom<Documentation>(() => true)),
+	reactDocgen: v.optional(v.any()),
+	// loose schema for react-docgen-typescript types
+	reactDocgenTypescript: v.optional(v.any()),
 	docs: v.optional(v.record(v.string(), Doc)),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;

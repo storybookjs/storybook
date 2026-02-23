@@ -15,11 +15,15 @@ export {
 	GET_STORY_TOOL_NAME,
 } from './tools/get-documentation-for-story.ts';
 
-// Export manifest constants
-export { COMPONENT_MANIFEST_PATH, DOCS_MANIFEST_PATH } from './utils/get-manifest.ts';
+// Export manifest constants and utilities
+export {
+	COMPONENT_MANIFEST_PATH,
+	DOCS_MANIFEST_PATH,
+	getMultiSourceManifests,
+} from './utils/get-manifest.ts';
 
 // Export types for reuse
-export type { StorybookContext } from './types.ts';
+export type { StorybookContext, Source, SourceManifests } from './types.ts';
 
 // copied from tmcp internals as it's not exposed
 type InitializeRequestParams = {
@@ -61,7 +65,8 @@ export interface StorybookMcpHandlerOptions extends StorybookContext {
 	 */
 	onSessionInitialize?: (initializeRequestParams: InitializeRequestParams) => void | Promise<void>;
 }
-export type { ComponentManifest, ComponentManifestMap } from './types.ts';
+export type { ComponentManifest } from './types.ts';
+export { ComponentManifestMap, DocsManifestMap } from './types.ts';
 
 type Handler = (req: Request, context?: StorybookContext) => Promise<Response>;
 
@@ -96,7 +101,6 @@ export const createStorybookMcpHandler = async (
 	return (async (req, context) => {
 		return await transport.respond(req, {
 			request: req,
-			format: context?.format ?? options.format ?? 'markdown',
 			manifestProvider: context?.manifestProvider ?? options.manifestProvider,
 			onListAllDocumentation: context?.onListAllDocumentation ?? options.onListAllDocumentation,
 			onGetDocumentation: context?.onGetDocumentation ?? options.onGetDocumentation,

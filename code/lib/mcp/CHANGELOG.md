@@ -1,5 +1,41 @@
 # @storybook/mcp
 
+## 0.4.1
+
+### Patch Changes
+
+- [#131](https://github.com/storybookjs/mcp/pull/131) [`9cf991c`](https://github.com/storybookjs/mcp/commit/9cf991c65e0c67bf85b011ab6ed29dac9cac2cfa) Thanks [@JReinhold](https://github.com/JReinhold)! - Fixed type bundling issue
+
+## 0.4.0
+
+### Minor Changes
+
+- [#168](https://github.com/storybookjs/mcp/pull/168) [`c0793d4`](https://github.com/storybookjs/mcp/commit/c0793d4dd9b1895f6f67be21a5bf0339a3458e95) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add react-docgen-typescript support for component manifest parsing.
+
+## 0.3.0
+
+### Minor Changes
+
+- [#165](https://github.com/storybookjs/mcp/pull/165) [`e088e05`](https://github.com/storybookjs/mcp/commit/e088e0501619b29bf7f38ef2ee2b60c8477c803a) Thanks [@JReinhold](https://github.com/JReinhold)! - Remove support for XML format.
+
+  ## Breaking Change
+
+  The related option to configure XML vs markdown format now has no impact, the output is always formatted as markdown.
+
+- [#140](https://github.com/storybookjs/mcp/pull/140) [`f9fce2a`](https://github.com/storybookjs/mcp/commit/f9fce2a12b691d1187d8bc719c88e912e27e3391) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add multi-source composition with OAuth for private Storybooks
+
+## 0.2.2
+
+### Patch Changes
+
+- [#123](https://github.com/storybookjs/mcp/pull/123) [`b7aeb40`](https://github.com/storybookjs/mcp/commit/b7aeb40c32d831618774c13e316596e9ff840aa7) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Minimize token usage by only including the 3 first stories in component documentation.
+
+  ... if there are already prop types. If there are no prop types, include all stories. Additional stories can be fetched individually using a new `get-documentation-for-story` tool.
+
+- [#160](https://github.com/storybookjs/mcp/pull/160) [`bab8ec9`](https://github.com/storybookjs/mcp/commit/bab8ec9ece4f89661b458fbecd59b0a560948192) Thanks [@JReinhold](https://github.com/JReinhold)! - Render component-attached MDX docs entries in markdown output for `get-documentation`.
+
+  This fixes a regression where docs attached to components via `component.docs` in `components.json` were not included in markdown responses. The markdown formatter now emits a `## Docs` section below stories (and before props).
+
 ## 0.2.1
 
 ### Patch Changes
@@ -15,6 +51,7 @@
   # Breaking Changes
 
   This change introduces a number of minor breaking changes to `@storybook/mcp`:
+
   1. The lower level tool adder functions have been renamed:
   2. `addGetComponentDocumentationTool` -> `addGetDocumentationTool`
   3. `addListAllComponentsTool` -> `addListAllDocumentationTool`

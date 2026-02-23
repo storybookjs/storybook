@@ -1,7 +1,10 @@
 import type { McpServer } from 'tmcp';
 import type { StorybookContext } from '../types.ts';
-import { getManifests, errorToMCPContent } from '../utils/get-manifest.ts';
-import { formatManifestsToLists } from '../utils/format-manifest.ts';
+import { getManifests, getMultiSourceManifests, errorToMCPContent } from '../utils/get-manifest.ts';
+import {
+	formatMultiSourceManifestsToLists,
+	formatManifestsToLists,
+} from '../utils/manifest-formatter/markdown.ts';
 
 export const LIST_TOOL_NAME = 'list-all-documentation';
 
@@ -18,16 +21,48 @@ export async function addListAllDocumentationTool(
 		},
 		async () => {
 			try {
-				const manifests = await getManifests(
-					server.ctx.custom?.request,
-					server.ctx.custom?.manifestProvider,
-				);
+				const ctx = server.ctx.custom;
 
-				const format = server.ctx.custom?.format ?? 'markdown';
-				const lists = formatManifestsToLists(manifests, format);
+				// Multi-source mode: when sources are configured
+				if (ctx?.sources?.some((s) => s.url)) {
+					const multiSourceManifests = await getMultiSourceManifests(
+						ctx.sources,
+						ctx.request,
+						ctx.manifestProvider,
+					);
 
-				await server.ctx.custom?.onListAllDocumentation?.({
-					context: server.ctx.custom,
+					const lists = formatMultiSourceManifestsToLists(multiSourceManifests);
+
+					const firstSuccess = multiSourceManifests.find((m) => !m.error);
+					if (firstSuccess) {
+						await ctx.onListAllDocumentation?.({
+							context: ctx,
+							manifests: {
+								componentManifest: firstSuccess.componentManifest,
+								docsManifest: firstSuccess.docsManifest,
+							},
+							resultText: lists,
+							sources: multiSourceManifests,
+						});
+					}
+
+					return {
+						content: [
+							{
+								type: 'text',
+								text: lists,
+							},
+						],
+					};
+				}
+
+				// Single-source mode: existing behavior
+				const manifests = await getManifests(ctx?.request, ctx?.manifestProvider);
+
+				const lists = formatManifestsToLists(manifests);
+
+				await ctx?.onListAllDocumentation?.({
+					context: ctx,
 					manifests,
 					resultText: lists,
 				});

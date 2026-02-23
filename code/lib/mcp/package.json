@@ -1,6 +1,6 @@
 {
 	"name": "@storybook/mcp",
-	"version": "0.2.1",
+	"version": "0.4.1",
 	"description": "MCP server that serves knowledge about your components based on your Storybook stories and documentation",
 	"keywords": [
 		"mcp",
@@ -41,6 +41,7 @@
 	"devDependencies": {
 		"@tmcp/transport-stdio": "catalog:",
 		"react-docgen": "^8.0.2",
+		"react-docgen-typescript": "^2.4.0",
 		"srvx": "^0.8.16",
 		"tinyexec": "^1.0.2"
 	}

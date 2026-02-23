@@ -16,11 +16,62 @@ import path from 'pathe';
 import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
+import { PropExtractionManager } from './lsp';
+import type { ComponentDoc } from './propExtractor';
 import { type DocObj } from './reactDocgen';
 import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
+  reactPropTypes?: ComponentDoc;
+}
+
+// ---------------------------------------------------------------------------
+// Lazy singleton PropExtractionManager — survives across dev requests,
+// dies on build process exit. TypeScript is an optional peer dep.
+// ---------------------------------------------------------------------------
+
+let propTypesManagerPromise: Promise<PropExtractionManager | null> | undefined;
+
+function getPropTypesManager(): Promise<PropExtractionManager | null> {
+  if (!propTypesManagerPromise) {
+    propTypesManagerPromise = (async () => {
+      try {
+        console.log('[propTypes] importing typescript...');
+        const ts = await import('typescript');
+        console.log('[propTypes] creating PropExtractionManager...');
+        const manager = new PropExtractionManager(ts);
+        console.log('[propTypes] PropExtractionManager ready');
+        return manager;
+      } catch (e) {
+        console.log('[propTypes] TypeScript not available:', e);
+        return null;
+      }
+    })();
+  }
+  return propTypesManagerPromise;
+}
+
+async function getReactPropTypes(
+  componentPath: string,
+  importName: string | undefined
+): Promise<ComponentDoc | undefined> {
+  const manager = await getPropTypesManager();
+  if (!manager) return undefined;
+
+  try {
+    console.log(`[propTypes] getProjectForFile: ${componentPath}`);
+    const project = manager.getProjectForFile(componentPath);
+    console.log(`[propTypes] extractDocs: ${componentPath}`);
+    const docs = project.extractDocs(componentPath);
+    console.log(`[propTypes] done: ${docs.length} docs for ${componentPath}`);
+    // Match by export name: importName is the export name from the source file
+    // (e.g. 'default', 'Button'). ComponentDoc.exportName matches this.
+    return docs.find((d) => d.exportName === (importName ?? 'default'));
+  } catch (e) {
+    console.error(`[propTypes] ERROR for ${componentPath}:`, e);
+    return undefined;
+  }
 }
 
 function findMatchingComponent(
@@ -121,8 +172,9 @@ export const manifests: PresetPropertyFn<
     (entry) => entry.id.split('--')[0]
   );
 
-  const components = entriesByUniqueComponent
-    .map((entry): ReactComponentManifest | undefined => {
+  const components = (
+    await Promise.all(
+      entriesByUniqueComponent.map(async (entry): Promise<ReactComponentManifest | undefined> => {
       const storyFilePath =
         entry.type === 'story'
           ? entry.importPath
@@ -194,12 +246,45 @@ export const manifests: PresetPropertyFn<
         import: imports,
         reactDocgen: docgen,
         jsDocTags,
+        componentPath: component.path,
+        importName: component.importName,
         error: docgenResult.type === 'error' ? docgenResult.error : undefined,
       };
     })
-    .filter((component) => component !== undefined);
+    )
+  ).filter((component) => component !== undefined);
 
-  logger.verbose(`Component manifest generation took ${performance.now() - startPerformance}ms`);
+  // --- reactPropTypes: sequential pass (LanguageService is synchronous) ---
+  const propTypesStart = performance.now();
+  for (const component of components) {
+    if (!component.componentPath) continue;
+    const t0 = performance.now();
+    const reactPropTypes = await getReactPropTypes(
+      component.componentPath,
+      component.importName
+    );
+    const elapsed = performance.now() - t0;
+    if (reactPropTypes) {
+      (component as ReactComponentManifest).reactPropTypes = reactPropTypes;
+    }
+    logger.verbose(
+      `  reactPropTypes for ${component.name}: ${elapsed.toFixed(1)}ms${reactPropTypes ? ` (${Object.keys(reactPropTypes.props).length} props)` : ' (skipped)'}`
+    );
+  }
+  const propTypesTime = performance.now() - propTypesStart;
+
+  // Clean up internal fields before returning
+  for (const component of components) {
+    delete (component as any).componentPath;
+    delete (component as any).importName;
+  }
+
+  const totalTime = performance.now() - startPerformance;
+  const withPropTypes = components.filter((c) => (c as ReactComponentManifest).reactPropTypes)
+    .length;
+  logger.verbose(
+    `Component manifest generation took ${totalTime.toFixed(0)}ms (reactPropTypes: ${propTypesTime.toFixed(0)}ms) — ${components.length} components, ${withPropTypes} with reactPropTypes`
+  );
 
   return {
     ...existingManifests,

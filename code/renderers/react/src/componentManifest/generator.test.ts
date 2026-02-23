@@ -111,6 +111,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               },
             },
           },
+          "reactPropTypes": undefined,
           "stories": [
             {
               "description": undefined,
@@ -216,6 +217,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               },
             },
           },
+          "reactPropTypes": undefined,
           "stories": [
             {
               "description": undefined,
@@ -349,6 +351,7 @@ test('fall back to index title when no component name', async () => {
           },
         },
       },
+      "reactPropTypes": undefined,
       "stories": [
         {
           "description": undefined,
@@ -397,6 +400,7 @@ test('component exported from other file', async () => {
           },
         },
       },
+      "reactPropTypes": undefined,
       "stories": [
         {
           "error": {
@@ -450,6 +454,7 @@ test('unknown expressions', async () => {
           },
         },
       },
+      "reactPropTypes": undefined,
       "stories": [
         {
           "error": {
@@ -565,6 +570,7 @@ test('should create component manifest when only attached-mdx docs have manifest
                 },
               },
             },
+            "reactPropTypes": undefined,
             "stories": [],
             "summary": undefined,
           },

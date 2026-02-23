@@ -1,5 +1,11 @@
 # @storybook/mcp
 
+## 0.4.1
+
+### Patch Changes
+
+- [#131](https://github.com/storybookjs/mcp/pull/131) [`9cf991c`](https://github.com/storybookjs/mcp/commit/9cf991c65e0c67bf85b011ab6ed29dac9cac2cfa) Thanks [@JReinhold](https://github.com/JReinhold)! - Fixed type bundling issue
+
 ## 0.4.0
 
 ### Minor Changes

@@ -20,7 +20,7 @@ The server exposes three tools:
 
 ## Prerequisites
 
-- Node.js 20+ (24+ recommended in this monorepo)
+- Node.js 20+
 - A manifest source containing:
   - `components.json` (required)
   - `docs.json` (optional)
@@ -58,20 +58,10 @@ Use `manifestProvider` when your manifests are not available from the same origi
 const storybookMcpHandler = await createStorybookMcpHandler({
 	format: 'markdown',
 	manifestProvider: async (_request, path) => {
-		const fileName = path.split('/').at(-1);
-		return readManifestFromSomewhere(fileName);
+		return asyncReadManifestFromSomewhere(path);
 	},
 });
 ```
-
-### Run the example app
-
-```bash
-pnpm install
-pnpm --filter @storybook/mcp-self-host-node dev
-```
-
-Then connect your MCP client to `http://localhost:13316/mcp`.
 
 ## Deploying the same setup to Netlify Functions
 
@@ -103,15 +93,7 @@ export default async (request: Request): Promise<Response> => {
 };
 ```
 
-### Netlify-specific notes
-
-- If manifests are deployed as static assets, `manifestProvider` can fetch from those URLs.
-- If manifests are stored externally (S3, blob storage, API), keep that lookup in `manifestProvider`.
-- Keep an eye on function timeout/size limits if your manifest payloads are very large.
-
 ## API reference
-
-Source of truth: [packages/mcp/src/index.ts](../src/index.ts), [packages/mcp/src/types.ts](../src/types.ts)
 
 ### `createStorybookMcpHandler(options?)`
 
@@ -130,7 +112,6 @@ Behavior:
 - Registers all built-in docs tools.
 - Returns a request handler you can call from any fetch-compatible server runtime.
 - Merges per-request `context` over handler-level `options` for:
-  - `format`
   - `manifestProvider`
   - `onListAllDocumentation`
   - `onGetDocumentation`
@@ -146,7 +127,6 @@ Extends `StorybookContext` with:
 Context passed into each request:
 
 - `request?: Request`
-- `format?: 'markdown' | 'xml'`
 - `manifestProvider?: (request: Request | undefined, path: string) => Promise<string>`
 - `onListAllDocumentation?`
 - `onGetDocumentation?`
@@ -158,23 +138,3 @@ Context passed into each request:
 - `addGetComponentStoryDocumentationTool`, `GET_STORY_TOOL_NAME`
 
 Use these when you want to compose your own `tmcp` server but still reuse Storybook docs tools.
-
-### Manifest path exports
-
-- `COMPONENT_MANIFEST_PATH` (`./manifests/components.json`)
-- `DOCS_MANIFEST_PATH` (`./manifests/docs.json`)
-
-### Type exports
-
-- `StorybookContext`
-- `ComponentManifest`
-- `ComponentManifestMap`
-
-## Suggested docs-site structure (for migration)
-
-When copying this draft into storybook.js.org docs, split into:
-
-1. Overview + quickstart
-2. Self-host on Node
-3. Deploy to serverless (Netlify Functions adaptation)
-4. API reference

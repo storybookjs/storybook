@@ -58,6 +58,11 @@ export function registerIndexJsonRoute({
     try {
       const index = await (await storyIndexGeneratorPromise).getIndex();
       res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept'
+      );
       res.end(JSON.stringify(index));
     } catch (err) {
       res.statusCode = 500;

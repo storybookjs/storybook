@@ -543,6 +543,15 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     // Insert resolve after plugins
     return `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
   });
+
+  // In linked mode, add server.fs.allow to allow Vite to serve files from the monorepo root
+  if (options.link) {
+    fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
+      // Insert server.fs.allow after plugins (alongside resolve)
+      return `${match}\n  server: {\n    fs: {\n      allow: ['../../..']\n    }\n  },`;
+    });
+  }
+
   // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line
   const storybookTestRegex = /storybookTest\((\{[\s\S]*?\})\)/g;
   fileContent = fileContent.replace(storybookTestRegex, (match, args) => {

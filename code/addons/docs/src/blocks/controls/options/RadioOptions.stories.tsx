@@ -115,3 +115,15 @@ export const ArrayReadonly: Story = {
     },
   },
 };
+
+// Regression test for https://github.com/storybookjs/storybook/issues/30142
+// Options whose names match Array prototype methods (e.g. 'reverse') must be
+// displayed as plain text, not as the stringified native function.
+const optionsWithArrayMethodNames = ['normal', 'reverse', 'filter', 'map'];
+export const ArrayWithBuiltinNames: Story = {
+  name: 'Array with option names matching built-in Array methods',
+  args: {
+    value: optionsWithArrayMethodNames[0],
+    argType: { options: optionsWithArrayMethodNames },
+  },
+};

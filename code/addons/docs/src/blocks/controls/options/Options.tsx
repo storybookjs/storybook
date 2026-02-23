@@ -21,7 +21,12 @@ import { SelectControl } from './Select';
 const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
   if (Array.isArray(options)) {
     return options.reduce((acc, item) => {
-      acc[labels?.[item] || String(item)] = item;
+      const label = labels?.[item];
+      // Ensure the label is a string to avoid using non-string values (e.g., Array prototype
+      // methods) as object keys. This can happen when an option's name matches a built-in array
+      // method (e.g. 'reverse') and `labels` is inadvertently an array instead of a Record.
+      // See: https://github.com/storybookjs/storybook/issues/30142
+      acc[typeof label === 'string' ? label : String(item)] = item;
       return acc;
     }, {});
   }

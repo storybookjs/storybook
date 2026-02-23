@@ -1050,6 +1050,5 @@ describe('runStoryTestsTool', () => {
 				'button--primary-2',
 			]);
 		});
-
 	});
 });

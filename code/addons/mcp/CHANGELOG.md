@@ -1,5 +1,19 @@
 # @storybook/addon-mcp
 
+## 0.3.2
+
+### Patch Changes
+
+- [#131](https://github.com/storybookjs/mcp/pull/131) [`9cf991c`](https://github.com/storybookjs/mcp/commit/9cf991c65e0c67bf85b011ab6ed29dac9cac2cfa) Thanks [@JReinhold](https://github.com/JReinhold)! - Added `run-story-tests` tool that is available when:
+
+  1. `@storybook/addon-vitest` is configured
+  2. Running Storybook 10.3.0-alpha.8 or above
+
+  Additionally, if `@storybook/addon-a11y` is configured, the tool returns accessibility violations too.
+
+- Updated dependencies [[`9cf991c`](https://github.com/storybookjs/mcp/commit/9cf991c65e0c67bf85b011ab6ed29dac9cac2cfa)]:
+  - @storybook/mcp@0.4.1
+
 ## 0.3.1
 
 ### Patch Changes

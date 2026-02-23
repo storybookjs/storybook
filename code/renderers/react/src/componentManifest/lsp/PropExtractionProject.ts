@@ -193,13 +193,9 @@ export class PropExtractionProject {
     const cached = this.resultCache.get(filePath);
     if (cached && cached.version === version) return cached.docs;
 
-    console.log(`[propTypes] extractDocs START: ${filePath}`);
-    const t0 = Date.now();
-
     // Step 1: Get candidates from exports WITHOUT a full program.
     // Parse just the source file to find uppercase exports — no checker needed.
     const candidates = this.getCandidatesFromSource(filePath);
-    console.log(`[propTypes]   candidates: ${candidates.length} (${Date.now() - t0}ms)`);
     if (candidates.length === 0) return [];
 
     // Step 2: Generate probe source
@@ -214,31 +210,23 @@ export class PropExtractionProject {
     this.probeVersion++;
 
     // Step 3: Get program ONCE — LS evaluates probe + target together
-    console.log(`[propTypes]   getProgram...`);
-    const t1 = Date.now();
     const program = this.ls.getProgram();
-    console.log(`[propTypes]   getProgram done (${Date.now() - t1}ms)`);
     if (!program) return [];
 
     const checker = program.getTypeChecker();
     const probeSF = program.getSourceFile(this.probeFilePath);
     if (!probeSF) return [];
 
-    console.log(`[propTypes]   resolveProbeTypes...`);
-    const t2 = Date.now();
     const propsTypes = resolveProbeTypes(
       this.typescript,
       checker,
       probeSF,
       typeNameMap
     );
-    console.log(`[propTypes]   resolveProbeTypes done (${Date.now() - t2}ms)`);
 
     const sourceFile = program.getSourceFile(filePath);
     if (!sourceFile) return [];
 
-    console.log(`[propTypes]   extractFromProbe...`);
-    const t3 = Date.now();
     const docs = extractFromProbe(
       this.typescript,
       checker,
@@ -246,8 +234,6 @@ export class PropExtractionProject {
       sourceFile,
       propsTypes
     );
-    console.log(`[propTypes]   extractFromProbe done: ${docs.length} docs (${Date.now() - t3}ms)`);
-    console.log(`[propTypes] extractDocs TOTAL: ${Date.now() - t0}ms`);
 
     this.resultCache.set(filePath, { version, docs });
     return docs;

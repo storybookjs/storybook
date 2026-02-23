@@ -9,7 +9,7 @@ Storybook is a large monorepo built with TypeScript, React, and various other fr
 ## System Requirements
 
 - **Node.js**: 22.21.1 (see `.nvmrc`)
-- **Package Manager**: Yarn 4.9.1
+- **Package Manager**: Yarn 4.10.3
 - **Operating System**: Linux/macOS (CI environment)
 
 ## Repository Structure

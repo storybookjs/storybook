@@ -2,7 +2,6 @@ import { recast } from 'storybook/internal/babel';
 import { Tag } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
   type ComponentManifest,
@@ -14,15 +13,17 @@ import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
-import { getComponents, getImports } from './getComponentImports';
+import { type TypescriptOptions, getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { PropExtractionManager } from './lsp';
 import type { ComponentDoc } from './propExtractor';
 import { type DocObj } from './reactDocgen';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
 import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
+  reactDocgenTypescript?: ComponentDocWithExportName;
   reactPropTypes?: ComponentDoc;
 }
 
@@ -37,14 +38,9 @@ function getPropTypesManager(): Promise<PropExtractionManager | null> {
   if (!propTypesManagerPromise) {
     propTypesManagerPromise = (async () => {
       try {
-        console.log('[propTypes] importing typescript...');
         const ts = await import('typescript');
-        console.log('[propTypes] creating PropExtractionManager...');
-        const manager = new PropExtractionManager(ts);
-        console.log('[propTypes] PropExtractionManager ready');
-        return manager;
-      } catch (e) {
-        console.log('[propTypes] TypeScript not available:', e);
+        return new PropExtractionManager(ts);
+      } catch {
         return null;
       }
     })();
@@ -60,16 +56,10 @@ async function getReactPropTypes(
   if (!manager) return undefined;
 
   try {
-    console.log(`[propTypes] getProjectForFile: ${componentPath}`);
     const project = manager.getProjectForFile(componentPath);
-    console.log(`[propTypes] extractDocs: ${componentPath}`);
     const docs = project.extractDocs(componentPath);
-    console.log(`[propTypes] done: ${docs.length} docs for ${componentPath}`);
-    // Match by export name: importName is the export name from the source file
-    // (e.g. 'default', 'Button'). ComponentDoc.exportName matches this.
     return docs.find((d) => d.exportName === (importName ?? 'default'));
-  } catch (e) {
-    console.error(`[propTypes] ERROR for ${componentPath}:`, e);
+  } catch {
     return undefined;
   }
 }
@@ -139,7 +129,7 @@ function extractStories(
 
 function extractComponentDescription(
   csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
-  docgen: DocObj | undefined
+  docgen: { description?: string } | undefined
 ) {
   const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
   const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
@@ -154,10 +144,15 @@ export const manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[] }
-> = async (existingManifests = {}, { manifestEntries }) => {
-  invalidateCache();
+> = async (existingManifests = {}, options) => {
+  const { manifestEntries, presets } = options;
+  const typescriptOptions =
+    (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
 
-  const startPerformance = performance.now();
+  invalidateCache();
+  invalidateParser();
+
+  const startTime = performance.now();
 
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
@@ -182,13 +177,17 @@ export const manifests: PresetPropertyFn<
             (entry as DocsIndexEntry).storiesImports[0];
       const absoluteImportPath = path.join(process.cwd(), storyFilePath);
       const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
-      const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
+      const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
 
       const componentName = csf._meta?.component;
       const id = entry.id.split('--')[0];
       const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-      const allComponents = getComponents({ csf, storyFilePath: absoluteImportPath });
+      const allComponents = getComponents({
+        csf,
+        storyFilePath: absoluteImportPath,
+        typescriptOptions,
+      });
       const component = findMatchingComponent(
         allComponents,
         componentName,
@@ -212,7 +211,9 @@ export const manifests: PresetPropertyFn<
         jsDocTags: {},
       } satisfies Partial<ComponentManifest>;
 
-      if (!component?.reactDocgen) {
+      const hasDocgen = component?.reactDocgen || component?.reactDocgenTypescript;
+
+      if (!hasDocgen) {
         const error = !csf._meta?.component
           ? {
               name: 'No component found',
@@ -235,43 +236,47 @@ export const manifests: PresetPropertyFn<
         };
       }
 
+      // Extract description from whichever engine is active
       const docgenResult = component.reactDocgen;
-      const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
-      const { description, summary, jsDocTags } = extractComponentDescription(csf, docgen);
+      const docgen = docgenResult?.type === 'success' ? docgenResult.data : undefined;
+      const reactDocgenTypescriptDoc = component.reactDocgenTypescript;
+
+      // Use react-docgen description if available, fall back to RDT description
+      const docgenDescription = docgen?.description ?? reactDocgenTypescriptDoc?.description;
+      const { description, summary, jsDocTags } = extractComponentDescription(
+        csf,
+        docgenDescription ? { description: docgenDescription } : undefined
+      );
 
       return {
         ...base,
         description,
         summary,
         import: imports,
-        reactDocgen: docgen,
+        ...(docgen ? { reactDocgen: docgen } : {}),
+        ...(reactDocgenTypescriptDoc ? { reactDocgenTypescript: reactDocgenTypescriptDoc } : {}),
         jsDocTags,
         componentPath: component.path,
         importName: component.importName,
-        error: docgenResult.type === 'error' ? docgenResult.error : undefined,
+        error:
+          (docgenResult?.type === 'error' ? docgenResult.error : undefined) ??
+          component.reactDocgenTypescriptError,
       };
     })
     )
   ).filter((component) => component !== undefined);
 
   // --- reactPropTypes: sequential pass (LanguageService is synchronous) ---
-  const propTypesStart = performance.now();
   for (const component of components) {
     if (!component.componentPath) continue;
-    const t0 = performance.now();
     const reactPropTypes = await getReactPropTypes(
       component.componentPath,
       component.importName
     );
-    const elapsed = performance.now() - t0;
     if (reactPropTypes) {
       (component as ReactComponentManifest).reactPropTypes = reactPropTypes;
     }
-    logger.verbose(
-      `  reactPropTypes for ${component.name}: ${elapsed.toFixed(1)}ms${reactPropTypes ? ` (${Object.keys(reactPropTypes.props).length} props)` : ' (skipped)'}`
-    );
   }
-  const propTypesTime = performance.now() - propTypesStart;
 
   // Clean up internal fields before returning
   for (const component of components) {
@@ -279,18 +284,17 @@ export const manifests: PresetPropertyFn<
     delete (component as any).importName;
   }
 
-  const totalTime = performance.now() - startPerformance;
-  const withPropTypes = components.filter((c) => (c as ReactComponentManifest).reactPropTypes)
-    .length;
-  logger.verbose(
-    `Component manifest generation took ${totalTime.toFixed(0)}ms (reactPropTypes: ${propTypesTime.toFixed(0)}ms) — ${components.length} components, ${withPropTypes} with reactPropTypes`
-  );
+  const durationMs = Math.round(performance.now() - startTime);
 
   return {
     ...existingManifests,
     components: {
       v: 0,
       components: Object.fromEntries(components.map((component) => [component.id, component])),
+      meta: {
+        docgen: typescriptOptions.reactDocgen ?? 'react-docgen',
+        durationMs,
+      },
     },
   };
 };

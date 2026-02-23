@@ -1,3 +1,4 @@
+import { Channel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
   loadAllPresets,
@@ -48,6 +49,9 @@ export async function loadStorybook(
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
 
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
+
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
@@ -55,6 +59,7 @@ export async function loadStorybook(
     ],
     ...options,
     isCritical: true,
+    channel,
   });
 
   const { renderer, builder } = await presets.apply('core', {});
@@ -77,6 +82,7 @@ export async function loadStorybook(
     overridePresets: [
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
+    channel,
     ...options,
   });
 

@@ -388,7 +388,7 @@ function formatRunStoryTestResults({
 	}
 
 	const a11yReports = testResults.a11yReports as Record<StoryId, A11yReport[]>;
-	const a11yViolationCount = countA11yViolations(a11yReports);
+	const a11yViolationCount = runA11y ? countA11yViolations(a11yReports) : 0;
 	if (runA11y && a11yReports && Object.keys(a11yReports).length > 0) {
 		const a11ySection = formatA11yReportsSection({ a11yReports, origin });
 		if (a11ySection) {

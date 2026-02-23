@@ -29,6 +29,7 @@ export class PropExtractionProject {
   private probeContent = '';
   private probeVersion = 0;
   private resultCache = new Map<string, { version: string; docs: ComponentDoc[] }>();
+  private importResultCache = new Map<string, ComponentDoc | undefined>();
 
   /**
    * Volar pattern (createChecker.ts lines 436-447):
@@ -36,7 +37,6 @@ export class PropExtractionProject {
    * or getScriptFileNames() call. Set on file creation/deletion.
    */
   private shouldCheckRootFiles = false;
-  private getCommandLine: () => ts.ParsedCommandLine;
 
   readonly probeFilePath: string;
 
@@ -61,11 +61,17 @@ export class PropExtractionProject {
       : commandLine.options.rootDir ?? process.cwd();
     this.probeFilePath = path.join(projectRoot, '__probe__.ts');
 
-    // Store the initial commandLine and create a getter for lazy re-evaluation
-    this.getCommandLine = () => this.commandLine;
-
     const self = this;
+
+    // Volar pattern (createProject.ts line 52): spread ts.sys as base, then override.
+    // This picks up getDirectories, readDirectory, directoryExists, realpath,
+    // useCaseSensitiveFileNames, etc. without enumerating each one.
     const host: ts.LanguageServiceHost = {
+      ...self.typescript.sys,
+
+      // --- Volar pattern: getProjectVersion avoids redundant internal sync ---
+      getProjectVersion: () => `${self.projectVersion}:${self.probeVersion}`,
+
       getScriptFileNames: () => {
         // Volar pattern: check root files lazily
         self.checkRootFilesUpdate();
@@ -73,7 +79,9 @@ export class PropExtractionProject {
       },
       getScriptVersion: (fileName) => {
         if (fileName === self.probeFilePath) return String(self.probeVersion);
-        // Volar pattern: combine projectVersion with mtime for invalidation
+        // Volar pattern: return '' for non-existent files (convention for TS LSH)
+        if (!self.typescript.sys.fileExists(fileName)) return '';
+        // Combine projectVersion with mtime for invalidation
         const mtime = self.typescript.sys.getModifiedTime?.(fileName)?.valueOf();
         return `${self.projectVersion}:${mtime ?? 0}`;
       },
@@ -106,18 +114,19 @@ export class PropExtractionProject {
       getDefaultLibFileName: self.typescript.getDefaultLibFilePath,
       fileExists: (f) =>
         f === self.probeFilePath || self.typescript.sys.fileExists(f),
-      readFile: (f) =>
-        f === self.probeFilePath
-          ? self.probeContent
-          : self.typescript.sys.readFile(f),
+      // Volar pattern: route readFile through snapshot cache for consistency
+      readFile: (f) => {
+        if (f === self.probeFilePath) return self.probeContent;
+        const snapshot = host.getScriptSnapshot!(f);
+        return snapshot ? snapshot.getText(0, snapshot.getLength()) : undefined;
+      },
       // Volar pattern: expose project references for composite projects
       getProjectReferences: () => self.commandLine.projectReferences,
     };
 
-    this.ls = self.typescript.createLanguageService(
-      host,
-      self.typescript.createDocumentRegistry()
-    );
+    // Volar pattern: no DocumentRegistry — avoid shared state complications.
+    // Volar never uses createDocumentRegistry; our snapshot cache handles sharing.
+    this.ls = self.typescript.createLanguageService(host);
   }
 
   /**
@@ -198,24 +207,87 @@ export class PropExtractionProject {
     const candidates = this.getCandidatesFromSource(filePath);
     if (candidates.length === 0) return [];
 
-    // Step 2: Generate probe source
+    // Step 2: Compute relative import path for probe
     const probeDir = path.dirname(this.probeFilePath);
     let relativePath = path.relative(probeDir, filePath);
     relativePath = relativePath.replace(/\.(tsx?|jsx?)$/, '');
     if (!relativePath.startsWith('.')) relativePath = './' + relativePath;
     relativePath = relativePath.replace(/\\/g, '/');
 
-    const { source, typeNameMap } = generateProbeSource(relativePath, candidates);
+    // Step 3: Extract one candidate at a time.
+    // Batching all candidates in a single probe is dangerous — a file with 25+
+    // exports would generate 25 conditional types evaluated simultaneously,
+    // which can make TypeScript choke on complex type resolution.
+    const docs: ComponentDoc[] = [];
+
+    for (const candidate of candidates) {
+      const { source, typeNameMap } = generateProbeSource(relativePath, [candidate]);
+      this.probeContent = source;
+      this.probeVersion++;
+
+      const program = this.ls.getProgram();
+      if (!program) continue;
+
+      const checker = program.getTypeChecker();
+      const probeSF = program.getSourceFile(this.probeFilePath);
+      if (!probeSF) continue;
+
+      const propsTypes = resolveProbeTypes(
+        this.typescript,
+        checker,
+        probeSF,
+        typeNameMap
+      );
+
+      const sourceFile = program.getSourceFile(filePath);
+      if (!sourceFile) continue;
+
+      const candidateDocs = extractFromProbe(
+        this.typescript,
+        checker,
+        filePath,
+        sourceFile,
+        propsTypes
+      );
+      docs.push(...candidateDocs);
+    }
+
+    this.resultCache.set(filePath, { version, docs });
+    return docs;
+  }
+
+  /**
+   * Extract a single component's props by import specifier.
+   *
+   * Used for package imports (e.g. 'flowbite-react') where the resolved file
+   * may be compiled JS. The probe imports directly from the specifier, letting
+   * TypeScript resolve via tsconfig paths or node_modules .d.ts files.
+   */
+  extractDocByImport(
+    importSpecifier: string,
+    exportName: string
+  ): ComponentDoc | undefined {
+    // Cache by specifier + export name. Package versions don't change during a
+    // dev session, so this is safe until the project is invalidated via
+    // onFileChanged (which clears importResultCache).
+    const cacheKey = `${importSpecifier}::${exportName}`;
+    if (this.importResultCache.has(cacheKey)) {
+      return this.importResultCache.get(cacheKey);
+    }
+
+    const isDefault = exportName === 'default';
+    const candidates = [{ exportName, isDefault }];
+
+    const { source, typeNameMap } = generateProbeSource(importSpecifier, candidates);
     this.probeContent = source;
     this.probeVersion++;
 
-    // Step 3: Get program ONCE — LS evaluates probe + target together
     const program = this.ls.getProgram();
-    if (!program) return [];
+    if (!program) return undefined;
 
     const checker = program.getTypeChecker();
     const probeSF = program.getSourceFile(this.probeFilePath);
-    if (!probeSF) return [];
+    if (!probeSF) return undefined;
 
     const propsTypes = resolveProbeTypes(
       this.typescript,
@@ -224,19 +296,30 @@ export class PropExtractionProject {
       typeNameMap
     );
 
-    const sourceFile = program.getSourceFile(filePath);
-    if (!sourceFile) return [];
+    // Resolve the import to find the actual source file
+    const resolved = this.typescript.resolveModuleName(
+      importSpecifier,
+      this.probeFilePath,
+      this.commandLine.options,
+      this.typescript.sys
+    );
+    const resolvedFileName = resolved.resolvedModule?.resolvedFileName;
+    if (!resolvedFileName) return undefined;
+
+    const sourceFile = program.getSourceFile(resolvedFileName);
+    if (!sourceFile) return undefined;
 
     const docs = extractFromProbe(
       this.typescript,
       checker,
-      filePath,
+      resolvedFileName,
       sourceFile,
       propsTypes
     );
 
-    this.resultCache.set(filePath, { version, docs });
-    return docs;
+    const result = docs.find((d) => d.exportName === exportName);
+    this.importResultCache.set(cacheKey, result);
+    return result;
   }
 
   /**
@@ -310,11 +393,14 @@ export class PropExtractionProject {
       if (program?.getSourceFile(filePath)) {
         this.projectVersion++;
         this.resultCache.delete(filePath);
+        // Package .d.ts files may have changed — clear import cache too
+        this.importResultCache.clear();
       }
     } else if (type === 'deleted') {
       if (program?.getSourceFile(filePath)) {
         this.projectVersion++;
         this.resultCache.delete(filePath);
+        this.importResultCache.clear();
         this.shouldCheckRootFiles = true;
       }
     } else if (type === 'created') {
@@ -326,6 +412,7 @@ export class PropExtractionProject {
   dispose() {
     this.ls.dispose();
     this.resultCache.clear();
+    this.importResultCache.clear();
     // Note: sharedSnapshots is NOT cleared here — it's owned by the Manager
   }
 }

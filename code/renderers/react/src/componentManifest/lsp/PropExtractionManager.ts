@@ -18,14 +18,10 @@ import type ts from 'typescript';
 import { PropExtractionProject } from './PropExtractionProject';
 
 /**
- * Default compiler options for inferred projects (files outside any tsconfig).
- * Matches Volar's getInferredCompilerOptions pattern.
+ * Sensible defaults for inferred projects. Numeric enum values are overridden
+ * from the actual TS instance in getOrCreateInferredProject().
  */
 const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
-  target: 99 /* ts.ScriptTarget.Latest */,
-  module: 99 /* ts.ModuleKind.ESNext */,
-  moduleResolution: 100 /* ts.ModuleResolutionKind.Bundler */,
-  jsx: 4 /* ts.JsxEmit.ReactJSX */,
   strict: true,
   esModuleInterop: true,
   allowJs: true,
@@ -102,10 +98,9 @@ export class PropExtractionManager {
     );
     if (referencedConfig) return referencedConfig;
 
-    // File not in tsconfig's include — but it's the nearest one, so still use it.
-    // This handles cases where tsconfig uses broad patterns that miss individual files
-    // but we still want the correct compiler options.
-    return candidate;
+    // Volar pattern: if the file isn't in any tsconfig (direct or via references),
+    // return null to let the caller fall back to an inferred project with safe defaults.
+    return null;
   }
 
   /**
@@ -235,8 +230,9 @@ export class PropExtractionManager {
     if (!project) {
       const parsed = this.parseConfig(configPath);
       if (!parsed) {
-        // Fall back to inferred if config fails to parse
-        return this.getOrCreateInferredProject(configPath);
+        // Fall back to inferred project keyed by the config's directory (not the config
+        // path itself). Volar pattern: inferred projects are always keyed by directory.
+        return this.getOrCreateInferredProject(path.dirname(configPath));
       }
       project = new PropExtractionProject(
         this.typescript,
@@ -264,9 +260,11 @@ export class PropExtractionManager {
       const parsed: ts.ParsedCommandLine = {
         options: {
           ...DEFAULT_INFERRED_OPTIONS,
-          // Use numeric enum values from the actual TS instance
+          // All enum-valued options from the actual TS instance — no hardcoded numbers.
+          // Volar pattern: use runtime enum values, not compile-time constants.
           target: this.typescript.ScriptTarget.Latest,
           module: this.typescript.ModuleKind.ESNext,
+          moduleResolution: this.typescript.ModuleResolutionKind.Bundler,
           jsx: this.typescript.JsxEmit.ReactJSX,
         },
         fileNames: [],

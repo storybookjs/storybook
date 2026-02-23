@@ -386,6 +386,9 @@ function serializeType(
   }
 
   if (type.isUnion()) {
+    // Filter undefined from union members before any further processing.
+    // This replaces the fragile `typeString.replace(' | undefined', '')` pattern
+    // which broke for `undefined | string` or multiple `undefined` members.
     const nonUndefinedTypes = type.types.filter(
       (t) => !(t.getFlags() & typescript.TypeFlags.Undefined)
     );
@@ -404,6 +407,20 @@ function serializeType(
         })),
       };
     }
+
+    // For optional props, strip `undefined` from the serialized type.
+    // We use checker.typeToString on the FULL union (not individual members) to
+    // preserve TS's own simplifications — e.g. TS represents `boolean` internally
+    // as `false | true`, but typeToString correctly prints "boolean".
+    // We only enter this branch when we confirmed undefined members exist.
+    if (!isRequired && nonUndefinedTypes.length < type.types.length) {
+      const fullString = checker.typeToString(type);
+      const stripped = fullString
+        .replace(/\s*\|\s*undefined\b/g, '')
+        .replace(/^undefined\b\s*\|\s*/, '')
+        .trim();
+      return { name: stripped || 'undefined' };
+    }
   }
 
   const constraint = type.getConstraint?.();
@@ -411,13 +428,7 @@ function serializeType(
     return serializeType(typescript, checker, constraint, isRequired, depth + 1);
   }
 
-  let typeString = checker.typeToString(type);
-
-  if (!isRequired) {
-    typeString = typeString.replace(' | undefined', '');
-  }
-
-  return { name: typeString };
+  return { name: checker.typeToString(type) };
 }
 
 // ---------------------------------------------------------------------------

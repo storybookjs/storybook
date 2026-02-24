@@ -1,3 +1,35 @@
+## 10.2.11
+
+- Addon-Vitest: Fix postinstall a11y installation - [#33888](https://github.com/storybookjs/storybook/pull/33888), thanks @valentinpalkovic!
+- Manifests: Use correct story name - [#33709](https://github.com/storybookjs/storybook/pull/33709), thanks @JReinhold!
+- Next.js: Handle legacyBehavior prop in Link mock component  - [#33862](https://github.com/storybookjs/storybook/pull/33862), thanks @yatishgoel!
+- React: Fix manifest stories empty when meta has no explicit title - [#33878](https://github.com/storybookjs/storybook/pull/33878), thanks @kasperpeulen!
+
+## 10.2.10
+
+- Core: Require token for websocket connections - [#33820](https://github.com/storybookjs/storybook/pull/33820), thanks @ghengeveld!
+
+## 10.2.9
+
+- Addon-Vitest: Improve config file detection in monorepos - [#33814](https://github.com/storybookjs/storybook/pull/33814), thanks @valentinpalkovic!
+- Builder-Vite: Update dependencies react-vite framework - [#33810](https://github.com/storybookjs/storybook/pull/33810), thanks @valentinpalkovic!
+- Builder-Vite: Use relative path for mocker entry in production builds - [#33792](https://github.com/storybookjs/storybook/pull/33792), thanks @DukeDeSouth!
+- Next.js: Fix Link component override in appDirectory configuration - [#31251](https://github.com/storybookjs/storybook/pull/31251), thanks @yatishgoel!
+
+## 10.2.8
+
+- Telemetry: Add Expo metaframework - [#33783](https://github.com/storybookjs/storybook/pull/33783), thanks @copilot-swe-agent!
+- Telemetry: Add init exit event - [#33773](https://github.com/storybookjs/storybook/pull/33773), thanks @valentinpalkovic!
+- Telemetry: Add share events - [#33766](https://github.com/storybookjs/storybook/pull/33766), thanks @ndelangen!
+- Test: Update event creation logic in user-event package - [#33787](https://github.com/storybookjs/storybook/pull/33787), thanks @valentinpalkovic!
+
+## 10.2.7
+
+- CSF: Fix cross-file story imports in csf-factories codemod  - [#33723](https://github.com/storybookjs/storybook/pull/33723), thanks @yatishgoel!
+- Core: Fix rendering of View Transitions in Firefox - [#33651](https://github.com/storybookjs/storybook/pull/33651), thanks @ghengeveld!
+- Globals: Repair dynamicTitle: false for user-defined tools - [#33284](https://github.com/storybookjs/storybook/pull/33284), thanks @ia319!
+- Logger: Honor --loglevel for npmlog output - [#33776](https://github.com/storybookjs/storybook/pull/33776), thanks @LouisLau-art!
+
 ## 10.2.6
 
 - Addon-Vitest: Skip postinstall setup when configured - [#33712](https://github.com/storybookjs/storybook/pull/33712), thanks @valentinpalkovic!

@@ -1,6 +1,7 @@
 import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
 import type { SupportedLanguage } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -91,6 +92,13 @@ We assume that Storybook is already instantiated for your project. Do you still 
       if (force || options.yes) {
         options.force = true;
       } else {
+        if (!options.disableTelemetry) {
+          await telemetry(
+            'exit',
+            { eventType: 'init', reason: 'existing-installation' },
+            { stripMetadata: true, immediate: true }
+          );
+        }
         process.exit(0);
       }
     }

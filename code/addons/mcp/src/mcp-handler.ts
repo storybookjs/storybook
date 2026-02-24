@@ -69,7 +69,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
 		await addListAllDocumentationTool(server, contextAwareEnabled);
 		await addGetDocumentationTool(server, contextAwareEnabled, { multiSource });
-		await addGetStoryDocumentationTool(server, contextAwareEnabled);
+		await addGetStoryDocumentationTool(server, contextAwareEnabled, { multiSource });
 	}
 
 	transport = new HttpTransport(server, { path: null });

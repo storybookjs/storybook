@@ -758,6 +758,78 @@ describe('propExtractor', () => {
       expect(props.label.defaultValue).toBeNull();
     });
 
+    it('extracts defaults from export default forwardRef with named function', () => {
+      // Exact pattern from Primer's Header: export default + named function expression
+      const docs = extractSingle(`
+        import React from 'react';
+        interface HeaderProps { as?: string; className?: string }
+        const Header = React.forwardRef<HTMLElement, HeaderProps>(function Header(
+          {as: BaseComponent = 'header', className, ...rest},
+          forwardRef,
+        ) {
+          return <div ref={forwardRef} />;
+        });
+        export default Header;
+      `);
+
+      expect(docs).toHaveLength(1);
+      expect(docs[0].props.as.defaultValue).toEqual({ value: "'header'" });
+    });
+
+    it('extracts defaults from export default Object.assign(forwardRef(...))', () => {
+      // Exact pattern from Primer: Header, Popover, CircleBadge
+      const docs = extractSingle(`
+        import React from 'react';
+        interface HeaderProps { as?: string; className?: string }
+        const Header = React.forwardRef<HTMLElement, HeaderProps>(function Header(
+          {as: BaseComponent = 'header', className, ...rest},
+          forwardRef,
+        ) {
+          return <div ref={forwardRef} />;
+        });
+        const HeaderLink = (props: { children: React.ReactNode }) => <a />;
+        const HeaderItem = (props: { children: React.ReactNode }) => <div />;
+        export default Object.assign(Header, {Link: HeaderLink, Item: HeaderItem});
+      `);
+
+      expect(docs).toHaveLength(1);
+      expect(docs[0].props.as.defaultValue).toEqual({ value: "'header'" });
+    });
+
+    it('extracts defaults from overloaded function component', () => {
+      // Pattern from Primer's IssueLabel: function overloads + implementation
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { variant?: 'gray' | 'green' | 'red'; label: string }
+        export function IssueLabel(props: {variant: 'gray'; label: string}): React.ReactNode;
+        export function IssueLabel(props: {variant: 'green'; label: string}): React.ReactNode;
+        export function IssueLabel({ variant = 'gray', label, ...rest }: Props): React.ReactNode {
+          return <span />;
+        }
+      `);
+
+      expect(docs).toHaveLength(1);
+      expect(docs[0].props.variant.defaultValue).toEqual({ value: "'gray'" });
+    });
+
+    it('extracts defaults from generic arrow function component', () => {
+      // Pattern from Primer's CircleBadge: generic arrow with inline destructuring
+      const docs = extractSingle(`
+        import React from 'react';
+        interface BadgeProps { variant?: string; as?: string }
+        const Badge = <As extends React.ElementType>({
+          as: Component = 'div',
+          variant = 'medium',
+          ...props
+        }: BadgeProps) => <div />;
+        export default Badge;
+      `);
+
+      expect(docs).toHaveLength(1);
+      expect(docs[0].props.as.defaultValue).toEqual({ value: "'div'" });
+      expect(docs[0].props.variant.defaultValue).toEqual({ value: "'medium'" });
+    });
+
     it('extracts defaults from React.memo', () => {
       const docs = extractSingle(`
         import React from 'react';

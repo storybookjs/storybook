@@ -741,8 +741,22 @@ function extractDestructuringDefaults(
 
   if (typescript.isFunctionDeclaration(decl)) {
     fn = decl;
+    // For overloaded functions, valueDeclaration points to the first overload (no body).
+    // Find the implementation signature (the one with a body) to get destructuring defaults.
+    if (!fn.body) {
+      const allDecls = resolved.getDeclarations?.() ?? [];
+      for (const d of allDecls) {
+        if (typescript.isFunctionDeclaration(d) && d.body) {
+          fn = d;
+          break;
+        }
+      }
+    }
   } else if (typescript.isVariableDeclaration(decl) && decl.initializer) {
     fn = unwrapToFunction(typescript, decl.initializer, 0, checker);
+  } else if (typescript.isExportAssignment(decl) && decl.expression) {
+    // export default Object.assign(Component, { Sub }), export default forwardRef(...)
+    fn = unwrapToFunction(typescript, decl.expression, 0, checker);
   }
 
   if (!fn) return defaults;
@@ -1051,7 +1065,9 @@ export function extractFromProbe(
   checker: ts.TypeChecker,
   filePath: string,
   sourceFile: ts.SourceFile,
-  propsTypes: Map<string, ts.Type>
+  propsTypes: Map<string, ts.Type>,
+  /** When the sourceFile is a .d.ts, provide the original .tsx path for defaults extraction. */
+  defaultsSourcePath?: string
 ): ComponentDoc[] {
   const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
   if (!moduleSymbol) return [];
@@ -1077,6 +1093,20 @@ export function extractFromProbe(
 
     // Collect defaults: destructuring > defaultProps > JSDoc (in extractPropItem)
     const defaultsMap = extractDestructuringDefaults(typescript, resolved, checker);
+
+    // Fallback: when the symbol resolves to a .d.ts file (e.g. package imports in
+    // monorepos), .d.ts declarations have no function bodies so extractDestructuringDefaults
+    // returns empty. Use the original source file for AST-only defaults extraction.
+    if (defaultsMap.size === 0 && defaultsSourcePath) {
+      const fallbackDefaults = extractDefaultsFromSourceFile(
+        typescript,
+        defaultsSourcePath,
+        exportName
+      );
+      for (const [key, value] of fallbackDefaults) {
+        defaultsMap.set(key, value);
+      }
+    }
 
     // Also check for defaultProps pattern (legacy, deprecated in React 19)
     const staticDefaults = extractStaticDefaultProps(typescript, checker, resolved);
@@ -1108,6 +1138,244 @@ export function extractFromProbe(
   }
 
   return results;
+}
+
+// ---------------------------------------------------------------------------
+// AST-only defaults extraction from source files
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts destructuring defaults from a source file using pure AST walking.
+ *
+ * Used as a fallback when the primary file is a `.d.ts` (e.g. package imports
+ * in monorepos) where function bodies are stripped. Reads the original source
+ * file, finds the exported function matching `exportName`, and collects
+ * defaults from its parameter destructuring.
+ *
+ * Works without a TypeChecker — only string literal, numeric, boolean, null,
+ * and undefined defaults are extracted. Identifier references (e.g. `noop`,
+ * `DEFAULT_SIZE`) are included as-is.
+ */
+function extractDefaultsFromSourceFile(
+  typescript: typeof ts,
+  filePath: string,
+  exportName: string
+): Map<string, string> {
+  const defaults = new Map<string, string>();
+
+  const content = typescript.sys.readFile(filePath);
+  if (!content) return defaults;
+
+  const sf = typescript.createSourceFile(
+    filePath,
+    content,
+    typescript.ScriptTarget.Latest,
+    /* setParentNodes */ true
+  );
+
+  // Build a map of top-level variable names → initializer nodes.
+  // This lets us follow references like: export const Stack = Object.assign(StackImpl, ...)
+  // where StackImpl is defined as: const StackImpl = forwardRef(...)
+  const varMap = new Map<string, ts.Expression>();
+  for (const stmt of sf.statements) {
+    if (typescript.isVariableStatement(stmt)) {
+      for (const decl of stmt.declarationList.declarations) {
+        if (typescript.isIdentifier(decl.name) && decl.initializer) {
+          varMap.set(decl.name.text, decl.initializer);
+        }
+      }
+    }
+    if (typescript.isFunctionDeclaration(stmt) && stmt.name) {
+      varMap.set(stmt.name.text, stmt as unknown as ts.Expression);
+    }
+  }
+
+  // Find the target: the function associated with the exported symbol.
+  // For "default" export, look at export default ... or export { X as default }.
+  // For named exports, look at export const X = ... or export { X }.
+  const fn = findExportedFunction(typescript, sf, exportName, varMap);
+  if (!fn) return defaults;
+
+  // Extract destructuring defaults from the first parameter
+  const firstParam = fn.parameters[0];
+  if (!firstParam) return defaults;
+
+  if (typescript.isObjectBindingPattern(firstParam.name)) {
+    collectBindingDefaults(typescript, firstParam.name, defaults);
+  } else if (fn.body) {
+    // Body destructuring: (props) => { const { x = 1 } = props; }
+    const body = typescript.isBlock(fn.body) ? fn.body : undefined;
+    if (body) {
+      for (const stmt of body.statements) {
+        if (!typescript.isVariableStatement(stmt)) continue;
+        for (const varDecl of stmt.declarationList.declarations) {
+          if (typescript.isObjectBindingPattern(varDecl.name) && varDecl.initializer) {
+            collectBindingDefaults(typescript, varDecl.name, defaults);
+          }
+        }
+      }
+    }
+  }
+
+  return defaults;
+}
+
+/**
+ * Finds the function-like declaration for a given export name in the source file.
+ * Pure AST — follows Object.assign, forwardRef, memo, as-casts, and identifier refs.
+ */
+function findExportedFunction(
+  typescript: typeof ts,
+  sf: ts.SourceFile,
+  exportName: string,
+  varMap: Map<string, ts.Expression>
+): ts.FunctionLikeDeclaration | undefined {
+  let targetExpr: ts.Expression | undefined;
+
+  for (const stmt of sf.statements) {
+    // export default X
+    if (
+      exportName === 'default' &&
+      typescript.isExportAssignment(stmt) &&
+      !stmt.isExportEquals
+    ) {
+      targetExpr = stmt.expression;
+      break;
+    }
+
+    // export const X = ... or export function X
+    if (typescript.isVariableStatement(stmt) && hasExportModifier(typescript, stmt)) {
+      for (const decl of stmt.declarationList.declarations) {
+        if (typescript.isIdentifier(decl.name) && decl.name.text === exportName && decl.initializer) {
+          targetExpr = decl.initializer;
+          break;
+        }
+      }
+      if (targetExpr) break;
+    }
+
+    if (
+      typescript.isFunctionDeclaration(stmt) &&
+      hasExportModifier(typescript, stmt) &&
+      stmt.name?.text === exportName
+    ) {
+      // Find implementation (not overload) for overloaded functions
+      return findFunctionImpl(typescript, sf, stmt.name.text) ?? stmt;
+    }
+
+    // export { StackImpl as Stack } or export { X }
+    if (typescript.isExportDeclaration(stmt) && stmt.exportClause && typescript.isNamedExports(stmt.exportClause)) {
+      for (const spec of stmt.exportClause.elements) {
+        const exported = spec.name.text;
+        const local = spec.propertyName ? spec.propertyName.text : spec.name.text;
+        if (exported === exportName) {
+          targetExpr = varMap.get(local) as ts.Expression | undefined;
+          break;
+        }
+      }
+      if (targetExpr) break;
+    }
+  }
+
+  if (!targetExpr) {
+    // Not explicitly exported — might be via barrel: import { X } from './...'
+    // Try to find a top-level variable matching the export name
+    targetExpr = varMap.get(exportName) as ts.Expression | undefined;
+  }
+
+  if (!targetExpr) return undefined;
+
+  return unwrapToFunctionAST(typescript, targetExpr, varMap, 0);
+}
+
+/**
+ * Pure AST version of unwrapToFunction. Follows forwardRef, memo, Object.assign,
+ * as-casts, parenthesized expressions, and identifier references via varMap.
+ */
+function unwrapToFunctionAST(
+  typescript: typeof ts,
+  node: ts.Node,
+  varMap: Map<string, ts.Expression>,
+  depth: number
+): ts.FunctionLikeDeclaration | undefined {
+  if (depth > 10) return undefined;
+
+  // Already a function
+  if (typescript.isFunctionExpression(node) || typescript.isArrowFunction(node)) {
+    return node;
+  }
+  if (typescript.isFunctionDeclaration(node)) {
+    return node;
+  }
+
+  // Parenthesized: (expr)
+  if (typescript.isParenthesizedExpression(node)) {
+    return unwrapToFunctionAST(typescript, node.expression, varMap, depth + 1);
+  }
+
+  // As-expression: expr as Type
+  if (typescript.isAsExpression(node)) {
+    return unwrapToFunctionAST(typescript, node.expression, varMap, depth + 1);
+  }
+
+  // Type assertion: <Type>expr
+  if (typescript.isTypeAssertionExpression?.(node)) {
+    return unwrapToFunctionAST(typescript, (node as any).expression, varMap, depth + 1);
+  }
+
+  // Call expression: forwardRef(...), memo(...), Object.assign(X, ...)
+  if (typescript.isCallExpression(node)) {
+    const callee = node.expression;
+    // Object.assign(Component, { Sub }) — first arg is the component
+    if (
+      typescript.isPropertyAccessExpression(callee) &&
+      typescript.isIdentifier(callee.expression) &&
+      callee.expression.text === 'Object' &&
+      callee.name.text === 'assign' &&
+      node.arguments.length >= 1
+    ) {
+      return unwrapToFunctionAST(typescript, node.arguments[0], varMap, depth + 1);
+    }
+
+    // forwardRef(...), memo(...) — first arg is the function
+    if (node.arguments.length >= 1) {
+      return unwrapToFunctionAST(typescript, node.arguments[0], varMap, depth + 1);
+    }
+  }
+
+  // Identifier: follow to its declaration via varMap
+  if (typescript.isIdentifier(node)) {
+    const init = varMap.get(node.text);
+    if (init) {
+      return unwrapToFunctionAST(typescript, init, varMap, depth + 1);
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Finds the implementation body for an overloaded function declaration.
+ */
+function findFunctionImpl(
+  typescript: typeof ts,
+  sf: ts.SourceFile,
+  name: string
+): ts.FunctionDeclaration | undefined {
+  for (const stmt of sf.statements) {
+    if (typescript.isFunctionDeclaration(stmt) && stmt.name?.text === name && stmt.body) {
+      return stmt;
+    }
+  }
+  return undefined;
+}
+
+/** Check if a statement has the `export` modifier. */
+function hasExportModifier(typescript: typeof ts, node: ts.Statement): boolean {
+  return (
+    typescript.canHaveModifiers(node) &&
+    typescript.getModifiers(node)?.some((m) => m.kind === typescript.SyntaxKind.ExportKeyword) === true
+  );
 }
 
 // ---------------------------------------------------------------------------

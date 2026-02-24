@@ -32,6 +32,8 @@ export class PropExtractionProject {
   private probeVersionPkg = 0;
   /** Fast lookup for tryAddFile — mirrors commandLine.fileNames. */
   private fileNamesSet: Set<string>;
+  /** Cached result for getScriptFileNames — invalidated on fileNames change. */
+  private cachedFileNames: string[] | undefined;
 
   /**
    * Volar pattern (createChecker.ts lines 436-447):
@@ -91,7 +93,12 @@ export class PropExtractionProject {
       },
 
       getScriptFileNames: () => {
-        return [...self.commandLine.fileNames, self.probeFilePath, self.probeFilePathPkg];
+        // Volar pattern (createChecker.ts): cache the file names array to avoid
+        // re-creating it on every LS sync call. Invalidated when fileNames change.
+        if (!self.cachedFileNames) {
+          self.cachedFileNames = [...self.commandLine.fileNames, self.probeFilePath, self.probeFilePathPkg];
+        }
+        return self.cachedFileNames;
       },
       getScriptVersion: (fileName) => {
         if (fileName === self.probeFilePath) return String(self.probeVersion);
@@ -176,6 +183,7 @@ export class PropExtractionProject {
     if (!this.fileNamesSet.has(normalized)) {
       this.fileNamesSet.add(normalized);
       this.commandLine.fileNames.push(normalized);
+      this.cachedFileNames = undefined;
       this.projectVersion++;
     }
   }
@@ -216,6 +224,7 @@ export class PropExtractionProject {
       if (!arrayItemsEqual(newCommandLine.fileNames, this.commandLine.fileNames)) {
         this.commandLine.fileNames = newCommandLine.fileNames;
         this.fileNamesSet = new Set(newCommandLine.fileNames);
+        this.cachedFileNames = undefined;
         this.projectVersion++;
       }
     } catch {
@@ -546,7 +555,7 @@ export class PropExtractionProject {
    * package imports instead of local files.
    */
   extractDocsByImportBulk(
-    entries: Array<{ importSpecifier: string; exportName: string; memberAccess?: string }>
+    entries: Array<{ importSpecifier: string; exportName: string; memberAccess?: string; componentPath?: string }>
   ): Map<string, ComponentDoc> {
     const results = new Map<string, ComponentDoc>();
     if (entries.length === 0) return results;
@@ -650,6 +659,14 @@ export class PropExtractionProject {
     // ones (prefers "Root", then first with call signature).
     this.resolveCompoundTypes(checker, probeSF, entries, varNameMap, allPropsTypes);
 
+    // Build lookup: mapKey → componentPath (source .tsx path from Storybook's resolver)
+    const componentPaths = new Map<string, string>();
+    for (const { importSpecifier, exportName, componentPath } of entries) {
+      if (componentPath) {
+        componentPaths.set(`${importSpecifier}::${exportName}`, componentPath);
+      }
+    }
+
     // Extract docs for each entry using the resolved props types
     for (const { importSpecifier, exportName } of entries) {
       const mapKey = `${importSpecifier}::${exportName}`;
@@ -669,13 +686,21 @@ export class PropExtractionProject {
       const sourceFile = program.getSourceFile(resolvedFileName);
       if (!sourceFile) continue;
 
+      // When TypeScript resolves to a .d.ts file (e.g. package imports in monorepos),
+      // pass the original source path so extractFromProbe can extract defaults from it.
+      const defaultsSourcePath =
+        resolvedFileName.endsWith('.d.ts') || resolvedFileName.endsWith('.d.mts') || resolvedFileName.endsWith('.d.cts')
+          ? componentPaths.get(mapKey)
+          : undefined;
+
       const propsTypes = new Map<string, ts.Type>([[exportName, propsType]]);
       const docs = extractFromProbe(
         this.typescript,
         checker,
-        resolvedFileName,
+        componentPaths.get(mapKey) ?? resolvedFileName,
         sourceFile,
-        propsTypes
+        propsTypes,
+        defaultsSourcePath
       );
 
       const doc = docs.find((d) => d.exportName === exportName);
@@ -819,6 +844,17 @@ export class PropExtractionProject {
   }
 
   /**
+   * Check if a file is in this project's TypeScript program.
+   *
+   * Volar's findIndirectReferenceTsconfig pattern:
+   * Uses program.getSourceFile() to check for transitively included files
+   * (imported but not necessarily in the tsconfig's include list).
+   */
+  hasSourceFile(filePath: string): boolean {
+    return !!this.ls.getProgram()?.getSourceFile(filePath);
+  }
+
+  /**
    * Notify that a file has changed on disk.
    *
    * Volar pattern (createChecker.ts lines 409-431):
@@ -828,6 +864,13 @@ export class PropExtractionProject {
    * - 'deleted': bump if in program + flag shouldCheckRootFiles
    */
   onFileChanged(filePath: string, type: 'changed' | 'created' | 'deleted' = 'changed'): void {
+    if (type === 'created') {
+      // Volar: break immediately — once shouldCheckRootFiles is set,
+      // checkRootFilesUpdate() will re-parse the entire tsconfig anyway.
+      this.shouldCheckRootFiles = true;
+      return;
+    }
+
     const program = this.ls.getProgram();
 
     if (type === 'changed') {
@@ -840,9 +883,6 @@ export class PropExtractionProject {
         this.projectVersion++;
         this.shouldCheckRootFiles = true;
       }
-    } else if (type === 'created') {
-      // New file — may need to be added to the program
-      this.shouldCheckRootFiles = true;
     }
   }
 

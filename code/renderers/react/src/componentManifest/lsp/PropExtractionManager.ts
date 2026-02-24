@@ -31,8 +31,10 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
 export class PropExtractionManager {
   private projects = new Map<string, PropExtractionProject>();
   private inferredProjects = new Map<string, PropExtractionProject>();
-  private tsconfigCache = new Map<string, string | null>();
   private parsedConfigCache = new Map<string, ts.ParsedCommandLine | null>();
+  /** Volar pattern (searchedDirs): avoid re-scanning directories for tsconfig files. */
+  private searchedDirs = new Set<string>();
+  private rootTsConfigs = new Set<string>();
 
   /**
    * Shared snapshot cache across all projects.
@@ -68,39 +70,60 @@ export class PropExtractionManager {
    * Find a tsconfig that actually includes this file.
    *
    * Volar pattern (typescriptProject.ts lines 101-233):
-   * 1. findDirectIncludeTsconfig — check if file is in parsed fileNames
-   * 2. findIndirectReferenceTsconfig — check via project references chain
+   * 1. Collect ALL tsconfigs walking up (not just nearest)
+   * 2. Sort by proximity (deepest path first, prefer containing directory)
+   * 3. Pass 1: findDirectIncludeTsconfig — check parsed fileNames (cheap)
+   * 4. Pass 2: findIndirectReferenceTsconfig — check via program.getSourceFile()
+   *    (catches files that are imported but not in include list)
    */
   private findMatchingTSConfig(filePath: string): string | null {
-    // First, find the nearest tsconfig candidate
-    const candidate = this.findNearestTSConfig(filePath);
-    if (!candidate) return null;
+    // Volar pattern: collect ALL tsconfigs walking up, not just nearest.
+    // This handles cases where the nearest tsconfig doesn't include the file
+    // but a parent tsconfig does (e.g. monorepo root with project references).
+    const candidates = this.collectTSConfigs(filePath);
+    if (candidates.length === 0) return null;
 
-    // Verify the file is actually included in this tsconfig
-    const parsed = this.parseConfig(candidate);
-    if (!parsed) return null;
+    // Volar's sortTSConfigs: deepest paths first (most specific),
+    // prefer configs whose directory contains the file.
+    candidates.sort((a, b) => sortTSConfigs(filePath, a, b));
 
     const normalizedFilePath = filePath.replace(/\\/g, '/');
 
-    // Direct include check (Volar's findDirectIncludeTsconfig)
-    const normalizedFileNames = new Set(
-      parsed.fileNames.map((f) => f.replace(/\\/g, '/'))
-    );
-    if (normalizedFileNames.has(normalizedFilePath)) {
-      return candidate;
+    // Pass 1: Direct include — check parsed fileNames (cheap, no program needed)
+    // Volar's findDirectIncludeTsconfig pattern
+    for (const candidate of candidates) {
+      const parsed = this.parseConfig(candidate);
+      if (!parsed) continue;
+
+      const normalizedFileNames = new Set(
+        parsed.fileNames.map((f) => f.replace(/\\/g, '/'))
+      );
+      if (normalizedFileNames.has(normalizedFilePath)) {
+        return candidate;
+      }
+
+      // Also check project reference chain (via fileNames)
+      const referencedConfig = this.findInProjectReferences(
+        filePath,
+        parsed,
+        candidate,
+        new Set()
+      );
+      if (referencedConfig) return referencedConfig;
     }
 
-    // Project reference chain check (Volar's findIndirectReferenceTsconfig)
-    const referencedConfig = this.findInProjectReferences(
-      filePath,
-      parsed,
-      candidate,
-      new Set()
-    );
-    if (referencedConfig) return referencedConfig;
+    // Pass 2: Indirect — check via program.getSourceFile()
+    // Volar's findIndirectReferenceTsconfig pattern: catches files that are
+    // transitively imported but not in the tsconfig's include list.
+    // Creates projects lazily (cached for reuse by subsequent files).
+    for (const candidate of candidates) {
+      if (!this.parseConfig(candidate)) continue;
+      const project = this.getOrCreateConfiguredProject(candidate);
+      if (project.hasSourceFile(normalizedFilePath)) {
+        return candidate;
+      }
+    }
 
-    // Volar pattern: if the file isn't in any tsconfig (direct or via references),
-    // return null to let the caller fall back to an inferred project with safe defaults.
     return null;
   }
 
@@ -126,14 +149,17 @@ export class PropExtractionManager {
     for (const ref of commandLine.projectReferences) {
       let refPath = ref.path.replace(/\\/g, '/');
 
-      // Volar fix for #712: resolve directory references to tsconfig.json.
+      // Volar fix for #712: resolve directory references to tsconfig.json / jsconfig.json.
       // Project references can point to a directory (e.g. "../core") instead
       // of a file. Volar checks if the path is a directory and resolves to
-      // tsconfig.json inside it.
+      // the config file inside it.
       if (this.typescript.sys.directoryExists(refPath)) {
         const tsconfigInDir = path.join(refPath, 'tsconfig.json');
+        const jsconfigInDir = path.join(refPath, 'jsconfig.json');
         if (this.typescript.sys.fileExists(tsconfigInDir)) {
           refPath = tsconfigInDir;
+        } else if (this.typescript.sys.fileExists(jsconfigInDir)) {
+          refPath = jsconfigInDir;
         }
       }
 
@@ -164,26 +190,37 @@ export class PropExtractionManager {
   }
 
   /**
-   * Find the nearest tsconfig.json by walking up directories.
+   * Collect ALL tsconfig.json and jsconfig.json files walking up from the file's directory.
    *
-   * Uses ts.findConfigFile to walk up the directory tree.
-   * Results are cached per directory.
+   * Volar pattern (typescriptProject.ts lines 101-133):
+   * Don't stop at the nearest config — collect all candidates
+   * so we can sort by proximity and try each one. This handles
+   * monorepos where the nearest tsconfig may not include the file
+   * but a parent tsconfig (with project references) does.
+   *
+   * Uses searchedDirs / rootTsConfigs caches (Volar pattern) to avoid
+   * re-scanning directories that have already been checked.
    */
-  private findNearestTSConfig(filePath: string): string | null {
+  private collectTSConfigs(filePath: string): string[] {
     let dir = path.dirname(filePath);
     while (true) {
-      if (this.tsconfigCache.has(dir)) return this.tsconfigCache.get(dir)!;
-      const result = this.typescript.findConfigFile(
-        dir,
-        this.typescript.sys.fileExists
-      );
-      this.tsconfigCache.set(dir, result ?? null);
-      if (result) return result;
+      if (this.searchedDirs.has(dir)) break;
+      this.searchedDirs.add(dir);
+      for (const name of ['tsconfig.json', 'jsconfig.json']) {
+        const configPath = path.join(dir, name);
+        if (this.typescript.sys.fileExists(configPath)) {
+          this.rootTsConfigs.add(configPath);
+        }
+      }
       const parent = path.dirname(dir);
       if (parent === dir) break;
       dir = parent;
     }
-    return null;
+    // Return configs that are ancestors of the file
+    return [...this.rootTsConfigs].filter((config) => {
+      const configDir = path.dirname(config).replace(/\\/g, '/');
+      return filePath.replace(/\\/g, '/').startsWith(configDir + '/');
+    });
   }
 
   /**
@@ -311,6 +348,11 @@ export class PropExtractionManager {
     for (const project of this.inferredProjects.values()) project.invalidate();
   }
 
+  /**
+   * Volar pattern: no snapshot cache clearing on file changes.
+   * The mtime-based cache in getScriptSnapshot handles it:
+   * next access checks getModifiedTime() → mtime differs → re-reads from disk.
+   */
   onFileChanged(filePath: string) {
     for (const project of this.projects.values()) {
       project.onFileChanged(filePath, 'changed');
@@ -318,8 +360,6 @@ export class PropExtractionManager {
     for (const project of this.inferredProjects.values()) {
       project.onFileChanged(filePath, 'changed');
     }
-    // Clear shared snapshot so it's re-read from disk
-    this.sharedSnapshots.delete(filePath);
   }
 
   /**
@@ -343,7 +383,6 @@ export class PropExtractionManager {
     for (const project of this.projects.values()) {
       project.onFileChanged(filePath, 'deleted');
     }
-    this.sharedSnapshots.delete(filePath);
   }
 
   /**
@@ -357,8 +396,9 @@ export class PropExtractionManager {
       project.dispose();
       this.projects.delete(configPath);
     }
-    this.tsconfigCache.clear();
     this.parsedConfigCache.clear();
+    this.searchedDirs.clear();
+    this.rootTsConfigs.clear();
   }
 
   dispose() {
@@ -366,8 +406,41 @@ export class PropExtractionManager {
     for (const project of this.inferredProjects.values()) project.dispose();
     this.projects.clear();
     this.inferredProjects.clear();
-    this.tsconfigCache.clear();
     this.parsedConfigCache.clear();
     this.sharedSnapshots.clear();
+    this.searchedDirs.clear();
+    this.rootTsConfigs.clear();
   }
+}
+
+/**
+ * Sort tsconfig candidates by priority (Volar's sortTSConfigs pattern).
+ *
+ * Priority order:
+ * 1. Prefer configs whose directory contains the file
+ * 2. Prefer deeper paths (more specific tsconfig)
+ * 3. Prefer tsconfig.json over other config names
+ */
+function sortTSConfigs(filePath: string, a: string, b: string): number {
+  const dirA = path.dirname(a).replace(/\\/g, '/');
+  const dirB = path.dirname(b).replace(/\\/g, '/');
+  const normalizedFile = filePath.replace(/\\/g, '/');
+
+  const inA = normalizedFile.startsWith(dirA + '/');
+  const inB = normalizedFile.startsWith(dirB + '/');
+
+  if (inA !== inB) {
+    return (inB ? 1 : 0) - (inA ? 1 : 0);
+  }
+
+  const aLength = a.split('/').length;
+  const bLength = b.split('/').length;
+
+  if (aLength === bLength) {
+    const aWeight = path.basename(a) === 'tsconfig.json' ? 1 : 0;
+    const bWeight = path.basename(b) === 'tsconfig.json' ? 1 : 0;
+    return bWeight - aWeight;
+  }
+
+  return bLength - aLength;
 }

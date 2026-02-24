@@ -79,14 +79,22 @@ function findMatchingComponent(
   componentName: string | undefined,
   trimmedTitle: string
 ) {
-  const isMatch = (it: (typeof components)[number]) =>
-    componentName
-      ? [it.componentName, it.localImportName, it.importName].includes(componentName)
-      : trimmedTitle.includes(it.componentName) ||
-        (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
-        (it.importName && trimmedTitle.includes(it.importName));
+  const byName = (it: (typeof components)[number]) =>
+    [it.componentName, it.localImportName, it.importName].includes(componentName!);
+  const byTitle = (it: (typeof components)[number]) =>
+    trimmedTitle.includes(it.componentName) ||
+    (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
+    (it.importName && trimmedTitle.includes(it.importName));
 
-  const matches = components.filter(isMatch);
+  let matches = componentName ? components.filter(byName) : components.filter(byTitle);
+
+  // If componentName was given but none of the matches have JSX usage,
+  // the component is likely a namespace object (e.g. Accordion) rather than
+  // a renderable component. Fall back to title matching instead.
+  if (componentName && matches.length > 0 && matches.every((m) => m.jsxDepth === undefined)) {
+    matches = components.filter(byTitle);
+  }
+
   if (matches.length <= 1) return matches[0];
 
   // Prefer the outermost component (shallowest JSX nesting depth)
@@ -404,6 +412,7 @@ export const manifests: PresetPropertyFn<
           importSpecifier: e.ctx.importId!,
           exportName: e.ctx.importName!,
           memberAccess: e.ctx.memberAccess,
+          componentPath: e.ctx.componentPath,
         }));
         const tBulk = performance.now();
         const bulkResults = project.extractDocsByImportBulk(bulkEntries);

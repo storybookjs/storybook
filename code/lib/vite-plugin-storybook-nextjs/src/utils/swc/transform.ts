@@ -1,8 +1,8 @@
-import path from "node:path";
 import type loadJsConfig from "next/dist/build/load-jsconfig.js";
 import { getSupportedBrowsers } from "next/dist/build/utils.js";
 import type { findPagesDir } from "next/dist/lib/find-pages-dir.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import path from "pathe";
 import type { SourceMap } from "rollup";
 import { shouldOutputCommonJs } from "../nextjs";
 import { getBaseSWCOptions } from "./options";
@@ -33,13 +33,19 @@ export const getVitestSWCTransformConfig = ({
   isDev,
   isEsmProject,
 }: VitestSWCTransformConfigParams) => {
+  const { compilerOptions, ...restJSConfig } = loadedJSConfig.jsConfig ?? {};
+  const { paths, ...restCompilerOptions } = compilerOptions ?? {};
   const baseOptions = getBaseSWCOptions({
     filename,
     development: isDev,
     hasReactRefresh: false,
     globalWindow: !isServerEnvironment,
-    modularizeImports: nextConfig.modularizeImports,
-    jsConfig: loadedJSConfig.jsConfig,
+    jsConfig: {
+      ...restJSConfig,
+      compilerOptions: {
+        ...restCompilerOptions,
+      },
+    },
     resolvedBaseUrl: loadedJSConfig.resolvedBaseUrl,
     swcPlugins: nextConfig.experimental.swcPlugins,
     compiler: nextConfig?.compiler,
@@ -88,13 +94,13 @@ export const getVitestSWCTransformConfig = ({
       : {
           env: {
             targets: getSupportedBrowsers(rootDir, isDev),
+            bugfixes: true,
           },
         }),
     module: {
       type: isEsmProject && !useCjsModules ? "es6" : "commonjs",
     },
     disableNextSsg: !isPageFile,
-    disablePageConfig: true,
     isPageFile,
     pagesDir: nextDirectories.pagesDir,
     appDir: nextDirectories.appDir,

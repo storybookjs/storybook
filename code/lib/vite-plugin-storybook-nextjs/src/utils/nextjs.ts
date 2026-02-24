@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import path, { join } from "node:path";
 import * as nextEnv from "@next/env";
 import Log from "next/dist/build/output/log.js";
 import {
@@ -8,6 +7,7 @@ import {
 } from "next/dist/build/swc/index.js";
 import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import path, { join } from "pathe";
 
 const nextDistPath =
   /(next[\\/]dist[\\/]shared[\\/]lib)|(next[\\/]dist[\\/]client)|(next[\\/]dist[\\/]pages)/;

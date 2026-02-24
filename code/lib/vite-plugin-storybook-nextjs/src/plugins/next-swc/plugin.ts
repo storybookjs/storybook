@@ -1,9 +1,10 @@
-import { resolve } from "node:path";
 import nextLoadJsConfig from "next/dist/build/load-jsconfig.js";
 import { transform } from "next/dist/build/swc/index.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import { resolve } from "pathe";
 import { type Plugin, createFilter } from "vite";
 
+import { isVitestEnv } from "../../utils";
 import * as NextUtils from "../../utils/nextjs";
 import { getVitestSWCTransformConfig } from "../../utils/swc/transform";
 import { isDefined } from "../../utils/typescript";
@@ -26,7 +27,6 @@ export function vitePluginNextSwc(
   let isServerEnvironment: boolean;
   let isDev: boolean;
   let isEsmProject: boolean;
-  let packageJson: { type: string };
   const filter = createFilter(included, excluded);
 
   const resolvedDir = resolve(rootDir);
@@ -39,7 +39,6 @@ export function vitePluginNextSwc(
       nextDirectories = NextUtils.findNextDirectories(resolvedDir);
       loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
       isDev = env.mode !== "production";
-      packageJson = await NextUtils.loadClosestPackageJson(resolvedDir);
       isEsmProject = true;
       // TODO: Setting isEsmProject to false errors. Need to investigate further.
       // isEsmProject = packageJson.type === "module";
@@ -49,12 +48,17 @@ export function vitePluginNextSwc(
       const serverWatchIgnored = config.server?.watch?.ignored;
       const isServerWatchIgnoredArray = Array.isArray(serverWatchIgnored);
 
-      if (
-        config.test?.environment === "node" ||
-        config.test?.environment === "edge-runtime" ||
-        config.test?.browser?.enabled !== false
-      ) {
-        isServerEnvironment = true;
+      // Default to browser-mode (Storybook preview / Vite dev).
+      isServerEnvironment = false;
+
+      // In Vitest, default to server-mode unless browser mode is explicitly enabled.
+      // This avoids Next/SWC folding `typeof window` to `"undefined"` in Storybook's browser preview
+      // when `config.test` is absent.
+      if (isVitestEnv) {
+        isServerEnvironment =
+          config.test?.environment === "node" ||
+          config.test?.environment === "edge-runtime" ||
+          config.test?.browser?.enabled !== true;
       }
 
       return {

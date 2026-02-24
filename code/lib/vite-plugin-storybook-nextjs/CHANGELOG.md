@@ -1,3 +1,255 @@
+## 3.1.12
+
+## 3.2.1
+
+### Patch Changes
+
+- [#100](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/100) [`f4201b4`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/f4201b48f3c81a5cc1ec570c7057f604bc915076) Thanks [@yannbf](https://github.com/yannbf)! - fix emotion compiler option reference
+
+## 3.2.0
+
+### Minor Changes
+
+- [#95](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/95) [`b24bcc0`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/b24bcc0aed2dbd5c705323edf81b1ebb4d800651) Thanks [@yannbf](https://github.com/yannbf)! - Add support for Vite 8
+
+### Patch Changes
+
+- [#99](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/99) [`333ed7c`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/333ed7ce09a7e75344c5b49fcb19b0c0358aca94) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Add @emotion/react/jsx-dev-runtime to optimize deps
+
+- [#97](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/97) [`b73e921`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/b73e921fd4d875fc8b4a0066bfe0d200b791de31) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Deactivate barrel file handling via Next.js' swc transpiler
+
+### Patch Changes
+
+- [#91](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/91) [`a671255`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/a671255a12f8376a1ab343ae26013f67bb9ba719) Thanks [@ButterflyBug](https://github.com/ButterflyBug)! - Support unstable_rethrow from next/navigation
+
+- [#90](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/90) [`76b6d17`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/76b6d17f96d4347ee0712886eb4ece19118291e4) Thanks [@yannbf](https://github.com/yannbf)! - Fix loadable import in ESM environments
+
+## 3.1.11
+
+### Patch Changes
+
+- [#87](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/87) [`60468b6`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/60468b61633491202ba02a57d7b755e4f2a91b59) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Support vite resolve.alias config
+
+## v3.1.10 (Tue Jan 27 2026)
+
+#### 🐛 Bug Fix
+
+- Support latest prerelease [#85](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/85) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
+# v3.1.9 (Wed Jan 14 2026)
+
+#### 🐛 Bug Fix
+
+- Add nextjs imports with extensions as SB has started using [#83](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/83) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
+# v3.1.8 (Mon Dec 15 2025)
+
+#### 🐛 Bug Fix
+
+- SWC: Support mount in play functions [#82](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/82) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
+# v3.1.7 (Fri Dec 12 2025)
+
+#### 🐛 Bug Fix
+
+- fix: resolve next/font/local loading issues [#81](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/81) ([@Chiman2937](https://github.com/Chiman2937))
+
+#### Authors: 1
+
+- Chiyoung ([@Chiman2937](https://github.com/Chiman2937))
+
+---
+
+# v3.1.6 (Fri Dec 12 2025)
+
+#### 🐛 Bug Fix
+
+- Fix/typeof window swc env detection [#80](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/80) ([@robbchar](https://github.com/robbchar))
+
+#### Authors: 1
+
+- Robb ([@robbchar](https://github.com/robbchar))
+
+---
+
+# v3.1.5 (Wed Dec 03 2025)
+
+#### 🐛 Bug Fix
+
+- Fix SVG imports failing under square-bracket directories [#78](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/78) ([@Copilot](https://github.com/Copilot))
+
+#### Authors: 1
+
+- [@Copilot](https://github.com/Copilot)
+
+---
+
+# v3.1.4 (Wed Dec 03 2025)
+
+#### 🐛 Bug Fix
+
+- Fix next/dynamic mock to properly handle ssr: false option [#77](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/77) ([@Copilot](https://github.com/Copilot))
+
+#### Authors: 1
+
+- [@Copilot](https://github.com/Copilot)
+
+---
+
+# v3.1.3 (Wed Dec 03 2025)
+
+#### 🐛 Bug Fix
+
+- Add cacheLife and cacheTag mocks to next/cache [#76](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/76) ([@Copilot](https://github.com/Copilot))
+
+#### Authors: 1
+
+- [@Copilot](https://github.com/Copilot)
+
+---
+
+# v3.1.2 (Wed Nov 26 2025)
+
+#### 🐛 Bug Fix
+
+- Update storybook peer dependency to include version 10.2.0-0 [#73](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/73) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
+# v3.1.1 (Thu Nov 06 2025)
+
+#### 🐛 Bug Fix
+
+- fix: Support 10.1 canary releases [#71](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/71) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- Fix local story globs [#70](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/70) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 2
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
+# v3.1.0 (Wed Nov 05 2025)
+
+#### 🚀 Enhancement
+
+- Handle SVGR and add include/exclude options for next/image [#69](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/69) ([@rickdunkin](https://github.com/rickdunkin) [@yannbf](https://github.com/yannbf))
+
+#### Authors: 2
+
+- Rick Dunkin ([@rickdunkin](https://github.com/rickdunkin))
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
+# v3.0.3 (Thu Oct 30 2025)
+
+#### 🐛 Bug Fix
+
+- Improve path handling for Windows [#68](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/68) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
+# v3.0.2 (Thu Oct 30 2025)
+
+#### 🐛 Bug Fix
+
+- Safely encode image paths [#65](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/65) ([@sylvaingi](https://github.com/sylvaingi))
+
+#### Authors: 1
+
+- Sylvain Gizard ([@sylvaingi](https://github.com/sylvaingi))
+
+---
+
+# v3.0.1 (Tue Oct 28 2025)
+
+#### 🐛 Bug Fix
+
+- Fix `next/config` deprecation warning [#66](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/66) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
+# v3.0.0 (Fri Oct 24 2025)
+
+#### 💥 Breaking Change
+
+- Support next 16 [#62](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/62) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
+# v2.0.8 (Mon Oct 06 2025)
+
+#### 🐛 Bug Fix
+
+- Fix when addon-docs isn't installed [#60](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/60) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
+# v2.0.7 (Tue Aug 26 2025)
+
+#### 🐛 Bug Fix
+
+- Fix: Resolve dynamic require issues when using with Vitest [#50](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/50) ([@elecdeer](https://github.com/elecdeer) [@ghengeveld](https://github.com/ghengeveld))
+
+#### Authors: 2
+
+- [@elecdeer](https://github.com/elecdeer)
+- Gert Hengeveld ([@ghengeveld](https://github.com/ghengeveld))
+
+---
+
+# v2.0.6 (Wed Aug 20 2025)
+
+#### 🐛 Bug Fix
+
+- docs: Update links to actions docs page [#55](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/55) ([@Sidnioulz](https://github.com/Sidnioulz))
+
+#### Authors: 1
+
+- Steve Dodier-Lazaro ([@Sidnioulz](https://github.com/Sidnioulz))
+
+---
+
 # v2.0.5 (Mon Jun 30 2025)
 
 #### 🐛 Bug Fix
@@ -540,8 +792,6 @@
 ---
 
 # v0.0.4 (Tue Jul 30 2024)
-
-
 
 ---
 

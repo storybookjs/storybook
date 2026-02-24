@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { resolve } from "pathe";
 
 import { createRequire } from "node:module";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
@@ -10,6 +10,7 @@ import { vitePluginNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
 
 import "./polyfills/promise-with-resolvers";
+import loadJsConfig from "next/dist/build/load-jsconfig.js";
 import nextServerConfig from "next/dist/server/config.js";
 import {
   PHASE_DEVELOPMENT_SERVER,
@@ -17,43 +18,76 @@ import {
   PHASE_TEST,
 } from "next/dist/shared/lib/constants.js";
 import { vitePluginNextDynamic } from "./plugins/next-dynamic/plugin";
-import { vitePluginNextImage } from "./plugins/next-image/plugin";
+import {
+  type NextImagePluginOptions,
+  vitePluginNextImage,
+} from "./plugins/next-image/plugin";
 import { vitePluginNextMocks } from "./plugins/next-mocks/plugin";
-import { getExecutionEnvironment, isVitestEnv } from "./utils";
+import {
+  getExecutionEnvironment,
+  getNextjsMajorVersion,
+  isVitestEnv,
+} from "./utils";
 
 const require = createRequire(import.meta.url);
 const loadConfig: typeof nextServerConfig =
   // biome-ignore lint/suspicious/noExplicitAny: CJS support
   (nextServerConfig as any).default || nextServerConfig;
 
-type VitePluginOptions = {
+export type PluginOptions = {
   /**
    * Provide the path to your Next.js project directory
    * @default process.cwd()
    */
   dir?: string;
+  /**
+   * Control which image files are handled by the next-image plugin.
+   * @see https://github.com/storybookjs/vite-plugin-storybook-nextjs/blob/main/README.md#faq-includingexcluding-images
+   */
+  image?: NextImagePluginOptions;
 };
 
 function VitePlugin({
   dir = process.cwd(),
-}: VitePluginOptions = {}): (Plugin | Promise<Plugin>)[] {
+  image,
+}: PluginOptions = {}): (Plugin | Promise<Plugin>)[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
+  const nodeEnv = process.env.NODE_ENV;
+  const phase =
+    nodeEnv === "development"
+      ? PHASE_DEVELOPMENT_SERVER
+      : nodeEnv === "test"
+        ? PHASE_TEST
+        : PHASE_PRODUCTION_BUILD;
+
+  loadConfig(phase, resolvedDir).then((nextConfig) => {
+    nextConfigResolver.resolve(nextConfig);
+  });
+
   return [
-    tsconfigPaths({ root: resolvedDir }),
+    nextConfigResolver.promise.then(async (nextConfig) => {
+      const loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
+      loadedJSConfig.jsConfigPath;
+
+      const { enforce, ...tsconfigPathConfig } = tsconfigPaths({
+        root: resolvedDir,
+        ...(loadedJSConfig.jsConfigPath
+          ? { projects: [loadedJSConfig.jsConfigPath] }
+          : {}),
+      });
+
+      return {
+        ...tsconfigPathConfig,
+      };
+    }),
     {
       name: "vite-plugin-storybook-nextjs",
       enforce: "pre" as const,
-      async config(config, env) {
-        const phase =
-          env.mode === "development"
-            ? PHASE_DEVELOPMENT_SERVER
-            : env.mode === "test"
-              ? PHASE_TEST
-              : PHASE_PRODUCTION_BUILD;
-
-        nextConfigResolver.resolve(await loadConfig(phase, resolvedDir));
+      async config(config) {
+        const isNext16orNewer = getNextjsMajorVersion() >= 16;
+        const nextConfig = await nextConfigResolver.promise;
 
         const executionEnvironment = getExecutionEnvironment(config);
 
@@ -117,13 +151,19 @@ function VitePlugin({
               "next/dist/client/components/redirect-boundary",
               "next/dist/client/head-manager",
               "next/dist/client/components/is-next-router-error",
-              "next/config",
               "next/dist/shared/lib/segment",
+              "next/dist/shared/lib/app-router-context.shared-runtime.js",
+              "next/dist/shared/lib/head-manager-context.shared-runtime.js",
+              "next/dist/shared/lib/hooks-client-context.shared-runtime.js",
+              "next/dist/shared/lib/router-context.shared-runtime.js",
+              "next/dist/client/components/redirect-boundary.js",
+              "next/dist/client/head-manager.js",
+              "next/dist/client/components/is-next-router-error.js",
+              "next/dist/shared/lib/segment.js",
               "styled-jsx",
               "styled-jsx/style",
               "sb-original/image-context",
               "sb-original/default-loader",
-              "@mdx-js/react",
               "next/dist/compiled/react",
               "next/image",
               "next/legacy/image",
@@ -132,6 +172,10 @@ function VitePlugin({
               // Refer to this pnpm issue for more details:
               // https://github.com/vitejs/vite/issues/16293
               "next > styled-jsx/style",
+              ...(nextConfig.compiler?.emotion
+                ? ["@emotion/react/jsx-dev-runtime"]
+                : []),
+              ...(isNext16orNewer ? [] : ["next/config"]),
             ],
           },
           test: {
@@ -181,7 +225,7 @@ function VitePlugin({
     vitePluginNextFont(),
     vitePluginNextSwc(dir, nextConfigResolver),
     vitePluginNextEnv(dir, nextConfigResolver),
-    vitePluginNextImage(nextConfigResolver),
+    vitePluginNextImage(nextConfigResolver, image),
     vitePluginNextMocks(),
     vitePluginNextDynamic(),
   ];

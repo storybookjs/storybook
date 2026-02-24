@@ -1,6 +1,6 @@
 import fs from "node:fs";
-import path from "node:path";
 import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
+import path from "pathe";
 import { describe, expect, it, vi } from "vitest";
 import {
   findNextDirectories,
@@ -11,7 +11,7 @@ import {
 
 // Mocking the necessary modules and functions
 vi.mock("node:fs");
-vi.mock("node:path");
+vi.mock("pathe");
 vi.mock("next/dist/build/output/log.js");
 vi.mock("@next/env");
 vi.mock("next/dist/build/swc/index.js", () => ({

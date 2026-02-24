@@ -114,6 +114,9 @@ export const useServerInsertedHTML: Mock<
 export const notFound: Mock<() => never> = fn(actual.notFound).mockName(
   "next/navigation::notFound",
 );
+export const unstable_rethrow: Mock<(error: unknown) => void> = fn(
+  actual.unstable_rethrow,
+).mockName("next/navigation::unstable_rethrow");
 
 // Params, not exported by Next.js, is manually declared to avoid inference issues.
 interface Params {

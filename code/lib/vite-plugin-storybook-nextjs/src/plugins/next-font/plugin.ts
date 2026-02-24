@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import path from "node:path";
+import path from "pathe";
 import type { Plugin } from "vite";
 
 import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from "./google/get-font-face-declarations";
@@ -41,7 +41,7 @@ export function vitePluginNextFont() {
     async config(config, env) {
       devMode = env.mode !== "production";
 
-      return config;
+      return {};
     },
     async resolveId(source, importer) {
       const cwd = process.cwd();

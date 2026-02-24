@@ -8239,7 +8239,7 @@ __metadata:
     typescript: "npm:^5.9.3"
     vite: "npm:^7.0.4"
   peerDependencies:
-    preact: ">=10"
+    preact: ">=10 || >= 11.0.0-0"
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -8253,7 +8253,7 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
   peerDependencies:
-    preact: ^8.0.0||^10.0.0
+    preact: ^8.0.0 || ^10.0.0 || >= 11.0.0-0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft

@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils';
-import type { Task, TaskKey } from '../task';
+import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task';
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants';
 
 const logger = console;
@@ -19,18 +19,38 @@ const pathExists = async (path: string) => {
   }
 };
 
+const sanitizeOptions = (details: TemplateDetails, options: PassedOptionValues) => {
+  if (options.link && !options.forceLink && details.template.inDevelopment) {
+    logger.log(
+      `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode... Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
+    );
+
+    options.link = false;
+  }
+  if (options.link && !options.forceLink && details.template.preferNoLink) {
+    logger.log(
+      `The ${options.template} has preferNoLink property enabled. Defaulting to --no-link mode. Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
+    );
+
+    options.link = false;
+  }
+};
+
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
-  dependsOn: ({ template, key }, { link }) => {
-    if ('inDevelopment' in template && template.inDevelopment) {
-      if (pathExists(join(SANDBOX_DIRECTORY, key))) {
+  dependsOn: (details, options) => {
+    // Must sanitize options here too to ensure we run the right prerequisite tasks.
+    sanitizeOptions(details, options);
+
+    if ('inDevelopment' in details.template && details.template.inDevelopment) {
+      if (pathExists(join(SANDBOX_DIRECTORY, details.key))) {
         return ['run-registry'];
       }
 
       return ['run-registry', 'generate'];
     }
 
-    if (link) {
+    if (options.link) {
       return ['compile'];
     }
 
@@ -57,13 +77,7 @@ export const sandbox: Task = {
     return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
   },
   async run(details, options) {
-    if (options.link && details.template.inDevelopment) {
-      logger.log(
-        `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode..`
-      );
-
-      options.link = false;
-    }
+    sanitizeOptions(details, options);
 
     if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');

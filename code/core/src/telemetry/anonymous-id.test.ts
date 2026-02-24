@@ -1,12 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { execSync } from 'child_process';
+import { executeCommandSync } from 'storybook/internal/common';
 
 import { getProjectSince, normalizeGitUrl, unhashedProjectId } from './anonymous-id';
 
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-}));
+vi.mock(import('storybook/internal/common'), async (actualModule) => {
+  const actual = await actualModule();
+
+  return {
+    ...actual,
+    executeCommandSync: vi.fn(actual.executeCommandSync),
+  };
+});
 
 describe('normalizeGitUrl', () => {
   it('trims off https://', () => {
@@ -113,24 +118,18 @@ describe('unhashedProjectId', () => {
 });
 
 describe('getProjectSince', () => {
-  it('returns a Date from git log output', () => {
-    vi.mocked(execSync).mockReturnValue(Buffer.from('2024-06-15 18:23:01 +0000\n'));
-
-    expect(getProjectSince()).toEqual(new Date('2024-06-15 18:23:01 +0000'));
-    expect(vi.mocked(execSync)).toHaveBeenCalledWith('git log --reverse --format=%cd --date=iso', {
-      timeout: 1000,
-      stdio: 'pipe',
-    });
+  it('returns the Storybook creation date from git log output', () => {
+    expect(getProjectSince()).toEqual(new Date('2015-12-11T10:54:01.000Z'));
   });
 
   it('returns undefined if git log output is empty', () => {
-    vi.mocked(execSync).mockReturnValue(Buffer.from('   \n'));
+    vi.mocked(executeCommandSync).mockReturnValue('');
 
     expect(getProjectSince()).toBeUndefined();
   });
 
   it('returns undefined if git log fails', () => {
-    vi.mocked(execSync).mockImplementation(() => {
+    vi.mocked(executeCommandSync).mockImplementation(() => {
       throw new Error('git not available');
     });
 

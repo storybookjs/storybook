@@ -28,6 +28,7 @@ describe("vitePluginNextImage resolveId", () => {
     const resolve = vi.fn();
     const importer = "/project/src/Component.tsx";
 
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
     const result = await plugin.resolveId!.call(
       createContext(resolve),
       "./images/avatar.png",
@@ -47,7 +48,7 @@ describe("vitePluginNextImage resolveId", () => {
     const plugin = vitePluginNextImage(nextConfigResolver);
     const resolvedPath = "/project/packages/assets/src/images/avatar.png";
     const resolve = vi.fn().mockResolvedValue({ id: resolvedPath });
-
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
     const result = await plugin.resolveId!.call(
       createContext(resolve),
       "@myorg/assets/images/avatar.png",
@@ -69,7 +70,7 @@ describe("vitePluginNextImage resolveId", () => {
     const resolve = vi.fn().mockResolvedValue(null);
 
     requireResolveMock.mockReturnValueOnce(resolvedPath);
-
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
     const result = await plugin.resolveId!.call(
       createContext(resolve),
       "@myorg/assets/images/avatar.png",

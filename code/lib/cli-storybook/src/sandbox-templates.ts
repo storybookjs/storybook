@@ -83,6 +83,11 @@ export type Template = {
    */
   inDevelopment?: boolean;
   /**
+   * Some sandboxes have partial or total incompatibilities when running with linked dependencies.
+   * Set this flag to use --no-link by default (but still support --link for local testing).
+   */
+  preferNoLink?: boolean;
+  /**
    * Some sandboxes might need extra modifications in the initialized Storybook, such as extend
    * main.js, for setting specific feature flags.
    */
@@ -701,6 +706,7 @@ export const baseTemplates = {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    preferNoLink: true,
     modifications: {
       // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
       useCsfFactory: true,
@@ -719,6 +725,7 @@ export const baseTemplates = {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    preferNoLink: true,
     modifications: {
       extraDependencies: ['@angular/forms@21.2.16'], // Move this to latest or 22 once ng new creates v22 projects
       useCsfFactory: true,
@@ -779,6 +786,7 @@ export const baseTemplates = {
   'preact-vite/default-js': {
     name: 'Preact Latest (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact',
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -792,6 +800,7 @@ export const baseTemplates = {
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -816,8 +825,7 @@ export const baseTemplates = {
       jq '.resolutions += {"preact": "npm:preact@beta",}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add preact@beta
       `,
-    // TODO: Remove this after publishing to next as the template is not yet usable before reaching that branch.
-    inDevelopment: true,
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -1112,6 +1120,8 @@ export const normal: TemplateKey[] = [
   'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
+  // TODO/FIXME/TEMP/DEBUG: never merge this to next.
+  'preact-vite/prerelease-ts',
 ];
 
 export const merged: TemplateKey[] = [

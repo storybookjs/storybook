@@ -1,5 +1,11 @@
 ## 3.1.12
 
+## 3.2.2
+
+### Patch Changes
+
+- [#94](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/94) [`f0bed5a`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/f0bed5a68f92b638677dce4bfe975b4f97ad5c62) Thanks [@Stanzilla](https://github.com/Stanzilla)! - Fix next-image resolution for package image imports
+
 ## 3.2.1
 
 ### Patch Changes

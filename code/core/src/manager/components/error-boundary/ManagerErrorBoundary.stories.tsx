@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { spyOn } from 'storybook/test';
+import { expect, fn, spyOn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { ManagerErrorBoundary } from './ManagerErrorBoundary';
+
+// Mocks for play assertions: set by decorator, asserted in play functions
+let consoleErrorSpy: ReturnType<typeof spyOn>;
+const sendTelemetryErrorMock = fn();
 
 // Component that throws an error immediately when rendered
 const ThrowingComponent = ({ shouldThrow = true }: { shouldThrow?: boolean }) => {
@@ -59,9 +63,26 @@ const meta = preview.meta({
   },
   decorators: [
     (Story) => {
-      // Suppress console.error in stories to prevent noisy test output
-      spyOn(console, 'error').mockImplementation(() => {});
-      return <Story />;
+      consoleErrorSpy = spyOn(console, 'error').mockImplementation(() => {});
+      sendTelemetryErrorMock.mockClear();
+      const originalSendTelemetryError = globalThis.sendTelemetryError;
+      globalThis.sendTelemetryError = sendTelemetryErrorMock;
+
+      const RestoreGlobals = ({ children }: { children: React.ReactNode }) => {
+        useEffect(
+          () => () => {
+            globalThis.sendTelemetryError = originalSendTelemetryError;
+          },
+          []
+        );
+        return <>{children}</>;
+      };
+
+      return (
+        <RestoreGlobals>
+          <Story />
+        </RestoreGlobals>
+      );
     },
   ],
 });
@@ -74,6 +95,29 @@ export const WithError = meta.story({
       <ThrowingComponent />
     </ManagerErrorBoundary>
   ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByTestId('manager-error-boundary')).toBeInTheDocument();
+    await expect(canvas.getByText('Something went wrong')).toBeInTheDocument();
+    await expect(
+      canvas.getByText('This is a test error thrown by ThrowingComponent')
+    ).toBeInTheDocument();
+
+    await expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Storybook Manager UI Error:',
+      expect.any(Error)
+    );
+    await expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Component Stack:',
+      expect.stringContaining('ThrowingComponent')
+    );
+
+    await expect(sendTelemetryErrorMock).toHaveBeenCalledTimes(1);
+    await expect(sendTelemetryErrorMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'This is a test error thrown by ThrowingComponent',
+      })
+    );
+  },
 });
 
 export const WithDeepStackTrace = meta.story({
@@ -93,6 +137,13 @@ export const WithoutError = meta.story({
       </div>
     </ManagerErrorBoundary>
   ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Everything is fine!')).toBeInTheDocument();
+    await expect(
+      canvas.getByText('This content should render normally when there is no error.')
+    ).toBeInTheDocument();
+    await expect(canvas.queryByTestId('manager-error-boundary')).not.toBeInTheDocument();
+  },
 });
 
 export const InteractiveError = meta.story({
@@ -119,6 +170,21 @@ export const CustomErrorMessage = meta.story({
       <ManagerErrorBoundary>
         <CustomError />
       </ManagerErrorBoundary>
+    );
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByTestId('manager-error-boundary')).toBeInTheDocument();
+    await expect(
+      canvas.getByText(
+        'Custom error: Unable to load addons configuration. Please check your manager.ts file.'
+      )
+    ).toBeInTheDocument();
+
+    await expect(sendTelemetryErrorMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message:
+          'Custom error: Unable to load addons configuration. Please check your manager.ts file.',
+      })
     );
   },
 });

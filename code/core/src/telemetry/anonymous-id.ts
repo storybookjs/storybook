@@ -32,6 +32,8 @@ export function unhashedProjectId(remoteUrl: string, projectRootPath: string) {
 }
 
 let anonymousProjectId: string;
+let getProjectSinceResult: Date | undefined;
+
 export const getAnonymousProjectId = () => {
   if (anonymousProjectId) {
     return anonymousProjectId;
@@ -56,6 +58,10 @@ export const getAnonymousProjectId = () => {
 
 export const getProjectSince = () => {
   try {
+    if (getProjectSinceResult) {
+      return getProjectSinceResult;
+    }
+
     const dateBuffer = executeCommandSync({
       command: 'git',
       args: ['log', '--reverse', '--format=%cd', '--date=iso'],
@@ -70,6 +76,7 @@ export const getProjectSince = () => {
       return undefined;
     }
 
+    getProjectSinceResult = date;
     return date;
   } catch (_) {
     //

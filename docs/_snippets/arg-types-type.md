@@ -171,6 +171,7 @@ const meta = preview.meta({
 
 ```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Example } from './Example';
 
 const meta = preview.meta({

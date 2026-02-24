@@ -27,7 +27,7 @@ export default meta;
 
   import MyComponent from './MyComponent.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     /* 👇 The title prop is optional.
      * See https://storybook.js.org/docs/configure/#configure-story-loading
      * to learn how to generate automatic titles
@@ -45,7 +45,7 @@ export default meta;
 ```
 
 ```js filename="MyComponent.story.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { MyComponent } from './MyComponent';
+import MyComponent from './MyComponent.svelte';
 
 export default {
   /* 👇 The title prop is optional.
@@ -88,7 +88,7 @@ export default {
 
   import MyComponent from './MyComponent.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     /* 👇 The title prop is optional.
      * See https://storybook.js.org/docs/configure/#configure-story-loading
      * to learn how to generate automatic titles

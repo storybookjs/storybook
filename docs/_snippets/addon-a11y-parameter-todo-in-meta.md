@@ -59,14 +59,14 @@ export default {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="DataTable.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Button from './Button.svelte';
+  import DataTable from './DataTable.svelte';
 
   const { Story } = defineMeta({
-    component: Button,
+    component: DataTable,
     parameters: {
       // 👇 This component's accessibility tests will not fail
       //    Instead, they display warnings in the Storybook UI
@@ -76,31 +76,31 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="DataTable.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta } from '@storybook/your-framework';
 
-import { Button } from './Button.svelte';
+import DataTable from './DataTable.svelte';
 
 const meta = {
-  component: Button,
+  component: DataTable,
   parameters: {
     // 👇 This component's accessibility tests will not fail
     //    Instead, they display warnings in the Storybook UI
     a11y: { test: 'todo' },
   },
-} satisfies Meta<typeof Button>;
+} satisfies Meta<typeof DataTable>;
 export default meta;
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="DataTable.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Button from './Button.svelte';
+  import DataTable from './DataTable.svelte';
 
   const { Story } = defineMeta({
-    component: Button,
+    component: DataTable,
     parameters: {
       // 👇 This component's accessibility tests will not fail
       //    Instead, they display warnings in the Storybook UI
@@ -110,11 +110,11 @@ export default meta;
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { Button } from './Button.svelte';
+```js filename="DataTable.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+import DataTable from './DataTable.svelte';
 
 export default {
-  component: Button,
+  component: DataTable,
   parameters: {
     // 👇 This component's accessibility tests will not fail
     //    Instead, they display warnings in the Storybook UI
@@ -193,6 +193,7 @@ const meta = preview.meta({
 
 ```js filename="DataTable.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { DataTable } from './DataTable';
 
 const meta = preview.meta({

@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 
 import { useTheme } from 'storybook/theming';
 
+import { useMediaQuery } from '../../hooks/useMedia';
+
 function findActiveLandmarkElement() {
   let currentElement: Element | null = document.activeElement;
   let landmarkElement: HTMLElement | null = null;
@@ -23,6 +25,7 @@ function findActiveLandmarkElement() {
 // which region of the UI they landed into.
 export function useLandmarkIndicator() {
   const theme = useTheme();
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const currentAnimationRef = useRef<Animation | null>(null);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -41,23 +44,25 @@ export function useLandmarkIndicator() {
         currentAnimationRef.current = null;
       }
 
-      const animation = landmarkElement.animate(
-        [{ border: `2px solid ${theme.color.primary}` }, { border: `2px solid transparent` }],
-        {
-          duration: 1500,
-          pseudoElement: '::after',
-        }
-      );
-      currentAnimationRef.current = animation;
+      if (!reducedMotion) {
+        const animation = landmarkElement.animate(
+          [{ border: `2px solid ${theme.color.primary}` }, { border: `2px solid transparent` }],
+          {
+            duration: 1500,
+            pseudoElement: '::after',
+          }
+        );
+        currentAnimationRef.current = animation;
 
-      animation.onfinish = () => {
-        currentAnimationRef.current = null;
-      };
+        animation.onfinish = () => {
+          currentAnimationRef.current = null;
+        };
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => {
       document.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
-  }, [theme.color.primary]);
+  }, [reducedMotion, theme.color.primary]);
 }

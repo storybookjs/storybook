@@ -34,3 +34,5 @@ export const resolvedReact = async (existing: any) => {
     return existing;
   }
 };
+
+export const optimizeViteDeps = ['preact/compat/jsx-runtime', '@storybook/react-dom-shim'];

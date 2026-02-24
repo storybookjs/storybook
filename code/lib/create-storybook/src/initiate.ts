@@ -98,7 +98,6 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     addons: extraAddons,
     configDir,
-    dependencyInstallationResult,
     options,
   });
 
@@ -178,15 +177,16 @@ async function runStorybookDev(result: {
 
     const parts = storybookCommand.split(' ');
 
-    if (packageManager.type === 'npm') {
+    // Angular CLI throws "Unknown argument: silent"
+    if (packageManager.type === 'npm' && projectType !== ProjectType.ANGULAR) {
       parts.push('--silent');
     }
 
+    // in the case of Angular, we are calling `ng run` which doesn't allow passing flags to the command
     const supportSbFlags = projectType !== ProjectType.ANGULAR;
 
     if (supportSbFlags) {
       // npm needs extra -- to pass flags to the command
-      // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
       const doesNeedExtraDash =
         packageManager.type === PackageManagerName.NPM ||
         packageManager.type === PackageManagerName.BUN;
@@ -201,13 +201,13 @@ async function runStorybookDev(result: {
 
       if (useAlternativePort) {
         parts.push(`-p`, `${availablePort}`);
-
-        if (supportsOnboarding && shouldOnboard) {
-          parts.push('--initial-path=/onboarding');
-        }
-
-        parts.push('--quiet');
       }
+
+      if (supportsOnboarding && shouldOnboard) {
+        parts.push('--initial-path=/onboarding');
+      }
+
+      parts.push('--quiet');
     }
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets

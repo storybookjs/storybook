@@ -105,7 +105,7 @@ export async function initFileSearchChannel(
         if (!coreOptions.disableTelemetry) {
           telemetry('create-new-story-file-search', {
             success: false,
-            error: `An error occured while searching for components: ${e}`,
+            error: `An error occurred while searching for components: ${e}`,
           });
         }
       }

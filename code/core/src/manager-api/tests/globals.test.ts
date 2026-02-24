@@ -71,7 +71,7 @@ describe('globals API', () => {
     });
   });
 
-  it('emits UPDATE_GLOBALS if retains a globals value different to what recieves on SET_GLOBALS', () => {
+  it('emits UPDATE_GLOBALS if retains a globals value different to what receives on SET_GLOBALS', () => {
     const channel = new EventEmitter();
     const listener = vi.fn();
     channel.on(UPDATE_GLOBALS, listener);

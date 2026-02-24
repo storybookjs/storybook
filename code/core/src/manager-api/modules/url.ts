@@ -247,13 +247,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         throw new Error(`Invalid refId: ${refId}`);
       }
 
-      const originAddress = global.window.location.origin + location.pathname;
+      const pathname = location.pathname || '/';
+      const originAddress = global.window.location.origin + pathname;
       const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
-        base === 'origin' ? originAddress : base === 'network' ? networkAddress : location.pathname;
+        base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
-        : global.PREVIEW_URL || `${managerBase}iframe.html`;
+        : global.PREVIEW_URL || `${managerBase.replace(/\/[^/]*$/, '/')}iframe.html`;
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
       const { args = '', globals = '', ...otherParams } = queryParams;

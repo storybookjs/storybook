@@ -469,5 +469,21 @@ describe('getStoryHrefs', () => {
     const { managerHref, previewHref } = api.getStoryHrefs('test--story');
     expect(managerHref).toEqual('/?path=/story/test--story');
     expect(previewHref).toEqual('https://custom.preview.url/?id=test--story&viewMode=story');
+    delete global.PREVIEW_URL;
+  });
+
+  it('correctly links from /index.html', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/index.html', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/index.html?path=/story/test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
   });
 });

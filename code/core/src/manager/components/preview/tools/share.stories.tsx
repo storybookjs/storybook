@@ -5,7 +5,7 @@ import { global } from '@storybook/global';
 import type { StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, screen, waitFor } from 'storybook/test';
+import { expect, fn, screen, waitFor } from 'storybook/test';
 
 import { shareTool } from './share';
 
@@ -15,6 +15,7 @@ const managerContext = {
     refId: undefined,
   },
   api: {
+    emit: fn().mockName('api::emit'),
     getShortcutKeys: () => ({
       copyStoryLink: ['alt', 'shift', 'l'],
       openInIsolation: ['alt', 'shift', 'i'],

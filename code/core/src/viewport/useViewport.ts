@@ -78,9 +78,9 @@ const parseGlobals = (
     };
   }
 
-  const global = normalizeGlobal(globals?.[PARAM_KEY], false);
-  const userGlobal = normalizeGlobal(userGlobals?.[PARAM_KEY], false);
-  const storyGlobal = normalizeGlobal(storyGlobals?.[PARAM_KEY], false);
+  const global = normalizeGlobal(globals?.[PARAM_KEY]);
+  const userGlobal = normalizeGlobal(userGlobals?.[PARAM_KEY]);
+  const storyGlobal = normalizeGlobal(storyGlobals?.[PARAM_KEY]);
   const storyHasViewport = PARAM_KEY in storyGlobals;
 
   // Story-level viewport globals override user globals for the current story.

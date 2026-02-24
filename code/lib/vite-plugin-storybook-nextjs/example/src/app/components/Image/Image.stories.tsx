@@ -1,6 +1,7 @@
 import Image from "next/image";
 import React, { useState } from "react";
 
+import AliasedAccessibility from "@/stories/assets/accessibility.svg";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import Accessibility from "./assets/accessibility.svg";
 import AvifImage from "./assets/avif-test-image.avif";
@@ -113,6 +114,13 @@ export const WithRef = {
         <p>Alt attribute of image: {ref?.alt}</p>
       </div>
     );
+  },
+} satisfies Story;
+
+export const AliasedImport = {
+  args: {
+    src: AliasedAccessibility,
+    alt: "Aliased Accessibility",
   },
 } satisfies Story;
 

@@ -124,12 +124,31 @@ export function vitePluginNextImage(
         !excludeImporterPattern.test(importer ?? "") &&
         !importer?.startsWith(virtualImagePrefix)
       ) {
-        const isAbsolute = path.isAbsolute(id);
-        const imagePath = importer
-          ? isAbsolute
-            ? source
-            : path.join(path.dirname(importer), source)
-          : source;
+        const isAbsolute = path.isAbsolute(source);
+        const importerPath = importer?.split("?")[0];
+        let imagePath = source;
+
+        if (importerPath && !isAbsolute) {
+          if (source.startsWith(".")) {
+            imagePath = path.join(path.dirname(importerPath), source);
+          } else {
+            const resolvedByVite = await this.resolve(source, importer, {
+              skipSelf: true,
+            });
+
+            if (resolvedByVite?.id) {
+              imagePath = resolvedByVite.id.split("?")[0];
+            } else {
+              try {
+                imagePath = require.resolve(source, {
+                  paths: [path.dirname(importerPath)],
+                });
+              } catch {
+                imagePath = source;
+              }
+            }
+          }
+        }
 
         const pathForFilter = imagePath.replace(postfixRE, "");
 

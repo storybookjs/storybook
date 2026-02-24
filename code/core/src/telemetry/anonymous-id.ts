@@ -53,3 +53,24 @@ export const getAnonymousProjectId = () => {
 
   return anonymousProjectId;
 };
+
+export const getProjectSince = () => {
+  try {
+    const dateBuffer = execSync(`git log --reverse --format=%cd --date=iso`, {
+      timeout: 1000,
+      stdio: `pipe`,
+    });
+
+    const date = new Date(String(dateBuffer).trim());
+
+    if (Number.isNaN(date.getTime())) {
+      return undefined;
+    }
+
+    return date;
+  } catch (_) {
+    //
+  }
+
+  return undefined;
+};

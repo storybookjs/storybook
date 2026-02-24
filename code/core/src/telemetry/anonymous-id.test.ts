@@ -1,6 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { normalizeGitUrl, unhashedProjectId } from './anonymous-id';
+import { execSync } from 'child_process';
+
+import { getProjectSince, normalizeGitUrl, unhashedProjectId } from './anonymous-id';
+
+vi.mock('child_process', () => ({
+  execSync: vi.fn(),
+}));
 
 describe('normalizeGitUrl', () => {
   it('trims off https://', () => {
@@ -103,5 +109,31 @@ describe('unhashedProjectId', () => {
     expect(
       unhashedProjectId('https://github.com/storybookjs/storybook.git\n', 'path\\to\\storybook')
     ).toBe('github.com/storybookjs/storybook.gitpath/to/storybook');
+  });
+});
+
+describe('getProjectSince', () => {
+  it('returns a Date from git log output', () => {
+    vi.mocked(execSync).mockReturnValue(Buffer.from('2024-06-15 18:23:01 +0000\n'));
+
+    expect(getProjectSince()).toEqual(new Date('2024-06-15 18:23:01 +0000'));
+    expect(vi.mocked(execSync)).toHaveBeenCalledWith('git log --reverse --format=%cd --date=iso', {
+      timeout: 1000,
+      stdio: 'pipe',
+    });
+  });
+
+  it('returns undefined if git log output is empty', () => {
+    vi.mocked(execSync).mockReturnValue(Buffer.from('   \n'));
+
+    expect(getProjectSince()).toBeUndefined();
+  });
+
+  it('returns undefined if git log fails', () => {
+    vi.mocked(execSync).mockImplementation(() => {
+      throw new Error('git not available');
+    });
+
+    expect(getProjectSince()).toBeUndefined();
   });
 });

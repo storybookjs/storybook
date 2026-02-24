@@ -11,16 +11,8 @@
  * ```
  */
 export function escapeForTemplate(str: string): string {
-  return str.replace(/[`$'"\\\n\r]/g, (char) => {
-    const codes: Record<string, string> = {
-      '`': '\\`',
-      "'": "\\'",
-      '"': '\\"',
-      $: '\\$',
-      '\\': '\\\\',
-      '\n': '\\n',
-      '\r': '\\r',
-    };
-    return codes[char] || char;
-  });
+  return str
+    .replace(/\\/g, '\\\\') // Escape backslashes first
+    .replace(/(['"$`])/g, '\\$&') // Then escape quotes, dollar signs, and backticks
+    .replace(/[\n\r]/g, '\\$&'); // Then newlines
 }

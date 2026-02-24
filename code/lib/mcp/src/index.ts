@@ -11,7 +11,7 @@ import type { StorybookContext } from './types.ts';
 export { addListAllDocumentationTool, LIST_TOOL_NAME } from './tools/list-all-documentation.ts';
 export { addGetDocumentationTool, GET_TOOL_NAME } from './tools/get-documentation.ts';
 export {
-	addGetStoryDocumentationTool as addGetComponentStoryDocumentationTool,
+	addGetStoryDocumentationTool,
 	GET_STORY_TOOL_NAME,
 } from './tools/get-documentation-for-story.ts';
 

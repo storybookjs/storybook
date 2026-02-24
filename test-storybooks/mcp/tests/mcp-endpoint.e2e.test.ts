@@ -100,7 +100,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.result).toHaveProperty('tools');
 			// Dev, docs, and test tools should be present
-			expect(response.result.tools).toHaveLength(5);
+			expect(response.result.tools).toHaveLength(6);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
@@ -378,6 +378,27 @@ describe('MCP Endpoint E2E Tests', () => {
 				    },
 				    "name": "get-documentation",
 				    "title": "Get Documentation",
+				  },
+				  {
+				    "description": "Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.",
+				    "inputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "componentId": {
+				          "type": "string",
+				        },
+				        "storyName": {
+				          "type": "string",
+				        },
+				      },
+				      "required": [
+				        "componentId",
+				        "storyName",
+				      ],
+				      "type": "object",
+				    },
+				    "name": "get-documentation-for-story",
+				    "title": "Get Documentation for Story",
 				  },
 				]
 			`);
@@ -750,6 +771,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				[
 				  "list-all-documentation",
 				  "get-documentation",
+				  "get-documentation-for-story",
 				]
 			`);
 		});

@@ -1,33 +1,33 @@
 import { describe, expect, it } from 'vitest';
 
-import { safeJsString } from './safeString';
+import { escapeForTemplate } from './safeString';
 
 describe('safeString', () => {
-  it('should escape single quotes characters', () => {
-    expect(
-      safeJsString("./button.tsx'alert({ console.log('malicious code') })")
-    ).toMatchInlineSnapshot(`"./button.tsx\\'alert({ console.log(\\'malicious code\\') })"`);
-  });
+  describe('escapeForTemplate', () => {
+    it('should escape backticks in template strings', () => {
+      expect(escapeForTemplate('button`s.tsx')).toBe('button\\`s.tsx');
+    });
 
-  it('should escape double quotes characters', () => {
-    expect(
-      safeJsString('./button.tsx"alert({ console.log("malicious code") })')
-    ).toMatchInlineSnapshot(`"./button.tsx\\"alert({ console.log(\\"malicious code\\") })"`);
-  });
+    it('should escape dollar signs for template expressions', () => {
+      expect(escapeForTemplate('button$file.tsx')).toBe('button\\$file.tsx');
+    });
 
-  it('should escape backslashes characters', () => {
-    expect(safeJsString('const file = "\\nexports.ts"')).toMatchInlineSnapshot(
-      `"const file = \\"\\\\nexports.ts\\""`
-    );
-  });
+    it('should escape backslashes', () => {
+      expect(escapeForTemplate('button\\file.tsx')).toBe('button\\\\file.tsx');
+    });
 
-  it('should escape new line characters', () => {
-    expect(safeJsString('const file = "\nexports.ts"')).toMatchInlineSnapshot(
-      `"const file = \\"\\nexports.ts\\""`
-    );
-  });
+    it('should escape quotes or newlines', () => {
+      expect(escapeForTemplate("button's.tsx")).toBe("button\\'s.tsx");
+      expect(escapeForTemplate('button"s.tsx')).toBe('button\\"s.tsx');
+      expect(escapeForTemplate('button\ns.tsx')).toBe('button\\ns.tsx');
+    });
 
-  it('should skip escaping if not needed', () => {
-    expect(safeJsString('./button.tsx')).toMatchInlineSnapshot(`"./button.tsx"`);
+    it('should handle multiple special characters', () => {
+      expect(escapeForTemplate('button`${file}\\path.tsx')).toBe('button\\`\\${file}\\\\path.tsx');
+    });
+
+    it('should preserve normal file paths', () => {
+      expect(escapeForTemplate('./src/components/Button.tsx')).toBe('./src/components/Button.tsx');
+    });
   });
 });

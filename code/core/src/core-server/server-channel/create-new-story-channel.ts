@@ -14,7 +14,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import { generateStoryFile } from '../utils/generate-story';
-import { safeJsString } from '../utils/safeString';
 
 export function initCreateNewStoryChannel(
   channel: Channel,
@@ -25,22 +24,7 @@ export function initCreateNewStoryChannel(
   channel.on(
     CREATE_NEW_STORYFILE_REQUEST,
     async (data: RequestData<CreateNewStoryRequestPayload>) => {
-      const {
-        componentFilePath,
-        componentExportName,
-        componentExportCount,
-        componentIsDefaultExport,
-      } = data.payload;
-
-      const result = await generateStoryFile(
-        {
-          componentFilePath: safeJsString(componentFilePath),
-          componentExportName: safeJsString(componentExportName),
-          componentExportCount,
-          componentIsDefaultExport,
-        },
-        options
-      );
+      const result = await generateStoryFile(data.payload, options);
 
       if (result.success) {
         channel.emit(CREATE_NEW_STORYFILE_RESPONSE, {

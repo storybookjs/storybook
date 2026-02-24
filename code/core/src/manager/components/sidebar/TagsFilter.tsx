@@ -212,6 +212,7 @@ export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
 
   return (
     <PopoverProvider
+      ariaLabel="Tag filters"
       placement="bottom"
       onVisibleChange={setExpanded}
       offset={8}
@@ -236,7 +237,6 @@ export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
         key="tags"
         ariaLabel="Tag filters"
         ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
-        aria-haspopup="dialog"
         variant="ghost"
         padding="small"
         isHighlighted={tagsActive}

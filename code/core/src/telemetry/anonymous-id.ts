@@ -1,8 +1,7 @@
 import { relative } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { executeCommandSync, getProjectRoot } from 'storybook/internal/common';
 
-import { execSync } from 'child_process';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
@@ -33,6 +32,8 @@ export function unhashedProjectId(remoteUrl: string, projectRootPath: string) {
 }
 
 let anonymousProjectId: string;
+let getProjectSinceResult: Date | undefined;
+
 export const getAnonymousProjectId = () => {
   if (anonymousProjectId) {
     return anonymousProjectId;
@@ -41,15 +42,45 @@ export const getAnonymousProjectId = () => {
   try {
     const projectRootPath = relative(getProjectRoot(), process.cwd());
 
-    const originBuffer = execSync(`git config --local --get remote.origin.url`, {
+    const result = executeCommandSync({
+      command: 'git',
+      args: ['config', '--get', 'remote.origin.url'],
       timeout: 1000,
-      stdio: `pipe`,
     });
 
-    anonymousProjectId = oneWayHash(unhashedProjectId(String(originBuffer), projectRootPath));
+    anonymousProjectId = oneWayHash(unhashedProjectId(result, projectRootPath));
   } catch (_) {
     //
   }
 
   return anonymousProjectId;
+};
+
+export const getProjectSince = () => {
+  try {
+    if (getProjectSinceResult) {
+      return getProjectSinceResult;
+    }
+
+    const dateBuffer = executeCommandSync({
+      command: 'git',
+      args: ['log', '--reverse', '--format=%cd', '--date=iso'],
+      timeout: 1000,
+    });
+
+    const firstLine = String(dateBuffer).trim().split('\n')[0];
+
+    const date = new Date(firstLine);
+
+    if (Number.isNaN(date.getTime())) {
+      return undefined;
+    }
+
+    getProjectSinceResult = date;
+    return date;
+  } catch (_) {
+    //
+  }
+
+  return undefined;
 };

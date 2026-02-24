@@ -433,7 +433,7 @@ describe('ghostStoriesChannel', () => {
           stats: {
             globMatchCount: 0,
             candidateAnalysisDuration: 0,
-            totalRunDuration: 0,
+            totalRunDuration: expect.any(Number),
             analyzedCount: 0,
             avgComplexity: 0,
             candidateCount: 0,

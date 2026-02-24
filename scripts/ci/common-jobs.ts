@@ -239,7 +239,7 @@ export const testsUnit_linux = defineJob(
   'Tests (linux)',
   (workflowName) => ({
     executor: {
-      name: 'sb_node_22_classic',
+      name: 'sb_playwright',
       class: 'large',
     },
     steps: [

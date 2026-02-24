@@ -1,21 +1,22 @@
-```ts renderer="common" language="ts"
-export interface Builder<Config, Stats> {
+```ts filename="core-common.ts" renderer="common" language="ts"
+export interface Builder<Config, BuilderStats extends Stats = Stats> {
+  getConfig: (options: Options) => Promise<Config>;
   start: (args: {
     options: Options;
     startTime: ReturnType<typeof process.hrtime>;
-    router: Router;
-    server: Server;
+    router: ServerApp;
+    server: HttpServer;
+    channel: ServerChannel;
   }) => Promise<void | {
-    stats?: Stats;
+    stats?: BuilderStats;
     totalTime: ReturnType<typeof process.hrtime>;
     bail: (e?: Error) => Promise<void>;
   }>;
   build: (arg: {
     options: Options;
     startTime: ReturnType<typeof process.hrtime>;
-  }) => Promise<void | Stats>;
+  }) => Promise<void | BuilderStats>;
   bail: (e?: Error) => Promise<void>;
-  getConfig: (options: Options) => Promise<Config>;
   corePresets?: string[];
   overridePresets?: string[];
 }

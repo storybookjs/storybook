@@ -26,6 +26,7 @@ import {
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
+import { escapeForTemplate } from './safeString';
 
 export async function getNewStoryFile(
   {
@@ -41,7 +42,7 @@ export async function getNewStoryFile(
 
   const base = basename(componentFilePath);
   const extension = extname(componentFilePath);
-  const basenameWithoutExtension = base.replace(extension, '');
+  const basenameWithoutExtension = escapeForTemplate(base.replace(extension, ''));
   const dir = dirname(componentFilePath);
 
   const { storyFileName, isTypescript, storyFileExtension } = getStoryMetadata(componentFilePath);
@@ -98,7 +99,9 @@ export async function getNewStoryFile(
         const storyFilePath = join(getProjectRoot(), dir);
         const relPath = relative(storyFilePath, previewConfigPath);
         const pathWithoutExt = relPath.replace(/\.(ts|js|mts|cts|tsx|jsx)$/, '');
-        previewImportPath = pathWithoutExt.startsWith('.') ? pathWithoutExt : `./${pathWithoutExt}`;
+        previewImportPath = escapeForTemplate(
+          pathWithoutExt.startsWith('.') ? pathWithoutExt : `./${pathWithoutExt}`
+        );
       }
     }
 

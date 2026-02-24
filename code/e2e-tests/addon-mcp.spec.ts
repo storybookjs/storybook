@@ -134,10 +134,6 @@ test.describe('addon-mcp', () => {
       test('should show both toolsets as enabled', async ({ page }) => {
         await page.goto(MCP_ENDPOINT);
 
-        // Both toolsets should show as enabled
-        const enabledStatuses = page.locator('.toolset-status.enabled');
-        await expect(enabledStatuses).toHaveCount(2);
-
         // Check that dev toolset is listed with its tools
         const devToolset = page.locator('.toolset', { has: page.locator('text=dev') });
         await expect(devToolset).toBeVisible();
@@ -147,6 +143,18 @@ test.describe('addon-mcp', () => {
         const docsToolset = page.locator('.toolset', { has: page.locator('text=docs') });
         await expect(docsToolset).toBeVisible();
         await expect(docsToolset.locator('.toolset-status')).toHaveText('enabled');
+
+        // Check that test toolset is listed with its tools
+        const testToolset = page.locator('.toolset', { has: page.locator('text=test') });
+        await expect(testToolset).toBeVisible();
+        await expect(testToolset.locator('.toolset-status').first()).toHaveText('enabled');
+
+        // Check that accessibility tool is enabled
+        const accessibilityTool = testToolset.locator(
+          '.toolset-tools li:has-text("accessibility")'
+        );
+        await expect(accessibilityTool).toBeVisible();
+        await expect(accessibilityTool.locator('.toolset-status')).toHaveText('+ accessibility');
       });
     });
 

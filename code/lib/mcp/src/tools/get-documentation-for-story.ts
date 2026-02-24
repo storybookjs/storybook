@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { StorybookContext } from '../types.ts';
+import { StorybookIdField } from '../types.ts';
 import { errorToMCPContent, getManifests } from '../utils/get-manifest.ts';
 import { formatStoryDocumentation } from '../utils/manifest-formatter/markdown.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
@@ -10,15 +11,6 @@ export const GET_STORY_TOOL_NAME = 'get-documentation-for-story';
 const BaseInput = {
 	componentId: v.string(),
 	storyName: v.string(),
-};
-
-const StorybookIdField = {
-	storybookId: v.pipe(
-		v.string(),
-		v.description(
-			'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.',
-		),
-	),
 };
 
 export async function addGetStoryDocumentationTool(

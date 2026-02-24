@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { ComponentManifest, Doc, StorybookContext } from '../types.ts';
+import { StorybookIdField } from '../types.ts';
 import { getManifests, errorToMCPContent } from '../utils/get-manifest.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 import {
@@ -14,15 +15,6 @@ export const GET_TOOL_NAME = 'get-documentation';
 
 const BaseInput = {
 	id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
-};
-
-const StorybookIdField = {
-	storybookId: v.pipe(
-		v.string(),
-		v.description(
-			'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.',
-		),
-	),
 };
 
 export async function addGetDocumentationTool(

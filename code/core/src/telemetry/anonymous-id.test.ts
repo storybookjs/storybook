@@ -1,8 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { executeCommandSync } from 'storybook/internal/common';
 
-import { getProjectSince, normalizeGitUrl, unhashedProjectId } from './anonymous-id';
+import {
+  getAnonymousProjectId,
+  getProjectSince,
+  normalizeGitUrl,
+  unhashedProjectId,
+} from './anonymous-id';
 
 vi.mock(import('storybook/internal/common'), async (actualModule) => {
   const actual = await actualModule();
@@ -11,6 +16,10 @@ vi.mock(import('storybook/internal/common'), async (actualModule) => {
     ...actual,
     executeCommandSync: vi.fn(actual.executeCommandSync),
   };
+});
+
+beforeEach(() => {
+  vi.mocked(executeCommandSync).mockReset();
 });
 
 describe('normalizeGitUrl', () => {
@@ -134,5 +143,30 @@ describe('getProjectSince', () => {
     });
 
     expect(getProjectSince()).toBeUndefined();
+  });
+});
+
+describe('getAnonymousProjectId', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it('returns hashed project id for Storybook repo when git command succeeds', async () => {
+    const result = getAnonymousProjectId();
+
+    expect(result).toMatch('061e4ee22a1f7c079849d97234b3be94d016fb1f24ba11878c41f8b48c0213bf');
+  });
+
+  it('returns undefined when git command fails', async () => {
+    const { getAnonymousProjectId: getAnonId } = await import('./anonymous-id');
+
+    vi.mocked(executeCommandSync).mockImplementation(() => {
+      throw new Error('git not available');
+    });
+
+    const result = getAnonId();
+
+    expect(result).toBeUndefined();
   });
 });

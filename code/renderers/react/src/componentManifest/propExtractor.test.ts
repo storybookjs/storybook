@@ -625,6 +625,39 @@ describe('propExtractor', () => {
       // Inline type literal — declarations should include TypeLiteral
       expect(props.label.declarations).toBeDefined();
     });
+
+    it('resolves parent through intersection type literals (Primer pattern)', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        type BaseProps = { loading?: boolean }
+        type ButtonProps = { variant?: string } & BaseProps;
+        export const Button = (props: ButtonProps) => <button />;
+      `);
+
+      const { props } = docs[0];
+      // variant is in ButtonProps' type literal, loading is in BaseProps' type literal
+      // Both should resolve parent through the intersection to the enclosing type alias
+      expect(props.variant.parent?.name).toBe('ButtonProps');
+      expect(props.loading.parent?.name).toBe('BaseProps');
+    });
+
+    it('resolves parent for forwardRef with as-cast (PolymorphicForwardRefComponent pattern)', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        type BaseProps = { loading?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>;
+        type ButtonProps = { variant?: string } & BaseProps;
+        type PolymorphicFC<As extends React.ElementType, P> =
+          React.ForwardRefExoticComponent<P & { as?: As } & React.RefAttributes<any>>;
+        export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+          (props, ref) => <button ref={ref} />
+        ) as PolymorphicFC<'button', ButtonProps>;
+      `);
+
+      const { props } = docs[0];
+      expect(props.variant).toBeDefined();
+      expect(props.variant.parent?.name).toBe('ButtonProps');
+      expect(props.loading.parent?.name).toBe('BaseProps');
+    });
   });
 
   describe('display name', () => {
@@ -660,6 +693,300 @@ describe('propExtractor', () => {
 
       // Should use filename without extension
       expect(docs[0].displayName).toBe('Widget');
+    });
+
+    it('uses parent directory for anonymous default exports from index.ts', () => {
+      const files: Record<string, string> = {
+        [path.join(VIRTUAL_ROOT, '__virtual__/TextInput/TextInput.tsx')]: `
+          import React from 'react';
+          export default (props: { value: string }) => <input />;
+        `,
+        [path.join(VIRTUAL_ROOT, '__virtual__/TextInput/index.ts')]: `
+          export { default } from './TextInput';
+        `,
+      };
+      const program = createVirtualProgram(files);
+      const docs = extractComponentDocs(
+        ts,
+        path.join(VIRTUAL_ROOT, '__virtual__/TextInput/index.ts'),
+        program
+      );
+
+      // Should use parent directory name, not "index"
+      expect(docs[0].displayName).toBe('TextInput');
+    });
+  });
+
+  describe('defaultValue', () => {
+    it('extracts destructuring defaults from arrow function', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { size?: string; color?: string; label: string }
+        export const Button = ({ size = 'md', color = 'blue', label }: Props) => <button />;
+      `);
+
+      const { props } = docs[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.color.defaultValue).toEqual({ value: "'blue'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts boolean and numeric defaults', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { disabled?: boolean; count?: number; label: string }
+        export const Input = ({ disabled = false, count = 0, label }: Props) => <input />;
+      `);
+
+      const { props } = docs[0];
+      expect(props.disabled.defaultValue).toEqual({ value: 'false' });
+      expect(props.count.defaultValue).toEqual({ value: '0' });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts defaults from forwardRef', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { variant?: string; label: string }
+        export const Button = React.forwardRef<HTMLButtonElement, Props>(
+          ({ variant = 'primary', label }, ref) => <button ref={ref} />
+        );
+      `);
+
+      const { props } = docs[0];
+      expect(props.variant.defaultValue).toEqual({ value: "'primary'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts defaults from React.memo', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { size?: string; label: string }
+        export const Badge = React.memo(({ size = 'sm', label }: Props) => <span />);
+      `);
+
+      const { props } = docs[0];
+      expect(props.size.defaultValue).toEqual({ value: "'sm'" });
+    });
+
+    it('returns null when no destructuring is used', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { size?: string }
+        export const Button = (props: Props) => <button />;
+      `);
+
+      expect(docs[0].props.size.defaultValue).toBeNull();
+    });
+
+    it('extracts defaults from body-level destructuring', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { color?: string; rounded?: boolean; label: string }
+        export const Alert = (props: Props) => {
+          const { color = 'info', rounded = true, label } = props;
+          return <div />;
+        };
+      `);
+
+      const { props } = docs[0];
+      expect(props.color.defaultValue).toEqual({ value: "'info'" });
+      expect(props.rounded.defaultValue).toEqual({ value: 'true' });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts defaults from body-level destructuring in forwardRef', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { color?: string; size?: string; label: string }
+        export const Alert = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
+          const { color = 'info', size = 'md', label } = props;
+          return <div ref={ref} />;
+        });
+      `);
+
+      const { props } = docs[0];
+      expect(props.color.defaultValue).toEqual({ value: "'info'" });
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts defaults from body-level destructuring via helper call', () => {
+      // Pattern used by Flowbite: const { color = 'info' } = resolveProps(props, ...)
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { color?: string; rounded?: boolean }
+        function resolveProps(a: any, b: any): Props { return a; }
+        export const Alert = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
+          const { color = 'info', rounded = true } = resolveProps(props, {});
+          return <div ref={ref} />;
+        });
+      `);
+
+      const { props } = docs[0];
+      expect(props.color.defaultValue).toEqual({ value: "'info'" });
+      expect(props.rounded.defaultValue).toEqual({ value: 'true' });
+    });
+
+    it('extracts defaults through Object.assign compound component', () => {
+      // Pattern used by Primer: Object.assign(forwardRef(...), { SubComponent })
+      const docs = extract({
+        [f('stack.tsx')]: `
+          import React, { forwardRef, type ElementType } from 'react';
+
+          interface StackProps {
+            /** Stack direction */
+            direction?: 'horizontal' | 'vertical';
+            /** Alignment */
+            align?: 'stretch' | 'start' | 'center';
+          }
+
+          const StackImpl = forwardRef(
+            ({ direction = 'vertical', align = 'stretch', ...rest }: StackProps, ref: React.Ref<HTMLDivElement>) => {
+              return <div ref={ref} {...rest} />;
+            },
+          );
+
+          const StackItem = (props: { children: React.ReactNode }) => <div />;
+
+          export const Stack = Object.assign(StackImpl, { Item: StackItem });
+        `,
+      });
+
+      expect(docs).toHaveLength(1);
+      expect(docs[0].exportName).toBe('Stack');
+      expect(docs[0].props.direction.defaultValue).toEqual({ value: "'vertical'" });
+      expect(docs[0].props.align.defaultValue).toEqual({ value: "'stretch'" });
+    });
+
+    it('extracts JSDoc @default tags', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props {
+          /** @default 'md' */
+          size?: string;
+          label: string;
+        }
+        export const Button = (props: Props) => <button />;
+      `);
+
+      const { props } = docs[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('prefers destructuring default over JSDoc @default', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props {
+          /** @default 'lg' */
+          size?: string;
+        }
+        export const Button = ({ size = 'md' }: Props) => <button />;
+      `);
+
+      // Destructuring default takes precedence (runtime behavior)
+      expect(docs[0].props.size.defaultValue).toEqual({ value: "'md'" });
+    });
+
+    it('resolves identifier references to literal values', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        const DEFAULT_SIZE = 'md';
+        const DEFAULT_COUNT = 42;
+        interface Props { size?: string; count?: number; label: string }
+        export const Button = ({ size = DEFAULT_SIZE, count = DEFAULT_COUNT, label }: Props) => <button />;
+      `);
+
+      const { props } = docs[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.count.defaultValue).toEqual({ value: '42' });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('resolves sibling destructured parameter references', () => {
+      // Pattern: inputLabel = placeholderText, where placeholderText = 'Filter items'
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { placeholderText?: string; inputLabel?: string; title: string }
+        export const Panel = ({
+          placeholderText = 'Filter items',
+          inputLabel = placeholderText,
+          title,
+        }: Props) => <div />;
+      `);
+
+      const { props } = docs[0];
+      expect(props.placeholderText.defaultValue).toEqual({ value: "'Filter items'" });
+      expect(props.inputLabel.defaultValue).toEqual({ value: "'Filter items'" });
+      expect(props.title.defaultValue).toBeNull();
+    });
+
+    it('resolves enum member references', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        enum Size { Small = 'sm', Medium = 'md', Large = 'lg' }
+        interface Props { size?: string }
+        export const Button = ({ size = Size.Medium }: Props) => <button />;
+      `);
+
+      expect(docs[0].props.size.defaultValue).toEqual({ value: "'md'" });
+    });
+
+    it('extracts Component.defaultProps expression pattern', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { size?: string; color?: string; label: string }
+        export const Button = (props: Props) => <button />;
+        Button.defaultProps = { size: 'md', color: 'blue' };
+      `);
+
+      const { props } = docs[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.color.defaultValue).toEqual({ value: "'blue'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts static defaultProps from class components', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { size?: string; label: string }
+        export class Button extends React.Component<Props> {
+          static defaultProps = { size: 'md' };
+          render() { return <button />; }
+        }
+      `);
+
+      const { props } = docs[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('prefers destructuring default over defaultProps', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        interface Props { size?: string; color?: string }
+        export const Button = ({ size = 'sm' }: Props) => <button />;
+        Button.defaultProps = { size: 'md', color: 'blue' };
+      `);
+
+      const { props } = docs[0];
+      // Destructuring wins over defaultProps
+      expect(props.size.defaultValue).toEqual({ value: "'sm'" });
+      // defaultProps fills in what destructuring doesn't cover
+      expect(props.color.defaultValue).toEqual({ value: "'blue'" });
+    });
+
+    it('resolves defaultProps with identifier references', () => {
+      const docs = extractSingle(`
+        import React from 'react';
+        const DEFAULT_SIZE = 'md';
+        interface Props { size?: string }
+        export const Button = (props: Props) => <button />;
+        Button.defaultProps = { size: DEFAULT_SIZE };
+      `);
+
+      expect(docs[0].props.size.defaultValue).toEqual({ value: "'md'" });
     });
   });
 
@@ -733,6 +1060,12 @@ describe('propExtractor', () => {
 
       expect(doc.props.onClick).toBeDefined();
       expect(doc.props.onClick.required).toBe(false);
+
+      // Default values from destructuring
+      expect(doc.props.primary.defaultValue).toEqual({ value: 'false' });
+      expect(doc.props.size.defaultValue).toEqual({ value: "'medium'" });
+      expect(doc.props.backgroundColor.defaultValue).toBeNull();
+      expect(doc.props.label.defaultValue).toBeNull();
     });
   });
 
@@ -1442,6 +1775,53 @@ describe('QA: patterns RDT fails on', () => {
       expect(docs[0].props).toHaveProperty('variant');
       expect(docs[0].props).toHaveProperty('size');
       expect(docs[0].props.variant.description).toBe('Button variant style');
+    });
+
+    it('extracts destructuring defaults from forwardRef with as-cast', () => {
+      const docs = extract({
+        [f('stack.tsx')]: `
+          import React, { forwardRef, type ElementType } from 'react';
+
+          interface PolymorphicForwardRefComponent<
+            DefaultElement extends React.ElementType,
+            OwnProps = {}
+          > extends React.ForwardRefExoticComponent<
+            Omit<React.ComponentPropsWithRef<DefaultElement>, keyof OwnProps> & OwnProps & { as?: DefaultElement }
+          > {
+            <As extends React.ElementType = DefaultElement>(
+              props: Omit<React.ComponentPropsWithRef<As>, keyof OwnProps> & OwnProps & { as?: As }
+            ): React.ReactElement | null;
+          }
+
+          interface StackProps {
+            /** Specify the direction for the stack */
+            direction?: 'horizontal' | 'vertical';
+            /** Specify the alignment */
+            align?: 'stretch' | 'start' | 'center' | 'end';
+            /** Specify wrapping */
+            wrap?: 'wrap' | 'nowrap';
+          }
+
+          const Stack = forwardRef(
+            ({
+              direction = 'vertical',
+              align = 'stretch',
+              wrap = 'nowrap',
+              ...rest
+            }: StackProps, forwardedRef: React.Ref<HTMLDivElement>) => {
+              return <div ref={forwardedRef} {...rest} />;
+            },
+          ) as PolymorphicForwardRefComponent<ElementType, StackProps>;
+
+          export { Stack };
+        `,
+      });
+
+      expect(docs).toHaveLength(1);
+      expect(docs[0].exportName).toBe('Stack');
+      expect(docs[0].props.direction.defaultValue).toEqual({ value: "'vertical'" });
+      expect(docs[0].props.align.defaultValue).toEqual({ value: "'stretch'" });
+      expect(docs[0].props.wrap.defaultValue).toEqual({ value: "'nowrap'" });
     });
   });
 

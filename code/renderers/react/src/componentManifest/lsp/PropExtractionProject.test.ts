@@ -579,18 +579,11 @@ describe('extractDocsByImportBulk with memberAccess (compound components)', () =
     const project = new PropExtractionProject(ts, parsed, configPath);
 
     try {
-      // Without memberAccess: Accordion is a plain object, not a component
-      const withoutMA = project.extractDocsByImportBulk([
-        { importSpecifier: './accordion', exportName: 'Accordion' },
-      ]);
-      // resolveCompoundTypes fallback may or may not find it, but the direct
-      // JSX `<Accordion />` won't resolve (it's not a component).
-      // The key test is that WITH memberAccess it definitely works:
-
-      const withMA = project.extractDocsByImportBulk([
+      // memberAccess='Root' → probe <Accordion.Root />, get Root's props
+      const results = project.extractDocsByImportBulk([
         { importSpecifier: './accordion', exportName: 'Accordion', memberAccess: 'Root' },
       ]);
-      const doc = withMA.get('./accordion::Accordion');
+      const doc = results.get('./accordion::Accordion');
 
       expect(doc).toBeDefined();
       expect(doc!.props.multiple).toBeDefined();
@@ -600,6 +593,88 @@ describe('extractDocsByImportBulk with memberAccess (compound components)', () =
       // Should NOT have Item or Trigger props
       expect(doc!.props.value).toBeUndefined();
       expect(doc!.props.asChild).toBeUndefined();
+    } finally {
+      project.dispose();
+    }
+  });
+
+  it('probes the member directly when memberAccess is set', () => {
+    // When memberAccess is set (derived from outermost JSX like <Button.Aligner>),
+    // the probe targets that member directly — no fallback needed.
+    const { projectDir, configPath } = createTempProject({
+      'button.tsx': `
+        import React from 'react';
+
+        interface ButtonProps {
+          /** Visual variant */
+          variant?: 'solid' | 'outline';
+          /** Color theme */
+          color?: 'neutral' | 'primary';
+          /** Disabled state */
+          disabled?: boolean;
+        }
+        const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+          (props, ref) => <button ref={ref} />
+        );
+
+        interface AlignerProps {
+          /** Side of the button to align */
+          side?: 'start' | 'end';
+          children?: React.ReactNode;
+        }
+        const Aligner = (props: AlignerProps) => <div />;
+
+        interface GroupProps {
+          /** Gap between buttons */
+          gap?: number;
+          children?: React.ReactNode;
+        }
+        const Group = (props: GroupProps) => <div />;
+
+        const ButtonRoot = Button as typeof Button & {
+          Aligner: typeof Aligner;
+          Group: typeof Group;
+        };
+        ButtonRoot.Aligner = Aligner;
+        ButtonRoot.Group = Group;
+
+        export default ButtonRoot;
+      `,
+    });
+    tempDir = projectDir;
+
+    const parsed = ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    );
+    const project = new PropExtractionProject(ts, parsed, configPath);
+
+    try {
+      // memberAccess='Aligner' → probe <Button.Aligner />, get Aligner's props
+      const results = project.extractDocsByImportBulk([
+        { importSpecifier: './button', exportName: 'default', memberAccess: 'Aligner' },
+      ]);
+
+      const doc = results.get('./button::default');
+      expect(doc).toBeDefined();
+      expect(doc!.props.side).toBeDefined();
+      // Should NOT have Button's own props
+      expect(doc!.props.variant).toBeUndefined();
+
+      // Without memberAccess → probe <Button />, get Button's own props
+      const results2 = project.extractDocsByImportBulk([
+        { importSpecifier: './button', exportName: 'default' },
+      ]);
+
+      const doc2 = results2.get('./button::default');
+      expect(doc2).toBeDefined();
+      expect(doc2!.props.variant).toBeDefined();
+      expect(doc2!.props.color).toBeDefined();
+      // Should NOT have Aligner's props
+      expect(doc2!.props.side).toBeUndefined();
     } finally {
       project.dispose();
     }

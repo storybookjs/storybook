@@ -284,6 +284,22 @@ const TEST_FILES: Record<string, string> = {
     import React from 'react';
     export const Button = (props: { label: string }) => <button />;
   `,
+  'extract/parent_typeliteral_intersection.tsx': `
+    import React from 'react';
+    type BaseProps = { loading?: boolean };
+    type ButtonProps = { variant?: string } & BaseProps;
+    export const Button = (props: ButtonProps) => <button />;
+  `,
+  'extract/parent_polymorphic_cast.tsx': `
+    import React from 'react';
+    type BaseProps = { loading?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>;
+    type ButtonProps = { variant?: string } & BaseProps;
+    type PolymorphicFC<As extends React.ElementType, P> =
+      React.ForwardRefExoticComponent<P & { as?: As } & React.RefAttributes<any>>;
+    export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+      (props, ref) => <button ref={ref} />
+    ) as PolymorphicFC<'button', ButtonProps>;
+  `,
 
   // =========================================================================
   // propExtractor — display name
@@ -302,6 +318,67 @@ const TEST_FILES: Record<string, string> = {
   'extract/dn/Widget.tsx': `
     import React from 'react';
     export default (props: { label: string }) => <button />;
+  `,
+  'extract/dn/TextInput/TextInput.tsx': `
+    import React from 'react';
+    export default (props: { value: string }) => <input />;
+  `,
+  'extract/dn/TextInput/index.ts': `
+    export { default } from './TextInput';
+  `,
+
+  // =========================================================================
+  // propExtractor — defaultValue
+  // =========================================================================
+  'extract/dv_destructuring.tsx': `
+    import React from 'react';
+    interface Props { size?: string; color?: string; label: string }
+    export const Button = ({ size = 'md', color = 'blue', label }: Props) => <button />;
+  `,
+  'extract/dv_forwardref.tsx': `
+    import React from 'react';
+    interface Props { variant?: string; label: string }
+    export const Button = React.forwardRef<HTMLButtonElement, Props>(
+      ({ variant = 'primary', label }, ref) => <button ref={ref} />
+    );
+  `,
+  'extract/dv_jsdoc.tsx': `
+    import React from 'react';
+    interface Props {
+      /** @default 'md' */
+      size?: string;
+      label: string;
+    }
+    export const Button = (props: Props) => <button />;
+  `,
+  'extract/dv_body_destructuring.tsx': `
+    import React from 'react';
+    interface Props { color?: string; rounded?: boolean; label: string }
+    export const Alert = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
+      const { color = 'info', rounded = true, label } = props;
+      return <div ref={ref} />;
+    });
+  `,
+  'extract/dv_identifier_resolution.tsx': `
+    import React from 'react';
+    const DEFAULT_SIZE = 'md';
+    const DEFAULT_COUNT = 42;
+    interface Props { size?: string; count?: number; label: string }
+    export const Button = ({ size = DEFAULT_SIZE, count = DEFAULT_COUNT, label }: Props) => <button />;
+  `,
+  'extract/dv_defaultprops.tsx': `
+    import React from 'react';
+    interface Props { size?: string; color?: string; label: string }
+    export const Button = (props: Props) => <button />;
+    Button.defaultProps = { size: 'md', color: 'blue' };
+  `,
+  'extract/dv_static_defaultprops.tsx': `
+    import React from 'react';
+    interface Props { size?: string; label: string }
+    export class Button extends React.Component<Props> {
+      static defaultProps = { size: 'md' };
+      render() { return <button />; }
+    }
   `,
 
   // =========================================================================
@@ -743,6 +820,50 @@ const TEST_FILES: Record<string, string> = {
   `,
 
   // =========================================================================
+  // QA: Primer — PolymorphicForwardRefComponent with destructuring defaults
+  // =========================================================================
+  'qa/primer_polymorphic_defaults.tsx': `
+    import React, { forwardRef, type ElementType } from 'react';
+
+    type Merge<A, B> = Omit<A, keyof B> & B;
+
+    interface PolymorphicForwardRefComponent<
+      DefaultElement extends React.ElementType,
+      OwnProps = {}
+    > extends React.ForwardRefExoticComponent<
+      Merge<React.ComponentPropsWithRef<DefaultElement>, OwnProps & { as?: DefaultElement }>
+    > {
+      <As extends React.ElementType = DefaultElement>(
+        props: Merge<React.ComponentPropsWithRef<As>, OwnProps & { as?: As }>
+      ): React.ReactElement | null;
+    }
+
+    interface StackProps {
+      /** Specify the direction
+       * @default vertical
+       */
+      direction?: 'horizontal' | 'vertical';
+      /** Specify the alignment */
+      align?: 'stretch' | 'start' | 'center' | 'end';
+      /** Specify wrapping */
+      wrap?: 'wrap' | 'nowrap';
+    }
+
+    const Stack = forwardRef(
+      ({
+        direction = 'vertical',
+        align = 'stretch',
+        wrap = 'nowrap',
+        ...rest
+      }: StackProps, forwardedRef: React.Ref<HTMLDivElement>) => {
+        return <div ref={forwardedRef} {...rest} />;
+      },
+    ) as PolymorphicForwardRefComponent<ElementType, StackProps>;
+
+    export { Stack };
+  `,
+
+  // =========================================================================
   // QA: Primer — Object.assign compound component
   // =========================================================================
   'qa/primer_object_assign.tsx': `
@@ -770,6 +891,39 @@ const TEST_FILES: Record<string, string> = {
     });
 
     export default FormControl;
+  `,
+
+  // =========================================================================
+  // QA: Primer — Object.assign compound + destructuring defaults (Stack)
+  // =========================================================================
+  'qa/primer_stack/Stack.tsx': `
+    import React, { forwardRef, type ElementType } from 'react';
+
+    interface StackProps {
+      /** Specify the direction
+       * @default vertical
+       */
+      direction?: 'horizontal' | 'vertical';
+      /** Specify the alignment */
+      align?: 'stretch' | 'start' | 'center' | 'end';
+      /** Specify wrapping */
+      wrap?: 'wrap' | 'nowrap';
+    }
+
+    const StackImpl = forwardRef(
+      ({
+        direction = 'vertical',
+        align = 'stretch',
+        wrap = 'nowrap',
+        ...rest
+      }: StackProps, forwardedRef: React.Ref<HTMLDivElement>) => {
+        return <div ref={forwardedRef} {...rest} />;
+      },
+    );
+
+    const StackItem = (props: { children: React.ReactNode }) => <div />;
+
+    export const Stack = Object.assign(StackImpl, { Item: StackItem });
   `,
 
   // =========================================================================
@@ -1233,6 +1387,18 @@ describe('propExtractor (LSP)', () => {
       const { props } = docs('extract/parent_inline.tsx')[0];
       expect(props.label.declarations).toBeDefined();
     });
+
+    it('resolves parent through intersection type literals', () => {
+      const { props } = docs('extract/parent_typeliteral_intersection.tsx')[0];
+      expect(props.variant.parent?.name).toBe('ButtonProps');
+      expect(props.loading.parent?.name).toBe('BaseProps');
+    });
+
+    it('resolves parent for forwardRef with polymorphic as-cast', () => {
+      const { props } = docs('extract/parent_polymorphic_cast.tsx')[0];
+      expect(props.variant.parent?.name).toBe('ButtonProps');
+      expect(props.loading.parent?.name).toBe('BaseProps');
+    });
   });
 
   describe('display name', () => {
@@ -1246,6 +1412,58 @@ describe('propExtractor (LSP)', () => {
 
     it('falls back to filename for anonymous default exports', () => {
       expect(docs('extract/dn/Widget.tsx')[0].displayName).toBe('Widget');
+    });
+
+    it('uses parent directory for anonymous default exports from index.ts', () => {
+      expect(docs('extract/dn/TextInput/index.ts')[0].displayName).toBe('TextInput');
+    });
+  });
+
+  describe('defaultValue', () => {
+    it('extracts destructuring defaults from arrow function', () => {
+      const { props } = docs('extract/dv_destructuring.tsx')[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.color.defaultValue).toEqual({ value: "'blue'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts defaults from forwardRef', () => {
+      const { props } = docs('extract/dv_forwardref.tsx')[0];
+      expect(props.variant.defaultValue).toEqual({ value: "'primary'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts JSDoc @default tags', () => {
+      const { props } = docs('extract/dv_jsdoc.tsx')[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts defaults from body-level destructuring in forwardRef', () => {
+      const { props } = docs('extract/dv_body_destructuring.tsx')[0];
+      expect(props.color.defaultValue).toEqual({ value: "'info'" });
+      expect(props.rounded.defaultValue).toEqual({ value: 'true' });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('resolves identifier references to literal values', () => {
+      const { props } = docs('extract/dv_identifier_resolution.tsx')[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.count.defaultValue).toEqual({ value: '42' });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts Component.defaultProps expression pattern', () => {
+      const { props } = docs('extract/dv_defaultprops.tsx')[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.color.defaultValue).toEqual({ value: "'blue'" });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts static defaultProps from class components', () => {
+      const { props } = docs('extract/dv_static_defaultprops.tsx')[0];
+      expect(props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(props.label.defaultValue).toBeNull();
     });
   });
 
@@ -1284,6 +1502,12 @@ describe('propExtractor (LSP)', () => {
 
       expect(doc.props.onClick).toBeDefined();
       expect(doc.props.onClick.required).toBe(false);
+
+      // Default values from destructuring
+      expect(doc.props.primary.defaultValue).toEqual({ value: 'false' });
+      expect(doc.props.size.defaultValue).toEqual({ value: "'medium'" });
+      expect(doc.props.backgroundColor.defaultValue).toBeNull();
+      expect(doc.props.label.defaultValue).toBeNull();
     });
   });
 
@@ -1598,6 +1822,17 @@ describe('QA: patterns RDT fails on (LSP)', () => {
       expect(result[0].props).toHaveProperty('size');
       expect(result[0].props.variant.description).toBe('Button variant style');
     });
+
+    it('extracts destructuring defaults from forwardRef with as-cast', () => {
+      const result = docs('qa/primer_polymorphic_defaults.tsx');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].exportName).toBe('Stack');
+      // Destructuring defaults should take priority over JSDoc @default
+      expect(result[0].props.direction.defaultValue).toEqual({ value: "'vertical'" });
+      expect(result[0].props.align.defaultValue).toEqual({ value: "'stretch'" });
+      expect(result[0].props.wrap.defaultValue).toEqual({ value: "'nowrap'" });
+    });
   });
 
   describe('Pattern 4: Object.assign compound component (Primer)', () => {
@@ -1613,6 +1848,17 @@ describe('QA: patterns RDT fails on (LSP)', () => {
       // Sub-components should NOT appear as props
       expect(result[0].props).not.toHaveProperty('Caption');
       expect(result[0].props).not.toHaveProperty('Label');
+    });
+
+    it('extracts destructuring defaults through Object.assign', () => {
+      const result = docs('qa/primer_stack/Stack.tsx');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].exportName).toBe('Stack');
+      // Destructuring defaults should win over JSDoc @default
+      expect(result[0].props.direction.defaultValue).toEqual({ value: "'vertical'" });
+      expect(result[0].props.align.defaultValue).toEqual({ value: "'stretch'" });
+      expect(result[0].props.wrap.defaultValue).toEqual({ value: "'nowrap'" });
     });
   });
 

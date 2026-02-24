@@ -564,9 +564,11 @@ export class PropExtractionProject {
 
     // Build ONE mega-probe for all specifiers using hybrid approach:
     // conditional types for detection + JSX elements for props extraction.
-    // When memberAccess is set (detected from story JSX usage), the probe
-    // targets the sub-component directly: `<_p0_Accordion.Root />` instead
-    // of `<_p0_Accordion />`, letting TypeScript resolve compound component props.
+    //
+    // When memberAccess is set (derived from the outermost JSX component,
+    // e.g. `<Accordion.Root>` → memberAccess="Root"), probe the member
+    // directly: `<Accordion.Root />`. Otherwise probe the import itself:
+    // `<Button />`. resolveCompoundTypes is a last-resort fallback.
     const lines: string[] = [];
     lines.push(`import { JSXElementConstructor } from 'react';`);
     const varNameMap = new Map<string, string>();
@@ -590,15 +592,16 @@ export class PropExtractionProject {
         lines.push(`import ${parts.join(', ')} from '${specifier}';`);
       }
 
-      // Detection types + JSX elements
-      // When memberAccess is set, target the sub-component (e.g. Accordion.Root)
+      // Generate probe for each candidate.
+      // When memberAccess is set (outermost JSX was e.g. <Accordion.Root>),
+      // probe the member directly. Otherwise probe the import itself.
       if (hasDefault) {
         const defaultCandidate = candidates.find((c) => c.isDefault)!;
         const ma = defaultCandidate.memberAccess;
-        const detName = `${prefix}det_default`;
-        const varName = `${prefix}el_default`;
         const typeofExpr = ma ? `typeof ${prefix}Default.${ma}` : `typeof ${prefix}Default`;
         const jsxTag = ma ? `${prefix}Default.${ma}` : `${prefix}Default`;
+        const detName = `${prefix}det_default`;
+        const varName = `${prefix}el_default`;
         lines.push(
           `export type ${detName} = ${typeofExpr} extends JSXElementConstructor<any> ? true : never;`
         );
@@ -607,20 +610,21 @@ export class PropExtractionProject {
         varNameMap.set(`${specifier}::default`, varName);
       }
       for (const c of named) {
-        const detName = `${prefix}det_${c.exportName}`;
-        const varName = `${prefix}el_${c.exportName}`;
+        const mapKey = `${specifier}::${c.exportName}`;
         const typeofExpr = c.memberAccess
           ? `typeof ${prefix}${c.exportName}.${c.memberAccess}`
           : `typeof ${prefix}${c.exportName}`;
         const jsxTag = c.memberAccess
           ? `${prefix}${c.exportName}.${c.memberAccess}`
           : `${prefix}${c.exportName}`;
+        const detName = `${prefix}det_${c.exportName}`;
+        const varName = `${prefix}el_${c.exportName}`;
         lines.push(
           `export type ${detName} = ${typeofExpr} extends JSXElementConstructor<any> ? true : never;`
         );
         lines.push(`export const ${varName} = <${jsxTag} />;`);
-        detTypeMap.set(`${specifier}::${c.exportName}`, detName);
-        varNameMap.set(`${specifier}::${c.exportName}`, varName);
+        detTypeMap.set(mapKey, detName);
+        varNameMap.set(mapKey, varName);
       }
       idx++;
     }
@@ -638,12 +642,12 @@ export class PropExtractionProject {
     const probeSF = program.getSourceFile(this.probeFilePathPkg);
     if (!probeSF) return results;
 
-    // Resolve props: conditional types filter non-components, JSX extracts props
+    // Resolve props: conditional types filter non-components, JSX extracts props.
     const allPropsTypes = resolveProbeTypes(this.typescript, checker, probeSF, varNameMap, detTypeMap);
 
-    // Compound component detection: for entries where JSX resolution failed
-    // (the import is a namespace object like Accordion with .Root, .Item, etc.),
-    // inspect the imported type's properties to find the main component.
+    // Fallback: for entries where the probe failed (e.g. no memberAccess was provided
+    // and the import is a namespace), inspect the type's properties to find component-like
+    // ones (prefers "Root", then first with call signature).
     this.resolveCompoundTypes(checker, probeSF, entries, varNameMap, allPropsTypes);
 
     // Extract docs for each entry using the resolved props types

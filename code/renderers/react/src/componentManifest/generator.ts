@@ -15,7 +15,13 @@ import path from 'pathe';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getCodeSnippet } from './generateCodeSnippet';
-import { type TypescriptOptions, getComponents, getImports } from './getComponentImports';
+import {
+  type TypescriptOptions,
+  docgenTimings,
+  getComponents,
+  getImports,
+  resetDocgenTimings,
+} from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { PropExtractionManager } from './lsp';
 import type { ComponentDoc } from './propExtractor';
@@ -68,41 +74,24 @@ interface PropTypesContext {
   memberAccess?: string;
 }
 
-
-/**
- * Detect compound component member access from story source.
- *
- * Scans the story file for `<ComponentName.SubComponent` JSX patterns.
- * If found, returns the preferred sub-component name (preferring "Root").
- * This tells the probe to generate `<Accordion.Root />` instead of `<Accordion />`
- * so TypeScript resolves the actual component's props via JSX checking.
- */
-function detectMemberAccess(storySource: string, componentName: string): string | undefined {
-  const escapedName = componentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`<${escapedName}\\.([A-Z]\\w*)`, 'g');
-  const members = new Set<string>();
-  let match;
-  while ((match = regex.exec(storySource)) !== null) {
-    members.add(match[1]);
-  }
-  if (members.size === 0) return undefined;
-  // Prefer Root — it's the outermost wrapper component in Ark UI / Radix patterns
-  if (members.has('Root')) return 'Root';
-  // Fall back to first member found
-  return members.values().next().value;
-}
-
 function findMatchingComponent(
   components: ReturnType<typeof getComponents>,
   componentName: string | undefined,
   trimmedTitle: string
 ) {
-  return components.find((it) =>
+  const isMatch = (it: (typeof components)[number]) =>
     componentName
       ? [it.componentName, it.localImportName, it.importName].includes(componentName)
       : trimmedTitle.includes(it.componentName) ||
         (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
-        (it.importName && trimmedTitle.includes(it.importName))
+        (it.importName && trimmedTitle.includes(it.importName));
+
+  const matches = components.filter(isMatch);
+  if (matches.length <= 1) return matches[0];
+
+  // Prefer the outermost component (shallowest JSX nesting depth)
+  return matches.reduce((best, cur) =>
+    (cur.jsxDepth ?? Infinity) < (best.jsxDepth ?? Infinity) ? cur : best
   );
 }
 
@@ -200,6 +189,7 @@ export const manifests: PresetPropertyFn<
     (entry) => entry.id.split('--')[0]
   );
 
+  resetDocgenTimings();
   const docgenStartTime = performance.now();
 
   const results = (
@@ -304,9 +294,7 @@ export const manifests: PresetPropertyFn<
               importName: component.importName,
               importId: component.importId,
               storyFilePath: absoluteImportPath,
-              memberAccess: componentName
-                ? detectMemberAccess(storyFile, componentName)
-                : undefined,
+              memberAccess: component.member,
             }
           : undefined,
       };
@@ -458,6 +446,8 @@ export const manifests: PresetPropertyFn<
         durationMs,
         timings: {
           docgen: docgenDurationMs,
+          reactDocgen: Math.round(docgenTimings.reactDocgenMs),
+          reactDocgenTypescript: Math.round(docgenTimings.reactDocgenTypescriptMs),
           reactPropTypes: propTypesDurationMs,
           reactPropTypesComponents: propTypesCount,
         },

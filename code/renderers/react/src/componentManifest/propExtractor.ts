@@ -392,9 +392,29 @@ export function detectComponents(
 // Parent / source info per property
 // ---------------------------------------------------------------------------
 
+/**
+ * Returns the source file for a property symbol, used by getBulkSourceExclusions
+ * to decide whether a prop comes from a "bulk" source (node_modules/.d.ts).
+ *
+ * When a prop has multiple declarations (e.g. user re-declares `aria-label` in
+ * their own interface AND it exists in React's HTMLAttributes), we check ALL
+ * declarations. If ANY declaration is in user code (not node_modules, not .d.ts),
+ * we return that user-code path so the prop is NOT bulk-excluded.
+ */
 function getPropSourceFile(prop: ts.Symbol): string | undefined {
   const declarations = prop.getDeclarations();
   if (!declarations?.length) return undefined;
+
+  // If any declaration lives in user code (not node_modules, not .d.ts),
+  // return that source — the prop should not be bulk-excluded.
+  for (const decl of declarations) {
+    const fileName = decl.getSourceFile().fileName;
+    if (!fileName.includes('node_modules') && !fileName.endsWith('.d.ts')) {
+      return fileName;
+    }
+  }
+
+  // All declarations are in node_modules or .d.ts — return the first one.
   return declarations[0].getSourceFile().fileName;
 }
 
@@ -402,17 +422,21 @@ function getParentType(typescript: typeof ts, prop: ts.Symbol): ParentType | und
   const declarations = prop.getDeclarations();
   if (!declarations?.length) return undefined;
 
-  const { parent } = declarations[0];
-  if (!parent) return undefined;
-
-  if (
-    typescript.isInterfaceDeclaration(parent) ||
-    typescript.isTypeAliasDeclaration(parent)
-  ) {
-    return {
-      name: parent.name.getText(),
-      fileName: parent.getSourceFile().fileName,
-    };
+  // Walk up the AST from the property's parent to find the enclosing named type.
+  // Props declared in type literals inside intersections (e.g. `type T = { prop: X } & Base`)
+  // have the chain: PropertySignature → TypeLiteralNode → IntersectionTypeNode → TypeAliasDeclaration
+  let node: ts.Node | undefined = declarations[0].parent;
+  while (node) {
+    if (
+      typescript.isInterfaceDeclaration(node) ||
+      typescript.isTypeAliasDeclaration(node)
+    ) {
+      return {
+        name: node.name.getText(),
+        fileName: node.getSourceFile().fileName,
+      };
+    }
+    node = node.parent;
   }
 
   return undefined;
@@ -512,6 +536,392 @@ function serializeType(
 }
 
 // ---------------------------------------------------------------------------
+// Default value extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Unwraps wrapper calls (React.forwardRef, React.memo, etc.) to find
+ * the underlying function expression or declaration.
+ */
+function unwrapToFunction(
+  typescript: typeof ts,
+  node: ts.Node,
+  depth = 0,
+  checker?: ts.TypeChecker
+): ts.FunctionLikeDeclaration | undefined {
+  if (depth > 5) return undefined;
+
+  if (
+    typescript.isArrowFunction(node) ||
+    typescript.isFunctionExpression(node) ||
+    typescript.isFunctionDeclaration(node)
+  ) {
+    return node;
+  }
+
+  // Unwrap CallExpression: React.forwardRef(fn), React.memo(fn), etc.
+  if (typescript.isCallExpression(node)) {
+    for (const arg of node.arguments) {
+      const fn = unwrapToFunction(typescript, arg, depth + 1, checker);
+      if (fn) return fn;
+    }
+  }
+
+  // Unwrap parenthesized expressions: (fn)
+  if (typescript.isParenthesizedExpression(node)) {
+    return unwrapToFunction(typescript, node.expression, depth + 1, checker);
+  }
+
+  // Unwrap as-expression: fn as SomeType
+  if (typescript.isAsExpression(node)) {
+    return unwrapToFunction(typescript, node.expression, depth + 1, checker);
+  }
+
+  // Follow identifier references when a checker is available.
+  // Handles: Object.assign(StackImpl, ...) where StackImpl = forwardRef(...)
+  if (typescript.isIdentifier(node) && checker) {
+    const symbol = checker.getSymbolAtLocation(node);
+    if (symbol) {
+      const resolved =
+        symbol.flags & typescript.SymbolFlags.Alias
+          ? checker.getAliasedSymbol(symbol)
+          : symbol;
+      const decl = resolved.valueDeclaration;
+      if (decl && typescript.isVariableDeclaration(decl) && decl.initializer) {
+        return unwrapToFunction(typescript, decl.initializer, depth + 1, checker);
+      }
+      if (decl && typescript.isFunctionDeclaration(decl)) {
+        return decl;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Resolves an expression to its literal string representation.
+ *
+ * For identifiers like `DEFAULT_SIZE` pointing to `const DEFAULT_SIZE = 'md'`,
+ * follows the reference chain and returns `'md'` (the literal value).
+ * Handles variable declarations, imports, enum members, and property accesses.
+ * Falls back to `.getText()` for unresolvable expressions.
+ */
+function resolveLiteralValue(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  node: ts.Expression,
+  depth = 0
+): string {
+  if (depth > 5) return node.getText();
+
+  // Direct literals — return source text as-is
+  if (
+    typescript.isStringLiteral(node) ||
+    typescript.isNumericLiteral(node) ||
+    typescript.isNoSubstitutionTemplateLiteral(node) ||
+    node.kind === typescript.SyntaxKind.TrueKeyword ||
+    node.kind === typescript.SyntaxKind.FalseKeyword ||
+    node.kind === typescript.SyntaxKind.NullKeyword
+  ) {
+    return node.getText();
+  }
+
+  // Prefix unary: -1, +2
+  if (typescript.isPrefixUnaryExpression(node)) {
+    return node.getText();
+  }
+
+  // Identifier — follow to declaration
+  if (typescript.isIdentifier(node)) {
+    if (node.text === 'undefined') return 'undefined';
+
+    const symbol = checker.getSymbolAtLocation(node);
+    if (!symbol) return node.getText();
+
+    const resolved =
+      symbol.flags & typescript.SymbolFlags.Alias
+        ? checker.getAliasedSymbol(symbol)
+        : symbol;
+
+    const decl = resolved.valueDeclaration;
+    if (decl && typescript.isVariableDeclaration(decl) && decl.initializer) {
+      return resolveLiteralValue(typescript, checker, decl.initializer, depth + 1);
+    }
+    if (decl && typescript.isEnumMember(decl) && decl.initializer) {
+      return resolveLiteralValue(typescript, checker, decl.initializer, depth + 1);
+    }
+
+    // BindingElement — sibling destructured parameter: inputLabel = placeholderText
+    // where placeholderText = 'Filter items' is in the same destructuring pattern
+    if (decl && typescript.isBindingElement(decl) && decl.initializer) {
+      return resolveLiteralValue(typescript, checker, decl.initializer, depth + 1);
+    }
+
+    return node.getText();
+  }
+
+  // PropertyAccessExpression — Enum.Value, obj.key
+  if (typescript.isPropertyAccessExpression(node)) {
+    const symbol = checker.getSymbolAtLocation(node);
+    if (symbol) {
+      const decl = symbol.valueDeclaration;
+      if (decl && typescript.isEnumMember(decl) && decl.initializer) {
+        return resolveLiteralValue(typescript, checker, decl.initializer, depth + 1);
+      }
+      if (decl && typescript.isPropertyAssignment(decl) && decl.initializer) {
+        return resolveLiteralValue(typescript, checker, decl.initializer, depth + 1);
+      }
+      if (decl && typescript.isVariableDeclaration(decl) && decl.initializer) {
+        return resolveLiteralValue(typescript, checker, decl.initializer, depth + 1);
+      }
+    }
+    return node.getText();
+  }
+
+  // Fallback — return source text
+  return node.getText();
+}
+
+/**
+ * Collects default values from an ObjectBindingPattern into the given map.
+ *
+ * For `{ size = 'md', icon: Icon = DefaultIcon }`, adds:
+ *   'size' → "'md'", 'icon' → 'DefaultIcon'
+ *
+ * When a checker is provided, identifiers like `DEFAULT_SIZE` are resolved
+ * to their literal values (e.g. `'md'`).
+ */
+function collectBindingDefaults(
+  typescript: typeof ts,
+  pattern: ts.ObjectBindingPattern,
+  defaults: Map<string, string>,
+  checker?: ts.TypeChecker
+): void {
+  for (const element of pattern.elements) {
+    if (element.initializer) {
+      // Use the property name if renamed (e.g. { icon: Icon = DefaultIcon }),
+      // otherwise use the binding name
+      const propName = element.propertyName
+        ? element.propertyName.getText()
+        : element.name.getText();
+      defaults.set(
+        propName,
+        checker
+          ? resolveLiteralValue(typescript, checker, element.initializer)
+          : element.initializer.getText()
+      );
+    }
+  }
+}
+
+/**
+ * Extracts destructuring default values from the component function.
+ *
+ * Handles two patterns:
+ *
+ * 1. **Parameter destructuring**: `({ size = 'md' }: Props) => ...`
+ * 2. **Body destructuring**: `(props) => { const { size = 'md' } = props; ... }`
+ *    Also handles `const { size = 'md' } = resolveProps(props, ...)` and similar.
+ *
+ * Returns Map { 'size' => "'md'" }.
+ * For class components or non-destructured params, returns an empty map.
+ */
+function extractDestructuringDefaults(
+  typescript: typeof ts,
+  resolved: ts.Symbol,
+  checker?: ts.TypeChecker
+): Map<string, string> {
+  const defaults = new Map<string, string>();
+  const decl = resolved.valueDeclaration;
+  if (!decl) return defaults;
+
+  // Find the function: may be directly a function, or wrapped in forwardRef/memo/etc.
+  let fn: ts.FunctionLikeDeclaration | undefined;
+
+  if (typescript.isFunctionDeclaration(decl)) {
+    fn = decl;
+  } else if (typescript.isVariableDeclaration(decl) && decl.initializer) {
+    fn = unwrapToFunction(typescript, decl.initializer, 0, checker);
+  }
+
+  if (!fn) return defaults;
+
+  // Get the first parameter (props)
+  const firstParam = fn.parameters[0];
+  if (!firstParam) return defaults;
+
+  // Case 1: Parameter-level destructuring — ({ size = 'md' }: Props) => ...
+  if (typescript.isObjectBindingPattern(firstParam.name)) {
+    collectBindingDefaults(typescript, firstParam.name, defaults, checker);
+    return defaults;
+  }
+
+  // Case 2: Body-level destructuring — (props) => { const { size = 'md' } = props; }
+  // Also handles: const { size = 'md' } = resolveProps(props, ...)
+  if (fn.body) {
+    const body = typescript.isBlock(fn.body) ? fn.body : undefined;
+    if (body) {
+      for (const stmt of body.statements) {
+        if (!typescript.isVariableStatement(stmt)) continue;
+        for (const varDecl of stmt.declarationList.declarations) {
+          if (typescript.isObjectBindingPattern(varDecl.name) && varDecl.initializer) {
+            collectBindingDefaults(typescript, varDecl.name, defaults, checker);
+          }
+        }
+      }
+    }
+  }
+
+  return defaults;
+}
+
+/**
+ * Collects default values from an object literal expression.
+ *
+ * Used for `defaultProps = { size: 'md', disabled: false }` patterns.
+ * Handles PropertyAssignment and ShorthandPropertyAssignment.
+ */
+function collectObjectLiteralDefaults(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  obj: ts.ObjectLiteralExpression,
+  defaults: Map<string, string>
+): void {
+  for (const prop of obj.properties) {
+    if (typescript.isPropertyAssignment(prop) && prop.name) {
+      const name = prop.name.getText();
+      defaults.set(name, resolveLiteralValue(typescript, checker, prop.initializer));
+    } else if (typescript.isShorthandPropertyAssignment(prop)) {
+      const name = prop.name.getText();
+      const symbol = checker.getShorthandAssignmentValueSymbol(prop);
+      if (
+        symbol?.valueDeclaration &&
+        typescript.isVariableDeclaration(symbol.valueDeclaration) &&
+        symbol.valueDeclaration.initializer
+      ) {
+        defaults.set(
+          name,
+          resolveLiteralValue(typescript, checker, symbol.valueDeclaration.initializer)
+        );
+      } else {
+        defaults.set(name, name);
+      }
+    }
+  }
+}
+
+/**
+ * Extracts default values from `Component.defaultProps = {...}` and
+ * `static defaultProps = {...}` patterns.
+ *
+ * This is a legacy React pattern (deprecated in React 19) but still used
+ * in many codebases. Lower priority than destructuring defaults.
+ */
+function extractStaticDefaultProps(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  resolved: ts.Symbol
+): Map<string, string> {
+  const defaults = new Map<string, string>();
+
+  const decl = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
+  if (!decl) return defaults;
+  const componentSourceFile = decl.getSourceFile();
+
+  for (const stmt of componentSourceFile.statements) {
+    // Pattern 1: Class with static defaultProps = { size: 'md' }
+    if (typescript.isClassDeclaration(stmt) && stmt.name) {
+      const classSymbol = checker.getSymbolAtLocation(stmt.name);
+      if (classSymbol !== resolved) continue;
+
+      for (const member of stmt.members) {
+        if (!typescript.isPropertyDeclaration(member)) continue;
+        if (!member.name || member.name.getText() !== 'defaultProps') continue;
+        if (!member.initializer) continue;
+
+        let initializer: ts.Expression = member.initializer;
+        // Follow identifier reference: static defaultProps = myDefaults
+        if (typescript.isIdentifier(initializer)) {
+          const sym = checker.getSymbolAtLocation(initializer);
+          const symDecl = sym?.valueDeclaration;
+          if (
+            symDecl &&
+            typescript.isVariableDeclaration(symDecl) &&
+            symDecl.initializer
+          ) {
+            initializer = symDecl.initializer;
+          }
+        }
+
+        if (typescript.isObjectLiteralExpression(initializer)) {
+          collectObjectLiteralDefaults(typescript, checker, initializer, defaults);
+        }
+      }
+    }
+
+    // Pattern 2: Component.defaultProps = { size: 'md' }
+    if (
+      typescript.isExpressionStatement(stmt) &&
+      typescript.isBinaryExpression(stmt.expression) &&
+      stmt.expression.operatorToken.kind === typescript.SyntaxKind.EqualsToken
+    ) {
+      const left = stmt.expression.left;
+      if (!typescript.isPropertyAccessExpression(left)) continue;
+      if (left.name.text !== 'defaultProps') continue;
+
+      // Check if the expression target is our component
+      const targetSymbol = checker.getSymbolAtLocation(left.expression);
+      if (!targetSymbol) continue;
+
+      const targetResolved =
+        targetSymbol.flags & typescript.SymbolFlags.Alias
+          ? checker.getAliasedSymbol(targetSymbol)
+          : targetSymbol;
+
+      if (targetResolved !== resolved) continue;
+
+      let right: ts.Expression = stmt.expression.right;
+      // Follow identifier reference: Button.defaultProps = myDefaults
+      if (typescript.isIdentifier(right)) {
+        const sym = checker.getSymbolAtLocation(right);
+        const symDecl = sym?.valueDeclaration;
+        if (
+          symDecl &&
+          typescript.isVariableDeclaration(symDecl) &&
+          symDecl.initializer
+        ) {
+          right = symDecl.initializer;
+        }
+      }
+
+      if (typescript.isObjectLiteralExpression(right)) {
+        collectObjectLiteralDefaults(typescript, checker, right, defaults);
+      }
+    }
+  }
+
+  return defaults;
+}
+
+/**
+ * Extracts a default value from JSDoc @default / @defaultValue tags on a prop's declaration.
+ */
+function getJSDocDefault(
+  typescript: typeof ts,
+  prop: ts.Symbol,
+  checker: ts.TypeChecker
+): string | undefined {
+  const tags = prop.getJsDocTags(checker);
+  for (const tag of tags) {
+    if (tag.name === 'default' || tag.name === 'defaultValue') {
+      return typescript.displayPartsToString(tag.text) || undefined;
+    }
+  }
+  return undefined;
+}
+
+// ---------------------------------------------------------------------------
 // Single prop extraction
 // ---------------------------------------------------------------------------
 
@@ -519,7 +929,8 @@ function extractPropItem(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   prop: ts.Symbol,
-  contextNode: ts.Node
+  contextNode: ts.Node,
+  defaultsMap?: Map<string, string>
 ): PropItem {
   const isOptional = !!(prop.flags & typescript.SymbolFlags.Optional);
   const isRequired = !isOptional;
@@ -532,12 +943,18 @@ function extractPropItem(
   const parent = getParentType(typescript, prop);
   const declarations = getAllDeclarationParents(typescript, prop);
 
+  // Default value: prefer destructuring default, then JSDoc @default
+  const propName = prop.getName();
+  const destructuringDefault = defaultsMap?.get(propName);
+  const jsDocDefault = getJSDocDefault(typescript, prop, checker);
+  const defaultStr = destructuringDefault ?? jsDocDefault;
+
   return {
-    name: prop.getName(),
+    name: propName,
     required: isRequired,
     type,
     description,
-    defaultValue: null,
+    defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,
   };
@@ -602,8 +1019,13 @@ function computeDisplayName(
       return resolvedName;
     }
     const fileName = sourceFile.fileName;
-    const base = fileName.split('/').pop() ?? fileName;
-    return base.replace(/\.(tsx?|jsx?)$/, '');
+    const parts = fileName.split('/');
+    let base = (parts.pop() ?? fileName).replace(/\.(tsx?|jsx?)$/, '');
+    // For barrel files (index.ts), use the parent directory name instead
+    if (base === 'index') {
+      base = parts.pop() ?? base;
+    }
+    return base;
   }
 
   return exportName;
@@ -653,10 +1075,21 @@ export function extractFromProbe(
     const contextNode = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
     if (!contextNode) continue;
 
+    // Collect defaults: destructuring > defaultProps > JSDoc (in extractPropItem)
+    const defaultsMap = extractDestructuringDefaults(typescript, resolved, checker);
+
+    // Also check for defaultProps pattern (legacy, deprecated in React 19)
+    const staticDefaults = extractStaticDefaultProps(typescript, checker, resolved);
+    for (const [key, value] of staticDefaults) {
+      if (!defaultsMap.has(key)) {
+        defaultsMap.set(key, value);
+      }
+    }
+
     const props: Record<string, PropItem> = {};
     for (const prop of allProperties) {
       if (excluded.has(prop.getName())) continue;
-      props[prop.getName()] = extractPropItem(typescript, checker, prop, contextNode);
+      props[prop.getName()] = extractPropItem(typescript, checker, prop, contextNode, defaultsMap);
     }
 
     const displayName = computeDisplayName(exp, resolved, sourceFile);

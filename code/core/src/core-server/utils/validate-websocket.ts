@@ -2,29 +2,43 @@ import { timingSafeEqual } from 'node:crypto';
 
 import type { BuilderOptions } from 'storybook/internal/types';
 
+// TODO: Change to `[]` in SB11 to change from opt-in to opt-out
+const DEFAULT_ALLOWED_HOSTS: string[] = ['*'];
+
+/**
+ * Validates a request origin against known local/network addresses and allowed hosts.
+ *
+ * @param requestOrigin - The origin header value to validate.
+ * @param options - The builder options.
+ * @returns `true` if the origin is valid, `false` otherwise.
+ */
 export const isValidOrigin = (
   requestOrigin: string | undefined,
-  { localAddress, networkAddress }: BuilderOptions
+  { allowedHosts = DEFAULT_ALLOWED_HOSTS, localAddress, networkAddress }: BuilderOptions
 ): boolean => {
-  if (!requestOrigin || !localAddress) {
+  if (allowedHosts.includes('*')) {
+    return true;
+  }
+  if (!requestOrigin) {
     return false;
   }
 
-  const localUrl = new URL(localAddress);
-  const requestUrl = new URL(requestOrigin);
-  if (localUrl.origin === requestUrl.origin) {
-    return true;
-  }
+  try {
+    const requestUrl = new URL(requestOrigin);
+    const localUrl = localAddress && new URL(localAddress);
+    const networkUrl = networkAddress && new URL(networkAddress);
 
-  const networkUrl = networkAddress && new URL(networkAddress);
-  if (networkUrl && networkUrl.origin === requestUrl.origin) {
-    return true;
-  }
+    if (localUrl && localUrl.origin === requestUrl.origin) {
+      return true;
+    }
+    if (networkUrl && networkUrl.origin === requestUrl.origin) {
+      return true;
+    }
 
-  return (
-    requestOrigin === `${localUrl.protocol}//localhost:${localUrl.port}` ||
-    requestOrigin === `${localUrl.protocol}//127.0.0.1:${localUrl.port}`
-  );
+    return allowedHosts.includes(requestUrl.hostname);
+  } catch {
+    return false;
+  }
 };
 
 /**

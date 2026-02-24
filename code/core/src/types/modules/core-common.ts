@@ -214,6 +214,7 @@ export interface BuilderOptions {
   serverChannelUrl?: string;
   localAddress?: string;
   networkAddress?: string;
+  allowedHosts?: string[];
 }
 
 export interface StorybookConfigOptions {

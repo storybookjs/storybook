@@ -8,6 +8,9 @@ describe('isValidOrigin', () => {
     networkAddress: 'http://192.168.1.100:6006',
   } as any;
 
+  /** When allowedHosts is set to [], only local/network origins are allowed (no default allow-all). */
+  const strictOptions = { ...options, allowedHosts: [] } as any;
+
   it('returns true for exact local address match', () => {
     expect(isValidOrigin('http://localhost:6006', options)).toBe(true);
   });
@@ -24,29 +27,41 @@ describe('isValidOrigin', () => {
     expect(isValidOrigin('http://127.0.0.1:6006', options)).toBe(true);
   });
 
-  it('returns false for different origin', () => {
-    expect(isValidOrigin('http://malicious-site.com', options)).toBe(false);
+  it('when allowedHosts is undefined, allows any origin', () => {
+    expect(isValidOrigin('http://malicious-site.com', options)).toBe(true);
+    expect(isValidOrigin('https://any-origin.example.com', options)).toBe(true);
+  });
+
+  it('when allowedHosts is ["*"], allows any origin', () => {
+    const allowAllOptions = { ...options, allowedHosts: ['*'] } as any;
+    expect(isValidOrigin('http://malicious-site.com', allowAllOptions)).toBe(true);
+    expect(isValidOrigin('https://any-origin.example.com', allowAllOptions)).toBe(true);
+  });
+
+  it('returns false for different origin when allowedHosts is empty', () => {
+    expect(isValidOrigin('http://malicious-site.com', strictOptions)).toBe(false);
   });
 
   it('returns false for different port', () => {
-    expect(isValidOrigin('http://localhost:8080', options)).toBe(false);
+    expect(isValidOrigin('http://localhost:8080', strictOptions)).toBe(false);
   });
 
   it('returns false for different protocol', () => {
-    expect(isValidOrigin('https://localhost:6006', options)).toBe(false);
+    expect(isValidOrigin('https://localhost:6006', strictOptions)).toBe(false);
   });
 
-  it('returns false for undefined origin', () => {
-    expect(isValidOrigin(undefined, options)).toBe(false);
+  it('returns false for undefined origin when not allow-all', () => {
+    expect(isValidOrigin(undefined, strictOptions)).toBe(false);
   });
 
-  it('returns false for null origin', () => {
-    expect(isValidOrigin(null as any, options)).toBe(false);
+  it('returns false for null origin when not allow-all', () => {
+    expect(isValidOrigin(null as any, strictOptions)).toBe(false);
   });
 
-  it('returns false when localAddress is missing', () => {
+  it('returns false when localAddress is missing and allowedHosts is empty', () => {
     const optionsWithoutLocal = {
       networkAddress: 'http://192.168.1.100:6006',
+      allowedHosts: [],
     } as any;
     expect(isValidOrigin('http://localhost:6006', optionsWithoutLocal)).toBe(false);
   });
@@ -58,7 +73,8 @@ describe('isValidOrigin', () => {
     } as any;
     expect(isValidOrigin('https://localhost:6006', httpsOptions)).toBe(true);
     expect(isValidOrigin('https://192.168.1.100:6006', httpsOptions)).toBe(true);
-    expect(isValidOrigin('http://localhost:6006', httpsOptions)).toBe(false);
+    const strictHttpsOptions = { ...httpsOptions, allowedHosts: [] } as any;
+    expect(isValidOrigin('http://localhost:6006', strictHttpsOptions)).toBe(false);
   });
 
   it('handles network address without port', () => {
@@ -66,11 +82,12 @@ describe('isValidOrigin', () => {
       localAddress: 'http://localhost:6006',
     } as any;
     expect(isValidOrigin('http://localhost:6006', optionsWithoutNetwork)).toBe(true);
-    expect(isValidOrigin('http://192.168.1.100:6006', optionsWithoutNetwork)).toBe(false);
+    const strictNoNetwork = { ...optionsWithoutNetwork, allowedHosts: [] } as any;
+    expect(isValidOrigin('http://192.168.1.100:6006', strictNoNetwork)).toBe(false);
   });
 
   it('handles different network address correctly', () => {
-    expect(isValidOrigin('http://10.0.0.1:6006', options)).toBe(false);
+    expect(isValidOrigin('http://10.0.0.1:6006', strictOptions)).toBe(false);
   });
 
   it('handles origin with path', () => {
@@ -81,6 +98,42 @@ describe('isValidOrigin', () => {
   it('handles origin with query parameters', () => {
     // Origin header should not include query, but if it does, we should still validate correctly
     expect(isValidOrigin('http://localhost:6006?query=value', options)).toBe(true);
+  });
+
+  it('returns true when request hostname is in allowedHosts', () => {
+    const optionsWithAllowed = {
+      ...options,
+      allowedHosts: ['my-app.example.com', 'other.example.com'],
+    } as any;
+    expect(isValidOrigin('https://my-app.example.com', optionsWithAllowed)).toBe(true);
+    expect(isValidOrigin('https://other.example.com', optionsWithAllowed)).toBe(true);
+  });
+
+  it('returns false when request hostname is not in allowedHosts and not local/network', () => {
+    const optionsWithAllowed = {
+      localAddress: 'http://localhost:6006',
+      networkAddress: 'http://192.168.1.100:6006',
+      allowedHosts: ['my-app.example.com'],
+    } as any;
+    expect(isValidOrigin('https://other-site.com', optionsWithAllowed)).toBe(false);
+  });
+
+  it('allowedHosts does not override default local/network checks', () => {
+    const optionsWithAllowed = {
+      ...options,
+      allowedHosts: ['my-app.example.com'],
+    } as any;
+    expect(isValidOrigin('http://localhost:6006', optionsWithAllowed)).toBe(true);
+    expect(isValidOrigin('http://192.168.1.100:6006', optionsWithAllowed)).toBe(true);
+  });
+
+  it('empty allowedHosts does not allow arbitrary origins', () => {
+    const optionsWithEmptyAllowed = {
+      localAddress: 'http://localhost:6006',
+      allowedHosts: [],
+    } as any;
+    expect(isValidOrigin('http://localhost:6006', optionsWithEmptyAllowed)).toBe(true);
+    expect(isValidOrigin('https://arbitrary.com', optionsWithEmptyAllowed)).toBe(false);
   });
 });
 

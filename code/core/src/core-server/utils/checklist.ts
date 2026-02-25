@@ -3,7 +3,6 @@ import { experimental_UniversalStore } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import { dequal as deepEqual } from 'dequal';
 import { throttle } from 'es-toolkit/function';
 import { toMerged } from 'es-toolkit/object';
 
@@ -84,6 +83,11 @@ export async function initializeChecklist() {
       });
       saveProjectState({ items: projectValues as StoreState['items'] });
       saveUserState({ items: userValues, widget: state.widget });
+
+      // Skip telemetry when loading from persistence (first transition to loaded: true)
+      if (!previousState.loaded) {
+        return;
+      }
 
       // Gather items that have changed state
       const { mutedItems, statusItems } = entries.reduce(

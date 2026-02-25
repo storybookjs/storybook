@@ -1,0 +1,21 @@
+button {
+  display: inline-block;
+  cursor: pointer;
+  border: 0;
+  border-radius: 3em;
+  background-color: #1ea7fd;
+  padding: 11px 20px;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.nested-focus-visible {
+  &:focus-visible {
+    @supports (color: color-mix(in lab, red, red)) {
+      text-decoration: underline red;
+    }
+  }
+}

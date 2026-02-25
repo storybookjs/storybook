@@ -108,7 +108,6 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 
 				const index = await fetchStoryIndex(origin);
 				const resolvedStories = findStoryIds(index, input.stories);
-				const entriesById = new Map(Object.values(index.entries).map((entry) => [entry.id, entry]));
 
 				const structuredResult: PreviewStoriesOutput['stories'] = [];
 				const textResult: string[] = [];
@@ -123,7 +122,7 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 						continue;
 					}
 
-					const indexEntry = entriesById.get(story.id);
+					const indexEntry = index.entries[story.id];
 					if (!indexEntry) {
 						structuredResult.push({
 							input: story.input,

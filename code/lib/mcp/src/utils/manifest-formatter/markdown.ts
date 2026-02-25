@@ -38,11 +38,7 @@ function formatDocLine(doc: Doc): string {
 }
 
 function formatStorySubLine(story: Story): string {
-	if (!story.id) {
-		return `  - ${story.name}`;
-	}
-
-	return `  - ${story.name} (${story.id})`;
+	return `  - ${story.name}` + (story.id ? ` (${story.id})` : '');
 }
 
 /**

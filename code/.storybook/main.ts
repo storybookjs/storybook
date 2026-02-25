@@ -138,8 +138,7 @@ const config = defineMain({
     },
   },
   core: {
-    // disableTelemetry: true,
-    allowedHosts: ['storybook.ngrok-free.dev'],
+    disableTelemetry: true,
   },
   features: {
     developmentModeForBuild: true,

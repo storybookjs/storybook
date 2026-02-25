@@ -20,17 +20,15 @@ const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   isolation: 'isolate',
+  gap: 8,
 
   // Enable container queries for child responsive styles
   '@supports (container-type: inline-size)': {
     containerType: 'inline-size',
   },
 
-  '@media (max-width: 400px)': {
-    flexDirection: 'column' as const,
-  },
-
   '.rejt-tree': {
+    flex: 1,
     marginLeft: '1rem',
     fontSize: '13px',
     listStyleType: 'none',
@@ -136,14 +134,16 @@ const RawButton = styled(ToggleButton)({
   // Container query: respond to component width (WCAG 2.1 Reflow)
   '@container (max-width: 400px)': {
     position: 'static',
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
+    order: 2,
     '& > span': srOnlyStyles,
   },
 
   // Fallback for browsers without container query support
   '@media (max-width: 400px)': {
     position: 'static',
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
+    order: 2,
     '& > span': srOnlyStyles,
   },
 });

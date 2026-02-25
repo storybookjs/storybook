@@ -9,6 +9,25 @@ import { ManagerErrorBoundary } from './ManagerErrorBoundary';
 let consoleErrorSpy: ReturnType<typeof spyOn>;
 const sendTelemetryErrorMock = fn();
 
+// Stable wrapper: only cleanup in useEffect so teardown runs correctly with React Strict Mode.
+// Setup must run synchronously in the decorator so the spy is in place before Story renders.
+const RestoreGlobals = ({
+  children,
+  originalSendTelemetryError,
+}: {
+  children: React.ReactNode;
+  originalSendTelemetryError: typeof globalThis.sendTelemetryError;
+}) => {
+  useEffect(
+    () => () => {
+      consoleErrorSpy.mockRestore();
+      globalThis.sendTelemetryError = originalSendTelemetryError;
+    },
+    [originalSendTelemetryError]
+  );
+  return <>{children}</>;
+};
+
 // Component that throws an error immediately when rendered
 const ThrowingComponent = ({ shouldThrow = true }: { shouldThrow?: boolean }) => {
   if (shouldThrow) {
@@ -67,20 +86,8 @@ const meta = preview.meta({
       sendTelemetryErrorMock.mockClear();
       const originalSendTelemetryError = globalThis.sendTelemetryError;
       globalThis.sendTelemetryError = sendTelemetryErrorMock;
-
-      const RestoreGlobals = ({ children }: { children: React.ReactNode }) => {
-        useEffect(
-          () => () => {
-            consoleErrorSpy.mockRestore();
-            globalThis.sendTelemetryError = originalSendTelemetryError;
-          },
-          []
-        );
-        return <>{children}</>;
-      };
-
       return (
-        <RestoreGlobals>
+        <RestoreGlobals originalSendTelemetryError={originalSendTelemetryError}>
           <Story />
         </RestoreGlobals>
       );

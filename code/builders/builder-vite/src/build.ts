@@ -47,8 +47,7 @@ export async function build(options: Options) {
   finalConfig.plugins?.push({
     name: 'storybook:enforce-output-dir',
     enforce: 'post',
-    config: (config) => ({
-      ...config,
+    config: () => ({
       build: {
         outDir: options.outputDir,
       },

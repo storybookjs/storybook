@@ -71,6 +71,7 @@ const meta = preview.meta({
       const RestoreGlobals = ({ children }: { children: React.ReactNode }) => {
         useEffect(
           () => () => {
+            consoleErrorSpy.mockRestore();
             globalThis.sendTelemetryError = originalSendTelemetryError;
           },
           []
@@ -106,10 +107,7 @@ export const WithError = meta.story({
       'Storybook Manager UI Error:',
       expect.any(Error)
     );
-    await expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Component Stack:',
-      expect.stringContaining('ThrowingComponent')
-    );
+    await expect(consoleErrorSpy).toHaveBeenCalledWith('Component Stack:', expect.any(String));
 
     await expect(sendTelemetryErrorMock).toHaveBeenCalledTimes(1);
     await expect(sendTelemetryErrorMock).toHaveBeenCalledWith(

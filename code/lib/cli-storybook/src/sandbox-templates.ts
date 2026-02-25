@@ -588,7 +588,7 @@ export const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'bench'],
     initOptions: {
       type: ProjectType.HTML,
     },
@@ -602,7 +602,7 @@ export const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'bench'],
     initOptions: {
       type: ProjectType.HTML,
     },
@@ -700,7 +700,7 @@ export const baseTemplates = {
       useCsfFactory: true,
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
   },
   'lit-vite/default-ts': {
     name: 'Lit Latest (Vite | TypeScript)',
@@ -715,7 +715,7 @@ export const baseTemplates = {
       useCsfFactory: true,
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
   },
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',

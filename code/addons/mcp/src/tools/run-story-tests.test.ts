@@ -283,6 +283,62 @@ describe('runStoryTestsTool', () => {
 		);
 	});
 
+	it('should run focused tests when stories input uses storyId', async () => {
+		const testContext = createTestContext();
+
+		setupChannelResponse({
+			status: 'completed',
+			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
+				storyIds: ['button--primary'],
+				totalTestCount: 1,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
+				componentTestCount: { success: 1, error: 0 },
+				a11yCount: { success: 1, warning: 0, error: 0 },
+				componentTestStatuses: [
+					{
+						storyId: 'button--primary',
+						typeId: 'storybook/component-test',
+						value: 'status-value:success',
+						title: 'Component Test',
+						description: '',
+					},
+				],
+				a11yStatuses: [],
+				a11yReports: {},
+				unhandledErrors: [],
+			},
+		});
+
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: RUN_STORY_TESTS_TOOL_NAME,
+				arguments: {
+					stories: [{ storyId: 'button--primary' }],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.content[0].text).toContain('button--primary');
+		expect(mockChannel.emit).toHaveBeenCalledWith(
+			'storybook/test/trigger-test-run-request',
+			expect.objectContaining({
+				storyIds: ['button--primary'],
+			}),
+		);
+	});
+
 	it('should pass a11y: false in config when disabled via input', async () => {
 		const testContext = createTestContext();
 

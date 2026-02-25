@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { findStoryIds } from './find-story-ids.ts';
 import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryInput } from '../types.ts';
 
 vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,
@@ -161,7 +162,9 @@ describe('findStoryIds', () => {
 		expect(result.found).toHaveLength(2);
 		expect(result.found.map((f) => f.id)).toEqual(['button--primary', 'input--default']);
 		expect(result.notFound).toHaveLength(1);
-		expect(result.notFound[0]!.input.exportName).toBe('NonExistent');
+		expect((result.notFound[0]!.input as StoryInput & { exportName: string }).exportName).toBe(
+			'NonExistent',
+		);
 	});
 
 	it('should return empty results for empty input', () => {
@@ -183,6 +186,34 @@ describe('findStoryIds', () => {
 
 		expect(result.found).toHaveLength(0);
 		expect(result.notFound).toHaveLength(1);
+	});
+
+	it('should find story by storyId input', () => {
+		const stories: StoryInput[] = [
+			{
+				storyId: 'button--primary',
+			},
+		];
+
+		const result = findStoryIds(mockStoryIndex, stories);
+
+		expect(result.found).toHaveLength(1);
+		expect(result.found[0]!.id).toBe('button--primary');
+		expect(result.notFound).toHaveLength(0);
+	});
+
+	it('should return not found for non-existent storyId input', () => {
+		const stories: StoryInput[] = [
+			{
+				storyId: 'button--does-not-exist',
+			},
+		];
+
+		const result = findStoryIds(mockStoryIndex, stories);
+
+		expect(result.found).toHaveLength(0);
+		expect(result.notFound).toHaveLength(1);
+		expect(result.notFound[0]!.errorMessage).toContain('button--does-not-exist');
 	});
 
 	it('should match stories when cwd and absolute path use Windows separators', () => {

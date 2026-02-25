@@ -1,25 +1,29 @@
 import type { McpServer } from 'tmcp';
-import path from 'node:path';
 import url from 'node:url';
-import { normalizeStoryPath } from 'storybook/internal/common';
-import { storyNameFromExport } from 'storybook/internal/csf';
-import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
 import { collectTelemetry } from '../telemetry.ts';
 import { buildArgsParam } from '../utils/build-args-param.ts';
 import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
+import { findStoryIds } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 import { StoryInput, StoryInputArray } from '../types.ts';
 import appTemplate from './preview-stories/preview-stories-app-template.html';
 import fs from 'node:fs/promises';
-import { slash } from '../utils/slash.ts';
 import { PREVIEW_STORIES_TOOL_NAME } from './tool-names.ts';
 
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
 
 const PreviewStoriesInput = v.object({
-	stories: StoryInputArray,
+	stories: v.pipe(
+		StoryInputArray,
+		v.description(
+			`Stories to preview.
+Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
+Use { storyId } when IDs were discovered from documentation tools.
+Use { absoluteStoryPath + exportName } only when you're already working in a specific .stories.* file and already have that context.`,
+		),
+	),
 });
 
 const PreviewStoriesOutput = v.object({
@@ -50,14 +54,6 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 	);
 
 	const appHtml = appTemplate.replace('// APP_SCRIPT_PLACEHOLDER', previewStoryAppScript);
-
-	// Keep normalization consistent with Storybook core importPath handling:
-	// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L403
-	// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L434-L441
-	const normalizeImportPath = (importPath: string): string => {
-		const normalized = path.posix.normalize(slash(importPath));
-		return slash(normalizeStoryPath(normalized));
-	};
 
 	server.resource(
 		{
@@ -111,68 +107,51 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 				}
 
 				const index = await fetchStoryIndex(origin);
-				const entriesList = Object.values(index.entries);
+				const { found, notFound } = findStoryIds(index, input.stories);
+				const entriesById = new Map(Object.values(index.entries).map((entry) => [entry.id, entry]));
 
 				const structuredResult: PreviewStoriesOutput['stories'] = [];
 				const textResult: string[] = [];
 
-				for (const inputParams of input.stories) {
-					const { exportName, explicitStoryName, absoluteStoryPath } = inputParams;
-
-					const normalizedCwd = slash(process.cwd());
-					const normalizedAbsolutePath = slash(absoluteStoryPath);
-					const relativePath = normalizeImportPath(
-						path.posix.relative(normalizedCwd, normalizedAbsolutePath),
-					);
-
-					logger.debug('Searching for:');
-					logger.debug({
-						exportName,
-						explicitStoryName,
-						absoluteStoryPath,
-						relativePath,
-					});
-
-					const foundStory = entriesList.find(
-						(entry) =>
-							normalizeImportPath(entry.importPath) === relativePath &&
-							[explicitStoryName, storyNameFromExport(exportName)].includes(entry.name),
-					);
-
-					if (foundStory) {
-						logger.debug(`Found story ID: ${foundStory.id}`);
-						let previewUrl = `${origin}/?path=/story/${foundStory.id}`;
-
-						// Add props as args query param if provided
-						const argsParam = buildArgsParam(inputParams.props ?? {});
-						if (argsParam) {
-							previewUrl += `&args=${argsParam}`;
-						}
-
-						// Add globals query param if provided
-						const globalsParam = buildArgsParam(inputParams.globals ?? {});
-						if (globalsParam) {
-							previewUrl += `&globals=${globalsParam}`;
-						}
-
+				for (const story of found) {
+					const indexEntry = entriesById.get(story.id);
+					if (!indexEntry) {
 						structuredResult.push({
-							title: foundStory.title,
-							name: foundStory.name,
-							previewUrl,
+							input: story.input,
+							error: `No story found for story ID "${story.id}"`,
 						});
-						textResult.push(previewUrl);
-					} else {
-						logger.debug('No story found');
-						let errorMessage = `No story found for export name "${exportName}" with absolute file path "${absoluteStoryPath}"`;
-						if (!explicitStoryName) {
-							errorMessage += ` (did you forget to pass the explicit story name?)`;
-						}
-						structuredResult.push({
-							input: inputParams,
-							error: errorMessage,
-						});
-						textResult.push(errorMessage);
+						textResult.push(`No story found for story ID "${story.id}"`);
+						continue;
 					}
+
+					let previewUrl = `${origin}/?path=/story/${story.id}`;
+
+					// Add props as args query param if provided
+					const argsParam = buildArgsParam(story.input.props ?? {});
+					if (argsParam) {
+						previewUrl += `&args=${argsParam}`;
+					}
+
+					// Add globals query param if provided
+					const globalsParam = buildArgsParam(story.input.globals ?? {});
+					if (globalsParam) {
+						previewUrl += `&globals=${globalsParam}`;
+					}
+
+					structuredResult.push({
+						title: indexEntry.title,
+						name: indexEntry.name,
+						previewUrl,
+					});
+					textResult.push(previewUrl);
+				}
+
+				for (const story of notFound) {
+					structuredResult.push({
+						input: story.input,
+						error: story.errorMessage,
+					});
+					textResult.push(story.errorMessage);
 				}
 
 				if (!disableTelemetry) {

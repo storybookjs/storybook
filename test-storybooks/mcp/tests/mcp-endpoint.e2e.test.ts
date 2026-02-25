@@ -115,44 +115,86 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
 				        "stories": {
+				          "description": "Stories to preview.
+				Use { storyId } when you discovered IDs from documentation tools and don't already know story file paths.
+				Use { absoluteStoryPath + exportName } when you're already working in a specific .stories.* file and have that context.",
 				          "items": {
-				            "properties": {
-				              "absoluteStoryPath": {
-				                "type": "string",
-				              },
-				              "explicitStoryName": {
-				                "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				            "anyOf": [
+				              {
+				                "properties": {
+				                  "absoluteStoryPath": {
+				                    "description": "Absolute path to the story file. Use together with exportName when story file context is already available.",
+				                    "type": "string",
+				                  },
+				                  "explicitStoryName": {
+				                    "description": "If the story has an explicit name set via the "name" property, that is different from the export name, provide it here.
 				Otherwise don't set this.",
-				                "type": "string",
-				              },
-				              "exportName": {
-				                "type": "string",
-				              },
-				              "globals": {
-				                "additionalProperties": {},
-				                "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				                    "type": "string",
+				                  },
+				                  "exportName": {
+				                    "description": "The export name of the story from the story file.
+				Use this path-based shape when you're already editing a .stories.* file and know the export names in that file.",
+				                    "type": "string",
+				                  },
+				                  "globals": {
+				                    "additionalProperties": {},
+				                    "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
 				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
-				                "propertyNames": {
-				                  "type": "string",
-				                },
-				                "type": "object",
-				              },
-				              "props": {
-				                "additionalProperties": {},
-				                "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				                    "propertyNames": {
+				                      "type": "string",
+				                    },
+				                    "type": "object",
+				                  },
+				                  "props": {
+				                    "additionalProperties": {},
+				                    "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
 				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
-				                "propertyNames": {
-				                  "type": "string",
+				                    "propertyNames": {
+				                      "type": "string",
+				                    },
+				                    "type": "object",
+				                  },
 				                },
+				                "required": [
+				                  "exportName",
+				                  "absoluteStoryPath",
+				                ],
 				                "type": "object",
 				              },
-				            },
-				            "required": [
-				              "exportName",
-				              "absoluteStoryPath",
+				              {
+				                "properties": {
+				                  "globals": {
+				                    "additionalProperties": {},
+				                    "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                    "propertyNames": {
+				                      "type": "string",
+				                    },
+				                    "type": "object",
+				                  },
+				                  "props": {
+				                    "additionalProperties": {},
+				                    "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                    "propertyNames": {
+				                      "type": "string",
+				                    },
+				                    "type": "object",
+				                  },
+				                  "storyId": {
+				                    "description": "The full Storybook story ID (for example "button--primary").
+				Use this shape when you discovered IDs from documentation tools like list-all-documentation (withStoryIds=true) or get-documentation.",
+				                    "type": "string",
+				                  },
+				                },
+				                "required": [
+				                  "storyId",
+				                ],
+				                "type": "object",
+				              },
 				            ],
-				            "type": "object",
 				          },
 				          "type": "array",
 				        },
@@ -194,43 +236,82 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "type": "string",
 				                  },
 				                  "input": {
-				                    "properties": {
-				                      "absoluteStoryPath": {
-				                        "type": "string",
-				                      },
-				                      "explicitStoryName": {
-				                        "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				                    "anyOf": [
+				                      {
+				                        "properties": {
+				                          "absoluteStoryPath": {
+				                            "description": "Absolute path to the story file. Use together with exportName when story file context is already available.",
+				                            "type": "string",
+				                          },
+				                          "explicitStoryName": {
+				                            "description": "If the story has an explicit name set via the "name" property, that is different from the export name, provide it here.
 				Otherwise don't set this.",
-				                        "type": "string",
-				                      },
-				                      "exportName": {
-				                        "type": "string",
-				                      },
-				                      "globals": {
-				                        "additionalProperties": {},
-				                        "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				                            "type": "string",
+				                          },
+				                          "exportName": {
+				                            "description": "The export name of the story from the story file.
+				Use this path-based shape when you're already editing a .stories.* file and know the export names in that file.",
+				                            "type": "string",
+				                          },
+				                          "globals": {
+				                            "additionalProperties": {},
+				                            "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
 				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
-				                        "propertyNames": {
-				                          "type": "string",
-				                        },
-				                        "type": "object",
-				                      },
-				                      "props": {
-				                        "additionalProperties": {},
-				                        "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				                            "propertyNames": {
+				                              "type": "string",
+				                            },
+				                            "type": "object",
+				                          },
+				                          "props": {
+				                            "additionalProperties": {},
+				                            "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
 				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
-				                        "propertyNames": {
-				                          "type": "string",
+				                            "propertyNames": {
+				                              "type": "string",
+				                            },
+				                            "type": "object",
+				                          },
 				                        },
+				                        "required": [
+				                          "exportName",
+				                          "absoluteStoryPath",
+				                        ],
 				                        "type": "object",
 				                      },
-				                    },
-				                    "required": [
-				                      "exportName",
-				                      "absoluteStoryPath",
+				                      {
+				                        "properties": {
+				                          "globals": {
+				                            "additionalProperties": {},
+				                            "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                            "propertyNames": {
+				                              "type": "string",
+				                            },
+				                            "type": "object",
+				                          },
+				                          "props": {
+				                            "additionalProperties": {},
+				                            "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                            "propertyNames": {
+				                              "type": "string",
+				                            },
+				                            "type": "object",
+				                          },
+				                          "storyId": {
+				                            "description": "The full Storybook story ID (for example "button--primary").
+				Use this shape when you discovered IDs from documentation tools like list-all-documentation (withStoryIds=true) or get-documentation.",
+				                            "type": "string",
+				                          },
+				                        },
+				                        "required": [
+				                          "storyId",
+				                        ],
+				                        "type": "object",
+				                      },
 				                    ],
-				                    "type": "object",
 				                  },
 				                },
 				                "required": [
@@ -299,45 +380,86 @@ describe('MCP Endpoint E2E Tests', () => {
 				        "stories": {
 				          "description": "Stories to test for focused feedback. Omit this field to run tests for all available stories.
 				Prefer running tests for specific stories while developing to get faster feedback,
-				and only omit this when you explicitly need to run all tests for comprehensive verification.",
+				and only omit this when you explicitly need to run all tests for comprehensive verification.
+				Use { storyId } when IDs were discovered from documentation tools.
+				Use { absoluteStoryPath + exportName } when you're currently working in a story file and already know those values.",
 				          "items": {
-				            "properties": {
-				              "absoluteStoryPath": {
-				                "type": "string",
-				              },
-				              "explicitStoryName": {
-				                "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				            "anyOf": [
+				              {
+				                "properties": {
+				                  "absoluteStoryPath": {
+				                    "description": "Absolute path to the story file. Use together with exportName when story file context is already available.",
+				                    "type": "string",
+				                  },
+				                  "explicitStoryName": {
+				                    "description": "If the story has an explicit name set via the "name" property, that is different from the export name, provide it here.
 				Otherwise don't set this.",
-				                "type": "string",
-				              },
-				              "exportName": {
-				                "type": "string",
-				              },
-				              "globals": {
-				                "additionalProperties": {},
-				                "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				                    "type": "string",
+				                  },
+				                  "exportName": {
+				                    "description": "The export name of the story from the story file.
+				Use this path-based shape when you're already editing a .stories.* file and know the export names in that file.",
+				                    "type": "string",
+				                  },
+				                  "globals": {
+				                    "additionalProperties": {},
+				                    "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
 				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
-				                "propertyNames": {
-				                  "type": "string",
-				                },
-				                "type": "object",
-				              },
-				              "props": {
-				                "additionalProperties": {},
-				                "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				                    "propertyNames": {
+				                      "type": "string",
+				                    },
+				                    "type": "object",
+				                  },
+				                  "props": {
+				                    "additionalProperties": {},
+				                    "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
 				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
-				                "propertyNames": {
-				                  "type": "string",
+				                    "propertyNames": {
+				                      "type": "string",
+				                    },
+				                    "type": "object",
+				                  },
 				                },
+				                "required": [
+				                  "exportName",
+				                  "absoluteStoryPath",
+				                ],
 				                "type": "object",
 				              },
-				            },
-				            "required": [
-				              "exportName",
-				              "absoluteStoryPath",
+				              {
+				                "properties": {
+				                  "globals": {
+				                    "additionalProperties": {},
+				                    "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                    "propertyNames": {
+				                      "type": "string",
+				                    },
+				                    "type": "object",
+				                  },
+				                  "props": {
+				                    "additionalProperties": {},
+				                    "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                    "propertyNames": {
+				                      "type": "string",
+				                    },
+				                    "type": "object",
+				                  },
+				                  "storyId": {
+				                    "description": "The full Storybook story ID (for example "button--primary").
+				Use this shape when you discovered IDs from documentation tools like list-all-documentation (withStoryIds=true) or get-documentation.",
+				                    "type": "string",
+				                  },
+				                },
+				                "required": [
+				                  "storyId",
+				                ],
+				                "type": "object",
+				              },
 				            ],
-				            "type": "object",
 				          },
 				          "type": "array",
 				        },
@@ -351,7 +473,15 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "List all available UI components and documentation entries from the Storybook",
 				    "inputSchema": {
-				      "properties": {},
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "withStoryIds": {
+				          "default": false,
+				          "description": "When true, includes story sub-bullets under each component with story name and story ID. Use this to discover IDs for downstream story-focused workflows without filesystem lookup.",
+				          "type": "boolean",
+				        },
+				      },
+				      "required": [],
 				      "type": "object",
 				    },
 				    "name": "list-all-documentation",
@@ -360,7 +490,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "Get documentation for a UI component or docs entry.
 
-				Returns the first 3 stories with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the get-documentation-for-story tool to fetch the story documentation for the specific story variant you need.
+				Returns the first 3 stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the get-documentation-for-story tool to fetch the story documentation for the specific story variant you need.
 
 				Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.",
 				    "inputSchema": {

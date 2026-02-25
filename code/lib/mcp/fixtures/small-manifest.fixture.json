@@ -8,6 +8,7 @@
 			"summary": "A simple button component",
 			"stories": [
 				{
+					"id": "button--primary",
 					"name": "Primary",
 					"description": "The primary button variant.",
 					"snippet": "const Primary = () => <Button variant=\"primary\">Click Me</Button>"
@@ -21,6 +22,7 @@
 			"description": "A container component for grouping related content.",
 			"stories": [
 				{
+					"id": "card--basic",
 					"name": "Basic",
 					"description": "A basic card with content.",
 					"snippet": "const Basic = () => (\n  <Card>\n    <h3>Title</h3>\n    <p>Content</p>\n  </Card>\n)"
@@ -34,6 +36,7 @@
 			"description": "A text input component with validation support.",
 			"stories": [
 				{
+					"id": "input--basic",
 					"name": "Basic",
 					"description": "A basic text input.",
 					"snippet": "const Basic = () => <Input label=\"Name\" placeholder=\"Enter name\" />"

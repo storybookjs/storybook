@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { normalizeStoryPath } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
@@ -20,6 +21,18 @@ export interface FindStoryIdsResult {
 	notFound: NotFoundStory[];
 }
 
+function isStoryIdInput(input: StoryInput): input is StoryInput & { storyId: string } {
+	return 'storyId' in input;
+}
+
+// Keep normalization consistent with Storybook core importPath handling:
+// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L403
+// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L434-L441
+function normalizeImportPath(importPath: string): string {
+	const normalized = path.posix.normalize(slash(importPath));
+	return slash(normalizeStoryPath(normalized));
+}
+
 /**
  * Finds story IDs in the story index that match the given story inputs.
  *
@@ -35,10 +48,32 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 	};
 
 	for (const storyInput of stories) {
+		if (isStoryIdInput(storyInput)) {
+			const foundEntry = entriesList.find((entry) => entry.id === storyInput.storyId);
+
+			if (foundEntry) {
+				logger.debug(`Found story ID: ${foundEntry.id}`);
+				result.found.push({
+					id: foundEntry.id,
+					input: storyInput,
+				});
+			} else {
+				logger.debug('No story found');
+				result.notFound.push({
+					input: storyInput,
+					errorMessage: `No story found for story ID "${storyInput.storyId}"`,
+				});
+			}
+
+			continue;
+		}
+
 		const { exportName, explicitStoryName, absoluteStoryPath } = storyInput;
 		const normalizedCwd = slash(process.cwd());
 		const normalizedAbsolutePath = slash(absoluteStoryPath);
-		const relativePath = `./${path.posix.relative(normalizedCwd, normalizedAbsolutePath)}`;
+		const relativePath = normalizeImportPath(
+			path.posix.relative(normalizedCwd, normalizedAbsolutePath),
+		);
 
 		logger.debug('Searching for:');
 		logger.debug({
@@ -50,7 +85,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 
 		const foundEntry = entriesList.find(
 			(entry) =>
-				entry.importPath === relativePath &&
+				normalizeImportPath(entry.importPath) === relativePath &&
 				[explicitStoryName, storyNameFromExport(exportName)].includes(entry.name),
 		);
 

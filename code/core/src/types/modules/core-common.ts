@@ -48,6 +48,11 @@ export interface CoreConfig {
    */
   enableCrashReports?: boolean;
   /**
+   * Enable hostname validation, currently only for WebSocket connections. Set to `[]` to disallow
+   * all hosts except known local/network address, or `true` to allow all hosts.
+   */
+  allowedHosts?: string[] | true;
+  /**
    * Enable CORS headings to run document in a "secure context" see:
    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
    * This enables these headers in development-mode: Cross-Origin-Opener-Policy: same-origin
@@ -108,6 +113,11 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
+  apply(
+    extension: 'server',
+    config?: StorybookConfigRaw['server'],
+    args?: any
+  ): Promise<StorybookConfigRaw['server']>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -214,7 +224,6 @@ export interface BuilderOptions {
   serverChannelUrl?: string;
   localAddress?: string;
   networkAddress?: string;
-  allowedHosts?: string[];
 }
 
 export interface StorybookConfigOptions {
@@ -333,6 +342,14 @@ export interface TestBuildFlags {
   disableTreeShaking?: boolean;
   /** Minify with ESBuild when using webpack. */
   esbuildMinify?: boolean;
+}
+
+export interface ServerConfig {
+  /**
+   * Enable hostname validation for WebSocket connections. Set to `[]` to disallow all hosts except
+   * known local/network address, or `['*']` to allow all hosts.
+   */
+  allowedHosts?: string[];
 }
 
 export interface TestBuildConfig {
@@ -518,6 +535,8 @@ export interface StorybookConfigRaw {
      */
     experimentalCodeExamples?: boolean;
   };
+
+  server?: ServerConfig;
 
   build?: TestBuildConfig;
 

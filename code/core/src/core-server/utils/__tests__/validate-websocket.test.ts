@@ -27,13 +27,14 @@ describe('isValidOrigin', () => {
     expect(isValidOrigin('http://127.0.0.1:6006', options)).toBe(true);
   });
 
-  it('when allowedHosts is undefined, allows any origin', () => {
+  // TODO: Change default to [] in SB11
+  it('when allowedHosts is undefined (default true), allows any origin', () => {
     expect(isValidOrigin('http://malicious-site.com', options)).toBe(true);
     expect(isValidOrigin('https://any-origin.example.com', options)).toBe(true);
   });
 
-  it('when allowedHosts is ["*"], allows any origin', () => {
-    const allowAllOptions = { ...options, allowedHosts: ['*'] } as any;
+  it('when allowedHosts is true, allows any origin', () => {
+    const allowAllOptions = { ...options, allowedHosts: true } as any;
     expect(isValidOrigin('http://malicious-site.com', allowAllOptions)).toBe(true);
     expect(isValidOrigin('https://any-origin.example.com', allowAllOptions)).toBe(true);
   });
@@ -135,52 +136,89 @@ describe('isValidOrigin', () => {
     expect(isValidOrigin('http://localhost:6006', optionsWithEmptyAllowed)).toBe(true);
     expect(isValidOrigin('https://arbitrary.com', optionsWithEmptyAllowed)).toBe(false);
   });
+
+  it('when host is 0.0.0.0 and allowedHosts is empty, permits all origins', () => {
+    const optionsZeroHost = {
+      host: '0.0.0.0',
+      allowedHosts: [],
+    } as any;
+    expect(isValidOrigin('http://malicious-site.com', optionsZeroHost)).toBe(true);
+    expect(isValidOrigin('https://any-origin.example.com', optionsZeroHost)).toBe(true);
+  });
+
+  it('when host is 0.0.0.0 but allowedHosts is not empty, does not permit arbitrary origins', () => {
+    const optionsZeroHostWithAllowed = {
+      host: '0.0.0.0',
+      localAddress: 'http://localhost:6006',
+      allowedHosts: ['my-app.example.com'],
+    } as any;
+    expect(isValidOrigin('http://malicious-site.com', optionsZeroHostWithAllowed)).toBe(false);
+    expect(isValidOrigin('https://my-app.example.com', optionsZeroHostWithAllowed)).toBe(true);
+  });
+
+  it('when allowedHosts entry includes port, matches against full host (hostname:port)', () => {
+    // Use non-default ports so requestUrl.host includes the port (Node omits default 443/80)
+    const optionsWithHostAndPort = {
+      localAddress: 'http://localhost:6006',
+      allowedHosts: ['my-app.example.com:8443', 'other.example.com:8080'],
+    } as any;
+    expect(isValidOrigin('https://my-app.example.com:8443', optionsWithHostAndPort)).toBe(true);
+    expect(isValidOrigin('http://other.example.com:8080', optionsWithHostAndPort)).toBe(true);
+    expect(isValidOrigin('https://my-app.example.com:8444', optionsWithHostAndPort)).toBe(false);
+    expect(isValidOrigin('https://my-app.example.com', optionsWithHostAndPort)).toBe(false);
+  });
 });
 
 describe('isValidToken', () => {
   const validToken = 'test-token-123';
 
+  const options = (token: string) => ({ token }) as any;
+
   it('returns true for matching tokens', () => {
-    expect(isValidToken(validToken, validToken)).toBe(true);
+    expect(isValidToken(validToken, options(validToken))).toBe(true);
   });
 
   it('returns false for non-matching tokens', () => {
-    expect(isValidToken('wrong-token', validToken)).toBe(false);
+    expect(isValidToken('wrong-token', options(validToken))).toBe(false);
   });
 
   it('returns false for null token', () => {
-    expect(isValidToken(null, validToken)).toBe(false);
+    expect(isValidToken(null, options(validToken))).toBe(false);
   });
 
   it('returns false for undefined token', () => {
-    expect(isValidToken(undefined as any, validToken)).toBe(false);
+    expect(isValidToken(undefined as any, options(validToken))).toBe(false);
   });
 
   it('returns false for empty token', () => {
-    expect(isValidToken('', validToken)).toBe(false);
+    expect(isValidToken('', options(validToken))).toBe(false);
   });
 
-  it('returns false for null expected token', () => {
-    expect(isValidToken(validToken, null as any)).toBe(false);
+  it('returns false when options.token is null', () => {
+    expect(isValidToken(validToken, { token: null } as any)).toBe(false);
+  });
+
+  it('returns false when options.token is undefined', () => {
+    expect(isValidToken(validToken, {} as any)).toBe(false);
   });
 
   it('returns false for empty expected token', () => {
-    expect(isValidToken(validToken, '')).toBe(false);
+    expect(isValidToken(validToken, options(''))).toBe(false);
   });
 
   it('returns false for tokens with different lengths', () => {
-    expect(isValidToken('short', 'much-longer-token')).toBe(false);
+    expect(isValidToken('short', options('much-longer-token'))).toBe(false);
   });
 
   it('handles special characters in tokens', () => {
     const specialToken = 'token-with-special-chars-!@#$%^&*()';
-    expect(isValidToken(specialToken, specialToken)).toBe(true);
-    expect(isValidToken(specialToken, 'different-token')).toBe(false);
+    expect(isValidToken(specialToken, options(specialToken))).toBe(true);
+    expect(isValidToken(specialToken, options('different-token'))).toBe(false);
   });
 
   it('handles unicode characters in tokens', () => {
     const unicodeToken = 'token-with-unicode-🚀-测试';
-    expect(isValidToken(unicodeToken, unicodeToken)).toBe(true);
-    expect(isValidToken(unicodeToken, 'different-token')).toBe(false);
+    expect(isValidToken(unicodeToken, options(unicodeToken))).toBe(true);
+    expect(isValidToken(unicodeToken, options('different-token'))).toBe(false);
   });
 });

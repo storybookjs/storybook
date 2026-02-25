@@ -138,7 +138,8 @@ const config = defineMain({
     },
   },
   core: {
-    disableTelemetry: true,
+    // disableTelemetry: true,
+    allowedHosts: ['storybook.ngrok-free.dev'],
   },
   features: {
     developmentModeForBuild: true,
@@ -172,6 +173,7 @@ const config = defineMain({
         target: BROWSER_TARGETS,
       },
       server: {
+        allowedHosts: ['nonstatutory-hydrodynamically-twila.ngrok-free.dev'],
         watch: {
           // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
           ignored: ['**/.nx/cache/**', '**/tsconfig.json'],

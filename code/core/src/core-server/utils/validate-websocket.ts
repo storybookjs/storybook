@@ -1,9 +1,15 @@
 import { timingSafeEqual } from 'node:crypto';
 
-import type { BuilderOptions } from 'storybook/internal/types';
+export type ValidateWebSocketOptions = {
+  token: string;
+  host?: string;
+  allowedHosts?: string[] | true;
+  localAddress?: string;
+  networkAddress?: string;
+};
 
 // TODO: Change to `[]` in SB11 to change from opt-in to opt-out
-const DEFAULT_ALLOWED_HOSTS: string[] = ['*'];
+const DEFAULT_ALLOWED_HOSTS: string[] | true = true;
 
 /**
  * Validates a request origin against known local/network addresses and allowed hosts.
@@ -14,9 +20,10 @@ const DEFAULT_ALLOWED_HOSTS: string[] = ['*'];
  */
 export const isValidOrigin = (
   requestOrigin: string | undefined,
-  { allowedHosts = DEFAULT_ALLOWED_HOSTS, localAddress, networkAddress }: BuilderOptions
+  options: ValidateWebSocketOptions
 ): boolean => {
-  if (allowedHosts.includes('*')) {
+  const allowedHosts = options.allowedHosts || DEFAULT_ALLOWED_HOSTS;
+  if (allowedHosts === true) {
     return true;
   }
   if (!requestOrigin) {
@@ -25,8 +32,8 @@ export const isValidOrigin = (
 
   try {
     const requestUrl = new URL(requestOrigin);
-    const localUrl = localAddress && new URL(localAddress);
-    const networkUrl = networkAddress && new URL(networkAddress);
+    const localUrl = options.localAddress && new URL(options.localAddress);
+    const networkUrl = options.networkAddress && new URL(options.networkAddress);
 
     if (localUrl && localUrl.origin === requestUrl.origin) {
       return true;
@@ -34,8 +41,12 @@ export const isValidOrigin = (
     if (networkUrl && networkUrl.origin === requestUrl.origin) {
       return true;
     }
-
-    return allowedHosts.includes(requestUrl.hostname);
+    if (options.host === '0.0.0.0' && allowedHosts.length === 0) {
+      return true;
+    }
+    return allowedHosts.some((host) =>
+      host.includes(':') ? host === requestUrl.host : host === requestUrl.hostname
+    );
   } catch {
     return false;
   }
@@ -46,13 +57,16 @@ export const isValidOrigin = (
  *
  * @returns `true` if tokens match, `false` otherwise
  */
-export function isValidToken(token: string | null, expectedToken: string): boolean {
-  if (!token || !expectedToken) {
+export function isValidToken(
+  requestToken: string | null,
+  options: ValidateWebSocketOptions
+): boolean {
+  if (!requestToken || !options.token) {
     return false;
   }
 
-  const a = new Uint8Array(Buffer.from(token, 'utf8'));
-  const b = new Uint8Array(Buffer.from(expectedToken, 'utf8'));
+  const a = new Uint8Array(Buffer.from(requestToken, 'utf8'));
+  const b = new Uint8Array(Buffer.from(options.token, 'utf8'));
   try {
     return a.length === b.length && timingSafeEqual(a, b);
   } catch {

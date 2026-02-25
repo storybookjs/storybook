@@ -2,13 +2,12 @@ import type { IncomingMessage } from 'node:http';
 
 import type { ChannelHandler } from 'storybook/internal/channels';
 import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
-import type { BuilderOptions } from 'storybook/internal/types';
 
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
 import { UniversalStore } from '../../shared/universal-store';
-import { isValidOrigin, isValidToken } from './validate-websocket';
+import { type ValidateWebSocketOptions, isValidOrigin, isValidToken } from './validate-websocket';
 
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 
@@ -23,10 +22,7 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
-  private token: string;
-
-  constructor(server: Server, options: BuilderOptions, token: string) {
-    this.token = token;
+  constructor(server: Server, options: ValidateWebSocketOptions) {
     this.socket = new WebSocketServer({ noServer: true });
 
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
@@ -41,7 +37,7 @@ export class ServerChannelTransport {
         }
 
         const requestToken = url.searchParams.get('token');
-        if (!isValidToken(requestToken, this.token)) {
+        if (!isValidToken(requestToken, options)) {
           throw new Error('Invalid websocket token');
         }
 
@@ -94,8 +90,8 @@ export class ServerChannelTransport {
   }
 }
 
-export function getServerChannel(server: Server, options: BuilderOptions, token: string) {
-  const transports = [new ServerChannelTransport(server, options, token)];
+export function getServerChannel(server: Server, options: ValidateWebSocketOptions) {
+  const transports = [new ServerChannelTransport(server, options)];
 
   const channel = new Channel({ transports, async: true });
 

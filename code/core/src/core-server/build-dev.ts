@@ -23,6 +23,7 @@ import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import Channel from '../channels';
 import { detectPnp } from '../cli/detect';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
@@ -92,7 +93,7 @@ export async function buildDevStandalone(
   }
 
   invariant(port, 'expected options to have a port');
-  const { address, networkAddress } = getServerAddresses(
+  const { address: localAddress, networkAddress } = getServerAddresses(
     port,
     options.host,
     options.https ? 'https' : 'http',
@@ -106,7 +107,7 @@ export async function buildDevStandalone(
   options.cacheKey = cacheKey;
   options.outputDir = outputDir;
   options.serverChannelUrl = getServerChannelUrl(port, options);
-  options.localAddress = address;
+  options.localAddress = localAddress;
   options.networkAddress = networkAddress;
 
   // TODO: Remove in SB11
@@ -121,7 +122,7 @@ export async function buildDevStandalone(
   }
 
   const config = await loadMainConfig(options);
-  const { framework } = config;
+  const { core, framework } = config;
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
@@ -156,7 +157,6 @@ export async function buildDevStandalone(
   } catch (e) {}
 
   const server = await getServer(options);
-  const channel = getServerChannel(server, options, getWsToken());
 
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
@@ -168,10 +168,30 @@ export async function buildDevStandalone(
     ],
     ...options,
     isCritical: true,
-    channel,
+    channel: new Channel({
+      transports: [
+        {
+          setHandler: () => () => console.error('CHANNEL IS NOT READY YET'),
+          send: () => () => console.error('CHANNEL IS NOT READY YET'),
+        },
+      ],
+    }),
   });
 
-  const { renderer, builder, disableTelemetry } = await presets.apply('core', {});
+  const { allowedHosts, renderer, builder, disableTelemetry } = await presets.apply('core', {});
+
+  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
+  // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
+  if (
+    options.host === '0.0.0.0' &&
+    (!allowedHosts || (allowedHosts !== true && allowedHosts.length === 0))
+  ) {
+    logger.warn(dedent`
+      --host is set to 0.0.0.0 but no allowedHosts are defined. Allowing all hosts.
+      To restrict allowed hosts, set core.allowedHosts in your main Storybook config.
+      See: https://storybook.js.org/docs/api/main-config/main-config-core
+    `);
+  }
 
   if (!builder) {
     throw new MissingBuilderError();
@@ -211,6 +231,14 @@ export async function buildDevStandalone(
   }
 
   const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
+
+  const channel = getServerChannel(server, {
+    token: getWsToken(),
+    host: options.host,
+    allowedHosts,
+    localAddress,
+    networkAddress,
+  });
 
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
@@ -290,12 +318,12 @@ export async function buildDevStandalone(
         updateInfo: versionCheck,
         version: storybookVersion,
         name,
-        address,
+        address: localAddress,
         networkAddress,
         managerTotalTime,
         previewTotalTime,
       });
     }
   }
-  return { port, address, networkAddress };
+  return { port, address: localAddress, networkAddress };
 }

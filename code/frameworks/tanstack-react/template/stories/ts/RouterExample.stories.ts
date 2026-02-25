@@ -1,20 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import {
-  RouterProvider,
+  createMemoryHistory,
   createRootRoute,
   createRoute,
+  createRouter,
 } from "@tanstack/react-router";
-import { createStoryMemoryRouter } from "@storybook/tanstack-react";
-import { expect, within, userEvent } from "storybook/test";
 
-import {
-  RouterAbout,
-  RouterAppLayout,
-  RouterAppSettings,
-  RouterHome,
-  RouterLayout,
-  RouterPost,
-} from "./RouterExample";
+import { RouterLayout, RouterHome, RouterAbout } from "./RouterExample";
 
 const rootRoute = createRootRoute({
   component: RouterLayout,

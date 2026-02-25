@@ -157,3 +157,16 @@ export type AllManifests = {
 	componentManifest: ComponentManifestMap;
 	docsManifest?: DocsManifestMap;
 };
+
+/**
+ * Shared Valibot field for the storybookId input, used in multi-source mode.
+ * Reused across tools that support source selection.
+ */
+export const StorybookIdField = {
+	storybookId: v.pipe(
+		v.string(),
+		v.description(
+			'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.',
+		),
+	),
+};

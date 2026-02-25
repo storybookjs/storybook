@@ -1,3 +1,16 @@
+## 10.2.12
+
+- Core: Sanitize inputs for save from controls - [#33868](https://github.com/storybookjs/storybook/pull/33868), thanks @valentinpalkovic!
+- Telemetry: Add project age - [#33910](https://github.com/storybookjs/storybook/pull/33910), thanks @shilman!
+- Webpack: Improve performance of module-mocking plugins - [#33169](https://github.com/storybookjs/storybook/pull/33169), thanks @valentinpalkovic!
+
+## 10.2.11
+
+- Addon-Vitest: Fix postinstall a11y installation - [#33888](https://github.com/storybookjs/storybook/pull/33888), thanks @valentinpalkovic!
+- Manifests: Use correct story name - [#33709](https://github.com/storybookjs/storybook/pull/33709), thanks @JReinhold!
+- Next.js: Handle legacyBehavior prop in Link mock component  - [#33862](https://github.com/storybookjs/storybook/pull/33862), thanks @yatishgoel!
+- React: Fix manifest stories empty when meta has no explicit title - [#33878](https://github.com/storybookjs/storybook/pull/33878), thanks @kasperpeulen!
+
 ## 10.2.10
 
 - Core: Require token for websocket connections - [#33820](https://github.com/storybookjs/storybook/pull/33820), thanks @ghengeveld!

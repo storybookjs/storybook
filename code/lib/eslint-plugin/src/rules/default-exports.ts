@@ -99,7 +99,7 @@ export default createStorybookRule({
       },
       'Program:exit': function (program: TSESTree.Program) {
         if (!isCsf4Style && !hasDefaultExport && !hasStoriesOfImport) {
-          const componentName = getComponentName(program, context.getFilename());
+          const componentName = getComponentName(program, context.filename);
           const firstNonImportStatement = program.body.find((n) => !isImportDeclaration(n));
           const node = firstNonImportStatement || program.body[0] || program;
 

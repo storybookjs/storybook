@@ -1,3 +1,32 @@
+## 10.3.0-alpha.11
+
+- Addon Pseudo-states: Process all nested css rules - [#33605](https://github.com/storybookjs/storybook/pull/33605), thanks @hpohlmeyer!
+- Core: Avoid hanging when inferring args for recursive calls on DOM elemens - [#33922](https://github.com/storybookjs/storybook/pull/33922), thanks @valentinpalkovic!
+- Core: Sanitize inputs for save from controls - [#33868](https://github.com/storybookjs/storybook/pull/33868), thanks @valentinpalkovic!
+- Telemetry: Add project age - [#33910](https://github.com/storybookjs/storybook/pull/33910), thanks @shilman!
+- Viewport: Prioritize story viewport globals and avoid user-global pollution - [#33849](https://github.com/storybookjs/storybook/pull/33849), thanks @ia319!
+
+## 10.3.0-alpha.10
+
+- Addon-Vitest: Fix postinstall a11y installation - [#33888](https://github.com/storybookjs/storybook/pull/33888), thanks @valentinpalkovic!
+- Builder-Vite: Use preview annotations as entry points for optimizeDeps - [#33875](https://github.com/storybookjs/storybook/pull/33875), thanks @copilot-swe-agent!
+- React Native Web: Fix inconsistent example stories - [#33891](https://github.com/storybookjs/storybook/pull/33891), thanks @danielalanbates!
+- Webpack: Improve performance of module-mocking plugins - [#33169](https://github.com/storybookjs/storybook/pull/33169), thanks @valentinpalkovic!
+
+## 10.3.0-alpha.9
+
+- React: Add react-docgen-typescript to component manifest - [#33818](https://github.com/storybookjs/storybook/pull/33818), thanks @kasperpeulen!
+
+## 10.3.0-alpha.8
+
+- A11y: Ensure popover dialogs have an ARIA label - [#33500](https://github.com/storybookjs/storybook/pull/33500), thanks @gayanMatch!
+- Addon-Vitest: Add channel API to programmatically trigger test runs - [#33206](https://github.com/storybookjs/storybook/pull/33206), thanks @JReinhold!
+- Builder-Vite: Centralize Vite plugins for builder-vite and addon-vitest - [#33819](https://github.com/storybookjs/storybook/pull/33819), thanks @valentinpalkovic!
+- Core: Revert Pull Request #33420 from Maelryn/fix/copy-button-overlap - [#33877](https://github.com/storybookjs/storybook/pull/33877), thanks @Sidnioulz!
+- Next.js-Vite: Fix failing postcss mutation - [#33879](https://github.com/storybookjs/storybook/pull/33879), thanks @valentinpalkovic!
+- React: Fix manifest stories empty when meta has no explicit title - [#33878](https://github.com/storybookjs/storybook/pull/33878), thanks @kasperpeulen!
+- UI: Fix Copy button overlapping code in portrait mode - [#33420](https://github.com/storybookjs/storybook/pull/33420), thanks @Maelryn!
+
 ## 10.3.0-alpha.7
 
 - Core: Require token for websocket connections - [#33820](https://github.com/storybookjs/storybook/pull/33820), thanks @ghengeveld!

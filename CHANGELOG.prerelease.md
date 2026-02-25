@@ -1,3 +1,11 @@
+## 10.3.0-alpha.11
+
+- Addon Pseudo-states: Process all nested css rules - [#33605](https://github.com/storybookjs/storybook/pull/33605), thanks @hpohlmeyer!
+- Core: Avoid hanging when inferring args for recursive calls on DOM elemens - [#33922](https://github.com/storybookjs/storybook/pull/33922), thanks @valentinpalkovic!
+- Core: Sanitize inputs for save from controls - [#33868](https://github.com/storybookjs/storybook/pull/33868), thanks @valentinpalkovic!
+- Telemetry: Add project age - [#33910](https://github.com/storybookjs/storybook/pull/33910), thanks @shilman!
+- Viewport: Prioritize story viewport globals and avoid user-global pollution - [#33849](https://github.com/storybookjs/storybook/pull/33849), thanks @ia319!
+
 ## 10.3.0-alpha.10
 
 - Addon-Vitest: Fix postinstall a11y installation - [#33888](https://github.com/storybookjs/storybook/pull/33888), thanks @valentinpalkovic!

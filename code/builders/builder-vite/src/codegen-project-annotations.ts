@@ -1,5 +1,6 @@
 import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
+import { STORY_HOT_UPDATED } from 'storybook/internal/core-events';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { genArrayFromRaw, genImport, genSafeVariableName } from 'knitwork';
@@ -68,6 +69,8 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
       if (import.meta.hot) {
         import.meta.hot.accept([${JSON.stringify(previewFileURL)}], (previewAnnotationModules) => {
+          // Cancel any running play function before patching in the new getProjectAnnotations
+          window?.__STORYBOOK_PREVIEW__?.channel?.emit('${STORY_HOT_UPDATED}');
           // getProjectAnnotations has changed so we need to patch the new one in
           window?.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({
             getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules),
@@ -96,6 +99,8 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
     if (import.meta.hot) {
       import.meta.hot.accept(${JSON.stringify(previewAnnotationURLs)}, (previewAnnotationModules) => {
+        // Cancel any running play function before patching in the new getProjectAnnotations
+        window?.__STORYBOOK_PREVIEW__?.channel?.emit('${STORY_HOT_UPDATED}');
         // getProjectAnnotations has changed so we need to patch the new one in
         window?.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({
           getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules),

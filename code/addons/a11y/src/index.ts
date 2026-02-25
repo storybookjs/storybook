@@ -5,6 +5,6 @@ import type { A11yTypes } from './types';
 
 export { PARAM_KEY } from './constants';
 export * from './params';
-export type { A11yGlobals, A11yTypes } from './types';
+export type { A11yGlobals, A11yTypes, A11yReport } from './types';
 
 export default () => definePreviewAddon<A11yTypes>(addonAnnotations);

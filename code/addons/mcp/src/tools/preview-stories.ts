@@ -107,13 +107,22 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 				}
 
 				const index = await fetchStoryIndex(origin);
-				const { found, notFound } = findStoryIds(index, input.stories);
+				const resolvedStories = findStoryIds(index, input.stories);
 				const entriesById = new Map(Object.values(index.entries).map((entry) => [entry.id, entry]));
 
 				const structuredResult: PreviewStoriesOutput['stories'] = [];
 				const textResult: string[] = [];
 
-				for (const story of found) {
+				for (const story of resolvedStories) {
+					if ('errorMessage' in story) {
+						structuredResult.push({
+							input: story.input,
+							error: story.errorMessage,
+						});
+						textResult.push(story.errorMessage);
+						continue;
+					}
+
 					const indexEntry = entriesById.get(story.id);
 					if (!indexEntry) {
 						structuredResult.push({
@@ -144,14 +153,6 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 						previewUrl,
 					});
 					textResult.push(previewUrl);
-				}
-
-				for (const story of notFound) {
-					structuredResult.push({
-						input: story.input,
-						error: story.errorMessage,
-					});
-					textResult.push(story.errorMessage);
 				}
 
 				if (!disableTelemetry) {

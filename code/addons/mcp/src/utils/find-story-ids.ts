@@ -16,10 +16,7 @@ export interface NotFoundStory {
 	errorMessage: string;
 }
 
-export interface FindStoryIdsResult {
-	found: FoundStory[];
-	notFound: NotFoundStory[];
-}
+export type FindStoryIdsResult = FoundStory | NotFoundStory;
 
 function isStoryIdInput(input: StoryInput): input is StoryInput & { storyId: string } {
 	return 'storyId' in input;
@@ -38,28 +35,25 @@ function normalizeImportPath(importPath: string): string {
  *
  * @param index - The Storybook story index
  * @param stories - Array of story inputs to search for
- * @returns Object containing found stories with their IDs and not-found stories with error messages
+ * @returns Array of per-input lookup results in the exact same order as the input stories
  */
-export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStoryIdsResult {
+export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStoryIdsResult[] {
 	const entriesList = Object.values(index.entries);
-	const result: FindStoryIdsResult = {
-		found: [],
-		notFound: [],
-	};
+	const result: FindStoryIdsResult[] = [];
 
 	for (const storyInput of stories) {
 		if (isStoryIdInput(storyInput)) {
-			const foundEntry = entriesList.find((entry) => entry.id === storyInput.storyId);
+			const foundEntry = index.entries[storyInput.storyId];
 
 			if (foundEntry) {
 				logger.debug(`Found story ID: ${foundEntry.id}`);
-				result.found.push({
+				result.push({
 					id: foundEntry.id,
 					input: storyInput,
 				});
 			} else {
 				logger.debug('No story found');
-				result.notFound.push({
+				result.push({
 					input: storyInput,
 					errorMessage: `No story found for story ID "${storyInput.storyId}"`,
 				});
@@ -91,7 +85,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 
 		if (foundEntry) {
 			logger.debug(`Found story ID: ${foundEntry.id}`);
-			result.found.push({
+			result.push({
 				id: foundEntry.id,
 				input: storyInput,
 			});
@@ -101,7 +95,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 			if (!explicitStoryName) {
 				errorMessage += ` (did you forget to pass the explicit story name?)`;
 			}
-			result.notFound.push({
+			result.push({
 				input: storyInput,
 				errorMessage,
 			});

@@ -209,6 +209,52 @@ describe('previewStoriesTool', () => {
 		});
 	});
 
+	it('should preserve output order for mixed found and not-found inputs', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{ storyId: 'button--does-not-exist' },
+						{ storyId: 'button--primary' },
+						{
+							exportName: 'Missing',
+							absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+						},
+						{ storyId: 'input--default' },
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.content).toEqual([
+			{
+				type: 'text',
+				text: 'No story found for story ID "button--does-not-exist"',
+			},
+			{
+				type: 'text',
+				text: 'http://localhost:6006/?path=/story/button--primary',
+			},
+			{
+				type: 'text',
+				text: `No story found for export name "Missing" with absolute file path "${process.cwd()}/src/Button.stories.tsx" (did you forget to pass the explicit story name?)`,
+			},
+			{
+				type: 'text',
+				text: 'http://localhost:6006/?path=/story/input--default',
+			},
+		]);
+	});
+
 	it('should return error message for story not found', async () => {
 		const request = {
 			jsonrpc: '2.0' as const,

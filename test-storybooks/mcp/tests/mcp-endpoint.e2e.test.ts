@@ -116,14 +116,15 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "properties": {
 				        "stories": {
 				          "description": "Stories to preview.
-				Use { storyId } when you discovered IDs from documentation tools and don't already know story file paths.
-				Use { absoluteStoryPath + exportName } when you're already working in a specific .stories.* file and have that context.",
+				Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
+				Use { storyId } when IDs were discovered from documentation tools.
+				Use { absoluteStoryPath + exportName } only when you're already working in a specific .stories.* file and already have that context.",
 				          "items": {
 				            "anyOf": [
 				              {
 				                "properties": {
 				                  "absoluteStoryPath": {
-				                    "description": "Absolute path to the story file. Use together with exportName when story file context is already available.",
+				                    "description": "Absolute path to the story file. Use together with exportName only when story file context is already available.",
 				                    "type": "string",
 				                  },
 				                  "explicitStoryName": {
@@ -133,7 +134,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				                  },
 				                  "exportName": {
 				                    "description": "The export name of the story from the story file.
-				Use this path-based shape when you're already editing a .stories.* file and know the export names in that file.",
+				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file.
+				If you do not already have story file context, prefer the storyId shape instead of searching files.",
 				                    "type": "string",
 				                  },
 				                  "globals": {
@@ -185,7 +187,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				                  },
 				                  "storyId": {
 				                    "description": "The full Storybook story ID (for example "button--primary").
-				Use this shape when you discovered IDs from documentation tools like list-all-documentation (withStoryIds=true) or get-documentation.",
+				Prefer this shape whenever you are not already working in a specific story file.
+				Use IDs discovered from list-all-documentation (withStoryIds=true) or get-documentation.",
 				                    "type": "string",
 				                  },
 				                },
@@ -240,7 +243,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                      {
 				                        "properties": {
 				                          "absoluteStoryPath": {
-				                            "description": "Absolute path to the story file. Use together with exportName when story file context is already available.",
+				                            "description": "Absolute path to the story file. Use together with exportName only when story file context is already available.",
 				                            "type": "string",
 				                          },
 				                          "explicitStoryName": {
@@ -250,7 +253,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				                          },
 				                          "exportName": {
 				                            "description": "The export name of the story from the story file.
-				Use this path-based shape when you're already editing a .stories.* file and know the export names in that file.",
+				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file.
+				If you do not already have story file context, prefer the storyId shape instead of searching files.",
 				                            "type": "string",
 				                          },
 				                          "globals": {
@@ -302,7 +306,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				                          },
 				                          "storyId": {
 				                            "description": "The full Storybook story ID (for example "button--primary").
-				Use this shape when you discovered IDs from documentation tools like list-all-documentation (withStoryIds=true) or get-documentation.",
+				Prefer this shape whenever you are not already working in a specific story file.
+				Use IDs discovered from list-all-documentation (withStoryIds=true) or get-documentation.",
 				                            "type": "string",
 				                          },
 				                        },
@@ -381,14 +386,15 @@ describe('MCP Endpoint E2E Tests', () => {
 				          "description": "Stories to test for focused feedback. Omit this field to run tests for all available stories.
 				Prefer running tests for specific stories while developing to get faster feedback,
 				and only omit this when you explicitly need to run all tests for comprehensive verification.
+				Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 				Use { storyId } when IDs were discovered from documentation tools.
-				Use { absoluteStoryPath + exportName } when you're currently working in a story file and already know those values.",
+				Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.",
 				          "items": {
 				            "anyOf": [
 				              {
 				                "properties": {
 				                  "absoluteStoryPath": {
-				                    "description": "Absolute path to the story file. Use together with exportName when story file context is already available.",
+				                    "description": "Absolute path to the story file. Use together with exportName only when story file context is already available.",
 				                    "type": "string",
 				                  },
 				                  "explicitStoryName": {
@@ -398,7 +404,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				                  },
 				                  "exportName": {
 				                    "description": "The export name of the story from the story file.
-				Use this path-based shape when you're already editing a .stories.* file and know the export names in that file.",
+				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file.
+				If you do not already have story file context, prefer the storyId shape instead of searching files.",
 				                    "type": "string",
 				                  },
 				                  "globals": {
@@ -450,7 +457,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				                  },
 				                  "storyId": {
 				                    "description": "The full Storybook story ID (for example "button--primary").
-				Use this shape when you discovered IDs from documentation tools like list-all-documentation (withStoryIds=true) or get-documentation.",
+				Prefer this shape whenever you are not already working in a specific story file.
+				Use IDs discovered from list-all-documentation (withStoryIds=true) or get-documentation.",
 				                    "type": "string",
 				                  },
 				                },

@@ -1,4 +1,5 @@
 import { expectTypeOf } from 'vitest';
+
 import type { HandlerFunction } from './HandlerFunction';
 
 // Should be assignable to async callback props (the fixed case)

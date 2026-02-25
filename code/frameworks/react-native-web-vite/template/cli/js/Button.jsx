@@ -38,9 +38,6 @@ const styles = StyleSheet.create({
   button: {
     borderWidth: 0,
     borderRadius: 48,
-    fontWeight: '700',
-    lineHeight: 1,
-
   },
   buttonText: {
     fontWeight: '700',

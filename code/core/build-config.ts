@@ -199,6 +199,7 @@ const config: BuildEntries = {
         exportEntries: ['./internal/mocking-utils/mocker-runtime'],
         entryPoint: './src/mocking-utils/mocker-runtime.js',
         dts: false,
+        splitting: false,
       },
     ],
     globalizedRuntime: [

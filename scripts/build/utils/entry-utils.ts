@@ -10,6 +10,7 @@ export type BuildEntry = {
   exportEntries?: ('.' | `./${string}`)[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
   dts?: false; // default to generating d.ts files for all entries, except if set to false
+  splitting?: false; // when false, code splitting is disabled for this entry (e.g. for files that must be a single bundle)
 };
 export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
 

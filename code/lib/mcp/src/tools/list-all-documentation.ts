@@ -1,4 +1,5 @@
 import type { McpServer } from 'tmcp';
+import * as v from 'valibot';
 import type { StorybookContext } from '../types.ts';
 import { getManifests, getMultiSourceManifests, errorToMCPContent } from '../utils/get-manifest.ts';
 import {
@@ -7,6 +8,18 @@ import {
 } from '../utils/manifest-formatter/markdown.ts';
 
 export const LIST_TOOL_NAME = 'list-all-documentation';
+
+const ListAllDocumentationInput = v.object({
+	withStoryIds: v.optional(
+		v.pipe(
+			v.boolean(),
+			v.description(
+				'When true, includes story sub-bullets under each component with story name and story ID. Use this to discover IDs for downstream story-focused workflows without filesystem lookup.',
+			),
+		),
+		false,
+	),
+});
 
 export async function addListAllDocumentationTool(
 	server: McpServer<any, StorybookContext>,
@@ -17,11 +30,13 @@ export async function addListAllDocumentationTool(
 			name: LIST_TOOL_NAME,
 			title: 'List All Documentation',
 			description: 'List all available UI components and documentation entries from the Storybook',
+			schema: ListAllDocumentationInput,
 			enabled,
 		},
-		async () => {
+		async (input) => {
 			try {
 				const ctx = server.ctx.custom;
+				const withStoryIds = input.withStoryIds ?? false;
 
 				// Multi-source mode: when sources are configured
 				if (ctx?.sources?.some((s) => s.url)) {
@@ -31,7 +46,9 @@ export async function addListAllDocumentationTool(
 						ctx.manifestProvider,
 					);
 
-					const lists = formatMultiSourceManifestsToLists(multiSourceManifests);
+					const lists = formatMultiSourceManifestsToLists(multiSourceManifests, {
+						withStoryIds,
+					});
 
 					const firstSuccess = multiSourceManifests.find((m) => !m.error);
 					if (firstSuccess) {
@@ -59,7 +76,9 @@ export async function addListAllDocumentationTool(
 				// Single-source mode: existing behavior
 				const manifests = await getManifests(ctx?.request, ctx?.manifestProvider);
 
-				const lists = formatManifestsToLists(manifests);
+				const lists = formatManifestsToLists(manifests, {
+					withStoryIds,
+				});
 
 				await ctx?.onListAllDocumentation?.({
 					context: ctx,

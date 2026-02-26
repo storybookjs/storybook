@@ -2,7 +2,7 @@ import type { McpServer } from 'tmcp';
 import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
 import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
-import { findStoryIds } from '../utils/find-story-ids.ts';
+import { findStoryIds, type FoundStory, type NotFoundStory } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
@@ -39,7 +39,10 @@ const RunStoryTestsInput = v.object({
 			v.description(
 				`Stories to test for focused feedback. Omit this field to run tests for all available stories.
 Prefer running tests for specific stories while developing to get faster feedback,
-and only omit this when you explicitly need to run all tests for comprehensive verification.`,
+and only omit this when you explicitly need to run all tests for comprehensive verification.
+Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
+Use { storyId } when IDs were discovered from documentation tools.
+Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.`,
 			),
 		),
 	),
@@ -144,13 +147,18 @@ For visual/design accessibility violations (for example color contrast), ask the
 
 				if (input.stories) {
 					const index = await fetchStoryIndex(origin);
-					const { found, notFound } = findStoryIds(index, input.stories);
+					const resolvedStories = findStoryIds(index, input.stories);
 
-					storyIds = found.map((story) => story.id);
+					storyIds = resolvedStories
+						.filter((story): story is FoundStory => 'id' in story)
+						.map((story) => story.id);
 					inputStoryCount = input.stories.length;
 
 					if (storyIds.length === 0) {
-						const errorMessages = notFound.map((story) => story.errorMessage).join('\n');
+						const errorMessages = resolvedStories
+							.filter((story): story is NotFoundStory => 'errorMessage' in story)
+							.map((story) => story.errorMessage)
+							.join('\n');
 
 						if (!disableTelemetry) {
 							await collectTelemetry({

@@ -17,6 +17,8 @@ Buttons should be used for actions that affect the current page or trigger opera
 
 ### Primary
 
+Story ID: button--primary
+
 The primary button variant is used for the main call-to-action on a page. It has the highest visual prominence and should be used sparingly to guide users toward the most important action.
 
 ## Best Practices
@@ -33,6 +35,8 @@ const Primary = () => <Button variant="primary">Click Me</Button>
 
 ### Secondary
 
+Story ID: button--secondary
+
 The secondary button variant is used for secondary actions that are still important but not the primary focus of the page.
 
 Secondary buttons have less visual weight than primary buttons and can be used multiple times on a page.
@@ -44,6 +48,8 @@ const Secondary = () => <Button variant="secondary">Cancel</Button>
 \`\`\`
 
 ### With Sizes
+
+Story ID: button--with-sizes
 
 Buttons are available in three sizes: small, medium (default), and large.
 
@@ -63,8 +69,8 @@ const WithSizes = () => (
 
 ### Other Stories
 
-- Loading: Button in loading state during async operations
-- Danger: Danger button for destructive actions
+- Loading (button--loading): Button in loading state during async operations
+- Danger (button--danger): Danger button for destructive actions
 
 ## Props
 
@@ -122,6 +128,8 @@ The Card component provides a consistent way to present information in a contain
 
 ### Basic
 
+Story ID: card--basic
+
 A basic card with just content.
 
 The default elevated variant provides subtle depth through shadow, making the card appear to float above the page. This is ideal for creating visual hierarchy and grouping related information.
@@ -138,6 +146,8 @@ const Basic = () => (
 \`\`\`
 
 ### With Header and Footer
+
+Story ID: card--with-header-and-footer
 
 A card with distinct header and footer sections.
 
@@ -157,6 +167,8 @@ const WithHeaderAndFooter = () => (
 \`\`\`
 
 ### Clickable
+
+Story ID: card--clickable
 
 An interactive card that responds to clicks.
 
@@ -179,8 +191,8 @@ const Clickable = () => (
 
 ### Other Stories
 
-- Variants: Card visual variants (elevated, outlined, flat)
-- User Profile: Complete user profile card example
+- Variants (card--variants): Card visual variants (elevated, outlined, flat)
+- User Profile (card--user-profile): Complete user profile card example
 
 ## Props
 
@@ -235,6 +247,8 @@ The Input component automatically manages ARIA attributes for labels, descriptio
 
 ### Basic
 
+Story ID: input--basic
+
 A basic text input with a label.
 
 This is the most common use case for the Input component. Always include a label for accessibility, even if it's visually hidden in your design.
@@ -246,6 +260,8 @@ const Basic = () => <Input label="Full Name" placeholder="Enter your name" />
 \`\`\`
 
 ### With Error
+
+Story ID: input--with-error
 
 An input displaying an error state with an error message.
 
@@ -259,6 +275,8 @@ const WithError = () => <Input label="Email" type="email" value="invalid-email" 
 
 ### With Helper Text
 
+Story ID: input--with-helper-text
+
 An input with helper text providing additional context or instructions.
 
 Helper text appears below the input and provides guidance without being an error. Use it to clarify format expectations, character limits, or provide helpful hints.
@@ -271,8 +289,8 @@ const WithHelperText = () => <Input label="Password" type="password" helperText=
 
 ### Other Stories
 
-- Types: Various input types (email, tel, url, number)
-- Disabled: Disabled input state
+- Types (input--types): Various input types (email, tel, url, number)
+- Disabled (input--disabled): Disabled input state
 
 ## Props
 

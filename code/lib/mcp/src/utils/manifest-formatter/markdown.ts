@@ -13,6 +13,10 @@ import { extractDocsSummary, MAX_SUMMARY_LENGTH } from './extract-docs-summary.t
  */
 export const MAX_STORIES_TO_SHOW = 3;
 
+type ListFormattingOptions = {
+	withStoryIds?: boolean;
+};
+
 function formatComponentLine(component: ComponentManifest): string {
 	const summary =
 		component.summary ??
@@ -31,6 +35,10 @@ function formatComponentLine(component: ComponentManifest): string {
 function formatDocLine(doc: Doc): string {
 	const summary = doc.summary ?? extractDocsSummary(doc.content);
 	return `- ${doc.title} (${doc.id})${summary ? `: ${summary}` : ''}`;
+}
+
+function formatStorySubLine(story: Story): string {
+	return `  - ${story.name}` + (story.id ? ` (${story.id})` : '');
 }
 
 /**
@@ -128,6 +136,10 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 		for (const story of storiesToShow) {
 			parts.push(`### ${story.name}`);
 			parts.push('');
+			if (story.id) {
+				parts.push(`Story ID: ${story.id}`);
+				parts.push('');
+			}
 			parts.push(...formatStoryContent(story, componentManifest.import));
 			parts.push('');
 		}
@@ -141,7 +153,8 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 			for (const story of remainingStories) {
 				const summary = extractSummary(story);
 				const summaryPart = summary ? `: ${summary}` : '';
-				parts.push(`- ${story.name}${summaryPart}`);
+				const storyLabel = story.id ? `${story.name} (${story.id})` : story.name;
+				parts.push(`- ${storyLabel}${summaryPart}`);
 			}
 			parts.push('');
 		}
@@ -232,13 +245,21 @@ export function formatDocsManifest(doc: Doc): string {
  * @param manifest - The component manifest map to format
  * @returns Formatted string representation of the component list
  */
-export function formatManifestsToLists(manifests: AllManifests): string {
+export function formatManifestsToLists(
+	manifests: AllManifests,
+	options: ListFormattingOptions = {},
+): string {
 	const parts: string[] = [];
 
 	parts.push('# Components');
 	parts.push('');
 	for (const component of Object.values(manifests.componentManifest.components)) {
 		parts.push(formatComponentLine(component));
+		if (options.withStoryIds) {
+			for (const story of component.stories ?? []) {
+				parts.push(formatStorySubLine(story));
+			}
+		}
 	}
 	parts.push('');
 
@@ -255,13 +276,10 @@ export function formatManifestsToLists(manifests: AllManifests): string {
 	return parts.join('\n').trim();
 }
 
-/**
- * Format multi-source manifests into grouped lists.
- * Each source is displayed with a heading and its components/docs listed underneath.
- * @param manifests - The multi-source manifests to format
- * @returns Formatted string representation grouped by source
- */
-export function formatMultiSourceManifestsToLists(manifests: SourceManifests[]): string {
+export function formatMultiSourceManifestsToLists(
+	manifests: SourceManifests[],
+	options: ListFormattingOptions = {},
+): string {
 	const parts: string[] = [];
 
 	for (const { source, componentManifest, docsManifest, error } of manifests) {
@@ -281,6 +299,11 @@ export function formatMultiSourceManifestsToLists(manifests: SourceManifests[]):
 			parts.push('');
 			for (const component of components) {
 				parts.push(formatComponentLine(component));
+				if (options.withStoryIds) {
+					for (const story of component.stories ?? []) {
+						parts.push(formatStorySubLine(story));
+					}
+				}
 			}
 			parts.push('');
 		}

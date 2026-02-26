@@ -156,9 +156,12 @@ The instructions ensure agents follow your project's conventions when creating o
 
 Allows agents to retrieve direct URLs to specific stories in your Storybook. The agent can request URLs for multiple stories by providing:
 
-- `absoluteStoryPath`: Absolute path to the story file
-- `exportName`: The export name of the story
-- `explicitStoryName`: Optional explicit story name
+- **Path-based input** (best when the agent is already editing a `.stories.*` file):
+  - `absoluteStoryPath`: Absolute path to the story file
+  - `exportName`: The export name of the story
+  - `explicitStoryName`: Optional explicit story name
+- **ID-based input** (best when the agent discovered stories via docs tools):
+  - `storyId`: Full Storybook story ID (for example `example-button--primary`)
 
 Example agent usage:
 
@@ -195,9 +198,13 @@ export default {
 
 Returns a list of all available UI components as well as standalone docs in your component library. Useful for the LLM as discovery and understanding what components are available to use.
 
+You can pass `withStoryIds: true` to include nested story entries (story name + story ID) under each component, which is useful before calling `preview-stories` or `run-story-tests` with `storyId`.
+
 #### 4. Get Documentation (`get-documentation`)
 
 Retrieves detailed documentation for a specific component or docs entry.
+
+Component documentation includes component ID and story IDs for listed stories, so agents can directly feed those IDs into `preview-stories` and `run-story-tests`.
 
 The agent provides a component/docs ID to retrieve its documentation. To get documentation for multiple entries, call this tool multiple times.
 

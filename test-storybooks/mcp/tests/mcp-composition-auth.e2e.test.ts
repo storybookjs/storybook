@@ -146,6 +146,8 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				### Primary
 
+				Story ID: example-button--primary
+
 				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
@@ -153,6 +155,8 @@ describe('MCP Composition Auth E2E Tests', () => {
 				\`\`\`
 
 				### Secondary
+
+				Story ID: example-button--secondary
 
 				\`\`\`
 				import { Button } from "@my-org/my-component-library";
@@ -162,6 +166,8 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				### Large
 
+				Story ID: example-button--large
+
 				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
@@ -170,8 +176,8 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				### Other Stories
 
-				- Small
-				- With A 11 Y Violation
+				- Small (example-button--small)
+				- With A 11 Y Violation (example-button--with-a-11-y-violation)
 
 				## Props
 

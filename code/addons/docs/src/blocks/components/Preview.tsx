@@ -1,6 +1,7 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
-import React, { Children, useCallback, useContext, useState } from 'react';
+import React, { Children, useCallback, useContext, useMemo, useState } from 'react';
 
+import { logger } from 'storybook/internal/client-logger';
 import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
 
@@ -155,10 +156,11 @@ export const Preview: FC<PreviewProps> = ({
   ...props
 }) => {
   const [expanded, setExpanded] = useState(isExpanded);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
-  const [additionalActionItems] = useState<ActionItem[]>(
-    additionalActions ? [...additionalActions] : []
+  const additionalActionItems = useMemo(
+    () => (additionalActions ? [...additionalActions] : []),
+    [additionalActions]
   );
   const sourceId = useId();
   const previewClasses = [className].concat(['sbdocs', 'sbdocs-preview', 'sb-unstyled']);
@@ -170,15 +172,17 @@ export const Preview: FC<PreviewProps> = ({
     await createCopyToClipboardFunction()(text);
   }, []);
 
-  const handleCopyCode = useCallback(() => {
-    if (copied) {
-      return;
+  const handleCopyCode = useCallback(async () => {
+    try {
+      await copyToClipboard(withSource?.code ?? '');
+      setCopied('Copied!');
+    } catch (err) {
+      logger.error(err);
+      setCopied('Copy error!');
     }
-    copyToClipboard(withSource?.code ?? '').then(() => {
-      setCopied(true);
-      globalThis.window.setTimeout(() => setCopied(false), COPIED_LABEL_ANIMATION_DURATION);
-    });
-  }, [copied, copyToClipboard, withSource?.code]);
+
+    globalThis.window.setTimeout(() => setCopied(null), COPIED_LABEL_ANIMATION_DURATION);
+  }, [copyToClipboard, withSource?.code]);
 
   const childProps = getChildProps(children);
 
@@ -227,6 +231,7 @@ export const Preview: FC<PreviewProps> = ({
         <ActionBar className="sbdocs sbdocs-preview-actions" innerStyle={{ paddingInline: 0 }}>
           {hasSourceError && (
             <Button
+              ariaLabel={false}
               disabled
               variant="ghost"
               className="docblock-code-toggle docblock-code-toggle--disabled"
@@ -237,6 +242,7 @@ export const Preview: FC<PreviewProps> = ({
           {hasValidSource && (
             <>
               <ToggleButton
+                ariaLabel={false}
                 pressed={expanded}
                 aria-expanded={expanded}
                 aria-controls={sourceId}
@@ -246,8 +252,8 @@ export const Preview: FC<PreviewProps> = ({
               >
                 <MarkupIcon /> {expanded ? 'Hide code' : 'Show code'}
               </ToggleButton>
-              <Button variant="ghost" onClick={handleCopyCode}>
-                <CopyIcon /> {copied ? 'Copied!' : 'Copy code'}
+              <Button ariaLabel={false} variant="ghost" onClick={handleCopyCode}>
+                <CopyIcon /> {copied ?? 'Copy code'}
               </Button>
             </>
           )}

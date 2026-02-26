@@ -44,8 +44,10 @@ export interface SourceCodeProps {
   /** The formatter the syntax highlighter uses for your story’s code. */
   format?: ComponentProps<typeof SyntaxHighlighter>['format'];
   /** Display the source snippet in a dark mode. */
-  dark?: boolean;  /** Whether to show the copy button. Defaults to true. */
-  copyable?: boolean;}
+  dark?: boolean;
+  /** Whether to show the copy button. Defaults to true. */
+  copyable?: boolean;
+}
 
 export interface SourceProps extends SourceCodeProps {
   isLoading?: boolean;

@@ -118,11 +118,22 @@ export function getCodeSnippet(
     ? metaPath.get('properties').filter((p) => p.isObjectProperty())
     : [];
 
-  const getRenderPath = (object: NodePath<t.ObjectProperty>[]) => {
+  // Tri-state render resolution: distinguishes "no render property" from
+  // "render exists but couldn't be resolved" so that an unresolvable story-level
+  // render (e.g. `render: ImportedTemplate`) doesn't incorrectly fall back to meta's render.
+  type RenderResolution =
+    | { kind: 'missing' }
+    | {
+        kind: 'resolved';
+        path: NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>;
+      }
+    | { kind: 'unresolved' };
+
+  const getRenderPath = (object: NodePath<t.ObjectProperty>[]): RenderResolution => {
     const renderPath = object.find((p) => keyOf(p.node) === 'render')?.get('value');
 
     if (!renderPath) {
-      return undefined;
+      return { kind: 'missing' };
     }
 
     // If render is an identifier (e.g. `render: Template`), try to resolve it
@@ -134,10 +145,10 @@ export function getCodeSnippet(
           resolved.isFunctionExpression() ||
           resolved.isFunctionDeclaration())
       ) {
-        return resolved;
+        return { kind: 'resolved', path: resolved };
       }
-      // Could not resolve to a function — skip render extraction, fall through to no-function path
-      return undefined;
+      // Render property exists but couldn't be resolved — don't fall back to meta's render
+      return { kind: 'unresolved' };
     }
 
     if (!(renderPath.isArrowFunctionExpression() || renderPath.isFunctionExpression())) {
@@ -146,13 +157,22 @@ export function getCodeSnippet(
       );
     }
 
-    return renderPath;
+    return { kind: 'resolved', path: renderPath };
   };
 
-  const metaRenderPath = getRenderPath(metaProps);
-  const renderPath = getRenderPath(storyProps);
+  const metaRender = getRenderPath(metaProps);
+  const storyRender = getRenderPath(storyProps);
 
-  storyFn ??= renderPath ?? metaRenderPath;
+  // Story render takes precedence. Only fall back to meta render when the story
+  // has no render property at all — NOT when it has one that couldn't be resolved.
+  if (!storyFn) {
+    storyFn =
+      storyRender.kind === 'resolved'
+        ? storyRender.path
+        : storyRender.kind === 'missing' && metaRender.kind === 'resolved'
+          ? metaRender.path
+          : undefined;
+  }
 
   // Collect args
   const metaArgs = metaArgsRecord(metaObj ?? null);

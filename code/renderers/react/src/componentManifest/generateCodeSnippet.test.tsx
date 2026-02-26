@@ -322,6 +322,34 @@ test('Meta level render: Template (identifier referencing unresolvable function)
   );
 });
 
+test('Story unresolvable render does not fall back to meta render', async () => {
+  // When a story has `render: ImportedTemplate` (unresolvable) and meta has an inline render,
+  // the story's render should take precedence — fall through to no-function JSX synthesis,
+  // NOT use meta's render function.
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      component: Button,
+      render: (args) => <Button {...args} extra="from-meta" />,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+
+    export const StoryWithImportedRender = {
+      render: ImportedTemplate,
+      args: { label: 'hello' }
+    };
+  `;
+  // Should NOT contain extra="from-meta" — that would mean meta's render leaked through
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const StoryWithImportedRender = () => <Button label="hello">Click me</Button>;"`
+  );
+});
+
 test('Meta level render', async () => {
   const input = dedent`
     import type { Meta } from '@storybook/react';

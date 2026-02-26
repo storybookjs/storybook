@@ -10,8 +10,8 @@ import { version } from '../../package.json';
 import { build } from '../cli/build';
 import { buildIndex as index } from '../cli/buildIndex';
 import { dev } from '../cli/dev';
-// TODO(T4): import { run } from '../cli/run';
 import { globalSettings } from '../cli/globalSettings';
+import { run } from '../cli/run';
 
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';
@@ -220,12 +220,13 @@ command('index')
   });
 
 command('run')
-  .requiredOption(
-    '--story <id>',
-    'ID of the story to run',
-    (val, prev) => [...(prev || []), val]
+  .requiredOption('--story <id>', 'ID of the story to run', (val, prev) => [...(prev || []), val])
+  .option(
+    '--timeout <ms>',
+    'Timeout in milliseconds for the run',
+    (str) => parseInt(str, 10),
+    30000
   )
-  .option('--timeout <ms>', 'Timeout in milliseconds for the run', (str) => parseInt(str, 10), 30000)
   .option('--no-bail', 'Do not exit after the first failure')
   .option('--keep-open', 'Keep the browser open after the run')
   .option('--json', 'Output results as JSON')
@@ -243,11 +244,7 @@ command('run')
       configDir: 'SBCONFIG_CONFIG_DIR',
     });
 
-    try {
-      throw new Error('not yet implemented — cli/run.ts will be added in T4');
-    } catch (error) {
-      await handleCommandFailure(options.logfile);
-    }
+    await run(options).catch(() => handleCommandFailure(options.logfile));
   });
 
 program.on('command:*', ([invalidCmd]) => {

@@ -186,5 +186,5 @@ export async function storybookDevServer(
     process.on('SIGTERM', cancelTelemetry);
   }
 
-  return { previewResult, managerResult, address, networkAddress };
+  return { previewResult, managerResult, address, networkAddress, serverChannel };
 }

@@ -2,11 +2,12 @@
 import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 
-import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
 import { raw as rawPlugin } from 'esbuild-raw-plugin';
 import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
+import type { Plugin as RolldownPlugin } from 'rolldown';
+import { build as rolldownBuild, watch as rolldownWatch } from 'rolldown';
 import { dedent } from 'ts-dedent';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info';
@@ -22,6 +23,46 @@ import {
   type EsbuildContextOptions,
   getExternal,
 } from './entry-utils';
+
+/**
+ * Rolldown plugin that replaces module imports with references to global variables. This is the
+ * rolldown-compatible equivalent of @fal-works/esbuild-plugin-global-externals.
+ *
+ * Used when building the globalizedRuntime (manager's runtime.tsx) so that packages like react,
+ * storybook/manager-api, etc. are resolved from the pre-populated globals set up by
+ * globals-runtime.ts rather than being bundled again.
+ */
+function rolldownGlobalExternalsPlugin(globalsMap: typeof globalsModuleInfoMap): RolldownPlugin {
+  const VIRTUAL_PREFIX = '\0rolldown-global-externals:';
+  return {
+    name: 'rolldown-global-externals',
+    resolveId(id) {
+      if (id in globalsMap) {
+        return `${VIRTUAL_PREFIX}${id}`;
+      }
+      return null;
+    },
+    load(id) {
+      if (!id.startsWith(VIRTUAL_PREFIX)) {
+        return null;
+      }
+      const moduleId = id.slice(VIRTUAL_PREFIX.length);
+      const info = globalsMap[moduleId as keyof typeof globalsMap];
+      if (!info) {
+        return null;
+      }
+      const { varName, namedExports } = info;
+      const lines: string[] = [];
+      if (namedExports) {
+        for (const exportName of namedExports) {
+          lines.push(`export const ${exportName} = ${varName}["${exportName}"];`);
+        }
+      }
+      lines.push(`export default ${varName};`);
+      return lines.join('\n');
+    },
+  };
+}
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -221,50 +262,103 @@ export async function generateBundle({
   }
 
   if (entries.runtime) {
-    const splitEntries = entries.runtime.filter((e) => e.splitting !== false);
-    const noSplitEntries = entries.runtime.filter((e) => e.splitting === false);
-
-    if (splitEntries.length > 0) {
-      contexts.push(
-        esbuild.context({
-          ...runtimeOptions,
-          entryPoints: splitEntries.map(({ entryPoint }) => entryPoint),
-          plugins: [
-            ...runtimeOptions.plugins,
-            metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
-          ],
-        })
-      );
-    }
-
-    if (noSplitEntries.length > 0) {
-      contexts.push(
-        esbuild.context({
-          ...runtimeOptions,
-          entryPoints: noSplitEntries.map(({ entryPoint }) => entryPoint),
-          plugins: [...runtimeOptions.plugins],
-        })
-      );
-    }
-  }
-
-  if (entries.globalizedRuntime) {
     contexts.push(
       esbuild.context({
         ...runtimeOptions,
-        splitting: true,
-        chunkNames: 'manager/_manager-chunks/[name]-[hash]',
-        entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+        entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
-          globalExternals(globalsModuleInfoMap),
-          metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
+          metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );
   }
 
   const compile = await Promise.all(contexts);
+
+  // Rolldown-based build for globalizedRuntime (manager assets).
+  // Rolldown provides controllable code splitting via codeSplitting.maxSize,
+  // enabling the sb-manager output to be split into chunks of a sensible size.
+  let globalizedRuntimeCleanup: (() => void) | undefined;
+  if (entries.globalizedRuntime) {
+    const managerAlias: Record<string, string> = {
+      // The following aliases ensure that the runtimes bundle in the actual sources of these modules
+      // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
+      'storybook/preview-api': join(DIR_CWD, 'src/preview-api'),
+      'storybook/manager-api': join(DIR_CWD, 'src/manager-api'),
+      'storybook/theming': join(DIR_CWD, 'src/theming'),
+      'storybook/test': join(DIR_CWD, 'src/test'),
+      'storybook/internal': join(DIR_CWD, 'src'),
+      'storybook/outline': join(DIR_CWD, 'src/outline'),
+      'storybook/backgrounds': join(DIR_CWD, 'src/backgrounds'),
+      'storybook/highlight': join(DIR_CWD, 'src/highlight'),
+      'storybook/measure': join(DIR_CWD, 'src/measure'),
+      'storybook/actions': join(DIR_CWD, 'src/actions'),
+      'storybook/viewport': join(DIR_CWD, 'src/viewport'),
+      // The following aliases ensure that the manager has a single version of React,
+      // even if transitive dependencies would depend on other versions.
+      react: resolvePackageDir('react'),
+      'react-dom': resolvePackageDir('react-dom'),
+      'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
+    };
+
+    const rolldownOptions = {
+      input: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+      cwd: DIR_CWD,
+      platform: 'browser' as const,
+      external: ['msw/browser', 'msw/core/http'],
+      resolve: {
+        alias: managerAlias,
+        conditionNames: ['browser', 'module', 'default'],
+      },
+      treeshake: true,
+      transform: {
+        jsx: 'react' as const,
+        define: {
+          // Set React (and the whole manager) in production mode
+          'process.env.NODE_ENV': '"production"',
+        },
+      },
+      plugins: [rolldownGlobalExternalsPlugin(globalsModuleInfoMap)],
+      output: {
+        dir: join(DIR_CWD, 'dist'),
+        format: 'es' as const,
+        entryFileNames: 'manager/[name].js',
+        chunkFileNames: 'manager/_manager-chunks/[name]-[hash].js',
+        /*
+         * Split the manager's runtime into chunks ≤ 500 KB so browsers can
+         * cache and load them efficiently.  esbuild lacks per-output maxSize
+         * control, which is why we use rolldown here.
+         */
+        codeSplitting: {
+          groups: [
+            {
+              name: 'chunk',
+              maxSize: 500 * 1024,
+            },
+          ],
+        },
+        legalComments: 'none' as const,
+      },
+    };
+
+    if (isWatch) {
+      const watcher = rolldownWatch(rolldownOptions);
+      watcher.on('event', (event) => {
+        if (event.code === 'BUNDLE_END') {
+          console.log(
+            `compiled ${picocolors.cyan(join(DIR_REL, 'dist', 'manager', 'runtime.js'))}`
+          );
+        }
+        if (event.code === 'ERROR') {
+          console.error('[rolldown] manager build error', event);
+        }
+      });
+      globalizedRuntimeCleanup = () => watcher.close();
+    } else {
+      await rolldownBuild(rolldownOptions);
+    }
+  }
 
   await Promise.all(
     compile.map(async (context) => {
@@ -280,4 +374,18 @@ export async function generateBundle({
       }
     })
   );
+
+  if (globalizedRuntimeCleanup) {
+    // In watch mode, the rolldown watcher runs indefinitely alongside the esbuild watchers.
+    // Register cleanup on process exit so the watcher is properly closed.
+    process.on('exit', globalizedRuntimeCleanup);
+    process.on('SIGINT', () => {
+      globalizedRuntimeCleanup!();
+      process.exit(0);
+    });
+    process.on('SIGTERM', () => {
+      globalizedRuntimeCleanup!();
+      process.exit(0);
+    });
+  }
 }

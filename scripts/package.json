@@ -162,6 +162,7 @@
     "react-dom": "^18.3.1",
     "recast": "^0.23.9",
     "rimraf": "^6.1.2",
+    "rolldown": "1.0.0-rc.5",
     "rollup": "^4.21.0",
     "rollup-plugin-dts": "^6.1.1",
     "semver": "^7.7.3",

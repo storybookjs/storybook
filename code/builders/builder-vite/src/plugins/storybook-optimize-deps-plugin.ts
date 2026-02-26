@@ -5,6 +5,7 @@ import type { Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/
 import { resolve } from 'pathe';
 import { type Plugin } from 'vite';
 
+import { getPackageName, isLocalWorkspacePackage } from '../utils/is-local-workspace-package';
 import { processPreviewAnnotation } from '../utils/process-preview-annotation';
 import { getUniqueImportPaths } from '../utils/unique-import-paths';
 
@@ -48,7 +49,16 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
             ...previewAnnotationEntries,
           ],
           // Extra deps explicitly included by Storybook presets (e.g. framework-specific packages).
-          include: [...extraOptimizeDeps, ...(config.optimizeDeps?.include ?? [])],
+          // Local workspace packages (symlinked monorepo packages) are excluded so that Vite
+          // watches and serves their dist files directly, enabling cache invalidation when
+          // those packages are rebuilt during development.
+          include: [
+            ...extraOptimizeDeps.filter((dep) => {
+              const pkgName = getPackageName(dep);
+              return !isLocalWorkspacePackage(pkgName, projectRoot);
+            }),
+            ...(config.optimizeDeps?.include ?? []),
+          ],
         },
       };
     },

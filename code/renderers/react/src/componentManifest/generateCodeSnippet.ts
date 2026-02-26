@@ -561,10 +561,7 @@ function transformArgsSpreadsInJsx(
 }
 
 /** Resolve the initializer for an identifier (e.g. `Template.bind({})` or `render: Template`). */
-function resolveIdentifierInit(
-  storyPath: NodePath<t.Node>,
-  identifier: NodePath<t.Identifier>
-) {
+function resolveIdentifierInit(storyPath: NodePath<t.Node>, identifier: NodePath<t.Identifier>) {
   const programPath = storyPath.findParent((p) => p.isProgram()) as NodePath<t.Program> | null;
 
   if (!programPath) {
@@ -578,10 +575,7 @@ function resolveIdentifierInit(
     }
     if (stmt.isExportNamedDeclaration()) {
       const decl = stmt.get('declaration');
-      if (
-        decl.isFunctionDeclaration() &&
-        decl.node.id?.name === identifier.node.name
-      ) {
+      if (decl.isFunctionDeclaration() && decl.node.id?.name === identifier.node.name) {
         return decl;
       }
     }

@@ -308,7 +308,16 @@ export function isReactComponentType(
  *
  * Rejects: plain objects, functions, Promises, void, etc.
  */
-function isReactNodeLike(typescript: typeof ts, checker: ts.TypeChecker, type: ts.Type): boolean {
+function isReactNodeLike(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  type: ts.Type,
+  depth = 0
+): boolean {
+  if (depth > MAX_UNWRAP_DEPTH) {
+    return false;
+  }
+
   // `any` is compatible with ReactNode (e.g., JSON.parse returns any)
   if (type.flags & typescript.TypeFlags.Any) {
     return true;
@@ -322,7 +331,7 @@ function isReactNodeLike(typescript: typeof ts, checker: ts.TypeChecker, type: t
   // Union types: any member being ReactNode-like makes it valid
   // (e.g., ReactElement | null, string | number | boolean | ReactElement | null | undefined)
   if (type.isUnion()) {
-    return type.types.some((t) => isReactNodeLike(typescript, checker, t));
+    return type.types.some((t) => isReactNodeLike(typescript, checker, t, depth + 1));
   }
 
   // ReactElement shape: has `type`, `props`, `key` properties
@@ -1095,6 +1104,7 @@ export function serializeComponentDocs(
       const forceOptional = new Set<string>();
       const unionMembers = (propsType as ts.UnionType).types;
 
+      const allMemberPropSets: Set<string>[] = [];
       for (const member of unionMembers) {
         const memberPropNames = new Set<string>();
         for (const prop of member.getApparentProperties()) {
@@ -1128,12 +1138,15 @@ export function serializeComponentDocs(
             }
           }
         }
+        allMemberPropSets.push(memberPropNames);
+      }
 
-        // Props not in this member → force optional
-        for (const name of seen.keys()) {
-          if (!memberPropNames.has(name)) {
-            forceOptional.add(name);
-          }
+      // Props not present in ALL union members → force optional.
+      // A prop that exists in variant B but not variant A must be optional
+      // since the caller may pass variant A which doesn't have it.
+      for (const name of seen.keys()) {
+        if (!allMemberPropSets.every((s) => s.has(name))) {
+          forceOptional.add(name);
         }
       }
 

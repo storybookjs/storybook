@@ -240,12 +240,11 @@ export class ComponentMetaProject {
       } else if (type === 'deleted') {
         if (program?.getSourceFile(filePath)) {
           this.projectVersion++;
-          this.shouldCheckRootFiles = true;
-          break;
         }
-      } else if (type === 'created') {
         this.shouldCheckRootFiles = true;
-        break;
+      } else if (type === 'created') {
+        this.projectVersion++;
+        this.shouldCheckRootFiles = true;
       }
     }
 

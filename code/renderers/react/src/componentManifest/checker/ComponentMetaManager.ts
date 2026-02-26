@@ -333,6 +333,9 @@ export class ComponentMetaManager {
       this.configProjects.delete(configPath);
       project?.dispose();
     }
+    // Clear searchedDirs so findMatchTSConfig re-scans directories.
+    // Without this, new tsconfigs in previously-scanned dirs would be invisible.
+    this.searchedDirs.clear();
   }
 
   // ---------------------------------------------------------------------------

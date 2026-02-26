@@ -52,4 +52,5 @@
   "typescript.tsdk": "./typescript/lib",
   "vitest.workspaceConfig": "./code/vitest.workspace.ts",
   "vitest.rootConfig": "./code/vitest.workspace.ts",
+  "traycer.alwaysAllowPayToRun": true,
 }

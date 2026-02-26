@@ -544,6 +544,73 @@ describe('previewStoriesTool', () => {
 		});
 	});
 
+	it('should include props as args query param in URL when using storyId', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{
+							storyId: 'button--primary',
+							props: {
+								label: 'Custom Label',
+								disabled: true,
+							},
+						},
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.structuredContent?.stories[0]).toEqual({
+			title: 'Button',
+			name: 'Primary',
+			previewUrl:
+				'http://localhost:6006/?path=/story/button--primary&args=label:Custom+Label;disabled:!true',
+		});
+	});
+
+	it('should include globals query param in URL when using storyId', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{
+							storyId: 'button--primary',
+							globals: {
+								theme: 'dark',
+								locale: 'fr',
+							},
+						},
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.structuredContent?.stories[0]).toEqual({
+			title: 'Button',
+			name: 'Primary',
+			previewUrl: 'http://localhost:6006/?path=/story/button--primary&globals=theme:dark;locale:fr',
+		});
+	});
+
 	it('should include both props and globals query params in URL', async () => {
 		const request = {
 			jsonrpc: '2.0' as const,

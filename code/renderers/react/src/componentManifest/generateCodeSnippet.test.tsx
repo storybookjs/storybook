@@ -221,6 +221,26 @@ test('CSF2 - with args', () => {
   );
 });
 
+test('render: Template (identifier referencing local function)', () => {
+  const input = withCSF3(dedent`
+    const Template = (args) => <Button {...args} label="String"></Button>
+    export const Interactive: Story = { render: Template }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Interactive = () => <Button label="String">Click me</Button>;"`
+  );
+});
+
+test('render: Template (identifier referencing unresolvable function)', () => {
+  // When Template can't be resolved (e.g. imported), fall back to no-function JSX synthesis
+  const input = withCSF3(dedent`
+    export const Interactive: Story = { render: Template }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Interactive = () => <Button>Click me</Button>;"`
+  );
+});
+
 test('Custom Render', () => {
   const input = withCSF3(dedent`
     export const CustomRender: Story = { render: () => <Button label="String"></Button> }
@@ -239,6 +259,54 @@ test('CustomRenderWithOverideArgs only', async () => {
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
     `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Render</Button>;"`
+  );
+});
+
+test('Meta level render: Template (identifier referencing local function)', async () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const Template = (args) => <Button {...args} override="overide" />;
+
+    const meta: Meta<typeof Button> = {
+      render: Template,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+
+    export const CustomRenderWithOverideArgs = {
+      args: { foo: 'bar', override: 'value' }
+    };
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Click me</Button>;"`
+  );
+});
+
+test('Meta level render: Template (identifier referencing unresolvable function)', async () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      component: Button,
+      render: Template,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+
+    export const Fallback = {
+      args: { foo: 'bar' }
+    };
+  `;
+  // Falls back to no-function JSX synthesis using component name
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Fallback = () => <Button foo="bar">Click me</Button>;"`
   );
 });
 

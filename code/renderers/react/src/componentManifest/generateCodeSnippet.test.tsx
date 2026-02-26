@@ -231,6 +231,18 @@ test('render: Template (identifier referencing local function)', () => {
   );
 });
 
+test('render: Template (identifier referencing local function declaration)', () => {
+  const input = withCSF3(dedent`
+    function Template(args) { return <Button {...args} label="String"></Button> }
+    export const Interactive: Story = { render: Template }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "function Interactive() {
+        return <Button label="String">Click me</Button>;
+    }"
+  `);
+});
+
 test('render: Template (identifier referencing unresolvable function)', () => {
   // When Template can't be resolved (e.g. imported), fall back to no-function JSX synthesis
   const input = withCSF3(dedent`

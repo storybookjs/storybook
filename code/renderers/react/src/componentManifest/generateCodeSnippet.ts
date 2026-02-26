@@ -130,7 +130,9 @@ export function getCodeSnippet(
       const resolved = resolveIdentifierInit(storyDeclaration, renderPath);
       if (
         resolved &&
-        (resolved.isArrowFunctionExpression() || resolved.isFunctionExpression())
+        (resolved.isArrowFunctionExpression() ||
+          resolved.isFunctionExpression() ||
+          resolved.isFunctionDeclaration())
       ) {
         return resolved;
       }
@@ -212,7 +214,13 @@ export function getCodeSnippet(
 
       if (changed) {
         return t.isFunctionDeclaration(fn)
-          ? t.functionDeclaration(fn.id, [], t.blockStatement(newBody), fn.generator, fn.async)
+          ? t.functionDeclaration(
+              t.identifier(storyName),
+              [],
+              t.blockStatement(newBody),
+              fn.generator,
+              fn.async
+            )
           : t.variableDeclaration('const', [
               t.variableDeclarator(
                 t.identifier(storyName),
@@ -223,7 +231,7 @@ export function getCodeSnippet(
     }
 
     return t.isFunctionDeclaration(fn)
-      ? fn
+      ? t.functionDeclaration(t.identifier(storyName), fn.params, fn.body, fn.generator, fn.async)
       : t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), fn)]);
   }
 
@@ -563,6 +571,23 @@ function resolveIdentifierInit(
     return null;
   }
 
+  // Check for function declarations: `function Template(args) { ... }` or `export function Template(args) { ... }`
+  for (const stmt of programPath.get('body')) {
+    if (stmt.isFunctionDeclaration() && stmt.node.id?.name === identifier.node.name) {
+      return stmt;
+    }
+    if (stmt.isExportNamedDeclaration()) {
+      const decl = stmt.get('declaration');
+      if (
+        decl.isFunctionDeclaration() &&
+        decl.node.id?.name === identifier.node.name
+      ) {
+        return decl;
+      }
+    }
+  }
+
+  // Check for variable declarations: `const Template = (args) => ...`
   const declarators = programPath.get('body').flatMap((stmt) => {
     if (stmt.isVariableDeclaration()) {
       return stmt.get('declarations');

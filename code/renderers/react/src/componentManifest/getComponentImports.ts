@@ -34,7 +34,7 @@ export type ComponentRef = {
   member?: string;
   path?: string;
   isPackage: boolean;
-  /** Minimum JSX nesting depth where this component first appears (0 = outermost). */
+  /** Minimum JSX nesting depth where this component first appears (1 = outermost JSX element). */
   jsxDepth?: number;
   reactDocgen?: ReturnType<typeof getReactDocgen>;
   reactDocgenTypescript?: ComponentDocWithExportName;
@@ -98,7 +98,7 @@ export const getComponents = ({
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
-  /** Minimum JSX nesting depth per component name (0 = outermost). */
+  /** Minimum JSX nesting depth per component name (1 = outermost JSX element). */
   const componentDepth = new Map<string, number>();
   const localToImport = new Map<string, { importId: string; importName: string }>();
 

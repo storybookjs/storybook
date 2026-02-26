@@ -295,17 +295,9 @@ export class ComponentMetaProject {
   // Primary extraction method — probe-free
   // ---------------------------------------------------------------------------
 
-  extractPropsFromStory(
-    storyFilePath: string,
-    componentPath: string,
-    exportName: string,
-    importId?: string,
-    memberAccess?: string
-  ): ComponentDoc[] {
-    const results = this.extractPropsFromStories([
-      { storyFilePath, componentPath, exportName, importId, memberAccess },
-    ]);
-    return results.get(storyFilePath)?.get(exportName) ?? [];
+  extractPropsFromStory(entry: StoryExtractionEntry): ComponentDoc[] {
+    const results = this.extractPropsFromStories([entry]);
+    return results.get(entry.storyFilePath)?.get(entry.exportName) ?? [];
   }
 
   extractPropsFromStories(
@@ -333,80 +325,85 @@ export class ComponentMetaProject {
     const byComponentPath = new Map<string, Resolved[]>();
 
     for (const entry of entries) {
-      const storySourceFile = program.getSourceFile(entry.storyFilePath);
-      if (!storySourceFile) {
-        continue;
-      }
-
-      const isPackageImport = entry.importId && !entry.importId.startsWith('.');
-      let componentSourceFile: ts.SourceFile | undefined;
-
-      if (isPackageImport) {
-        const resolved = this.typescript.resolveModuleName(
-          entry.importId!,
-          entry.storyFilePath,
-          this.commandLine.options,
-          this.typescript.sys
-        );
-        if (resolved.resolvedModule) {
-          componentSourceFile = program.getSourceFile(resolved.resolvedModule.resolvedFileName);
+      try {
+        const storySourceFile = program.getSourceFile(entry.storyFilePath);
+        if (!storySourceFile) {
+          continue;
         }
-      } else {
-        componentSourceFile = program.getSourceFile(entry.componentPath);
-      }
 
-      if (!componentSourceFile) {
-        continue;
-      }
+        const isPackageImport = entry.importId && !entry.importId.startsWith('.');
+        let componentSourceFile: ts.SourceFile | undefined;
 
-      // Path 1: Find JSX in story file
-      let propsType: ts.Type | undefined;
-      if (entry.importId) {
-        propsType = resolvePropsFromStoryFile(
-          this.typescript,
-          checker,
-          storySourceFile,
-          entry.importId,
-          entry.exportName,
-          entry.memberAccess
-        );
-      }
+        if (isPackageImport) {
+          const resolved = this.typescript.resolveModuleName(
+            entry.importId!,
+            entry.storyFilePath,
+            this.commandLine.options,
+            this.typescript.sys
+          );
+          if (resolved.resolvedModule) {
+            componentSourceFile = program.getSourceFile(resolved.resolvedModule.resolvedFileName);
+          }
+        } else {
+          componentSourceFile = program.getSourceFile(entry.componentPath);
+        }
 
-      // Path 2: Fallback — direct type inspection
-      if (!propsType) {
-        propsType = this.resolveFromComponentExport(
-          checker,
+        if (!componentSourceFile) {
+          continue;
+        }
+
+        // Path 1: Find JSX in story file
+        let propsType: ts.Type | undefined;
+        if (entry.importId) {
+          propsType = resolvePropsFromStoryFile(
+            this.typescript,
+            checker,
+            storySourceFile,
+            entry.importId,
+            entry.exportName,
+            entry.memberAccess
+          );
+        }
+
+        // Path 2: Fallback — direct type inspection
+        if (!propsType) {
+          propsType = this.resolveFromComponentExport(
+            checker,
+            componentSourceFile,
+            entry.exportName,
+            entry.memberAccess
+          );
+        }
+
+        if (!propsType) {
+          continue;
+        }
+
+        const resolvedFileName = componentSourceFile.fileName;
+        const defaultsSourcePath =
+          resolvedFileName.endsWith('.d.ts') ||
+          resolvedFileName.endsWith('.d.mts') ||
+          resolvedFileName.endsWith('.d.cts')
+            ? entry.componentPath
+            : undefined;
+
+        const key = entry.componentPath;
+        let group = byComponentPath.get(key);
+        if (!group) {
+          group = [];
+          byComponentPath.set(key, group);
+        }
+        group.push({
+          exportName: entry.exportName,
+          propsType,
+          componentPath: entry.componentPath,
           componentSourceFile,
-          entry.exportName,
-          entry.memberAccess
-        );
-      }
-
-      if (!propsType) {
+          defaultsSourcePath,
+        });
+      } catch {
+        // One bad component should not kill the entire batch.
         continue;
       }
-
-      const resolvedFileName = componentSourceFile.fileName;
-      const defaultsSourcePath =
-        resolvedFileName.endsWith('.d.ts') ||
-        resolvedFileName.endsWith('.d.mts') ||
-        resolvedFileName.endsWith('.d.cts')
-          ? entry.componentPath
-          : undefined;
-
-      const key = entry.componentPath;
-      let group = byComponentPath.get(key);
-      if (!group) {
-        group = [];
-        byComponentPath.set(key, group);
-      }
-      group.push({
-        exportName: entry.exportName,
-        propsType,
-        componentPath: entry.componentPath,
-        componentSourceFile,
-        defaultsSourcePath,
-      });
     }
 
     for (const [, resolvedEntries] of byComponentPath) {
@@ -469,20 +466,25 @@ export class ComponentMetaProject {
     const propsTypes = new Map<string, ts.Type>();
 
     for (const exp of exports) {
-      const name = exp.getName();
-      if (name !== 'default' && !/^[A-Z]/.test(name)) {
+      try {
+        const name = exp.getName();
+        if (name !== 'default' && !/^[A-Z]/.test(name)) {
+          continue;
+        }
+
+        const componentType = checker.getTypeOfSymbol(exp);
+
+        if (!isReactComponentType(this.typescript, checker, componentType)) {
+          continue;
+        }
+
+        const propsType = resolvePropsFromComponentType(this.typescript, checker, componentType);
+        if (propsType) {
+          propsTypes.set(name, propsType);
+        }
+      } catch {
+        // One bad export should not prevent extraction of other exports.
         continue;
-      }
-
-      const componentType = checker.getTypeOfSymbol(exp);
-
-      if (!isReactComponentType(this.typescript, checker, componentType)) {
-        continue;
-      }
-
-      const propsType = resolvePropsFromComponentType(this.typescript, checker, componentType);
-      if (propsType) {
-        propsTypes.set(name, propsType);
       }
     }
 

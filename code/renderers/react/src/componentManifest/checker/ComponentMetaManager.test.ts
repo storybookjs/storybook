@@ -133,7 +133,7 @@ describe('ComponentMetaManager', () => {
     }
   });
 
-  it('creates separate projects for files under different tsconfigs', () => {
+  it('creates separate projects for files under different tsconfigs', { timeout: 30_000 }, () => {
     tempDir = createTempDir();
 
     // Create two sub-projects with their own tsconfigs

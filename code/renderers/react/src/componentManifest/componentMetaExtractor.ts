@@ -68,6 +68,9 @@ export interface ComponentDoc {
  * affected (only `.d.ts` and `node_modules` paths are checked).
  */
 const LARGE_SOURCE_THRESHOLD = 30;
+
+/** Max recursion depth for unwrapping React.memo/forwardRef/Object.assign chains. */
+const MAX_UNWRAP_DEPTH = 5;
 const MAX_SERIALIZATION_DEPTH = 5;
 
 // ---------------------------------------------------------------------------
@@ -507,7 +510,7 @@ function unwrapToFunction(
   depth = 0,
   checker?: ts.TypeChecker
 ): ts.FunctionLikeDeclaration | undefined {
-  if (depth > 5) {
+  if (depth > MAX_UNWRAP_DEPTH) {
     return undefined;
   }
 
@@ -572,7 +575,7 @@ function resolveLiteralValue(
   node: ts.Expression,
   depth = 0
 ): string {
-  if (depth > 5) {
+  if (depth > MAX_UNWRAP_DEPTH) {
     return node.getText();
   }
 
@@ -967,10 +970,21 @@ function extractPropItem(
  * unaffected.
  */
 function getBulkSourceExclusions(properties: ts.Symbol[]): Set<string> {
+  // Cache getPropSourceFile results — avoids walking declarations twice per prop.
+  const propSourceCache = new Map<ts.Symbol, string | undefined>();
+  const getSource = (prop: ts.Symbol) => {
+    let cached = propSourceCache.get(prop);
+    if (cached === undefined && !propSourceCache.has(prop)) {
+      cached = getPropSourceFile(prop);
+      propSourceCache.set(prop, cached);
+    }
+    return cached;
+  };
+
   const sourceCount = new Map<string, number>();
 
   for (const prop of properties) {
-    const source = getPropSourceFile(prop);
+    const source = getSource(prop);
     if (source && (source.includes('node_modules') || source.endsWith('.d.ts'))) {
       sourceCount.set(source, (sourceCount.get(source) ?? 0) + 1);
     }
@@ -984,7 +998,7 @@ function getBulkSourceExclusions(properties: ts.Symbol[]): Set<string> {
 
   const excluded = new Set<string>();
   for (const prop of properties) {
-    const source = getPropSourceFile(prop);
+    const source = getSource(prop);
     if (source && bulkSources.has(source)) {
       excluded.add(prop.getName());
     }
@@ -1093,7 +1107,7 @@ export function serializeComponentDocs(
           // Detect these "degraded" props so we can prefer the real variant.
           const isDegraded =
             !!(propType.getFlags() & typescript.TypeFlags.Never) ||
-            propType.getFlags() === typescript.TypeFlags.Undefined;
+            !!(propType.getFlags() & typescript.TypeFlags.Undefined);
 
           // Props with degraded type or optional in any variant → force optional
           if (isOptional || isDegraded) {
@@ -1108,7 +1122,7 @@ export function serializeComponentDocs(
             const existingType = checker.getTypeOfSymbolAtLocation(existing, contextNode);
             const existingIsDegraded =
               !!(existingType.getFlags() & typescript.TypeFlags.Never) ||
-              existingType.getFlags() === typescript.TypeFlags.Undefined;
+              !!(existingType.getFlags() & typescript.TypeFlags.Undefined);
             if (existingIsDegraded) {
               seen.set(name, prop);
             }
@@ -1357,7 +1371,7 @@ function unwrapToFunctionAST(
   varMap: Map<string, ts.Expression>,
   depth: number
 ): ts.FunctionLikeDeclaration | undefined {
-  if (depth > 10) {
+  if (depth > MAX_UNWRAP_DEPTH) {
     return undefined;
   }
 

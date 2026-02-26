@@ -4,7 +4,7 @@
  * Mirrors Volar LS's typescriptProject.ts:
  *
  * - ConfigProjects / inferredProject / rootTsConfigs / searchedDirs
- * - FindMatchTSConfig → prepareClosestootCommandLine / findDirectIncludeTsconfig /
+ * - FindMatchTSConfig → prepareClosestRootCommandLine / findDirectIncludeTsconfig /
  *   findIndirectReferenceTsconfig / findTSConfig / getReferencesChains / getCommandLine
  * - GetOrCreateConfiguredProject / getOrCreateInferredProject
  * - SortTSConfigs / isFileInDir
@@ -13,6 +13,8 @@
  * Plus our own file watching layer (fs.watch + debounce) since we're a standalone Node.js process,
  * not running inside an IDE.
  */
+import { logger } from 'storybook/internal/node-logger';
+
 import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
 import type ts from 'typescript';
@@ -81,7 +83,7 @@ export class ComponentMetaManager {
       }
       this.searchedDirs.add(dir);
       for (const tsConfigName of rootTsConfigNames) {
-        const tsconfigPath = path.join(dir, tsConfigName);
+        const tsconfigPath = path.join(dir, tsConfigName).replace(/\\/g, '/');
         if (this.typescript.sys.fileExists(tsconfigPath)) {
           this.rootTsConfigs.add(tsconfigPath);
         }
@@ -97,8 +99,8 @@ export class ComponentMetaManager {
       return null;
     }
 
-    // Volar LS pattern: prepareClosestootCommandLine (lines 124-138)
-    const prepareClosestootCommandLine = () => {
+    // Volar LS pattern: prepareClosestRootCommandLine (lines 124-138)
+    const prepareClosestRootCommandLine = () => {
       let matches: string[] = [];
       for (const rootTsConfig of this.rootTsConfigs) {
         if (isFileInDir(fileName, path.dirname(rootTsConfig))) {
@@ -213,7 +215,7 @@ export class ComponentMetaManager {
       return project?.getCommandLine();
     };
 
-    prepareClosestootCommandLine();
+    prepareClosestRootCommandLine();
 
     return findDirectIncludeTsconfig() ?? findIndirectReferenceTsconfig();
   }
@@ -237,9 +239,14 @@ export class ComponentMetaManager {
         );
         this.configProjects.set(tsconfig, project);
 
-        // Our addition: auto-watch the project's directory if watching is active.
-        this.watchDirectory(path.dirname(tsconfig));
-      } catch {
+        // Auto-watch the project's directories if watching is active.
+        // This covers projects discovered after initial startWatching().
+        if (this.watching) {
+          this.watchDirectory(path.dirname(tsconfig));
+          this.watchProgramSourceDirs(project);
+        }
+      } catch (err) {
+        logger.debug(`[reactComponentMeta] Failed to parse tsconfig ${tsconfig}: ${err}`);
         return null;
       }
     }
@@ -315,6 +322,7 @@ export class ComponentMetaManager {
    * (Changed||Deleted && has project).
    */
   onConfigChanged(configPath: string, type: 'created' | 'changed' | 'deleted') {
+    configPath = configPath.replace(/\\/g, '/');
     if (type === 'created') {
       this.rootTsConfigs.add(configPath);
     } else if ((type === 'changed' || type === 'deleted') && this.configProjects.has(configPath)) {
@@ -355,17 +363,23 @@ export class ComponentMetaManager {
    * where stories import components via path aliases (e.g. apps/storybook/ imports from
    * packages/ui/ via tsconfig paths).
    */
-  private watchProgramSourceDirs(): void {
+  private watchProgramSourceDirs(singleProject?: ComponentMetaProject): void {
     const dirs = new Set<string>();
 
-    for (const project of this.configProjects.values()) {
-      for (const filePath of project.getSourceFilePaths()) {
+    if (singleProject) {
+      for (const filePath of singleProject.getSourceFilePaths()) {
         dirs.add(path.dirname(filePath));
       }
-    }
-    if (this.inferredProject) {
-      for (const filePath of this.inferredProject.getSourceFilePaths()) {
-        dirs.add(path.dirname(filePath));
+    } else {
+      for (const project of this.configProjects.values()) {
+        for (const filePath of project.getSourceFilePaths()) {
+          dirs.add(path.dirname(filePath));
+        }
+      }
+      if (this.inferredProject) {
+        for (const filePath of this.inferredProject.getSourceFilePaths()) {
+          dirs.add(path.dirname(filePath));
+        }
       }
     }
 
@@ -459,8 +473,8 @@ export class ComponentMetaManager {
       });
       watcher.unref();
       this.watchers.push(watcher);
-    } catch {
-      // Directory might not exist or recursive watching not supported
+    } catch (err) {
+      logger.debug(`[reactComponentMeta] Failed to watch directory ${normalized}: ${err}`);
     }
   }
 

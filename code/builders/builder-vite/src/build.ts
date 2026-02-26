@@ -4,7 +4,6 @@ import type { Options } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 import type { InlineConfig } from 'vite';
 
-import { sanitizeEnvVars } from './envs';
 import { createViteLogger } from './logger';
 import type { WebpackStatsPlugin } from './plugins';
 import { hasVitePlugins } from './utils/has-vite-plugins';
@@ -40,6 +39,28 @@ export async function build(options: Options) {
 
   const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
 
+  // Add a plugin to enforce Storybook's outDir after all other plugins.
+  // This prevents frameworks like Nitro from redirecting
+  // build output to their own directories (e.g., .output/public/).
+  // The 'enforce: post' ensures this runs after all other config hooks.
+  finalConfig.plugins?.push({
+    name: 'storybook:enforce-output-dir',
+    enforce: 'post',
+    config: () => ({
+      build: {
+        outDir: options.outputDir,
+      },
+    }),
+    // configEnvironment is a new method in Vite 6
+    // It is used to configure configs based on the environment
+    // E.g. Nitro uses this method to set the output directory to .output/public/
+    configEnvironment: () => ({
+      build: {
+        outDir: options.outputDir,
+      },
+    }),
+  });
+
   if (options.features?.developmentModeForBuild) {
     finalConfig.plugins?.push({
       name: 'storybook:define-env',
@@ -67,7 +88,7 @@ export async function build(options: Options) {
 
   finalConfig.customLogger ??= await createViteLogger();
 
-  await viteBuild(await sanitizeEnvVars(options, finalConfig));
+  await viteBuild(finalConfig);
 
   const statsPlugin = findPlugin(
     finalConfig,

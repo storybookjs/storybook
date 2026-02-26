@@ -482,22 +482,6 @@ export class AddonVitestPostinstallFailedAddonA11yError extends StorybookError {
   }
 }
 
-export class AddonVitestPostinstallExistingSetupFileError extends StorybookError {
-  constructor(public data: { filePath: string }) {
-    super({
-      name: 'AddonVitestPostinstallExistingSetupFileError',
-      category: Category.CLI_INIT,
-      isHandledError: true,
-      code: 7,
-      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced`,
-      message: dedent`
-        Found an existing Vitest setup file: ${data.filePath}
-        Please refer to the documentation to complete the setup manually.
-      `,
-    });
-  }
-}
-
 export class AddonVitestPostinstallWorkspaceUpdateError extends StorybookError {
   constructor(public data: { filePath: string }) {
     super({

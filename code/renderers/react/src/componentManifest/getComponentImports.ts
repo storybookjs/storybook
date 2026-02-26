@@ -3,9 +3,24 @@ import { dirname } from 'node:path';
 import { type NodePath, babelParse, recast, types as t } from 'storybook/internal/babel';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
+import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
+
+import type { ParserOptions } from 'react-docgen-typescript';
 
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
+import {
+  type ComponentDocWithExportName,
+  matchComponentDoc,
+  parseWithReactDocgenTypescript,
+} from './reactDocgenTypescript';
 import { cachedResolveImport } from './utils';
+
+export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript';
+
+export interface TypescriptOptions extends TypescriptOptionsBase {
+  reactDocgen: ReactDocgenConfig;
+  reactDocgenTypescriptOptions: ParserOptions;
+}
 
 // Public component metadata type used across passes
 export type ComponentRef = {
@@ -18,6 +33,8 @@ export type ComponentRef = {
   path?: string;
   isPackage: boolean;
   reactDocgen?: ReturnType<typeof getReactDocgen>;
+  reactDocgenTypescript?: ComponentDocWithExportName;
+  reactDocgenTypescriptError?: { name: string; message: string };
 };
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
@@ -51,20 +68,19 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
  *
  * - Member expressions like Foo.Bar are supported; namespace imports are represented accordingly.
  * - If react-docgen determines a package import override, it is stored in `importOverride`.
- *
- * @param csf The parsed CSF file instance whose AST will be inspected.
- * @param storyFilePath Optional absolute path of the story file to resolve relative imports
- *   against.
- * @returns An array of component references sorted by componentName.
- * @public
  */
 export const getComponents = ({
   csf,
   storyFilePath,
+  typescriptOptions,
 }: {
   csf: CsfFile;
   storyFilePath?: string;
+  typescriptOptions: Partial<TypescriptOptions>;
 }): ComponentRef[] => {
+  const { reactDocgen = 'react-docgen', reactDocgenTypescriptOptions } = typescriptOptions;
+  // For the manifest, false (docgen disabled) defaults to react-docgen
+  const reactDocgenConfig = reactDocgen || 'react-docgen';
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
@@ -214,14 +230,47 @@ export const getComponents = ({
       const componentWithPackage = { ...component, isPackage };
 
       if (path) {
-        const reactDocgen = getReactDocgen(path, componentWithPackage);
-        return {
-          ...componentWithPackage,
-          path,
-          reactDocgen,
-          importOverride:
-            reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
-        };
+        if (reactDocgenConfig === 'react-docgen-typescript') {
+          let reactDocgenTypescript: ComponentDocWithExportName | undefined;
+          let reactDocgenTypescriptError: { name: string; message: string } | undefined;
+          try {
+            reactDocgenTypescript = matchComponentDoc(
+              parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
+              component
+            );
+          } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
+            reactDocgenTypescriptError = {
+              name: 'react-docgen-typescript parse error',
+              message: `File: ${path}\n${message}`,
+            };
+          }
+
+          // Extract importOverride from RDT's description (same JSDoc parsing as react-docgen)
+          const importOverride = reactDocgenTypescript
+            ? getImportTag(reactDocgenTypescript)
+            : undefined;
+
+          return {
+            ...componentWithPackage,
+            path,
+            ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+            ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
+            importOverride,
+          };
+        }
+
+        if (reactDocgenConfig === 'react-docgen') {
+          const reactDocgen = getReactDocgen(path, componentWithPackage);
+          return {
+            ...componentWithPackage,
+            path,
+            reactDocgen,
+            importOverride:
+              reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
+          };
+        }
       }
       return componentWithPackage;
     })
@@ -527,15 +576,17 @@ export function getComponentData({
   csf,
   packageName,
   storyFilePath,
+  typescriptOptions = {},
 }: {
   csf: CsfFile;
   packageName?: string;
   storyFilePath?: string;
+  typescriptOptions?: Partial<TypescriptOptions>;
 }): {
   components: ComponentRef[];
   imports: string[];
 } {
-  const components = getComponents({ csf, storyFilePath });
+  const components = getComponents({ csf, storyFilePath, typescriptOptions });
   const imports = getImports({ components, packageName });
   return { components, imports };
 }

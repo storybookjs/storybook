@@ -393,6 +393,7 @@ export const ColorControl: FC<ColorControlProps> = ({
         placeholder="Choose color..."
       />
       <PopoverProvider
+        ariaLabel="Color picker"
         defaultVisible={startOpen}
         visible={readOnly ? false : undefined}
         onVisibleChange={() => color && addPreset(color)}

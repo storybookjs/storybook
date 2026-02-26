@@ -4,7 +4,6 @@ import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
-import { hostValidationMiddleware } from 'host-validation-middleware';
 import polka from 'polka';
 
 import { telemetry } from '../telemetry';

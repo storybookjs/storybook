@@ -7,8 +7,8 @@ import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
 import { UniversalStore } from '../../shared/universal-store';
-import { type HostValidationOptions } from './getHostValidationMiddleware';
-import { isValidOrigin, isValidToken } from './validate-websocket';
+import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware';
+import { isValidToken } from './validate-token';
 
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 
@@ -37,7 +37,8 @@ export class ServerChannelTransport {
           return;
         }
 
-        if (!isValidOrigin(request.headers.origin, options)) {
+        const originHost = request.headers.origin && new URL(request.headers.origin).host;
+        if (!isValidHost(originHost, options)) {
           throw new Error('Invalid websocket origin');
         }
 

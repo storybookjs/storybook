@@ -1,3 +1,5 @@
+import { realpathSync } from 'node:fs';
+
 import type { PreviewAnnotation } from 'storybook/internal/types';
 
 import { isAbsolute, normalize, resolve } from 'pathe';
@@ -13,7 +15,16 @@ export function processPreviewAnnotation(path: PreviewAnnotation, projectRoot: s
     if (path.bare != null && path.absolute === '') {
       return path.bare;
     }
-    return normalize(path.absolute);
+    // Resolve symlinks to get the real path. In a monorepo, workspace packages are symlinked
+    // in node_modules. When Vite resolves imports with preserveSymlinks: false (the default),
+    // it uses the real path in the module graph. Using the same real path here ensures that
+    // import.meta.hot.accept() URLs in the generated virtual module match Vite's module graph,
+    // enabling HMR to work correctly when workspace package files change.
+    try {
+      return normalize(realpathSync(path.absolute));
+    } catch {
+      return normalize(path.absolute);
+    }
   }
 
   // If it's already an absolute path, return it.

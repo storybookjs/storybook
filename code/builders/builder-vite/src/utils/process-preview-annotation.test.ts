@@ -1,10 +1,42 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { onlyWindows, skipWindows } from '../../../../vitest.helpers';
 import { processPreviewAnnotation } from './process-preview-annotation';
 
+const realpathSyncMock = vi.fn().mockImplementation((absPath: string) => {
+  // By default, simulate a non-existent or regular file (no symlink) by returning the same path.
+  // Individual tests can override this to simulate a symlink.
+  return absPath;
+});
+
+vi.mock('node:fs', () => ({
+  realpathSync: (...args: any[]) => realpathSyncMock(...args),
+}));
+
 describe('processPreviewAnnotation()', () => {
   it('should pull the `absolute` value from an object', () => {
+    const annotation = {
+      bare: '@storybook/addon-links/preview',
+      absolute: '/Users/foo/storybook/node_modules/@storybook/addon-links/dist/preview.mjs',
+    };
+    const url = processPreviewAnnotation(annotation, '/Users/foo/storybook/');
+    expect(url).toBe('/Users/foo/storybook/node_modules/@storybook/addon-links/dist/preview.mjs');
+  });
+
+  it('should resolve the real path when the absolute value is a symlink', () => {
+    realpathSyncMock.mockReturnValueOnce('/Users/foo/storybook/addons/docs/dist/preview.mjs');
+    const annotation = {
+      bare: '@storybook/addon-docs/preview',
+      absolute: '/Users/foo/storybook/node_modules/@storybook/addon-docs/dist/preview.mjs',
+    };
+    const url = processPreviewAnnotation(annotation, '/Users/foo/storybook/');
+    expect(url).toBe('/Users/foo/storybook/addons/docs/dist/preview.mjs');
+  });
+
+  it('should fall back to the absolute value when realpathSync throws', () => {
+    realpathSyncMock.mockImplementationOnce(() => {
+      throw new Error('ENOENT');
+    });
     const annotation = {
       bare: '@storybook/addon-links/preview',
       absolute: '/Users/foo/storybook/node_modules/@storybook/addon-links/dist/preview.mjs',

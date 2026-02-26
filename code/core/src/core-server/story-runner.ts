@@ -1,15 +1,18 @@
+import { type StoryRunOptions } from 'storybook/internal/types';
+
+import type { nanoid } from 'nanoid';
 import { chromium } from 'playwright-core';
-import { nanoid } from 'nanoid';
 
-import { StoryRunOptions } from '../types/modules/core-common';
-
-import { RunReporterInterface, RunResult, StoryResult, ConsoleLog } from './utils/run-reporter';
-import { RunStoryChannel } from './server-channel/run-story-channel';
+import type { RunStoryChannel } from './server-channel/run-story-channel';
 import { PlaywrightConsoleCapture } from './utils/playwright-console-capture';
+import type {
+  ConsoleLog,
+  RunReporterInterface,
+  RunResult,
+  StoryResult,
+} from './utils/run-reporter';
 
-/**
- * Runs stories via Playwright, orchestrating browser automation and result reporting.
- */
+/** Runs stories via Playwright, orchestrating browser automation and result reporting. */
 export class StoryRunner {
   private options: StoryRunOptions;
   private serverUrl: string;
@@ -28,9 +31,7 @@ export class StoryRunner {
     this.reporter = reporter;
   }
 
-  /**
-   * Run all configured stories and return aggregated results.
-   */
+  /** Run all configured stories and return aggregated results. */
   async run(): Promise<RunResult> {
     const runSessionId = nanoid();
     const results: StoryResult[] = [];

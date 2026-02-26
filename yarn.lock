@@ -28629,6 +28629,7 @@ __metadata:
     picocolors: "npm:^1.1.0"
     picomatch: "npm:^2.3.0"
     picoquery: "npm:^1.4.0"
+    playwright-core: "npm:^1.52.0"
     polished: "npm:^4.2.2"
     polka: "npm:^1.0.0-next.28"
     prettier: "npm:^3.7.1"

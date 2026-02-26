@@ -1,14 +1,14 @@
-import { Channel } from 'storybook/internal/channels';
+import type { Channel } from 'storybook/internal/channels';
 import {
-  STORY_FINISHED,
-  STORY_THREW_EXCEPTION,
   PLAY_FUNCTION_THREW_EXCEPTION,
-  STORY_ERRORED,
-  STORY_MISSING,
   RUN_SESSION_REGISTER,
-} from '../core-events';
+  STORY_ERRORED,
+  STORY_FINISHED,
+  STORY_MISSING,
+  STORY_THREW_EXCEPTION,
+} from 'storybook/internal/core-events';
 
-import { StoryResult } from '../utils/run-reporter';
+import type { StoryResult } from '../utils/run-reporter';
 
 interface PendingStoryWait {
   storyId: string;
@@ -16,8 +16,8 @@ interface PendingStoryWait {
 }
 
 /**
- * Manages story result communication via the preview channel.
- * Uses runSessionId + storyId as isolation keys to prevent cross-story contamination.
+ * Manages story result communication via the preview channel. Uses runSessionId + storyId as
+ * isolation keys to prevent cross-story contamination.
  */
 export class RunStoryChannel {
   private registeredSessions: Set<string> = new Set();
@@ -33,16 +33,19 @@ export class RunStoryChannel {
     });
 
     // Terminal events that conclude a story run
-    const terminalEvents = [STORY_FINISHED, STORY_THREW_EXCEPTION, PLAY_FUNCTION_THREW_EXCEPTION, STORY_ERRORED, STORY_MISSING];
+    const terminalEvents = [
+      STORY_FINISHED,
+      STORY_THREW_EXCEPTION,
+      PLAY_FUNCTION_THREW_EXCEPTION,
+      STORY_ERRORED,
+      STORY_MISSING,
+    ];
 
     terminalEvents.forEach((event) => {
       this.channel.on(event, (args: any) => {
         // Resolve only if there's a pending wait for this story and session
         for (const [runSessionId, wait] of this.pendingResolvers.entries()) {
-          if (
-            this.registeredSessions.has(runSessionId) &&
-            args?.storyId === wait.storyId
-          ) {
+          if (this.registeredSessions.has(runSessionId) && args?.storyId === wait.storyId) {
             const result = this.toStoryResult(event, args);
             wait.resolver(result);
             this.pendingResolvers.delete(runSessionId);
@@ -56,6 +59,7 @@ export class RunStoryChannel {
 
   /**
    * Wait for a specific story to finish, returns a promise that resolves with the story result.
+   *
    * @param storyId The ID of the story being executed
    * @param runSessionId Unique session identifier for this run
    */
@@ -66,8 +70,8 @@ export class RunStoryChannel {
   }
 
   /**
-   * Cancel and clean up a pending story wait.
-   * Called when a story times out or is interrupted.
+   * Cancel and clean up a pending story wait. Called when a story times out or is interrupted.
+   *
    * @param runSessionId Unique session identifier
    * @param storyId The ID of the story
    */
@@ -80,6 +84,7 @@ export class RunStoryChannel {
 
   /**
    * Convert a channel event and its args into a StoryResult.
+   *
    * @param event The event name
    * @param args The event arguments from the channel
    */

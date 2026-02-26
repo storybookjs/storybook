@@ -205,6 +205,14 @@ export interface CLIOptions extends CLIBaseOptions {
   previewOnly?: boolean;
 }
 
+export interface StoryRunOptions extends CLIOptions {
+  storyIds: string[];
+  timeout: number;
+  bail: boolean;
+  keepOpen: boolean;
+  json: boolean;
+}
+
 export interface BuilderOptions {
   configType?: 'DEVELOPMENT' | 'PRODUCTION';
   ignorePreview?: boolean;

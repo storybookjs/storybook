@@ -49,6 +49,8 @@ enum events {
   STORY_ARGS_UPDATED = 'storyArgsUpdated',
   // Reset either a single arg of a story all args of a story
   RESET_STORY_ARGS = 'resetStoryArgs',
+  // Emitted by the preview page once it connects, carrying the runSessionId query param
+  RUN_SESSION_REGISTER = 'runSessionRegister',
   // Emitted after a filter is set
   SET_FILTER = 'setFilter',
   // Emitted by the preview at startup once it knows the initial set of globals+globalTypes
@@ -126,6 +128,7 @@ export const {
   PREVIEW_KEYDOWN,
   REGISTER_SUBSCRIPTION,
   RESET_STORY_ARGS,
+  RUN_SESSION_REGISTER,
   SELECT_STORY,
   SET_CONFIG,
   SET_CURRENT_STORY,

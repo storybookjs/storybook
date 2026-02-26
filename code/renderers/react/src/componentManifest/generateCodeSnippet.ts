@@ -48,7 +48,7 @@ export function getCodeSnippet(
         (t.isStringLiteral(prop.node) && prop.node.value === 'bind');
 
       if (obj.isIdentifier() && isBind) {
-        const resolved = resolveIdentifierInit(storyDeclaration, obj);
+        const resolved = resolveBindIdentifierInit(storyDeclaration, obj);
 
         if (resolved) {
           normalizedPath = resolved;
@@ -121,24 +121,13 @@ export function getCodeSnippet(
   const getRenderPath = (object: NodePath<t.ObjectProperty>[]) => {
     const renderPath = object.find((p) => keyOf(p.node) === 'render')?.get('value');
 
-    if (!renderPath) {
-      return undefined;
+    if (renderPath?.isIdentifier()) {
+      componentName = renderPath.node.name;
     }
-
-    // If render is an identifier (e.g. `render: Template`), try to resolve it
-    if (renderPath.isIdentifier()) {
-      const resolved = resolveIdentifierInit(storyDeclaration, renderPath);
-      if (
-        resolved &&
-        (resolved.isArrowFunctionExpression() || resolved.isFunctionExpression())
-      ) {
-        return resolved;
-      }
-      // Could not resolve to a function — skip render extraction, fall through to no-function path
-      return undefined;
-    }
-
-    if (!(renderPath.isArrowFunctionExpression() || renderPath.isFunctionExpression())) {
+    if (
+      renderPath &&
+      !(renderPath.isArrowFunctionExpression() || renderPath.isFunctionExpression())
+    ) {
       throw renderPath.buildCodeFrameError(
         'Expected render to be an arrow function or function expression'
       );
@@ -552,8 +541,8 @@ function transformArgsSpreadsInJsx(
   return { node: t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren), changed };
 }
 
-/** Resolve the initializer for an identifier (e.g. `Template.bind({})` or `render: Template`). */
-function resolveIdentifierInit(
+/** Resolve the initializer for an identifier used as `Template.bind(...)`. */
+function resolveBindIdentifierInit(
   storyPath: NodePath<t.Node>,
   identifier: NodePath<t.Identifier>
 ) {

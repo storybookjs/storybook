@@ -32,7 +32,12 @@ const PreviewStoriesOutput = v.object({
 			v.object({
 				title: v.string(),
 				name: v.string(),
-				previewUrl: v.string(),
+				previewUrl: v.pipe(
+					v.string(),
+					v.description(
+						'Direct URL to open the story preview. Always include this URL in the final user-facing response so users can open it directly.',
+					),
+				),
 			}),
 			v.object({
 				input: StoryInput,
@@ -91,8 +96,9 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 	server.tool(
 		{
 			name: PREVIEW_STORIES_TOOL_NAME,
-			title: 'Preview stories',
-			description: `Use this tool to preview one or more stories, rendering them as an MCP App using the UI Resource or returning the raw URL for users to visit.`,
+			title: 'Get story preview URLs',
+			description: `Use this tool to get one or more Storybook preview URLs.
+Always include each returned preview URL in your final user-facing response so users can open them directly.`,
 			schema: PreviewStoriesInput,
 			outputSchema: PreviewStoriesOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,

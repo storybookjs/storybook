@@ -110,7 +110,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				        "resourceUri": "ui://preview-stories/preview.html",
 				      },
 				    },
-				    "description": "Use this tool to preview one or more stories, rendering them as an MCP App using the UI Resource or returning the raw URL for users to visit.",
+				    "description": "Use this tool to get one or more Storybook preview URLs.
+				Always include each returned preview URL in your final user-facing response so users can open them directly.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -220,6 +221,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "type": "string",
 				                  },
 				                  "previewUrl": {
+				                    "description": "Direct URL to open the story preview. Always include this URL in the final user-facing response so users can open it directly.",
 				                    "type": "string",
 				                  },
 				                  "title": {
@@ -335,7 +337,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "title": "Preview stories",
+				    "title": "Get story preview URLs",
 				  },
 				  {
 				    "description": "Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).

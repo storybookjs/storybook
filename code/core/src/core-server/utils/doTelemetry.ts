@@ -28,7 +28,11 @@ export async function doTelemetry(
       }
       sendTelemetryError(err, 'dev', {
         cliOptions: options,
-        presetOptions: { ...options, corePresets: [], overridePresets: [] },
+        presetOptions: {
+          ...options,
+          corePresets: [],
+          overridePresets: [],
+        },
       });
       return;
     }

@@ -60,7 +60,7 @@ export const ActionBarWrapping = {
     </Preview>
   ),
   globals: {
-    viewport: 'mobile1',
+    viewport: { value: 'mobile1' },
   },
 };
 

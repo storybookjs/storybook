@@ -10,6 +10,7 @@ import { version } from '../../package.json';
 import { build } from '../cli/build';
 import { buildIndex as index } from '../cli/buildIndex';
 import { dev } from '../cli/dev';
+// TODO(T4): import { run } from '../cli/run';
 import { globalSettings } from '../cli/globalSettings';
 
 addToGlobalContext('cliVersion', version);
@@ -216,6 +217,37 @@ command('index')
       ...options,
       packageJson,
     }).catch(() => process.exit(1));
+  });
+
+command('run')
+  .requiredOption(
+    '--story <id>',
+    'ID of the story to run',
+    (val, prev) => [...(prev || []), val]
+  )
+  .option('--timeout <ms>', 'Timeout in milliseconds for the run', (str) => parseInt(str, 10), 30000)
+  .option('--no-bail', 'Do not exit after the first failure')
+  .option('--keep-open', 'Keep the browser open after the run')
+  .option('--json', 'Output results as JSON')
+  .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option('--preview-url <string>', 'Preview URL for testing')
+  .option('--force-build-preview', 'Build the preview iframe')
+  .option('--smoke-test', 'Run in smoke test mode')
+  .action(async (options) => {
+    const { env } = process;
+    env.NODE_ENV = env.NODE_ENV || 'development';
+
+    getEnvConfig(options, {
+      port: 'SBCONFIG_PORT',
+      configDir: 'SBCONFIG_CONFIG_DIR',
+    });
+
+    try {
+      throw new Error('not yet implemented — cli/run.ts will be added in T4');
+    } catch (error) {
+      await handleCommandFailure(options.logfile);
+    }
   });
 
 program.on('command:*', ([invalidCmd]) => {

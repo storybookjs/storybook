@@ -36,7 +36,7 @@ if (
 async function run() {
   const args = process.argv.slice(2);
 
-  if (['dev', 'build', 'index'].includes(args[0])) {
+  if (['dev', 'build', 'index', 'run'].includes(args[0])) {
     const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);
     return;

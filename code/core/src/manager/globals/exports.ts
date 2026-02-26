@@ -440,7 +440,6 @@ export default {
     'logDOM',
     'logRoles',
     'mocked',
-    'mocks',
     'onMockCall',
     'prettyDOM',
     'prettyFormat',

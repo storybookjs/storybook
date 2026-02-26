@@ -5,16 +5,16 @@ import {
   type MaybePartiallyMocked,
   type MaybePartiallyMockedDeep,
   isMockFunction,
-  mocks,
   fn as vitestFn,
   spyOn as vitestSpyOn,
 } from '@vitest/spy';
+import * as vitestSpy from '@vitest/spy';
 import type { SpyInternalImpl } from 'tinyspy';
 import * as tinyspy from 'tinyspy';
 
 export type * from '@vitest/spy';
 
-export { isMockFunction, mocks };
+export { isMockFunction };
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;
 const listeners = new Set<Listener>();
@@ -55,6 +55,13 @@ function listenWhenCalled(mock: MockInstance) {
   return mock;
 }
 
+// This is needed for Vitest 3 compatibility purposes. The mocks object does not exist in Vitest 4,
+// in favor of using functions directly like clearAllMocks, resetAllMocks, etc.
+const getMocks: () => MockInstance[] | undefined = () => {
+  // @ts-expect-error These will exist in Vitest 3
+  return vitestSpy.mocks;
+};
+
 /**
  * Calls [`.mockClear()`](https://vitest.dev/api/mock#mockclear) on every mocked function. This will
  * only empty `.mock` state, it will not reset implementation.
@@ -62,7 +69,12 @@ function listenWhenCalled(mock: MockInstance) {
  * It is useful if you need to clean up mock between different assertions.
  */
 export function clearAllMocks() {
-  mocks.forEach((spy) => spy.mockClear());
+  const mocks = getMocks();
+  if (mocks) {
+    mocks.forEach((spy) => spy.mockClear());
+  } else {
+    vitestSpy.clearAllMocks();
+  }
 }
 
 /**
@@ -73,7 +85,12 @@ export function clearAllMocks() {
  * This is useful when you want to completely reset a mock to the default state.
  */
 export function resetAllMocks() {
-  mocks.forEach((spy) => spy.mockReset());
+  const mocks = getMocks();
+  if (mocks) {
+    mocks.forEach((spy) => spy.mockReset());
+  } else {
+    vitestSpy.resetAllMocks();
+  }
 }
 
 /**
@@ -81,7 +98,12 @@ export function resetAllMocks() {
  * will restore all original implementations.
  */
 export function restoreAllMocks() {
-  mocks.forEach((spy) => spy.mockRestore());
+  const mocks = getMocks();
+  if (mocks) {
+    mocks.forEach((spy) => spy.mockRestore());
+  } else {
+    vitestSpy.restoreAllMocks();
+  }
 }
 
 /**

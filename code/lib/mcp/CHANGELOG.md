@@ -1,5 +1,19 @@
 # @storybook/mcp
 
+## 0.5.0
+
+### Minor Changes
+
+- [#171](https://github.com/storybookjs/mcp/pull/171) [`b3a8356`](https://github.com/storybookjs/mcp/commit/b3a835605a760cdfb8748c17f6daec8701fb5914) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Export `addGetStoryDocumentationTool` directly instead of renaming it to `addGetComponentStoryDocumentationTool`.
+
+  **Breaking change**: If you were importing `addGetComponentStoryDocumentationTool` from `@storybook/mcp`, update your import to use `addGetStoryDocumentationTool` instead.
+
+### Patch Changes
+
+- [#175](https://github.com/storybookjs/mcp/pull/175) [`6a098f9`](https://github.com/storybookjs/mcp/commit/6a098f96d3da58d572037e07a2aa33dab2a51bfd) Thanks [@JReinhold](https://github.com/JReinhold)! - Add story ID based inputs for preview/testing workflows and surface story IDs in docs outputs.
+
+  This change keeps existing path-based story inputs (`absoluteStoryPath` + `exportName`) while adding a `storyId` input shape for `preview-stories` and `run-story-tests`. It also adds `withStoryIds` to `list-all-documentation` and includes story IDs in `get-documentation` story sections, so agents can discover and reuse IDs directly without extra filesystem lookup steps.
+
 ## 0.4.1
 
 ### Patch Changes

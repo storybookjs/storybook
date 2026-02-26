@@ -1,5 +1,20 @@
 # @storybook/addon-mcp
 
+## 0.3.3
+
+### Patch Changes
+
+- [#171](https://github.com/storybookjs/mcp/pull/171) [`b3a8356`](https://github.com/storybookjs/mcp/commit/b3a835605a760cdfb8748c17f6daec8701fb5914) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Fix: expose the `get-documentation-for-story` tool in the MCP Addon.
+
+- [#176](https://github.com/storybookjs/mcp/pull/176) [`8afbb72`](https://github.com/storybookjs/mcp/commit/8afbb72c1bbbf718e12076a3d857516c9c9e7da2) Thanks [@JReinhold](https://github.com/JReinhold)! - Improve `preview-stories` tool description to make agent behavior more consistent.
+
+- [#175](https://github.com/storybookjs/mcp/pull/175) [`6a098f9`](https://github.com/storybookjs/mcp/commit/6a098f96d3da58d572037e07a2aa33dab2a51bfd) Thanks [@JReinhold](https://github.com/JReinhold)! - Add story ID based inputs for preview/testing workflows and surface story IDs in docs outputs.
+
+  This change keeps existing path-based story inputs (`absoluteStoryPath` + `exportName`) while adding a `storyId` input shape for `preview-stories` and `run-story-tests`. It also adds `withStoryIds` to `list-all-documentation` and includes story IDs in `get-documentation` story sections, so agents can discover and reuse IDs directly without extra filesystem lookup steps.
+
+- Updated dependencies [[`b3a8356`](https://github.com/storybookjs/mcp/commit/b3a835605a760cdfb8748c17f6daec8701fb5914), [`6a098f9`](https://github.com/storybookjs/mcp/commit/6a098f96d3da58d572037e07a2aa33dab2a51bfd)]:
+  - @storybook/mcp@0.5.0
+
 ## 0.3.2
 
 ### Patch Changes

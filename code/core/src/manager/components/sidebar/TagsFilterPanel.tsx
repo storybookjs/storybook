@@ -18,16 +18,14 @@ import { styled } from 'storybook/theming';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 
 export const groupByType = (filters: Filter[]) =>
-  filters
-    .filter(Boolean)
-    .reduce(
-      (acc, filter) => {
-        acc[filter.type] ??= [];
-        acc[filter.type].push(filter);
-        return acc;
-      },
-      {} as Record<string, Filter[]>
-    );
+  filters.filter(Boolean).reduce(
+    (acc, filter) => {
+      acc[filter.type] ??= [];
+      acc[filter.type].push(filter);
+      return acc;
+    },
+    {} as Record<string, Filter[]>
+  );
 
 const Wrapper = styled.div({
   minWidth: 240,

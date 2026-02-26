@@ -1,9 +1,12 @@
-import type { ClipboardEvent, FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
+import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 import React, { Children, useCallback, useContext, useState } from 'react';
 
-import { ActionBar, Zoom } from 'storybook/internal/components';
+import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
 
+import { CopyIcon, MarkupIcon } from '@storybook/icons';
+
+import { useId } from '@react-aria/utils';
 import { darken } from 'polished';
 import { styled } from 'storybook/theming';
 
@@ -35,10 +38,6 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
   ({ isColumn, columns, layout }) => ({
     display: isColumn || !columns ? 'block' : 'flex',
     position: 'relative',
-    flex: 1,
-    flexShrink: 0,
-    flexBasis: 'fit-content',
-    maxWidth: '100%',
     flexWrap: 'wrap',
     overflow: 'auto',
     flexDirection: isColumn ? 'column' : 'row',
@@ -79,6 +78,10 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
       : {}
 );
 
+const ActionBar = styled(Bar)({
+  marginTop: -40,
+});
+
 const StyledSource = styled(Source)(({ theme }) => ({
   margin: 0,
   borderTopLeftRadius: 0,
@@ -102,9 +105,9 @@ const PreviewContainer = styled.div<PreviewProps>(
     overflow: 'hidden',
     margin: '25px 0 40px',
     ...getBlockBackgroundStyle(theme),
-    borderBottomLeftRadius: (withSource && isExpanded && 0) as any,
-    borderBottomRightRadius: (withSource && isExpanded && 0) as any,
-    borderBottomWidth: (isExpanded && 0) as any,
+    borderBottomLeftRadius: withSource && isExpanded ? 0 : undefined,
+    borderBottomRightRadius: withSource && isExpanded ? 0 : undefined,
+    borderBottomWidth: isExpanded ? 0 : undefined,
 
     'h3 + &': {
       marginTop: '16px',
@@ -112,51 +115,6 @@ const PreviewContainer = styled.div<PreviewProps>(
   }),
   ({ withToolbar }) => withToolbar && { paddingTop: 40 }
 );
-
-interface SourceItem {
-  source?: ReactElement | null;
-  actionItem: ActionItem;
-}
-
-const getSource = (
-  withSource: SourceProps | undefined,
-  expanded: boolean,
-  setExpanded: Function
-): SourceItem => {
-  switch (true) {
-    case !!(withSource && withSource.error): {
-      return {
-        source: null,
-        actionItem: {
-          title: 'No code available',
-          className: 'docblock-code-toggle docblock-code-toggle--disabled',
-          disabled: true,
-          onClick: () => setExpanded(false),
-        },
-      };
-    }
-    case expanded: {
-      return {
-        source: <StyledSource {...withSource} dark />,
-        actionItem: {
-          title: 'Hide code',
-          className: 'docblock-code-toggle docblock-code-toggle--expanded',
-          onClick: () => setExpanded(false),
-        },
-      };
-    }
-    default: {
-      return {
-        source: <StyledSource {...withSource} dark />,
-        actionItem: {
-          title: 'Show code',
-          className: 'docblock-code-toggle',
-          onClick: () => setExpanded(true),
-        },
-      };
-    }
-  }
-};
 
 function getChildProps(children: ReactNode) {
   if (Children.count(children) === 1) {
@@ -176,11 +134,7 @@ const PositionedToolbar = styled(Toolbar)({
   height: 40,
 });
 
-const ActionBarContainer = styled.div({
-  overflow: 'hidden',
-  display: 'flex',
-  flexWrap: 'wrap',
-});
+const COPIED_LABEL_ANIMATION_DURATION = 2000;
 
 /**
  * A preview component for showing one or more component `Story` items. The preview also shows the
@@ -201,74 +155,53 @@ export const Preview: FC<PreviewProps> = ({
   ...props
 }) => {
   const [expanded, setExpanded] = useState(isExpanded);
-  const { source, actionItem } = getSource(withSource, expanded, setExpanded);
+  const [copied, setCopied] = useState(false);
   const [scale, setScale] = useState(1);
-  const previewClasses = [className].concat(['sbdocs', 'sbdocs-preview', 'sb-unstyled']);
-
-  const defaultActionItems = withSource ? [actionItem] : [];
-  const [additionalActionItems, setAdditionalActionItems] = useState(
+  const [additionalActionItems] = useState<ActionItem[]>(
     additionalActions ? [...additionalActions] : []
   );
-  const actionItems = [...defaultActionItems, ...additionalActionItems];
-
-  const { window: globalWindow } = globalThis;
+  const sourceId = useId();
+  const previewClasses = [className].concat(['sbdocs', 'sbdocs-preview', 'sb-unstyled']);
 
   const context = useContext(DocsContext);
 
   const copyToClipboard = useCallback(async (text: string) => {
     const { createCopyToClipboardFunction } = await import('storybook/internal/components');
-    createCopyToClipboardFunction();
+    await createCopyToClipboardFunction()(text);
   }, []);
 
-  const onCopyCapture = (e: ClipboardEvent<HTMLInputElement>) => {
-    // When the selection range is neither empty nor collapsed, we can assume
-    // user's intention is to copy the selected text, instead of the story's
-    // code snippet.
-    const selection: Selection | null = globalWindow.getSelection();
-    if (selection && selection.type === 'Range') {
+  const handleCopyCode = useCallback(() => {
+    if (copied) {
       return;
     }
-
-    e.preventDefault();
-    if (additionalActionItems.filter((item) => item.title === 'Copied').length === 0) {
-      copyToClipboard(source?.props.code ?? '').then(() => {
-        setAdditionalActionItems([
-          ...additionalActionItems,
-          {
-            title: 'Copied',
-            onClick: () => {},
-          },
-        ]);
-        globalWindow.setTimeout(
-          () =>
-            setAdditionalActionItems(
-              additionalActionItems.filter((item) => item.title !== 'Copied')
-            ),
-          1500
-        );
-      });
-    }
-  };
+    copyToClipboard(withSource?.code ?? '').then(() => {
+      setCopied(true);
+      globalThis.window.setTimeout(() => setCopied(false), COPIED_LABEL_ANIMATION_DURATION);
+    });
+  }, [copied, copyToClipboard, withSource?.code]);
 
   const childProps = getChildProps(children);
 
+  const hasSourceError = !!(withSource && withSource.error);
+  const hasValidSource = !!(withSource && !withSource.error);
+
   return (
-    <PreviewContainer
-      {...{ withSource, withToolbar }}
-      {...props}
-      className={previewClasses.join(' ')}
-    >
-      {withToolbar && (
-        <PositionedToolbar
-          isLoading={isLoading}
-          border
-          zoom={(z: number) => setScale(scale * z)}
-          resetZoom={() => setScale(1)}
-          storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}
-        />
-      )}
-      <ZoomContext.Provider value={{ scale }}>
-        <ActionBarContainer className="docs-story" onCopyCapture={withSource && onCopyCapture}>
+    <>
+      <PreviewContainer
+        {...{ withSource, withToolbar }}
+        {...props}
+        className={previewClasses.join(' ')}
+      >
+        {withToolbar && (
+          <PositionedToolbar
+            isLoading={isLoading}
+            border
+            zoom={(z: number) => setScale(scale * z)}
+            resetZoom={() => setScale(1)}
+            storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}
+          />
+        )}
+        <ZoomContext.Provider value={{ scale }}>
           <ChildrenContainer
             isColumn={isColumn || !Array.isArray(children)}
             columns={columns}
@@ -283,11 +216,55 @@ export const Preview: FC<PreviewProps> = ({
               )}
             </Zoom.Element>
           </ChildrenContainer>
-          <ActionBar actionItems={actionItems} flexLayout />
-        </ActionBarContainer>
-      </ZoomContext.Provider>
-      {withSource && expanded && source}
-    </PreviewContainer>
+        </ZoomContext.Provider>
+        {hasValidSource && expanded && (
+          <div id={sourceId}>
+            <StyledSource {...withSource} dark copyable={false} />
+          </div>
+        )}
+      </PreviewContainer>
+      {(withSource || additionalActionItems.length > 0) && (
+        <ActionBar className="sbdocs sbdocs-preview-actions">
+          {hasSourceError && (
+            <Button
+              disabled
+              variant="ghost"
+              className="docblock-code-toggle docblock-code-toggle--disabled"
+            >
+              <MarkupIcon /> No code available
+            </Button>
+          )}
+          {hasValidSource && (
+            <>
+              <ToggleButton
+                pressed={expanded}
+                aria-expanded={expanded}
+                aria-controls={sourceId}
+                onClick={() => setExpanded(!expanded)}
+                variant="ghost"
+                className={`docblock-code-toggle${expanded ? ' docblock-code-toggle--expanded' : ''}`}
+              >
+                <MarkupIcon /> {expanded ? 'Hide code' : 'Show code'}
+              </ToggleButton>
+              <Button variant="ghost" onClick={handleCopyCode}>
+                <CopyIcon /> {copied ? 'Copied!' : 'Copy code'}
+              </Button>
+            </>
+          )}
+          {additionalActionItems.map(({ title, className, onClick, disabled }, index: number) => (
+            <Button
+              key={index}
+              className={className}
+              onClick={onClick}
+              disabled={!!disabled}
+              variant="ghost"
+            >
+              {title}
+            </Button>
+          ))}
+        </ActionBar>
+      )}
+    </>
   );
 };
 

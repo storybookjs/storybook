@@ -81,6 +81,7 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
 
 const ActionBar = styled(Bar)({
   marginTop: -40,
+  marginBottom: 40,
 });
 
 const StyledSource = styled(Source)(({ theme }) => ({

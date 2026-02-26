@@ -3,7 +3,7 @@
  * using esbuild. Do _not_ import from other modules in core unless strictly necessary, as it will
  * cause the dist to get huge.
  */
-import { existsSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import type { LoadHook } from 'node:module';
 import * as path from 'node:path';
@@ -34,6 +34,23 @@ const jsToTsExtensionMap: Record<string, readonly string[]> = {
   '.jsx': ['.tsx'],
 };
 
+const directoryCache = new Map<string, Set<string>>();
+
+export function clearDirectoryCache(): void {
+  directoryCache.clear();
+}
+
+function getDirectoryFiles(dir: string): Set<string> {
+  if (!directoryCache.has(dir)) {
+    try {
+      directoryCache.set(dir, new Set(readdirSync(dir)));
+    } catch {
+      directoryCache.set(dir, new Set());
+    }
+  }
+  return directoryCache.get(dir)!;
+}
+
 /**
  * Resolves an extensionless file path by trying different extensions. Returns the path with the
  * correct extension if found, otherwise returns the original path.
@@ -52,9 +69,11 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
     const tsExtensions = jsToTsExtensionMap[extImportPath];
 
     // Try TypeScript alternatives first (.js → .ts/.tsx, .mjs → .mts, etc.)
+    const absoluteBase = path.resolve(currentDir, basePath);
+    const dirFiles = getDirectoryFiles(path.dirname(absoluteBase));
+    const baseFileName = path.basename(absoluteBase);
     for (const tsExt of tsExtensions) {
-      const candidatePath = path.resolve(currentDir, `${basePath}${tsExt}`);
-      if (existsSync(candidatePath)) {
+      if (dirFiles.has(`${baseFileName}${tsExt}`)) {
         return `${basePath}${tsExt}`;
       }
     }
@@ -76,9 +95,10 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
 
   const absolutePath = path.resolve(currentDir, importPath);
 
+  const dirFiles = getDirectoryFiles(path.dirname(absolutePath));
+  const baseFileName = path.basename(absolutePath);
   for (const ext of supportedExtensions) {
-    const candidatePath = `${absolutePath}${ext}`;
-    if (existsSync(candidatePath)) {
+    if (dirFiles.has(`${baseFileName}${ext}`)) {
       return `${importPath}${ext}`;
     }
   }

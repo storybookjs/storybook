@@ -1,18 +1,11 @@
 import { timingSafeEqual } from 'node:crypto';
 
-export type ValidateWebSocketOptions = {
-  token: string;
-  host?: string;
-  allowedHosts?: string[] | true;
-  localAddress?: string;
-  networkAddress?: string;
-};
+import { isHostAllowed } from 'host-validation-middleware';
 
-// TODO: Change to `[]` in SB11 to change from opt-in to opt-out
-const DEFAULT_ALLOWED_HOSTS: string[] | true = true;
+import { DEFAULT_ALLOWED_HOSTS, type HostValidationOptions } from './getHostValidationMiddleware';
 
 /**
- * Validates a request origin against known local/network addresses and allowed hosts.
+ * Validates a request Origin against known local/network addresses and allowed hosts.
  *
  * @param requestOrigin - The origin header value to validate.
  * @param options - The builder options.
@@ -20,7 +13,7 @@ const DEFAULT_ALLOWED_HOSTS: string[] | true = true;
  */
 export const isValidOrigin = (
   requestOrigin: string | undefined,
-  options: ValidateWebSocketOptions
+  options: HostValidationOptions
 ): boolean => {
   const allowedHosts = options.allowedHosts || DEFAULT_ALLOWED_HOSTS;
   if (allowedHosts === true) {
@@ -44,9 +37,7 @@ export const isValidOrigin = (
     if (options.host === '0.0.0.0' && allowedHosts.length === 0) {
       return true;
     }
-    return allowedHosts.some((host) =>
-      host.includes(':') ? host === requestUrl.host : host === requestUrl.hostname
-    );
+    return isHostAllowed(requestUrl.host, allowedHosts);
   } catch {
     return false;
   }
@@ -57,16 +48,13 @@ export const isValidOrigin = (
  *
  * @returns `true` if tokens match, `false` otherwise
  */
-export function isValidToken(
-  requestToken: string | null,
-  options: ValidateWebSocketOptions
-): boolean {
-  if (!requestToken || !options.token) {
+export function isValidToken(requestToken: string | null, expectedToken: string): boolean {
+  if (!requestToken || !expectedToken) {
     return false;
   }
 
   const a = new Uint8Array(Buffer.from(requestToken, 'utf8'));
-  const b = new Uint8Array(Buffer.from(options.token, 'utf8'));
+  const b = new Uint8Array(Buffer.from(expectedToken, 'utf8'));
   try {
     return a.length === b.length && timingSafeEqual(a, b);
   } catch {

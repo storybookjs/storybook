@@ -8,28 +8,29 @@ import { stringify } from 'telejson';
 
 import { ServerChannelTransport, getServerChannel } from '../get-server-channel';
 
+const mockToken = 'test-token-123';
+
 const options = {
   localAddress: 'http://localhost:6006',
   networkAddress: 'http://192.168.1.100:6006',
+  token: mockToken,
 } as any;
 
 describe('getServerChannel', () => {
   it('should return a channel', () => {
     const server = { on: vi.fn() } as any as Server;
-    const result = getServerChannel(server, options, 'test-token-123');
+    const result = getServerChannel(server, options);
     expect(result).toBeInstanceOf(Channel);
   });
 
   it('should attach to the http server', () => {
     const server = { on: vi.fn() } as any as Server;
-    getServerChannel(server, options, 'test-token-123');
+    getServerChannel(server, options);
     expect(server.on).toHaveBeenCalledWith('upgrade', expect.any(Function));
   });
 });
 
 describe('ServerChannelTransport', () => {
-  const mockToken = 'test-token-123';
-
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
@@ -41,7 +42,7 @@ describe('ServerChannelTransport', () => {
   it('parses simple JSON', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
     const handler = vi.fn();
     transport.setHandler(handler);
 
@@ -55,7 +56,7 @@ describe('ServerChannelTransport', () => {
   it('parses object JSON', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
     const handler = vi.fn();
     transport.setHandler(handler);
 
@@ -69,7 +70,7 @@ describe('ServerChannelTransport', () => {
   it('supports telejson cyclical data', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
     const handler = vi.fn();
     transport.setHandler(handler);
 
@@ -94,7 +95,7 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     // Simulate upgrade request without token
     const request = {
@@ -120,7 +121,7 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    new ServerChannelTransport(server, options, mockToken);
+    new ServerChannelTransport(server, options);
 
     // Simulate upgrade request with wrong token
     const request = {
@@ -146,7 +147,7 @@ describe('ServerChannelTransport', () => {
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
     const handleUpgradeSpy = vi.fn();
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     // Mock handleUpgrade to track if it's called
     // @ts-expect-error (accessing private property)
@@ -174,7 +175,7 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     // Simulate upgrade request with invalid origin
     const request = {
@@ -200,7 +201,7 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     // Simulate upgrade request without origin header
     const request = {
@@ -225,7 +226,7 @@ describe('ServerChannelTransport', () => {
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
     const handleUpgradeSpy = vi.fn();
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     // Mock handleUpgrade to track if it's called
     // @ts-expect-error (accessing private property)
@@ -255,7 +256,7 @@ describe('ServerChannelTransport', () => {
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
     const handleUpgradeSpy = vi.fn();
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     // Mock handleUpgrade to track if it's called
     // @ts-expect-error (accessing private property)
@@ -285,7 +286,7 @@ describe('ServerChannelTransport', () => {
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
     const handleUpgradeSpy = vi.fn();
-    const transport = new ServerChannelTransport(server, options, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     // Mock handleUpgrade to track if it's called
     // @ts-expect-error (accessing private property)

@@ -4,6 +4,7 @@ import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
+import { hostValidationMiddleware } from 'host-validation-middleware';
 import polka from 'polka';
 
 import { telemetry } from '../telemetry';
@@ -12,6 +13,7 @@ import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
+import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware';
 import { registerIndexJsonRoute } from './utils/index-json';
 import { registerManifests } from './utils/manifests/manifests';
 import { useStorybookMetadata } from './utils/metadata';
@@ -48,6 +50,14 @@ export async function storybookDevServer(
     options.extendServer(server);
   }
 
+  app.use(
+    getHostValidationMiddleware({
+      host: options.host,
+      allowedHosts: core?.allowedHosts,
+      localAddress: options.localAddress,
+      networkAddress: options.networkAddress,
+    })
+  );
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 

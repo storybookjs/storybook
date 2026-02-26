@@ -7,9 +7,14 @@ import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
 import { UniversalStore } from '../../shared/universal-store';
-import { type ValidateWebSocketOptions, isValidOrigin, isValidToken } from './validate-websocket';
+import { type HostValidationOptions } from './getHostValidationMiddleware';
+import { isValidOrigin, isValidToken } from './validate-websocket';
 
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
+
+type ServerChannelTransportOptions = HostValidationOptions & {
+  token: string;
+};
 
 /**
  * This class represents a channel transport that allows for a one-to-many relationship between the
@@ -22,7 +27,7 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
-  constructor(server: Server, options: ValidateWebSocketOptions) {
+  constructor(server: Server, options: ServerChannelTransportOptions) {
     this.socket = new WebSocketServer({ noServer: true });
 
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
@@ -37,7 +42,7 @@ export class ServerChannelTransport {
         }
 
         const requestToken = url.searchParams.get('token');
-        if (!isValidToken(requestToken, options)) {
+        if (!isValidToken(requestToken, options.token)) {
           throw new Error('Invalid websocket token');
         }
 
@@ -90,7 +95,7 @@ export class ServerChannelTransport {
   }
 }
 
-export function getServerChannel(server: Server, options: ValidateWebSocketOptions) {
+export function getServerChannel(server: Server, options: ServerChannelTransportOptions) {
   const transports = [new ServerChannelTransport(server, options)];
 
   const channel = new Channel({ transports, async: true });

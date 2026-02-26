@@ -38,9 +38,7 @@ export const AddonPanel = ({ active, children, hasScrollbar = true }: AddonPanel
     // the hidden attribute is an valid html element that's both accessible and works to visually hide content
     <Div hidden={!active}>
       {hasScrollbar ? (
-        <ScrollArea vertical horizontal>
-          {useUpdate(active, children)}
-        </ScrollArea>
+        <ScrollArea vertical>{useUpdate(active, children)}</ScrollArea>
       ) : (
         useUpdate(active, children)
       )}

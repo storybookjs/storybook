@@ -2,6 +2,6 @@ interface ButtonProps {
   label: string;
   disabled?: boolean;
 }
-export function Button(props: ButtonProps) {
+export function Button(_props: ButtonProps) {
   return null;
 }

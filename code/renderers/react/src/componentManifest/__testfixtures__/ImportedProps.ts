@@ -7,6 +7,6 @@ interface BadgeProps extends SharedProps, ClickableProps {
   count?: number;
 }
 
-export function Badge(props: BadgeProps) {
+export function Badge(_props: BadgeProps) {
   return null;
 }

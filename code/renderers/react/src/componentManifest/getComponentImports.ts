@@ -30,8 +30,12 @@ export type ComponentRef = {
   importOverride?: string;
   importName?: string;
   namespace?: string;
+  /** For member expressions like `Accordion.Root`, the member part (`"Root"`). */
+  member?: string;
   path?: string;
   isPackage: boolean;
+  /** Minimum JSX nesting depth where this component first appears (0 = outermost). */
+  jsxDepth?: number;
   reactDocgen?: ReturnType<typeof getReactDocgen>;
   reactDocgenTypescript?: ComponentDocWithExportName;
   reactDocgenTypescriptError?: { name: string; message: string };
@@ -69,6 +73,16 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
  * - Member expressions like Foo.Bar are supported; namespace imports are represented accordingly.
  * - If react-docgen determines a package import override, it is stored in `importOverride`.
  */
+/**
+ * Accumulated timing for react-docgen and react-docgen-typescript. Reset via `resetDocgenTimings()`
+ * before a manifest pass, then read after.
+ */
+export const docgenTimings = { reactDocgenMs: 0, reactDocgenTypescriptMs: 0 };
+export function resetDocgenTimings() {
+  docgenTimings.reactDocgenMs = 0;
+  docgenTimings.reactDocgenTypescriptMs = 0;
+}
+
 export const getComponents = ({
   csf,
   storyFilePath,
@@ -84,24 +98,44 @@ export const getComponents = ({
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
+  /** Minimum JSX nesting depth per component name (0 = outermost). */
+  const componentDepth = new Map<string, number>();
   const localToImport = new Map<string, { importId: string; importName: string }>();
 
   // Gather components from all JSX opening elements
   program.traverse({
     JSXOpeningElement(p) {
+      // Count JSX ancestor depth (how many JSXElements wrap this one)
+      let depth = 0;
+      let ancestor: typeof p.parentPath | null = p.parentPath;
+      while (ancestor) {
+        if (ancestor.isJSXElement()) {
+          depth++;
+        }
+        ancestor = ancestor.parentPath;
+      }
+
       const n = p.node.name;
+      let name: string | undefined;
       if (t.isJSXIdentifier(n)) {
-        const name = n.name;
+        name = n.name;
         if (name && /[A-Z]/.test(name.charAt(0))) {
           componentSet.add(name);
         }
       } else if (t.isJSXMemberExpression(n)) {
-        const jsxNameToString = (name: t.JSXIdentifier | t.JSXMemberExpression): string =>
-          t.isJSXIdentifier(name)
-            ? name.name
-            : `${jsxNameToString(name.object)}.${jsxNameToString(name.property)}`;
-        const full = jsxNameToString(n);
-        componentSet.add(full);
+        const jsxNameToString = (nm: t.JSXIdentifier | t.JSXMemberExpression): string =>
+          t.isJSXIdentifier(nm)
+            ? nm.name
+            : `${jsxNameToString(nm.object)}.${jsxNameToString(nm.property)}`;
+        name = jsxNameToString(n);
+        componentSet.add(name);
+      }
+
+      if (name) {
+        const existing = componentDepth.get(name);
+        if (existing === undefined || depth < existing) {
+          componentDepth.set(name, depth);
+        }
       }
     },
   });
@@ -174,26 +208,31 @@ export const getComponents = ({
 
   const componentObjs = filteredComponents
     .map((c) => {
+      const depth = componentDepth.get(c);
       const dot = c.indexOf('.');
       if (dot !== -1) {
         const ns = c.slice(0, dot);
-        const member = c.slice(dot + 1);
+        const mem = c.slice(dot + 1);
         const direct = localToImport.get(ns);
         return !direct
-          ? { componentName: c }
+          ? { componentName: c, member: mem, jsxDepth: depth }
           : direct.importName === '*'
             ? {
                 componentName: c,
                 localImportName: ns,
                 importId: direct.importId,
-                importName: member,
+                importName: mem,
                 namespace: ns,
+                member: mem,
+                jsxDepth: depth,
               }
             : {
                 componentName: c,
                 localImportName: ns,
                 importId: direct.importId,
                 importName: direct.importName,
+                member: mem,
+                jsxDepth: depth,
               };
       }
       const direct = localToImport.get(c);
@@ -203,8 +242,9 @@ export const getComponents = ({
             localImportName: c,
             importId: direct.importId,
             importName: direct.importName,
+            jsxDepth: depth,
           }
-        : { componentName: c };
+        : { componentName: c, jsxDepth: depth };
     })
     .map((component) => {
       let path;
@@ -230,9 +270,18 @@ export const getComponents = ({
       const componentWithPackage = { ...component, isPackage };
 
       if (path) {
+        // Always run react-docgen
+        const rdgStart = performance.now();
+        const reactDocgen = getReactDocgen(path, componentWithPackage);
+        docgenTimings.reactDocgenMs += performance.now() - rdgStart;
+        const importOverrideFromDocgen =
+          reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined;
+
+        // Only run react-docgen-typescript when explicitly configured
+        let reactDocgenTypescript: ComponentDocWithExportName | undefined;
+        let reactDocgenTypescriptError: { name: string; message: string } | undefined;
         if (reactDocgenConfig === 'react-docgen-typescript') {
-          let reactDocgenTypescript: ComponentDocWithExportName | undefined;
-          let reactDocgenTypescriptError: { name: string; message: string } | undefined;
+          const rdtStart = performance.now();
           try {
             reactDocgenTypescript = matchComponentDoc(
               parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
@@ -246,31 +295,21 @@ export const getComponents = ({
               message: `File: ${path}\n${message}`,
             };
           }
-
-          // Extract importOverride from RDT's description (same JSDoc parsing as react-docgen)
-          const importOverride = reactDocgenTypescript
-            ? getImportTag(reactDocgenTypescript)
-            : undefined;
-
-          return {
-            ...componentWithPackage,
-            path,
-            ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
-            ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
-            importOverride,
-          };
+          docgenTimings.reactDocgenTypescriptMs += performance.now() - rdtStart;
         }
 
-        if (reactDocgenConfig === 'react-docgen') {
-          const reactDocgen = getReactDocgen(path, componentWithPackage);
-          return {
-            ...componentWithPackage,
-            path,
-            reactDocgen,
-            importOverride:
-              reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
-          };
-        }
+        const importOverrideFromRdt = reactDocgenTypescript
+          ? getImportTag(reactDocgenTypescript)
+          : undefined;
+
+        return {
+          ...componentWithPackage,
+          path,
+          reactDocgen,
+          ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+          ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
+          importOverride: importOverrideFromDocgen ?? importOverrideFromRdt,
+        };
       }
       return componentWithPackage;
     })

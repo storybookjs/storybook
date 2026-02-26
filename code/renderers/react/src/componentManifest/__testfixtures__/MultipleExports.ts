@@ -1,13 +1,13 @@
 interface InputProps {
   placeholder?: string;
 }
-export function Input(props: InputProps) {
+export function Input(_props: InputProps) {
   return null;
 }
 
 interface LabelProps {
   text: string;
 }
-export default function Bla(props: LabelProps) {
+export default function Bla(_props: LabelProps) {
   return null;
 }

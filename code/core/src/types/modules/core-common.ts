@@ -372,6 +372,11 @@ export interface ComponentsManifest {
   meta?: {
     docgen: 'react-docgen' | 'react-docgen-typescript';
     durationMs: number;
+    timings?: {
+      docgen: number;
+      reactComponentMeta: number;
+      reactComponentMetaComponents: number;
+    };
   };
 }
 

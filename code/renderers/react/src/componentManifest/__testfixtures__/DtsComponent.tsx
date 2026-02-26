@@ -5,6 +5,6 @@ interface HtmlButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'solid' | 'outline';
 }
 
-export function HtmlButton(props: HtmlButtonProps) {
+export function HtmlButton(_props: HtmlButtonProps) {
   return null;
 }

@@ -224,7 +224,7 @@ export const Preview: FC<PreviewProps> = ({
         )}
       </PreviewContainer>
       {(withSource || additionalActionItems.length > 0) && (
-        <ActionBar className="sbdocs sbdocs-preview-actions">
+        <ActionBar className="sbdocs sbdocs-preview-actions" innerStyle={{ paddingInline: 0 }}>
           {hasSourceError && (
             <Button
               disabled

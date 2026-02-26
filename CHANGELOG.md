@@ -1,3 +1,12 @@
+## 10.2.13
+
+- Addon Pseudo-states: Process all nested css rules - [#33605](https://github.com/storybookjs/storybook/pull/33605), thanks @hpohlmeyer!
+- Builder-Vite: Prevent config duplication - [#33883](https://github.com/storybookjs/storybook/pull/33883), thanks @copilot-swe-agent!
+- CLI: Fix React native web A11y issues - [#33937](https://github.com/storybookjs/storybook/pull/33937), thanks @jonniebigodes!
+- Core: Avoid hanging when inferring args for recursive calls on DOM elemens - [#33922](https://github.com/storybookjs/storybook/pull/33922), thanks @valentinpalkovic!
+- Eslint: Fix ESLint 10 compatibility in eslint-plugin-storybook rules - [#33884](https://github.com/storybookjs/storybook/pull/33884), thanks @copilot-swe-agent!
+- Viewport: Prioritize story viewport globals and avoid user-global pollution - [#33849](https://github.com/storybookjs/storybook/pull/33849), thanks @ia319!
+
 ## 10.2.12
 
 - Core: Sanitize inputs for save from controls - [#33868](https://github.com/storybookjs/storybook/pull/33868), thanks @valentinpalkovic!

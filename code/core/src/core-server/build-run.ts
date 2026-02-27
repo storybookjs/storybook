@@ -15,12 +15,15 @@ import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
+import { getWsToken } from './presets/wsToken';
 import { RunStoryChannel } from './server-channel/run-story-channel';
 import { StoryRunner } from './story-runner';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getPreviewBuilder } from './utils/get-builders';
+import { getServerChannel } from './utils/get-server-channel';
 import { RunReporter } from './utils/run-reporter';
 import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { getServer } from './utils/server-init';
 
 async function resolveStoryInputs(
   inputs: string[],
@@ -151,6 +154,7 @@ export async function buildRunStandalone(
 
   // Load first pass: We need to determine the builder
   let presets = await loadAllPresets({
+    channel: {},
     corePresets,
     overridePresets: [
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
@@ -167,6 +171,7 @@ export async function buildRunStandalone(
 
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
+    channel: {},
     corePresets: [
       join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(previewBuilder.corePresets || []),
@@ -189,8 +194,11 @@ export async function buildRunStandalone(
     previewOnly: true,
   } as unknown as typeof options & { presets: typeof presets; features: typeof features };
 
-  const { address, serverChannel } = await buildOrThrow(async () =>
-    storybookDevServer(fullOptions)
+  const server = await getServer(fullOptions);
+  const channel = getServerChannel(server, getWsToken());
+
+  const { address } = await buildOrThrow(async () =>
+    storybookDevServer({ ...fullOptions, channel }, server)
   );
 
   // Resolve story inputs and await browser in parallel
@@ -201,7 +209,7 @@ export async function buildRunStandalone(
   options.storyIds = storyIds;
 
   // Instantiate components
-  const runStoryChannel = new RunStoryChannel(serverChannel);
+  const runStoryChannel = new RunStoryChannel(channel);
   const reporter = new RunReporter({ json: options.json, storyPaths: storyIdToPath });
   const storyRunner = new StoryRunner(
     options,

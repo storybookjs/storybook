@@ -1,6 +1,6 @@
 import { type StoryRunOptions } from 'storybook/internal/types';
 
-import type { nanoid } from 'nanoid';
+import { nanoid } from 'nanoid';
 import { chromium } from 'playwright-core';
 
 import type { RunStoryChannel } from './server-channel/run-story-channel';
@@ -71,7 +71,7 @@ export class StoryRunner {
           });
 
           // Build URL with story ID and session ID
-          const storyUrl = `${this.serverUrl}/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&runSessionId=${encodeURIComponent(runSessionId)}`;
+          const storyUrl = `${this.serverUrl}iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&runSessionId=${encodeURIComponent(runSessionId)}`;
 
           // Register wait BEFORE navigation to ensure we catch events emitted during load
           const waitForStoryPromise = this.runStoryChannel.waitForStory(storyId, runSessionId);
@@ -99,9 +99,30 @@ export class StoryRunner {
           // Compute duration
           const duration = Date.now() - startTime;
 
+          // Extract error-level logs and append to error message
+          const errorLogs = consoleLogs.filter((log) => log.level === 'error');
+          let finalError = result.error;
+          let finalStacktrace = result.stacktrace;
+          if (errorLogs.length > 0) {
+            const browserErrors = errorLogs.map((log) => log.text).join('\n');
+            finalError = finalError
+              ? `${finalError}\n\nBrowser errors:\n${browserErrors}`
+              : browserErrors;
+            const stacktraces = errorLogs
+              .filter((log) => log.stacktrace)
+              .map((log) => log.stacktrace!);
+            if (stacktraces.length > 0) {
+              finalStacktrace = finalStacktrace
+                ? `${finalStacktrace}\n\nBrowser error stacktraces:\n${stacktraces.join('\n\n')}`
+                : `Browser error stacktraces:\n${stacktraces.join('\n\n')}`;
+            }
+          }
+
           // Merge console logs and duration into result
           const finalResult: StoryResult = {
             ...result,
+            ...(finalError && { error: finalError }),
+            ...(finalStacktrace && { stacktrace: finalStacktrace }),
             consoleLogs,
             duration,
           };

@@ -345,6 +345,7 @@ export async function loadAllPresets(
 
   // Remove `@storybook/preset-typescript` and add a warning if in use.
   const filteredPresetConfig = filterPresetsConfig(presetsConfig);
+  // TODO: Remove in Storybook 11
   if (filteredPresetConfig.length < presetsConfig.length) {
     logger.warn(
       'Storybook now supports TypeScript natively. You can safely remove `@storybook/preset-typescript`.'

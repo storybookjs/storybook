@@ -11,6 +11,7 @@ export interface ConsoleLog {
 export interface StoryResult {
   id: string;
   status: 'passed' | 'failed' | 'skipped';
+  storyPath?: string;
   duration?: number;
   error?: string;
   stacktrace?: string;
@@ -43,10 +44,10 @@ export interface RunReporterInterface {
  * options.
  */
 export class RunReporter implements RunReporterInterface {
-  private options: { json: boolean };
+  private options: { json: boolean; storyPaths?: Record<string, string> };
   private storyStartTimes: Map<string, number> = new Map();
 
-  constructor(options: { json: boolean }) {
+  constructor(options: { json: boolean; storyPaths?: Record<string, string> }) {
     this.options = options;
   }
 
@@ -62,7 +63,9 @@ export class RunReporter implements RunReporterInterface {
     if (this.options.json) {
       return;
     }
-    process.stdout.write(`Running story: ${storyId}\n`);
+    const storyPath = this.options.storyPaths?.[storyId];
+    const storyPathSuffix = storyPath ? ` (${storyPath})` : '';
+    process.stdout.write(`Running story: ${storyId}${storyPathSuffix}\n`);
   }
 
   onConsoleLog(storyId: string, log: ConsoleLog): void {

@@ -1,4 +1,4 @@
-import { getConfigInfo, loadAllPresets, loadMainConfig } from 'storybook/internal/common';
+import { loadAllPresets, loadMainConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   BuilderOptions,
@@ -9,7 +9,7 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { join, resolve } from 'pathe';
+import { join, relative, resolve } from 'pathe';
 import { chromium } from 'playwright-core';
 import { dedent } from 'ts-dedent';
 
@@ -26,18 +26,13 @@ async function resolveStoryInputs(
   inputs: string[],
   serverAddress: string,
   cwd: string
-): Promise<string[]> {
+): Promise<{ storyIds: string[]; storyIdToPath: Record<string, string> }> {
   const isFilePathInput = (input: string) =>
     input.includes('/') ||
     input.includes('\\') ||
     ['.stories.ts', '.stories.tsx', '.stories.js', '.stories.jsx', '.stories.mdx'].some((suffix) =>
       input.endsWith(suffix)
     );
-
-  const fileInputs = inputs.filter(isFilePathInput);
-  if (fileInputs.length === 0) {
-    return inputs;
-  }
 
   const response = await fetch(`${serverAddress}index.json`);
   if (!response.ok) {
@@ -46,6 +41,15 @@ async function resolveStoryInputs(
   }
   const storyIndex = (await response.json()) as StoryIndex;
 
+  const storyIdToPath: Record<string, string> = {};
+  Object.values(storyIndex.entries).forEach((entry) => {
+    if (entry.type === 'story' && entry.importPath) {
+      const resolvedPath = resolve(cwd, entry.importPath);
+      storyIdToPath[entry.id] = relative(cwd, resolvedPath);
+    }
+  });
+
+  const fileInputs = inputs.filter(isFilePathInput);
   const resolvedIds: string[] = inputs.filter((input) => !isFilePathInput(input));
 
   for (const input of fileInputs) {
@@ -72,7 +76,7 @@ async function resolveStoryInputs(
     process.exit(1);
   }
 
-  return dedupedIds;
+  return { storyIds: dedupedIds, storyIdToPath };
 }
 
 export async function buildRunStandalone(
@@ -181,12 +185,17 @@ export async function buildRunStandalone(
     storybookDevServer(fullOptions)
   );
 
-  options.storyIds = await resolveStoryInputs(options.storyIds, address, process.cwd());
+  const { storyIds, storyIdToPath } = await resolveStoryInputs(
+    options.storyIds,
+    address,
+    process.cwd()
+  );
+  options.storyIds = storyIds;
 
   // Instantiate components
   const runStoryChannel = new RunStoryChannel(serverChannel);
-  const reporter = new RunReporter({ json: options.json });
-  const storyRunner = new StoryRunner(options, address, runStoryChannel, reporter);
+  const reporter = new RunReporter({ json: options.json, storyPaths: storyIdToPath });
+  const storyRunner = new StoryRunner(options, address, runStoryChannel, reporter, storyIdToPath);
 
   // Await run
   try {

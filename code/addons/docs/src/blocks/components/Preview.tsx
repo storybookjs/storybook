@@ -208,6 +208,7 @@ export const Preview: FC<PreviewProps> = ({
             columns={columns}
             layout={layout}
             inline={inline}
+            className="docs-story"
           >
             <Zoom.Element centered={layout === 'centered'} scale={inline ? scale : 1}>
               {Array.isArray(children) ? (

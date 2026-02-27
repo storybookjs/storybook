@@ -106,7 +106,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
@@ -186,7 +185,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
@@ -210,7 +208,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
@@ -241,7 +238,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).not.toHaveBeenCalled();
@@ -271,7 +267,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).not.toHaveBeenCalled();
@@ -301,7 +296,6 @@ describe('ServerChannelTransport', () => {
     } as any;
     const head = Buffer.from('');
 
-    // @ts-expect-error (accessing private method via upgrade handler)
     server.listeners('upgrade')[0](request, socket, head);
 
     // Should not call handleUpgrade for wrong path

@@ -26,7 +26,7 @@ const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
       // methods) as object keys. This can happen when an option's name matches a built-in array
       // method (e.g. 'reverse') and `labels` is inadvertently an array instead of a Record.
       // See: https://github.com/storybookjs/storybook/issues/30142
-      acc[typeof label === 'string' ? label : String(item)] = item;
+      acc[typeof label === 'string' && label !== '' ? label : String(item)] = item;
       return acc;
     }, {});
   }

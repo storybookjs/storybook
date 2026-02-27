@@ -1,7 +1,7 @@
 import { type StoryRunOptions } from 'storybook/internal/types';
 
 import { nanoid } from 'nanoid';
-import { chromium } from 'playwright-core';
+import type { Browser } from 'playwright-core';
 
 import type { RunStoryChannel } from './server-channel/run-story-channel';
 import { PlaywrightConsoleCapture } from './utils/playwright-console-capture';
@@ -19,19 +19,22 @@ export class StoryRunner {
   private runStoryChannel: RunStoryChannel;
   private reporter: RunReporterInterface;
   private storyIdToPath: Record<string, string>;
+  private browser: Browser;
 
   constructor(
     options: StoryRunOptions,
     serverUrl: string,
     runStoryChannel: RunStoryChannel,
     reporter: RunReporterInterface,
-    storyIdToPath: Record<string, string>
+    storyIdToPath: Record<string, string>,
+    browser: Browser
   ) {
     this.options = options;
     this.serverUrl = serverUrl;
     this.runStoryChannel = runStoryChannel;
     this.reporter = reporter;
     this.storyIdToPath = storyIdToPath;
+    this.browser = browser;
   }
 
   /** Run all configured stories and return aggregated results. */
@@ -41,9 +44,6 @@ export class StoryRunner {
 
     // Notify reporter of run start
     this.reporter.onRunStart(this.options.storyIds);
-
-    // Launch browser
-    const browser = await chromium.launch({ headless: true });
 
     try {
       // Process each story
@@ -64,7 +64,7 @@ export class StoryRunner {
         this.reporter.onStoryStart(storyId);
 
         // Create a fresh page for this story
-        const page = await browser.newPage();
+        const page = await this.browser.newPage();
         const consoleLogs: ConsoleLog[] = [];
 
         try {
@@ -83,8 +83,9 @@ export class StoryRunner {
           // Record start time
           const startTime = Date.now();
 
-          // Navigate to the story
-          await page.goto(storyUrl);
+          // Navigate to the story — 'commit' is enough since story completion
+          // is signaled via the server channel, not page load events
+          await page.goto(storyUrl, { waitUntil: 'commit' });
 
           // Race the registered wait against timeout
           const result = await Promise.race([
@@ -171,7 +172,7 @@ export class StoryRunner {
       return runResult;
     } finally {
       // Always close browser
-      await browser.close();
+      await this.browser.close();
     }
   }
 }

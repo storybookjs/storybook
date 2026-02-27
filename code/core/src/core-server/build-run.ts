@@ -10,7 +10,7 @@ import type {
 import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
-import { chromium } from 'playwright-core';
+import { type Browser, chromium } from 'playwright-core';
 import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../shared/utils/module';
@@ -109,9 +109,11 @@ export async function buildRunStandalone(
     process.exit(1);
   }
 
-  // Playwright preflight
+  // Playwright preflight — resolve executable path eagerly; also starts browser
+  // in parallel with server startup later
+  let chromiumExecutablePath: string;
   try {
-    chromium.executablePath();
+    chromiumExecutablePath = chromium.executablePath();
   } catch {
     logger.error(
       dedent`
@@ -122,6 +124,12 @@ export async function buildRunStandalone(
     );
     process.exit(1);
   }
+
+  // Start browser launch early, in parallel with server startup
+  const browserPromise: Promise<Browser> = chromium.launch({
+    headless: true,
+    executablePath: chromiumExecutablePath,
+  });
 
   const configDir = resolve(options.configDir);
 
@@ -185,17 +193,24 @@ export async function buildRunStandalone(
     storybookDevServer(fullOptions)
   );
 
-  const { storyIds, storyIdToPath } = await resolveStoryInputs(
-    options.storyIds,
-    address,
-    process.cwd()
-  );
+  // Resolve story inputs and await browser in parallel
+  const [{ storyIds, storyIdToPath }, browser] = await Promise.all([
+    resolveStoryInputs(options.storyIds, address, process.cwd()),
+    browserPromise,
+  ]);
   options.storyIds = storyIds;
 
   // Instantiate components
   const runStoryChannel = new RunStoryChannel(serverChannel);
   const reporter = new RunReporter({ json: options.json, storyPaths: storyIdToPath });
-  const storyRunner = new StoryRunner(options, address, runStoryChannel, reporter, storyIdToPath);
+  const storyRunner = new StoryRunner(
+    options,
+    address,
+    runStoryChannel,
+    reporter,
+    storyIdToPath,
+    browser
+  );
 
   // Await run
   try {

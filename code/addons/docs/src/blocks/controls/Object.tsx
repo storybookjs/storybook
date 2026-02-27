@@ -6,7 +6,7 @@ import { Button, Form, ToggleButton } from 'storybook/internal/components';
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { type Theme, srOnlyStyles, styled, useTheme } from 'storybook/theming';
+import { type Theme, styled, useTheme } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -21,11 +21,6 @@ const Wrapper = styled.div(({ theme }) => ({
   display: 'flex',
   isolation: 'isolate',
   gap: 8,
-
-  // Enable container queries for child responsive styles
-  '@supports (container-type: inline-size)': {
-    containerType: 'inline-size',
-  },
 
   '.rejt-tree': {
     flex: 1,
@@ -125,27 +120,9 @@ const Input = styled.input(({ theme, placeholder }) => ({
 }));
 
 const RawButton = styled(ToggleButton)({
-  position: 'absolute',
-  zIndex: 2,
-  top: 2,
-  right: 2,
-  gap: '4px',
-
-  // Container query: respond to component width (WCAG 2.1 Reflow)
-  '@container (max-width: 400px)': {
-    position: 'static',
-    alignSelf: 'flex-start',
-    order: 2,
-    '& > span': srOnlyStyles,
-  },
-
-  // Fallback for browsers without container query support
-  '@media (max-width: 400px)': {
-    position: 'static',
-    alignSelf: 'flex-start',
-    order: 2,
-    '& > span': srOnlyStyles,
-  },
+  alignSelf: 'flex-start',
+  order: 2,
+  marginRight: -10,
 });
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
@@ -222,7 +199,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const onForceVisible = useCallback(() => {
     onChange({});
     setForceVisible(true);
-  }, [setForceVisible]);
+  }, [onChange, setForceVisible]);
 
   const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -274,14 +251,16 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
         <RawButton
           disabled={readonly}
           pressed={showRaw}
-          ariaLabel={`Edit the ${name} properties in JSON format`}
+          ariaLabel={`Edit ${name} as JSON`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
           }}
+          variant="ghost"
+          padding="small"
+          size="small"
         >
           <EditIcon />
-          <span>Edit JSON</span>
         </RawButton>
       )}
       {!showRaw ? (

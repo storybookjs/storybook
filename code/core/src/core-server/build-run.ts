@@ -18,7 +18,7 @@ import { storybookDevServer } from './dev-server';
 import { RunStoryChannel } from './server-channel/run-story-channel';
 import { StoryRunner } from './story-runner';
 import { buildOrThrow } from './utils/build-or-throw';
-import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
+import { getPreviewBuilder } from './utils/get-builders';
 import { RunReporter } from './utils/run-reporter';
 import { getServerChannelUrl, getServerPort } from './utils/server-address';
 

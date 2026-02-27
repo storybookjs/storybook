@@ -21,6 +21,11 @@ interface ArgRowProps {
   compact?: boolean;
   expandable?: boolean;
   initialExpandedArgs?: boolean;
+  /**
+   * Optional prefix to ensure unique control IDs when multiple Controls blocks
+   * are rendered on the same page. Typically the story ID.
+   */
+  idPrefix?: string;
 }
 
 const Name = styled.span({ fontWeight: 'bold' });

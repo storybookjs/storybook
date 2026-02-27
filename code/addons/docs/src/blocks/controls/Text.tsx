@@ -28,6 +28,7 @@ export const TextControl: FC<TextProps> = ({
   onBlur,
   maxLength,
   argType,
+  idPrefix,
 }) => {
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onChange(event.target.value);
@@ -49,7 +50,7 @@ export const TextControl: FC<TextProps> = ({
         variant="outline"
         size="medium"
         disabled={readonly}
-        id={getControlSetterButtonId(name)}
+        id={getControlSetterButtonId(name, idPrefix)}
         onClick={onForceVisible}
       >
         Set string
@@ -62,7 +63,7 @@ export const TextControl: FC<TextProps> = ({
   return (
     <Wrapper>
       <Form.Textarea
-        id={getControlId(name)}
+        id={getControlId(name, idPrefix)}
         maxLength={maxLength}
         onChange={handleChange}
         disabled={readonly}

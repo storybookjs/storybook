@@ -11,6 +11,15 @@ describe('getControlId', () => {
   ])('%s', (name, input, expected) => {
     expect(getControlId(input)).toBe(expected);
   });
+
+  it.each([
+    // caseName, input, prefix, expected
+    ['with prefix', 'some-id', 'story-1', 'control-story-1-some-id'],
+    ['with prefix and spaces', 'my prop', 'story-2', 'control-story-2-my-prop'],
+    ['with undefined prefix', 'some-id', undefined, 'control-some-id'],
+  ])('%s with prefix', (name, input, prefix, expected) => {
+    expect(getControlId(input, prefix)).toBe(expected);
+  });
 });
 
 describe('getControlSetterButtonId', () => {
@@ -21,5 +30,14 @@ describe('getControlSetterButtonId', () => {
     ['all valid characters', 'some_weird-:custom.id', 'set-some_weird-:custom.id'],
   ])('%s', (name, input, expected) => {
     expect(getControlSetterButtonId(input)).toBe(expected);
+  });
+
+  it.each([
+    // caseName, input, prefix, expected
+    ['with prefix', 'some-id', 'story-1', 'set-story-1-some-id'],
+    ['with prefix and spaces', 'my prop', 'story-2', 'set-story-2-my-prop'],
+    ['with undefined prefix', 'some-id', undefined, 'set-some-id'],
+  ])('%s with prefix', (name, input, prefix, expected) => {
+    expect(getControlSetterButtonId(input, prefix)).toBe(expected);
   });
 });

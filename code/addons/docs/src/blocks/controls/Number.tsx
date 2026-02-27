@@ -35,6 +35,7 @@ export const NumberControl: FC<NumberProps> = ({
   onBlur,
   onFocus,
   argType,
+  idPrefix,
 }) => {
   const [inputValue, setInputValue] = useState(typeof value === 'number' ? value : '');
   const [forceVisible, setForceVisible] = useState(false);
@@ -102,7 +103,7 @@ export const NumberControl: FC<NumberProps> = ({
         ariaLabel={false}
         variant="outline"
         size="medium"
-        id={getControlSetterButtonId(name)}
+        id={getControlSetterButtonId(name, idPrefix)}
         onClick={onForceVisible}
         disabled={readonly}
       >
@@ -115,7 +116,7 @@ export const NumberControl: FC<NumberProps> = ({
     <Wrapper>
       <FormInput
         ref={htmlElRef}
-        id={getControlId(name)}
+        id={getControlId(name, idPrefix)}
         type="number"
         onChange={handleChange}
         size="flex"

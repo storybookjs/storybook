@@ -1,6 +1,6 @@
 import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
-import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { STORY_HOT_UPDATED } from 'storybook/internal/core-events';
+import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { genArrayFromRaw, genImport, genSafeVariableName } from 'knitwork';

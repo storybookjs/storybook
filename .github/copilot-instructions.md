@@ -65,6 +65,12 @@ yarn nx compile <package-name> -c production # Compile specific package
 yarn lint                         # Run all linting checks (~4 min)
 ```
 
+Fix linting on all touched files by running the following command before commiting:
+
+```bash
+yarn --cwd code lint:js:cmd <file> --fix
+```
+
 ### Type Checking
 
 ```bash

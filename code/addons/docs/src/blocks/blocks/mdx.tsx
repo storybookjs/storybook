@@ -144,6 +144,9 @@ const OcticonHeaders = SUPPORTED_MDX_HEADERS.reduce(
   (acc, headerType) => ({
     ...acc,
     [headerType]: styled(headerType)({
+      // Reserve space for the floating anchor icon (which has marginLeft: '-24px')
+      // so it is visible in both light and dark themes without being clipped.
+      paddingLeft: '24px',
       '& svg': {
         position: 'relative',
         top: '-0.1em',

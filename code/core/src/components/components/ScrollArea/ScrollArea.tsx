@@ -28,10 +28,18 @@ const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number;
   })
 );
 
-const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)({
-  width: '100%',
-  height: '100%',
-});
+const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)<{ focusable: boolean }>(
+  ({ focusable, theme }) => ({
+    width: '100%',
+    height: '100%',
+    '&:focus': focusable
+      ? {
+          outline: `2px solid ${theme.color.secondary}`,
+          outlineOffset: -2,
+        }
+      : {},
+  })
+);
 
 const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
   offset: number;
@@ -99,7 +107,12 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
     ref
   ) => (
     <ScrollAreaRoot scrollbarsize={scrollbarSize} offset={offset} className={className}>
-      <ScrollAreaViewport ref={ref} style={{ scrollPadding }} tabIndex={focusable ? 0 : undefined}>
+      <ScrollAreaViewport
+        ref={ref}
+        style={{ scrollPadding }}
+        tabIndex={focusable ? 0 : undefined}
+        focusable={focusable}
+      >
         {children}
       </ScrollAreaViewport>
       {horizontal && (

@@ -100,6 +100,8 @@ export class ComponentMetaManager {
     }
 
     // Volar LS pattern: prepareClosestRootCommandLine (lines 124-138)
+    // Side-effect only: pre-creates the closest project via getCommandLine() so that
+    // findIndirectReferenceTsconfig below can inspect its project references.
     const prepareClosestRootCommandLine = () => {
       let matches: string[] = [];
       for (const rootTsConfig of this.rootTsConfigs) {
@@ -434,8 +436,20 @@ export class ComponentMetaManager {
     const normalized = dir.replace(/\\/g, '/');
 
     for (const watched of this.watchedDirs) {
+      // Already covered by an existing broader watcher
       if (normalized === watched || normalized.startsWith(watched + '/')) {
         return;
+      }
+    }
+
+    // Remove narrower watchers that this broader directory subsumes.
+    // The new recursive watcher covers them, so keeping both wastes file descriptors
+    // and produces duplicate events.
+    for (const watched of this.watchedDirs) {
+      if (watched.startsWith(normalized + '/')) {
+        this.watchedDirs.delete(watched);
+        // Note: we don't close the old fs.watch — that would require a Map<dir, watcher>.
+        // The duplicate events are harmless (debounced), and watchers are cleaned up on dispose().
       }
     }
 

@@ -57,6 +57,16 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
 };
 
 /**
+ * Accumulated timing for react-docgen and react-docgen-typescript. Reset via `resetDocgenTimings()`
+ * before a manifest pass, then read after.
+ */
+export const docgenTimings = { reactDocgenMs: 0, reactDocgenTypescriptMs: 0 };
+export function resetDocgenTimings() {
+  docgenTimings.reactDocgenMs = 0;
+  docgenTimings.reactDocgenTypescriptMs = 0;
+}
+
+/**
  * Collects all React component references used by a CSF story file and resolves as much import and
  * docgen information as possible.
  *
@@ -73,16 +83,6 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
  * - Member expressions like Foo.Bar are supported; namespace imports are represented accordingly.
  * - If react-docgen determines a package import override, it is stored in `importOverride`.
  */
-/**
- * Accumulated timing for react-docgen and react-docgen-typescript. Reset via `resetDocgenTimings()`
- * before a manifest pass, then read after.
- */
-export const docgenTimings = { reactDocgenMs: 0, reactDocgenTypescriptMs: 0 };
-export function resetDocgenTimings() {
-  docgenTimings.reactDocgenMs = 0;
-  docgenTimings.reactDocgenTypescriptMs = 0;
-}
-
 export const getComponents = ({
   csf,
   storyFilePath,
@@ -270,17 +270,9 @@ export const getComponents = ({
       const componentWithPackage = { ...component, isPackage };
 
       if (path) {
-        // Always run react-docgen
-        const rdgStart = performance.now();
-        const reactDocgen = getReactDocgen(path, componentWithPackage);
-        docgenTimings.reactDocgenMs += performance.now() - rdgStart;
-        const importOverrideFromDocgen =
-          reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined;
-
-        // Only run react-docgen-typescript when explicitly configured
-        let reactDocgenTypescript: ComponentDocWithExportName | undefined;
-        let reactDocgenTypescriptError: { name: string; message: string } | undefined;
         if (reactDocgenConfig === 'react-docgen-typescript') {
+          let reactDocgenTypescript: ComponentDocWithExportName | undefined;
+          let reactDocgenTypescriptError: { name: string; message: string } | undefined;
           const rdtStart = performance.now();
           try {
             reactDocgenTypescript = matchComponentDoc(
@@ -296,20 +288,33 @@ export const getComponents = ({
             };
           }
           docgenTimings.reactDocgenTypescriptMs += performance.now() - rdtStart;
+
+          const importOverride = reactDocgenTypescript
+            ? getImportTag(reactDocgenTypescript)
+            : undefined;
+
+          return {
+            ...componentWithPackage,
+            path,
+            ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+            ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
+            importOverride,
+          };
         }
 
-        const importOverrideFromRdt = reactDocgenTypescript
-          ? getImportTag(reactDocgenTypescript)
-          : undefined;
+        if (reactDocgenConfig === 'react-docgen') {
+          const rdgStart = performance.now();
+          const reactDocgen = getReactDocgen(path, componentWithPackage);
+          docgenTimings.reactDocgenMs += performance.now() - rdgStart;
 
-        return {
-          ...componentWithPackage,
-          path,
-          reactDocgen,
-          ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
-          ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
-          importOverride: importOverrideFromDocgen ?? importOverrideFromRdt,
-        };
+          return {
+            ...componentWithPackage,
+            path,
+            reactDocgen,
+            importOverride:
+              reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
+          };
+        }
       }
       return componentWithPackage;
     })

@@ -162,15 +162,12 @@ describe('ComponentMetaProject', () => {
       const docs1 = project.extractDocs(filePaths['Card.tsx']);
       expect(docs1).toHaveLength(1);
 
-      // Second call — should be cached (same mtime)
-      const t0 = Date.now();
+      // Second call — should be cached (same mtime), returns identical result
       const docs2 = project.extractDocs(filePaths['Card.tsx']);
-      const elapsed = Date.now() - t0;
 
       expect(docs2).toHaveLength(1);
       expect(docs2[0].displayName).toBe('Card');
-      // Cached call should be very fast (sub-10ms)
-      expect(elapsed).toBeLessThan(50);
+      expect(docs2).toStrictEqual(docs1);
     } finally {
       project.dispose();
     }

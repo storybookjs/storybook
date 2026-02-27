@@ -40,7 +40,10 @@ export async function createViteServer(options: Options, devServer: Server) {
   };
 
   // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments
-  if (options.host === '0.0.0.0' && !config.server.allowedHosts) {
+  if (
+    options.host === '0.0.0.0' &&
+    (!allowedHosts || (Array.isArray(allowedHosts) && allowedHosts.length === 0))
+  ) {
     config.server.allowedHosts = true;
   }
 

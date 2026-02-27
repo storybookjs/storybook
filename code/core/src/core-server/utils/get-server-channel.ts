@@ -6,6 +6,7 @@ import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
+import { logger } from '../../node-logger';
 import { UniversalStore } from '../../shared/universal-store';
 import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware';
 import { isValidToken } from './validate-token';
@@ -32,7 +33,7 @@ export class ServerChannelTransport {
 
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
       try {
-        const url = request.url && new URL(request.url, request.headers.origin);
+        const url = request.url && new URL(request.url, options.localAddress);
         if (!url || url.pathname !== '/storybook-server-channel') {
           return;
         }
@@ -51,7 +52,7 @@ export class ServerChannelTransport {
           this.socket.emit('connection', ws, request);
         });
       } catch (error) {
-        console.warn('Rejecting WebSocket connection:', error);
+        logger.warn(`Rejecting WebSocket connection: ${error}`);
         socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
         socket.destroy();
       }

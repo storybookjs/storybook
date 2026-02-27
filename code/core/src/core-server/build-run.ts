@@ -11,7 +11,6 @@ import { global } from '@storybook/global';
 
 import { join, resolve } from 'pathe';
 import { chromium } from 'playwright-core';
-import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../shared/utils/module';
@@ -120,21 +119,7 @@ export async function buildRunStandalone(
     process.exit(1);
   }
 
-  const { packageJson } = options;
-  let { storybookVersion, previewConfigPath } = options;
   const configDir = resolve(options.configDir);
-  if (packageJson) {
-    invariant(
-      packageJson.version !== undefined,
-      `Expected package.json#version to be defined in the "${packageJson.name}" package}`
-    );
-    storybookVersion = packageJson.version;
-    previewConfigPath = getConfigInfo(configDir).previewConfigPath ?? undefined;
-  } else {
-    if (!storybookVersion) {
-      storybookVersion = '0.0.0';
-    }
-  }
 
   const port = await getServerPort(options.port);
   options.port = port;
@@ -166,16 +151,12 @@ export async function buildRunStandalone(
   const builder = core.builder;
 
   const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
-  const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(resolvedPreviewBuilder),
-    getManagerBuilder(),
-  ]);
+  const [previewBuilder] = await Promise.all([getPreviewBuilder(resolvedPreviewBuilder)]);
 
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
     corePresets: [
       join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
-      ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...corePresets,
     ],

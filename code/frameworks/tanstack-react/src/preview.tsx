@@ -17,6 +17,7 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 
+import { resetAllServerFnStubs } from './server-fn-stubs';
 import type { TanStackPreviewOptions } from './types';
 
 // Module-level router registry
@@ -380,6 +381,13 @@ export const decorators: Decorator[] = [
     const options = (context.parameters?.tanstack ?? {}) as TanStackPreviewOptions;
     const storyElement = <Story />;
     return <TanStackProvider storyElement={storyElement} options={options} storyId={context.id} />;
+  },
+];
+
+export const loaders = [
+  async () => {
+    resetAllServerFnStubs();
+    return {};
   },
 ];
 

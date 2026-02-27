@@ -103,7 +103,7 @@ export const addWorkaroundResolutions = async ({
   if (isViteSandbox(key)) {
     // Override vite to v8 beta for vite-based sandboxes to test Vite 8 compatibility
     additionalResolutions = {
-      vite: '8.0.0-beta.15',
+      vite: '8.0.0-beta.16',
     };
   }
 

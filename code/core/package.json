@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.3.0-alpha.10",
+  "version": "10.3.0-alpha.12",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -230,7 +230,7 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.1",
-    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "4.0.18",
     "@vitest/spy": "4.0.18",

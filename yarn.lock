@@ -28510,8 +28510,11 @@ __metadata:
     ws: "npm:^8.18.0"
     zod: "npm:^3.25.76"
   peerDependencies:
+    playwright-core: ^1
     prettier: ^2 || ^3
   peerDependenciesMeta:
+    playwright-core:
+      optional: true
     prettier:
       optional: true
   bin:

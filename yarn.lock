@@ -10974,25 +10974,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/mocker@https://pkg.pr.new/@vitest/mocker@9744":
-  version: 4.1.0-beta.4
-  resolution: "@vitest/mocker@https://pkg.pr.new/@vitest/mocker@9744"
-  dependencies:
-    "@vitest/spy": "https://pkg.pr.new/vitest-dev/vitest/@vitest/spy@424e233"
-    estree-walker: "npm:^3.0.3"
-    magic-string: "npm:^0.30.21"
-  peerDependencies:
-    msw: ^2.4.9
-    vite: ^6.0.0 || ^7.0.0-0
-  peerDependenciesMeta:
-    msw:
-      optional: true
-    vite:
-      optional: true
-  checksum: 10c0/f262e9e8cf16b5dd6af8cc24a6febab84d70308f1b1a3f22ae50b724615bed9e4c377fae099c39868cf931ada0fcfeef237868b3225579cb97a86dd329308efe
-  languageName: node
-  linkType: hard
-
 "@vitest/mocker@npm:4.0.18":
   version: 4.0.18
   resolution: "@vitest/mocker@npm:4.0.18"
@@ -11028,15 +11009,6 @@ __metadata:
     vite:
       optional: true
   checksum: 10c0/8eeece00ccf3bfec3a530511515eefb10c9fcc95a954f3aa814a0f76348d5e8d6b3e105fdc54256ffb69d288ad893d95e110682554fcc7c20e5f942f85c1da4a
-  languageName: node
-  linkType: hard
-
-"@vitest/pretty-format@https://pkg.pr.new/vitest-dev/vitest/@vitest/pretty-format@424e233":
-  version: 4.1.0-beta.4
-  resolution: "@vitest/pretty-format@https://pkg.pr.new/vitest-dev/vitest/@vitest/pretty-format@424e233"
-  dependencies:
-    tinyrainbow: "npm:^3.0.3"
-  checksum: 10c0/0c38808ebedd7ae75815f0abefcfa05040f82dcf2bf89028323931bf6e0a5d7cfdbee1259a944778a2042d2d13de76ced8b657bdf79e079d4732358425e07241
   languageName: node
   linkType: hard
 
@@ -11101,13 +11073,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/spy@https://pkg.pr.new/vitest-dev/vitest/@vitest/spy@424e233":
-  version: 4.1.0-beta.4
-  resolution: "@vitest/spy@https://pkg.pr.new/vitest-dev/vitest/@vitest/spy@424e233"
-  checksum: 10c0/8e5f9686b70c3e240a2ca5d9e29cecdf935e93e28f40a0b29a6242d3272075136caa48dc4cac2966ed1c2d79ed8886131bb6e9a38a6902fc0643791e9a6f9580
-  languageName: node
-  linkType: hard
-
 "@vitest/spy@npm:4.0.18":
   version: 4.0.18
   resolution: "@vitest/spy@npm:4.0.18"
@@ -11119,17 +11084,6 @@ __metadata:
   version: 4.1.0-beta.5
   resolution: "@vitest/spy@npm:4.1.0-beta.5"
   checksum: 10c0/9daf0fddda387ea0e3fac3b47f912ee1cae2108a069879f7a0a18375087c44d680c1450cd492f7aa026091c795eb3fe93c9ef9ba4f3b1d136e6558892a830ac6
-  languageName: node
-  linkType: hard
-
-"@vitest/utils@https://pkg.pr.new/@vitest/utils@9744":
-  version: 4.1.0-beta.4
-  resolution: "@vitest/utils@https://pkg.pr.new/@vitest/utils@9744"
-  dependencies:
-    "@vitest/pretty-format": "https://pkg.pr.new/vitest-dev/vitest/@vitest/pretty-format@424e233"
-    convert-source-map: "npm:^2.0.0"
-    tinyrainbow: "npm:^3.0.3"
-  checksum: 10c0/aec46f5bf923dbf90affa0db2481a3f2ed42e268c5d60d1473a451d50a4c454b996878ceffbddc3615e7173fde2288e625273063d7a5bb062c5467b3bc074c99
   languageName: node
   linkType: hard
 
@@ -28847,9 +28801,9 @@ __metadata:
     "@types/semver": "npm:^7.7.1"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:4.0.18"
-    "@vitest/mocker": "https://pkg.pr.new/@vitest/mocker@9744"
+    "@vitest/mocker": "npm:4.0.18"
     "@vitest/spy": "npm:4.0.18"
-    "@vitest/utils": "https://pkg.pr.new/@vitest/utils@9744"
+    "@vitest/utils": "npm:4.0.18"
     "@yarnpkg/fslib": "npm:2.10.3"
     "@yarnpkg/libzip": "npm:2.3.0"
     ansi-to-html: "npm:^0.7.2"

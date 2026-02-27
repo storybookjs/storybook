@@ -24,6 +24,7 @@ process.env.STORYBOOK = 'true';
  * - `dev`: Start the Storybook development server
  * - `build`: Build the Storybook static files
  * - `index`: Generate the Storybook index file
+ * - `run`: Run Storybook in a standalone mode
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
  */

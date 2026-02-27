@@ -5,8 +5,8 @@ export interface ConsoleLog {
   level: 'log' | 'warn' | 'error';
   text: string;
   timestamp: number;
+  stacktrace?: string;
 }
-
 /** Result of running a single story, including status, duration, errors, and console logs. */
 export interface StoryResult {
   id: string;

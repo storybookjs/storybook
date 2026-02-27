@@ -1,13 +1,5 @@
-import { readFile } from 'node:fs/promises';
-
-import {
-  getConfigInfo,
-  getInterpretedFile,
-  loadAllPresets,
-  loadMainConfig,
-} from 'storybook/internal/common';
+import { getConfigInfo, loadAllPresets, loadMainConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { BuilderOptions, LoadOptions, StoryRunOptions } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -17,7 +9,6 @@ import { chromium } from 'playwright-core';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import { detectPnp } from '../cli/detect';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { RunStoryChannel } from './server-channel/run-story-channel';
@@ -26,7 +17,6 @@ import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { RunReporter } from './utils/run-reporter';
 import { getServerChannelUrl, getServerPort } from './utils/server-address';
-import { stripCommentsAndStrings } from './utils/strip-comments-and-strings';
 
 export async function buildRunStandalone(
   options: StoryRunOptions &
@@ -37,6 +27,7 @@ export async function buildRunStandalone(
     }
 ): Promise<void> {
   // Flag contract validation
+  console.log('Starting Storybook run with options:', options);
   if (options.previewUrl || options.forceBuildPreview || options.smokeTest) {
     const unsupportedFlags = [];
     if (options.previewUrl) {
@@ -58,6 +49,8 @@ export async function buildRunStandalone(
     process.exit(1);
   }
 
+  console.log('Initializing Storybook run...');
+
   // Playwright preflight
   try {
     chromium.executablePath();
@@ -71,6 +64,8 @@ export async function buildRunStandalone(
     );
     process.exit(1);
   }
+
+  console.log('Chromium browser found, proceeding with Storybook run...');
 
   const { packageJson } = options;
   let { storybookVersion, previewConfigPath } = options;
@@ -88,20 +83,25 @@ export async function buildRunStandalone(
     }
   }
 
+  console.log(`Using Storybook version: ${storybookVersion}`);
+
   const port = await getServerPort(options.port);
   options.port = port;
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
   options.serverChannelUrl = getServerChannelUrl(port, options);
 
-  // TODO: Remove in SB11
-  options.pnp = await detectPnp();
-
   const config = await loadMainConfig(options);
   const { framework } = config;
   const corePresets: string[] = [];
 
   const frameworkName = (typeof framework === 'string' ? framework : framework?.name) || 'custom';
+
+  console.log(`Detected framework: ${frameworkName}`);
+
+  if (frameworkName) {
+    corePresets.push(join(frameworkName, 'preset'));
+  }
 
   // Load first pass: We need to determine the builder
   let presets = await loadAllPresets({
@@ -113,11 +113,15 @@ export async function buildRunStandalone(
     isCritical: true,
   });
 
-  const { renderer, builder } = await presets.apply('core', {});
+  console.log('Initial presets loaded, determining builder...');
 
-  if (!builder) {
-    throw new MissingBuilderError();
-  }
+  const core = await presets.apply('core', {});
+  console.log({ core });
+
+  console.log({ options });
+  const builder = core.builder;
+
+  console.log(`Using builder: ${typeof builder === 'string' ? builder : builder?.name}`);
 
   const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
   const [previewBuilder, managerBuilder] = await Promise.all([
@@ -125,25 +129,9 @@ export async function buildRunStandalone(
     getManagerBuilder(),
   ]);
 
-  if (resolvedPreviewBuilder.includes('builder-vite')) {
-    const deprecationMessage =
-      dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
-              - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);
-
-    const mainJsPath = getInterpretedFile(
-      resolve(options.configDir || '.storybook', 'main')
-    ) as string;
-    if (/\.c[jt]s$/.test(mainJsPath)) {
-      logger.warn(deprecationMessage);
-    }
-    const mainJsContent = await readFile(mainJsPath, { encoding: 'utf8' });
-    const CJS_CONTENT_REGEX =
-      /\bmodule\.exports\b|\bexports[.[]|\brequire\s*\(|\bObject\.(?:defineProperty|defineProperties|assign)\s*\(\s*exports\b/;
-    const strippedContent = stripCommentsAndStrings(mainJsContent);
-    if (CJS_CONTENT_REGEX.test(strippedContent)) {
-      logger.warn(deprecationMessage);
-    }
-  }
+  console.log(
+    'Preview and manager builders resolved, checking for CommonJS usage in main config...'
+  );
 
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
@@ -159,6 +147,8 @@ export async function buildRunStandalone(
     ],
     ...options,
   });
+
+  console.log('All presets loaded successfully.');
 
   const features = await presets.apply('features');
   global.FEATURES = features;
@@ -180,15 +170,19 @@ export async function buildRunStandalone(
   const storyRunner = new StoryRunner(options, address, runStoryChannel, reporter);
 
   // Await run
-  const runResult = await storyRunner.run();
+  try {
+    const runResult = await storyRunner.run();
 
-  // --keep-open handling
-  if (options.keepOpen) {
-    await new Promise<void>((resolve) => {
-      process.once('SIGINT', resolve);
-    });
+    // --keep-open handling
+    if (options.keepOpen) {
+      await new Promise<void>((resolve) => {
+        process.once('SIGINT', resolve);
+      });
+    }
+
+    // Exit
+    process.exit(runResult.failed > 0 || runResult.skipped > 0 ? 1 : 0);
+  } catch (err) {
+    logger.error(`Error during Storybook run: ${err instanceof Error ? err.message : String(err)}`);
   }
-
-  // Exit
-  process.exit(runResult.failed > 0 || runResult.skipped > 0 ? 1 : 0);
 }

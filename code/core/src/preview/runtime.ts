@@ -1,4 +1,8 @@
-import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR, RUN_SESSION_REGISTER } from 'storybook/internal/core-events';
+import {
+  MANAGER_INERT_ATTRIBUTE_CHANGED,
+  RUN_SESSION_REGISTER,
+  TELEMETRY_ERROR,
+} from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
@@ -47,19 +51,19 @@ export function setup() {
         document.body.removeAttribute('inert');
       }
     });
+
+    // Register this preview session if a runSessionId is present in the URL
+    const runSessionId = new URLSearchParams(globalThis.location?.search ?? '').get('runSessionId');
+    if (runSessionId) {
+      const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
+      channel.emit(RUN_SESSION_REGISTER, { runSessionId });
+    }
   });
 
   // handle all uncaught StorybookError at the root of the application and log to telemetry if applicable
   global.addEventListener('error', errorListener);
   global.addEventListener('unhandledrejection', unhandledRejectionListener);
   maybeSetupPreviewNavigator();
-
-  // Register this preview session if a runSessionId is present in the URL
-  const runSessionId = new URLSearchParams(globalThis.location?.search ?? '').get('runSessionId');
-  if (runSessionId) {
-    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
-    channel.emit(RUN_SESSION_REGISTER, { runSessionId });
-  }
 }
 
 // TODO: In the future, remove this call to make the module side-effect free

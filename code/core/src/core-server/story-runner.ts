@@ -18,17 +18,20 @@ export class StoryRunner {
   private serverUrl: string;
   private runStoryChannel: RunStoryChannel;
   private reporter: RunReporterInterface;
+  private storyIdToPath: Record<string, string>;
 
   constructor(
     options: StoryRunOptions,
     serverUrl: string,
     runStoryChannel: RunStoryChannel,
-    reporter: RunReporterInterface
+    reporter: RunReporterInterface,
+    storyIdToPath: Record<string, string>
   ) {
     this.options = options;
     this.serverUrl = serverUrl;
     this.runStoryChannel = runStoryChannel;
     this.reporter = reporter;
+    this.storyIdToPath = storyIdToPath;
   }
 
   /** Run all configured stories and return aggregated results. */
@@ -50,6 +53,7 @@ export class StoryRunner {
           const skippedResult: StoryResult = {
             id: storyId,
             status: 'skipped',
+            storyPath: this.storyIdToPath[storyId],
           };
           results.push(skippedResult);
           this.reporter.onStoryResult(skippedResult);
@@ -90,6 +94,7 @@ export class StoryRunner {
                 resolve({
                   id: storyId,
                   status: 'failed',
+                  storyPath: this.storyIdToPath[storyId],
                   error: `timed out after ${this.options.timeout}ms`,
                 });
               }, this.options.timeout);
@@ -123,6 +128,7 @@ export class StoryRunner {
             ...result,
             ...(finalError && { error: finalError }),
             ...(finalStacktrace && { stacktrace: finalStacktrace }),
+            storyPath: this.storyIdToPath[storyId],
             consoleLogs,
             duration,
           };

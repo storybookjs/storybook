@@ -147,27 +147,9 @@ Args specified through the URL will extend and override any default values of ar
   {/* prettier-ignore-end */}
 
   <Callout variant="warning">
-    When using Storybook hooks (e.g., `useArgs`) in a render function, **do not** mix them with framework hooks like React's `useState`, `useEffect`, or `useRef`. React re-renders triggered by state updates (e.g., from `useState`'s setter) do not run through Storybook's hook context, which causes a `Storybook preview hooks can only be called inside decorators and story functions` error on re-render.
 
-    Instead, use Storybook's equivalents from `storybook/preview-api`: `useState`, `useEffect`, `useRef`, `useMemo`, `useCallback`, and `useReducer`. These are designed to work correctly alongside Storybook hooks like `useArgs`.
-
-    ```tsx
-    // ✅ Correct: import all hooks from storybook/preview-api
-    import { useArgs, useState, useEffect } from 'storybook/preview-api';
-
-    export const MyStory = {
-      render: function Render(args) {
-        const [{ value }, updateArgs] = useArgs();
-        const [localState, setLocalState] = useState(false);
-
-        useEffect(() => {
-          // side effects here
-        }, [value]);
-
-        return <MyComponent {...args} />;
-      },
-    };
-    ```
+    If you're using Storybook's hooks API in the story's render function, **do not** mix them with React's hooks such as `useState`, `useEffect`, or `useRef`. This is because side effects and re-rendering triggered by React's hooks do not run through Storybook's hook context, which can cause an error on re-render. To manage state and side effects within a story, you must use Storybook's equivalent hooks, such as `useState`, `useEffect`, and `useRef` from `storybook/preview-api`.
+  
   </Callout>
 </IfRenderer>
 

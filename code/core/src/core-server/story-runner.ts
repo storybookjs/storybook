@@ -105,11 +105,12 @@ export class StoryRunner {
           // Compute duration
           const duration = Date.now() - startTime;
 
-          // Extract error-level logs and append to error message
+          // Extract error-level logs and append to error message only when the story failed
           const errorLogs = consoleLogs.filter((log) => log.level === 'error');
           let finalError = result.error;
           let finalStacktrace = result.stacktrace;
           if (errorLogs.length > 0) {
+            result.status = 'failed';
             const browserErrors = errorLogs.map((log) => log.text).join('\n');
             finalError = finalError
               ? `${finalError}\n\nBrowser errors:\n${browserErrors}`

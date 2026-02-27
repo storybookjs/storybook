@@ -33,7 +33,7 @@ describe('getHostValidationMiddleware', () => {
   it('returns 403 when Host is invalid (strict allowedHosts)', () => {
     const middleware = getHostValidationMiddleware({
       host: 'localhost',
-      allowedHosts: ['localhost'],
+      allowedHosts: [],
       localAddress: 'http://localhost:6006',
       networkAddress: 'http://192.168.1.100:6006',
     });
@@ -51,7 +51,7 @@ describe('getHostValidationMiddleware', () => {
   it('calls next() when Host is valid (matches localAddress)', () => {
     const middleware = getHostValidationMiddleware({
       host: 'localhost',
-      allowedHosts: ['localhost'],
+      allowedHosts: [],
       localAddress: 'http://localhost:6006',
       networkAddress: 'http://192.168.1.100:6006',
     });
@@ -68,7 +68,7 @@ describe('getHostValidationMiddleware', () => {
   it('calls next() when Host matches networkAddress', () => {
     const middleware = getHostValidationMiddleware({
       host: '0.0.0.0',
-      allowedHosts: ['localhost'],
+      allowedHosts: [],
       localAddress: 'http://localhost:6006',
       networkAddress: 'http://192.168.1.100:6006',
     });
@@ -102,7 +102,7 @@ describe('getHostValidationMiddleware', () => {
   it('returns 403 when Host header is absent (allowedHosts not true)', () => {
     const middleware = getHostValidationMiddleware({
       host: 'localhost',
-      allowedHosts: ['localhost'],
+      allowedHosts: [],
       localAddress: 'http://localhost:6006',
     });
     const req = createMockRequest({});

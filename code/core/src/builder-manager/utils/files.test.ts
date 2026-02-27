@@ -2,8 +2,6 @@ import { platform } from 'node:os';
 
 import { expect, it } from 'vitest';
 
-import type { OutputFile } from 'esbuild';
-
 import { sanitizePath } from './files';
 
 const os = platform();
@@ -13,14 +11,10 @@ it('sanitizePath', () => {
   const addonsDir = isWindows
     ? 'C:\\Users\\username\\Projects\\projectname\\storybook'
     : '/Users/username/Projects/projectname/storybook';
-  const text = 'demo text';
-  const file: OutputFile = {
-    path: isWindows
-      ? 'C:\\Users\\username\\Projects\\projectname\\storybook\\node_modules\\@storybook\\addon-x+y\\dist\\manager.js'
-      : '/Users/username/Projects/projectname/storybook/node_modules/@storybook/addon-x+y/dist/manager.js',
-    contents: Uint8Array.from(Array.from(text).map((letter) => letter.charCodeAt(0))),
-    text,
-    hash: '',
+  const file = {
+    fileName: 'node_modules/@storybook/addon-x+y/dist/manager.js',
+    code: 'demo text',
+    type: 'chunk' as const,
   };
   const { location, url } = sanitizePath(file, addonsDir);
 

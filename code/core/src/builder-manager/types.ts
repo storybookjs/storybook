@@ -5,13 +5,19 @@ import type {
   Builder_WithRequiredProperty,
 } from 'storybook/internal/types';
 
-import type { BuildOptions, BuildResult } from 'esbuild';
+import type { OutputOptions, RolldownOptions, RolldownOutput } from 'rolldown';
+
+export type ManagerBuilderConfig = {
+  inputOptions: RolldownOptions;
+  outputOptions: OutputOptions;
+  outdir: string;
+};
 
 export type ManagerBuilder = Builder<
-  Builder_WithRequiredProperty<BuildOptions, 'outdir'> & { entryPoints: string[] },
+  Builder_WithRequiredProperty<ManagerBuilderConfig, 'outdir'>,
   BuilderStats
 >;
-export type Compilation = BuildResult;
+export type Compilation = RolldownOutput;
 
 export type BuilderStartOptions = Parameters<ManagerBuilder['start']>['0'];
 export type BuilderStartResult = Builder_Unpromise<ReturnType<ManagerBuilder['start']>>;

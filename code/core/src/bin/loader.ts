@@ -1,6 +1,6 @@
 /**
  * This is an isolated file that is registered as a loader in Node. It is used to convert TS to ESM
- * using esbuild. Do _not_ import from other modules in core unless strictly necessary, as it will
+ * using rolldown. Do _not_ import from other modules in core unless strictly necessary, as it will
  * cause the dist to get huge.
  */
 import { existsSync } from 'node:fs';
@@ -11,10 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 import { deprecate } from 'storybook/internal/node-logger';
 
-import { transform } from 'esbuild';
+import { transformSync } from 'rolldown/utils';
 import { dedent } from 'ts-dedent';
-
-import { NODE_TARGET } from '../shared/constants/environments-support';
 
 export const supportedExtensions = [
   '.js',
@@ -88,7 +86,7 @@ export function addExtensionsToRelativeImports(source: string, filePath: string)
 }
 
 export const load: LoadHook = async (url, context, nextLoad) => {
-  /** Convert TS to ESM using esbuild */
+  /** Convert TS to ESM using rolldown */
   if (
     url.endsWith('.ts') ||
     url.endsWith('.tsx') ||
@@ -99,12 +97,7 @@ export const load: LoadHook = async (url, context, nextLoad) => {
   ) {
     const filePath = fileURLToPath(url);
     const rawSource = await readFile(filePath, 'utf-8');
-    const transformedSource = await transform(rawSource, {
-      loader: 'ts',
-      target: NODE_TARGET,
-      format: 'esm',
-      platform: 'neutral',
-    });
+    const transformedSource = transformSync(filePath, rawSource);
 
     // Add extensions to relative imports so Node.js ESM can resolve them
     const sourceWithExtensions = addExtensionsToRelativeImports(transformedSource.code, filePath);

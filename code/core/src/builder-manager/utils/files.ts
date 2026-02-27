@@ -1,16 +1,14 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join, normalize, relative } from 'node:path';
+import { dirname, join, normalize } from 'node:path';
 
-import type { OutputFile } from 'esbuild';
+import type { OutputAsset, OutputChunk } from 'rolldown';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import type { Compilation } from '../types';
-
 export async function readOrderedFiles(
   addonsDir: string,
-  outputFiles: Compilation['outputFiles'] | undefined
+  outputFiles: (OutputChunk | OutputAsset)[] | undefined
 ) {
   const files = await Promise.all(
     outputFiles?.map(async (file) => {
@@ -21,7 +19,8 @@ export async function readOrderedFiles(
         const directory = dirname(location);
         await mkdir(directory, { recursive: true });
       }
-      await writeFile(location, file.contents);
+      const contents = file.type === 'chunk' ? file.code : file.source;
+      await writeFile(location, contents);
       return url;
     }) || []
   );
@@ -31,8 +30,8 @@ export async function readOrderedFiles(
   return { cssFiles, jsFiles };
 }
 
-export function sanitizePath(file: OutputFile, addonsDir: string) {
-  const filePath = relative(addonsDir, file.path);
+export function sanitizePath(file: { fileName: string }, addonsDir: string) {
+  const filePath = file.fileName;
   const location = normalize(join(addonsDir, filePath));
   const url = `./sb-addons/${slash(filePath).split('/').map(encodeURIComponent).join('/')}`;
 

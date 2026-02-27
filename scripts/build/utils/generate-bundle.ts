@@ -2,7 +2,6 @@
 import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 
-import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
 import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
@@ -13,7 +12,6 @@ import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/glo
 import {
   BROWSER_TARGETS,
   NODE_TARGET,
-  SUPPORTED_FEATURES,
 } from '../../../code/core/src/shared/constants/environments-support';
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module';
 import {
@@ -120,45 +118,6 @@ export async function generateBundle({
     ],
   } as const satisfies EsbuildContextOptions;
 
-  const runtimeOptions = {
-    ...sharedOptions,
-    platform: 'browser',
-    target: BROWSER_TARGETS,
-    supported: SUPPORTED_FEATURES,
-    splitting: false,
-    external: [
-      // The following modules are conditionally called inside of @vitest/mocker
-      // The actual function which calls these modules is not imported
-      // and therefore we can externalize them.
-      'msw/browser', 
-      'msw/core/http',
-    ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
-    alias: {
-      // The following aliases ensures that the runtimes bundles in the actual sources of these modules
-      // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
-      'storybook/preview-api': './src/preview-api',
-      'storybook/manager-api': './src/manager-api',
-      'storybook/theming': './src/theming',
-      'storybook/test': './src/test',
-      'storybook/internal': './src',
-      'storybook/outline': './src/outline',
-      'storybook/backgrounds': './src/backgrounds',
-      'storybook/highlight': './src/highlight',
-      'storybook/measure': './src/measure',
-      'storybook/actions': './src/actions',
-      'storybook/viewport': './src/viewport',
-      // The following aliases ensures that the manager has a single version of React,
-      // even if transitive dependencies would depend on other versions.
-      react: resolvePackageDir('react'),
-      'react-dom': resolvePackageDir('react-dom'),
-      'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
-    },
-    define: {
-      // This should set react in prod mode for the manager
-      'process.env.NODE_ENV': '"production"',
-    },
-  } as const satisfies EsbuildContextOptions;
-
   const contexts: Array<ReturnType<typeof esbuild.context>> = [];
 
   if (entries.node) {
@@ -211,7 +170,6 @@ export async function generateBundle({
         platform: 'browser',
         chunkNames: '_browser-chunks/[name]-[hash]',
         target: BROWSER_TARGETS,
-        supported: SUPPORTED_FEATURES,
         plugins: [
           ...sharedOptions.plugins,
           metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
@@ -221,30 +179,407 @@ export async function generateBundle({
   }
 
   if (entries.runtime) {
-    contexts.push(
-      esbuild.context({
-        ...runtimeOptions,
-        entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
+    // Use rolldown for better code splitting with chunk size limits
+    const { rolldown } = await import('rolldown');
+    
+    const buildRuntimeWithRolldown = async () => {
+      const bundle = await rolldown({
+        input: entries.runtime.map(({ entryPoint }) => entryPoint),
+        cwd: DIR_CWD,
+        platform: 'browser',
+        resolve: {
+          extensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
+          conditionNames: ['browser', 'module', 'default'],
+          alias: {
+            'storybook/preview-api': join(DIR_CWD, './src/preview-api'),
+            'storybook/manager-api': join(DIR_CWD, './src/manager-api'),
+            'storybook/theming': join(DIR_CWD, './src/theming'),
+            'storybook/test': join(DIR_CWD, './src/test'),
+            'storybook/outline': join(DIR_CWD, './src/outline'),
+            'storybook/backgrounds': join(DIR_CWD, './src/backgrounds'),
+            'storybook/highlight': join(DIR_CWD, './src/highlight'),
+            'storybook/measure': join(DIR_CWD, './src/measure'),
+            'storybook/actions': join(DIR_CWD, './src/actions'),
+            'storybook/viewport': join(DIR_CWD, './src/viewport'),
+            react: resolvePackageDir('react'),
+            'react-dom': resolvePackageDir('react-dom'),
+            'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
+          },
+        },
         plugins: [
-          ...runtimeOptions.plugins,
-          metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
+          {
+            name: 'resolve-storybook-internal',
+            async resolveId(source, importer, options) {
+              if (source.startsWith('storybook/internal/')) {
+                const relativePath = source.replace('storybook/internal/', '');
+                // Transform import but let rolldown continue resolution with the file path
+                return this.resolve(join(DIR_CWD, 'src', relativePath), importer, {
+                  ...options,
+                  skipSelf: true,
+                });
+              }
+              return null;
+            },
+          },
+          {
+            name: 'globals-externals',
+            renderChunk(code) {
+              // Transform bare imports for externalized globals into global variable references
+              let transformedCode = code;
+              
+              for (const [moduleId, moduleInfo] of Object.entries(globalsModuleInfoMap)) {
+                const globalVar = moduleInfo.varName;
+                const escapedModuleId = moduleId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                
+                // Transform mixed default + named imports: import DEFAULT, { named } from "module"
+                const mixedDefaultNamedRegex = new RegExp(
+                  `import\\s+([\\w$]+)\\s*,\\s*\\{([^}]+)\\}\\s*from\\s+['"]${escapedModuleId}['"];?`,
+                  'g'
+                );
+                transformedCode = transformedCode.replace(mixedDefaultNamedRegex, (_match, defaultName, namedImports) => {
+                  const statements = [`const ${defaultName} = globalThis.${globalVar};`];
+                  const importPairs = namedImports.split(',').map((imp: string) => imp.trim());
+                  importPairs.forEach((imp: string) => {
+                    const parts = imp.split(/\s+as\s+/);
+                    if (parts.length === 2) {
+                      statements.push(`const ${parts[1].trim()} = globalThis.${globalVar}.${parts[0].trim()};`);
+                    } else {
+                      statements.push(`const ${imp} = globalThis.${globalVar}.${imp};`);
+                    }
+                  });
+                  return statements.join('\n');
+                });
+                
+                // Transform: import * as NAME from "module-id"
+                transformedCode = transformedCode.replace(
+                  new RegExp(`import \\* as ([\\w$]+) from ['"]${escapedModuleId}['"];?\\n?`, 'g'),
+                  `const $1 = globalThis.${globalVar};\n`
+                );
+                
+                // Transform: import DEFAULT from "module-id"  
+                transformedCode = transformedCode.replace(
+                  new RegExp(`import ([\\w$]+) from ['"]${escapedModuleId}['"];?\\n?`, 'g'),
+                  `const $1 = globalThis.${globalVar};\n`
+                );
+                
+                // Transform: import { ... } from "module-id"
+                transformedCode = transformedCode.replace(
+                  new RegExp(`import \\{([^}]+)\\} from ['"]${escapedModuleId}['"];?\\n?`, 'g'),
+                  (_, imports) => {
+                    const importParts = imports.split(',').map((imp: string) => imp.trim());
+                    return importParts.map((imp: string) => {
+                      const parts = imp.split(/\s+as\s+/);
+                      const imported = parts[0].trim();
+                      const local = parts[1]?.trim() || imported;
+                      return `const ${local} = globalThis.${globalVar}.${imported};`;
+                    }).join('\n') + '\n';
+                  }
+                );
+
+                // Transform CJS __require("module-id") calls → globalThis.VAR
+                transformedCode = transformedCode.replace(
+                  new RegExp(`__require\\(['"]${escapedModuleId}['"]\\)`, 'g'),
+                  `globalThis.${globalVar}`
+                );
+              }
+              
+              return { code: transformedCode, map: null };
+            },
+          },
         ],
-      })
-    );
+        external: (id) => {
+          // Only externalize specific msw modules
+          if (id === 'msw/browser' || id === 'msw/core/http') {
+            return true;
+          }
+          // Bundle everything else
+          return false;
+        },
+        treeshake: {
+          annotations: false,
+        },
+        transform: {
+          target: BROWSER_TARGETS,
+          jsx: {
+            runtime: 'classic',
+            pragma: 'React.createElement',
+            pragmaFrag: 'React.Fragment',
+          },
+          define: {
+            'process.env.NODE_ENV': '"production"',
+          },
+        },
+      });
+
+      try {
+        const result = await bundle.generate({
+          format: 'esm',
+          dir: 'dist',
+          entryFileNames: (chunkInfo) => {
+            // Use facadeModuleId to determine the correct output path
+            const facadeId = chunkInfo.facadeModuleId || '';
+            if (facadeId.includes('src/preview/runtime')) return 'preview/runtime.js';
+            if (facadeId.includes('src/manager/globals-runtime')) return 'manager/globals-runtime.js';
+            if (facadeId.includes('src/mocking-utils/mocker-runtime')) return 'mocking-utils/mocker-runtime.js';
+            // Fallback for other entries
+            return '[name].js';
+          },
+          chunkFileNames: 'manager/_manager-chunks/[name]-[hash].js',
+          sourcemap: false,
+          minify: false,
+          codeSplitting: {
+            maxSize: 1024 * 1024, // 1MB max chunk size
+            groups: [
+              {
+                name: 'react',
+                test: /[\\/]node_modules[\\/]react(-dom)?[\\/]/,
+                minSize: 100 * 1024, // 100KB min size
+              },
+              {
+                name: 'icons',
+                test: /[\\/]@storybook[\\/]icons[\\/]/,
+                minSize: 50 * 1024, // 50KB min size
+              },
+            ],
+          },
+        });
+
+        // Write output files
+        for (const outputFile of result.output) {
+          const filePath = join(DIR_CWD, 'dist', outputFile.fileName);
+          // Ensure directory exists
+          const dir = join(DIR_CWD, 'dist', outputFile.fileName.split('/').slice(0, -1).join('/'));
+          await mkdir(dir, { recursive: true });
+          const content = outputFile.type === 'chunk' ? outputFile.code : outputFile.source;
+          await writeFile(filePath, content);
+        }
+
+        // Write metafile if needed
+        const metafilePath = join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME, 'runtime.json');
+        await mkdir(join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME), { recursive: true });
+        await writeFile(metafilePath, JSON.stringify({ outputs: result.output.map(o => ({
+          fileName: o.fileName,
+          size: o.type === 'chunk' ? o.code.length : o.source.length,
+        })) }, null, 2));
+
+        return result;
+      } finally {
+        await bundle.close();
+      }
+    };
+
+    if (isWatch) {
+      // For watch mode, rebuild on change
+      watch(join(DIR_CWD, 'src'), { recursive: true }, async () => {
+        try {
+          await buildRuntimeWithRolldown();
+          console.log(picocolors.cyan('Rebuilt runtime'));
+        } catch (error) {
+          console.error('Error rebuilding runtime:', error);
+        }
+      });
+    }
+    
+    await buildRuntimeWithRolldown();
   }
 
   if (entries.globalizedRuntime) {
-    contexts.push(
-      esbuild.context({
-        ...runtimeOptions,
-        entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+    // Use rolldown for better code splitting with chunk size limits
+    const { rolldown } = await import('rolldown');
+    
+    const buildGlobalizedRuntimeWithRolldown = async () => {
+      const bundle = await rolldown({
+        input: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+        cwd: DIR_CWD,
+        platform: 'browser',
+        resolve: {
+          extensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
+          conditionNames: ['browser', 'module', 'default'],
+          alias: {
+            'storybook/preview-api': join(DIR_CWD, './src/preview-api'),
+            'storybook/manager-api': join(DIR_CWD, './src/manager-api'),
+            'storybook/theming': join(DIR_CWD, './src/theming'),
+            'storybook/test': join(DIR_CWD, './src/test'),
+            'storybook/outline': join(DIR_CWD, './src/outline'),
+            'storybook/backgrounds': join(DIR_CWD, './src/backgrounds'),
+            'storybook/highlight': join(DIR_CWD, './src/highlight'),
+            'storybook/measure': join(DIR_CWD, './src/measure'),
+            'storybook/actions': join(DIR_CWD, './src/actions'),
+            'storybook/viewport': join(DIR_CWD, './src/viewport'),
+            react: resolvePackageDir('react'),
+            'react-dom': resolvePackageDir('react-dom'),
+            'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
+          },
+        },
         plugins: [
-          ...runtimeOptions.plugins,
-          globalExternals(globalsModuleInfoMap),
-          metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
+          {
+            name: 'resolve-storybook-internal',
+            async resolveId(source, importer, options) {
+              if (source.startsWith('storybook/internal/')) {
+                const relativePath = source.replace('storybook/internal/', '');
+                // Transform import but let rolldown continue resolution with the file path
+                return this.resolve(join(DIR_CWD, 'src', relativePath), importer, {
+                  ...options,
+                  skipSelf: true,
+                });
+              }
+              return null;
+            },
+          },
+          {
+            name: 'globals-externals',
+            renderChunk(code: string, _chunk: { fileName: string }) {
+              // Transform remaining bare imports of externalized modules to globalThis references
+              let transformedCode = code;
+              
+              for (const [moduleId, info] of Object.entries(globalsModuleInfoMap)) {
+                const escapedModuleId = moduleId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                
+                // Transform mixed default + named imports: import DEFAULT, { named } from "module"
+                const mixedDefaultNamedRegex = new RegExp(
+                  `import\\s+([\\w$]+)\\s*,\\s*\\{([^}]+)\\}\\s*from\\s+['"]${escapedModuleId}['"];?`,
+                  'g'
+                );
+                transformedCode = transformedCode.replace(mixedDefaultNamedRegex, (_match, defaultName, namedImports) => {
+                  const statements = [`const ${defaultName} = globalThis.${info.varName};`];
+                  const importPairs = namedImports.split(',').map((imp: string) => imp.trim());
+                  importPairs.forEach((imp: string) => {
+                    const parts = imp.split(/\s+as\s+/);
+                    if (parts.length === 2) {
+                      statements.push(`const ${parts[1].trim()} = globalThis.${info.varName}.${parts[0].trim()};`);
+                    } else {
+                      statements.push(`const ${imp} = globalThis.${info.varName}.${imp};`);
+                    }
+                  });
+                  return statements.join('\n');
+                });
+                
+                // Transform namespace imports: import * as NAME from "module" → const NAME = globalThis.__GLOBAL__;
+                const namespaceRegex = new RegExp(
+                  `import\\s*\\*\\s*as\\s+([\\w$]+)\\s+from\\s+['"]${escapedModuleId}['"];?`,
+                  'g'
+                );
+                transformedCode = transformedCode.replace(namespaceRegex, (_match, name) => {
+                  return `const ${name} = globalThis.${info.varName};`;
+                });
+                
+                // Transform default imports: import DEFAULT from "module" → const DEFAULT = globalThis.__GLOBAL__;
+                const defaultRegex = new RegExp(
+                  `import\\s+([\\w$]+)\\s+from\\s+['"]${escapedModuleId}['"];?`,
+                  'g'
+                );
+                transformedCode = transformedCode.replace(defaultRegex, (_match, name) => {
+                  return `const ${name} = globalThis.${info.varName};`;
+                });
+                
+                // Transform named imports: import { a, b as c } from "module" → const a = globalThis.__GLOBAL__.a; const c = globalThis.__GLOBAL__.b;
+                const namedRegex = new RegExp(
+                  `import\\s*\\{([^}]+)\\}\\s*from\\s+['"]${escapedModuleId}['"];?`,
+                  'g'
+                );
+                transformedCode = transformedCode.replace(namedRegex, (_match, imports) => {
+                  const importPairs = imports.split(',').map((imp: string) => imp.trim());
+                  const statements = importPairs.map((imp: string) => {
+                    const parts = imp.split(/\s+as\s+/);
+                    if (parts.length === 2) {
+                      // import { original as alias }
+                      return `const ${parts[1].trim()} = globalThis.${info.varName}.${parts[0].trim()};`;
+                    } else {
+                      // import { name }
+                      return `const ${imp} = globalThis.${info.varName}.${imp};`;
+                    }
+                  });
+                  return statements.join('\n');
+                });
+
+                // Transform CJS __require("module-id") calls → globalThis.VAR
+                transformedCode = transformedCode.replace(
+                  new RegExp(`__require\\(['"]${escapedModuleId}['"]\\)`, 'g'),
+                  `globalThis.${info.varName}`
+                );
+              }
+              
+              return { code: transformedCode };
+            },
+          },
         ],
-      })
-    );
+        external: (id) => {
+          // Externalize global packages that will be provided by globals-runtime.js
+          if (id in globalsModuleInfoMap) {
+            return true;
+          }
+          // Bundle everything else
+          return false;
+        },
+        treeshake: {
+          annotations: false,
+        },
+        transform: {
+          target: BROWSER_TARGETS,
+          jsx: {
+            runtime: 'classic',
+            pragma: 'React.createElement',
+            pragmaFrag: 'React.Fragment',
+          },
+          define: {
+            'process.env.NODE_ENV': '"production"',
+          },
+        },
+      });
+
+      try {
+        const result = await bundle.generate({
+          format: 'esm',
+          dir: 'dist',
+          entryFileNames: 'manager/[name].js',
+          chunkFileNames: 'manager/_manager-chunks/[name]-[hash].js',
+          sourcemap: false,
+          minify: false,
+          codeSplitting: {
+            maxSize: 1024 * 1024, // 1MB max chunk size
+          },
+          globals: Object.fromEntries(
+            Object.entries(globalsModuleInfoMap).map(([key, value]) => [key, value.varName])
+          ),
+        });
+
+        // Write output files
+        for (const outputFile of result.output) {
+          const filePath = join(DIR_CWD, 'dist', outputFile.fileName);
+          // Ensure directory exists
+          const dir = join(DIR_CWD, 'dist', outputFile.fileName.split('/').slice(0, -1).join('/'));
+          await mkdir(dir, { recursive: true });
+          const content = outputFile.type === 'chunk' ? outputFile.code : outputFile.source;
+          await writeFile(filePath, content);
+        }
+
+        // Write metafile if needed
+        const metafilePath = join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME, 'globalizedRuntime.json');
+        await mkdir(join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME), { recursive: true });
+        await writeFile(metafilePath, JSON.stringify({ outputs: result.output.map(o => ({
+          fileName: o.fileName,
+          size: o.type === 'chunk' ? o.code.length : o.source.length,
+        })) }, null, 2));
+
+        return result;
+      } finally {
+        await bundle.close();
+      }
+    };
+
+    if (isWatch) {
+      // For watch mode, rebuild on change
+      watch(join(DIR_CWD, 'src'), { recursive: true }, async () => {
+        try {
+          await buildGlobalizedRuntimeWithRolldown();
+          console.log(picocolors.cyan('Rebuilt globalizedRuntime'));
+        } catch (error) {
+          console.error('Error rebuilding globalizedRuntime:', error);
+        }
+      });
+    }
+    
+    await buildGlobalizedRuntimeWithRolldown();
   }
 
   const compile = await Promise.all(contexts);

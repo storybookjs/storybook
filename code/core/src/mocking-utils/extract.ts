@@ -5,9 +5,9 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
 
-import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
+import { transformSync } from 'rolldown/utils';
 
 import { resolveMock } from './resolve';
 
@@ -100,7 +100,7 @@ export function extractMockCalls(
 ): MockCall[] {
   try {
     const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
-    const { code: jsCode } = transformSync(previewConfigCode, { loader: 'tsx', format: 'esm' });
+    const { code: jsCode } = transformSync(options.previewConfigPath, previewConfigCode);
     const ast = parse(jsCode);
     const mocks: MockCall[] = [];
 

@@ -1,6 +1,11 @@
 import { getConfigInfo, loadAllPresets, loadMainConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { BuilderOptions, LoadOptions, StoryRunOptions } from 'storybook/internal/types';
+import type {
+  BuilderOptions,
+  LoadOptions,
+  StoryIndex,
+  StoryRunOptions,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -18,6 +23,59 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { RunReporter } from './utils/run-reporter';
 import { getServerChannelUrl, getServerPort } from './utils/server-address';
 
+async function resolveStoryInputs(
+  inputs: string[],
+  serverAddress: string,
+  cwd: string
+): Promise<string[]> {
+  const isFilePathInput = (input: string) =>
+    input.includes('/') ||
+    input.includes('\\') ||
+    ['.stories.ts', '.stories.tsx', '.stories.js', '.stories.jsx', '.stories.mdx'].some((suffix) =>
+      input.endsWith(suffix)
+    );
+
+  const fileInputs = inputs.filter(isFilePathInput);
+  if (fileInputs.length === 0) {
+    return inputs;
+  }
+
+  const response = await fetch(`${serverAddress}index.json`);
+  if (!response.ok) {
+    logger.error(`✗ Failed to load story index from ${serverAddress}index.json`);
+    process.exit(1);
+  }
+  const storyIndex = (await response.json()) as StoryIndex;
+
+  const resolvedIds: string[] = inputs.filter((input) => !isFilePathInput(input));
+
+  for (const input of fileInputs) {
+    const resolvedInput = resolve(cwd, input);
+    const entriesForPath = Object.values(storyIndex.entries).filter((entry) =>
+      entry.importPath ? resolve(cwd, entry.importPath) === resolvedInput : false
+    );
+    const storyEntries = entriesForPath.filter((entry) => entry.type === 'story');
+    const docsEntries = entriesForPath.filter((entry) => entry.type === 'docs');
+
+    if (storyEntries.length > 0) {
+      resolvedIds.push(...storyEntries.map((entry) => entry.id));
+    } else if (docsEntries.length > 0) {
+      logger.warn(`Skipping docs-only file: ${input}`);
+    } else {
+      logger.error(`✗ ${input} — no stories found for this file`);
+      process.exit(1);
+    }
+  }
+
+  const dedupedIds = [...new Set(resolvedIds)];
+  if (dedupedIds.length === 0) {
+    logger.error('✗ No stories found for the provided inputs');
+    process.exit(1);
+  }
+
+  return dedupedIds;
+}
+
 export async function buildRunStandalone(
   options: StoryRunOptions &
     LoadOptions &
@@ -27,7 +85,6 @@ export async function buildRunStandalone(
     }
 ): Promise<void> {
   // Flag contract validation
-  console.log('Starting Storybook run with options:', options);
   if (options.previewUrl || options.forceBuildPreview || options.smokeTest) {
     const unsupportedFlags = [];
     if (options.previewUrl) {
@@ -49,12 +106,10 @@ export async function buildRunStandalone(
     process.exit(1);
   }
 
-  console.log('Initializing Storybook run...');
-
   // Playwright preflight
   try {
     chromium.executablePath();
-  } catch (_) {
+  } catch {
     logger.error(
       dedent`
         Error: No Chromium browser found for storybook run.
@@ -64,8 +119,6 @@ export async function buildRunStandalone(
     );
     process.exit(1);
   }
-
-  console.log('Chromium browser found, proceeding with Storybook run...');
 
   const { packageJson } = options;
   let { storybookVersion, previewConfigPath } = options;
@@ -83,8 +136,6 @@ export async function buildRunStandalone(
     }
   }
 
-  console.log(`Using Storybook version: ${storybookVersion}`);
-
   const port = await getServerPort(options.port);
   options.port = port;
   options.configType = 'DEVELOPMENT';
@@ -96,8 +147,6 @@ export async function buildRunStandalone(
   const corePresets: string[] = [];
 
   const frameworkName = (typeof framework === 'string' ? framework : framework?.name) || 'custom';
-
-  console.log(`Detected framework: ${frameworkName}`);
 
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
@@ -113,25 +162,14 @@ export async function buildRunStandalone(
     isCritical: true,
   });
 
-  console.log('Initial presets loaded, determining builder...');
-
   const core = await presets.apply('core', {});
-  console.log({ core });
-
-  console.log({ options });
   const builder = core.builder;
-
-  console.log(`Using builder: ${typeof builder === 'string' ? builder : builder?.name}`);
 
   const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
   const [previewBuilder, managerBuilder] = await Promise.all([
     getPreviewBuilder(resolvedPreviewBuilder),
     getManagerBuilder(),
   ]);
-
-  console.log(
-    'Preview and manager builders resolved, checking for CommonJS usage in main config...'
-  );
 
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
@@ -148,8 +186,6 @@ export async function buildRunStandalone(
     ...options,
   });
 
-  console.log('All presets loaded successfully.');
-
   const features = await presets.apply('features');
   global.FEATURES = features;
 
@@ -163,6 +199,8 @@ export async function buildRunStandalone(
   const { address, serverChannel } = await buildOrThrow(async () =>
     storybookDevServer(fullOptions)
   );
+
+  options.storyIds = await resolveStoryInputs(options.storyIds, address, process.cwd());
 
   // Instantiate components
   const runStoryChannel = new RunStoryChannel(serverChannel);

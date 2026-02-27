@@ -221,7 +221,10 @@ command('index')
   });
 
 command('run')
-  .requiredOption('--story <id>', 'ID of the story to run', (val, prev) => [...(prev || []), val])
+  .requiredOption('--story <id|path>', 'Story ID or file path to run. Repeatable.', (val, prev) => [
+    ...(prev || []),
+    val,
+  ])
   .option(
     '--timeout <ms>',
     'Timeout in milliseconds for the run',

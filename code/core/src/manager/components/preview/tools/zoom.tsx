@@ -19,6 +19,12 @@ const ZoomButton = styled(Button)({
   minWidth: 48,
 });
 
+const ZoomResetButton = styled(ActionList.Button)<{ $isInitialValue: boolean }>(
+  ({ $isInitialValue }) => ({
+    visibility: $isInitialValue ? 'hidden' : undefined,
+  })
+);
+
 const Context = createContext({ value: INITIAL_ZOOM_LEVEL, set: (v: number) => {} });
 
 const ZoomInput = styled(NumericInput)({
@@ -81,16 +87,16 @@ export const Zoom = memo<{
                   </ActionList.Button>
                 }
                 after={
-                  value !== INITIAL_ZOOM_LEVEL && (
-                    <ActionList.Button
-                      size="small"
-                      padding="small"
-                      onClick={() => zoomTo(INITIAL_ZOOM_LEVEL)}
-                      ariaLabel="Reset zoom"
-                    >
-                      <UndoIcon />
-                    </ActionList.Button>
-                  )
+                  <ZoomResetButton
+                    size="small"
+                    padding="small"
+                    $isInitialValue={value === INITIAL_ZOOM_LEVEL}
+                    onClick={() => zoomTo(INITIAL_ZOOM_LEVEL)}
+                    ariaLabel="Reset zoom"
+                    aria-hidden={value === INITIAL_ZOOM_LEVEL}
+                  >
+                    <UndoIcon />
+                  </ZoomResetButton>
                 }
                 value={`${Math.round(value * 100)}%`}
                 minValue={1}

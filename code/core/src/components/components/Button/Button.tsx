@@ -60,7 +60,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'outline',
       padding = 'medium',
       disabled = false,
-      hidden = false,
       readOnly = false,
       active,
       onClick,
@@ -139,8 +138,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             variant={variant}
             size={size}
             padding={padding}
-            disabled={disabled || hidden || readOnly}
-            hidden={hidden}
+            disabled={disabled || readOnly}
             readOnly={readOnly}
             active={active}
             animating={isAnimating}
@@ -168,7 +166,6 @@ const StyledButton = styled('button', {
   variant?: 'outline' | 'solid' | 'ghost';
   active?: boolean;
   disabled?: boolean;
-  hidden?: boolean;
   readOnly?: boolean;
   animating?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
@@ -178,7 +175,6 @@ const StyledButton = styled('button', {
     variant,
     size,
     disabled,
-    hidden,
     readOnly,
     active,
     animating,
@@ -221,7 +217,6 @@ const StyledButton = styled('button', {
     whiteSpace: 'nowrap',
     userSelect: 'none',
     opacity: disabled && !readOnly ? 0.5 : 1,
-    visibility: hidden ? 'hidden' : 'visible',
     margin: 0,
     fontSize: `${theme.typography.size.s1}px`,
     fontWeight: theme.typography.weight.bold,

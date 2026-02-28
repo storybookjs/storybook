@@ -1290,13 +1290,88 @@ afterAll(() => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract docs for a test file by its key in TEST_FILES. */
+/**
+ * Discover all value export names from a source file's AST.
+ * Used by the docs() helper to build extraction entries without needing
+ * a public "discover exports" method on ComponentMetaProject.
+ */
+function findExportNames(sourceFile: ts.SourceFile): string[] {
+  const names: string[] = [];
+
+  for (const stmt of sourceFile.statements) {
+    // export default X (export assignment)
+    if (ts.isExportAssignment(stmt) && !stmt.isExportEquals) {
+      names.push('default');
+      continue;
+    }
+
+    // export { X, Y, Z } or export { X } from './foo'
+    if (ts.isExportDeclaration(stmt)) {
+      if (stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
+        for (const spec of stmt.exportClause.elements) {
+          names.push(spec.name.text);
+        }
+      }
+      continue;
+    }
+
+    const mods = ts.canHaveModifiers(stmt) ? ts.getModifiers(stmt) : undefined;
+    if (!mods?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
+
+    if (mods.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword)) {
+      names.push('default');
+      continue;
+    }
+
+    if (ts.isFunctionDeclaration(stmt) && stmt.name) {
+      names.push(stmt.name.text);
+    } else if (ts.isClassDeclaration(stmt) && stmt.name) {
+      names.push(stmt.name.text);
+    } else if (ts.isVariableStatement(stmt)) {
+      for (const decl of stmt.declarationList.declarations) {
+        if (ts.isIdentifier(decl.name)) {
+          names.push(decl.name.text);
+        }
+      }
+    } else if (ts.isEnumDeclaration(stmt)) {
+      names.push(stmt.name.text);
+    }
+  }
+
+  return [...new Set(names)];
+}
+
+/**
+ * Extract docs for a test file by its key in TEST_FILES.
+ * Discovers all exports from the file's AST and uses extractPropsFromStories
+ * with Path 2 fallback (no importId → skips story JSX lookup).
+ */
 function docs(fileName: string): ComponentDoc[] {
   const fp = filePaths[fileName];
   if (!fp) {
     throw new Error(`Unknown test file: "${fileName}"`);
   }
-  return project.extractDocs(fp);
+
+  // Discover export names from the file's AST
+  const text = sys.readFile(fp);
+  if (!text) return [];
+  const sf = ts.createSourceFile(fp, text, ts.ScriptTarget.Latest, true);
+  const exportNames = findExportNames(sf);
+
+  // Use extractPropsFromStories with Path 2 (no importId → direct type inspection)
+  const entries = exportNames.map((name) => ({
+    storyFilePath: fp,
+    componentPath: fp,
+    exportName: name,
+  }));
+  const results = project.extractPropsFromStories(entries);
+  const storyMap = results.get(fp);
+  if (!storyMap) return [];
+  const allDocs: ComponentDoc[] = [];
+  for (const [, d] of storyMap) {
+    allDocs.push(...d);
+  }
+  return allDocs;
 }
 
 /** Get detected component export names for a test file. */

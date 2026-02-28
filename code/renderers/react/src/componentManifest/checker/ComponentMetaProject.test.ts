@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import ts from 'typescript';
 
+import type { ComponentDoc } from '../componentMetaExtractor';
 import { ComponentMetaManager } from './ComponentMetaManager';
 import { ComponentMetaProject } from './ComponentMetaProject';
 
@@ -86,6 +87,31 @@ function cleanup(dir: string) {
   }
 }
 
+/**
+ * Test helper: extract docs for known exports via Path 2 (no story file needed).
+ * Uses the component file as both storyFilePath and componentPath with no importId,
+ * so Path 1 (story JSX) is skipped and Path 2 (direct type inspection) kicks in.
+ */
+function extractDocs(
+  project: ComponentMetaProject,
+  componentPath: string,
+  exportNames: string[]
+): ComponentDoc[] {
+  const entries = exportNames.map((name) => ({
+    storyFilePath: componentPath,
+    componentPath,
+    exportName: name,
+  }));
+  const results = project.extractPropsFromStories(entries);
+  const storyMap = results.get(componentPath);
+  if (!storyMap) return [];
+  const allDocs: ComponentDoc[] = [];
+  for (const [, d] of storyMap) {
+    allDocs.push(...d);
+  }
+  return allDocs;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -124,7 +150,7 @@ describe('ComponentMetaProject', () => {
     const project = new ComponentMetaProject(ts, parsed, configPath);
 
     try {
-      const docs = project.extractDocs(filePaths['Button.tsx']);
+      const docs = extractDocs(project, filePaths['Button.tsx'], ['Button']);
 
       expect(docs).toHaveLength(1);
       expect(docs[0].displayName).toBe('Button');
@@ -159,11 +185,11 @@ describe('ComponentMetaProject', () => {
 
     try {
       // First call — cold
-      const docs1 = project.extractDocs(filePaths['Card.tsx']);
+      const docs1 = extractDocs(project, filePaths['Card.tsx'], ['Card']);
       expect(docs1).toHaveLength(1);
 
       // Second call — should be cached (same mtime), returns identical result
-      const docs2 = project.extractDocs(filePaths['Card.tsx']);
+      const docs2 = extractDocs(project, filePaths['Card.tsx'], ['Card']);
 
       expect(docs2).toHaveLength(1);
       expect(docs2[0].displayName).toBe('Card');
@@ -192,7 +218,7 @@ describe('ComponentMetaProject', () => {
     const project = new ComponentMetaProject(ts, parsed, configPath);
 
     try {
-      const docs1 = project.extractDocs(filePaths['Tag.tsx']);
+      const docs1 = extractDocs(project, filePaths['Tag.tsx'], ['Tag']);
       expect(docs1).toHaveLength(1);
       expect(docs1[0].props.text).toBeDefined();
 
@@ -206,10 +232,10 @@ describe('ComponentMetaProject', () => {
       );
 
       // Notify the project
-      project.onFileChanged(filePaths['Tag.tsx']);
+      project.onFilesChanged([{ filePath: filePaths['Tag.tsx'], type: 'changed' }]);
 
       // Re-extract — should see the new prop
-      const docs2 = project.extractDocs(filePaths['Tag.tsx']);
+      const docs2 = extractDocs(project, filePaths['Tag.tsx'], ['Tag']);
       expect(docs2).toHaveLength(1);
       expect(docs2[0].props.text).toBeDefined();
       expect(docs2[0].props.color).toBeDefined();
@@ -239,7 +265,7 @@ describe('ComponentMetaProject', () => {
     const project = new ComponentMetaProject(ts, parsed, configPath);
 
     try {
-      const docs = project.extractDocs(filePaths['Components.tsx']);
+      const docs = extractDocs(project, filePaths['Components.tsx'], ['Button', 'Icon']);
 
       expect(docs).toHaveLength(2);
       const names = docs.map((d) => d.displayName).sort();
@@ -272,7 +298,7 @@ describe('ComponentMetaProject', () => {
     const project = new ComponentMetaProject(ts, parsed, configPath);
 
     try {
-      const docs = project.extractDocs(filePaths['Select.tsx']);
+      const docs = extractDocs(project, filePaths['Select.tsx'], ['Select']);
 
       expect(docs).toHaveLength(1);
       expect(docs[0].props.size.type.name).toBe('enum');
@@ -306,7 +332,7 @@ describe('ComponentMetaProject', () => {
     const project = new ComponentMetaProject(ts, parsed, configPath);
 
     try {
-      const docs = project.extractDocs(filePaths['components/Button.tsx']);
+      const docs = extractDocs(project, filePaths['components/Button.tsx'], ['Button']);
 
       expect(docs).toHaveLength(1);
       expect(docs[0].displayName).toBe('Button');
@@ -340,7 +366,7 @@ describe('ComponentMetaProject', () => {
     const project = new ComponentMetaProject(ts, parsed, configPath);
 
     try {
-      const docs = project.extractDocs(filePaths['Header.tsx']);
+      const docs = extractDocs(project, filePaths['Header.tsx'], ['default']);
 
       expect(docs).toHaveLength(1);
       expect(docs[0].displayName).toBe('Header');
@@ -375,7 +401,7 @@ describe('ComponentMetaProject', () => {
     const project = new ComponentMetaProject(ts, parsed, configPath);
 
     try {
-      const docs = project.extractDocs(filePaths['FancyButton.tsx']);
+      const docs = extractDocs(project, filePaths['FancyButton.tsx'], ['FancyButton']);
 
       expect(docs).toHaveLength(1);
       // User props survive
@@ -412,8 +438,8 @@ describe('ComponentMetaProject', () => {
     const project = new ComponentMetaProject(ts, parsed, configPath);
 
     try {
-      const buttonDocs = project.extractDocs(filePaths['Button.tsx']);
-      const cardDocs = project.extractDocs(filePaths['Card.tsx']);
+      const buttonDocs = extractDocs(project, filePaths['Button.tsx'], ['Button']);
+      const cardDocs = extractDocs(project, filePaths['Card.tsx'], ['Card']);
 
       expect(buttonDocs).toHaveLength(1);
       expect(buttonDocs[0].displayName).toBe('Button');
@@ -456,7 +482,7 @@ describe('ComponentMetaProject', () => {
 
     try {
       // Initial: only Button
-      const docs1 = project.extractDocs(filePaths['Button.tsx']);
+      const docs1 = extractDocs(project, filePaths['Button.tsx'], ['Button']);
       expect(docs1).toHaveLength(1);
 
       // Create a new file
@@ -470,10 +496,10 @@ describe('ComponentMetaProject', () => {
       );
 
       // Notify as 'created' — should trigger shouldCheckRootFiles
-      project.onFileChanged(cardPath, 'created');
+      project.onFilesChanged([{ filePath: cardPath, type: 'created' }]);
 
       // Extract from the new file
-      const docs2 = project.extractDocs(cardPath);
+      const docs2 = extractDocs(project, cardPath, ['Card']);
       expect(docs2).toHaveLength(1);
       expect(docs2[0].displayName).toBe('Card');
     } finally {
@@ -513,17 +539,17 @@ describe('ComponentMetaProject', () => {
 
     try {
       // Both files extract initially
-      expect(project.extractDocs(filePaths['Button.tsx'])).toHaveLength(1);
-      expect(project.extractDocs(filePaths['Card.tsx'])).toHaveLength(1);
+      expect(extractDocs(project, filePaths['Button.tsx'], ['Button'])).toHaveLength(1);
+      expect(extractDocs(project, filePaths['Card.tsx'], ['Card'])).toHaveLength(1);
 
       // Delete Card.tsx from disk
       sys.deleteFile!(filePaths['Card.tsx']);
 
       // Notify as 'deleted' — triggers shouldCheckRootFiles + breaks
-      project.onFileChanged(filePaths['Card.tsx'], 'deleted');
+      project.onFilesChanged([{ filePath: filePaths['Card.tsx'], type: 'deleted' }]);
 
       // Button should still work
-      const docs = project.extractDocs(filePaths['Button.tsx']);
+      const docs = extractDocs(project, filePaths['Button.tsx'], ['Button']);
       expect(docs).toHaveLength(1);
       expect(docs[0].displayName).toBe('Button');
     } finally {
@@ -555,7 +581,7 @@ describe('ComponentMetaProject', () => {
 
     try {
       // Force program creation by extracting
-      project.extractDocs(filePaths['Button.tsx']);
+      extractDocs(project, filePaths['Button.tsx'], ['Button']);
 
       const sourcePaths = project.getSourceFilePaths();
       // Should include our files
@@ -605,7 +631,7 @@ describe('ComponentMetaManager integration', () => {
     // 2. project.extractDocs(componentPath)
     // 3. docs.find(d => d.exportName === importName)
     const project = manager.getProjectForFile(filePaths['Button.tsx']);
-    const docs = project.extractDocs(filePaths['Button.tsx']);
+    const docs = extractDocs(project, filePaths['Button.tsx'], ['Button']);
     const doc = docs.find((d) => d.exportName === 'Button');
 
     expect(doc).toBeDefined();
@@ -628,7 +654,7 @@ describe('ComponentMetaManager integration', () => {
     manager = new ComponentMetaManager(ts);
 
     const project = manager.getProjectForFile(filePaths['Header.tsx']);
-    const docs = project.extractDocs(filePaths['Header.tsx']);
+    const docs = extractDocs(project, filePaths['Header.tsx'], ['default']);
 
     // generator.ts uses: docs.find(d => d.exportName === (importName ?? 'default'))
     const doc = docs.find((d) => d.exportName === 'default');
@@ -659,8 +685,8 @@ describe('ComponentMetaManager integration', () => {
     expect(project1).toBe(project2);
 
     // Both extract correctly from the shared project
-    const buttonDoc = project1.extractDocs(filePaths['Button.tsx']);
-    const cardDoc = project2.extractDocs(filePaths['Card.tsx']);
+    const buttonDoc = extractDocs(project1, filePaths['Button.tsx'], ['Button']);
+    const cardDoc = extractDocs(project2, filePaths['Card.tsx'], ['Card']);
     expect(buttonDoc[0].displayName).toBe('Button');
     expect(cardDoc[0].displayName).toBe('Card');
   });

@@ -40,8 +40,7 @@ export class ComponentMetaManager {
 
   // Our own file watching layer
   private watching = false;
-  private watchedDirs = new Set<string>();
-  private watchers: FSWatcher[] = [];
+  private watchersByDir = new Map<string, FSWatcher>();
   private pendingEvents = new Map<string, ReturnType<typeof setTimeout>>();
 
   // Volar Kit pattern (createChecker.ts line 83): module-level fsFileSnapshots
@@ -279,7 +278,7 @@ export class ComponentMetaManager {
       );
     }
 
-    this.inferredProject.tryAddFile(fileName);
+    this.inferredProject.ensureFiles([fileName]);
 
     return this.inferredProject;
   }
@@ -401,7 +400,7 @@ export class ComponentMetaManager {
         // If already covered by an existing watcher, skip
         const normalized = candidate.replace(/\\/g, '/');
         let alreadyWatched = false;
-        for (const watched of this.watchedDirs) {
+        for (const watched of this.watchersByDir.keys()) {
           if (normalized === watched || normalized.startsWith(watched + '/')) {
             alreadyWatched = true;
             break;
@@ -435,25 +434,22 @@ export class ComponentMetaManager {
 
     const normalized = dir.replace(/\\/g, '/');
 
-    for (const watched of this.watchedDirs) {
+    for (const watched of this.watchersByDir.keys()) {
       // Already covered by an existing broader watcher
       if (normalized === watched || normalized.startsWith(watched + '/')) {
         return;
       }
     }
 
-    // Remove narrower watchers that this broader directory subsumes.
+    // Close and remove narrower watchers that this broader directory subsumes.
     // The new recursive watcher covers them, so keeping both wastes file descriptors
     // and produces duplicate events.
-    for (const watched of this.watchedDirs) {
+    for (const [watched, watcher] of this.watchersByDir) {
       if (watched.startsWith(normalized + '/')) {
-        this.watchedDirs.delete(watched);
-        // Note: we don't close the old fs.watch — that would require a Map<dir, watcher>.
-        // The duplicate events are harmless (debounced), and watchers are cleaned up on dispose().
+        watcher.close();
+        this.watchersByDir.delete(watched);
       }
     }
-
-    this.watchedDirs.add(normalized);
 
     try {
       const watcher = watch(dir, { recursive: true }, (eventType, filename) => {
@@ -462,7 +458,7 @@ export class ComponentMetaManager {
         }
         const filePath = path.resolve(dir, filename).replace(/\\/g, '/');
 
-        if (filePath.includes('node_modules') || filePath.includes('.git')) {
+        if (filePath.includes('/node_modules/') || filePath.includes('/.git/')) {
           return;
         }
 
@@ -489,7 +485,7 @@ export class ComponentMetaManager {
         );
       });
       watcher.unref();
-      this.watchers.push(watcher);
+      this.watchersByDir.set(normalized, watcher);
     } catch (err) {
       logger.debug(`[reactComponentMeta] Failed to watch directory ${normalized}: ${err}`);
     }
@@ -500,11 +496,10 @@ export class ComponentMetaManager {
       clearTimeout(timeout);
     }
     this.pendingEvents.clear();
-    for (const watcher of this.watchers) {
+    for (const watcher of this.watchersByDir.values()) {
       watcher.close();
     }
-    this.watchers.length = 0;
-    this.watchedDirs.clear();
+    this.watchersByDir.clear();
     this.watching = false;
   }
 

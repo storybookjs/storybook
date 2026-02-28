@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import ts from 'typescript';
 
+import type { ComponentDoc } from '../componentMetaExtractor';
 import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager';
+import type { ComponentMetaProject } from './ComponentMetaProject';
 
 // ---------------------------------------------------------------------------
 // Test helper: create real tsconfig projects in a temp directory
@@ -54,6 +56,29 @@ function cleanup(dir: string) {
   for (const entry of sys.readDirectory(dir, undefined, undefined, ['**/*'])) {
     sys.deleteFile!(entry);
   }
+}
+
+/**
+ * Test helper: extract docs for known exports via Path 2 (no story file needed).
+ */
+function extractDocs(
+  project: ComponentMetaProject,
+  componentPath: string,
+  exportNames: string[]
+): ComponentDoc[] {
+  const entries = exportNames.map((name) => ({
+    storyFilePath: componentPath,
+    componentPath,
+    exportName: name,
+  }));
+  const results = project.extractPropsFromStories(entries);
+  const storyMap = results.get(componentPath);
+  if (!storyMap) return [];
+  const allDocs: ComponentDoc[] = [];
+  for (const [, d] of storyMap) {
+    allDocs.push(...d);
+  }
+  return allDocs;
 }
 
 // ---------------------------------------------------------------------------
@@ -179,10 +204,10 @@ describe('ComponentMetaManager', () => {
     expect(buttonProject).not.toBe(cardProject);
 
     // Both extract correctly
-    const buttonDocs = buttonProject.extractDocs(path.join(tempDir, 'app/Button.tsx'));
+    const buttonDocs = extractDocs(buttonProject, path.join(tempDir, 'app/Button.tsx'), ['Button']);
     expect(buttonDocs[0].displayName).toBe('Button');
 
-    const cardDocs = cardProject.extractDocs(path.join(tempDir, 'lib/Card.tsx'));
+    const cardDocs = extractDocs(cardProject, path.join(tempDir, 'lib/Card.tsx'), ['Card']);
     expect(cardDocs[0].displayName).toBe('Card');
   });
 
@@ -213,7 +238,7 @@ describe('ComponentMetaManager', () => {
     const project = manager.getProjectForFile(path.join(tempDir, 'Button.tsx'));
     expect(project).toBeDefined();
 
-    const docs = project.extractDocs(path.join(tempDir, 'Button.tsx'));
+    const docs = extractDocs(project, path.join(tempDir, 'Button.tsx'), ['Button']);
     expect(docs).toHaveLength(1);
     expect(docs[0].displayName).toBe('Button');
   });
@@ -243,7 +268,7 @@ describe('ComponentMetaManager', () => {
     const project = manager.getProjectForFile(path.join(tempDir, 'Tag.tsx'));
 
     // Initial extraction
-    const docs1 = project.extractDocs(path.join(tempDir, 'Tag.tsx'));
+    const docs1 = extractDocs(project, path.join(tempDir, 'Tag.tsx'), ['Tag']);
     expect(docs1[0].props.text).toBeDefined();
     expect(docs1[0].props.color).toBeUndefined();
 
@@ -260,7 +285,7 @@ describe('ComponentMetaManager', () => {
     manager.onFilesChanged([{ filePath: path.join(tempDir, 'Tag.tsx'), type: 'changed' }]);
 
     // Re-extract — should see the new prop
-    const docs2 = project.extractDocs(path.join(tempDir, 'Tag.tsx'));
+    const docs2 = extractDocs(project, path.join(tempDir, 'Tag.tsx'), ['Tag']);
     expect(docs2[0].props.color).toBeDefined();
   });
 
@@ -340,7 +365,7 @@ describe('ComponentMetaManager', () => {
     const project2 = manager.getProjectForFile(path.join(tempDir, 'Button.tsx'));
     // The project should now be backed by the new tsconfig
     expect(project2).toBeDefined();
-    const docs = project2.extractDocs(path.join(tempDir, 'Button.tsx'));
+    const docs = extractDocs(project2, path.join(tempDir, 'Button.tsx'), ['Button']);
     expect(docs[0].displayName).toBe('Button');
   });
 
@@ -384,9 +409,9 @@ describe('ComponentMetaManager', () => {
 
     // Access both projects and extract (triggers LanguageService + snapshot caching)
     const p1 = manager.getProjectForFile(path.join(tempDir, 'app/Button.tsx'));
-    p1.extractDocs(path.join(tempDir, 'app/Button.tsx'));
+    extractDocs(p1, path.join(tempDir, 'app/Button.tsx'), ['Button']);
     const p2 = manager.getProjectForFile(path.join(tempDir, 'lib/Card.tsx'));
-    p2.extractDocs(path.join(tempDir, 'lib/Card.tsx'));
+    extractDocs(p2, path.join(tempDir, 'lib/Card.tsx'), ['Card']);
 
     // fsFileSnapshots is shared — entries from both projects exist in one map
     expect(manager.fsFileSnapshots.size).toBeGreaterThan(0);
@@ -432,7 +457,7 @@ describe('ComponentMetaManager', () => {
     const project = manager.getProjectForFile(filePath);
 
     expect(project).toBeDefined();
-    const docs = project.extractDocs(filePath);
+    const docs = extractDocs(project, filePath, ['Button']);
     expect(docs).toHaveLength(1);
     expect(docs[0].displayName).toBe('Button');
   });

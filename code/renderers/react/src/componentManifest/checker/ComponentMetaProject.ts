@@ -8,7 +8,7 @@
  * - FsFileSnapshots with mtime-based caching (shared across projects)
  * - TypeScriptProjectHost contract (projectVersion, shouldCheckRootFiles, checkRootFilesUpdate)
  * - Selective projectVersion bump on file events (Kit checker pattern)
- * - TryAddFile for dynamic file inclusion (LS pattern)
+ * - EnsureFiles for dynamic file inclusion (LS pattern)
  *
  * Props extraction works probe-free:
  *
@@ -47,6 +47,8 @@ export class ComponentMetaProject {
   private projectVersion = 0;
   private shouldCheckRootFiles = false;
   private warmupTimer?: ReturnType<typeof setTimeout>;
+  /** Entries to extract — set by the generator, replayed during warmup for targeted type resolution. */
+  private entries: StoryExtractionEntry[] = [];
 
   constructor(
     private typescript: typeof ts,
@@ -128,21 +130,6 @@ export class ComponentMetaProject {
     this.ls = typescript.createLanguageService(languageServiceHost);
   }
 
-  // ---------------------------------------------------------------------------
-  // Volar LS TypeScriptProjectLS interface (typescriptProjectLs.ts lines 194-209)
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Dynamically add a file to the project's file list. 1:1 with Volar LS tryAddFile
-   * (typescriptProjectLs.ts lines 196-200).
-   */
-  tryAddFile(fileName: string): void {
-    if (!this.commandLine.fileNames.includes(fileName)) {
-      this.commandLine.fileNames.push(fileName);
-      this.projectVersion++;
-    }
-  }
-
   getCommandLine(): ts.ParsedCommandLine {
     return this.commandLine;
   }
@@ -212,20 +199,17 @@ export class ComponentMetaProject {
       .filter((f) => !f.includes('node_modules'));
   }
 
-  // Volar Kit pattern: fileCreated / fileUpdated / fileDeleted (createChecker.ts lines 201-209)
-  onFileChanged(fileName: string, type: 'changed' | 'created' | 'deleted' = 'changed'): void {
-    this.onFilesChanged([{ filePath: fileName, type }]);
-  }
-
   /**
    * Volar Kit pattern (createChecker.ts lines 409-432): Selective projectVersion bump with break on
-   * created/deleted.
+   * created/deleted. Created events only set shouldCheckRootFiles (version bump happens in
+   * checkRootFilesUpdate if the file list actually changed). Deleted/created break early since they
+   * trigger a full config reparse — processing remaining changes is unnecessary.
    */
   onFilesChanged(
     changes: Array<{ filePath: string; type: 'changed' | 'created' | 'deleted' }>
   ): void {
     // Eagerly invalidate snapshot cache for ALL changes before processing.
-    // Our addition — Volar relies on mtime-only, which can miss same-second edits.
+    // Deleting from fsFileSnapshots ensures the sync callback re-reads the file.
     for (const { filePath } of changes) {
       this.fsFileSnapshots.delete(filePath);
     }
@@ -242,52 +226,28 @@ export class ComponentMetaProject {
           this.projectVersion++;
         }
         this.shouldCheckRootFiles = true;
+        break;
       } else if (type === 'created') {
-        this.projectVersion++;
         this.shouldCheckRootFiles = true;
+        break;
       }
     }
 
-    // Eager warmup: rebuild the program now so the next request is instant.
-    // Debounced to avoid redundant rebuilds during rapid file changes.
-    if (this.projectVersion !== oldVersion) {
-      this.scheduleWarmup();
-    }
-  }
-
-  /**
-   * Schedule an eager program + type checker rebuild after file changes settle. By the time the
-   * next extraction request arrives (typically seconds later), both the program and type checker
-   * are already warm — turning a ~1-2s rebuild into a near-instant cache hit.
-   *
-   * Three layers of warmup, each progressively deeper:
-   *
-   * 1. GetProgram() — re-parses changed files, creates new Program
-   * 2. GetTypeChecker() — creates checker + runs binding (symbol tables)
-   * 3. GetSemanticDiagnostics() — forces full type resolution for all source files
-   *
-   * Without (3), TypeScript resolves types lazily on first access via
-   * getTypeOfSymbol()/getResolvedSignature(). That lazy resolution is what makes post-edit RPT ~2s.
-   * By running diagnostics eagerly in the background, all types are pre-computed and cached on
-   * their respective nodes/symbols.
-   */
-  private scheduleWarmup(): void {
-    clearTimeout(this.warmupTimer);
-    this.warmupTimer = setTimeout(() => {
-      try {
-        const program = this.ls.getProgram();
-        if (program) {
-          // Force full type checking — resolves and caches ALL types.
-          // This is the same work extraction would do, just pre-computed
-          // during idle time instead of blocking the request.
-          program.getSemanticDiagnostics();
+    // Targeted warmup: re-extract in the background so the next request is instant.
+    // Only resolves the specific types we need (story JSX → getResolvedSignature),
+    // not the entire program. TypeScript caches resolved types on AST nodes —
+    // the real extraction then hits cached results.
+    if (this.projectVersion !== oldVersion && this.entries.length > 0) {
+      clearTimeout(this.warmupTimer);
+      this.warmupTimer = setTimeout(() => {
+        try {
+          this.extractPropsFromStories(this.entries);
+        } catch {
+          // Warmup failure is non-fatal — extraction will still work on demand.
         }
-      } catch {
-        // Warmup failure is non-fatal — extraction will still work on demand.
-      }
-    }, 100);
-    // Don't let the timer keep the process alive
-    this.warmupTimer?.unref?.();
+      }, 100);
+      this.warmupTimer?.unref?.();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -303,6 +263,8 @@ export class ComponentMetaProject {
     entries: StoryExtractionEntry[]
   ): Map<string, Map<string, ComponentDoc[]>> {
     const result = new Map<string, Map<string, ComponentDoc[]>>();
+
+    this.entries = entries;
 
     const allFiles = entries.flatMap((e) => [e.storyFilePath, e.componentPath]);
     this.ensureFiles(allFiles);
@@ -439,58 +401,6 @@ export class ComponentMetaProject {
   }
 
   /**
-   * Extract component docs from a single file by scanning all its exports. Uses direct type
-   * inspection (Path 2) for each exported component.
-   */
-  extractDocs(filePath: string): ComponentDoc[] {
-    this.tryAddFile(filePath);
-    this.ensureFresh([filePath]);
-
-    const program = this.ls.getProgram();
-    if (!program) {
-      return [];
-    }
-    const checker = program.getTypeChecker();
-    const sourceFile = program.getSourceFile(filePath);
-    if (!sourceFile) {
-      return [];
-    }
-
-    const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
-    if (!moduleSymbol) {
-      return [];
-    }
-
-    const exports = checker.getExportsOfModule(moduleSymbol);
-    const propsTypes = new Map<string, ts.Type>();
-
-    for (const exp of exports) {
-      try {
-        const name = exp.getName();
-        if (name !== 'default' && !/^[A-Z]/.test(name)) {
-          continue;
-        }
-
-        const componentType = checker.getTypeOfSymbol(exp);
-
-        if (!isReactComponentType(this.typescript, checker, componentType)) {
-          continue;
-        }
-
-        const propsType = resolvePropsFromComponentType(this.typescript, checker, componentType);
-        if (propsType) {
-          propsTypes.set(name, propsType);
-        }
-      } catch {
-        // One bad export should not prevent extraction of other exports.
-        continue;
-      }
-    }
-
-    return serializeComponentDocs(this.typescript, checker, filePath, sourceFile, propsTypes);
-  }
-
-  /**
    * Check mtime for specific files and bump projectVersion if any changed.
    *
    * This bypasses the sync() gate in createLanguageServiceHost — sync() only runs when
@@ -531,6 +441,12 @@ export class ComponentMetaProject {
       return undefined;
     }
 
+    // React requires component names to start with uppercase (JSX intrinsic rule).
+    // 'default' exports are allowed — the component's actual displayName is determined later.
+    if (exportName !== 'default' && /^[a-z]/.test(exportName)) {
+      return undefined;
+    }
+
     const exports = checker.getExportsOfModule(moduleSymbol);
     const targetExport = exports.find((e) => e.getName() === exportName);
     if (!targetExport) {
@@ -554,6 +470,12 @@ export class ComponentMetaProject {
       } else {
         return undefined;
       }
+    }
+
+    // Guard: only extract props if the type is actually a React component.
+    // Without this check, utility functions with object params would be false positives.
+    if (!isReactComponentType(this.typescript, checker, componentType)) {
+      return undefined;
     }
 
     return resolvePropsFromComponentType(this.typescript, checker, componentType);

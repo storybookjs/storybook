@@ -35,8 +35,10 @@ interface ReactComponentManifest extends ComponentManifest {
 }
 
 // ---------------------------------------------------------------------------
-// Lazy singleton ComponentMetaManager — survives across dev requests,
-// dies on build process exit. TypeScript is an optional peer dep.
+// Eager singleton ComponentMetaManager — created as soon as this preset is
+// loaded so TypeScript is already warm by the first manifests() call.
+// Survives across dev requests, dies on build process exit.
+// TypeScript is an optional peer dep.
 //
 // Dev mode (primary flow): the `watch` flag from the preset options enables
 // file watching. Actual fs.watch instances are created lazily when projects
@@ -46,36 +48,33 @@ interface ReactComponentManifest extends ComponentManifest {
 // Build mode: watch is false — no watchers, no event handling. One-shot.
 // ---------------------------------------------------------------------------
 
-let componentMetaManagerPromise: Promise<ComponentMetaManager | null> | undefined;
+const managerWarmup: Promise<ComponentMetaManager | null> = (async () => {
+  try {
+    const ts = await import('typescript');
+    const manager = new ComponentMetaManager(ts);
 
-function getComponentMetaManager(): Promise<ComponentMetaManager | null> {
-  if (!componentMetaManagerPromise) {
-    componentMetaManagerPromise = (async () => {
-      try {
-        const ts = await import('typescript');
-        const manager = new ComponentMetaManager(ts);
-
-        // Clean up TS LanguageService instances + watchers on process exit.
-        // The dev server has no shutdown hook, so we rely on process events.
-        process.on('exit', () => manager.dispose());
-        for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-          process.on(signal, () => {
-            manager.dispose();
-            process.kill(process.pid, signal);
-          });
+    // Clean up TS LanguageService instances + watchers on process exit.
+    // The dev server has no shutdown hook, so we rely on process events.
+    process.on('exit', () => manager.dispose());
+    for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+      process.once(signal, () => {
+        try {
+          manager.dispose();
+        } catch {
+          // Best-effort cleanup — don't prevent the process from exiting.
         }
+        process.kill(process.pid, signal);
+      });
+    }
 
-        return manager;
-      } catch (error) {
-        logger.debug(
-          '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
-        );
-        return null;
-      }
-    })();
+    return manager;
+  } catch (error) {
+    logger.debug(
+      '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
+    );
+    return null;
   }
-  return componentMetaManagerPromise;
-}
+})();
 
 /**
  * Context needed for prop extraction, kept separate from the manifest object. Avoids injecting temp
@@ -201,10 +200,8 @@ export const manifests: PresetPropertyFn<
 
   const startTime = performance.now();
 
-  // Kick off TypeScript import + manager creation immediately.
-  // This runs in parallel with the docgen pass below, so by the time
-  // the sequential reactComponentMeta extraction starts, TS is already loaded.
-  const managerWarmup = getComponentMetaManager();
+  // managerWarmup was kicked off at module load time — TypeScript should
+  // already be imported and the manager ready by now.
 
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(

@@ -68,7 +68,7 @@ const managerWarmup: Promise<ComponentMetaManager | null> = (async () => {
     }
 
     return manager;
-  } catch (error) {
+  } catch {
     logger.debug(
       '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
     );

@@ -63,6 +63,7 @@ export interface WrapperProps {
   bordered?: boolean;
   padded?: boolean;
   showLineNumbers?: boolean;
+  copyable?: boolean;
 }
 
 const Wrapper = styled.div<WrapperProps>(
@@ -86,6 +87,12 @@ const Wrapper = styled.div<WrapperProps>(
           '.react-syntax-highlighter-line-number::before': {
             content: 'attr(data-line-number)',
           },
+        }
+      : {},
+  ({ copyable }) =>
+    copyable
+      ? {
+          paddingBottom: 28,
         }
       : {}
 );
@@ -227,6 +234,7 @@ export const SyntaxHighlighter = ({
       bordered={bordered}
       padded={padded}
       showLineNumbers={showLineNumbers}
+      copyable={copyable}
       className={className}
     >
       <Scroller>

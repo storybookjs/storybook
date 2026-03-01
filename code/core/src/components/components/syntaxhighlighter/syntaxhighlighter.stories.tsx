@@ -224,6 +224,20 @@ export const BorderedCopyable = {
   },
 };
 
+export const BorderedCopyableSmallViewport = {
+  args: {
+    ...BorderedCopyable.args,
+  },
+  parameters: {
+    chromatic: { viewports: [320] },
+  },
+  render: (args: ComponentProps<typeof SyntaxHighlighter>) => (
+    <div style={{ width: 320 }}>
+      <SyntaxHighlighter {...args} />
+    </div>
+  ),
+};
+
 export const Padded = {
   args: {
     padded: true,

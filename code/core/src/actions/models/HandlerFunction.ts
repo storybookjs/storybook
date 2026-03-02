@@ -1,1 +1,1 @@
-export type HandlerFunction = (...args: any[]) => any;
+export type HandlerFunction = (...args: any[]) => void | Promise<void>;

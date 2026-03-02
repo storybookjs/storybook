@@ -25,11 +25,9 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
       window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
 
       if (import.meta.hot) {
-        import.meta.hot.on('vite:afterUpdate', () => {
-          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
-        });
-
         import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+          // Cancel any running play function before patching in the new importFn
+          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
           // importFn has changed so we need to patch the new one in
           window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
         });
@@ -57,11 +55,9 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
       window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
 
       if (import.meta.hot) {
-        import.meta.hot.on('vite:afterUpdate', () => {
-          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
-        });
-
         import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+          // Cancel any running play function before patching in the new importFn
+          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
           // importFn has changed so we need to patch the new one in
           window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
         });
@@ -89,11 +85,9 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
       window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
 
       if (import.meta.hot) {
-        import.meta.hot.on('vite:afterUpdate', () => {
-          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
-        });
-
         import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+          // Cancel any running play function before patching in the new importFn
+          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
           // importFn has changed so we need to patch the new one in
           window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
         });
@@ -121,11 +115,9 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
       window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
 
       if (import.meta.hot) {
-        import.meta.hot.on('vite:afterUpdate', () => {
-          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
-        });
-
         import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+          // Cancel any running play function before patching in the new importFn
+          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
           // importFn has changed so we need to patch the new one in
           window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
         });

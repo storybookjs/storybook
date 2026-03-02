@@ -644,20 +644,52 @@ describe('registerIndexJsonRoute', () => {
       onChange(`${workingDir}/src/nested/Button.stories.ts`);
       onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
-      // Wait for first batch to be processed and emit (leading edge)
+      // With trailing-only debounce, the first emit only fires after the debounce period
       await vi.waitFor(() => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
       });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
 
       // Fire another change event after the first batch is processed
-      // This will trigger the trailing edge of the debounce
+      // This will trigger the trailing edge of the debounce again
       onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
-      // Wait for trailing debounce to trigger second emit
+      // Wait for the trailing debounce to trigger a second emit
       await vi.waitFor(() => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(2);
       });
+    });
+
+    it('only emits once per file change (no double-fire from leading+trailing edges)', async () => {
+      vi.mocked(debounce).mockImplementation(
+        (await vi.importActual<typeof import('es-toolkit/function')>('es-toolkit/function'))
+          .debounce
+      );
+
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
+      });
+
+      const watcher = Watchpack.mock.instances[0];
+      const onChange = watcher.on.mock.calls[0][1];
+
+      // Fire a single change event
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+
+      // Wait for the trailing debounce to fire
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
+
+      // Ensure it was only called once (no double-fire from both leading and trailing edges)
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
   });
 });

@@ -90,10 +90,10 @@ export const Zoom = memo<{
                   <ZoomResetButton
                     size="small"
                     padding="small"
-                    hidden={value === INITIAL_ZOOM_LEVEL}
                     $isInitialValue={value === INITIAL_ZOOM_LEVEL}
                     onClick={() => zoomTo(INITIAL_ZOOM_LEVEL)}
                     ariaLabel="Reset zoom"
+                    aria-hidden={value === INITIAL_ZOOM_LEVEL}
                   >
                     <UndoIcon />
                   </ZoomResetButton>

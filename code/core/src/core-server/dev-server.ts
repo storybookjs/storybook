@@ -158,7 +158,7 @@ export async function storybookDevServer(
   }
 
   const features = await options.presets.apply('features');
-  if (features?.experimentalComponentsManifest) {
+  if (features?.componentsManifest !== false) {
     registerManifests({ app, presets: options.presets });
   }
   // Now the preview has successfully started, we can count this as a 'dev' event.

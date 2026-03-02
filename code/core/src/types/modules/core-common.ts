@@ -501,7 +501,7 @@ export interface StorybookConfigRaw {
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
 
-    experimentalComponentsManifest?: boolean;
+    componentsManifest?: boolean;
 
     /**
      * Enables the new code example generation for React components. You can see those examples when

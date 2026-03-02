@@ -157,7 +157,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       )
     );
 
-    if (features?.experimentalComponentsManifest) {
+    if (features?.componentsManifest !== false) {
       effects.push(writeManifests(options.outputDir, presets));
     }
   }

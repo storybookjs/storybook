@@ -26,7 +26,8 @@ export const A = styled(Link)(withReset, ({ theme }) => ({
     color: 'inherit',
     textDecoration: 'underline',
     textDecorationThickness: '1px',
-    padding: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
     '&::before': {
       content: '"\\00a0"',
       fontSize: '0.5em',

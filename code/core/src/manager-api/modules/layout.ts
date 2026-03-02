@@ -102,6 +102,14 @@ export interface SubAPI {
    * account customisations requested by the end user via a layoutCustomisations function.
    */
   getNavSizeWithCustomisations: (navSize: number) => number;
+  /**
+   * Attempts to focus an element identified by its ID. Polls for the element for up to 500ms to
+   * handle cases where the element may not yet be rendered.
+   *
+   * @param elementId - The id of the element to focus.
+   * @param select - Whether to call select() on the element after focusing it.
+   */
+  focusOnUIElement: (elementId?: string, select?: boolean) => void;
 }
 
 type PartialSubState = Partial<SubState>;
@@ -136,6 +144,7 @@ export const focusableUIElements = {
   storySearchField: 'storybook-explorer-searchfield',
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',
+  showAddonPanel: 'storybook-show-addon-panel',
 };
 
 const getIsNavShown = (state: State) => {

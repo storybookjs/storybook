@@ -358,7 +358,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'togglePanel': {
+          const wasPanelShown = fullAPI.getIsPanelShown();
           fullAPI.togglePanel();
+          if (wasPanelShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel);
+          }
           break;
         }
 

@@ -8,6 +8,8 @@ import { BottomBarIcon, SidebarAltIcon } from '@storybook/icons';
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 
+const SHOW_ADDON_PANEL_BUTTON_ID = 'storybook-show-addon-panel';
+
 const menuMapper = ({ api, state }: Combo) => ({
   isVisible: api.getIsPanelShown(),
   singleStory: state.singleStory,
@@ -30,6 +32,7 @@ export const addonsTool: Addon_BaseType = {
               padding="small"
               variant="ghost"
               ariaLabel="Show addon panel"
+              id={SHOW_ADDON_PANEL_BUTTON_ID}
               key="addons"
               onClick={toggle}
             >

@@ -27,7 +27,13 @@ const Panel: FC<any> = (props) => {
   const panelActions = useMemo(
     () => ({
       onSelect: (panel: string) => api.setSelectedPanel(panel),
-      toggleVisibility: () => api.togglePanel(),
+      toggleVisibility: () => {
+        const wasPanelShown = api.getIsPanelShown();
+        api.togglePanel();
+        if (wasPanelShown) {
+          api.focusOnUIElement('storybook-show-addon-panel');
+        }
+      },
       togglePosition: () => api.togglePanelPosition(),
     }),
     [api]

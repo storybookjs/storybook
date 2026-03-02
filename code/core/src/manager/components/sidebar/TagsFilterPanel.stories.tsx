@@ -1,10 +1,12 @@
 import type { DocsIndexEntry, StoryIndexEntry } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { API } from 'storybook/manager-api';
 
-import { MockAPIDecorator } from './TagsFilter.stories';
+import { MockAPIDecorator } from './TagsFilter.story-helpers';
 import { TagsFilterPanel } from './TagsFilterPanel';
 
 const getEntries = (includeUserTags: boolean) => {

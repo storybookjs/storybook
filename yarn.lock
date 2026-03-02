@@ -10946,7 +10946,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/expect@npm:4.1.0-beta.5":
+"@vitest/expect@npm:4.1.0-beta.5, @vitest/expect@npm:^4.1.0-beta.5":
   version: 4.1.0-beta.5
   resolution: "@vitest/expect@npm:4.1.0-beta.5"
   dependencies:
@@ -10993,7 +10993,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/mocker@npm:4.1.0-beta.5":
+"@vitest/mocker@npm:4.1.0-beta.5, @vitest/mocker@npm:^4.1.0-beta.5":
   version: 4.1.0-beta.5
   resolution: "@vitest/mocker@npm:4.1.0-beta.5"
   dependencies:
@@ -11080,7 +11080,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/spy@npm:4.1.0-beta.5":
+"@vitest/spy@npm:4.1.0-beta.5, @vitest/spy@npm:^4.1.0-beta.5":
   version: 4.1.0-beta.5
   resolution: "@vitest/spy@npm:4.1.0-beta.5"
   checksum: 10c0/9daf0fddda387ea0e3fac3b47f912ee1cae2108a069879f7a0a18375087c44d680c1450cd492f7aa026091c795eb3fe93c9ef9ba4f3b1d136e6558892a830ac6
@@ -11097,7 +11097,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/utils@npm:4.1.0-beta.5":
+"@vitest/utils@npm:4.1.0-beta.5, @vitest/utils@npm:^4.1.0-beta.5":
   version: 4.1.0-beta.5
   resolution: "@vitest/utils@npm:4.1.0-beta.5"
   dependencies:
@@ -28800,10 +28800,10 @@ __metadata:
     "@types/react-syntax-highlighter": "npm:11.0.5"
     "@types/semver": "npm:^7.7.1"
     "@types/ws": "npm:^8"
-    "@vitest/expect": "npm:4.0.18"
-    "@vitest/mocker": "npm:4.0.18"
-    "@vitest/spy": "npm:4.0.18"
-    "@vitest/utils": "npm:4.0.18"
+    "@vitest/expect": "npm:^4.1.0-beta.5"
+    "@vitest/mocker": "npm:^4.1.0-beta.5"
+    "@vitest/spy": "npm:^4.1.0-beta.5"
+    "@vitest/utils": "npm:^4.1.0-beta.5"
     "@yarnpkg/fslib": "npm:2.10.3"
     "@yarnpkg/libzip": "npm:2.3.0"
     ansi-to-html: "npm:^0.7.2"

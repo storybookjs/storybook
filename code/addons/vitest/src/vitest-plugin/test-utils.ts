@@ -14,7 +14,8 @@ declare module 'vitest/browser' {
   }
 }
 
-const { getInitialGlobals } = server.commands;
+// @ts-expect-error - getInitialGlobals may not be available in all vitest versions
+const getInitialGlobals = server.commands?.getInitialGlobals;
 
 /**
  * Converts a file URL to a file path, handling URL encoding

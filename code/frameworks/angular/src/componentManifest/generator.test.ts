@@ -11,14 +11,19 @@ import { invalidateCache } from './utils';
 import { fsMocks, indexJson, sampleCompodocJson } from './fixtures';
 
 // Build an in-memory filesystem from the fsMocks record
-const fileSystem: Record<string, string> = {};
+// Use vi.hoisted to ensure fileSystem is available before vi.mock is executed
+const { fileSystem, populateFs } = vi.hoisted(() => {
+  const fileSystem: Record<string, string> = {};
 
-function populateFs(mocks: Record<string, string>, basePath: string) {
-  Object.entries(mocks).forEach(([relativePath, content]) => {
-    const fullPath = `${basePath}/${relativePath.replace(/^\.\//, '')}`;
-    fileSystem[fullPath] = content;
-  });
-}
+  function populateFs(mocks: Record<string, string>, basePath: string) {
+    Object.entries(mocks).forEach(([relativePath, content]) => {
+      const fullPath = `${basePath}/${relativePath.replace(/^\.\//, '')}`;
+      fileSystem[fullPath] = content;
+    });
+  }
+
+  return { fileSystem, populateFs };
+});
 
 vi.mock('node:fs', async (importOriginal) => {
   const original = (await importOriginal()) as typeof fs;

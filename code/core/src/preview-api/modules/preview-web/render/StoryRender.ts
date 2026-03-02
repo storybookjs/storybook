@@ -179,8 +179,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   /**
    * Resolves whether autoplay should be enabled based on:
-   * 1. renderOptions.autoplay (false = docs mode override, takes highest priority)
-   * 2. story.usesMount (always autoplay when true, as the play function is required for rendering)
+   *
+   * 1. RenderOptions.autoplay (false = docs mode override, takes highest priority)
+   * 2. Story.usesMount (always autoplay when true, as the play function is required for rendering)
    * 3. The storyAutoplay global value ('always', 'never', 'no-reduced-motion')
    * 4. The user's prefers-reduced-motion media query (when storyAutoplay is 'no-reduced-motion')
    */
@@ -203,7 +204,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         return false;
       case 'no-reduced-motion':
       default:
-        return !(globalThis?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+        return !globalThis?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
     }
   }
 

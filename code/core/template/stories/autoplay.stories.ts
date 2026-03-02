@@ -8,15 +8,17 @@ export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   decorators: [
     (storyFn: any, context: any) => {
-      return storyFn({ args: { text: `Autoplay: ${context.globals?.storyAutoplay ?? 'default'}` } });
+      return storyFn({
+        args: { text: `Autoplay: ${context.globals?.storyAutoplay ?? 'default'}` },
+      });
     },
   ],
   tags: ['!vitest'],
 };
 
 /**
- * This story has storyAutoplay set to 'always' via globals.
- * The play function should always run regardless of the global setting.
+ * This story has storyAutoplay set to 'always' via globals. The play function should always run
+ * regardless of the global setting.
  */
 export const AlwaysAutoplay = {
   globals: {
@@ -31,10 +33,7 @@ export const AlwaysAutoplay = {
   },
 };
 
-/**
- * This story has storyAutoplay set to 'never' via globals.
- * The play function should never run.
- */
+/** This story has storyAutoplay set to 'never' via globals. The play function should never run. */
 export const NeverAutoplay = {
   globals: {
     storyAutoplay: 'never',

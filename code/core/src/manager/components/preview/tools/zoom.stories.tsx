@@ -89,7 +89,7 @@ export const ArrowUpKey = meta.story({
     const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     zoom.focus();
     await userEvent.keyboard('[ArrowUp]');
-    expect(screen.getByRole('switch', { name: 'Change zoom level' })).toHaveTextContent('101%');
+    expect(zoom).toHaveTextContent('101%');
   },
 });
 

@@ -22,7 +22,7 @@ describe('traverseArgs', () => {
     arg2: Object.freeze({ frozen: true }),
   };
 
-  expect(args.deep.deeper.fnKey.getMockName()).toEqual('spy');
+  expect(args.deep.deeper.fnKey.getMockName()).toEqual('vi.fn()');
 
   const traversed = traverseArgs(args) as typeof args;
 

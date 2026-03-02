@@ -131,6 +131,7 @@ module.exports = {
         'react/forbid-prop-types': 'off',
         'react/no-unused-prop-types': 'off',
         'react/require-default-props': 'off',
+        '@typescript-eslint/no-unused-vars': 'off',
       },
     },
     {

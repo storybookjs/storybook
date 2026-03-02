@@ -8,6 +8,11 @@ import { dedent } from 'ts-dedent';
 import { fsMocks, indexJson } from './fixtures';
 import { manifests } from './generator';
 
+/** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test data has widened literal types
+const runManifests = (entries: any[]) =>
+  manifests(undefined, { manifestEntries: entries } as Parameters<typeof manifests>[1]);
+
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(fsMocks, '/app');
@@ -17,8 +22,9 @@ test('manifests generates correct id, name, description and examples ', async ()
   const manifestEntries = Object.values(indexJson.entries).filter(
     (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
-  const result = await manifests(undefined, { manifestEntries } as any);
-  const { meta, ...components } = result?.components ?? {};
+  const result = await runManifests(manifestEntries);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
+  const { meta: _meta, ...components } = result?.components ?? {};
 
   expect(components).toMatchInlineSnapshot(`
     {
@@ -286,7 +292,7 @@ async function getManifestForStory(code: string) {
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
 
   return result?.components?.components?.['example-button'];
 }
@@ -526,7 +532,8 @@ test('should create component manifest when only attached-mdx docs have manifest
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
   const { meta: _meta, ...components } = result?.components ?? {};
   expect({ components }).toMatchInlineSnapshot(`
     {
@@ -636,7 +643,7 @@ test('stories are populated when meta has no explicit title', async () => {
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
   const component = result?.components?.components?.['card'];
 
   // When no explicit title is in the meta, stories should still be populated

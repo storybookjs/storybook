@@ -92,9 +92,7 @@ export const getComponents = ({
   storyFilePath?: string;
   typescriptOptions: Partial<TypescriptOptions>;
 }): ComponentRef[] => {
-  const { reactDocgen = 'react-docgen', reactDocgenTypescriptOptions } = typescriptOptions;
-  // For the manifest, false (docgen disabled) defaults to react-docgen
-  const reactDocgenConfig = reactDocgen || 'react-docgen';
+  const { reactDocgenTypescriptOptions } = typescriptOptions;
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
@@ -431,7 +429,7 @@ export const getImports = ({
         if (!decl) {
           return undefined;
         }
-        const spec = (decl.specifiers ?? []).find((s) => !isTypeSpecifier(s as any));
+        const spec = (decl.specifiers ?? []).find((s) => !isTypeSpecifier(s));
         if (!spec) {
           return undefined;
         }

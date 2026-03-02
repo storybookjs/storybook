@@ -42,7 +42,7 @@ export interface PropItem {
   required: boolean;
   type: PropItemType;
   description: string;
-  defaultValue: { value: any } | null;
+  defaultValue: { value: string } | null;
   parent?: ParentType;
   declarations?: ParentType[];
 }
@@ -1407,8 +1407,8 @@ function unwrapToFunctionAST(
   }
 
   // Type assertion: <Type>expr
-  if (typescript.isTypeAssertionExpression?.(node)) {
-    return unwrapToFunctionAST(typescript, (node as any).expression, varMap, depth + 1);
+  if (typescript.isTypeAssertionExpression && typescript.isTypeAssertionExpression(node)) {
+    return unwrapToFunctionAST(typescript, node.expression, varMap, depth + 1);
   }
 
   // Call expression: forwardRef(...), memo(...), Object.assign(X, ...)

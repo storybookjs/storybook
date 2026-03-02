@@ -20,6 +20,7 @@ const getImports = (code: string, packageName?: string, storyFilePath?: string) 
     packageName,
     storyFilePath,
   });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return { components: components.map(({ reactDocgen, ...rest }) => rest), imports };
 };
 

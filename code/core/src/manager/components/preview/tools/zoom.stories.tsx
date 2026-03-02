@@ -129,7 +129,7 @@ export const HomeKey = meta.story({
     const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
     zoom.focus();
     await userEvent.keyboard('[Home]');
-    expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('400%');
+    expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('800%');
   },
 });
 

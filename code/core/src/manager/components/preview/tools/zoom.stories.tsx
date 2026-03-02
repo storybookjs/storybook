@@ -86,81 +86,77 @@ export const MinZoom = meta.story({
 export const ArrowUpKey = meta.story({
   args: {},
   play: async ({ canvas, userEvent }) => {
-    const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
+    const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     zoom.focus();
     await userEvent.keyboard('[ArrowUp]');
-    expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('101%');
+    expect(screen.getByRole('switch', { name: 'Change zoom level' })).toHaveTextContent('101%');
   },
 });
 
 export const ArrowDownKey = meta.story({
   args: {},
   play: async ({ canvas, userEvent }) => {
-    const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
+    const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     await zoom.focus();
     await userEvent.keyboard('[ArrowDown]');
-    expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('99%');
+    expect(zoom).toHaveTextContent('99%');
   },
 });
 
 export const PageUpKey = meta.story({
   args: {},
   play: async ({ canvas, userEvent }) => {
-    const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
+    const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     zoom.focus();
     await userEvent.keyboard('[PageUp]');
-    expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('150%');
+    expect(zoom).toHaveTextContent('150%');
   },
 });
 
 export const PageDownKey = meta.story({
   args: {},
   play: async ({ canvas, userEvent }) => {
-    const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
+    const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     zoom.focus();
     await userEvent.keyboard('[PageDown]');
-    expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('50%');
+    expect(zoom).toHaveTextContent('50%');
   },
 });
 
 export const HomeKey = meta.story({
   args: {},
   play: async ({ canvas, userEvent }) => {
-    const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
+    const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     zoom.focus();
     await userEvent.keyboard('[Home]');
-    expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('800%');
+    expect(zoom).toHaveTextContent('800%');
   },
 });
 
 export const EndKey = meta.story({
   args: {},
   play: async ({ canvas, userEvent }) => {
-    const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
+    const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     zoom.focus();
     await userEvent.keyboard('[End]');
-    expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('25%');
+    expect(zoom).toHaveTextContent('25%');
   },
 });
 
 export const WheelUp = meta.story({
   args: {},
   play: async ({ canvas }) => {
-    const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
+    const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     await fireEvent.wheel(zoom, { deltaY: -100 });
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('150%')
-    );
+    await waitFor(() => expect(zoom).toHaveTextContent('150%'));
   },
 });
 
 export const WheelDown = meta.story({
   args: {},
   play: async ({ canvas }) => {
-    const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
+    const zoom = await canvas.findByRole('switch', { name: 'Change zoom level' });
     await fireEvent.wheel(zoom, { deltaY: 100 });
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('50%')
-    );
+    await waitFor(() => expect(zoom).toHaveTextContent('50%'));
   },
 });

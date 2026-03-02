@@ -208,7 +208,9 @@ const ZoomWrapper = memo<{
 
   const zoomBy = useCallback(
     (delta: number) => {
-      set(Math.max(0.01, value + delta));
+      const min = ZOOM_LEVELS[0];
+      const max = ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
+      set(Math.max(min, Math.min(max, value + delta)));
     },
     [set, value]
   );

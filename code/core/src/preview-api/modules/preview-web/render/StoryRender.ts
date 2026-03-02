@@ -13,6 +13,7 @@ import {
 } from 'storybook/internal/preview-errors';
 import type {
   Canvas,
+  Globals,
   PreparedStory,
   RenderContext,
   RenderContextCallbacks,
@@ -176,6 +177,36 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     return this.store.getStoryContext(this.story, { forceInitialArgs });
   }
 
+  /**
+   * Resolves whether autoplay should be enabled based on:
+   * 1. renderOptions.autoplay (false = docs mode override, takes highest priority)
+   * 2. story.usesMount (always autoplay when true, as the play function is required for rendering)
+   * 3. The storyAutoplay global value ('always', 'never', 'no-reduced-motion')
+   * 4. The user's prefers-reduced-motion media query (when storyAutoplay is 'no-reduced-motion')
+   */
+  private resolveAutoplay(globals: Globals): boolean {
+    // If renderOptions explicitly disables autoplay (e.g. docs mode), respect that
+    if (this.renderOptions.autoplay === false) {
+      return false;
+    }
+
+    // If the story uses mount in its play function, it must autoplay to render
+    if (this.story?.usesMount) {
+      return true;
+    }
+
+    const setting = globals?.storyAutoplay ?? 'no-reduced-motion';
+    switch (setting) {
+      case 'always':
+        return true;
+      case 'never':
+        return false;
+      case 'no-reduced-motion':
+      default:
+        return !(globalThis?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    }
+  }
+
   async render({
     initial = false,
     forceRemount = false,
@@ -325,7 +356,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       };
 
       // The phase should be 'rendering' but it might be set to 'aborted' by another render cycle
-      if (this.renderOptions.autoplay && forceRemount && playFunction && this.phase !== 'errored') {
+      if (
+        this.resolveAutoplay(context.globals) &&
+        forceRemount &&
+        playFunction &&
+        this.phase !== 'errored'
+      ) {
         window?.addEventListener?.('error', onError);
         window?.addEventListener?.('unhandledrejection', onUnhandledRejection);
         this.disableKeyListeners = true;

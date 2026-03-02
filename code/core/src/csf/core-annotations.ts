@@ -2,7 +2,9 @@ import type { StorybookTypes } from 'storybook/internal/types';
 
 import actionAnnotations, { type ActionsTypes } from '../actions/preview';
 import backgroundsAnnotations, { type BackgroundTypes } from '../backgrounds/preview';
-import componentTestingAnnotations from '../component-testing/preview';
+import componentTestingAnnotations, {
+  type ComponentTestingTypes,
+} from '../component-testing/preview';
 import { type ControlsTypes } from '../controls/preview';
 import ghostStoriesAnnotations from '../core-server/utils/ghost-stories/test-annotations';
 import highlightAnnotations, { type HighlightTypes } from '../highlight/preview';
@@ -20,9 +22,12 @@ export type { OutlineTypes } from '../outline/preview';
 export type { TestTypes } from '../test/preview';
 export type { ViewportGlobals, ViewportTypes } from '../viewport/preview';
 
+export type { ComponentTestingTypes, StoryAutoplay } from '../component-testing/preview';
+
 export type CoreTypes = StorybookTypes &
   ActionsTypes &
   BackgroundTypes &
+  ComponentTestingTypes &
   ControlsTypes &
   HighlightTypes &
   MeasureTypes &

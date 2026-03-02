@@ -14,10 +14,21 @@ const { step } = instrument(
   { intercept: true }
 );
 
+export type StoryAutoplay = 'always' | 'never' | 'no-reduced-motion';
+
+export type ComponentTestingTypes = {
+  globals: {
+    storyAutoplay?: StoryAutoplay;
+  };
+};
+
 export default () =>
-  definePreviewAddon({
+  definePreviewAddon<ComponentTestingTypes>({
     parameters: {
       throwPlayFunctionExceptions: false,
+    },
+    initialGlobals: {
+      storyAutoplay: 'no-reduced-motion' as StoryAutoplay,
     },
     runStep: step,
   });

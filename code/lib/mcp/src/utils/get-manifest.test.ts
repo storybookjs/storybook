@@ -111,7 +111,7 @@ describe('getManifest', () => {
 				"You must either pass the original request forward to the server context, or set a custom manifestProvider that doesn't need the request",
 			);
 		});
-		it('should throw ManifestGetError when fetch fails with 404 and include hint about experimentalComponentsManifest', async () => {
+		it('should throw ManifestGetError when fetch fails with 404 and include hint about componentsManifest', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: false,
 				status: 404,
@@ -123,7 +123,7 @@ describe('getManifest', () => {
 			await expect(getManifests(request)).rejects.toThrow(
 				'Failed to fetch manifest: 404 Not Found',
 			);
-			await expect(getManifests(request)).rejects.toThrow('experimentalComponentsManifest');
+			await expect(getManifests(request)).rejects.toThrow('componentsManifest');
 		});
 
 		it('should throw ManifestGetError when fetch fails with 500 without manifest hint', async () => {
@@ -140,7 +140,7 @@ describe('getManifest', () => {
 			try {
 				await getManifests(request);
 			} catch (error) {
-				expect((error as Error).message).not.toContain('experimentalComponentsManifest');
+				expect((error as Error).message).not.toContain('componentsManifest');
 			}
 		});
 

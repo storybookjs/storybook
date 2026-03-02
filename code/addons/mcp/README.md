@@ -48,13 +48,13 @@ export default {
 			options: {
 				toolsets: {
 					dev: true, // Tools for story URL retrieval and UI building instructions (default: true)
-					docs: true, // Tools for component manifest and documentation (default: true, requires experimental feature flag below 👇)
+					docs: true, // Tools for component manifest and documentation (default: true, requires feature flag below 👇)
 				},
 			},
 		},
 	],
 	features: {
-		experimentalComponentsManifest: true, // Enable manifest generation for the docs toolset, only supported in React-based setups.
+		componentsManifest: true, // Enable manifest generation for the docs toolset, only supported in React-based setups.
 	},
 };
 ```
@@ -62,7 +62,7 @@ export default {
 **Available Toolsets:**
 
 - `dev`: Enables [Dev Tools](#dev-tools)
-- `docs`: Enables [Documentation Tools](#docs-tools-experimental)
+- `docs`: Enables [Documentation Tools](#docs-tools)
 
 Disabling the Dev Tools is useful when you want to try out the same experience that your external component consumers will get, because they only get the Component Documentation Tools.
 
@@ -172,15 +172,15 @@ Agent calls tool, gets response:
 http://localhost:6006/?path=/story/example-button--primary
 ```
 
-### Docs Tools (Experimental)
+### Docs Tools
 
-These additional tools are available when the **experimental** component manifest feature is enabled. They provide agents with detailed documentation about your UI components.
+These additional tools are available when the component manifest feature is enabled. They provide agents with detailed documentation about your UI components.
 
 **Requirements:**
 
 - Storybook version 10.1.0 or higher (currently only available as prereleases, `storybook@next`)
 - React-based framework (`react-vite`, `nextjs-vite`, `nextjs`, `react-webpack5`)
-- Feature flag `features.experimentalComponentsManifest` set to `true` in `.storybook/main.js`
+- Feature flag `features.componentsManifest` set to `true` in `.storybook/main.js`
 
 **To enable:**
 
@@ -189,7 +189,7 @@ These additional tools are available when the **experimental** component manifes
 export default {
 	// ... other config
 	features: {
-		experimentalComponentsManifest: true,
+		componentsManifest: true,
 	},
 };
 ```

@@ -19,7 +19,7 @@ describe('experimental_devServer', () => {
 			presets: {
 				apply: vi.fn((key: string) => {
 					if (key === 'features') {
-						return Promise.resolve({ experimentalComponentsManifest: false });
+						return Promise.resolve({ componentsManifest: false });
 					}
 					return Promise.resolve(undefined);
 				}),
@@ -124,7 +124,7 @@ describe('experimental_devServer', () => {
 			presets: {
 				apply: vi.fn((key: string) => {
 					if (key === 'features') {
-						return Promise.resolve({ experimentalComponentsManifest: false });
+						return Promise.resolve({ componentsManifest: false });
 					}
 					return Promise.resolve(undefined);
 				}),
@@ -217,7 +217,7 @@ describe('experimental_devServer', () => {
 						});
 					}
 					if (key === 'features') {
-						return Promise.resolve({ experimentalComponentsManifest: false });
+						return Promise.resolve({ componentsManifest: false });
 					}
 					return Promise.resolve(undefined);
 				}),
@@ -237,7 +237,7 @@ describe('experimental_devServer', () => {
 				apply: vi.fn((key: string) => {
 					if (key === 'refs') return Promise.resolve(null);
 					if (key === 'features') {
-						return Promise.resolve({ experimentalComponentsManifest: false });
+						return Promise.resolve({ componentsManifest: false });
 					}
 					return Promise.resolve(undefined);
 				}),
@@ -256,7 +256,7 @@ describe('experimental_devServer', () => {
 				apply: vi.fn((key: string) => {
 					if (key === 'refs') return Promise.reject(new Error('Config error'));
 					if (key === 'features') {
-						return Promise.resolve({ experimentalComponentsManifest: false });
+						return Promise.resolve({ componentsManifest: false });
 					}
 					return Promise.resolve(undefined);
 				}),

@@ -3,7 +3,7 @@ import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 import { global } from '@storybook/global';
 
 import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
-import { addons, waitForAnimations } from 'storybook/preview-api';
+import { addons, pauseAnimations } from 'storybook/preview-api';
 
 import { withLinkPaths } from './a11yRunnerUtils';
 import { EVENTS } from './constants';
@@ -97,6 +97,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
     if (highlightsRoot) {
       highlightsRoot.style.display = 'none';
     }
+    const restoreAnimations = pauseAnimations();
 
     const task = async () => {
       try {
@@ -114,6 +115,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
       runNext();
     }
 
+    restoreAnimations();
     if (highlightsRoot) {
       highlightsRoot.style.display = '';
     }
@@ -122,7 +124,6 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
 channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = DEFAULT_PARAMETERS) => {
   try {
-    await waitForAnimations();
     const result = await run(input, storyId);
     // Axe result contains class instances, which telejson deserializes in a
     // way that violates:

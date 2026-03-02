@@ -1,4 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
+import path from 'node:path';
+
 import type { APIRequestContext } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 import process from 'process';
@@ -6,7 +8,7 @@ import process from 'process';
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
-const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR;
+const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR!;
 
 const MCP_ENDPOINT = `${storybookUrl}/mcp`;
 
@@ -132,10 +134,6 @@ test.describe('addon-mcp', () => {
       test('should show both toolsets as enabled', async ({ page }) => {
         await page.goto(MCP_ENDPOINT);
 
-        // Both toolsets should show as enabled
-        const enabledStatuses = page.locator('.toolset-status.enabled');
-        await expect(enabledStatuses).toHaveCount(2);
-
         // Check that dev toolset is listed with its tools
         const devToolset = page.locator('.toolset', { has: page.locator('text=dev') });
         await expect(devToolset).toBeVisible();
@@ -145,6 +143,18 @@ test.describe('addon-mcp', () => {
         const docsToolset = page.locator('.toolset', { has: page.locator('text=docs') });
         await expect(docsToolset).toBeVisible();
         await expect(docsToolset.locator('.toolset-status')).toHaveText('enabled');
+
+        // Check that test toolset is listed with its tools
+        const testToolset = page.locator('.toolset', { has: page.locator('text=test') });
+        await expect(testToolset).toBeVisible();
+        await expect(testToolset.locator('.toolset-status').first()).toHaveText('enabled');
+
+        // Check that accessibility tool is enabled
+        const accessibilityTool = testToolset.locator(
+          '.toolset-tools li:has-text("accessibility")'
+        );
+        await expect(accessibilityTool).toBeVisible();
+        await expect(accessibilityTool.locator('.toolset-status')).toHaveText('+ accessibility');
       });
     });
 
@@ -200,7 +210,7 @@ test.describe('addon-mcp', () => {
             stories: [
               {
                 exportName: storyName,
-                absoluteStoryPath: `${sandboxDir}/src/stories/Button.stories.ts`,
+                absoluteStoryPath: path.join(sandboxDir, 'src', 'stories', 'Button.stories.ts'),
               },
             ],
           },

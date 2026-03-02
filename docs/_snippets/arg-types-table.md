@@ -112,7 +112,7 @@ export default {
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
-import { Example } from './Example';
+import Example from './Example.svelte';
 
 const meta = {
   component: Example,
@@ -236,6 +236,7 @@ const meta = preview.meta({
 
 ```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Example } from './Example';
 
 const meta = preview.meta({

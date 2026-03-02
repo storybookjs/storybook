@@ -264,7 +264,7 @@ export async function runAutomigrationsForProjects(
   selectedAutomigrations: AutomigrationCheckResult[],
   options: MultiProjectRunAutomigrationOptions
 ): Promise<Record<ConfigDir, AutomigrationResult>> {
-  const { dryRun, skipInstall, automigrations } = options;
+  const { dryRun, skipInstall, automigrations, yes } = options;
   const projectResults: Record<ConfigDir, AutomigrationResult> = {};
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
@@ -378,6 +378,7 @@ export async function runAutomigrationsForProjects(
             skipInstall,
             storybookVersion: project.storybookVersion,
             storiesPaths: project.storiesPaths,
+            yes,
           };
 
           await fix.run(runOptions);

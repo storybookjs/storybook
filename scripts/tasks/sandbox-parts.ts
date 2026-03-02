@@ -497,8 +497,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   if (shouldUseCsf4) {
     await writeFile(
       setupFilePath,
-      dedent`import { beforeAll } from 'vitest'
-      import { setProjectAnnotations } from '${storybookPackage}'
+      dedent`import { setProjectAnnotations } from '${storybookPackage}'
       import projectAnnotations from './preview'
 
       // setProjectAnnotations still kept to support non-CSF4 story tests
@@ -508,7 +507,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   } else {
     await writeFile(
       setupFilePath,
-      dedent`import { beforeAll } from 'vitest'
+      dedent`
       import { setProjectAnnotations } from '${storybookPackage}'
       import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
@@ -538,12 +537,20 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   }
 
   let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
-  // Insert resolve: { preserveSymlinks: true } as a sibling to plugins in the top-level config object
+
+  // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to plugins
   // Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }])
   fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
-    // Insert resolve after plugins
-    return `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
+    let replacement = `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
+
+    // In linked mode, also add server.fs.allow to allow Vite to serve files from the monorepo root
+    if (options.link) {
+      replacement += `\n  server: {\n    fs: {\n      allow: ['../../..']\n    }\n  },`;
+    }
+
+    return replacement;
   });
+
   // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line
   const storybookTestRegex = /storybookTest\((\{[\s\S]*?\})\)/g;
   fileContent = fileContent.replace(storybookTestRegex, (match, args) => {

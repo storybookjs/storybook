@@ -28,9 +28,6 @@ const config = defineMain({
 	core: {
 		disableTelemetry: true,
 	},
-	features: {
-		componentsManifest: true,
-	},
 	// No refs - single source mode
 });
 

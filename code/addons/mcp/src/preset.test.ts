@@ -69,9 +69,7 @@ describe('experimental_devServer', () => {
 		expect(mockRes.end).toHaveBeenCalledWith(
 			expect.not.stringContaining('Automatically redirecting to'),
 		);
-		expect(mockRes.end).toHaveBeenCalledWith(
-			expect.not.stringContaining('http-equiv="refresh"'),
-		);
+		expect(mockRes.end).toHaveBeenCalledWith(expect.not.stringContaining('http-equiv="refresh"'));
 	});
 
 	it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {
@@ -113,7 +111,9 @@ describe('experimental_devServer', () => {
 			expect.stringContaining('This toolset requires Storybook 10.3.0+ with'),
 		);
 		expect(mockRes.end).toHaveBeenCalledWith(
-			expect.stringContaining('View the <a href="/manifests/components.html">component manifest debugger</a>.'),
+			expect.stringContaining(
+				'View the <a href="/manifests/components.html">component manifest debugger</a>.',
+			),
 		);
 	});
 

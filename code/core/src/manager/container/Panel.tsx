@@ -6,6 +6,7 @@ import { Addon_TypesEnum } from 'storybook/internal/types';
 import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 
 import { STORY_PREPARED } from '../../core-events';
+import { focusableUIElements } from '../../manager-api/modules/layout';
 import { AddonPanel } from '../components/panel/Panel';
 
 const Panel: FC<any> = (props) => {
@@ -31,7 +32,10 @@ const Panel: FC<any> = (props) => {
         const wasPanelShown = api.getIsPanelShown();
         api.togglePanel();
         if (wasPanelShown) {
-          api.focusOnUIElement('storybook-show-addon-panel');
+          const result = api.focusOnUIElement(focusableUIElements.showAddonPanel, { poll: false });
+          if (result === false) {
+            document.body.focus();
+          }
         }
       },
       togglePosition: () => api.togglePanelPosition(),

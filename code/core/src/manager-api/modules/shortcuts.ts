@@ -359,9 +359,19 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
         case 'togglePanel': {
           const wasPanelShown = fullAPI.getIsPanelShown();
+          const panelElement = document.getElementById(focusableUIElements.storyPanelRoot);
+          const wasFocusInPanel =
+            panelElement && document.activeElement && panelElement.contains(document.activeElement);
+
           fullAPI.togglePanel();
-          if (wasPanelShown) {
-            fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel);
+
+          if (wasPanelShown && wasFocusInPanel) {
+            const result = fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel, {
+              poll: false,
+            });
+            if (result === false) {
+              document.body.focus();
+            }
           }
           break;
         }

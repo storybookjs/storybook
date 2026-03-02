@@ -153,6 +153,15 @@ export async function initiate(options: CommandOptions): Promise<void> {
   });
 
   if (initiateResult?.shouldRunDev) {
+    // Workaround for https://github.com/bombshell-dev/clack/issues/408
+    // @clack/core's block() sets stdin to raw mode but intentionally skips restoring it on Windows.
+    // Raw mode causes Ctrl+C to emit \x03 as a character instead of triggering SIGINT, so the
+    // process cannot be interrupted. Explicitly restore stdin to cooked mode before starting the
+    // dev server so that Ctrl+C works as expected.
+    if (process.platform === 'win32' && process.stdin.isTTY && process.stdin.isRaw) {
+      process.stdin.setRawMode(false);
+    }
+
     await runStorybookDev(initiateResult);
   }
 }

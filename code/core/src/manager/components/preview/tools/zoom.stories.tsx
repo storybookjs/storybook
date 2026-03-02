@@ -2,8 +2,7 @@ import { useState } from 'react';
 
 import type { StoryContext } from '@storybook/react-vite';
 
-import { Simulate } from 'react-dom/test-utils';
-import { expect, fn, screen, waitFor, within } from 'storybook/test';
+import { expect, fireEvent, fn, screen, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview';
 import { Zoom } from './zoom';
@@ -21,6 +20,7 @@ const meta = preview.meta({
     zoomIn: fn(),
     zoomOut: fn(),
     zoomTo: fn(),
+    zoomBy: fn(),
   },
   render: (args: Parameters<typeof Zoom>[0]) => {
     const [value, setValue] = useState(args.value);
@@ -147,7 +147,7 @@ export const WheelUp = meta.story({
   args: {},
   play: async ({ canvas }) => {
     const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
-    Simulate.wheel(zoom, { deltaY: -100 });
+    await fireEvent.wheel(zoom, { deltaY: -100 });
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('150%')
     );
@@ -158,7 +158,7 @@ export const WheelDown = meta.story({
   args: {},
   play: async ({ canvas }) => {
     const zoom = await canvas.findByRole('button', { name: 'Change zoom level' });
-    Simulate.wheel(zoom, { deltaY: 100 });
+    await fireEvent.wheel(zoom, { deltaY: 100 });
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Change zoom level' })).toHaveTextContent('50%')
     );

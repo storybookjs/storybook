@@ -262,3 +262,18 @@ export const WithLongContent = meta.story({
     ),
   },
 });
+
+export const WithTallContent = meta.story({
+  args: {
+    visible: true,
+    children: <Trigger>Tall content</Trigger>,
+    placement: 'bottom',
+    popover: (
+      <div style={{ padding: '8px', fontFamily: 'monospace', fontSize: '12px' }}>
+        {Array.from({ length: 60 }, (_, i) => (
+          <div key={i}>{`'option${i + 1}'`}</div>
+        ))}
+      </div>
+    ),
+  },
+});

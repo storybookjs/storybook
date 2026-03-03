@@ -113,11 +113,6 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
-  apply(
-    extension: 'server',
-    config?: StorybookConfigRaw['server'],
-    args?: any
-  ): Promise<StorybookConfigRaw['server']>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -344,14 +339,6 @@ export interface TestBuildFlags {
   esbuildMinify?: boolean;
 }
 
-export interface ServerConfig {
-  /**
-   * Enable hostname validation for WebSocket connections. Set to `[]` to disallow all hosts except
-   * known local/network address, or `['*']` to allow all hosts.
-   */
-  allowedHosts?: string[];
-}
-
 export interface TestBuildConfig {
   test?: TestBuildFlags;
 }
@@ -535,8 +522,6 @@ export interface StorybookConfigRaw {
      */
     experimentalCodeExamples?: boolean;
   };
-
-  server?: ServerConfig;
 
   build?: TestBuildConfig;
 

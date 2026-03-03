@@ -370,7 +370,7 @@ export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
   meta?: {
-    docgen: 'react-docgen' | 'react-docgen-typescript';
+    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
     durationMs: number;
     timings?: {
       docgen: number;
@@ -507,6 +507,15 @@ export interface StorybookConfigRaw {
     angularFilterNonInputControls?: boolean;
 
     experimentalComponentsManifest?: boolean;
+
+    /**
+     * Use TypeScript LanguageService (react-component-meta) for extracting React component props
+     * instead of react-docgen / react-docgen-typescript.
+     *
+     * @default false
+     * @experimental
+     */
+    experimentalReactComponentMeta?: boolean;
 
     /**
      * Enables the new code example generation for React components. You can see those examples when

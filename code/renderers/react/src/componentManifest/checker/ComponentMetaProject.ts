@@ -27,7 +27,6 @@ import type ts from 'typescript';
 
 import {
   type ComponentDoc,
-  isReactComponentType,
   resolvePropsFromComponentType,
   resolvePropsFromStoryFile,
   serializeComponentDocs,
@@ -326,12 +325,12 @@ export class ComponentMetaProject {
           );
         }
 
-        // Path 2: Fallback — direct type inspection
+        // Path 2: Fallback — resolve from meta.component in the story file.
+        // Only fires when the user explicitly set `component:` in the meta object.
         if (!propsType) {
-          propsType = this.resolveFromComponentExport(
+          propsType = this.resolveFromMetaComponent(
             checker,
-            componentSourceFile,
-            entry.exportName,
+            storySourceFile,
             entry.memberAccess
           );
         }
@@ -430,38 +429,34 @@ export class ComponentMetaProject {
   // Internal helpers
   // ---------------------------------------------------------------------------
 
-  private resolveFromComponentExport(
+  /**
+   * Path 2 fallback: resolve the component type from the story file's `meta.component` property.
+   * Only works when the user explicitly set `component:` in the meta — no node means no extraction.
+   */
+  private resolveFromMetaComponent(
     checker: ts.TypeChecker,
-    componentSourceFile: ts.SourceFile,
-    exportName: string,
+    storySourceFile: ts.SourceFile,
     memberAccess?: string
   ): ts.Type | undefined {
-    const moduleSymbol = checker.getSymbolAtLocation(componentSourceFile);
+    const moduleSymbol = checker.getSymbolAtLocation(storySourceFile);
     if (!moduleSymbol) {
       return undefined;
     }
 
-    // React requires component names to start with uppercase (JSX intrinsic rule).
-    // 'default' exports are allowed — the component's actual displayName is determined later.
-    if (exportName !== 'default' && /^[a-z]/.test(exportName)) {
+    const defaultExport = checker
+      .getExportsOfModule(moduleSymbol)
+      .find((e) => e.getName() === 'default');
+    if (!defaultExport) {
       return undefined;
     }
 
-    const exports = checker.getExportsOfModule(moduleSymbol);
-    const targetExport = exports.find((e) => e.getName() === exportName);
-    if (!targetExport) {
+    const metaType = checker.getTypeOfSymbol(defaultExport);
+    const componentProp = metaType.getProperty('component');
+    if (!componentProp) {
       return undefined;
     }
 
-    const resolved =
-      targetExport.flags & this.typescript.SymbolFlags.Alias
-        ? checker.getAliasedSymbol(targetExport)
-        : targetExport;
-    if (!resolved.valueDeclaration && !resolved.declarations?.length) {
-      return undefined;
-    }
-
-    let componentType = checker.getTypeOfSymbol(resolved);
+    let componentType = checker.getTypeOfSymbol(componentProp);
 
     if (memberAccess) {
       const prop = componentType.getProperty(memberAccess);
@@ -470,12 +465,6 @@ export class ComponentMetaProject {
       } else {
         return undefined;
       }
-    }
-
-    // Guard: only extract props if the type is actually a React component.
-    // Without this check, utility functions with object params would be false positives.
-    if (!isReactComponentType(this.typescript, checker, componentType)) {
-      return undefined;
     }
 
     return resolvePropsFromComponentType(this.typescript, checker, componentType);

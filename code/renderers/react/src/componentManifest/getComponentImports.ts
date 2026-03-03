@@ -87,12 +87,16 @@ export const getComponents = ({
   csf,
   storyFilePath,
   typescriptOptions,
+  experimentalReactComponentMeta,
 }: {
   csf: CsfFile;
   storyFilePath?: string;
   typescriptOptions: Partial<TypescriptOptions>;
+  experimentalReactComponentMeta?: boolean;
 }): ComponentRef[] => {
-  const { reactDocgenTypescriptOptions } = typescriptOptions;
+  const { reactDocgen = 'react-docgen', reactDocgenTypescriptOptions } = typescriptOptions;
+  // For the manifest, false (docgen disabled) defaults to react-docgen
+  const reactDocgenConfig = reactDocgen || 'react-docgen';
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
@@ -268,43 +272,57 @@ export const getComponents = ({
       const componentWithPackage = { ...component, isPackage };
 
       if (path) {
-        // QA: Run ALL 3 engines unconditionally for comparison
-        let reactDocgenTypescript: ComponentDocWithExportName | undefined;
-        let reactDocgenTypescriptError: { name: string; message: string } | undefined;
-        const rdtStart = performance.now();
-        try {
-          reactDocgenTypescript = matchComponentDoc(
-            parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
-            component
-          );
-        } catch (e) {
-          const message = e instanceof Error ? e.message : String(e);
-          logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
-          reactDocgenTypescriptError = {
-            name: 'react-docgen-typescript parse error',
-            message: `File: ${path}\n${message}`,
-          };
+        // When the experimental feature flag is on, skip docgen entirely —
+        // react-component-meta in generator.ts handles prop extraction instead.
+        if (experimentalReactComponentMeta) {
+          return { ...componentWithPackage, path };
         }
-        docgenTimings.reactDocgenTypescriptMs += performance.now() - rdtStart;
 
-        const rdgStart = performance.now();
-        const reactDocgen = getReactDocgen(path, componentWithPackage);
-        docgenTimings.reactDocgenMs += performance.now() - rdgStart;
+        if (reactDocgenConfig === 'react-docgen-typescript') {
+          let reactDocgenTypescript: ComponentDocWithExportName | undefined;
+          let reactDocgenTypescriptError: { name: string; message: string } | undefined;
+          const rdtStart = performance.now();
+          try {
+            reactDocgenTypescript = matchComponentDoc(
+              parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
+              component
+            );
+          } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
+            reactDocgenTypescriptError = {
+              name: 'react-docgen-typescript parse error',
+              message: `File: ${path}\n${message}`,
+            };
+          }
+          docgenTimings.reactDocgenTypescriptMs += performance.now() - rdtStart;
 
-        const importOverride = reactDocgenTypescript
-          ? getImportTag(reactDocgenTypescript)
-          : reactDocgen.type === 'success'
-            ? getImportTag(reactDocgen.data)
+          const importOverride = reactDocgenTypescript
+            ? getImportTag(reactDocgenTypescript)
             : undefined;
 
-        return {
-          ...componentWithPackage,
-          path,
-          reactDocgen,
-          ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
-          ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
-          importOverride,
-        };
+          return {
+            ...componentWithPackage,
+            path,
+            ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+            ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
+            importOverride,
+          };
+        }
+
+        if (reactDocgenConfig === 'react-docgen') {
+          const rdgStart = performance.now();
+          const reactDocgen = getReactDocgen(path, componentWithPackage);
+          docgenTimings.reactDocgenMs += performance.now() - rdgStart;
+
+          return {
+            ...componentWithPackage,
+            path,
+            reactDocgen,
+            importOverride:
+              reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
+          };
+        }
       }
       return componentWithPackage;
     })

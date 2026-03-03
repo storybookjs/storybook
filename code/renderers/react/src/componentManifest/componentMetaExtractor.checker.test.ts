@@ -124,10 +124,6 @@ const TEST_FILES: Record<string, string> = {
   'detect/plain_object.ts': `
     export const Config = { key: 'value' };
   `,
-  'detect/lowercase.tsx': `
-    import React from 'react';
-    export const button = (props: { label: string }) => <button />;
-  `,
   'detect/string_const.ts': `
     export const Title = 'Hello';
   `,
@@ -151,9 +147,6 @@ const TEST_FILES: Record<string, string> = {
   // =========================================================================
   // component detection — RDT false positives
   // =========================================================================
-  'detect/fp_lowercase.ts': `
-    export function add(a: number) { return a + 1; }
-  `,
   'detect/fp_formatdate.ts': `
     export function FormatDate(timestamp: number) { return new Date(timestamp).toISOString(); }
   `,
@@ -212,9 +205,6 @@ const TEST_FILES: Record<string, string> = {
     interface Props { label: string }
     const Button = (props: Props) => <button>{props.label}</button>;
     export default Button;
-  `,
-  'extract/skip_lowercase.ts': `
-    export const helper = (x: number) => x + 1;
   `,
   'extract/skip_config.ts': `
     export const Config = { key: 'value' };
@@ -1343,8 +1333,9 @@ function findExportNames(sourceFile: ts.SourceFile): string[] {
 }
 
 /**
- * Extract docs for a test file by its key in TEST_FILES. Discovers all exports from the file's AST
- * and uses extractPropsFromStories with Path 2 fallback (no importId → skips story JSX lookup).
+ * Extract docs for a test file by its key in TEST_FILES. For each export, creates a minimal story
+ * file with `export default { component: X }` so that Path 2 (resolveFromMetaComponent) fires.
+ * This mirrors production where the user explicitly sets meta.component.
  */
 function docs(fileName: string): ComponentDoc[] {
   const fp = filePaths[fileName];
@@ -1360,21 +1351,40 @@ function docs(fileName: string): ComponentDoc[] {
   const sf = ts.createSourceFile(fp, text, ts.ScriptTarget.Latest, true);
   const exportNames = findExportNames(sf);
 
-  // Use extractPropsFromStories with Path 2 (no importId → direct type inspection)
-  const entries = exportNames.map((name) => ({
-    storyFilePath: fp,
-    componentPath: fp,
-    exportName: name,
-  }));
-  const results = project.extractPropsFromStories(entries);
-  const storyMap = results.get(fp);
-  if (!storyMap) {
-    return [];
-  }
   const allDocs: ComponentDoc[] = [];
-  for (const [, d] of storyMap) {
-    allDocs.push(...d);
+  const dir = path.dirname(fp);
+  const baseName = path.basename(fp, path.extname(fp));
+
+  for (const name of exportNames) {
+    // Create a story file that imports and declares meta.component
+    const importLine =
+      name === 'default'
+        ? `import __Component__ from './${baseName}';`
+        : `import { ${name} as __Component__ } from './${baseName}';`;
+
+    const storyContent = `${importLine}\nexport default { component: __Component__ };`;
+    const storyPath = path.join(dir, `${baseName}.__story_${name}__.tsx`);
+
+    sys.writeFile(storyPath, storyContent);
+    project.ensureFiles([storyPath]);
+
+    const entries = [
+      {
+        storyFilePath: storyPath,
+        componentPath: fp,
+        exportName: name,
+      },
+    ];
+
+    const results = project.extractPropsFromStories(entries);
+    const storyMap = results.get(storyPath);
+    if (storyMap) {
+      for (const [, d] of storyMap) {
+        allDocs.push(...d);
+      }
+    }
   }
+
   return allDocs;
 }
 
@@ -1455,10 +1465,6 @@ describe('component detection (LSP)', () => {
       expect(detectNames('detect/plain_object.ts')).toEqual([]);
     });
 
-    it('rejects lowercase exports (JSX intrinsic rule)', () => {
-      expect(detectNames('detect/lowercase.tsx')).toEqual([]);
-    });
-
     it('rejects string constant', () => {
       expect(detectNames('detect/string_const.ts')).toEqual([]);
     });
@@ -1481,10 +1487,6 @@ describe('component detection (LSP)', () => {
   });
 
   describe('RDT false positives', () => {
-    it('rejects lowercase function (RDT bug: detects any single-param fn)', () => {
-      expect(detectNames('detect/fp_lowercase.ts')).toEqual([]);
-    });
-
     it('accepts uppercase function returning ReactNode-assignable value', () => {
       expect(detectNames('detect/fp_formatdate.ts')).toEqual(['FormatDate']);
     });
@@ -1493,13 +1495,8 @@ describe('component detection (LSP)', () => {
       expect(detectNames('detect/fp_parseprops.ts')).toEqual(['ParseProps']);
     });
 
-    it('rejects hook returning non-ReactNode object', () => {
-      expect(detectNames('detect/fp_usecounter.ts')).toEqual([]);
-    });
-
-    it('rejects higher-order function returning non-component', () => {
-      expect(detectNames('detect/fp_createvalidator.ts')).toEqual([]);
-    });
+    // UseCounter and CreateValidator are not tested here — Path 2 only runs for components
+    // the user explicitly declared via meta.component, so hooks/HOFs can't reach it.
 
     it('rejects enum-like const object', () => {
       expect(detectNames('detect/fp_buttonvariant.ts')).toEqual([]);
@@ -1537,10 +1534,6 @@ describe('componentMetaExtractor (LSP)', () => {
       expect(result).toHaveLength(1);
       expect(result[0].displayName).toBe('Button');
       expect(result[0].exportName).toBe('default');
-    });
-
-    it('skips non-component exports (lowercase)', () => {
-      expect(docs('extract/skip_lowercase.ts')).toHaveLength(0);
     });
 
     it('skips non-component uppercase exports (no valid props)', () => {
@@ -2163,27 +2156,9 @@ describe('QA: patterns RDT fails on (LSP)', () => {
     });
   });
 
-  describe('Pattern 8: false positive rejection', () => {
-    it('rejects utility function with single object param', () => {
-      expect(detectNames('qa/fp_utility.ts')).toEqual([]);
-    });
-
-    it('rejects higher-order function returning non-component', () => {
-      expect(detectNames('qa/fp_hof.ts')).toEqual([]);
-    });
-
-    it('rejects class not extending React.Component', () => {
-      expect(detectNames('qa/fp_class.ts')).toEqual([]);
-    });
-
-    it('rejects namespace-like const object', () => {
-      expect(detectNames('qa/fp_namespace.ts')).toEqual([]);
-    });
-
-    it('rejects async function returning non-ReactNode', () => {
-      expect(detectNames('qa/fp_async.ts')).toEqual([]);
-    });
-  });
+  // Pattern 8 (false positive rejection) removed — isReactComponentType guard was deleted.
+  // Path 2 only runs for components the user explicitly declared via meta.component,
+  // so utility functions, hooks, and HOFs can never reach it in production.
 });
 
 // ---------------------------------------------------------------------------

@@ -189,7 +189,7 @@ export const DesktopDocs: Story = {
       const pagesMain = canvas.queryByRole('main', { name: 'Main content' });
       expect(pagesMain).not.toBeInTheDocument();
     });
-    await step('Verify preview area is  rendered', async () => {
+    await step('Verify preview area is rendered', async () => {
       const preview = canvas.getByTestId('preview');
       expect(preview).toBeInTheDocument();
     });

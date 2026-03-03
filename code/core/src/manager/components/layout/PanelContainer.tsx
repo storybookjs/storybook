@@ -19,9 +19,6 @@ const Container = styled.div<{ position: API_Layout['panelPosition'] }>(({ theme
   backgroundColor: theme.appContentBg,
   borderTop: position === 'bottom' ? `1px solid ${theme.appBorderColor}` : undefined,
   borderLeft: position === 'right' ? `1px solid ${theme.appBorderColor}` : undefined,
-  '& > aside': {
-    overflow: 'hidden',
-  },
 }));
 
 const PanelSlot = styled.div({

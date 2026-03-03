@@ -124,6 +124,7 @@ describe('getManifest', () => {
 				'Failed to fetch manifest: 404 Not Found',
 			);
 			await expect(getManifests(request)).rejects.toThrow('componentsManifest');
+			await expect(getManifests(request)).rejects.toThrow('experimentalComponentsManifest');
 		});
 
 		it('should throw ManifestGetError when fetch fails with 500 without manifest hint', async () => {

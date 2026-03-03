@@ -123,7 +123,7 @@ export async function getManifests(
 		const reason = componentResult.reason;
 		const is404 = reason instanceof ManifestGetError && reason.message.includes('404');
 		const hint = is404
-			? `\nHint: The Storybook at this URL may not have the component manifest enabled. Add \`features: { componentsManifest: true }\` to its main.ts config.`
+			? `\nHint: The Storybook at this URL may not have the component manifest enabled. Add \`features: { componentsManifest: true }\` (or \`features: { experimentalComponentsManifest: true }\` for older Storybook versions) to its main.ts config.`
 			: '';
 		throw new ManifestGetError(
 			`Failed to get component manifest: ${reason instanceof Error ? reason.message : String(reason)}${hint}`,

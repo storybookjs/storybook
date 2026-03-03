@@ -182,14 +182,19 @@ These additional tools are available when the component manifest feature is enab
 
 **To enable:**
 
-The `componentsManifest` feature is enabled by default in recent Storybook versions — no configuration needed. If you need to explicitly set it (e.g. for older Storybook versions), add it to your config:
+The `componentsManifest` feature is enabled by default in recent Storybook versions — no configuration needed.
+
+If you are on an older Storybook version that doesn't default to `true`, you may need to enable it explicitly. Use the flag that matches your Storybook version:
 
 ```javascript
 // .storybook/main.js
 export default {
 	// ... other config
 	features: {
+		// For Storybook 10.1.x and later:
 		componentsManifest: true,
+		// For older Storybook versions (before the flag was renamed):
+		// experimentalComponentsManifest: true,
 	},
 };
 ```

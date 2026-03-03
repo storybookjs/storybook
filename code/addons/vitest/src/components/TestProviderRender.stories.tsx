@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import { destroyAnnouncer, toHaveLiveRegion } from 'storybook/internal/components';
+import { type TestProviderState } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext, addons } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { expect, fn, userEvent } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants';
 import { storeOptions } from '../constants';
 import { store as mockStore } from '../manager-store.mock';
 import { TestProviderRender } from './TestProviderRender';
+
+expect.extend({ toHaveLiveRegion });
 
 const managerContext: any = {
   api: {
@@ -74,8 +77,10 @@ const meta = {
   beforeEach: async () => {
     addons.register(A11Y_ADDON_ID, () => {});
     mockStore.setState.mockClear();
+    destroyAnnouncer();
     return () => {
       mockStore.setState(storeOptions.initialState);
+      destroyAnnouncer();
     };
   },
 } satisfies Meta<typeof TestProviderRender>;
@@ -320,5 +325,95 @@ export const InSidebarContextMenu: Story = {
       exportName: 'ExampleStory',
       depth: 1,
     },
+  },
+};
+
+/** Verifies that transitioning to the running state announces "Test run started." */
+export const AnnouncesTestRunStart: Story = {
+  render: (args) => {
+    const [state, setState] = useState<TestProviderState>('test-provider-state:pending');
+    return (
+      <div>
+        <button onClick={() => setState('test-provider-state:running')} data-testid="trigger-start">
+          Start run
+        </button>
+        <TestProviderRender {...args} testProviderState={state} />
+      </div>
+    );
+  },
+  play: async ({ canvas }) => {
+    const btn = canvas.getByTestId('trigger-start');
+    await userEvent.click(btn);
+
+    await expect(document.body).toHaveLiveRegion({ text: 'Test run started.', level: 'polite' });
+  },
+};
+
+/** Verifies that transitioning from running to succeeded announces results. */
+export const AnnouncesTestRunFinished: Story = {
+  render: (args) => {
+    const [state, setState] = useState<TestProviderState>('test-provider-state:running');
+    return (
+      <div>
+        <button
+          onClick={() => setState('test-provider-state:succeeded')}
+          data-testid="trigger-finish"
+        >
+          Finish run
+        </button>
+        <TestProviderRender
+          {...args}
+          testProviderState={state}
+          componentTestStatusValueToStoryIds={{
+            ...meta.args.componentTestStatusValueToStoryIds,
+            'status-value:success': ['story-id-1', 'story-id-2', 'story-id-3'],
+            'status-value:error': ['story-id-4'],
+          }}
+        />
+      </div>
+    );
+  },
+  play: async ({ canvas }) => {
+    const btn = canvas.getByTestId('trigger-finish');
+    await userEvent.click(btn);
+
+    await expect(document.body).toHaveLiveRegion({
+      text: /Test run finished\. 1 component errored, 3 components passed\./,
+      level: 'assertive',
+    });
+  },
+};
+
+/** Verifies that transitioning to crashed state announces the crash assertively. */
+export const AnnouncesTestRunCrashed: Story = {
+  render: (args) => {
+    const [state, setState] = useState<TestProviderState>('test-provider-state:running');
+    return (
+      <div>
+        <button onClick={() => setState('test-provider-state:crashed')} data-testid="trigger-crash">
+          Crash run
+        </button>
+        <TestProviderRender
+          {...args}
+          testProviderState={state}
+          storeState={{
+            ...storeOptions.initialState,
+            fatalError: {
+              message: 'Error message',
+              error: { name: 'Error', message: 'Error message', stack: 'Error stack' },
+            },
+          }}
+        />
+      </div>
+    );
+  },
+  play: async ({ canvas }) => {
+    const btn = canvas.getByTestId('trigger-crash');
+    await userEvent.click(btn);
+
+    await expect(document.body).toHaveLiveRegion({
+      text: 'Test run crashed.',
+      level: 'assertive',
+    });
   },
 };

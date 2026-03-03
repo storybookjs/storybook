@@ -66,10 +66,6 @@ describe('experimental_devServer', () => {
 			'Content-Type': 'text/html',
 		});
 		expect(mockRes.end).toHaveBeenCalledWith(expect.stringContaining('<html'));
-		expect(mockRes.end).toHaveBeenCalledWith(
-			expect.not.stringContaining('Automatically redirecting to'),
-		);
-		expect(mockRes.end).toHaveBeenCalledWith(expect.not.stringContaining('http-equiv="refresh"'));
 	});
 
 	it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {

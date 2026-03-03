@@ -8,6 +8,7 @@ const SNAP_THRESHOLD_PX = 30;
 const SIDEBAR_MIN_WIDTH_PX = 240;
 const RIGHT_PANEL_MIN_WIDTH_PX = 270;
 const MIN_WIDTH_STIFFNESS = 0.9;
+const KEYBOARD_STEP_PX = 10;
 
 /** Clamps a value between min and max. */
 function clamp(value: number, min: number, max: number): number {
@@ -172,12 +173,65 @@ export function useDragging({
       });
     };
 
+    const onSidebarKeyDown = (e: KeyboardEvent) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+        return;
+      }
+      e.preventDefault();
+      setState((state) => {
+        const maxSize = window.innerWidth;
+        switch (e.key) {
+          case 'ArrowRight':
+            return { ...state, navSize: clamp(state.navSize + KEYBOARD_STEP_PX, 0, maxSize) };
+          case 'ArrowLeft':
+            return { ...state, navSize: clamp(state.navSize - KEYBOARD_STEP_PX, 0, maxSize) };
+          case 'Home':
+            return { ...state, navSize: 0 };
+          case 'End':
+            return { ...state, navSize: maxSize };
+          default:
+            return state;
+        }
+      });
+    };
+
+    const onPanelKeyDown = (e: KeyboardEvent) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+        return;
+      }
+      e.preventDefault();
+      setState((state) => {
+        const isBottom = state.panelPosition === 'bottom';
+        const sizeKey = isBottom ? 'bottomPanelHeight' : 'rightPanelWidth';
+        const maxSize = isBottom ? window.innerHeight : window.innerWidth;
+        const increaseKey = isBottom ? 'ArrowUp' : 'ArrowLeft';
+        const decreaseKey = isBottom ? 'ArrowDown' : 'ArrowRight';
+
+        switch (e.key) {
+          case increaseKey:
+            return { ...state, [sizeKey]: clamp(state[sizeKey] + KEYBOARD_STEP_PX, 0, maxSize) };
+          case decreaseKey:
+            return { ...state, [sizeKey]: clamp(state[sizeKey] - KEYBOARD_STEP_PX, 0, maxSize) };
+          case 'Home':
+            return { ...state, [sizeKey]: 0 };
+          case 'End':
+            return { ...state, [sizeKey]: maxSize };
+          default:
+            return state;
+        }
+      });
+    };
+
     panelResizer?.addEventListener('mousedown', onDragStart);
     sidebarResizer?.addEventListener('mousedown', onDragStart);
+    panelResizer?.addEventListener('keydown', onPanelKeyDown);
+    sidebarResizer?.addEventListener('keydown', onSidebarKeyDown);
 
     return () => {
       panelResizer?.removeEventListener('mousedown', onDragStart);
       sidebarResizer?.removeEventListener('mousedown', onDragStart);
+      panelResizer?.removeEventListener('keydown', onPanelKeyDown);
+      sidebarResizer?.removeEventListener('keydown', onSidebarKeyDown);
       // make iframe capture pointer events again
       previewIframe?.removeAttribute('style');
     };

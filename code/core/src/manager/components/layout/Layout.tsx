@@ -1,4 +1,4 @@
-import type { CSSProperties, FC } from 'react';
+import type { CSSProperties } from 'react';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
@@ -175,7 +175,16 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       <>
         {isDesktop && (
           <SidebarContainer>
-            <Drag ref={sidebarResizerRef} />
+            <Drag
+              ref={sidebarResizerRef}
+              role="separator"
+              tabIndex={0}
+              aria-orientation="vertical"
+              aria-label="Sidebar resize handle"
+              aria-valuenow={navSize}
+              aria-valuemin={0}
+              aria-valuemax={typeof window !== 'undefined' ? window.innerWidth : undefined}
+            />
             {slots.slotSidebar}
           </SidebarContainer>
         )}
@@ -200,6 +209,25 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             panelResizerRef={panelResizerRef}
             position={panelPosition}
           >
+            <Drag
+              orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
+              overlapping={panelPosition === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
+              position={panelPosition === 'bottom' ? 'left' : 'right'}
+              ref={panelResizerRef}
+              role="separator"
+              tabIndex={0}
+              aria-orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
+              aria-label="Addon panel resize handle"
+              aria-valuenow={panelPosition === 'bottom' ? bottomPanelHeight : rightPanelWidth}
+              aria-valuemin={0}
+              aria-valuemax={
+                typeof window !== 'undefined'
+                  ? panelPosition === 'bottom'
+                    ? window.innerHeight
+                    : window.innerWidth
+                  : undefined
+              }
+            />
             {slots.slotPanel}
           </PanelContainer>
         )}

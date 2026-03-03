@@ -12,10 +12,13 @@ export async function createViteServer(options: Options, devServer: Server) {
 
   const commonCfg = await commonConfig(options, 'development');
 
+  const { allowedHosts } = await presets.apply('core', {});
+
   const config: InlineConfig & { server: ServerOptions } = {
     ...commonCfg,
     // Set up dev server
     server: {
+      allowedHosts,
       middlewareMode: true,
       hmr: {
         port: options.port,
@@ -29,14 +32,12 @@ export async function createViteServer(options: Options, devServer: Server) {
     optimizeDeps: await getOptimizeDeps(commonCfg, options),
   };
 
-  const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$|^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$/;
-
+  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments
   if (
-    !(config.server.allowedHosts as string[])?.length &&
-    options.host &&
-    !ipRegex.test(options.host)
+    options.host === '0.0.0.0' &&
+    (!allowedHosts || (Array.isArray(allowedHosts) && allowedHosts.length === 0))
   ) {
-    config.server.allowedHosts = [options.host.toLowerCase()];
+    config.server.allowedHosts = true;
   }
 
   const finalConfig = await presets.apply('viteFinal', config, options);

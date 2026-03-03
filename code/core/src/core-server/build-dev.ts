@@ -136,7 +136,20 @@ export async function buildDevStandalone(
     isCritical: true,
   });
 
-  const { renderer, builder, disableTelemetry } = await presets.apply('core', {});
+  const { allowedHosts, renderer, builder, disableTelemetry } = await presets.apply('core', {});
+
+  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
+  // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
+  if (
+    options.host === '0.0.0.0' &&
+    (!allowedHosts || (allowedHosts !== true && allowedHosts.length === 0))
+  ) {
+    logger.warn(dedent`
+      --host is set to 0.0.0.0 but no allowedHosts are defined. Allowing all hosts.
+      To restrict allowed hosts, set core.allowedHosts in your main Storybook config.
+      See: https://storybook.js.org/docs/api/main-config/main-config-core
+    `);
+  }
 
   if (!builder) {
     throw new MissingBuilderError();
@@ -251,6 +264,7 @@ export async function buildDevStandalone(
         name,
         address,
         networkAddress,
+        allowedHosts,
         managerTotalTime,
         previewTotalTime,
       });

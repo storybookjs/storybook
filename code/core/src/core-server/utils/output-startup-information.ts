@@ -16,10 +16,11 @@ export function outputStartupInformation(options: {
   name: string;
   address: string;
   networkAddress: string;
+  allowedHosts?: string[] | true;
   managerTotalTime?: [number, number];
   previewTotalTime?: [number, number];
 }) {
-  const { updateInfo, version, name, address, networkAddress, managerTotalTime, previewTotalTime } =
+  const { updateInfo, version, name, address, networkAddress, allowedHosts, managerTotalTime, previewTotalTime } =
     options;
 
   const updateMessage = createUpdateMessage(updateInfo, version);
@@ -53,6 +54,11 @@ export function outputStartupInformation(options: {
     ['Local:', picocolors.cyan(address)],
     ['On your network:', picocolors.cyan(networkAddress)]
   );
+
+  const otherAllowedHosts = allowedHosts === true ? 'all (insecure)' : allowedHosts?.length ? allowedHosts.join(', ') : undefined;
+  if (otherAllowedHosts) {
+    serveMessage.push(['Other allowed hosts:', picocolors.cyan(otherAllowedHosts)]);
+  }
 
   const timeStatement = [
     managerTotalTime && `${picocolors.underline(prettyTime(managerTotalTime))} for manager`,

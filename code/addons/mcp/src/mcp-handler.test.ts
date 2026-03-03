@@ -278,6 +278,9 @@ describe('mcpServerHandler', () => {
 			},
 		});
 		expect(parsedResponse.result.serverInfo.version).toBeDefined();
+		expect(parsedResponse.result.instructions).toBeDefined();
+		expect(parsedResponse.result.instructions).toContain('get-storybook-story-instructions');
+		expect(parsedResponse.result.instructions).toContain('list-all-documentation');
 	});
 
 	it('should respect disableTelemetry setting', async () => {

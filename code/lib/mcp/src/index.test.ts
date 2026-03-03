@@ -95,6 +95,17 @@ describe('createStorybookMcpHandler', () => {
 		);
 	});
 
+	it('should include server instructions in initialize response', async () => {
+		const handler = await createStorybookMcpHandler();
+		await setupClient(handler);
+
+		const instructions = client.getInstructions();
+		expect(instructions).toBeDefined();
+		expect(instructions).toContain('list-all-documentation');
+		expect(instructions).toContain('get-documentation');
+		expect(instructions).toContain('Anti-Hallucination');
+	});
+
 	it('should call onSessionInitialize handler when provided', async () => {
 		const onSessionInitialize = vi.fn();
 		const handler = await createStorybookMcpHandler({ onSessionInitialize });

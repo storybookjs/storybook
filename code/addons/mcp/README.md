@@ -134,7 +134,9 @@ For clients not listed above, consult their documentation for MCP server configu
 
 ## Usage
 
-This addon provides MCP tools that your agent can use. The goal is that the agent uses these tools automatically when doing UI development, but agents are unreliable and unpredictable, so sometimes you might need to explicitly tell it to use the tools.
+This addon provides MCP tools that your agent can use. When an MCP client connects, the server sends instructions in the `initialize` response to guide agents on how to use the tools effectively — including when to call `get-storybook-story-instructions` before editing stories, how to use preview URLs, and when documentation tools are available. These instructions help agents use the correct workflow implicitly without needing explicit prompting.
+
+The goal is that the agent uses these tools automatically when doing UI development, but agents are unreliable and unpredictable, so sometimes you might need to explicitly tell it to use the tools.
 
 **If you are prompting from an IDE like VSCode or Cursor, be sure to use `Agent` mode and `sonnet-4.5` or better.**
 

@@ -6,6 +6,9 @@ import { addListAllDocumentationTool } from './tools/list-all-documentation.ts';
 import { addGetStoryDocumentationTool } from './tools/get-documentation-for-story.ts';
 import { addGetDocumentationTool } from './tools/get-documentation.ts';
 import type { StorybookContext } from './types.ts';
+import serverInstructions from './instructions.md';
+
+export { serverInstructions as STORYBOOK_MCP_INSTRUCTIONS };
 
 // Export tools for reuse by addon-mcp
 export { addListAllDocumentationTool, LIST_TOOL_NAME } from './tools/list-all-documentation.ts';
@@ -82,6 +85,7 @@ export const createStorybookMcpHandler = async (
 		},
 		{
 			adapter,
+			instructions: serverInstructions,
 			capabilities: {
 				tools: { listChanged: true },
 			},

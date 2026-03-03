@@ -8,6 +8,7 @@ import {
 	addListAllDocumentationTool,
 	addGetDocumentationTool,
 	addGetStoryDocumentationTool,
+	STORYBOOK_MCP_INSTRUCTIONS,
 	type Source,
 } from '@storybook/mcp';
 import type { Options } from 'storybook/internal/types';
@@ -21,6 +22,9 @@ import { addRunStoryTestsTool } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
+import addonInstructions from './instructions/mcp-server-instructions.md';
+
+const MCP_SERVER_INSTRUCTIONS = `${STORYBOOK_MCP_INSTRUCTIONS}\n\n${addonInstructions}`;
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -41,6 +45,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		},
 		{
 			adapter: new ValibotJsonSchemaAdapter(),
+			instructions: MCP_SERVER_INSTRUCTIONS,
 			capabilities: {
 				tools: { listChanged: true },
 				resources: { listChanged: true },

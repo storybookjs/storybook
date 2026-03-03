@@ -5,18 +5,19 @@ import { fileURLToPath } from 'node:url';
 
 import ansiRegex from 'ansi-regex';
 import { Command } from 'commander';
-import { execa } from 'execa';
+import { diff } from 'diff-match-patch-es';
 import pc from 'picocolors';
 
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
+import { exec } from './utils/exec';
 
 const PORT = process.env.STORYBOOK_SERVE_PORT
   ? Number.parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
   : 6006;
 
 const BUILDER_TO_SANDBOX: Record<string, string> = {
-  'builder-vite': 'react-vite/default-ts',
-  'builder-webpack5': 'react-webpack/18-ts',
+  'builder-vite': 'react-vite-default-ts',
+  'builder-webpack5': 'react-webpack-18-ts',
 };
 
 const PROVISIONAL_HEADER = [
@@ -55,27 +56,73 @@ function normalizeOutput(raw: string, rootDir: string): string {
     .trimEnd();
 }
 
+function stripHeader(content: string): string {
+  return content
+    .replace(/^#.*$/gm, '')
+    .replace(/^\s*\n/gm, '')
+    .trimEnd();
+}
+
 function createUnifiedDiff(previous: string, next: string): string {
   const beforeLines = previous.split('\n');
   const afterLines = next.split('\n');
 
-  const max = Math.max(beforeLines.length, afterLines.length);
-  const diffLines = ['--- baseline', '+++ current', '@@ -1 +1 @@'];
+  const changes = diff(previous, next);
+  const diffLines: string[] = ['--- baseline', '+++ current'];
 
-  for (let index = 0; index < max; index += 1) {
-    const before = beforeLines[index];
-    const after = afterLines[index];
+  let beforeIndex = 1;
+  let afterIndex = 1;
+  let hunkStart = -1;
+  const contextBuffer: Array<{ type: number; line: string }> = [];
+  const CONTEXT_LINES = 3;
 
-    if (before === after) {
-      continue;
+  for (const [changeType, text] of changes) {
+    const lines = text.split('\n').filter((line) => line.length > 0);
+
+    if (changeType === 0) {
+      for (const line of lines) {
+        contextBuffer.push({ type: 0, line });
+        beforeIndex += 1;
+        afterIndex += 1;
+      }
+    } else if (changeType === 1) {
+      if (hunkStart === -1) {
+        hunkStart = beforeIndex;
+      }
+
+      for (const line of lines) {
+        contextBuffer.push({ type: 1, line });
+        afterIndex += 1;
+      }
+    } else if (changeType === -1) {
+      if (hunkStart === -1) {
+        hunkStart = beforeIndex;
+      }
+
+      for (const line of lines) {
+        contextBuffer.push({ type: -1, line });
+        beforeIndex += 1;
+      }
     }
+  }
 
-    if (before !== undefined) {
-      diffLines.push(`-${before}`);
-    }
+  if (contextBuffer.length === 0) {
+    return diffLines.join('\n');
+  }
 
-    if (after !== undefined) {
-      diffLines.push(`+${after}`);
+  const hunkStart2 = Math.max(1, hunkStart - CONTEXT_LINES);
+  const beforeCount = beforeIndex - hunkStart2;
+  const afterCount = afterIndex - (hunkStart === -1 ? hunkStart2 : hunkStart2);
+
+  diffLines.push(`@@ -${hunkStart2},${beforeCount} +${hunkStart2},${afterCount} @@`);
+
+  for (const { type, line } of contextBuffer) {
+    if (type === 0) {
+      diffLines.push(` ${line}`);
+    } else if (type === 1) {
+      diffLines.push(`+${line}`);
+    } else if (type === -1) {
+      diffLines.push(`-${line}`);
     }
   }
 
@@ -129,14 +176,12 @@ async function main(): Promise<number> {
   const snapshotDir = join(currentDir, 'terminal-output-snapshots');
   const snapshotPath = join(snapshotDir, `${options.builder}-${mode}.snap.txt`);
 
-  const result = await execa(command, {
-    shell: true,
-    all: true,
-    reject: false,
-    cwd: sandboxDir,
-  });
+  if (!existsSync(sandboxDir)) {
+    console.error(pc.red(`Sandbox directory not found: ${sandboxDir}`));
+    return 1;
+  }
 
-  const rawOutput = result.all ?? '';
+  const rawOutput = (await exec(command, { cwd: sandboxDir }, { debug: false }, true)) as string;
   const normalizedOutput = normalizeOutput(rawOutput, ROOT_DIRECTORY);
 
   await mkdir(snapshotDir, { recursive: true });
@@ -159,14 +204,15 @@ async function main(): Promise<number> {
   }
 
   const baseline = await readFile(snapshotPath, 'utf8');
+  const strippedBaseline = stripHeader(baseline);
 
-  if (baseline.trimEnd() === normalizedOutput.trimEnd()) {
+  if (strippedBaseline === normalizedOutput) {
     console.log(pc.green(`✅ Output matches baseline: ${snapshotPath}`));
     return 0;
   }
 
-  const diff = createUnifiedDiff(baseline.trimEnd(), normalizedOutput.trimEnd());
-  console.log(diff);
+  const diffOutput = createUnifiedDiff(strippedBaseline, normalizedOutput);
+  console.log(diffOutput);
   return 1;
 }
 

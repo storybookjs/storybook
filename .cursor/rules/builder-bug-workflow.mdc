@@ -1,6 +1,6 @@
 ---
 description: Verification workflow for builder bug fixes (frontend output and Node.js terminal output)
-globs: "code/builders/**"
+globs: 'code/builders/**'
 alwaysApply: false
 ---
 
@@ -47,6 +47,7 @@ Wait for the port to be ready (check console for "Storybook started").
 ### Step 4: Capture Visual Evidence
 
 Use the Browser MCP to:
+
 1. Open the Storybook instance
 2. Navigate to your template story
 3. Take a screenshot showing the fix works correctly
@@ -69,56 +70,28 @@ If the browser output still shows the bug:
 
 Follow this workflow if your builder change affects Node.js stdout/stderr output (console logs, build progress, error messages, etc.).
 
-### Step 1: Run the Capture Script
+1. Run the capture script: `jiti scripts/capture-terminal-output.ts --builder <builder-name>` (e.g., `builder-vite` or `builder-webpack5`)
+2. The output is compared against `scripts/terminal-output-snapshots/<builder-name>-build.snap.txt`.
 
-Execute the terminal output capture script for your builder:
+**If no baseline exists**:
 
-```bash
-jiti scripts/capture-terminal-output.ts --builder <builder-name>
-```
+- The script automatically creates a provisional baseline file.
+- Add the following to your PR description:
+  ```
+  <!-- PROVISIONAL BASELINE — requires reviewer approval before merge -->
+  ```
+- Commit the provisional snapshot file for review.
 
-For example:
-- `jiti scripts/capture-terminal-output.ts --builder builder-vite`
-- `jiti scripts/capture-terminal-output.ts --builder builder-webpack5`
+**If the diff is consistent with your fix**:
 
-### Step 2: Compare Against Baseline
+- Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update`
+- Commit the updated snapshot file.
 
-The script automatically compares your output against the baseline snapshot at:
-```
-scripts/terminal-output-snapshots/<builder-name>-build.snap.txt
-```
+**If the diff is noisy or unexpected**:
 
-### Step 3: Handle Baseline Creation (if no baseline exists)
+- Diagnose the output changes and iterate on your fix before opening the PR.
 
-If no baseline snapshot exists, the script auto-creates a provisional file.
-
-**Add to your PR description**:
-```
-<!-- PROVISIONAL BASELINE — requires reviewer approval before merge -->
-```
-
-Commit the provisional snapshot file for reviewer approval.
-
-### Step 4: Update the Baseline (if diff matches your fix)
-
-If the output diff is consistent with your fix:
-
-```bash
-jiti scripts/capture-terminal-output.ts --builder <builder-name> --update
-```
-
-Commit the updated snapshot file.
-
-### Step 5: Iterate if Needed (if diff is noisy)
-
-If the output diff is noisy or unexpected:
-1. Diagnose what changed in the builder output
-2. Verify those changes align with your fix
-3. Iterate on your fix if necessary before opening the PR
-
-### Step 6: Document in PR Description
-
-Always include a summary of what terminal output changed in your PR description so reviewers can see the exact impact of your builder modifications.
+**PR description**: Always include a summary of what terminal output changed so reviewers can see the exact impact of your builder modifications.
 
 ---
 

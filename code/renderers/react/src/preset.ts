@@ -135,3 +135,5 @@ export async function internal_getArgTypesData(
 
   return argTypesData;
 }
+
+export const optimizeViteDeps: string[] = ['react-dom/test-utils'];

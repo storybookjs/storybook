@@ -69,9 +69,6 @@ const Wrapper = styled.div<WrapperProps>(
   ({ theme }) => ({
     position: 'relative',
     overflow: 'hidden',
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: theme.layoutMargin,
     color: theme.color.defaultText,
   }),
   ({ theme, bordered }) =>
@@ -94,23 +91,13 @@ const Wrapper = styled.div<WrapperProps>(
 );
 
 const UnstyledScroller = ({ children, className }: ScrollAreaProps) => (
-  <ScrollArea horizontal vertical className={className}>
+  <ScrollArea horizontal vertical focusable className={className}>
     {children}
   </ScrollArea>
 );
 const Scroller = styled(UnstyledScroller)(
   {
     position: 'relative',
-    width: 'fit-content',
-    maxWidth: '100%',
-    '> div': {
-      width: 'fit-content',
-      maxWidth: '100%',
-      '> div > pre': {
-        width: 'fit-content',
-        maxWidth: '100%',
-      },
-    },
   },
   ({ theme }) => themedSyntax(theme)
 );
@@ -133,15 +120,10 @@ See https://github.com/storybookjs/storybook/issues/18090
 const Code = styled.div(({ theme }) => ({
   flex: 1,
   paddingLeft: 2, // TODO: To match theming/global.ts for now
+  paddingRight: theme.layoutMargin,
   opacity: 1,
   fontFamily: theme.typography.fonts.mono,
 }));
-
-const RelativeActionBar = styled(ActionBar)({
-  position: 'relative',
-  marginLeft: 'auto',
-  alignSelf: 'flex-end',
-});
 
 const processLineNumber = (row: any) => {
   const children = [...row.children];
@@ -265,7 +247,7 @@ export const SyntaxHighlighter = ({
       </Scroller>
 
       {copyable ? (
-        <RelativeActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} />
+        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} />
       ) : null}
     </Wrapper>
   );

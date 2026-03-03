@@ -209,7 +209,10 @@ export class ConfigFile {
             if (t.isObjectExpression(decl.arguments[0])) {
               decl = decl.arguments[0];
               break;
-            } else if (t.isMemberExpression(decl.callee) && t.isCallExpression(decl.callee.object)) {
+            } else if (
+              t.isMemberExpression(decl.callee) &&
+              t.isCallExpression(decl.callee.object)
+            ) {
               decl = decl.callee.object;
             } else {
               break;

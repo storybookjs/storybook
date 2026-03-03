@@ -1334,8 +1334,8 @@ function findExportNames(sourceFile: ts.SourceFile): string[] {
 
 /**
  * Extract docs for a test file by its key in TEST_FILES. For each export, creates a minimal story
- * file with `export default { component: X }` so that Path 2 (resolveFromMetaComponent) fires.
- * This mirrors production where the user explicitly sets meta.component.
+ * file with `export default { component: X }` so that Path 2 (resolveFromMetaComponent) fires. This
+ * mirrors production where the user explicitly sets meta.component.
  */
 function docs(fileName: string): ComponentDoc[] {
   const fp = filePaths[fileName];

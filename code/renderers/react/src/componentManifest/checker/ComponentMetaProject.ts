@@ -328,11 +328,7 @@ export class ComponentMetaProject {
         // Path 2: Fallback — resolve from meta.component in the story file.
         // Only fires when the user explicitly set `component:` in the meta object.
         if (!propsType) {
-          propsType = this.resolveFromMetaComponent(
-            checker,
-            storySourceFile,
-            entry.memberAccess
-          );
+          propsType = this.resolveFromMetaComponent(checker, storySourceFile, entry.memberAccess);
         }
 
         if (!propsType) {
@@ -431,7 +427,8 @@ export class ComponentMetaProject {
 
   /**
    * Path 2 fallback: resolve the component type from the story file's `meta.component` property.
-   * Only works when the user explicitly set `component:` in the meta — no node means no extraction.
+   * Only works when the user explicitly set `component:` in the meta — no node means no
+   * extraction.
    */
   private resolveFromMetaComponent(
     checker: ts.TypeChecker,

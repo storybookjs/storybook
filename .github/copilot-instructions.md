@@ -521,19 +521,29 @@ Follow the same pattern as Flow 1:
 1. Run the capture script: `jiti scripts/capture-terminal-output.ts --builder <builder-name>` (e.g., `builder-vite` or `builder-webpack5`)
 2. The output is compared against `scripts/terminal-output-snapshots/<builder-name>-build.snap.txt`.
 
-**If no baseline exists**:
+**Prerequisites**: The sandbox directory for the builder must exist locally (e.g., `../storybook-sandboxes/react-vite-default-ts` for `builder-vite`). Generate it with: `yarn nx sandbox <template> -c production`
 
-- The script automatically creates a provisional baseline file.
+**If no baseline exists** or you're seeding the first real baseline:
+
+- Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update`
+- This generates a "PROVISIONAL BASELINE" snapshot marked for reviewer approval.
 - Add the following to your PR description:
   ```
   <!-- PROVISIONAL BASELINE — requires reviewer approval before merge -->
   ```
-- Commit the provisional snapshot file for review.
+- Commit the snapshot file for review.
 
 **If the diff is consistent with your fix**:
 
-- Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update`
-- Commit the updated snapshot file.
+- Review the diff to confirm it shows only expected changes:
+  - Build structure changes (new/removed asset files)
+  - Performance metrics changes (durations, sizes)
+  - Build messages or progress updates
+  - **NOT** due to hash changes in filenames (these are automatically normalized to `<HASH>`)
+- Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update` to commit the updated snapshot
+- Include the diff summary in your PR description.
+
+**Hash Normalization**: Build-generated hashes in filenames (e.g., `context-C0qIqeS4.png`, `formatter-ABCDEF.js`) are automatically normalized to `<HASH>` placeholders in snapshots. This keeps baselines stable across rebuilds. When validating snapshots, confirm asset filenames show `<HASH>` (not actual hashes) and version strings like `v10.3.0-alpha.12` are preserved.
 
 **If the diff is noisy or unexpected**:
 

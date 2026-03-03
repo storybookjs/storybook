@@ -37,23 +37,27 @@ function normalizeOutput(raw: string, rootDir: string): string {
   const normalizedRoot = rootDir.replace(/\\/g, '/');
   const rootPattern = new RegExp(escapeRegExp(normalizedRoot), 'g');
 
-  return raw
-    .replace(rootPattern, '<ROOT>')
-    .replace(/\/(?:Users|home|tmp)\/[\w./-]+/g, '<ROOT>')
-    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/g, '<TIMESTAMP>')
-    .replace(/\b\d{2}:\d{2}:\d{2}\b/g, '<TIME>')
-    .replace(/localhost:\d+/g, 'localhost:<PORT>')
-    .replace(/\b(?:on\s+)?port\s+\d+\b/gi, 'port <PORT>')
-    .replace(/\b(?:pid:\s*|PID\s+)\d+\b/g, 'pid: <PID>')
-    .replace(
-      /\b(?:built in\s*\d+(?:\.\d+)?\s*(?:ms|s)|done in\s*\d+(?:\.\d+)?\s*(?:ms|s)|in\s*\d+(?:\.\d+)?\s*ms)\b/gi,
-      'built in <DURATION>'
-    )
-    .replace(/([./-])[a-f0-9]{6,}(\.[a-z0-9]+\b)/gi, '$1<HASH>$2')
-    .replace(/\bheap used:\s*\d+(?:\.\d+)?\s*(?:kB|KB|MB|GB)\b/gi, 'heap used: <MEMORY>')
-    .replace(ansiRegex(), '')
-    .replace(/\r\n/g, '\n')
-    .trimEnd();
+  return (
+    raw
+      .replace(rootPattern, '<ROOT>')
+      .replace(/\/(?:Users|home|tmp)\/[\w./-]+/g, '<ROOT>')
+      .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/g, '<TIMESTAMP>')
+      .replace(/\b\d{2}:\d{2}:\d{2}\b/g, '<TIME>')
+      .replace(/localhost:\d+/g, 'localhost:<PORT>')
+      .replace(/\b(?:on\s+)?port\s+\d+\b/gi, 'port <PORT>')
+      .replace(/\b(?:pid:\s*|PID\s+)\d+\b/g, 'pid: <PID>')
+      .replace(
+        /\b(?:built in\s*\d+(?:\.\d+)?\s*(?:ms|s)|done in\s*\d+(?:\.\d+)?\s*(?:ms|s)|in\s*\d+(?:\.\d+)?\s*ms)\b/gi,
+        'built in <DURATION>'
+      )
+      // Normalize content hashes in filenames within asset paths only
+      // Only matches patterns like: storybook-static/assets/filename-<HASH>.ext
+      .replace(/(\/assets\/[^/]*)-[\w-]{6,}(?=\.[a-z]{2,4}\b)/gi, '$1-<HASH>')
+      .replace(/\bheap used:\s*\d+(?:\.\d+)?\s*(?:kB|KB|MB|GB)\b/gi, 'heap used: <MEMORY>')
+      .replace(ansiRegex(), '')
+      .replace(/\r\n/g, '\n')
+      .trimEnd()
+  );
 }
 
 function stripHeader(content: string): string {
@@ -64,9 +68,6 @@ function stripHeader(content: string): string {
 }
 
 function createUnifiedDiff(previous: string, next: string): string {
-  const beforeLines = previous.split('\n');
-  const afterLines = next.split('\n');
-
   const changes = diff(previous, next);
   const diffLines: string[] = ['--- baseline', '+++ current'];
 

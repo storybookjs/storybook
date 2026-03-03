@@ -1,18 +1,291 @@
-# PLACEHOLDER — replace with real output by running:
-#   jiti scripts/capture-terminal-output.ts --builder builder-vite --mode build --update
-#
-# This file shows the expected format of a normalized Vite build snapshot.
-# Real output will contain lines like the following (after normalization):
-#
-# @storybook/builder-vite v<VERSION>
-# info => Loading presets
-# info => Building in production mode
-# vite v<VERSION> building for production...
-# transforming (<ROOT>/stories/Button.stories.ts)
-# ✓ <N> modules transformed.
-# dist/sb-preview/runtime.js   <SIZE>
-# dist/sb-preview/runtime.js.map   <SIZE>
-# ✓ built in <DURATION>
-#
-# Normalization summary:
-# paths -> <ROOT>, durations -> <DURATION>, hashes -> <HASH>, ports -> <PORT>, timestamps -> <TIMESTAMP>
+
+┌  Building storybook v10.3.0-alpha.12
+│
+◇  Cleaning outputDir: storybook-static
+│
+◇  Loading presets
+│
+◇  Building manager..
+│
+●  Building preview..
+│  Vite vite v7.3.1 building client environment for production...
+│  Vite transforming...
+│  Vite ✓ 398 modules transformed.
+│  Vite rendering chunks...
+│  Vite computing gzip size...
+│  Vite storybook-static/assets/context-<HASH>.png
+│  6.12 kB
+│  Vite storybook-static/assets/styling-<HASH>.png
+│  7.24 kB
+│  Vite storybook-static/iframe.html
+│  20.64 kB │ gzip:   5.55 kB
+│  Vite storybook-static/assets/docs-<HASH>.png
+│  27.88 kB
+│  Vite storybook-static/assets/share-<HASH>.png
+│  40.77 kB
+│  Vite storybook-static/assets/accessibility-<HASH>.png
+│  42.34 kB
+│  Vite storybook-static/assets/figma-<HASH>.png
+│  44.25 kB
+│  Vite storybook-static/assets/theming-<HASH>.png
+│  44.37 kB
+│  Vite storybook-static/assets/testing-<HASH>.png
+│  49.31 kB
+│  Vite storybook-static/assets/addon-<HASH>.png
+│  467.37 kB
+│  Vite storybook-static/assets/ts-<HASH>.css
+│  0.03 kB │ gzip:   0.05 kB
+│  Vite storybook-static/assets/Header-<HASH>.css
+│  0.51 kB │ gzip:   0.30 kB
+│  Vite storybook-static/assets/Button-<HASH>.css
+│  0.52 kB │ gzip:   0.29 kB
+│  Vite storybook-static/assets/Page-<HASH>.css
+│  0.91 kB │ gzip:   0.39 kB
+│  Vite storybook-static/assets/imported-<HASH>.js
+│  0.16 kB │ gzip:   0.15 kB
+│  Vite storybook-static/assets/formatter-<HASH>.js
+│  0.18 kB │ gzip:   0.17 kB
+│  Vite storybook-static/assets/override.stories-<HASH>.js
+│  0.38 kB │ gzip:   0.28 kB
+│  Vite storybook-static/assets/iframe.stories-<HASH>.js
+│  0.40 kB │ gzip:   0.29 kB
+│  Vite storybook-static/assets/overflow.stories-<HASH>.js
+│  0.41 kB │ gzip:   0.30 kB
+│  Vite storybook-static/assets/extract-description.stories-<HASH>.js
+│  0.41 kB │ gzip:   0.29 kB
+│  Vite storybook-static/assets/hooks.stories-<HASH>.js
+│  0.42 kB │ gzip:   0.30 kB
+│  Vite storybook-static/assets/jsx-docgen.stories-<HASH>.js
+│  0.46 kB │ gzip:   0.29 kB
+│  Vite storybook-static/assets/index-<HASH>.js
+│  0.46 kB │ gzip:   0.30 kB
+│  Vite storybook-static/assets/teardown.stories-<HASH>.js
+│  0.46 kB │ gzip:   0.30 kB
+│  Vite storybook-static/assets/csf4.stories-<HASH>.js
+│  0.47 kB │ gzip:   0.32 kB
+│  Vite storybook-static/assets/exportOrder.stories-<HASH>.js
+│  0.49 kB │ gzip:   0.28 kB
+│  Vite storybook-static/assets/interleavedExports.stories-<HASH>.js
+│  0.49 kB │ gzip:   0.28 kB
+│  Vite
+│  storybook-static/assets/copilot-verification-example.stories-<HASH>.js
+│  0.49 kB │ gzip:   0.34 kB
+│  Vite storybook-static/assets/NoTitle-<HASH>.js
+│  0.50 kB │ gzip:   0.32 kB
+│  Vite storybook-static/assets/Tags-<HASH>.js
+│  0.51 kB │ gzip:   0.33 kB
+│  Vite storybook-static/assets/csf4-<HASH>.js
+│  0.51 kB │ gzip:   0.33 kB
+│  Vite storybook-static/assets/autotitle.stories-<HASH>.js
+│  0.53 kB │ gzip:   0.35 kB
+│  Vite storybook-static/assets/Error-<HASH>.js
+│  0.53 kB │ gzip:   0.35 kB
+│  Vite storybook-static/assets/CjsNodeModuleMocking.stories-<HASH>.js
+│  0.54 kB │ gzip:   0.37 kB
+│  Vite storybook-static/assets/issues.stories-<HASH>.js
+│  0.55 kB │ gzip:   0.34 kB
+│  Vite storybook-static/assets/title.stories-<HASH>.js
+│  0.56 kB │ gzip:   0.36 kB
+│  Vite storybook-static/assets/Title-<HASH>.js
+│  0.56 kB │ gzip:   0.34 kB
+│  Vite storybook-static/assets/mount-in-play.stories-<HASH>.js
+│  0.60 kB │ gzip:   0.37 kB
+│  Vite storybook-static/assets/unicode.stories-<HASH>.js
+│  0.60 kB │ gzip:   0.34 kB
+│  Vite storybook-static/assets/MetaOf-<HASH>.js
+│  0.62 kB │ gzip:   0.38 kB
+│  Vite storybook-static/assets/moduleMocking.stories-<HASH>.js
+│  0.63 kB │ gzip:   0.41 kB
+│  Vite storybook-static/assets/MetaOfNamed-<HASH>.js
+│  0.63 kB │ gzip:   0.38 kB
+│  Vite storybook-static/assets/ModuleAutoMocking.stories-<HASH>.js
+│  0.71 kB │ gzip:   0.43 kB
+│  Vite storybook-static/assets/loader-enhancements.stories-<HASH>.js
+│  0.72 kB │ gzip:   0.40 kB
+│  Vite storybook-static/assets/csf1.stories-<HASH>.js
+│  0.73 kB │ gzip:   0.36 kB
+│  Vite storybook-static/assets/argtype.stories-<HASH>.js
+│  0.76 kB │ gzip:   0.38 kB
+│  Vite storybook-static/assets/basic.stories-<HASH>.js
+│  0.77 kB │ gzip:   0.34 kB
+│  Vite storybook-static/assets/spies.stories-<HASH>.js
+│  0.78 kB │ gzip:   0.43 kB
+│  Vite storybook-static/assets/custom-title.stories-<HASH>.js
+│  0.79 kB │ gzip:   0.35 kB
+│  Vite
+│  storybook-static/assets/component-test.unhandled-errors.stories-<HASH>.js
+│  0.79 kB │ gzip:   0.48 kB
+│  Vite storybook-static/assets/unhandled-errors.stories-<HASH>.js
+│  0.79 kB │ gzip:   0.48 kB
+│  Vite storybook-static/assets/ignore-selector.stories-<HASH>.js
+│  0.79 kB │ gzip:   0.35 kB
+│  Vite storybook-static/assets/custom-selector.stories-<HASH>.js
+│  0.80 kB │ gzip:   0.36 kB
+│  Vite storybook-static/assets/description.stories-<HASH>.js
+│  0.80 kB │ gzip:   0.37 kB
+│  Vite storybook-static/assets/names.stories-<HASH>.js
+│  0.84 kB │ gzip:   0.39 kB
+│  Vite storybook-static/assets/Header.stories-<HASH>.js
+│  0.85 kB │ gzip:   0.45 kB
+│  Vite storybook-static/assets/disable.stories-<HASH>.js
+│  0.86 kB │ gzip:   0.38 kB
+│  Vite storybook-static/assets/expect.stories-<HASH>.js
+│  0.87 kB │ gzip:   0.50 kB
+│  Vite storybook-static/assets/multiple-csf-files-b.stories-<HASH>.js
+│  0.87 kB │ gzip:   0.39 kB
+│  Vite storybook-static/assets/multiple-csf-files-a.stories-<HASH>.js
+│  0.87 kB │ gzip:   0.40 kB
+│  Vite storybook-static/assets/ModuleSpyMocking.stories-<HASH>.js
+│  0.88 kB │ gzip:   0.52 kB
+│  Vite storybook-static/assets/test-<HASH>.js
+│  0.88 kB │ gzip:   0.55 kB
+│  Vite
+│  storybook-static/assets/visual-render-verification.stories-<HASH>.js
+│  0.89 kB │ gzip:   0.49 kB
+│  Vite storybook-static/assets/button.stories-<HASH>.js
+│  0.89 kB │ gzip:   0.43 kB
+│  Vite storybook-static/assets/csf2.stories-<HASH>.js
+│  0.90 kB │ gzip:   0.38 kB
+│  Vite
+│  storybook-static/assets/destructuring-not-transpiled.stories-<HASH>.js
+│  0.95 kB │ gzip:   0.50 kB
+│  Vite storybook-static/assets/component-play.stories-<HASH>.js
+│  0.95 kB │ gzip:   0.47 kB
+│  Vite storybook-static/assets/mount-in-play.stories-<HASH>.js
+│  0.97 kB │ gzip:   0.55 kB
+│  Vite storybook-static/assets/indexer.stories-<HASH>.js
+│  1.03 kB │ gzip:   0.47 kB
+│  Vite storybook-static/assets/shortcuts.stories-<HASH>.js
+│  1.03 kB │ gzip:   0.56 kB
+│  Vite storybook-static/assets/index.stories-<HASH>.js
+│  1.12 kB │ gzip:   0.43 kB
+│  Vite storybook-static/assets/NodeModuleMocking.stories-<HASH>.js
+│  1.13 kB │ gzip:   0.64 kB
+│  Vite storybook-static/assets/UtfSymbolScroll-<HASH>.js
+│  1.14 kB │ gzip:   0.63 kB
+│  Vite storybook-static/assets/matchers.stories-<HASH>.js
+│  1.15 kB │ gzip:   0.50 kB
+│  Vite storybook-static/assets/sorting.stories-<HASH>.js
+│  1.18 kB │ gzip:   0.49 kB
+│  Vite storybook-static/assets/Button-<HASH>.js
+│  1.22 kB │ gzip:   0.59 kB
+│  Vite storybook-static/assets/preload-<HASH>.js
+│  1.23 kB │ gzip:   0.71 kB
+│  Vite storybook-static/assets/globals.stories-<HASH>.js
+│  1.26 kB │ gzip:   0.56 kB
+│  Vite storybook-static/assets/errors.stories-<HASH>.js
+│  1.32 kB │ gzip:   0.57 kB
+│  Vite storybook-static/assets/error.stories-<HASH>.js
+│  1.33 kB │ gzip:   0.48 kB
+│  Vite storybook-static/assets/configs.stories-<HASH>.js
+│  1.33 kB │ gzip:   0.51 kB
+│  Vite storybook-static/assets/filters.stories-<HASH>.js
+│  1.35 kB │ gzip:   0.46 kB
+│  Vite storybook-static/assets/Button.stories-<HASH>.js
+│  1.44 kB │ gzip:   0.54 kB
+│  Vite storybook-static/assets/loaders.stories-<HASH>.js
+│  1.46 kB │ gzip:   0.70 kB
+│  Vite storybook-static/assets/autoplay.stories-<HASH>.js
+│  1.49 kB │ gzip:   0.61 kB
+│  Vite storybook-static/assets/basic.stories-<HASH>.js
+│  1.50 kB │ gzip:   0.61 kB
+│  Vite storybook-static/assets/parameters-actions.stories-<HASH>.js
+│  1.52 kB │ gzip:   0.86 kB
+│  Vite storybook-static/assets/tags-add.stories-<HASH>.js
+│  1.54 kB │ gzip:   0.66 kB
+│  Vite storybook-static/assets/parameters.stories-<HASH>.js
+│  1.56 kB │ gzip:   0.60 kB
+│  Vite storybook-static/assets/tags-remove.stories-<HASH>.js
+│  1.64 kB │ gzip:   0.69 kB
+│  Vite storybook-static/assets/ModuleMocking.stories-<HASH>.js
+│  1.72 kB │ gzip:   0.69 kB
+│  Vite storybook-static/assets/order-of-hooks.stories-<HASH>.js
+│  1.79 kB │ gzip:   0.68 kB
+│  Vite storybook-static/assets/Header-<HASH>.js
+│  1.79 kB │ gzip:   0.78 kB
+│  Vite storybook-static/assets/hooks.stories-<HASH>.js
+│  1.89 kB │ gzip:   0.80 kB
+│  Vite storybook-static/assets/test-fn.stories-<HASH>.js
+│  1.90 kB │ gzip:   0.77 kB
+│  Vite storybook-static/assets/tags-config.stories-<HASH>.js
+│  1.92 kB │ gzip:   0.75 kB
+│  Vite storybook-static/assets/basics.stories-<HASH>.js
+│  2.14 kB │ gzip:   0.92 kB
+│  Vite storybook-static/assets/before-each.stories-<HASH>.js
+│  2.20 kB │ gzip:   0.68 kB
+│  Vite storybook-static/assets/argMapping.stories-<HASH>.js
+│  2.23 kB │ gzip:   0.72 kB
+│  Vite storybook-static/assets/globals.stories-<HASH>.js
+│  2.27 kB │ gzip:   0.71 kB
+│  Vite storybook-static/assets/source.stories-<HASH>.js
+│  2.74 kB │ gzip:   0.80 kB
+│  Vite storybook-static/assets/argTypes.stories-<HASH>.js
+│  2.82 kB │ gzip:   0.91 kB
+│  Vite storybook-static/assets/decorators.stories-<HASH>.js
+│  2.86 kB │ gzip:   1.19 kB
+│  Vite storybook-static/assets/decorators.stories-<HASH>.js
+│  2.94 kB │ gzip:   1.11 kB
+│  Vite storybook-static/assets/ResolvedReact-<HASH>.js
+│  2.99 kB │ gzip:   0.98 kB
+│  Vite storybook-static/assets/conditional.stories-<HASH>.js
+│  3.01 kB │ gzip:   0.76 kB
+│  Vite storybook-static/assets/resolved-react.stories-<HASH>.js
+│  3.20 kB │ gzip:   1.33 kB
+│  Vite storybook-static/assets/globals.stories-<HASH>.js
+│  3.45 kB │ gzip:   0.83 kB
+│  Vite storybook-static/assets/tests.stories-<HASH>.js
+│  3.47 kB │ gzip:   0.72 kB
+│  Vite storybook-static/assets/Page.stories-<HASH>.js
+│  3.55 kB │ gzip:   1.54 kB
+│  Vite storybook-static/assets/args.stories-<HASH>.js
+│  3.57 kB │ gzip:   1.25 kB
+│  Vite storybook-static/assets/layout.stories-<HASH>.js
+│  3.83 kB │ gzip:   0.82 kB
+│  Vite storybook-static/assets/globals.stories-<HASH>.js
+│  4.71 kB │ gzip:   1.16 kB
+│  Vite storybook-static/assets/component-test.basics.stories-<HASH>.js
+│  5.29 kB │ gzip:   1.42 kB
+│  Vite storybook-static/assets/rendering.stories-<HASH>.js
+│  5.41 kB │ gzip:   1.89 kB
+│  Vite storybook-static/assets/basics.stories-<HASH>.js
+│  6.18 kB │ gzip:   1.32 kB
+│  Vite storybook-static/assets/parameters.stories-<HASH>.js
+│  7.19 kB │ gzip:   1.51 kB
+│  Vite storybook-static/assets/basics.stories-<HASH>.js
+│  7.63 kB │ gzip:   2.01 kB
+│  Vite storybook-static/assets/Configure-<HASH>.js
+│  25.54 kB │ gzip:  10.93 kB
+│  Vite storybook-static/vite-<HASH>.js
+│  28.11 kB │ gzip:   9.82 kB
+│  Vite storybook-static/assets/matchers-<HASH>.js
+│  29.66 kB │ gzip:  10.28 kB
+│  Vite storybook-static/assets/Color-<HASH>.js
+│  29.89 kB │ gzip:  11.32 kB
+│  Vite storybook-static/assets/ts-argtypes.stories-<HASH>.js
+│  31.54 kB │ gzip:   4.97 kB
+│  Vite storybook-static/assets/WithTooltip-<HASH>.js
+│  33.48 kB │ gzip:  11.81 kB
+│  Vite storybook-static/assets/js-argtypes.stories-<HASH>.js
+│  47.56 kB │ gzip:   7.26 kB
+│  Vite storybook-static/assets/syntaxhighlighter-<HASH>.js
+│  77.99 kB │ gzip:  27.31 kB
+│  Vite storybook-static/assets/server.browser-<HASH>.js
+│  313.94 kB │ gzip:  95.83 kB
+│  Vite storybook-static/assets/axe-<HASH>.js
+│  579.70 kB │ gzip: 159.59 kB
+│  Vite storybook-static/assets/iframe-<HASH>.js
+│  2,450.05 kB │ gzip: 739.92 kB
+│
+▲  Vite
+│  (!) Some chunks are larger than 500 kB after minification. Consider:
+│  - Using dynamic import() to code-split the application
+│  - Use build.rollupOptions.output.manualChunks to improve chunking:
+│  https://rollupjs.org/configuration-options/#output-manualchunks
+│  - Adjust chunk size limit for this warning via
+│  build.chunkSizeWarningLimit.
+│  Vite ✓ built in <DURATION>
+│
+◇  Output directory:
+│  <ROOT>-sandboxes/react-vite-default-ts/storybook-static
+│
+└  Storybook build completed successfully

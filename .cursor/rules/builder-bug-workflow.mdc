@@ -81,34 +81,71 @@ If the browser output still shows the bug:
 
 Follow this workflow if your builder change affects Node.js stdout/stderr output (console logs, build progress, error messages, etc.).
 
-1. Run the capture script: `jiti scripts/capture-terminal-output.ts --builder <builder-name>` (e.g., `builder-vite` or `builder-webpack5`)
-2. The output is compared against `scripts/terminal-output-snapshots/<builder-name>-build.snap.txt`.
+### Step 1: Verify Sandbox Availability
 
-**If no baseline exists**:
+The terminal output capture requires the sandbox directory to exist for your builder:
 
-- The script automatically creates a provisional baseline file.
-- Add the following to your PR description:
-  ```
-  <!-- PROVISIONAL BASELINE — requires reviewer approval before merge -->
-  ```
-- Commit the provisional snapshot file for review.
+- **`builder-vite`**: Requires `../storybook-sandboxes/react-vite-default-ts`
+- **`builder-webpack5`**: Requires `../storybook-sandboxes/react-webpack-18-ts`
+
+If either directory is missing, generate it:
+
+```bash
+yarn nx sandbox <template> -c production
+```
+
+### Step 2: Run the Capture Script
+
+Run the terminal output capture and comparison:
+
+```bash
+jiti scripts/capture-terminal-output.ts --builder <builder-name>
+```
+
+The output is compared against `scripts/terminal-output-snapshots/<builder-name>-build.snap.txt`.
+
+### Step 3: Review and Commit the Baseline
+
+**If no baseline exists** (all snapshots start as placeholders):
+
+- Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update`
+- This creates a "PROVISIONAL BASELINE" snapshot requiring reviewer approval
+- Add a note to your PR description: `<!-- PROVISIONAL BASELINE — requires reviewer approval before merge -->`
 
 **If the diff is consistent with your fix**:
 
-- Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update`
-- Commit the updated snapshot file.
+- Review the diff output carefully to confirm it shows only expected changes:
+  - Build structure changes (new assets, removed files, reorganized chunks)
+  - Performance metrics (durations, file sizes)
+  - Build messages or progress indicators
+  - **NOT** due to asset filename hashes (these are auto-normalized to `<HASH>`)
+- Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update` to commit the new baseline
+- Summarize the changes in your PR description
 
-**If the diff is noisy or unexpected**:
+### Step 4: Understand Hash Normalization
 
-- Diagnose the output changes and iterate on your fix before opening the PR.
+Build tools generate content hashes in filenames to enable long-term caching. These hashes change whenever file content changes. To keep snapshots stable and focused on structural changes, the capture script automatically normalizes hashes:
 
-**PR description**: Always include a summary of what terminal output changed so reviewers can see the exact impact of your builder modifications.
+- **Original output**: `context-C0qIqeS4.png`, `formatter-ABCDEF-GHIJKL.js`, `ts-argtypes-BOocmtEy.css`
+- **Normalized snapshot**: `context-<HASH>.png`, `formatter-<HASH>.js`, `ts-argtypes-<HASH>.css`
 
----
+**Validation checklist**:
 
-## Summary
+- ✓ All asset filenames (`/assets/*.ext`) show `<HASH>` placeholders, not real hashes
+- ✓ Version numbers like `v10.3.0-alpha.12` are preserved (not normalized)
+- ✓ Build messages and paths are normalized where present
 
-Both flows (2 and 3) require evidence in the PR:
+### Step 5: Handle Noisy or Unexpected Diffs
 
-- **Flow 2 (frontend)**: Browser screenshot showing the fix works
-- **Flow 3 (terminal)**: Snapshot diff or provisional baseline with explanation in PR description
+If the diff is large or unexpected:
+
+1. Diagnose what output changed and why
+2. Verify the changes are a direct result of your builder modification
+3. Iterate on your fix until the diff is clean and focused
+4. Run the capture script again: `jiti scripts/capture-terminal-output.ts --builder <builder-name>`
+
+### Step 6: Commit and Open PR
+
+- Commit the updated snapshot file
+- Include a summary of what terminal output changed in the PR description
+- Explain the business impact of the changes (performance, clarity, new features, etc.)

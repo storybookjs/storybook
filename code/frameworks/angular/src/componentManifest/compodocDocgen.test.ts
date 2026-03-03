@@ -12,7 +12,7 @@ import {
   loadCompodocJson,
 } from './compodocDocgen';
 
-vi.mock('node:fs');
+vi.mock('node:fs', { spy: true });
 
 const sampleCompodocJson: CompodocJson = {
   components: [

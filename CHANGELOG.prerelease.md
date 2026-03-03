@@ -1,3 +1,12 @@
+## 10.3.0-alpha.13
+
+- A11y: Add ScrollArea prop focusable for when it has static children - [#33876](https://github.com/storybookjs/storybook/pull/33876), thanks @Sidnioulz!
+- CLI: Set STORYBOOK environment variable - [#33938](https://github.com/storybookjs/storybook/pull/33938), thanks @yannbf!
+- Controls: Fix Object contrast issue and tidy up code - [#33923](https://github.com/storybookjs/storybook/pull/33923), thanks @Sidnioulz!
+- HMR: Fix race conditions causing stale play functions to fire on re-rendered stories - [#33930](https://github.com/storybookjs/storybook/pull/33930), thanks @copilot-swe-agent!
+- React: Handle render identifier in manifest snippet generation - [#33940](https://github.com/storybookjs/storybook/pull/33940), thanks @kasperpeulen!
+- UI: Prevent crash when tag filters contain undefined entries - [#33931](https://github.com/storybookjs/storybook/pull/33931), thanks @abhaysinh1000!
+
 ## 10.3.0-alpha.12
 
 - Builder-Vite: Prevent config duplication - [#33883](https://github.com/storybookjs/storybook/pull/33883), thanks @copilot-swe-agent!

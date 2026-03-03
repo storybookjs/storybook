@@ -90,6 +90,7 @@ interface ComponentMetaContext {
    * story's JSX usage. Tells the extractor to match `<Accordion.Root />` JSX elements.
    */
   memberAccess?: string;
+  metaJsDoc?: string;
 }
 
 function findMatchingComponent(
@@ -173,10 +174,10 @@ function extractStories(
 }
 
 function extractComponentDescription(
-  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
-  docgen: { description?: string } | undefined
+  metaJsDoc: string | undefined,
+  docgenDescription: string | undefined
 ) {
-  const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
+  const jsdocComment = metaJsDoc || docgenDescription;
   const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
   return {
     description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
@@ -194,6 +195,8 @@ export const manifests: PresetPropertyFn<
   const { manifestEntries, presets, watch } = options as typeof options & { watch?: boolean };
   const typescriptOptions =
     (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
+  const features = await presets?.apply('features', {});
+  const experimentalReactComponentMeta = !!features?.experimentalReactComponentMeta;
 
   invalidateCache();
   invalidateParser();
@@ -243,6 +246,7 @@ export const manifests: PresetPropertyFn<
           csf,
           storyFilePath: absoluteImportPath,
           typescriptOptions,
+          experimentalReactComponentMeta,
         });
         const component = findMatchingComponent(
           allComponents,
@@ -270,7 +274,7 @@ export const manifests: PresetPropertyFn<
 
         const hasDocgen = component?.reactDocgen || component?.reactDocgenTypescript;
 
-        if (!hasDocgen) {
+        if (!experimentalReactComponentMeta && !hasDocgen) {
           const error = !csf._meta?.component
             ? {
                 name: 'No component found',
@@ -300,11 +304,11 @@ export const manifests: PresetPropertyFn<
         const docgen = docgenResult?.type === 'success' ? docgenResult.data : undefined;
         const reactDocgenTypescriptDoc = component.reactDocgenTypescript;
 
-        // Use react-docgen description if available, fall back to RDT description
+        const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
         const docgenDescription = docgen?.description ?? reactDocgenTypescriptDoc?.description;
         const { description, summary, jsDocTags } = extractComponentDescription(
-          csf,
-          docgenDescription ? { description: docgenDescription } : undefined
+          metaJsDoc,
+          docgenDescription
         );
 
         return {
@@ -329,6 +333,7 @@ export const manifests: PresetPropertyFn<
                 importId: component.importId,
                 storyFilePath: absoluteImportPath,
                 memberAccess: component.member,
+                metaJsDoc,
               }
             : undefined,
         };
@@ -350,7 +355,7 @@ export const manifests: PresetPropertyFn<
   const manager = await managerWarmup;
   const componentMetaStartTime = performance.now();
   const componentMetaDebug: Record<string, unknown> = {};
-  if (manager) {
+  if (manager && experimentalReactComponentMeta) {
     // Group components by project for batch extraction — one getProgram() per project.
     type ProjectEntry = { component: ComponentManifest; ctx: ComponentMetaContext };
     const byProject = new Map<ReturnType<typeof manager.getProjectForFile>, ProjectEntry[]>();
@@ -389,8 +394,16 @@ export const manifests: PresetPropertyFn<
       for (const { component, ctx } of entries) {
         const docs = extractionResults.get(ctx.storyFilePath)?.get(ctx.importName ?? 'default');
         if (docs && docs.length > 0) {
-          (component as ReactComponentManifest).reactComponentMeta = docs[0];
+          const m = component as ReactComponentManifest;
+          m.reactComponentMeta = docs[0];
           componentMetaCount++;
+
+          if (!m.description && docs[0].description) {
+            const extracted = extractComponentDescription(ctx.metaJsDoc, docs[0].description);
+            m.description = extracted.description;
+            m.summary = extracted.summary;
+            m.jsDocTags = extracted.jsDocTags;
+          }
         }
       }
     }
@@ -414,7 +427,9 @@ export const manifests: PresetPropertyFn<
       v: 0,
       components: Object.fromEntries(components.map((component) => [component.id, component])),
       meta: {
-        docgen: typescriptOptions.reactDocgen ?? 'react-docgen',
+        docgen: experimentalReactComponentMeta
+          ? 'react-component-meta'
+          : (typescriptOptions.reactDocgen ?? 'react-docgen'),
         durationMs,
         timings: {
           docgen: docgenDurationMs,

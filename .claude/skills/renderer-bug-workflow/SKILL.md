@@ -66,7 +66,20 @@ Use the Browser MCP to:
 2. Navigate to your template story
 3. Take a screenshot showing the fix is working
 
+**What a "passing" screenshot shows**:
+
+- ✅ The previously broken behavior is now fixed
+- ✅ The story renders without errors or warnings
+- ✅ Visual output matches expected behavior described in the issue
+
 If the bug is resolved in the screenshot, attach it to your PR description.
+
+**Evidence quality checklist**:
+
+- [ ] Screenshot clearly shows the story/component rendering
+- [ ] The fixed behavior is visually distinct from what the bug report showed
+- [ ] No error messages or stack traces in the DevTools console
+- [ ] The screenshot is clear enough for reviewers to verify the fix
 
 ### Story URL Pattern
 

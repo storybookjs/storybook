@@ -178,7 +178,22 @@ Use the Browser MCP to:
 2. Interact with the affected area of the Manager UI (Controls panel, sidebar, etc.)
 3. Take a screenshot (ideally by using ChromeDev MCP) showing the fix works correctly
 
+**What a "passing" screenshot shows**:
+
+- ✅ The Manager UI feature (Controls, Actions, sidebar, etc.) is functioning as expected
+- ✅ The previously broken behavior is now fixed and visually evident
+- ✅ Interactive elements respond correctly to user actions
+- ✅ No error messages or console errors visible
+
 Attach the screenshot to your PR description.
+
+**Evidence quality checklist**:
+
+- [ ] Screenshot shows the Manager UI with the affected panel/feature
+- [ ] The fixed behavior is visually distinct from what the issue described as broken
+- [ ] Interactive state demonstrates the fix (e.g., function called, control updated, panel rendered)
+- [ ] DevTools console is clean (no errors related to the fix)
+- [ ] The screenshot clearly shows the fix working
 
 ---
 

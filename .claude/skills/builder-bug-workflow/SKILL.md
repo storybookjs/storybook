@@ -105,6 +105,12 @@ The output is compared against `scripts/terminal-output-snapshots/<builder-name>
 
 ## Step 3: Review and Commit the Baseline
 
+**Decision: Create or Update?**
+
+- **No baseline exists** (you have never run this before for this builder): You must **create** a baseline by running `--update`
+- **Baseline exists** but needs updating due to your fix: You **update** the baseline
+- **Baseline exists** but output doesn't match your fix: Your fix may be incomplete—re-run Step 1-2
+
 **If no baseline exists** (all snapshots start as placeholders):
 
 - Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update`

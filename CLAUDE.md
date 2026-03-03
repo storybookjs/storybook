@@ -31,13 +31,6 @@ yarn nx run-many -t compile -c production
 yarn nx compile <package-name> -c production
 ```
 
-### Linting
-
-```bash
-yarn lint                         # Run all linting checks
-yarn --cwd code lint:js:cmd <file> --fix  # Fix linting on specific file
-```
-
 ### Type Checking
 
 ```bash
@@ -80,7 +73,7 @@ yarn nx sandbox <template> -c production  # Creates ../storybook-sandboxes/<temp
 
 ## Code Quality & Testing
 
-Format and lint before committing:
+Format and lint before committing. Do not lint in-between, but only at the end:
 
 ```bash
 yarn prettier --write <file>

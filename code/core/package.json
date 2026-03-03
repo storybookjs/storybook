@@ -287,6 +287,7 @@
     "get-npm-tarball-url": "^2.1.0",
     "glob": "^10.5.0",
     "globby": "^14.1.0",
+    "host-validation-middleware": "^0.1.2",
     "jiti": "^2.6.1",
     "js-yaml": "^4.1.0",
     "jsdoc-type-pratt-parser": "^4.0.0",

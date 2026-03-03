@@ -23,6 +23,8 @@ Follow this workflow if your builder change affects browser-visible output.
 
 Create or update a story in the sandbox that demonstrates the affected behaviour and confirms the fix.
 
+For `builder-vite` verification, place the template story in `code/renderers/react/template/stories/` (it will be automatically symlinked into `react-vite-default-ts` at sandbox generation time).
+
 ### Step 2: Select the Appropriate Sandbox Template
 
 - **`builder-vite` changes**: Use `react-vite/default-ts`
@@ -42,6 +44,13 @@ Start the dev server as a background task:
 cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci
 ```
 
+- **Startup time**: The sandbox dev server typically takes **30–90 seconds** on first cold start; wait for the console to emit `"Storybook X.Y started"` before opening the browser.
+- **Known failure — port in use**: If port 6006 is occupied, kill the incumbent process:
+  ```bash
+  lsof -ti :6006 | xargs kill -9
+  ```
+  Then retry the dev server start.
+
 Wait for the port to be ready (check console for "Storybook started").
 
 ### Step 4: Capture Visual Evidence
@@ -60,7 +69,9 @@ If the browser output still shows the bug:
 
 1. Kill the dev server
 2. Recompile: `yarn nx compile <package-name> -c production`
-3. Copy fresh `dist/` into the sandbox: `cp -r <compiled-dist> ../storybook-sandboxes/<sandbox-dir>/node_modules/<package>/dist/`
+3. Copy fresh `dist/` into the sandbox:
+   - Source: `code/<package-path>/dist/`
+   - Destination: `../storybook-sandboxes/<sandbox-dir>/node_modules/@storybook/<package-name>/dist/`
 4. Restart the dev server: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
 5. Re-verify with a new screenshot
 

@@ -276,6 +276,12 @@ test.describe('Manager UI', () => {
       await sbPage.page.locator('[aria-label="Close settings page"]').click();
       expect(sbPage.page.url()).not.toContain('/settings/about');
     });
+
+    // Reference example for Copilot manager bug verification flow (Flow 4)
+    test('Copilot verification example — Manager UI smoke test', async ({ page }) => {
+      const sbPage = new SbPage(page, expect);
+      await expect(sbPage.page.locator('a[title="Storybook"]')).toBeVisible();
+    });
   });
 
   test.describe('Mobile', () => {

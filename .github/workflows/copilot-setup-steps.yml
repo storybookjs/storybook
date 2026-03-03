@@ -32,5 +32,8 @@ jobs:
         with:
           install-code-deps: true
 
+      - name: Install Playwright browsers
+        run: cd code && yarn playwright install --with-deps chromium
+
       - name: Compile
         run: yarn nx run-many --targets compile

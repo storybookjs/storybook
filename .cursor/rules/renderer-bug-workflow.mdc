@@ -1,6 +1,6 @@
 ---
 description: Verification workflow for renderer bug fixes
-globs: "code/renderers/**"
+globs: 'code/renderers/**'
 alwaysApply: false
 ---
 
@@ -11,8 +11,11 @@ When fixing bugs in `code/renderers/**`, follow this workflow to verify the fix 
 ## Step 1: Create or Update a Template Story
 
 Create or update a story in the affected renderer's template stories directory that demonstrates the bug and confirms the fix:
+
 - Location: `code/renderers/<renderer>/template/stories/`
 - The story should clearly exercise the broken behaviour and show that it is resolved.
+
+**Reference example**: See `code/renderers/react/template/stories/copilot-verification-example.stories.tsx` for a minimal example of what a template story should look like for Copilot verification purposes.
 
 ## Step 2: Select a Sandbox Template
 
@@ -45,16 +48,26 @@ In a background terminal session, start the sandbox dev server and wait for it t
 cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci
 ```
 
+- **Startup time**: The sandbox dev server typically takes **30–90 seconds** on first cold start; wait for the console to emit `"Storybook X.Y started"` before opening the browser.
+- **Known failure — port in use**: If port 6006 is occupied, kill the incumbent process:
+  ```bash
+  lsof -ti :6006 | xargs kill -9
+  ```
+  Then retry starting the dev server.
+
 Check the console output for "Storybook started" or similar confirmation before proceeding.
 
 ## Step 5: Capture Visual Evidence
 
 Use the Browser MCP to:
+
 1. Open the running Storybook instance
 2. Navigate to your template story
 3. Take a screenshot showing the fix is working
 
 If the bug is resolved in the screenshot, attach it to your PR description.
+
+**Story URL pattern**: The story URL follows the pattern `http://localhost:6006/?path=/story/<title-prefix>-<story-name>--<export-name>`. For example, a story exported as `Primary` in `code/renderers/react/template/stories/visual-render-verification.stories.tsx` would be at `http://localhost:6006/?path=/story/renderers-react-visual-render-verification--primary`.
 
 ## Step 6: Fallback Path (if bug persists)
 
@@ -62,16 +75,16 @@ If the story still shows the bug after initial verification:
 
 1. Kill the dev server
 2. Recompile the affected package: `yarn nx compile <package-name> -c production`
-3. Copy the fresh `dist/` from the compiled package into the sandbox's node_modules:
-   ```bash
-   cp -r <compiled-dist-path> ../storybook-sandboxes/<sandbox-dir>/node_modules/<package>/dist/
-   ```
+3. Copy the fresh `dist/` from the compiled package into the sandbox:
+   - Source: `code/<package-path>/dist/`
+   - Destination: `../storybook-sandboxes/<sandbox-dir>/node_modules/@storybook/<package-name>/dist/`
 4. Restart the dev server: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
 5. Re-verify the fix with a new screenshot
 
 ## Multi-Scenario PRs
 
 For PRs that fix multiple distinct scenarios:
+
 - Use one primary template
 - Include one screenshot per distinct scenario type
 - Ensure each screenshot clearly demonstrates the fix for that specific scenario

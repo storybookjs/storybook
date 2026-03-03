@@ -1,6 +1,6 @@
 ---
 description: Verification workflow for Manager UI and builder-manager bug fixes
-globs: "code/core/src/manager/**,code/core/src/builder-manager/**"
+globs: 'code/core/src/manager/**,code/core/src/builder-manager/**'
 alwaysApply: false
 ---
 
@@ -17,6 +17,7 @@ Create or update a test in `code/e2e-tests/manager.spec.ts` that asserts the spe
 - Include meaningful assertions that capture the core of the fix
 
 Example patterns:
+
 - Assert that a UI element is now visible/hidden correctly
 - Verify that interactions trigger the expected behaviour
 - Confirm that data is displayed or updated as expected
@@ -37,12 +38,15 @@ In a background terminal session, start the dev server and wait for port 6006:
 cd code && yarn storybook:ui
 ```
 
+**Port note**: `yarn storybook:ui` starts on port **6006**. The Playwright E2E tests read `STORYBOOK_URL` and fall back to `http://localhost:8001` if the variable is unset. To run E2E tests against the dev server, pass `STORYBOOK_URL=http://localhost:6006` when invoking `yarn playwright test`.
+
 Check the console output for confirmation that the server is ready.
 
 ## Step 4: Capture Visual Evidence
 
 Use the Browser MCP to:
-1. Open `http://localhost:6006` in the browser
+
+1. Open `http://localhost:6006` (dev server) or `http://localhost:8001` (default task-based setup) in the browser
 2. Navigate to the affected area in the Manager UI
 3. Interact with the UI to demonstrate the fix (if applicable)
 4. Take a screenshot showing the fix works correctly
@@ -58,6 +62,7 @@ cd code && yarn playwright test
 ```
 
 Confirm that:
+
 - Your new/updated test passes
 - No existing tests have been broken by the change
 - All E2E tests complete successfully

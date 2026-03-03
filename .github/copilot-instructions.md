@@ -445,6 +445,8 @@ Always perform these steps before opening any PR:
 
 **Trigger**: Changes in `code/renderers/**`
 
+**Reference example**: `code/renderers/react/template/stories/copilot-verification-example.stories.tsx` is a minimal example demonstrating the template story structure. Template stories from `code/renderers/<renderer>/template/stories/` are symlinked into the sandbox's `src/stories/renderers/<renderer>/` directory after sandbox generation.
+
 1. Create or update a template story in the affected renderer's `code/renderers/<renderer>/template/stories/` directory that demonstrates the bug and the fix.
 2. Heuristically select the most relevant sandbox template based on the renderer and bug context:
    - React: `react-vite/default-ts`
@@ -456,15 +458,26 @@ Always perform these steps before opening any PR:
    - (Choose based on context if not listed above)
 3. Generate the sandbox: `yarn nx sandbox <template> -c production` (creates `../storybook-sandboxes/<sandbox-dir>/`)
 4. Start the sandbox dev server as a background task: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
+   - **Startup time**: The sandbox dev server typically takes **30–90 seconds** on first cold start; wait for the console to emit `"Storybook X.Y started"` before opening the browser.
+   - **Known failure — port in use**: If port 6006 is occupied, kill the incumbent process:
+     ```bash
+     lsof -ti :6006 | xargs kill -9
+     ```
+     Then retry starting the dev server.
 5. Wait for the port to be ready (check the console output for "Storybook started").
 6. Use the Browser MCP to open the running Storybook instance, navigate to your story, and take a screenshot.
 7. If the bug is resolved, attach the screenshot to the PR description.
 
+**Story URL pattern**: The story URL follows the pattern `http://localhost:6006/?path=/story/<title-prefix>-<story-name>--<export-name>`. For example, a story exported as `Primary` in `code/renderers/react/template/stories/visual-render-verification.stories.tsx` would be at `http://localhost:6006/?path=/story/renderers-react-visual-render-verification--primary`.
+
 **Fallback path** (if the story still shows the bug):
+
 1. Kill the dev server.
 2. Recompile the affected package: `yarn nx compile <package-name> -c production`
-3. Copy the fresh `dist/` from the compiled package into the sandbox's `node_modules/<package>/dist/` directory.
-4. Restart the dev server.
+3. Copy the fresh `dist/` from the compiled package into the sandbox:
+   - Source: `code/<package-path>/dist/`
+   - Destination: `../storybook-sandboxes/<sandbox-dir>/node_modules/@storybook/<package-name>/dist/`
+4. Restart the dev server: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
 5. Re-verify the fix with a new screenshot.
 
 **Multi-scenario PRs**: For PRs that fix multiple distinct scenarios, use one primary template and include one screenshot per distinct scenario type.
@@ -481,11 +494,25 @@ Follow the same pattern as Flow 1:
 2. Create or update a template story that demonstrates the affected behaviour.
 3. Generate the sandbox: `yarn nx sandbox <template> -c production`
 4. Start dev server as a background task: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
+   - **Startup time**: Expect **30–90 seconds** on first cold start; wait for `"Storybook X.Y started"` in the console.
+   - **Known failure — port in use**: If port 6006 is occupied:
+     ```bash
+     lsof -ti :6006 | xargs kill -9
+     ```
+     Then retry the dev server start.
 5. Wait for the port to be ready.
 6. Use the Browser MCP to take a screenshot of the affected area.
 7. Attach the screenshot to the PR description.
 
-Apply the same fallback path as Flow 1 if the bug persists after initial verification.
+**Fallback path** (if the bug persists after initial verification):
+
+1. Kill the dev server.
+2. Recompile: `yarn nx compile <package-name> -c production`
+3. Copy fresh `dist/`:
+   - Source: `code/<package-path>/dist/`
+   - Destination: `../storybook-sandboxes/<sandbox-dir>/node_modules/@storybook/<package-name>/dist/`
+4. Restart: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
+5. Re-verify with a new screenshot.
 
 ### Flow 3 — Builder Bug Verification (Terminal Output)
 
@@ -495,6 +522,7 @@ Apply the same fallback path as Flow 1 if the bug persists after initial verific
 2. The output is compared against `scripts/terminal-output-snapshots/<builder-name>-build.snap.txt`.
 
 **If no baseline exists**:
+
 - The script automatically creates a provisional baseline file.
 - Add the following to your PR description:
   ```
@@ -503,10 +531,12 @@ Apply the same fallback path as Flow 1 if the bug persists after initial verific
 - Commit the provisional snapshot file for review.
 
 **If the diff is consistent with your fix**:
+
 - Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update`
 - Commit the updated snapshot file.
 
 **If the diff is noisy or unexpected**:
+
 - Diagnose the output changes and iterate on your fix before opening the PR.
 
 **PR description**: Always include a summary of what terminal output changed so reviewers can see the exact impact of your builder modifications.
@@ -517,20 +547,22 @@ Apply the same fallback path as Flow 1 if the bug persists after initial verific
 
 1. Write or update an E2E test in `code/e2e-tests/manager.spec.ts` that asserts the specific affected interaction.
 2. Build the Storybook UI: `cd code && yarn storybook:ui:build`
-3. Start the dev server as a background task: `cd code && yarn storybook:ui` (wait for port 6006 to be ready).
-4. Use the Browser MCP to open `http://localhost:6006`, navigate to the affected area, and take a screenshot.
+3. Start the dev server as a background task: `cd code && yarn storybook:ui` (this serves on port **6006**). When running E2E tests against this server, set `STORYBOOK_URL=http://localhost:6006` because the Playwright tests default to port 8001.
+4. Use the Browser MCP to open `http://localhost:6006` (dev server) or `http://localhost:8001` (default task-based setup), navigate to the affected area, and take a screenshot.
 5. Run the full E2E suite: `cd code && yarn playwright test`
 6. Confirm that your new or updated test passes.
 7. Attach the screenshot to the PR description as visual evidence of the fix.
 
+**Reference example**: See `code/e2e-tests/manager.spec.ts` — the `'Copilot verification example — Manager UI smoke test'` test inside the Desktop describe block is a minimal, self-contained example of what a Manager E2E test looks like. Use it as a starting point when writing new Manager tests.
+
 ### Flow Summary Table
 
-| Flow | Trigger | Key Actions | PR Evidence |
-|---|---|---|---|
-| 0 — Universal | Always | Unit tests + re-read problem | Tests pass |
-| 1 — Renderer | `code/renderers/**` changed | Template story → heuristic sandbox → Browser MCP screenshot | Screenshot of story in sandbox |
-| 2 — Builder (frontend) | `code/builders/**` changed, browser impact | Template story → heuristic sandbox → Browser MCP screenshot | Screenshot of story in sandbox |
-| 3 — Builder (terminal) | `code/builders/**` changed, Node.js output impact | Capture script → diff → update snapshot | Diff output in PR description |
-| 4 — Manager | `code/core/src/manager/**` or `builder-manager/**` changed | E2E test → start UI → Browser MCP screenshot | E2E pass + screenshot of Manager UI |
+| Flow                   | Trigger                                                    | Key Actions                                                 | PR Evidence                         |
+| ---------------------- | ---------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------- |
+| 0 — Universal          | Always                                                     | Unit tests + re-read problem                                | Tests pass                          |
+| 1 — Renderer           | `code/renderers/**` changed                                | Template story → heuristic sandbox → Browser MCP screenshot | Screenshot of story in sandbox      |
+| 2 — Builder (frontend) | `code/builders/**` changed, browser impact                 | Template story → heuristic sandbox → Browser MCP screenshot | Screenshot of story in sandbox      |
+| 3 — Builder (terminal) | `code/builders/**` changed, Node.js output impact          | Capture script → diff → update snapshot                     | Diff output in PR description       |
+| 4 — Manager            | `code/core/src/manager/**` or `builder-manager/**` changed | E2E test → start UI → Browser MCP screenshot                | E2E pass + screenshot of Manager UI |
 
 This document should be updated as the repository evolves and new build requirements or limitations are discovered.

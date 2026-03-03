@@ -90,7 +90,7 @@ cd code && yarn test
 
 When fixing bugs in Storybook, comprehensive workflows are available as Claude Skills in `.claude/skills/`:
 
-- **`/fix-bug`**: Complete end-to-end workflow — Fetch issue, understand bug, create plan, fix code, run verification, and open PR
+- **`/fix-bug`**: Complete end-to-end workflow — Fetch issue, understand bug, create plan, fix code, run verification, prepare PR content. GitHub Copilot on GitHub.com then automatically creates the PR
 - **`/verification-checklist`**: Universal checks for all bug types (Flow 0) — Run before opening any PR
 - **`/renderer-bug-workflow`**: Renderer bug verification in `code/renderers/**` (Flow 1)
 - **`/builder-bug-workflow`**: Builder bug verification in `code/builders/**` for frontend output (Flow 2) and terminal output (Flow 3)

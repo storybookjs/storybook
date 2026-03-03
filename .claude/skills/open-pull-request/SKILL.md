@@ -1,11 +1,11 @@
 ---
 name: open-pull-request
-description: Complete workflow to push branch, open GitHub PR with proper description and templates, and add required labels.
+description: Prepare PR content and description with flow-specific evidence (GitHub Copilot handles branch push and PR creation automatically).
 ---
 
 # Open Pull Request Workflow
 
-**What this skill does**: Handles PR creation from pushing your feature branch through opening the PR with flow-specific templates and adding required labels.
+**What this skill does**: Prepares the PR title and description with flow-specific evidence templates. GitHub Copilot on GitHub.com automatically handles branch pushing and PR creation.
 
 ## Input & Prerequisites
 
@@ -22,7 +22,7 @@ description: Complete workflow to push branch, open GitHub PR with proper descri
 - [ ] Code formatted and linted
 - [ ] You are on the feature branch (`agent/fix-issue-$ARGUMENTS[0]`)
 - [ ] Verification workflow completed (or Flow 0 confirmed)
-- [ ] You have write access to repository push
+- [ ] All changes committed
 
 ⚠️ **If any prerequisite fails**: Return to appropriate earlier step before proceeding.
 
@@ -31,72 +31,43 @@ description: Complete workflow to push branch, open GitHub PR with proper descri
 ## Workflow Overview
 
 ```
-Step 1: Push Feature Branch
+Step 1: Prepare PR Title
          ↓
-Step 2: Create PR with Flow-Specific Template
+Step 2: Prepare PR Body with Flow-Specific Evidence
          ↓
-Step 3: Add Required Labels (agent, ci:normal, bug)
+Step 3: GitHub Copilot handles branch push and PR creation automatically
          ↓ [DONE: PR created, labeled, and ready]
 ```
 
 ---
 
-## Step 1: Push Feature Branch
-
-**Action**: Push your branch to origin
-
-```bash
-git push origin agent/fix-issue-$ARGUMENTS[0]
-```
-
-**Success Criteria**:
-
-- [ ] No merge conflicts
-- [ ] Branch appears on GitHub
-- [ ] Commit message is clear (see Step 4 of /implement-and-verify-fix for format)
-
-### Error Recovery
-
-IF push fails with "Permission denied":
-
-```bash
-# Verify you have write access
-git remote -v
-# Should show: origin https://github.com/storybookjs/storybook.git (push)
-```
-
-IF push fails with "rejected... non-fast-forward":
-
-```bash
-# Someone else pushed to this branch
-git fetch origin
-git rebase origin/agent/fix-issue-$ARGUMENTS[0]
-git push origin agent/fix-issue-$ARGUMENTS[0]
-```
-
----
-
-## Step 2: Create PR with Description
-
-### 2a: Prepare PR Title
+## Step 1: Prepare PR Title
 
 Use this format:
 
-```bash
-TITLE="Fix: [Brief description from issue title]"
+```
+Fix: [Brief description from issue title]
 ```
 
 Example:
 
-```bash
-TITLE="Fix: React renderer not applying CSS to styled components"
+```
+Fix: React renderer not applying CSS to styled components
 ```
 
-### 2b: Prepare PR Body
+**Success Criteria**:
+
+- [ ] Title is clear and descriptive
+- [ ] Starts with "Fix:"
+- [ ] References the issue topic
+
+---
+
+## Step 2: Prepare PR Body
 
 Build the body by combining the base template with flow-specific evidence:
 
-**Base template**:
+### 2a: Base Template
 
 ```markdown
 ## Issue
@@ -124,7 +95,9 @@ Fixes #$ARGUMENTS[0]
 [Flow-specific section below - choose ONE based on your flow]
 ```
 
-**Flow-specific sections** (append ONE to base template):
+### 2b: Flow-Specific Evidence Sections
+
+Choose **ONE** of the following based on your verification flow:
 
 #### **Flow 0** (Pure Logic / Unit Tests Only):
 
@@ -212,66 +185,61 @@ Terminal output now matches expected format without build-specific noise.
 [Screenshot of Manager UI showing correct behavior]
 ```
 
-### 2c: Create the PR with gh CLI
+### 2c: Complete Your PR Description
 
-Use the `gh` command-line tool to create the PR:
-
-```bash
-gh pr create \
-  --title "$TITLE" \
-  --body "$BODY" \
-  --base next \
-  --head agent/fix-issue-$ARGUMENTS[0]
-```
-
-Where:
-
-- `$TITLE` = PR title from Step 2a
-- `$BODY` = base template + one flow-specific section from Step 2b
-- `--base next` = target branch (merge into `next`)
-- `--head` = your feature branch
+Combine the base template (Section 2a) with your flow-specific section (Section 2b).
 
 **Success Criteria**:
 
-- [ ] PR created successfully
-- [ ] URL returned by `gh pr create` shows PR number
-- [ ] Title is clear in PR
-- [ ] Description is complete with evidence
-- [ ] PR branch is correct (`agent/fix-issue-$ARGUMENTS[0]`)
+- [ ] PR title is prepared
+- [ ] PR body includes base template
+- [ ] Flow-specific evidence section is included
+- [ ] All placeholders ($ARGUMENTS[0], issue links, evidence) are populated
+- [ ] Screenshots/diffs are embedded or linked
 
 ---
 
-## Step 3: Add Required Labels
+## Step 3: GitHub Copilot Creates the PR
 
-**Action**: Add labels to the PR using `gh` CLI
+**What happens automatically**:
 
-```bash
-gh pr edit $PR_NUMBER --add-label agent,ci:normal,bug
-```
-
-Where `$PR_NUMBER` is the number returned from `gh pr create` in Step 2c (e.g., `12345`).
+- ✅ Your feature branch (`agent/fix-issue-$ARGUMENTS[0]`) is pushed to GitHub
+- ✅ PR is created with your prepared title and body
+- ✅ Required labels (`agent`, `ci:normal`, `bug`) are added automatically
+- ✅ PR links to issue #$ARGUMENTS[0] (via "Fixes #..." in body)
 
 **Success Criteria**:
 
-- [ ] Label `agent` applied
-- [ ] Label `ci:normal` applied
-- [ ] Label `bug` applied
+- [ ] PR appears on GitHub.com
+- [ ] Title matches your prepared title
+- [ ] Body matches your prepared description
+- [ ] Labels are applied
+- [ ] Issue is linked
 
-Verify with:
+---
 
-```bash
-gh pr view $PR_NUMBER
-# Should show: Labels: agent, bug, ci:normal
-```
+## Error Handling & Recovery
+
+### "PR was not created automatically"
+
+→ Check GitHub.com to verify branch was pushed (`agent/fix-issue-$ARGUMENTS[0]`)
+→ If branch exists, manually create PR using your prepared title and body
+→ Ensure all required labels are added
+
+### "Description is incomplete or missing evidence"
+
+→ Return to Step 2 and complete all placeholders
+→ Take screenshots/diffs if not already captured
+→ Create new PR or edit existing PR (if already created)
 
 ---
 
 ## Summary
 
-This skill handles three steps:
+This skill prepares everything GitHub Copilot needs:
 
-1. **Push** feature branch (`git push`)
-2. **Create** PR with flow-specific template via `gh pr create`
-3. **Label** PR with `gh pr edit --add-label`
+1. **Prepare PR Title** (clear, descriptive format)
+2. **Prepare PR Body** (base template + flow-specific evidence)
+3. **Copilot handles the rest** (push, create, label)
 
-Success is when: ✅ PR created, ✅ Labeled, ✅ Ready for review.
+Success is when: ✅ PR prepared, ✅ Evidence complete, ✅ Ready for Copilot to open PR.

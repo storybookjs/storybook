@@ -13,7 +13,8 @@ When a user provides a GitHub issue number, you orchestrate the complete bug fix
 1. **Planning**: Understanding the issue, routing to correct verification flow (0-4), creating fix plan
 2. **Implementation**: Writing code, tests, and verification
 3. **Documentation**: Preparing PR evidence and descriptions
-4. **PR Creation**: Opening a pull request with proper templates and labels
+4. **PR Preparation**: Preparing title and body with flow-specific evidence
+5. **PR Creation**: You (GitHub Copilot) then automatically create the PR with proper templates and labels
 
 ## How to Execute
 

@@ -18,7 +18,6 @@ description: Complete workflow to fetch a GitHub issue by number, understand the
 - [ ] Issue has enough detail to reproduce
 - [ ] You have write access to the repository
 - [ ] You are in a clean working directory (no uncommitted changes)
-- [ ] You have `gh` CLI installed and authenticated (`gh auth status` succeeds)
 
 ⚠️ **If any prerequisite fails**: Stop and request clarification or resolve the blocker before proceeding.
 
@@ -33,7 +32,9 @@ Step 2: Implement and Verify Fix (code, test, verify)
          ↓ [MUST PASS: All tests, evidence gathered]
 Step 3: Prepare PR Description (with evidence)
          ↓
-Step 4: Open PR (via /open-pull-request skill)
+Step 4: Prepare PR Content (via /open-pull-request skill)
+         ↓ [Prepares: title, body, evidence]
+Step 5: GitHub Copilot creates PR automatically
          ↓ [Handles: push, PR creation, labels]
          ✅ COMPLETE — PR ready for review
 ```
@@ -142,19 +143,26 @@ Example:
 
 ---
 
-## Step 4: Open Pull Request
+## Step 4: Prepare PR Content
 
-**Action**: Invoke the `/open-pull-request` skill to handle PR creation.
+**Action**: Invoke the `/open-pull-request` skill to prepare the PR title and description.
 
 This skill will:
 
-- Push your feature branch (`agent/fix-issue-$ARGUMENTS[0]`) to GitHub
-- Create a PR with flow-specific description template
-- Add required labels (`agent`, `ci:normal`, `bug`)
+- Prepare PR title in standard format
+- Prepare PR body with base template
+- Add flow-specific evidence section
+- Organize all artifacts for PR creation
+
+GitHub Copilot on GitHub.com will then automatically:
+
+- Push your feature branch
+- Create the PR with your prepared content
+- Add required labels
 
 ### 4a: Documentation Self-Improvement (Do This First!)
 
-**IMPORTANT**: Before creating the PR, reflect on your workflow execution:
+**IMPORTANT**: Before Copilot creates the PR, reflect on your workflow execution:
 
 **Did you encounter any of these issues?**
 
@@ -184,7 +192,7 @@ This skill will:
 
 - [ ] All documentation issues identified during workflow execution are fixed
 - [ ] Documentation improvements committed to feature branch
-- [ ] Ready to proceed with PR creation
+- [ ] Ready to proceed with PR preparation
 
 ---
 
@@ -204,16 +212,34 @@ Example:
 
 **Expected Output from Skill**:
 
-- ✅ PR successfully created
-- ✅ Flow-specific evidence in PR description
-- ✅ All three labels applied
-- ✅ Ready for review
+- ✅ PR title prepared
+- ✅ PR body with evidence prepared
+- ✅ All flow-specific sections included
+- ✅ Ready for Copilot to create PR
+
+**Success Criteria**:
+
+- [ ] PR title is clear and follows format
+- [ ] PR body includes all evidence
+- [ ] Flow-specific section inserted
+- [ ] All placeholders filled in
+- [ ] Ready for GitHub Copilot
+
+---
+
+## Step 5: GitHub Copilot Creates PR
+
+GitHub Copilot on GitHub.com automatically handles:
+
+- ✅ Pushing your feature branch to GitHub
+- ✅ Creating the PR with your prepared title and body
+- ✅ Adding required labels (`agent`, `ci:normal`, `bug`)
 
 **Success Criteria**:
 
 - [ ] PR created and visible on GitHub
-- [ ] Description matches your flow (0/1/2/3/4)
 - [ ] All labels applied
+- [ ] Issue is linked via "Fixes #..."
 - [ ] PR ready for review
 
 ---
@@ -255,11 +281,12 @@ Example:
 
 ## Summary
 
-This skill orchestrates four steps by delegating to specialized sub-skills:
+This skill orchestrates five steps:
 
 1. **Plan** via `/plan-bug-fix` (understand, route, plan)
 2. **Implement & Verify** via `/implement-and-verify-fix` (code, test, verify)
 3. **Document** evidence for PR description
-4. **Self-Improve & Open PR**: Fix any documentation issues encountered, then invoke `/open-pull-request` (push, create, label)
+4. **Prepare PR** via `/open-pull-request` (title, body, evidence)
+5. **Copilot creates PR** automatically (push, create, label)
 
 Success is when: ✅ PR open, ✅ Fix verified, ✅ Tests passing, ✅ Documentation improved (if needed), ✅ Ready for review.

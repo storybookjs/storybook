@@ -107,6 +107,7 @@ export interface SubAPI {
    *
    * @param elementId - The id of the element to focus.
    * @param options - Options for focusing the element.
+   * @param options.forceFocus - Whether to make the element focusable even though it wasn't.
    * @param options.select - Whether to call select() on the element after focusing it.
    * @param options.poll - Whether to poll for the element if it is not immediately available.
    *   Defaults to true. When true, polls every 50ms for up to 500ms.
@@ -114,7 +115,7 @@ export interface SubAPI {
    */
   focusOnUIElement: (
     elementId?: string,
-    options?: boolean | { select?: boolean; poll?: boolean }
+    options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
   ) => boolean | Promise<boolean>;
 }
 
@@ -147,6 +148,7 @@ export const defaultLayoutState: SubState = {
 };
 
 export const focusableUIElements = {
+  addonPanel: 'storybook-panel-region',
   storySearchField: 'storybook-explorer-searchfield',
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',
@@ -356,13 +358,16 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
      */
     focusOnUIElement(
       elementId?: string,
-      options?: boolean | { select?: boolean; poll?: boolean }
+      options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
     ): boolean | Promise<boolean> {
       // See RFC https://github.com/storybookjs/storybook/discussions/32983 for
       // ways to make this API more robust to focus-trap race conditions.
 
-      const { select = false, poll = true } =
-        typeof options === 'boolean' ? { select: options } : (options ?? {});
+      const {
+        forceFocus = false,
+        select = false,
+        poll = true,
+      } = typeof options === 'boolean' ? { select: options } : (options ?? {});
 
       if (!elementId) {
         return false;
@@ -375,7 +380,16 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         }
 
         element.focus();
-        if (element !== document.activeElement) {
+        if (
+          element !== document.activeElement &&
+          forceFocus &&
+          element.getAttribute('tabindex') === null
+        ) {
+          element.setAttribute('tabindex', '-1');
+          element.focus();
+        }
+
+        if (element !== document.activeElement && element.id !== document.activeElement?.id) {
           return false;
         }
 

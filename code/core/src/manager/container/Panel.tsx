@@ -32,7 +32,7 @@ const Panel: FC<any> = (props) => {
         const wasPanelShown = api.getIsPanelShown();
         api.togglePanel();
         if (wasPanelShown) {
-          const result = api.focusOnUIElement(focusableUIElements.showAddonPanel, { poll: false });
+          const result = api.focusOnUIElement(focusableUIElements.showAddonPanel);
           if (result === false) {
             document.body.focus();
           }

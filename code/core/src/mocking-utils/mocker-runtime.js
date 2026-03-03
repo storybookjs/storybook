@@ -72,7 +72,7 @@ function registerModuleMocker(interceptor) {
       },
     },
     (...args) => {
-      return globalThis.__STORYBOOK_MODULE_TEST__.spyOn(...args);
+      return globalThis.__STORYBOOK_MODULE_TEST__.createMockInstance(...args);
     },
     {
       root: '',

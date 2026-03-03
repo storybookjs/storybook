@@ -152,6 +152,44 @@ This skill will:
 - Create a PR with flow-specific description template
 - Add required labels (`agent`, `ci:normal`, `bug`)
 
+### 4a: Documentation Self-Improvement (Do This First!)
+
+**IMPORTANT**: Before creating the PR, reflect on your workflow execution:
+
+**Did you encounter any of these issues?**
+
+- [ ] Instructions in CLAUDE.md were unclear, incomplete, or incorrect
+- [ ] Instructions in any skill file were ambiguous or wrong
+- [ ] You struggled to follow certain steps due to missing information
+- [ ] You discovered better practices or approaches during implementation
+- [ ] Command examples failed or needed adjustments
+- [ ] Prerequisites were missing or incorrect
+
+**If YES to any**: FIX THE DOCUMENTATION NOW before opening the PR.
+
+**Action Steps**:
+
+1. Identify which file needs updating (CLAUDE.md or specific skill in `.claude/skills/`)
+2. Make the fix directly in that file using `replace_string_in_file`
+3. Commit the documentation improvement:
+   ```bash
+   git add CLAUDE.md .claude/skills/
+   git commit -m "Docs: Improve [skill-name] instructions based on workflow execution"
+   ```
+4. Explain in your response: What was wrong? What did you fix? Why will this help next time?
+
+**Rationale**: Each bug fix workflow is an opportunity to improve the skills themselves. By fixing documentation issues immediately, the next agent run will perform better and avoid the same pitfalls.
+
+**Success Criteria**:
+
+- [ ] All documentation issues identified during workflow execution are fixed
+- [ ] Documentation improvements committed to feature branch
+- [ ] Ready to proceed with PR creation
+
+---
+
+### 4b: Invoke Skill
+
 **Invoke with**:
 
 ```
@@ -222,6 +260,6 @@ This skill orchestrates four steps by delegating to specialized sub-skills:
 1. **Plan** via `/plan-bug-fix` (understand, route, plan)
 2. **Implement & Verify** via `/implement-and-verify-fix` (code, test, verify)
 3. **Document** evidence for PR description
-4. **Open PR** using `/open-pull-request` skill (push, create, label)
+4. **Self-Improve & Open PR**: Fix any documentation issues encountered, then invoke `/open-pull-request` (push, create, label)
 
-Success is when: ✅ PR open, ✅ Fix verified, ✅ Tests passing, ✅ Ready for review.
+Success is when: ✅ PR open, ✅ Fix verified, ✅ Tests passing, ✅ Documentation improved (if needed), ✅ Ready for review.

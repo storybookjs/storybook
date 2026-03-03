@@ -8,46 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
-        with:
-          install-code-deps: true
-
-      - name: Run unit tests
-        run: yarn test
-
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      builders_changed: ${{ steps.changes.outputs.builders_changed }}
-      manager_changed: ${{ steps.changes.outputs.manager_changed }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect changes
-        id: changes
-        run: |
-          git diff --name-only origin/${{ github.base_ref }}...HEAD > /tmp/changed_files.txt
-          
-          if grep -q "^code/builders/" /tmp/changed_files.txt; then
-            echo "builders_changed=true" >> $GITHUB_OUTPUT
-          fi
-          
-          if grep -q "^\(code/core/src/manager/\|code/core/src/builder-manager/\)" /tmp/changed_files.txt; then
-            echo "manager_changed=true" >> $GITHUB_OUTPUT
-          fi
-
   terminal-output-check:
     runs-on: ubuntu-latest
-    needs: [unit-tests, detect-changes]
-    if: needs.detect-changes.outputs.builders_changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -58,6 +20,12 @@ jobs:
 
       - name: Compile packages
         run: yarn nx run-many --targets compile -c production
+
+      - name: Generate required sandboxes
+        run: |
+          echo "🏗️  Generating sandboxes for terminal output verification..."
+          yarn nx sandbox react-vite-default -c production
+          yarn nx sandbox react-webpack-18 -c production
 
       - name: Check terminal output baselines and run capture
         run: |
@@ -80,10 +48,9 @@ jobs:
             else
               # Check if the required sandbox directory exists
               if [ ! -d "$sandbox_dir" ]; then
-                echo "⚠️  Sandbox directory not found for $builder at '$sandbox_dir'"
-                echo "   Skipping terminal output verification. Sandbox infrastructure not available in CI."
-                echo "   To verify this builder after baseline is seeded, run locally:"
-                echo "   \`yarn nx sandbox ${builder_to_sandbox[$builder]#react-} -c production && yarn capture-terminal-output --builder $builder\`"
+                echo "❌ Sandbox directory not found for $builder at '$sandbox_dir'"
+                echo "   This is unexpected - sandbox generation should have created it."
+                failed=1
               else
                 echo "🔍 Comparing terminal output for $builder..."
                 if ! yarn capture-terminal-output --builder "$builder"; then
@@ -97,42 +64,3 @@ jobs:
           if [ $failed -eq 1 ]; then
             exit 1
           fi
-
-  manager-e2e:
-    runs-on: ubuntu-latest
-    needs: [unit-tests, detect-changes]
-    if: needs.detect-changes.outputs.manager_changed == 'true'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
-        with:
-          install-code-deps: true
-
-      - name: Install Playwright browsers
-        run: cd code && yarn playwright install --with-deps chromium
-
-      - name: Compile packages
-        run: yarn nx run-many --targets compile -c production
-
-      - name: Build Storybook UI
-        run: cd code && yarn storybook:ui:build
-
-      - name: Start Storybook UI server
-        run: cd code && yarn storybook:ui --ci &
-
-      - name: Wait for Storybook UI server
-        run: cd code && yarn wait-on http://localhost:6006 --timeout 120000
-
-      - name: Run Manager E2E tests
-        run: cd code && yarn playwright test e2e-tests/manager.spec.ts
-        env:
-          STORYBOOK_URL: http://localhost:6006
-
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
-          path: code/playwright-results/

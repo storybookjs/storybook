@@ -2,6 +2,7 @@ import { beforeEach, expect, test, vi } from 'vitest';
 
 import fs from 'node:fs';
 
+import { up } from 'empathic/find';
 import { Tag } from 'storybook/internal/core-server';
 
 import { dedent } from 'ts-dedent';
@@ -25,33 +26,9 @@ const { fileSystem, populateFs } = vi.hoisted(() => {
   return { fileSystem, populateFs };
 });
 
-vi.mock('node:fs', async (importOriginal) => {
-  const original = (await importOriginal()) as typeof fs;
-  return {
-    ...original,
-    default: {
-      ...original,
-      existsSync: (filePath: string) => filePath in fileSystem,
-      readFileSync: (filePath: string, _encoding?: string) => {
-        if (filePath in fileSystem) {
-          return fileSystem[filePath];
-        }
-        throw new Error(`ENOENT: no such file or directory, open '${filePath}'`);
-      },
-    },
-    existsSync: (filePath: string) => filePath in fileSystem,
-    readFileSync: (filePath: string, _encoding?: string) => {
-      if (filePath in fileSystem) {
-        return fileSystem[filePath];
-      }
-      throw new Error(`ENOENT: no such file or directory, open '${filePath}'`);
-    },
-  };
-});
+vi.mock('node:fs', { spy: true });
 
-vi.mock('empathic/find', () => ({
-  up: () => '/app/package.json',
-}));
+vi.mock('empathic/find', { spy: true });
 
 // Dynamic import of the generator after mocks are set up
 const { manifests } = await import('./generator');
@@ -64,6 +41,15 @@ beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   invalidateCache();
   invalidateCompodocCache();
+
+  vi.mocked(fs.existsSync).mockImplementation((filePath) => (filePath as string) in fileSystem);
+  vi.mocked(fs.readFileSync).mockImplementation((filePath, _encoding) => {
+    if ((filePath as string) in fileSystem) {
+      return fileSystem[filePath as string] as any;
+    }
+    throw new Error(`ENOENT: no such file or directory, open '${filePath}'`);
+  });
+  vi.mocked(up).mockReturnValue('/app/package.json');
 });
 
 test('manifests generates components with correct id, name, description, and stories', async () => {

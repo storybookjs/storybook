@@ -99,12 +99,11 @@ describe('loadCompodocJson', () => {
   beforeEach(() => {
     invalidateCompodocCache();
     vi.resetAllMocks();
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(sampleCompodocJson));
   });
 
   it('should load and parse documentation.json from the workspace root', () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(sampleCompodocJson));
-
     const result = loadCompodocJson('/my/workspace');
 
     expect(fs.existsSync).toHaveBeenCalledWith(path.join('/my/workspace', 'documentation.json'));
@@ -122,7 +121,6 @@ describe('loadCompodocJson', () => {
   });
 
   it('should return null when JSON is invalid', () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue('not valid json');
 
     const result = loadCompodocJson('/my/workspace');
@@ -131,9 +129,6 @@ describe('loadCompodocJson', () => {
   });
 
   it('should cache the result after first load', () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(sampleCompodocJson));
-
     const result1 = loadCompodocJson('/my/workspace');
     const result2 = loadCompodocJson('/my/workspace');
 
@@ -143,9 +138,6 @@ describe('loadCompodocJson', () => {
   });
 
   it('should reload after cache invalidation', () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(sampleCompodocJson));
-
     loadCompodocJson('/my/workspace');
     expect(fs.readFileSync).toHaveBeenCalledTimes(1);
 

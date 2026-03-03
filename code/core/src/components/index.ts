@@ -121,18 +121,8 @@ export { Loader } from './components/Loader/Loader.tsx';
 export { ProgressSpinner } from './components/ProgressSpinner/ProgressSpinner.tsx';
 
 // Live Region
-export {
-  LiveRegion,
-  announce,
-  clearAnnouncer,
-  destroyAnnouncer,
-  useAnnouncer,
-} from './components/LiveRegion/LiveRegion';
-export type {
-  LiveRegionProps,
-  Politeness,
-  UseAnnouncerOptions,
-} from './components/LiveRegion/LiveRegion';
+export { announce, clearAnnouncer, destroyAnnouncer } from './components/LiveRegion/LiveRegion';
+export type { Politeness } from './components/LiveRegion/LiveRegion';
 export { toHaveLiveRegion } from './components/LiveRegion/toHaveLiveRegion';
 export type { LiveRegionMatcherOptions } from './components/LiveRegion/toHaveLiveRegion';
 

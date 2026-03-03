@@ -1,111 +1,83 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import React from 'react';
-
-import { LiveRegion } from './LiveRegion';
 import { toHaveLiveRegion } from './toHaveLiveRegion';
 
 expect.extend({ toHaveLiveRegion });
 
-describe('LiveRegion', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
-  it('renders with role="status" and aria-live="polite" by default', () => {
-    render(<LiveRegion>Hello</LiveRegion>);
-    const el = screen.getByRole('status');
-    expect(el).toBeDefined();
-    expect(el.getAttribute('aria-live')).toBe('polite');
-    expect(el.getAttribute('aria-atomic')).toBe('true');
-    expect(el.textContent).toBe('Hello');
-  });
-
-  it('renders with aria-live="assertive" when politeness is assertive', () => {
-    render(<LiveRegion politeness="assertive">Alert!</LiveRegion>);
-    const el = screen.getByRole('status');
-    expect(el.getAttribute('aria-live')).toBe('assertive');
-  });
-
-  it('applies sb-sr-only class when visuallyHidden is true (default)', () => {
-    render(<LiveRegion>Hidden text</LiveRegion>);
-    const el = screen.getByRole('status');
-    expect(el.className).toContain('sb-sr-only');
-  });
-
-  it('does not apply sb-sr-only class when visuallyHidden is false', () => {
-    render(<LiveRegion visuallyHidden={false}>Visible text</LiveRegion>);
-    const el = screen.getByRole('status');
-    expect(el.className).not.toContain('sb-sr-only');
-  });
-
-  it('merges className with sb-sr-only when visuallyHidden is true', () => {
-    render(<LiveRegion className="custom">Content</LiveRegion>);
-    const el = screen.getByRole('status');
-    expect(el.className).toContain('sb-sr-only');
-    expect(el.className).toContain('custom');
-  });
-
-  it('passes through additional HTML attributes', () => {
-    render(
-      <LiveRegion id="my-region" data-testid="live">
-        Content
-      </LiveRegion>
-    );
-    const el = screen.getByTestId('live');
-    expect(el.id).toBe('my-region');
-  });
-
-  it('renders children correctly', () => {
-    render(
-      <LiveRegion visuallyHidden={false}>
-        <span>Child element</span>
-      </LiveRegion>
-    );
-    expect(screen.getByText('Child element')).toBeDefined();
-  });
-});
-
 describe('toHaveLiveRegion', () => {
   afterEach(() => {
-    cleanup();
+    document.body.innerHTML = '';
   });
 
-  it('passes when a matching live region is found', () => {
-    const { container } = render(<LiveRegion visuallyHidden={false}>Tests passed</LiveRegion>);
+  it('passes when a matching live region with aria-live is found', () => {
+    const container = document.createElement('div');
+    container.innerHTML = '<div aria-live="polite">Tests passed</div>';
     expect(container).toHaveLiveRegion({ text: 'Tests passed' });
   });
 
+  it('passes when a matching live region with role="status" is found', () => {
+    const container = document.createElement('div');
+    container.innerHTML = '<div role="status">Tests passed</div>';
+    expect(container).toHaveLiveRegion({ text: 'Tests passed' });
+  });
+
+  it('passes when a matching live region with role="alert" is found', () => {
+    const container = document.createElement('div');
+    container.innerHTML = '<div role="alert">Critical error</div>';
+    expect(container).toHaveLiveRegion({ text: 'Critical error' });
+  });
+
+  it('passes when a matching live region with role="log" is found', () => {
+    const container = document.createElement('div');
+    container.innerHTML = '<div role="log">Log entry</div>';
+    expect(container).toHaveLiveRegion({ text: 'Log entry' });
+  });
+
   it('fails when no matching live region is found', () => {
-    const { container } = render(<LiveRegion visuallyHidden={false}>Tests passed</LiveRegion>);
+    const container = document.createElement('div');
+    container.innerHTML = '<div aria-live="polite">Tests passed</div>';
     expect(() => {
       expect(container).toHaveLiveRegion({ text: 'Tests failed' });
     }).toThrow();
   });
 
   it('matches with RegExp', () => {
-    const { container } = render(
-      <LiveRegion visuallyHidden={false}>3 tests passed, 0 failed</LiveRegion>
-    );
+    const container = document.createElement('div');
+    container.innerHTML = '<div aria-live="polite">3 tests passed, 0 failed</div>';
     expect(container).toHaveLiveRegion({ text: /\d+ tests passed/ });
   });
 
   it('filters by politeness level', () => {
-    const { container } = render(
-      <LiveRegion politeness="assertive" visuallyHidden={false}>
-        Error occurred
-      </LiveRegion>
-    );
+    const container = document.createElement('div');
+    container.innerHTML = '<div aria-live="assertive">Error occurred</div>';
     expect(container).toHaveLiveRegion({ text: 'Error occurred', level: 'assertive' });
     expect(() => {
       expect(container).toHaveLiveRegion({ text: 'Error occurred', level: 'polite' });
     }).toThrow();
   });
 
+  it('infers polite level from role="status"', () => {
+    const container = document.createElement('div');
+    container.innerHTML = '<div role="status">Status update</div>';
+    expect(container).toHaveLiveRegion({ text: 'Status update', level: 'polite' });
+    expect(() => {
+      expect(container).toHaveLiveRegion({ text: 'Status update', level: 'assertive' });
+    }).toThrow();
+  });
+
+  it('infers assertive level from role="alert"', () => {
+    const container = document.createElement('div');
+    container.innerHTML = '<div role="alert">Alert message</div>';
+    expect(container).toHaveLiveRegion({ text: 'Alert message', level: 'assertive' });
+    expect(() => {
+      expect(container).toHaveLiveRegion({ text: 'Alert message', level: 'polite' });
+    }).toThrow();
+  });
+
   it('works with .not modifier', () => {
-    const { container } = render(<LiveRegion visuallyHidden={false}>Tests passed</LiveRegion>);
+    const container = document.createElement('div');
+    container.innerHTML = '<div aria-live="polite">Tests passed</div>';
     expect(container).not.toHaveLiveRegion({ text: 'Tests failed' });
   });
 });

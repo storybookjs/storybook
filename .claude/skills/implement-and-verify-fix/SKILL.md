@@ -106,7 +106,7 @@ cd code && yarn test
 
 ```bash
 yarn prettier --write <changed-files>
-yarn --cwd code lint:js:cmd <changed-files> --fix
+yarn --cwd=./code lint:js:cmd <changed-files> --fix (for lint:js:cmd, the root of files is `code/`, so adjust paths accordingly)
 ```
 
 Then re-run tests to ensure linting didn't break anything:

@@ -1,7 +1,6 @@
 ---
-description: Verification workflow for builder bug fixes (frontend output and Node.js terminal output)
-globs: 'code/builders/**'
-alwaysApply: false
+name: builder-bug-workflow
+description: Complete workflows for verifying builder bug fixes in code/builders/**. Includes Flow 2 (frontend output) and Flow 3 (terminal output) with sandbox requirements, hash normalization, and snapshot management.
 ---
 
 # Builder Bug Verification Workflow
@@ -15,22 +14,22 @@ When fixing bugs in `code/builders/**`, determine whether the change affects bro
 
 ---
 
-## Flow 2 — Builder Bug Verification (Frontend Output)
+# Flow 2 — Builder Bug Verification (Frontend Output)
 
 Follow this workflow if your builder change affects browser-visible output.
 
-### Step 1: Create or Update a Template Story
+## Step 1: Create or Update a Template Story
 
 Create or update a story in the sandbox that demonstrates the affected behaviour and confirms the fix.
 
 For `builder-vite` verification, place the template story in `code/renderers/react/template/stories/` (it will be automatically symlinked into `react-vite-default-ts` at sandbox generation time).
 
-### Step 2: Select the Appropriate Sandbox Template
+## Step 2: Select the Appropriate Sandbox Template
 
 - **`builder-vite` changes**: Use `react-vite/default-ts`
 - **`builder-webpack5` changes**: Use `react-webpack/18-ts`
 
-### Step 3: Generate and Start the Sandbox
+## Step 3: Generate and Start the Sandbox
 
 Generate the sandbox environment:
 
@@ -53,7 +52,7 @@ cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci
 
 Wait for the port to be ready (check console for "Storybook started").
 
-### Step 4: Capture Visual Evidence
+## Step 4: Capture Visual Evidence
 
 Use the Browser MCP to:
 
@@ -63,7 +62,7 @@ Use the Browser MCP to:
 
 Attach the screenshot to your PR description.
 
-### Step 5: Fallback Path (if bug persists)
+## Step 5: Fallback Path (if bug persists)
 
 If the browser output still shows the bug:
 
@@ -77,11 +76,11 @@ If the browser output still shows the bug:
 
 ---
 
-## Flow 3 — Builder Bug Verification (Terminal Output)
+# Flow 3 — Builder Bug Verification (Terminal Output)
 
 Follow this workflow if your builder change affects Node.js stdout/stderr output (console logs, build progress, error messages, etc.).
 
-### Step 1: Verify Sandbox Availability
+## Step 1: Verify Sandbox Availability
 
 The terminal output capture requires the sandbox directory to exist for your builder:
 
@@ -94,7 +93,7 @@ If either directory is missing, generate it:
 yarn nx sandbox <template> -c production
 ```
 
-### Step 2: Run the Capture Script
+## Step 2: Run the Capture Script
 
 Run the terminal output capture and comparison:
 
@@ -104,7 +103,7 @@ jiti scripts/capture-terminal-output.ts --builder <builder-name>
 
 The output is compared against `scripts/terminal-output-snapshots/<builder-name>-build.snap.txt`.
 
-### Step 3: Review and Commit the Baseline
+## Step 3: Review and Commit the Baseline
 
 **If no baseline exists** (all snapshots start as placeholders):
 
@@ -122,7 +121,7 @@ The output is compared against `scripts/terminal-output-snapshots/<builder-name>
 - Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update` to commit the new baseline
 - Summarize the changes in your PR description
 
-### Step 4: Understand Hash Normalization
+## Step 4: Understand Hash Normalization
 
 Build tools generate content hashes in filenames to enable long-term caching. These hashes change whenever file content changes. To keep snapshots stable and focused on structural changes, the capture script automatically normalizes hashes:
 
@@ -135,7 +134,7 @@ Build tools generate content hashes in filenames to enable long-term caching. Th
 - ✓ Version numbers like `v10.3.0-alpha.12` are preserved (not normalized)
 - ✓ Build messages and paths are normalized where present
 
-### Step 5: Handle Noisy or Unexpected Diffs
+## Step 5: Handle Noisy or Unexpected Diffs
 
 If the diff is large or unexpected:
 
@@ -144,7 +143,7 @@ If the diff is large or unexpected:
 3. Iterate on your fix until the diff is clean and focused
 4. Run the capture script again: `jiti scripts/capture-terminal-output.ts --builder <builder-name>`
 
-### Step 6: Commit and Open PR
+## Step 6: Commit and Open PR
 
 - Commit the updated snapshot file
 - Include a summary of what terminal output changed in the PR description

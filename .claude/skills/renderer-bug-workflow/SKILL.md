@@ -1,10 +1,9 @@
 ---
-description: Verification workflow for renderer bug fixes
-globs: 'code/renderers/**'
-alwaysApply: false
+name: renderer-bug-workflow
+description: Complete workflow for verifying renderer bug fixes in code/renderers/**. Includes template story creation, sandbox generation, visual verification, and fallback procedures.
 ---
 
-# Renderer Bug Verification Workflow
+# Renderer Bug Verification Workflow (Flow 1)
 
 When fixing bugs in `code/renderers/**`, follow this workflow to verify the fix with visual evidence.
 
@@ -12,7 +11,7 @@ When fixing bugs in `code/renderers/**`, follow this workflow to verify the fix 
 
 Create or update a story in the affected renderer's template stories directory that demonstrates the bug and confirms the fix:
 
-- Location: `code/renderers/<renderer>/template/stories/`
+- **Location**: `code/renderers/<renderer>/template/stories/`
 - The story should clearly exercise the broken behaviour and show that it is resolved.
 
 **Reference example**: See `code/renderers/react/template/stories/copilot-verification-example.stories.tsx` for a minimal example of what a template story should look like for Copilot verification purposes.
@@ -48,6 +47,8 @@ In a background terminal session, start the sandbox dev server and wait for it t
 cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci
 ```
 
+### Important Notes
+
 - **Startup time**: The sandbox dev server typically takes **30–90 seconds** on first cold start; wait for the console to emit `"Storybook X.Y started"` before opening the browser.
 - **Known failure — port in use**: If port 6006 is occupied, kill the incumbent process:
   ```bash
@@ -67,7 +68,11 @@ Use the Browser MCP to:
 
 If the bug is resolved in the screenshot, attach it to your PR description.
 
-**Story URL pattern**: The story URL follows the pattern `http://localhost:6006/?path=/story/<title-prefix>-<story-name>--<export-name>`. For example, a story exported as `Primary` in `code/renderers/react/template/stories/visual-render-verification.stories.tsx` would be at `http://localhost:6006/?path=/story/renderers-react-visual-render-verification--primary`.
+### Story URL Pattern
+
+The story URL follows the pattern `http://localhost:6006/?path=/story/<title-prefix>-<story-name>--<export-name>`.
+
+For example, a story exported as `Primary` in `code/renderers/react/template/stories/visual-render-verification.stories.tsx` would be at `http://localhost:6006/?path=/story/renderers-react-visual-render-verification--primary`.
 
 ## Step 6: Fallback Path (if bug persists)
 

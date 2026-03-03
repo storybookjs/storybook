@@ -72,7 +72,7 @@ Use the Browser MCP to:
 - ✅ The story renders without errors or warnings
 - ✅ Visual output matches expected behavior described in the issue
 
-If the bug is resolved in the screenshot, attach it to your PR description.
+If the bug is resolved in the screenshot, save it to the verification folder for git tracking.
 
 **Evidence quality checklist**:
 
@@ -80,6 +80,28 @@ If the bug is resolved in the screenshot, attach it to your PR description.
 - [ ] The fixed behavior is visually distinct from what the bug report showed
 - [ ] No error messages or stack traces in the DevTools console
 - [ ] The screenshot is clear enough for reviewers to verify the fix
+
+### Save Screenshot to Verification Folder
+
+After taking the screenshot, move it to the repository's verification folder:
+
+```bash
+# Create the verification folder structure if it doesn't exist
+mkdir -p verification/screenshots/flow-1/issue-$ARGUMENTS[0]
+
+# Move/copy your screenshot from /tmp or temp location
+# Example: if screenshot is at /tmp/screenshot-before.png
+cp /tmp/screenshot-*.png verification/screenshots/flow-1/issue-$ARGUMENTS[0]/
+
+# Verify files are in place
+ls -la verification/screenshots/flow-1/issue-$ARGUMENTS[0]/
+```
+
+**Success Criteria**:
+
+- [ ] Screenshots saved to `verification/screenshots/flow-1/issue-$ARGUMENTS[0]/`
+- [ ] Files are named descriptively (e.g., `before-fix.png`, `after-fix.png`)
+- [ ] Ready to be committed with git
 
 ### Story URL Pattern
 

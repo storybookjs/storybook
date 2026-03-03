@@ -40,6 +40,8 @@ Step 4: Commit Changes
          ↓
 Step 5: Run Verification Workflow (flow-specific)
          ↓ [MUST PASS: Verification evidence gathered]
+Step 6: Commit Verification Artifacts
+         ↓ [Screenshots, tests, etc. added to git]
          ✅ COMPLETE — Ready for PR
 ```
 
@@ -185,14 +187,68 @@ IF verification fails:
 
 ---
 
+## Step 6: Commit Verification Artifacts
+
+**Action**: Add verification screenshots and other artifacts to git and commit them together.
+
+### 6a: Check for Verification Artifacts
+
+After completing Step 5, check if any artifacts were generated in the `verification/` folder:
+
+```bash
+# List all verification artifacts
+find verification/ -type f 2>/dev/null || echo "No verification folder found"
+
+# Typical artifacts by flow:
+# Flow 1: verification/screenshots/flow-1/issue-$ARGUMENTS[0]/*.png
+# Flow 2: verification/screenshots/flow-2/issue-$ARGUMENTS[0]/*.png
+# Flow 3: verification/screenshots/flow-3/issue-$ARGUMENTS[0]/*.png
+# Flow 4: verification/screenshots/flow-4/issue-$ARGUMENTS[0]/*.png
+```
+
+### 6b: Stage and Commit Artifacts
+
+If artifacts exist, commit them:
+
+```bash
+# Add all verification artifacts
+git add verification/
+
+# Commit with descriptive message
+git commit -m "Test(verif): Issue #$ARGUMENTS[0] — Verification evidence (Flow [0/1/2/3/4])"
+```
+
+Example:
+
+```bash
+git commit -m "Test(verif): Issue #12345 — Verification evidence (Flow 2: Browser output)"
+```
+
+**Success Criteria**:
+
+- [ ] All verification artifacts committed to git
+- [ ] `git log --oneline` shows the verification commit
+- [ ] Both code fix and verification evidence are tracked in history
+
+### Error Recovery
+
+IF no verification artifacts found:
+
+→ This is expected for **Flow 0** (logic-only fixes with no screenshots)
+→ Skip this step if verification workflow didn't generate artifacts
+→ Proceed to next step
+
+---
+
 ## Summary
 
-This skill implements and verifies a fix in 5 steps:
+This skill implements and verifies a fix in 6 steps:
 
 1. **Code** changes (Step 1)
 2. **Test** implementation and execution (Step 2, includes new tests + full test suite)
 3. **Lint** and format (Step 3)
-4. **Commit** changes (Step 4)
+4. **Commit** code changes (Step 4)
 5. **Verify** using flow-specific workflow (Step 5)
+6. **Commit** verification artifacts (Step 6)
 
-Output: ✅ Tested code, ✅ Committed changes, ✅ Verification evidence gathered, ✅ Ready for PR.
+Output: ✅ Tested code, ✅ Committed changes, ✅ Verification evidence committed, ✅ Ready for PR.

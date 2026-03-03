@@ -124,12 +124,13 @@ Root cause was purely algorithmic/logic, with no visible UI impact.
 - Template story created: `code/renderers/<renderer>/template/stories/fix-story.stories.tsx`
 - Sandbox: `<template-name>` (generated at `../storybook-sandboxes/<template-name>`)
 - Story verified at: `http://localhost:6006/?path=/story/<story-path>`
+- Evidence: `verification/screenshots/flow-1/issue-$ARGUMENTS[0]/`
 
 **Before Fix:**
-[Screenshot showing broken renderer output]
+![Before fix](verification/screenshots/flow-1/issue-$ARGUMENTS[0]/before-fix.png)
 
 **After Fix:**
-[Screenshot showing fixed renderer output]
+![After fix](verification/screenshots/flow-1/issue-$ARGUMENTS[0]/after-fix.png)
 ````
 
 #### **Flow 2** (Builder Frontend Output):
@@ -139,12 +140,13 @@ Root cause was purely algorithmic/logic, with no visible UI impact.
 
 - Sandbox: `<template-name>` (generated at `../storybook-sandboxes/<template-name>`)
 - Built output verified in browser
+- Evidence: `verification/screenshots/flow-2/issue-$ARGUMENTS[0]/`
 
 **Browser output before fix:**
-[Screenshot showing broken HTML/CSS/styling]
+![Before fix](verification/screenshots/flow-2/issue-$ARGUMENTS[0]/before-fix.png)
 
 **Browser output after fix:**
-[Screenshot showing correct HTML/CSS/styling]
+![After fix](verification/screenshots/flow-2/issue-$ARGUMENTS[0]/after-fix.png)
 ```
 
 #### **Flow 3** (Builder Terminal Output):
@@ -175,14 +177,15 @@ Terminal output now matches expected format without build-specific noise.
 - E2E test: `code/e2e-tests/manager.spec.ts`
 - Test name: `"<descriptive test name>"`
 - Status: ✅ Passing
+- Evidence: `verification/screenshots/flow-4/issue-$ARGUMENTS[0]/`
 
 **Story setup**: `code/core/template-stories/` or `code/addons/<addon>/template-stories/`
 
 **Before fix (expected to fail):**
-[Screenshot of Manager UI showing broken behavior]
+![Before fix](verification/screenshots/flow-4/issue-$ARGUMENTS[0]/before-fix.png)
 
 **After fix (test now passes):**
-[Screenshot of Manager UI showing correct behavior]
+![After fix](verification/screenshots/flow-4/issue-$ARGUMENTS[0]/after-fix.png)
 ```
 
 ### 2c: Complete Your PR Description

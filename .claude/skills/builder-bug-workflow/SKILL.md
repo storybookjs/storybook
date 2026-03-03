@@ -60,7 +60,26 @@ Use the Browser MCP to:
 2. Navigate to your template story
 3. Take a screenshot showing the fix works correctly
 
-Attach the screenshot to your PR description.
+### Save Screenshot to Verification Folder
+
+After taking the screenshot, move it to the repository's verification folder:
+
+```bash
+# Create the verification folder structure if it doesn't exist
+mkdir -p verification/screenshots/flow-2/issue-$ARGUMENTS[0]
+
+# Move/copy your screenshot from /tmp or temp location
+cp /tmp/screenshot-*.png verification/screenshots/flow-2/issue-$ARGUMENTS[0]/
+
+# Verify files are in place
+ls -la verification/screenshots/flow-2/issue-$ARGUMENTS[0]/
+```
+
+**Success Criteria**:
+
+- [ ] Screenshots saved to `verification/screenshots/flow-2/issue-$ARGUMENTS[0]/`
+- [ ] Files are named descriptively (e.g., `before-fix.png`, `after-fix.png`)
+- [ ] Ready to be committed with git
 
 ## Step 5: Fallback Path (if bug persists)
 

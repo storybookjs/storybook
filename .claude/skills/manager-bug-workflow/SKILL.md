@@ -178,6 +178,28 @@ Use the Browser MCP to:
 2. Interact with the affected area of the Manager UI (Controls panel, sidebar, etc.)
 3. Take a screenshot (ideally by using ChromeDev MCP) showing the fix works correctly
 
+### Save Screenshot to Verification Folder
+
+After taking the screenshot, move it to the repository's verification folder:
+
+```bash
+# Create the verification folder structure if it doesn't exist
+mkdir -p verification/screenshots/flow-4/issue-$ARGUMENTS[0]
+
+# Move/copy your screenshot from /tmp or temp location
+# Example: if screenshot is at /tmp/screenshot.png
+cp /tmp/screenshot-*.png verification/screenshots/flow-4/issue-$ARGUMENTS[0]/
+
+# Verify files are in place
+ls -la verification/screenshots/flow-4/issue-$ARGUMENTS[0]/
+```
+
+**Success Criteria**:
+
+- [ ] Screenshots saved to `verification/screenshots/flow-4/issue-$ARGUMENTS[0]/`
+- [ ] Files are named descriptively (e.g., `before-fix.png`, `after-fix.png`)
+- [ ] Ready to be committed with git
+
 **What a "passing" screenshot shows**:
 
 - ✅ The Manager UI feature (Controls, Actions, sidebar, etc.) is functioning as expected

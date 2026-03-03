@@ -13,7 +13,7 @@ import {
 import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
-import { ComponentMetaManager } from './checker';
+import type { ComponentMetaManager } from './checker';
 import type { ComponentDoc } from './componentMetaExtractor';
 import { getCodeSnippet } from './generateCodeSnippet';
 import {
@@ -51,6 +51,7 @@ interface ReactComponentManifest extends ComponentManifest {
 const managerWarmup: Promise<ComponentMetaManager | null> = (async () => {
   try {
     const ts = await import('typescript');
+    const { ComponentMetaManager } = await import('./checker');
     const manager = new ComponentMetaManager(ts);
 
     // Clean up TS LanguageService instances + watchers on process exit.

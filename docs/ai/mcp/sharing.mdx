@@ -1,0 +1,87 @@
+---
+title: Sharing your MCP server
+hideRendererSelector: true
+sidebar:
+  order: 3
+  title: Sharing
+---
+
+<If notRenderer={['react']}>
+  
+<Callout variant="info">
+  While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the manifest and MCP server) are currently only supported for [React](?renderer=react) projects.
+</Callout>
+
+</If>
+{/* End non-supported renderers */}
+
+<If renderer={['react']}>
+
+<Callout variant="warning" icon="🧪">
+  This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+</Callout>
+
+Just as [publishing your Storybook](../../sharing/publish-storybook.mdx) can help your team work more effectively, sharing your MCP server can enable your team to share the benefits of AI-assisted development. There are two different ways you can share your MCP server.
+
+## Automatic publishing with Chromatic
+
+The easiest way to share your MCP server is to [publish your Storybook with Chromatic](../../sharing/publish-storybook.mdx#publish-storybook-with-chromatic), which will [automatically publish your MCP server](https://chromatic.com/docs/mcp/) as well. If your Storybook is private, your MCP server will be private as well, and only accessible to those you invite to your Chromatic project. If your Storybook is public, your MCP server will be public as well, and accessible to anyone with the URL.
+
+Once published, you can share the [MCP server URL](https://chromatic.com/docs/mcp/#grab-your-mcp-server-url) with your team or community, and they can configure their agent to use that URL to access it.
+
+By publishing with Chromatic, you can be sure that your MCP server is always up-to-date with your latest Storybook, it's safeguarded by UI tests, and you don't have to worry about hosting or maintaining it yourself.
+
+## Self-hosting with `@storybook/mcp`
+
+If you prefer to have full control over your MCP server, you can choose to self-host it. This approach allows you to manage the server's infrastructure, security, and updates according to your team's requirements. You will need to ensure that your MCP server is accessible to your team or community and that it is properly maintained.
+
+We provide a package, `@storybook/mcp`, which is a library that creates a [`tmcp`-based](https://github.com/paoloricciuti/tmcp/) MCP server exposing Storybook component/docs knowledge from [manifests](../manifests.mdx).
+
+The server exposes three tools:
+
+- `list-all-documentation`
+- `get-documentation`
+- `get-documentation-for-story`
+
+### Prerequisites
+
+- Node.js 20+
+- A manifest source containing:
+  - `components.json` (required)
+  - `docs.json` (optional)
+
+### API
+
+The full API for `@storybook/mcp` is documented in the [package's repository](https://github.com/storybookjs/mcp/blob/main/self-hosting.md).
+
+### Example implementation
+
+You can reference [self-hosting patterns](https://github.com/storybookjs/mcp/tree/main/apps/self-host-mcp) for both a Node.js process and a Netlify Function.
+
+#### Minimal implementation
+
+This is the minimal implementation of a server using `@storybook/mcp`:
+
+```ts title="server.ts"
+import { createStorybookMcpHandler } from '@storybook/mcp';
+
+const storybookMcpHandler = await createStorybookMcpHandler();
+
+export async function handleRequest(request: Request): Promise<Response> {
+	if (new URL(request.url).pathname === '/mcp') {
+		return storybookMcpHandler(request);
+	}
+
+	return new Response('Not found', { status: 404 });
+}
+```
+
+**More AI resources**
+
+- [MCP server overview](./overview.mdx)
+- [MCP server API](./api.mdx)
+- [Best practices for using Storybook with AI](../best-practices.mdx)
+- [Manifests](../manifests.mdx)
+
+</If>
+{/* End supported renderers */}

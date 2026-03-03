@@ -1,0 +1,67 @@
+---
+title: Best practices for using Storybook with AI
+hideRendererSelector: true
+sidebar:
+  order: 2
+  title: Best practices
+---
+
+<If notRenderer={['react']}>
+  
+<Callout variant="info">
+  While they are in [preview](../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the manifest and MCP server) are currently only supported for [React](?renderer=react) projects.
+</Callout>
+
+</If>
+{/* End non-supported renderers */}
+
+<If renderer={['react']}>
+
+<Callout variant="warning" icon="🧪">
+  This is a [**preview**](../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+</Callout>
+
+Use Storybook together with an AI agent effectively by following these best practices.
+
+## Documenting your components
+
+To re-use your components effectively, agents depend on how well you document their purpose, usages, and API. There are a few key aspects that are well worth taking the time to document (ask your agent to help!). To provide these details, you can use [JSDoc comments](https://jsdoc.app/about-getting-started) in your code, which Storybook will automatically extract and include in the generated [manifest](./manifests.mdx) for the agent.
+
+Of course, with [Autodocs](../writing-docs/autodocs.mdx), any documentation efforts you make will help human developers, too!
+
+### Component descriptions
+
+Help the agent understand what a component should be used for by providing a description as a JSDoc comment above the meta (or default export) in the stories file:
+
+<CodeSnippets path="component-description-on-meta.md" />
+
+You can use Markdown syntax in your description to add formatting or links.
+
+Alternatively, you can apply the same content with a JSDoc comment above the component export or via `parameters.docs.description.component` in the meta.
+
+### Story descriptions
+
+Similarly, you can provide descriptions for each story, which serve as usage examples for the agent. Don't just repeat what the story is demonstrating; describe _why_ you would use whatever is demonstrated.
+
+<CodeSnippets path="story-description.md" />
+
+### Prop descriptions
+
+It's also helpful to provide descriptions for your component's props in the JSDoc comments in your component code, as agents will use these to understand how to use the component effectively.
+
+```ts title="Button.tsx"
+export interface ButtonProps {
+  /** The icon to render before the button text */
+  icon?: ReactNode;
+}
+```
+
+**More AI resources**
+
+- [MCP server overview](./mcp/overview.mdx)
+- [MCP server API](./mcp/api.mdx)
+- [Sharing your MCP server](./mcp/sharing.mdx)
+- [Manifests](./manifests.mdx)
+
+</If>
+{/* End supported renderers */}

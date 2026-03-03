@@ -320,6 +320,7 @@ export async function buildDevStandalone(
         name,
         address: localAddress,
         networkAddress,
+        allowedHosts,
         managerTotalTime,
         previewTotalTime,
       });

@@ -69,13 +69,13 @@ This skill will:
 **Invoke with**:
 
 ```
-/implement-and-verify-fix [issue-number]
+/implement-and-verify-fix <information-from-plan-bug-fix>
 ```
 
 Example:
 
 ```
-/implement-and-verify-fix 12345
+/implement-and-verify-fix issue=12345 flow=2 plan=... (pass necessary info from your fix plan)
 ```
 
 **Expected Output from Skill**:

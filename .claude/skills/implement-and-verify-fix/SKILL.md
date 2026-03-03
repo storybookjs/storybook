@@ -7,26 +7,6 @@ description: Implement code changes following a fix plan, run tests, and verify 
 
 **What this skill does**: Take a completed fix plan from `/plan-bug-fix` and implement it, test it, verify it works, and gather evidence.
 
-## Input & Prerequisites
-
-**Required Inputs**:
-
-- Issue number as `$ARGUMENTS[0]` (format: `12345`)
-- Completed fix plan from `/plan-bug-fix` skill
-- Verification flow determined (0/1/2/3/4)
-- Feature branch created: `agent/fix-issue-$ARGUMENTS[0]` (done in `/plan-bug-fix` Step 3)
-
-**Prerequisite Checks**:
-
-- [ ] Fix plan is clear and documented
-- [ ] Verification flow (0-4) is confirmed
-- [ ] You are currently on feature branch: `git branch` shows `agent/fix-issue-$ARGUMENTS[0]`
-- [ ] All uncommitted changes in working directory are accounted for (stashed or safe)
-
-⚠️ **If any prerequisite fails**: Return to `/plan-bug-fix` skill first.
-
----
-
 ## Workflow Overview
 
 ```

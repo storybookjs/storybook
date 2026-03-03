@@ -50,9 +50,19 @@ function normalizeOutput(raw: string, rootDir: string): string {
         /\b(?:built in\s*\d+(?:\.\d+)?\s*(?:ms|s)|done in\s*\d+(?:\.\d+)?\s*(?:ms|s)|in\s*\d+(?:\.\d+)?\s*ms)\b/gi,
         'built in <DURATION>'
       )
-      // Normalize content hashes in filenames within asset paths only
-      // Only matches patterns like: storybook-static/assets/filename-<HASH>.ext
-      .replace(/(\/assets\/[^/]*)-[\w-]{6,}(?=\.[a-z]{2,4}\b)/gi, '$1-<HASH>')
+      // Normalize chunk hashes in bundle filenames (e.g., "8609.cbfa8718.iframe.bundle.js" -> "<CHUNK>.<HASH>.iframe.bundle.js")
+      .replace(/\b(\d+)\.[a-f0-9]{8}\.iframe\.bundle\.js\b/g, '<CHUNK>.<HASH>.iframe.bundle.js')
+      // Normalize hashes in static media files (e.g., "addon-library.7a58d2cb.png" -> "addon-library.<HASH>.png")
+      .replace(/(static\/media\/[\w-]+)\.[a-f0-9]{8}\.(\w+)/g, '$1.<HASH>.$2')
+      // Normalize any remaining hashes in main bundle files (e.g., "main.869457cc.iframe.bundle.js" -> "main.<HASH>.iframe.bundle.js")
+      .replace(
+        /\b(main|runtime~main)\.[a-f0-9]{8}\.iframe\.bundle\.js\b/g,
+        '$1.<HASH>.iframe.bundle.js'
+      )
+      // Normalize file sizes (e.g., "(456 KiB)" or "(1.83 MiB)" -> "(<SIZE>)")
+      .replace(/\(\d+(?:\.\d+)?\s*(?:KiB|MiB|GiB|KB|MB|GB|B)\)/g, '(<SIZE>)')
+      // Normalize size limit values in warning messages (e.g., "244 KiB" -> "<SIZE>")
+      .replace(/\b\d+(?:\.\d+)?\s*(?:KiB|MiB|GiB|KB|MB|GB|B)\b/g, '<SIZE>')
       .replace(/\bheap used:\s*\d+(?:\.\d+)?\s*(?:kB|KB|MB|GB)\b/gi, 'heap used: <MEMORY>')
       .replace(ansiRegex(), '')
       .replace(/\r\n/g, '\n')

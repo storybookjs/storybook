@@ -31,11 +31,9 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
 
     return dedent`
     if (import.meta.hot) {
-      import.meta.hot.on('vite:afterUpdate', () => {
-        window.__STORYBOOK_PREVIEW__.channel.emit('${STORY_HOT_UPDATED}');
-      });
-
       import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
+        // Cancel any running play function before patching in the new importFn
+        window.__STORYBOOK_PREVIEW__.channel.emit('${STORY_HOT_UPDATED}');
         // importFn has changed so we need to patch the new one in
         window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
       });

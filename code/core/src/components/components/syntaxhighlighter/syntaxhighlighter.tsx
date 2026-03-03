@@ -91,7 +91,7 @@ const Wrapper = styled.div<WrapperProps>(
 );
 
 const UnstyledScroller = ({ children, className }: ScrollAreaProps) => (
-  <ScrollArea horizontal vertical className={className}>
+  <ScrollArea horizontal vertical focusable className={className}>
     {children}
   </ScrollArea>
 );

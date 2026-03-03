@@ -11,6 +11,7 @@ Type:
 
 ```ts
 {
+  allowedHosts?: string[] | true;
   builder?: string | { name: string; options?: BuilderOptions };
   channelOptions?: ChannelOptions;
   crossOriginIsolated?: boolean;
@@ -24,6 +25,20 @@ Type:
 ```
 
 Configures Storybook's internal features.
+
+## `allowedHosts`
+
+Type: `string[] | true`
+
+Default: `[]`
+
+Configures the allowed hosts for the Storybook dev server, used for Origin and Host header validation. Storybook's localhost and local network (or `--host`) addresses are always allowed. Use this when accessing your local Storybook instance through a reverse proxy (e.g. your webapp dev server). Set to `true` to disable hostname validation (insecure).
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-core-allowed-hosts.md" />
+
+{/* prettier-ignore-end */}
 
 ## `builder`
 

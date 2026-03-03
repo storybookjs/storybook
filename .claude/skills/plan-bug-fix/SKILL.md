@@ -168,16 +168,3 @@ Evidence: [screenshot / snapshot / E2E result]
 - [ ] You know which verification flow applies
 
 **Checkpoint**: Review plan for completeness. If ANY part is unclear, research more before proceeding.
-
----
-
-## Summary
-
-This skill prepares you for implementation:
-
-1. **Understand** the issue thoroughly
-2. **Route** to correct verification flow
-3. **Create** feature branch (`agent/fix-issue-$ARGUMENTS[0]`)
-4. **Plan** the fix in detail
-
-Output: ✅ Clear understanding, ✅ Verified flow, ✅ Feature branch ready, ✅ Detailed plan ready for implementation.

@@ -182,17 +182,3 @@ IF verification fails:
 3. If NO: Adjust code in Step 1, re-test (Step 3), re-verify (this step)
 4. If YES but artifacts wrong: Re-run verification skill
 5. If stuck: Review the specific verification skill's troubleshooting section
-
----
-
-## Summary
-
-This skill implements and verifies a fix in 5 steps:
-
-1. **Code** changes (Step 1)
-2. **Test** implementation and execution (Step 2, includes new tests + full test suite)
-3. **Lint** and format (Step 3)
-4. **Commit** changes (Step 4)
-5. **Verify** using flow-specific workflow (Step 5)
-
-Output: ✅ Tested code, ✅ Committed changes, ✅ Verification evidence gathered, ✅ Ready for PR.

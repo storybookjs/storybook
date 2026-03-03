@@ -106,6 +106,22 @@ ELSE (bug is purely about logic, build output, or CLI with NO user-visible UI in
 
 **Checkpoint**: Confirm routing is correct by asking "Can a user reproduce this bug in the browser?" — if yes, must be Flow 1–4, never Flow 0.
 
+### Save Flow Decision for Later Steps
+
+After determining your flow, save it for subsequent skills:
+
+```bash
+mkdir -p .agent-metadata
+echo "[FLOW NUMBER]" > .agent-metadata/.flow
+echo "$ARGUMENTS[0]" > .agent-metadata/.issue
+
+# Example:
+# echo "4" > .agent-metadata/.flow
+# echo "12345" > .agent-metadata/.issue
+```
+
+This metadata will be used by `/implement-and-verify-fix` and `/open-pull-request` skills.
+
 ---
 
 ## Step 3: Create Feature Branch

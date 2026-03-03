@@ -191,64 +191,101 @@ IF verification fails:
 
 **Action**: Add verification screenshots and other artifacts to git and commit them together.
 
-### 6a: Check for Verification Artifacts
+### 6a: Check for Verification Artifacts (MANDATORY FOR FLOW 1-4)
 
-After completing Step 5, check if any artifacts were generated in the `verification/` folder:
+After completing Step 5, validate that artifacts exist:
 
 ```bash
-# List all verification artifacts
-find verification/ -type f 2>/dev/null || echo "No verification folder found"
+# Determine the flow
+FLOW=$(cat .agent-metadata/.flow 2>/dev/null || echo "unknown")
+ISSUE=$ARGUMENTS[0]
 
-# Typical artifacts by flow:
-# Flow 1: verification/screenshots/flow-1/issue-$ARGUMENTS[0]/*.png
-# Flow 2: verification/screenshots/flow-2/issue-$ARGUMENTS[0]/*.png
-# Flow 3: verification/screenshots/flow-3/issue-$ARGUMENTS[0]/*.png
-# Flow 4: verification/screenshots/flow-4/issue-$ARGUMENTS[0]/*.png
+# Check artifacts by flow
+if [ "$FLOW" = "0" ]; then
+  echo "✅ Flow 0: No screenshots needed (verification = test passing)"
+  touch .agent-metadata/.verification-complete
+  exit 0
+fi
+
+# For Flow 1-4, screenshots are MANDATORY
+if find verification/screenshots/flow-${FLOW}/issue-${ISSUE}/ -name "*.png" 2>/dev/null | grep -q .; then
+  echo "✅ Verification artifacts found:"
+  find verification/screenshots/flow-${FLOW}/issue-${ISSUE}/ -name "*.png"
+else
+  echo "❌ ERROR: Required verification artifacts NOT found"
+  echo "   Expected: verification/screenshots/flow-${FLOW}/issue-${ISSUE}/*.png"
+  echo "   This is a BLOCKING error. Return to Step 5 and:"
+  echo "   1. Verify the verification workflow actually ran"
+  echo "   2. Check that screenshots were saved"
+  echo "   3. Ensure files are in the correct location"
+  exit 1
+fi
 ```
 
 ### 6b: Stage and Commit Artifacts
 
-If artifacts exist, commit them:
+Add and commit verification artifacts:
 
 ```bash
 # Add all verification artifacts
 git add verification/
 
 # Commit with descriptive message
-git commit -m "Test(verif): Issue #$ARGUMENTS[0] — Verification evidence (Flow [0/1/2/3/4])"
+git commit -m "Test(verif): Issue #$ARGUMENTS[0] — Verification evidence (Flow $FLOW)"
+
+# Mark verification as complete for the next skill
+mkdir -p .agent-metadata
+echo "$FLOW" > .agent-metadata/.flow
+echo "$ARGUMENTS[0]" > .agent-metadata/.issue
+touch .agent-metadata/.verification-complete
 ```
 
 Example:
 
 ```bash
-git commit -m "Test(verif): Issue #12345 — Verification evidence (Flow 2: Browser output)"
+git commit -m "Test(verif): Issue #12345 — Verification evidence (Flow 4)"
 ```
 
-**Success Criteria**:
+**Success Criteria** (BLOCKING):
 
-- [ ] All verification artifacts committed to git
-- [ ] `git log --oneline` shows the verification commit
-- [ ] Both code fix and verification evidence are tracked in history
+- [ ] **Flow 0**: No artifacts needed, `.verification-complete` marker created ✅
+- [ ] **Flow 1-4**: Screenshots committed to `verification/screenshots/flow-{X}/issue-{number}/` ✅
+- [ ] `.agent-metadata/.verification-complete` exists ✅
+- [ ] `git log --oneline` shows both code fix and verification commits ✅
 
-### Error Recovery
+### Error Handling
 
-IF no verification artifacts found:
+IF verification artifacts cannot be found:
 
-→ This is expected for **Flow 0** (logic-only fixes with no screenshots)
-→ Skip this step if verification workflow didn't generate artifacts
-→ Proceed to next step
+→ **BLOCKING ERROR** — This is not negotiable for Flow 1-4
+→ Return to Step 5: Verify that the verification workflow actually ran
+→ Check verification skill output: Did it generate screenshots?
+→ Manually verify files at: `find verification/ -name "*.png"`
+→ If still missing, re-run the verification skill and ensure output files are saved to the correct location
 
 ---
 
 ## Summary
 
-This skill implements and verifies a fix in 6 steps:
+This skill implements and verifies a fix in 6 mandatory steps:
 
 1. **Code** changes (Step 1)
 2. **Test** implementation and execution (Step 2, includes new tests + full test suite)
 3. **Lint** and format (Step 3)
 4. **Commit** code changes (Step 4)
 5. **Verify** using flow-specific workflow (Step 5)
-6. **Commit** verification artifacts (Step 6)
+6. **Commit** verification artifacts with validation (Step 6, **MANDATORY for Flow 1-4**)
 
-Output: ✅ Tested code, ✅ Committed changes, ✅ Verification evidence committed, ✅ Ready for PR.
+**Output Guarantees**:
+
+- ✅ Tested code in git
+- ✅ Verified fix (either passing test for Flow 0, or screenshots for Flow 1-4)
+- ✅ Verification artifacts in `verification/screenshots/` (Flow 1-4)
+- ✅ `.agent-metadata/.verification-complete` marker created
+- ✅ All commits in feature branch history
+- ✅ **Ready for PR with evidence**
+
+**Critical Enforcement**:
+
+- Step 6 BLOCKS if verification artifacts missing for Flow 1-4
+- Do not proceed without `.agent-metadata/.verification-complete` marker

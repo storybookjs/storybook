@@ -16,6 +16,23 @@ When a user provides a GitHub issue number, you orchestrate the complete bug fix
 4. **PR Preparation**: Preparing title and body with flow-specific evidence
 5. **PR Creation**: You (GitHub Copilot) then automatically create the PR with proper templates and labels
 
+## Critical Rules (DO NOT IGNORE)
+
+⚠️ **NEVER skip or bypass sub-skills**:
+
+- When `/fix-bug` tells you to invoke `/plan-bug-fix`, you MUST invoke it (don't plan manually)
+- When `/fix-bug` tells you to invoke `/implement-and-verify-fix`, you MUST invoke it (don't code manually)
+- Do NOT make code edits directly while skills are supposed to be handling it
+- Do NOT skip verification workflows for Flow 1-4 bugs
+- Do NOT create PRs without verification evidence committed to git
+
+⚠️ **Evidence is non-negotiable for Flow 1-4**:
+
+- Flow 1-4 bugs REQUIRE verification artifacts (screenshots, E2E test results, snapshots)
+- These artifacts MUST be committed to `verification/screenshots/flow-{X}/issue-{number}/`
+- PRs without evidence will be rejected
+- Blocking validation checks will prevent PR creation if evidence is missing
+
 ## How to Execute
 
 When given an issue number (e.g., "Fix issue 12345" or "Work on #12345"):

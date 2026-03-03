@@ -31,6 +31,8 @@ description: Prepare PR content and description with flow-specific evidence (Git
 ## Workflow Overview
 
 ```
+⚠️  VALIDATION: Verify evidence exists
+         ↓ [BLOCKING: Must pass before continuing]
 Step 1: Prepare PR Title
          ↓
 Step 2: Prepare PR Body with Flow-Specific Evidence
@@ -38,6 +40,59 @@ Step 2: Prepare PR Body with Flow-Specific Evidence
 Step 3: GitHub Copilot handles branch push and PR creation automatically
          ↓ [DONE: PR created, labeled, and ready]
 ```
+
+---
+
+## VALIDATION: Verify Evidence Exists (BLOCKING)
+
+**Action**: Before preparing PR content, confirm that `implement-and-verify-fix` was completed AND verification artifacts exist.
+
+### Check 1: Verify Skill Completion Marker
+
+```bash
+if [ ! -f ".agent-metadata/.verification-complete" ]; then
+  echo "❌ ERROR: implement-and-verify-fix skill did NOT complete"
+  echo "   The required marker '.agent-metadata/.verification-complete' does not exist"
+  echo "   ACTION: Go back and invoke /implement-and-verify-fix [issue-number]"
+  echo "   Do NOT manually edit code or skip verification"
+  exit 1
+fi
+
+echo "✅ Verification completed (marker found)"
+```
+
+### Check 2: Verify Evidence Artifacts (Flow 1-4)
+
+```bash
+# Get the flow that was recorded
+FLOW=$(cat .agent-metadata/.flow 2>/dev/null || echo "unknown")
+ISSUE=$ARGUMENTS[0]
+
+if [ "$FLOW" = "0" ]; then
+  echo "✅ Flow 0 (Logic): Tests are the evidence (already verified passing)"
+elif [ "$FLOW" != "unknown" ]; then
+  # Flow 1-4: Require screenshots
+  if find verification/screenshots/flow-${FLOW}/issue-${ISSUE}/ -name "*.png" 2>/dev/null | grep -q .; then
+    echo "✅ Verification artifacts found:"
+    find verification/screenshots/flow-${FLOW}/issue-${ISSUE}/ -name "*.png" | head -5
+  else
+    echo "❌ ERROR: Verification screenshots expected but NOT found"
+    echo "   Flow: $FLOW | Issue: $ISSUE"
+    echo "   Expected location: verification/screenshots/flow-${FLOW}/issue-${ISSUE}/"
+    echo "   ACTION: Return to /implement-and-verify-fix and ensure verification step completed"
+    exit 1
+  fi
+fi
+
+echo ""
+echo "✅ All validation checks passed. Safe to create PR."
+```
+
+**Success Criteria** (BLOCKING):
+
+- [ ] `.agent-metadata/.verification-complete` exists \u2705
+- [ ] **Flow 0**: Test passing confirmed \u2705
+- [ ] **Flow 1-4**: Screenshot files exist at `verification/screenshots/flow-{X}/issue-{number}/` \u2705
 
 ---
 

@@ -86,6 +86,8 @@ Example:
 
 ## Step 2: Implement and Verify Fix
 
+⚠️ **CRITICAL**: You **MUST** invoke the `/implement-and-verify-fix` skill. Do NOT make changes directly. This skill ensures systematic code quality, testing, and verification.
+
 **Action**: Invoke the `/implement-and-verify-fix` skill to code, test, and verify the fix.
 
 This skill will:
@@ -94,9 +96,9 @@ This skill will:
 - Write/update tests (new or existing)
 - Run full test suite
 - Format and lint code
-- Commit changes with clear message
-- Run flow-specific verification workflow
-- Gather evidence (screenshots, snapshots, or E2E results)
+- Commit code changes
+- Run **flow-specific verification workflow** (screenshots, E2E tests, snapshots)
+- Commit verification artifacts to `verification/screenshots/`
 
 **Invoke with**:
 
@@ -114,32 +116,78 @@ Example:
 
 - ✅ All tests passing
 - ✅ Code formatted and linted
-- ✅ Changes committed
-- ✅ Verification evidence gathered (flow-specific)
+- ✅ Code changes committed to git
+- ✅ Verification workflow completed (flow-specific)
+- ✅ Verification artifacts committed to `verification/screenshots/flow-{X}/issue-{number}/`
 
-**Success Criteria**:
+**Success Criteria** (ALL required):
 
+- [ ] Skill `/implement-and-verify-fix` was invoked (not manual edits)
 - [ ] All tests pass
 - [ ] No linting errors
-- [ ] Code committed with clear message
-- [ ] Verification artifacts exist (screenshot/snapshot/E2E results)
+- [ ] Code committed
+- [ ] **For Flow 0 only**: Verification is just test passing ✅
+- [ ] **For Flow 1-4**: Verification artifacts exist at `verification/screenshots/flow-{X}/issue-{number}/*.png` ✅
 - [ ] Fix visibly resolves the issue
+
+⚠️ **BLOCKING**: If verification artifacts are missing for Flow 1-4, you CANNOT proceed to Step 3. Return to this step and re-run `/implement-and-verify-fix` or the specific verification workflow.
 
 ---
 
-## Step 3: Prepare PR Description
+## Step 3: Verify Evidence & Prepare PR Description
 
-**Action**: Gather all evidence from Step 2. You will use this in the next skill to populate the PR template.
+**Action**: Validate that verification was completed, then gather evidence for the PR.
 
-**Checklist** (prepare these before invoking /open-pull-request):
+### 3a: Validate Verification Artifacts (MANDATORY)
 
-- [ ] Commit hash (from `git log --oneline`)
-- [ ] Changed files list
-- [ ] Test results: "All tests passing" (from `/implement-and-verify-fix` output)
-- [ ] Verification evidence: Screenshot, snapshot diff, or E2E results (from verification workflow)
+Before proceeding to PR creation, you MUST verify that evidence exists:
+
+**For Flow 0** (Pure Logic):
+
+```bash
+echo "✅ Flow 0: Verification = All tests passing (from Step 2)"
+```
+
+No screenshots needed.
+
+**For Flow 1, 2, 3, or 4** (requires screenshots):
+
+```bash
+# Check that verification artifacts exist
+FLOW=$(cat .agent-metadata/.flow 2>/dev/null || echo "unknown")
+ISSUE=$(cat .agent-metadata/.issue 2>/dev/null || echo "unknown")
+
+if [ -f "verification/screenshots/flow-${FLOW}/issue-${ISSUE}/before-fix.png" ] && \
+   [ -f "verification/screenshots/flow-${FLOW}/issue-${ISSUE}/after-fix.png" ]; then
+  echo "✅ Verification artifacts found at verification/screenshots/flow-${FLOW}/issue-${ISSUE}/"
+else
+  echo "❌ ERROR: Verification artifacts NOT found"
+  echo "   Expected: verification/screenshots/flow-${FLOW}/issue-${ISSUE}/*.png"
+  echo "   Return to Step 2 and re-run /implement-and-verify-fix or the verification workflow"
+  exit 1
+fi
+```
+
+**Success Criteria** (BLOCKING):
+
+- [ ] Flow 0: Tests pass only ✅
+- [ ] Flow 1-4: Screenshots exist at `verification/screenshots/flow-{X}/issue-{number}/before-fix.png` and `after-fix.png` ✅
+
+### 3b: Gather Evidence for PR
+
+Collect the following for the PR description:
+
+**Checklist**:
+
+- [ ] Commit hash (from `git log --oneline | head -2`)
+- [ ] Changed files list (from `git diff --name-only origin/next...`)
+- [ ] Test results: "All tests passing"
+- [ ] Verification evidence location:
+  - Flow 0: None (test passing confirms fix)
+  - Flow 1-4: `verification/screenshots/flow-{X}/issue-{number}/`
 - [ ] 2-3 sentence explanation of root cause and fix (from `/plan-bug-fix`)
 
-**Success Criteria**: All checklist items prepared and ready for PR description.
+**Success Criteria**: All checklist items confirmed and ready for PR description.
 
 ---
 

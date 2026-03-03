@@ -149,7 +149,7 @@ ELSE IF Flow 4 (Manager UI)
 **Success Criteria** (all must be true):
 
 - [ ] Verification skill completed without errors
-- [ ] Artifacts exist: screenshot, snapshot, or E2E results
+- [ ] Artifacts exist: screenshot, snapshot, or E2E results and are saved in the repository so that they can be commited with the fix
 - [ ] Fix visibly resolves the original issue
 - [ ] No new issues introduced
 

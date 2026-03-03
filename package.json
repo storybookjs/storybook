@@ -29,6 +29,7 @@
     "svelte-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh svelte-kit/skeleton-ts svelte",
     "svelte-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh svelte-kit/skeleton-ts",
     "task": "yarn --cwd=./scripts task",
+    "capture-terminal-output": "yarn --cwd=./scripts capture-terminal-output",
     "test": "cd code; yarn test",
     "test:watch": "cd code; yarn test:watch",
     "upload-bench": "cd scripts; yarn upload-bench",

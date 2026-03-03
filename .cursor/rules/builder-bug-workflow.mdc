@@ -1,0 +1,130 @@
+---
+description: Verification workflow for builder bug fixes (frontend output and Node.js terminal output)
+globs: "code/builders/**"
+alwaysApply: false
+---
+
+# Builder Bug Verification Workflow
+
+When fixing bugs in `code/builders/**`, determine whether the change affects browser-visible output (Flow 2) or Node.js stdout/stderr output (Flow 3), and follow the appropriate workflow.
+
+## Decision: Is this a Browser Output Bug or Terminal Output Bug?
+
+- **Browser output bug** (Flow 2): The fix affects how Storybook renders in the browser (CSS, layout, UI elements, story preview content).
+- **Terminal output bug** (Flow 3): The fix affects what is logged to the console during the build or dev process (progress messages, timestamps, paths, diagnostics).
+
+---
+
+## Flow 2 — Builder Bug Verification (Frontend Output)
+
+Follow this workflow if your builder change affects browser-visible output.
+
+### Step 1: Create or Update a Template Story
+
+Create or update a story in the sandbox that demonstrates the affected behaviour and confirms the fix.
+
+### Step 2: Select the Appropriate Sandbox Template
+
+- **`builder-vite` changes**: Use `react-vite/default-ts`
+- **`builder-webpack5` changes**: Use `react-webpack/18-ts`
+
+### Step 3: Generate and Start the Sandbox
+
+Generate the sandbox environment:
+
+```bash
+yarn nx sandbox <template> -c production
+```
+
+Start the dev server as a background task:
+
+```bash
+cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci
+```
+
+Wait for the port to be ready (check console for "Storybook started").
+
+### Step 4: Capture Visual Evidence
+
+Use the Browser MCP to:
+1. Open the Storybook instance
+2. Navigate to your template story
+3. Take a screenshot showing the fix works correctly
+
+Attach the screenshot to your PR description.
+
+### Step 5: Fallback Path (if bug persists)
+
+If the browser output still shows the bug:
+
+1. Kill the dev server
+2. Recompile: `yarn nx compile <package-name> -c production`
+3. Copy fresh `dist/` into the sandbox: `cp -r <compiled-dist> ../storybook-sandboxes/<sandbox-dir>/node_modules/<package>/dist/`
+4. Restart the dev server: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
+5. Re-verify with a new screenshot
+
+---
+
+## Flow 3 — Builder Bug Verification (Terminal Output)
+
+Follow this workflow if your builder change affects Node.js stdout/stderr output (console logs, build progress, error messages, etc.).
+
+### Step 1: Run the Capture Script
+
+Execute the terminal output capture script for your builder:
+
+```bash
+jiti scripts/capture-terminal-output.ts --builder <builder-name>
+```
+
+For example:
+- `jiti scripts/capture-terminal-output.ts --builder builder-vite`
+- `jiti scripts/capture-terminal-output.ts --builder builder-webpack5`
+
+### Step 2: Compare Against Baseline
+
+The script automatically compares your output against the baseline snapshot at:
+```
+scripts/terminal-output-snapshots/<builder-name>-build.snap.txt
+```
+
+### Step 3: Handle Baseline Creation (if no baseline exists)
+
+If no baseline snapshot exists, the script auto-creates a provisional file.
+
+**Add to your PR description**:
+```
+<!-- PROVISIONAL BASELINE — requires reviewer approval before merge -->
+```
+
+Commit the provisional snapshot file for reviewer approval.
+
+### Step 4: Update the Baseline (if diff matches your fix)
+
+If the output diff is consistent with your fix:
+
+```bash
+jiti scripts/capture-terminal-output.ts --builder <builder-name> --update
+```
+
+Commit the updated snapshot file.
+
+### Step 5: Iterate if Needed (if diff is noisy)
+
+If the output diff is noisy or unexpected:
+1. Diagnose what changed in the builder output
+2. Verify those changes align with your fix
+3. Iterate on your fix if necessary before opening the PR
+
+### Step 6: Document in PR Description
+
+Always include a summary of what terminal output changed in your PR description so reviewers can see the exact impact of your builder modifications.
+
+---
+
+## Summary
+
+Both flows (2 and 3) require evidence in the PR:
+
+- **Flow 2 (frontend)**: Browser screenshot showing the fix works
+- **Flow 3 (terminal)**: Snapshot diff or provisional baseline with explanation in PR description

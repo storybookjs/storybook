@@ -1,0 +1,18 @@
+# PLACEHOLDER — replace with real output by running:
+#   jiti scripts/capture-terminal-output.ts --builder builder-vite --mode build --update
+#
+# This file shows the expected format of a normalized Vite build snapshot.
+# Real output will contain lines like the following (after normalization):
+#
+# @storybook/builder-vite v<VERSION>
+# info => Loading presets
+# info => Building in production mode
+# vite v<VERSION> building for production...
+# transforming (<ROOT>/stories/Button.stories.ts)
+# ✓ <N> modules transformed.
+# dist/sb-preview/runtime.js   <SIZE>
+# dist/sb-preview/runtime.js.map   <SIZE>
+# ✓ built in <DURATION>
+#
+# Normalization summary:
+# paths -> <ROOT>, durations -> <DURATION>, hashes -> <HASH>, ports -> <PORT>, timestamps -> <TIMESTAMP>

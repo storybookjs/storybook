@@ -1,0 +1,17 @@
+# PLACEHOLDER — replace with real output by running:
+#   jiti scripts/capture-terminal-output.ts --builder builder-webpack5 --mode build --update
+#
+# This file shows the expected format of a normalized Webpack 5 build snapshot.
+# Real output will contain lines like the following (after normalization):
+#
+# @storybook/builder-webpack5 v<VERSION>
+# info => Loading presets
+# info => Building in production mode
+# webpack <VERSION> compiled successfully in <DURATION>
+# asset main.<HASH>.js <SIZE> [emitted]
+# asset vendors~main.<HASH>.js <SIZE> [emitted]
+# runtime modules <SIZE> <N> modules
+# built modules <SIZE> from <N> modules
+#
+# Normalization summary:
+# paths -> <ROOT>, durations -> <DURATION>, hashes -> <HASH>, ports -> <PORT>, timestamps -> <TIMESTAMP>

@@ -416,4 +416,121 @@ When adding logging to code, always use the appropriate logger:
 - Include code examples in addon/framework documentation
 - Update migration guides for breaking changes
 
+## Verification Strategies by Bug Type
+
+When fixing bugs in Storybook, the verification approach depends on what changed. Use the decision tree below to determine which verification flow to follow:
+
+```mermaid
+flowchart TD
+    A[Fix implemented] --> B[Flow 0: Universal — run unit tests + re-read problem]
+    B --> C{What changed?}
+    C -->|code/renderers/**| D[Flow 1: Renderer Bug]
+    C -->|code/builders/** — browser output| E[Flow 2: Builder Frontend Bug]
+    C -->|code/builders/** — Node.js stdout/stderr| F[Flow 3: Builder Terminal Output Bug]
+    C -->|code/core/src/manager/** or builder-manager/**| G[Flow 4: Manager Bug]
+    D & E & F & G --> H[PR opened with evidence attached]
+```
+
+### Flow 0 — Universal Verification Checklist
+
+Always perform these steps before opening any PR:
+
+1. Run `cd code && yarn test` and wait for results.
+2. Fix any failing tests before proceeding.
+3. Re-read the original problem description in full.
+4. Trace through your fix: does it address the root cause described, not just a symptom?
+5. If the fix is incomplete or misaligned with the problem, revise before opening a PR.
+
+### Flow 1 — Renderer Bug Verification
+
+**Trigger**: Changes in `code/renderers/**`
+
+1. Create or update a template story in the affected renderer's `code/renderers/<renderer>/template/stories/` directory that demonstrates the bug and the fix.
+2. Heuristically select the most relevant sandbox template based on the renderer and bug context:
+   - React: `react-vite/default-ts`
+   - Vue 3: `vue3-vite/default-ts`
+   - Svelte: `svelte-vite/default-ts`
+   - HTML: `html-vite/default-ts`
+   - Preact: `preact-vite/default-ts`
+   - Web Components: `web-components-vite/default-ts`
+   - (Choose based on context if not listed above)
+3. Generate the sandbox: `yarn nx sandbox <template> -c production` (creates `../storybook-sandboxes/<sandbox-dir>/`)
+4. Start the sandbox dev server as a background task: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
+5. Wait for the port to be ready (check the console output for "Storybook started").
+6. Use the Browser MCP to open the running Storybook instance, navigate to your story, and take a screenshot.
+7. If the bug is resolved, attach the screenshot to the PR description.
+
+**Fallback path** (if the story still shows the bug):
+1. Kill the dev server.
+2. Recompile the affected package: `yarn nx compile <package-name> -c production`
+3. Copy the fresh `dist/` from the compiled package into the sandbox's `node_modules/<package>/dist/` directory.
+4. Restart the dev server.
+5. Re-verify the fix with a new screenshot.
+
+**Multi-scenario PRs**: For PRs that fix multiple distinct scenarios, use one primary template and include one screenshot per distinct scenario type.
+
+### Flow 2 — Builder Bug Verification (Browser Output)
+
+**Trigger**: Changes in `code/builders/**` that affect browser-visible output
+
+Follow the same pattern as Flow 1:
+
+1. Template hints:
+   - `builder-vite` changes: use `react-vite/default-ts`
+   - `builder-webpack5` changes: use `react-webpack/18-ts`
+2. Create or update a template story that demonstrates the affected behaviour.
+3. Generate the sandbox: `yarn nx sandbox <template> -c production`
+4. Start dev server as a background task: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
+5. Wait for the port to be ready.
+6. Use the Browser MCP to take a screenshot of the affected area.
+7. Attach the screenshot to the PR description.
+
+Apply the same fallback path as Flow 1 if the bug persists after initial verification.
+
+### Flow 3 — Builder Bug Verification (Terminal Output)
+
+**Trigger**: Changes in `code/builders/**` that affect Node.js stdout/stderr output
+
+1. Run the capture script: `jiti scripts/capture-terminal-output.ts --builder <builder-name>` (e.g., `builder-vite` or `builder-webpack5`)
+2. The output is compared against `scripts/terminal-output-snapshots/<builder-name>-build.snap.txt`.
+
+**If no baseline exists**:
+- The script automatically creates a provisional baseline file.
+- Add the following to your PR description:
+  ```
+  <!-- PROVISIONAL BASELINE — requires reviewer approval before merge -->
+  ```
+- Commit the provisional snapshot file for review.
+
+**If the diff is consistent with your fix**:
+- Run: `jiti scripts/capture-terminal-output.ts --builder <builder-name> --update`
+- Commit the updated snapshot file.
+
+**If the diff is noisy or unexpected**:
+- Diagnose the output changes and iterate on your fix before opening the PR.
+
+**PR description**: Always include a summary of what terminal output changed so reviewers can see the exact impact of your builder modifications.
+
+### Flow 4 — Manager Bug Verification
+
+**Trigger**: Changes in `code/core/src/manager/**` or `code/core/src/builder-manager/**`
+
+1. Write or update an E2E test in `code/e2e-tests/manager.spec.ts` that asserts the specific affected interaction.
+2. Build the Storybook UI: `cd code && yarn storybook:ui:build`
+3. Start the dev server as a background task: `cd code && yarn storybook:ui` (wait for port 6006 to be ready).
+4. Use the Browser MCP to open `http://localhost:6006`, navigate to the affected area, and take a screenshot.
+5. Run the full E2E suite: `cd code && yarn playwright test`
+6. Confirm that your new or updated test passes.
+7. Attach the screenshot to the PR description as visual evidence of the fix.
+
+### Flow Summary Table
+
+| Flow | Trigger | Key Actions | PR Evidence |
+|---|---|---|---|
+| 0 — Universal | Always | Unit tests + re-read problem | Tests pass |
+| 1 — Renderer | `code/renderers/**` changed | Template story → heuristic sandbox → Browser MCP screenshot | Screenshot of story in sandbox |
+| 2 — Builder (frontend) | `code/builders/**` changed, browser impact | Template story → heuristic sandbox → Browser MCP screenshot | Screenshot of story in sandbox |
+| 3 — Builder (terminal) | `code/builders/**` changed, Node.js output impact | Capture script → diff → update snapshot | Diff output in PR description |
+| 4 — Manager | `code/core/src/manager/**` or `builder-manager/**` changed | E2E test → start UI → Browser MCP screenshot | E2E pass + screenshot of Manager UI |
+
 This document should be updated as the repository evolves and new build requirements or limitations are discovered.

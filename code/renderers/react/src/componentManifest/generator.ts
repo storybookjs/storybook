@@ -13,7 +13,7 @@ import {
 import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
-import type { ComponentMetaManager } from './checker';
+import { ComponentMetaManager } from './checker';
 import type { ComponentDoc } from './componentMetaExtractor';
 import { getCodeSnippet } from './generateCodeSnippet';
 import {
@@ -35,9 +35,10 @@ interface ReactComponentManifest extends ComponentManifest {
 }
 
 // ---------------------------------------------------------------------------
-// Lazy singleton ComponentMetaManager — only created when
-// experimentalReactComponentMeta is enabled.  Survives across dev requests,
-// dies on build process exit.  TypeScript is an optional peer dep.
+// Eager singleton ComponentMetaManager — created as soon as this preset is
+// loaded so TypeScript is already warm by the first manifests() call.
+// Survives across dev requests, dies on build process exit.
+// TypeScript is an optional peer dep.
 //
 // Dev mode (primary flow): the `watch` flag from the preset options enables
 // file watching. Actual fs.watch instances are created lazily when projects
@@ -47,41 +48,33 @@ interface ReactComponentManifest extends ComponentManifest {
 // Build mode: watch is false — no watchers, no event handling. One-shot.
 // ---------------------------------------------------------------------------
 
-let managerPromise: Promise<ComponentMetaManager | null> | undefined;
+const managerWarmup: Promise<ComponentMetaManager | null> = (async () => {
+  try {
+    const ts = await import('typescript');
+    const manager = new ComponentMetaManager(ts);
 
-function getOrCreateManager(): Promise<ComponentMetaManager | null> {
-  if (!managerPromise) {
-    managerPromise = (async () => {
-      try {
-        const ts = await import('typescript');
-        const { ComponentMetaManager } = await import('./checker');
-        const manager = new ComponentMetaManager(ts);
-
-        // Clean up TS LanguageService instances + watchers on process exit.
-        // The dev server has no shutdown hook, so we rely on process events.
-        process.on('exit', () => manager.dispose());
-        for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-          process.once(signal, () => {
-            try {
-              manager.dispose();
-            } catch {
-              // Best-effort cleanup — don't prevent the process from exiting.
-            }
-            process.kill(process.pid, signal);
-          });
+    // Clean up TS LanguageService instances + watchers on process exit.
+    // The dev server has no shutdown hook, so we rely on process events.
+    process.on('exit', () => manager.dispose());
+    for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+      process.once(signal, () => {
+        try {
+          manager.dispose();
+        } catch {
+          // Best-effort cleanup — don't prevent the process from exiting.
         }
+        process.kill(process.pid, signal);
+      });
+    }
 
-        return manager;
-      } catch {
-        logger.debug(
-          '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
-        );
-        return null;
-      }
-    })();
+    return manager;
+  } catch {
+    logger.debug(
+      '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
+    );
+    return null;
   }
-  return managerPromise;
-}
+})();
 
 /**
  * Context needed for prop extraction, kept separate from the manifest object. Avoids injecting temp
@@ -202,15 +195,13 @@ export const manifests: PresetPropertyFn<
   const typescriptOptions =
     (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
 
-  const features = await presets?.apply('features');
-  const useReactComponentMeta = !!features?.experimentalReactComponentMeta;
-
   invalidateCache();
   invalidateParser();
 
   const startTime = performance.now();
 
-  // The manager is created lazily on first use (when experimentalReactComponentMeta is enabled).
+  // managerWarmup was kicked off at module load time — TypeScript should
+  // already be imported and the manager ready by now.
 
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
@@ -252,7 +243,6 @@ export const manifests: PresetPropertyFn<
           csf,
           storyFilePath: absoluteImportPath,
           typescriptOptions,
-          experimentalReactComponentMeta: useReactComponentMeta,
         });
         const component = findMatchingComponent(
           allComponents,
@@ -280,7 +270,7 @@ export const manifests: PresetPropertyFn<
 
         const hasDocgen = component?.reactDocgen || component?.reactDocgenTypescript;
 
-        if (!hasDocgen && !(useReactComponentMeta && component?.path)) {
+        if (!hasDocgen) {
           const error = !csf._meta?.component
             ? {
                 name: 'No component found',
@@ -357,10 +347,10 @@ export const manifests: PresetPropertyFn<
 
   // --- reactComponentMeta: probe-free extraction from story JSX ---
   let componentMetaCount = 0;
-  const manager = useReactComponentMeta ? await getOrCreateManager() : null;
+  const manager = await managerWarmup;
   const componentMetaStartTime = performance.now();
   const componentMetaDebug: Record<string, unknown> = {};
-  if (manager && useReactComponentMeta) {
+  if (manager) {
     // Group components by project for batch extraction — one getProgram() per project.
     type ProjectEntry = { component: ComponentManifest; ctx: ComponentMetaContext };
     const byProject = new Map<ReturnType<typeof manager.getProjectForFile>, ProjectEntry[]>();
@@ -424,9 +414,7 @@ export const manifests: PresetPropertyFn<
       v: 0,
       components: Object.fromEntries(components.map((component) => [component.id, component])),
       meta: {
-        docgen: useReactComponentMeta
-          ? 'react-component-meta'
-          : (typescriptOptions.reactDocgen ?? 'react-docgen'),
+        docgen: typescriptOptions.reactDocgen ?? 'react-docgen',
         durationMs,
         timings: {
           docgen: docgenDurationMs,

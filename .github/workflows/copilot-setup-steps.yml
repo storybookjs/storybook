@@ -36,4 +36,4 @@ jobs:
         run: cd code && yarn playwright install --with-deps chromium
 
       - name: Compile
-        run: yarn nx run-many --targets compile
+        run: yarn nx run-many --targets compile --no-cloud

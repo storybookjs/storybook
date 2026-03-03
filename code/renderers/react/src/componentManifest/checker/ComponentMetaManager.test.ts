@@ -58,9 +58,7 @@ function cleanup(dir: string) {
   }
 }
 
-/**
- * Test helper: extract docs for known exports via Path 2 (no story file needed).
- */
+/** Test helper: extract docs for known exports via Path 2 (no story file needed). */
 function extractDocs(
   project: ComponentMetaProject,
   componentPath: string,
@@ -73,7 +71,9 @@ function extractDocs(
   }));
   const results = project.extractPropsFromStories(entries);
   const storyMap = results.get(componentPath);
-  if (!storyMap) return [];
+  if (!storyMap) {
+    return [];
+  }
   const allDocs: ComponentDoc[] = [];
   for (const [, d] of storyMap) {
     allDocs.push(...d);

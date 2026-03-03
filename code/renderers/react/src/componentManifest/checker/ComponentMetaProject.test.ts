@@ -88,9 +88,9 @@ function cleanup(dir: string) {
 }
 
 /**
- * Test helper: extract docs for known exports via Path 2 (no story file needed).
- * Uses the component file as both storyFilePath and componentPath with no importId,
- * so Path 1 (story JSX) is skipped and Path 2 (direct type inspection) kicks in.
+ * Test helper: extract docs for known exports via Path 2 (no story file needed). Uses the component
+ * file as both storyFilePath and componentPath with no importId, so Path 1 (story JSX) is skipped
+ * and Path 2 (direct type inspection) kicks in.
  */
 function extractDocs(
   project: ComponentMetaProject,
@@ -104,7 +104,9 @@ function extractDocs(
   }));
   const results = project.extractPropsFromStories(entries);
   const storyMap = results.get(componentPath);
-  if (!storyMap) return [];
+  if (!storyMap) {
+    return [];
+  }
   const allDocs: ComponentDoc[] = [];
   for (const [, d] of storyMap) {
     allDocs.push(...d);

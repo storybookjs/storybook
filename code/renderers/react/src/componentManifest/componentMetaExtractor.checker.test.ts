@@ -1291,9 +1291,8 @@ afterAll(() => {
 // ---------------------------------------------------------------------------
 
 /**
- * Discover all value export names from a source file's AST.
- * Used by the docs() helper to build extraction entries without needing
- * a public "discover exports" method on ComponentMetaProject.
+ * Discover all value export names from a source file's AST. Used by the docs() helper to build
+ * extraction entries without needing a public "discover exports" method on ComponentMetaProject.
  */
 function findExportNames(sourceFile: ts.SourceFile): string[] {
   const names: string[] = [];
@@ -1316,7 +1315,9 @@ function findExportNames(sourceFile: ts.SourceFile): string[] {
     }
 
     const mods = ts.canHaveModifiers(stmt) ? ts.getModifiers(stmt) : undefined;
-    if (!mods?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
+    if (!mods?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) {
+      continue;
+    }
 
     if (mods.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword)) {
       names.push('default');
@@ -1342,9 +1343,8 @@ function findExportNames(sourceFile: ts.SourceFile): string[] {
 }
 
 /**
- * Extract docs for a test file by its key in TEST_FILES.
- * Discovers all exports from the file's AST and uses extractPropsFromStories
- * with Path 2 fallback (no importId → skips story JSX lookup).
+ * Extract docs for a test file by its key in TEST_FILES. Discovers all exports from the file's AST
+ * and uses extractPropsFromStories with Path 2 fallback (no importId → skips story JSX lookup).
  */
 function docs(fileName: string): ComponentDoc[] {
   const fp = filePaths[fileName];
@@ -1354,7 +1354,9 @@ function docs(fileName: string): ComponentDoc[] {
 
   // Discover export names from the file's AST
   const text = sys.readFile(fp);
-  if (!text) return [];
+  if (!text) {
+    return [];
+  }
   const sf = ts.createSourceFile(fp, text, ts.ScriptTarget.Latest, true);
   const exportNames = findExportNames(sf);
 
@@ -1366,7 +1368,9 @@ function docs(fileName: string): ComponentDoc[] {
   }));
   const results = project.extractPropsFromStories(entries);
   const storyMap = results.get(fp);
-  if (!storyMap) return [];
+  if (!storyMap) {
+    return [];
+  }
   const allDocs: ComponentDoc[] = [];
   for (const [, d] of storyMap) {
     allDocs.push(...d);

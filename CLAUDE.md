@@ -27,8 +27,9 @@ storybook/                        # Yarn monorepo root
 ### Compilation
 
 ```bash
-yarn nx run-many -t compile -c production
-yarn nx compile <package-name> -c production
+// Temporary workaround for NX cloud login issues
+yarn nx run-many -t compile --no-cloud
+yarn nx compile <package-name> --no-cloud
 ```
 
 ### Type Checking
@@ -96,3 +97,22 @@ When fixing bugs in Storybook, comprehensive workflows are available as Claude S
 - **`/manager-bug-workflow`**: Manager UI bug verification in `code/core/src/manager/**` or `code/core/src/builder-manager/**` (Flow 4)
 
 Use `/fix-bug` to orchestrate the entire bug fix process from issue to PR. The other skills provide detailed guidance for specific verification flows. Invoke via slash-command or reference by name in instructions.
+
+## Custom GitHub Copilot Agent
+
+For GitHub.com Copilot coding agent, a specialized custom agent is available at `.github/copilot/agents/storybook-bug-fixer.agent.md`:
+
+**`@storybook-bug-fixer`**: Specialized agent that leverages the `/fix-bug` skill for end-to-end bug fixing workflows on GitHub.com. Simply provide an issue number (e.g., "Fix issue 12345") and the agent orchestrates the complete workflow from understanding to PR creation.
+
+**When to use**:
+
+- Fixing bugs from GitHub issues on GitHub.com
+- Need automated end-to-end bug fix workflow
+- Working within GitHub Copilot coding agent interface
+
+**When NOT to use**:
+
+- IDE/VS Code development (use `/fix-bug` skill directly instead)
+- Feature requests or enhancements (not bugs)
+- Documentation-only changes
+- Exploratory investigation before fixing

@@ -24,7 +24,7 @@ export type HostValidationOptions = {
  * @returns `true` if the host is valid, `false` otherwise.
  */
 export const isValidHost = (host: string | undefined, options: HostValidationOptions): boolean => {
-  const allowedHosts = options.allowedHosts || DEFAULT_ALLOWED_HOSTS;
+  const allowedHosts = options.allowedHosts ?? DEFAULT_ALLOWED_HOSTS;
   if (allowedHosts === true) {
     return true;
   }
@@ -57,7 +57,7 @@ export function getHostValidationMiddleware(
 ): Middleware<IncomingMessage> {
   return (req, res, next) => {
     const host = req.headers.host;
-    const allowedHosts = options.allowedHosts || DEFAULT_ALLOWED_HOSTS;
+    const allowedHosts = options.allowedHosts ?? DEFAULT_ALLOWED_HOSTS;
     if (allowedHosts !== true && !isValidHost(host, options)) {
       res.writeHead(403, { 'Content-Type': 'text/plain' });
       res.end('Invalid host');

@@ -8,10 +8,7 @@ on:
       - unlabeled
       - edited
     branches:
-      - main
-      - next
-      - release-*
-      - "*-release"
+      - "**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}

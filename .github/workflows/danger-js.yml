@@ -10,6 +10,7 @@ on:
     branches:
       - main
       - next
+      - release*
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}

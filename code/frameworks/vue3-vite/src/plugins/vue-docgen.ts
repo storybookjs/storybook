@@ -18,8 +18,11 @@ export async function vueDocgen(): Promise<Plugin> {
       const metaData = await parse(id);
 
       const s = new MagicString(src);
-      s.append(`;_sfc_main.__docgenInfo = ${JSON.stringify(metaData)}`);
 
+      s.append(`;_sfc_main.__docgenInfo = Object.assign({
+        displayName: _sfc_main.name ?? _sfc_main.__name
+      }, ${JSON.stringify(metaData)});`);
+      
       return {
         code: s.toString(),
         map: s.generateMap({ hires: true, source: id }),

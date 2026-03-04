@@ -179,6 +179,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       <>
         {isDesktop && (
           <SidebarContainer>
+            {slots.slotSidebar}
             <Drag
               ref={sidebarResizerRef}
               role="separator"
@@ -189,7 +190,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
               aria-valuemin={0}
               aria-valuemax={typeof window !== 'undefined' ? window.innerWidth : undefined}
             />
-            {slots.slotSidebar}
           </SidebarContainer>
         )}
         {isMobile && (
@@ -338,6 +338,9 @@ const Drag = styled.div<{
 
     '&:focus-visible': {
       opacity: 1,
+      outline: 'none',
+      height: 7,
+      boxShadow: `inset 0 0 0 4px ${theme.color.secondary}`,
     },
   }),
   ({ orientation = 'vertical', overlapping = true, position = 'left' }) =>

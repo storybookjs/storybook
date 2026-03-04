@@ -7,21 +7,6 @@ description: Deep-dive into GitHub issue, determine verification flow (0-4), and
 
 **What this skill does**: Understand issue details, route to correct verification flow, and create a detailed fix plan before writing any code.
 
-## Input & Prerequisites
-
-**Required Input**: GitHub issue number as `$ARGUMENTS[0]`. Format: `12345` (not `#12345`)
-
-**Prerequisite Checks** (before starting):
-
-- [ ] Issue number is valid (issue exists on GitHub)
-- [ ] Issue is marked as a bug (has `type: bug` label)
-- [ ] Issue has enough detail to reproduce
-- [ ] You have write access to the repository
-
-⚠️ **If any prerequisite fails**: Stop and request clarification from issue reporter.
-
----
-
 ## Workflow Overview
 
 ```
@@ -29,9 +14,7 @@ Step 1: Fetch & Understand Issue
          ↓
 Step 2: Determine Verification Flow (0/1/2/3/4)
          ↓ [CHECKPOINT: Confirm routing]
-Step 3: Create Feature Branch
-         ↓
-Step 4: Create Fix Plan (root cause, files, logic)
+Step 3: Create Fix Plan (root cause, files, logic)
          ↓ [CHECKPOINT: Review plan completeness]
          ✅ COMPLETE — Ready for implementation
 ```
@@ -108,19 +91,7 @@ ELSE (bug is purely about logic, build output, or CLI with NO user-visible UI in
 
 ---
 
-## Step 3: Create Feature Branch
-
-**Action**: Create a feature branch for this fix
-
-```bash
-git checkout -b agent/fix-issue-$ARGUMENTS[0]
-```
-
-**Success Criteria**: You are now on the feature branch. Confirm with `git branch`.
-
----
-
-## Step 4: Create Fix Plan
+## Step 3: Create Fix Plan
 
 **Action**: Document the fix before writing code.
 

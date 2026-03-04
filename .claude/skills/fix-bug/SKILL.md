@@ -1,28 +1,46 @@
 ---
 name: fix-bug
-description: Complete workflow to fetch a GitHub issue by number, understand the bug, plan and implement a fix, run verification workflows, and open a PR.
+description: Complete end-to-end workflow to fetch a GitHub issue, understand the bug, plan the fix, implement it, test it, verify it works, and prepare a PR—all in one linear process.
 ---
 
 ## Workflow Overview
 
 ```
-Step 1: Plan Bug Fix (understand, route, plan)
-         ↓ [via /plan-bug-fix skill]
-Step 2: Implement and Verify Fix (code, test, verify)
-         ↓ [MUST PASS: All tests, evidence gathered]
-Step 3: Documentation Self-Improvement (fix any docs issues you encountered during the workflow)
+Step 1: Understand & Plan the Fix
+         ↓
+Step 2: Implement Code Changes
+         ↓
+Step 3: Write Tests & Run Full Suite
+         ↓ [MUST PASS: All tests]
+         ↓
+Step 4: Format and Lint
+         ↓
+Step 5: Commit Changes
+         ↓
+Step 6: Run Verification Workflow (flow-specific)
+         ↓ [MUST PASS: Verification evidence gathered]
+         ↓
+Step 7: Documentation Self-Improvement (if needed)
+         ↓
+Step 8: Prepare PR Content & Open PR
 ```
 
-## Step 1: Plan Bug Fix
+---
 
-**Action**: Invoke the `/plan-bug-fix` skill to understand the issue and create fix plan and invoke it as a sub agent.
+## Step 1: Understand & Plan the Fix
 
-This skill will:
+**Action**: Fetch the GitHub issue and create a detailed fix plan before implementing.
 
-- Fetch issue #$ARGUMENTS[0] from GitHub
+**Sub-steps**:
+
+### 1a: Fetch Issue and Understand the Bug
+
+Use the `/plan-bug-fix` skill to:
+
+- Fetch issue #[issue-number] from GitHub
 - Extract all required information (title, description, labels, repro steps, etc.)
 - Route to correct verification flow (0–4) based on where bug manifests
-- Create detailed fix plan (root cause, files, logic, tests)
+- Create detailed fix plan (root cause, affected files, implementation logic, required tests)
 
 **Invoke with**:
 
@@ -36,66 +54,195 @@ Example:
 /plan-bug-fix 12345
 ```
 
-**Expected Output from Skill**:
+**Expected Output**:
 
-- ✅ Issue clearly understood
-- ✅ Verification flow determined (0/1/2/3/4)
-- ✅ Feature branch created (`agent/fix-issue-$ARGUMENTS[0]`)
-- ✅ Fix plan documented
-- ✅ Ready to implement
+- ✅ Issue clearly understood with full context
+- ✅ Verification flow determined (0 = Pure Logic, 1 = Renderer, 2 = Builder Frontend, 3 = Builder Terminal, 4 = Manager UI)
+- ✅ Feature branch created (e.g., `agent/fix-issue-12345`)
+- ✅ Fix plan documented with:
+  - Root cause analysis
+  - Files to modify
+  - Logic/implementation details
+  - Test requirements
+  - Expected verification evidence
 
 **Success Criteria**:
 
-- [ ] Issue understanding complete
-- [ ] Verification flow identified and confirmed
+- [ ] Issue understanding is complete and verified
+- [ ] Verification flow (0–4) is clearly identified
 - [ ] Feature branch created and checked out
-- [ ] Fix plan document ready
-- [ ] All blockers/unclear items resolved
+- [ ] Fix plan is documented and ready to follow
+- [ ] No blockers or unclear items remain
 
-## Step 2: Implement and Verify Fix
+---
 
-**Action**: Invoke the `/implement-and-verify-fix` skill to code, test, and verify the fix.
+## Step 2: Implement Code Changes
 
-This skill will:
+**Action**: Implement the fix following your plan from Step 1 exactly.
 
-- Implement code changes following your `/plan-bug-fix` plan
-- Write/update tests (new or existing)
-- Run full test suite
-- Format and lint code
-- Commit changes with clear message
-- Run flow-specific verification workflow
-- Gather evidence (screenshots, snapshots, or E2E results)
+**Rules**:
 
-**Invoke with**:
+- Only modify files listed in your plan
+- Add inline comments if fix is non-obvious
+- Do NOT make unrelated refactors
+- Do NOT change anything not in the plan
+
+**Success Criteria**:
+
+- [ ] Code matches your plan exactly
+- [ ] No extra changes or refactors
+- [ ] All targeted files are modified
+
+---
+
+## Step 3: Write Tests & Run Full Suite
+
+**Action**: Add or update tests as specified in your plan, then run all tests.
+
+### 3a: Write/Update Tests
+
+**IF plan says "new test needed"**:
+
+- Write the test to FAIL without the fix and PASS with it
+- Place it in the appropriate test file
+- Verify test fails without fix:
+  ```bash
+  cd code && yarn test
+  ```
+- Apply fix and verify test passes
+
+**IF plan says "existing test covers this"**:
+
+- No new test needed
+- Run existing tests to verify:
+  ```bash
+  cd code && yarn test
+  ```
+
+### 3b: Run Full Test Suite
+
+Execute full test suite:
+
+```bash
+cd code && yarn test
+```
+
+**Success Criteria**:
 
 ```
-/implement-and-verify-fix <information-from-plan-bug-fix>
+✅ ALL tests pass (new and existing)
+✅ No test failures
+✅ No skipped tests (unless pre-existing)
+```
+
+⚠️ **CRITICAL**: Do NOT proceed to Step 4 unless ALL tests pass.
+
+---
+
+## Step 4: Format and Lint
+
+**Action**: Clean up code formatting and catch style issues.
+
+```bash
+yarn prettier --write <changed-files>
+yarn --cwd=./code lint:js:cmd <changed-files> --fix
+```
+
+(Note: For `lint:js:cmd`, the file root is `code/`, so adjust paths accordingly)
+
+Then re-run tests to ensure linting didn't break anything:
+
+```bash
+cd code && yarn test
+```
+
+**Success Criteria**:
+
+- [ ] No linting errors
+- [ ] All tests still pass
+- [ ] Code is properly formatted
+
+---
+
+## Step 5: Commit Changes
+
+**Action**: Create commit with clear, descriptive message.
+
+```bash
+git add <changed-files>
+git commit -m "Fix: Issue #[issue-number] — [Brief description from issue title]"
 ```
 
 Example:
 
+```bash
+git commit -m "Fix: Issue #12345 — React renderer not applying CSS to styled components"
 ```
-/implement-and-verify-fix issue=12345 flow=2 plan=... (pass necessary info from your fix plan)
-```
-
-**Expected Output from Skill**:
-
-- ✅ All tests passing
-- ✅ Code formatted and linted
-- ✅ Changes committed
-- ✅ Verification evidence gathered (flow-specific)
 
 **Success Criteria**:
 
-- [ ] All tests pass
-- [ ] No linting errors
-- [ ] Code committed with clear message
-- [ ] Verification artifacts exist (screenshot/snapshot/E2E results)
-- [ ] Fix visibly resolves the issue
+- [ ] Commit created with clear message
+- [ ] `git log --oneline` shows the commit
 
-### Step 3: Documentation Self-Improvement (Do This First!)
+---
 
-**IMPORTANT**: Before Copilot creates the PR, reflect on your workflow execution:
+## Step 6: Run Verification Workflow
+
+**Action**: Run the verification workflow matching your flow type (determined in Step 1).
+
+### Routing Logic
+
+```
+IF Flow 0 (Pure Logic / No UI)
+  ✓ Already satisfied by Step 3 (yarn test passed)
+  ✓ Skip verification workflow
+  ⚠️ Double-check: re-read Step 1 criteria
+     If a user can reproduce this bug in the browser, this is wrong.
+
+ELSE IF Flow 1 (Renderer in code/renderers/**)
+  ✓ Use /renderer-bug-workflow skill
+  ✓ Expected: Template story, screenshot of fixed renderer
+
+ELSE IF Flow 2 (Builder Frontend in code/builders/**)
+  ✓ Use /builder-bug-workflow skill (Flow 2 section)
+  ✓ Expected: Screenshot of browser output showing fix
+
+ELSE IF Flow 3 (Builder Terminal Output)
+  ✓ Use /builder-bug-workflow skill (Flow 3 section)
+  ✓ Expected: Updated snapshot diff showing fix
+
+ELSE IF Flow 4 (Manager UI in code/core/src/manager/**)
+  ✓ Use /manager-bug-workflow skill
+  ✓ Expected: Passing E2E test + screenshot of Manager UI
+```
+
+**Success Criteria** (all must be true):
+
+- [ ] Verification workflow completed without errors
+- [ ] Artifacts exist and are saved in repository:
+  - Flow 1: Screenshot(s) of renderer output
+  - Flow 2: Screenshot(s) of browser/frontend output
+  - Flow 3: Updated snapshot files
+  - Flow 4: E2E test results + screenshot(s)
+- [ ] Fix visibly resolves the original issue
+- [ ] No new issues introduced
+- [ ] All artifacts are committed with the fix
+
+### Error Recovery
+
+IF verification fails:
+
+1. Read the error message carefully
+2. Did the original issue get fixed? (Check visual evidence)
+3. If NO: Adjust code in Step 2, re-test (Step 3), re-verify
+4. If YES but artifacts wrong: Re-run verification workflow
+5. If stuck: Review the specific verification workflow's troubleshooting section
+
+---
+
+## Step 7: Documentation Self-Improvement
+
+**IMPORTANT**: Reflect on your workflow execution before opening the PR.
 
 **Did you encounter any of these issues?**
 
@@ -111,18 +258,59 @@ Example:
 **Action Steps**:
 
 1. Identify which file needs updating (CLAUDE.md or specific skill in `.claude/skills/`)
-2. Make the fix directly in that file using `replace_string_in_file`
+2. Make the fix directly in that file using edit tools
 3. Commit the documentation improvement:
    ```bash
    git add CLAUDE.md .claude/skills/
    git commit -m "Docs: Improve [skill-name] instructions based on workflow execution"
    ```
-4. Explain in your response: What was wrong? What did you fix? Why will this help next time?
+4. Include in PR description: What was wrong? What did you fix? Why will this help next time?
 
 **Rationale**: Each bug fix workflow is an opportunity to improve the skills themselves. By fixing documentation issues immediately, the next agent run will perform better and avoid the same pitfalls.
 
 **Success Criteria**:
 
-- [ ] All documentation issues identified during workflow execution are fixed
-- [ ] Documentation improvements committed to feature branch
+- [ ] All documentation issues identified during workflow execution are fixed (or none found)
+- [ ] Documentation improvements committed to feature branch (if any)
 - [ ] Ready to proceed with PR preparation
+
+---
+
+## Step 8: Prepare PR Content & Open PR
+
+**Action**: Prepare comprehensive PR content and create the pull request.
+
+**Use the `/open-pull-request` skill** to generate PR content with:
+
+- Clear title referencing the issue (e.g., "Fix: Issue #12345 — React renderer CSS styling bug")
+- Summary of the root cause
+- Changes made (files modified)
+- Testing evidence:
+  - For Flow 0: Test suite results
+  - For Flow 1: Renderer screenshots
+  - For Flow 2: Frontend output screenshots
+  - For Flow 3: Snapshot diffs
+  - For Flow 4: E2E test results + Manager UI screenshots
+- Any documentation improvements made in Step 7
+
+**Invoke with**:
+
+```
+/open-pull-request [issue-number] [flow] [verification-evidence]
+```
+
+**Expected Output**:
+
+- ✅ PR title and description ready
+- ✅ Branch pushed to remote
+- ✅ PR created with all evidence linked
+- ✅ PR links to original issue
+
+**Success Criteria**:
+
+- [ ] PR has clear, descriptive title
+- [ ] PR description includes root cause analysis
+- [ ] All verification evidence is included or linked
+- [ ] PR references the original issue
+- [ ] All code changes are included
+- [ ] All artifact commits are included (screenshots, snapshots, E2E results)

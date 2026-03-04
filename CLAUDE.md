@@ -88,15 +88,35 @@ cd code && yarn test
 
 ## Bug Verification Workflows
 
-When fixing bugs in Storybook, comprehensive workflows are available as Claude Skills in `.claude/skills/`:
+When fixing bugs in Storybook, use the comprehensive `/fix-bug` workflow:
 
-- **`/fix-bug`**: Complete end-to-end workflow — Fetch issue, understand bug, create plan, fix code, run verification, prepare PR content. GitHub Copilot on GitHub.com then automatically creates the PR
-- **`/verification-checklist`**: Universal checks for all bug types (Flow 0) — Run before opening any PR
-- **`/renderer-bug-workflow`**: Renderer bug verification in `code/renderers/**` (Flow 1)
-- **`/builder-bug-workflow`**: Builder bug verification in `code/builders/**` for frontend output (Flow 2) and terminal output (Flow 3)
-- **`/manager-bug-workflow`**: Manager UI bug verification in `code/core/src/manager/**` or `code/core/src/builder-manager/**` (Flow 4)
+- **`/fix-bug [issue-number]`**: Complete end-to-end workflow — Understand the issue, plan the fix, implement code changes, run tests, verify the fix, handle documentation improvements, and prepare PR content. This is a single linear workflow that handles all steps from issue to PR.
 
-Use `/fix-bug` to orchestrate the entire bug fix process from issue to PR. The other skills provide detailed guidance for specific verification flows. Invoke via slash-command or reference by name in instructions.
+The workflow includes built-in verification for all bug types:
+
+- **Flow 0**: Pure logic bugs (tests only)
+- **Flow 1** (Renderer bugs): Renderer verification in `code/renderers/**`
+- **Flow 2** (Builder Frontend): Frontend output verification in `code/builders/**`
+- **Flow 3** (Builder Terminal): Terminal output verification in `code/builders/**`
+- **Flow 4** (Manager UI): Manager UI verification in `code/core/src/manager/**` or `code/core/src/builder-manager/**`
+
+Additional supporting skills for specific verification flows (if needed for detailed guidance):
+
+- **`/renderer-bug-workflow`**: Detailed renderer bug verification
+- **`/builder-bug-workflow`**: Detailed builder bug verification (Flow 2 & 3)
+- **`/manager-bug-workflow`**: Detailed manager UI verification (Flow 4)
+
+**When to use**:
+
+- Fixing bugs from GitHub issues
+- Need automated end-to-end bug fix workflow
+- For IDE/VS Code or GitHub.com Copilot
+
+**When NOT to use**:
+
+- Feature requests or enhancements (not bugs)
+- Documentation-only changes
+- Exploratory investigation (use `/plan-bug-fix` only if you just want the plan)
 
 ## Custom GitHub Copilot Agent
 

@@ -48,6 +48,11 @@ export interface CoreConfig {
    */
   enableCrashReports?: boolean;
   /**
+   * Enable hostname validation, currently only for WebSocket connections. Set to `[]` to disallow
+   * all hosts except known local/network address, or `true` to allow all hosts.
+   */
+  allowedHosts?: string[] | true;
+  /**
    * Enable CORS headings to run document in a "secure context" see:
    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
    * This enables these headers in development-mode: Cross-Origin-Opener-Policy: same-origin
@@ -212,6 +217,7 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  localAddress?: string;
   networkAddress?: string;
 }
 
@@ -341,7 +347,7 @@ type Tag = string;
 
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
-  defaultFilterSelection?: 'include' | 'exclude';
+  defaultFilterSelection?: 'include' | 'exclude' | undefined;
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }

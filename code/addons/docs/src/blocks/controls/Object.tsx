@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
-import { AddIcon, SubtractIcon } from '@storybook/icons';
+import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
 import { styled, useTheme } from 'storybook/theming';
@@ -18,8 +18,10 @@ const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   isolation: 'isolate',
+  gap: 8,
 
   '.rejt-tree': {
+    flex: 1,
     marginLeft: '1rem',
     fontSize: '13px',
     listStyleType: 'none',
@@ -125,10 +127,9 @@ const Input = styled.input(({ theme, placeholder }) => ({
 }));
 
 const RawButton = styled(ToggleButton)({
-  position: 'absolute',
-  zIndex: 2,
-  top: 2,
-  right: 2,
+  alignSelf: 'flex-start',
+  order: 2,
+  marginRight: -10,
 });
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
@@ -188,7 +189,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const onForceVisible = useCallback(() => {
     onChange({});
     setForceVisible(true);
-  }, [setForceVisible]);
+  }, [onChange, setForceVisible]);
 
   const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -240,13 +241,16 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
         <RawButton
           disabled={readonly}
           pressed={showRaw}
-          ariaLabel={`Edit the ${name} properties in JSON format`}
+          ariaLabel={`Edit ${name} as JSON`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
           }}
+          variant="ghost"
+          padding="small"
+          size="small"
         >
-          Edit JSON
+          <EditIcon />
         </RawButton>
       )}
       {!showRaw ? (

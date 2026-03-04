@@ -28,12 +28,13 @@ const Panel: FC<any> = (props) => {
   const panelActions = useMemo(
     () => ({
       onSelect: (panel: string) => api.setSelectedPanel(panel),
-      toggleVisibility: () => {
+      toggleVisibility: async () => {
         const wasPanelShown = api.getIsPanelShown();
         api.togglePanel();
         if (wasPanelShown) {
-          const result = api.focusOnUIElement(focusableUIElements.showAddonPanel);
-          if (result === false) {
+          const success = await api.focusOnUIElement(focusableUIElements.showAddonPanel);
+          // Fallback to body for predictable behavior.
+          if (success === false) {
             document.body.focus();
           }
         }

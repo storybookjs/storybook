@@ -1,5 +1,5 @@
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - synchronize
@@ -10,6 +10,7 @@ on:
     branches:
       - main
       - next
+      - sidnioulz/danger-js-on-forks
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}

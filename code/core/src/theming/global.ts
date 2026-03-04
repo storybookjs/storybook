@@ -156,6 +156,10 @@ export const createGlobal = memoize(1)(({
       pointerEvents: 'none',
     },
 
+    '.react-aria-Popover': {
+      overflow: 'auto',
+    },
+
     '.react-aria-Popover:focus-visible': {
       outline: 'none',
     },

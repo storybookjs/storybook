@@ -110,6 +110,8 @@ const Expandable = styled.button(codeCommon, ({ theme }) => ({
 const Detail = styled.div(({ theme }) => ({
   minWidth: 200,
   maxWidth: 800,
+  maxHeight: '85vh',
+  overflowY: 'auto',
   paddingRight: 16,
   // Don't remove the mono fontFamily here even if it seems useless, this is used by the browser to calculate the length of a "ch" unit.
   fontFamily: theme.typography.fonts.mono,

@@ -120,12 +120,6 @@ export { StorybookIcon } from './brand/StorybookIcon';
 export { Loader } from './components/Loader/Loader';
 export { ProgressSpinner } from './components/ProgressSpinner/ProgressSpinner';
 
-// Live Region
-export { announce, clearAnnouncer, destroyAnnouncer } from './components/LiveRegion/LiveRegion';
-export type { Politeness } from './components/LiveRegion/LiveRegion';
-export { toHaveLiveRegion } from './components/LiveRegion/toHaveLiveRegion';
-export type { LiveRegionMatcherOptions } from './components/LiveRegion/toHaveLiveRegion';
-
 // Utils
 export { getStoryHref } from './components/utils/getStoryHref';
 

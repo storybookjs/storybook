@@ -5,7 +5,7 @@
  * Usage:
  *
  * ```ts
- * import { toHaveLiveRegion } from 'storybook/internal/components';
+ * import { toHaveLiveRegion } from '../path/to/manager/utils/toHaveLiveRegion';
  *
  * expect.extend({ toHaveLiveRegion });
  *

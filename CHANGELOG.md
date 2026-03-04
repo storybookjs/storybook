@@ -1,3 +1,7 @@
+## 9.1.20
+
+- Add request validation
+
 ## 9.1.19
 
 - Harden websocket connection

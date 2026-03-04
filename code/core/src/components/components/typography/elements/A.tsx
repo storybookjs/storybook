@@ -1,9 +1,11 @@
+import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
 import { withReset } from '../lib/common';
 import { Link } from './Link';
 
-export const A = styled(Link)(withReset, ({ theme }) => ({
+export const A = styled(Link)(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
   fontSize: 'inherit',
   lineHeight: '24px',
 

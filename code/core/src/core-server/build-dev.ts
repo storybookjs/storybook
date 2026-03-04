@@ -17,7 +17,7 @@ import { oneWayHash, telemetry } from '@storybook/core/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
 import { global } from '@storybook/global';
 
-import { deprecate } from '@storybook/core/node-logger';
+import { deprecate, logger } from '@storybook/core/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from '@storybook/core/server-errors';
 
 import prompts from 'prompts';

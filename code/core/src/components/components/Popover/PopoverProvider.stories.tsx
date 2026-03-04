@@ -246,6 +246,21 @@ export const InteractivePopoverMouse = meta.story({
   },
 });
 
+export const WithTallContent = meta.story({
+  args: {
+    children: <Trigger>Tall content (scroll to see all)</Trigger>,
+    popover: (
+      <div style={{ padding: '8px' }}>
+        {Array.from({ length: 60 }, (_, i) => (
+          <div key={i} style={{ fontSize: '12px', lineHeight: '1.6' }}>
+            Line {i + 1}: Item content here
+          </div>
+        ))}
+      </div>
+    ),
+  },
+});
+
 export const WithLongContent = meta.story({
   args: {
     children: <Trigger>Long content</Trigger>,

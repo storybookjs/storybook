@@ -174,19 +174,19 @@ IF Flow 0 (Pure Logic / No UI)
      If a user can reproduce this bug in the browser, this is wrong.
 
 ELSE IF Flow 1 (Renderer in code/renderers/**)
-  ✓ Use /renderer-bug-workflow skill
+  -> Read .claude/skills/renderer-bug-workflow/SKILL.md for further instructions
   ✓ Expected: Template story, screenshot of fixed renderer
 
 ELSE IF Flow 2 (Builder Frontend in code/builders/**)
-  ✓ Use /builder-bug-workflow skill (Flow 2 section)
+  -> Read .claude/skills/builder-bug-workflow/SKILL.md for further instructions (Flow 2 section)
   ✓ Expected: Screenshot of browser output showing fix
 
 ELSE IF Flow 3 (Builder Terminal Output)
-  ✓ Use /builder-bug-workflow skill (Flow 3 section)
+  -> Read .claude/skills/builder-bug-workflow/SKILL.md for further instructions (Flow 3 section)
   ✓ Expected: Updated snapshot diff showing fix
 
 ELSE IF Flow 4 (Manager UI in code/core/src/manager/**)
-  ✓ Use /manager-bug-workflow skill
+  -> Read .claude/skills/manager-bug-workflow/SKILL.md for further instructions
   ✓ Expected: Passing E2E test + screenshot of Manager UI
 ```
 

@@ -148,9 +148,3 @@ If the diff is large or unexpected:
 2. Verify the changes are a direct result of your builder modification
 3. Iterate on your fix until the diff is clean and focused
 4. Run the capture script again: `jiti scripts/capture-terminal-output.ts --builder <builder-name>`
-
-## Step 6: Commit and Open PR
-
-- Commit the updated snapshot file
-- Include a summary of what terminal output changed in the PR description
-- Explain the business impact of the changes (performance, clarity, new features, etc.)

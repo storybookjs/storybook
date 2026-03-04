@@ -185,7 +185,7 @@ Use the Browser MCP to:
 - ✅ Interactive elements respond correctly to user actions
 - ✅ No error messages or console errors visible
 
-Attach the screenshot to your PR description.
+Move the screenshot to the repository (`verification/screenshots/`) and attach the screenshot to your PR description.
 
 **Evidence quality checklist**:
 
@@ -226,11 +226,3 @@ If the test fails with "Storybook iframe did not have children", it means the st
 1. The story ID in the URL is correct (derive it from title prefix + story title + export name, all lowercased kebab-case)
 2. The dev server is running and the story is visible at `http://localhost:6006/?path=/story/{id}`
 3. If you created the story after the build (not the dev server), restart using the dev server
-
----
-
-## Step 7: Commit and Open PR
-
-- Commit both the story file and the E2E test changes
-- Include the screenshot in your PR description
-- Summarize the Manager UI fix and which interaction was broken and is now fixed

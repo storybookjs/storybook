@@ -72,7 +72,7 @@ Use the Browser MCP to:
 - ✅ The story renders without errors or warnings
 - ✅ Visual output matches expected behavior described in the issue
 
-If the bug is resolved in the screenshot, attach it to your PR description.
+If the bug is resolved in the screenshot, move the screenshot from tmp directory to the repository (`verification/screenshots/`) and attach it to your PR description.
 
 **Evidence quality checklist**:
 

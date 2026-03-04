@@ -24,6 +24,7 @@ import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { router } from './utils/router';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
+import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
 
 export async function storybookDevServer(options: Options) {
@@ -37,9 +38,20 @@ export async function storybookDevServer(options: Options) {
 
   assert(core?.channelOptions?.wsToken, 'wsToken is required for securing the server channel');
 
+  const { port, host, initialPath } = options;
+  invariant(port, 'expected options to have a port');
+  const proto = options.https ? 'https' : 'http';
+  const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
+
   const serverChannel = await options.presets.apply(
     'experimental_serverChannel',
-    getServerChannel(server, core.channelOptions.wsToken)
+    getServerChannel(server, {
+      token: core.channelOptions.wsToken,
+      host,
+      allowedHosts: core.allowedHosts,
+      localAddress: address,
+      networkAddress,
+    })
   );
 
   if (features?.storyStoreV7 === false) {
@@ -63,6 +75,14 @@ export async function storybookDevServer(options: Options) {
     options.extendServer(server);
   }
 
+  app.use(
+    getHostValidationMiddleware({
+      host,
+      allowedHosts: core?.allowedHosts,
+      localAddress: address,
+      networkAddress,
+    })
+  );
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 
@@ -70,10 +90,6 @@ export async function storybookDevServer(options: Options) {
 
   app.use(router);
 
-  const { port, host, initialPath } = options;
-  invariant(port, 'expected options to have a port');
-  const proto = options.https ? 'https' : 'http';
-  const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
 
   const listening = new Promise<void>((resolve, reject) => {
     // @ts-expect-error (Following line doesn't match TypeScript signature at all 🤔)

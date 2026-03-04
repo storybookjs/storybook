@@ -9,12 +9,15 @@ export async function createViteServer(options: Options, devServer: Server) {
 
   const commonCfg = await commonConfig(options, 'development');
 
+  const { allowedHosts } = await presets.apply('core', {});
+
   const config = {
     ...commonCfg,
     // Needed in Vite 5: https://github.com/storybookjs/storybook/issues/25256
     assetsInclude: ['/sb-preview/**'],
     // Set up dev server
     server: {
+      allowedHosts,
       middlewareMode: true,
       hmr: {
         port: options.port,
@@ -27,6 +30,14 @@ export async function createViteServer(options: Options, devServer: Server) {
     appType: 'custom' as const,
     optimizeDeps: await getOptimizeDeps(commonCfg, options),
   };
+
+  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments
+  if (
+    options.host === '0.0.0.0' &&
+    (!allowedHosts || (Array.isArray(allowedHosts) && allowedHosts.length === 0))
+  ) {
+    config.server.allowedHosts = true;
+  }
 
   const finalConfig = await presets.apply('viteFinal', config, options);
 

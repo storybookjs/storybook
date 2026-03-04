@@ -175,6 +175,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       <>
         {isDesktop && (
           <SidebarContainer>
+            {slots.slotSidebar}
             <Drag
               ref={sidebarResizerRef}
               role="separator"
@@ -185,7 +186,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
               aria-valuemin={0}
               aria-valuemax={typeof window !== 'undefined' ? window.innerWidth : undefined}
             />
-            {slots.slotSidebar}
           </SidebarContainer>
         )}
         {isMobile && (

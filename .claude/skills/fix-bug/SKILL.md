@@ -15,14 +15,10 @@ Step 3: Write Tests & Run Full Suite
          ↓
 Step 4: Format and Lint
          ↓
-Step 5: Commit Changes
-         ↓
-Step 6: Run Verification Workflow (flow-specific)
+Step 5: Run Verification Workflow (flow-specific)
          ↓ [MUST PASS: Verification evidence gathered]
          ↓
-Step 7: Documentation Self-Improvement (if needed)
-         ↓
-Step 8: Prepare PR Content & Open PR
+Step 6: Documentation Self-Improvement (if needed)
 ```
 
 ---
@@ -164,29 +160,7 @@ cd code && yarn test
 
 ---
 
-## Step 5: Commit Changes
-
-**Action**: Create commit with clear, descriptive message.
-
-```bash
-git add <changed-files>
-git commit -m "Fix: Issue #[issue-number] — [Brief description from issue title]"
-```
-
-Example:
-
-```bash
-git commit -m "Fix: Issue #12345 — React renderer not applying CSS to styled components"
-```
-
-**Success Criteria**:
-
-- [ ] Commit created with clear message
-- [ ] `git log --oneline` shows the commit
-
----
-
-## Step 6: Run Verification Workflow
+## Step 5: Run Verification Workflow
 
 **Action**: Run the verification workflow matching your flow type (determined in Step 1).
 
@@ -240,7 +214,7 @@ IF verification fails:
 
 ---
 
-## Step 7: Documentation Self-Improvement
+## Step 6: Documentation Self-Improvement
 
 **IMPORTANT**: Reflect on your workflow execution before opening the PR.
 
@@ -259,12 +233,7 @@ IF verification fails:
 
 1. Identify which file needs updating (CLAUDE.md or specific skill in `.claude/skills/`)
 2. Make the fix directly in that file using edit tools
-3. Commit the documentation improvement:
-   ```bash
-   git add CLAUDE.md .claude/skills/
-   git commit -m "Docs: Improve [skill-name] instructions based on workflow execution"
-   ```
-4. Include in PR description: What was wrong? What did you fix? Why will this help next time?
+3. Include in PR description: What was wrong? What did you fix? Why will this help next time?
 
 **Rationale**: Each bug fix workflow is an opportunity to improve the skills themselves. By fixing documentation issues immediately, the next agent run will perform better and avoid the same pitfalls.
 
@@ -273,44 +242,3 @@ IF verification fails:
 - [ ] All documentation issues identified during workflow execution are fixed (or none found)
 - [ ] Documentation improvements committed to feature branch (if any)
 - [ ] Ready to proceed with PR preparation
-
----
-
-## Step 8: Prepare PR Content & Open PR
-
-**Action**: Prepare comprehensive PR content and create the pull request.
-
-**Use the `/open-pull-request` skill** to generate PR content with:
-
-- Clear title referencing the issue (e.g., "Fix: Issue #12345 — React renderer CSS styling bug")
-- Summary of the root cause
-- Changes made (files modified)
-- Testing evidence:
-  - For Flow 0: Test suite results
-  - For Flow 1: Renderer screenshots
-  - For Flow 2: Frontend output screenshots
-  - For Flow 3: Snapshot diffs
-  - For Flow 4: E2E test results + Manager UI screenshots
-- Any documentation improvements made in Step 7
-
-**Invoke with**:
-
-```
-/open-pull-request [issue-number] [flow] [verification-evidence]
-```
-
-**Expected Output**:
-
-- ✅ PR title and description ready
-- ✅ Branch pushed to remote
-- ✅ PR created with all evidence linked
-- ✅ PR links to original issue
-
-**Success Criteria**:
-
-- [ ] PR has clear, descriptive title
-- [ ] PR description includes root cause analysis
-- [ ] All verification evidence is included or linked
-- [ ] PR references the original issue
-- [ ] All code changes are included
-- [ ] All artifact commits are included (screenshots, snapshots, E2E results)

@@ -65,7 +65,9 @@ Fix: React renderer not applying CSS to styled components
 
 ## Step 2: Prepare PR Body
 
-Build the body by combining the base template with flow-specific evidence:
+Read PR template in .github/PULL_REQUEST_TEMPLATE.md and populate every required section.
+
+Use the this base template and flow-specific evidence as reference:
 
 ### 2a: Base Template
 
@@ -185,9 +187,22 @@ Terminal output now matches expected format without build-specific noise.
 [Screenshot of Manager UI showing correct behavior]
 ```
 
-### 2c: Complete Your PR Description
+### 2c: AI Disclaimer section
 
-Combine the base template (Section 2a) with your flow-specific section (Section 2b).
+Add an AI disclaimer explaining that the PR was created by AI, and show which agent and model was used.
+
+```markdown
+## AI Disclaimer
+
+- Agent: <copilot-coding-agent | claude-code | other>
+- Model: <exact model id/name>
+- Skills/Workflow: <skill names or flow id>
+- Human Oversight: <reviewed-by-human yes/no + notes>
+```
+
+### 2d: Complete Your PR Description
+
+Combine the base template (Section 2a) with your flow-specific section (Section 2b) and add the AI disclaimer (Section 2c) at the end.
 
 **Success Criteria**:
 
@@ -196,6 +211,7 @@ Combine the base template (Section 2a) with your flow-specific section (Section 
 - [ ] Flow-specific evidence section is included
 - [ ] All placeholders ($ARGUMENTS[0], issue links, evidence) are populated
 - [ ] Screenshots/diffs are embedded or linked
+- [ ] AI disclaimer present with agent + model
 
 ---
 

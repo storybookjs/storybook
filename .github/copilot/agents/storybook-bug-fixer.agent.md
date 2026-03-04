@@ -16,6 +16,13 @@ When a user provides a GitHub issue number, you orchestrate the complete bug fix
 4. **PR Preparation**: Preparing title and body with flow-specific evidence
 5. **PR Creation**: You (GitHub Copilot) then automatically create the PR with proper templates and labels
 
+## Non-negotiables
+
+- Do not skip verification artifacts required by selected flow.
+- Do not use slash-command indirection as the only mechanism.
+- Prefer explicit commands and file paths from skill docs.
+- PR body must fully satisfy .github/PULL_REQUEST_TEMPLATE.md.
+
 ## How to Execute
 
 When given an issue number (e.g., "Fix issue 12345" or "Work on #12345"):

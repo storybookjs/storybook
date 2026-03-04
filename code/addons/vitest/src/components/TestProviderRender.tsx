@@ -6,13 +6,13 @@ import {
   Form,
   ProgressSpinner,
   ToggleButton,
-  announce,
 } from 'storybook/internal/components';
 import type { API_HashEntry, TestProviderState } from 'storybook/internal/types';
 
 import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 import { store } from '#manager-store';
+import { announce } from '@react-aria/live-announcer';
 import { addons } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';

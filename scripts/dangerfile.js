@@ -147,11 +147,10 @@ const checkManualTestingSection = (body) => {
 
 const checkTargetBranch = () => {
   const targetBranch = danger.github.pr.base.ref;
-  const author = danger.github.pr.user;
   const authorAssociation = danger.github.pr.author_association;
 
-  // Only check for non-team members (not OWNER or MEMBER), but always check for bots
-  if (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') {
+  // Only check for non-team members (not OWNER or MEMBER)
+  if (['OWNER', 'MEMBER'].includes(authorAssociation)) {
     return;
   }
 

@@ -87,9 +87,10 @@ export const ObjectWithFunction: StoryObj<typeof meta> = {
 
 **Key patterns for test stories:**
 
-- Use `fn().mockName('myName')` for function args — this controls the label shown in the Actions panel (e.g. `myName:` appears in the Actions panel when the function is called)
+- Use `fn().mockName('myName')` for function args — this controls the label shown in the Actions panel
 - For object args with functions, `fn()` nested inside the object is correctly tracked by Storybook's Actions addon
 - Keep the component minimal — it just needs to make the affected behavior observable
+- **For Controls panel argType rows**: an argType only appears in the Controls panel if it has a corresponding `args` value AND a `control` type (e.g. `control: 'text'`). Setting only `table.type.detail` is not enough — the row won't render.
 
 ---
 
@@ -97,7 +98,7 @@ export const ObjectWithFunction: StoryObj<typeof meta> = {
 
 Add your test inside the `Desktop` describe block in `code/e2e-tests/manager.spec.ts`.
 
-**Important**: The `beforeEach` hook in `manager.spec.ts` navigates to the base `storybookUrl`. If your test needs a specific story, navigate directly inside the test body using `page.goto(...)` + `sbPage.waitUntilLoaded()` — this overrides the beforeEach navigation.
+**Important**: Always use `sbPage.navigateToStory(title, storyName)` to navigate to a story — it waits for the sidebar selection, URL change, and full story load. Do NOT use `page.goto()` + `waitUntilLoaded()` for story navigation; it has race conditions and the session storage init script won't apply retroactively.
 
 **Pattern for Controls panel tests:**
 
@@ -105,11 +106,8 @@ Add your test inside the `Desktop` describe block in `code/e2e-tests/manager.spe
 test('Controls panel preserves X when Y', async ({ page }) => {
   const sbPage = new SbPage(page, expect);
 
-  // Navigate directly to the specific story
-  await page.goto(
-    `${storybookUrl}/?path=/story/controls-function-arg-preservation--object-with-function`
-  );
-  await sbPage.waitUntilLoaded();
+  // Navigate via sidebar — most reliable method
+  await sbPage.navigateToStory('controls/function-arg-preservation', 'Object With Function');
 
   // Verify initial state
   const button = sbPage.previewRoot().getByRole('button');
@@ -226,6 +224,10 @@ If the test fails with "Storybook iframe did not have children", it means the st
 1. The story ID in the URL is correct (derive it from title prefix + story title + export name, all lowercased kebab-case)
 2. The dev server is running and the story is visible at `http://localhost:6006/?path=/story/{id}`
 3. If you created the story after the build (not the dev server), restart using the dev server
+
+**Debugging a failing test without screenshots**: When a test fails, Playwright writes `playwright-results/*/error-context.md` containing a full ARIA snapshot of the page at the point of failure. Read this file first — it shows exactly what elements are visible, their roles, and accessible names, without needing to open the trace viewer.
+
+**React-aria popover/dialog accessible name**: React-aria's `DialogTrigger`/`Popover` derives the dialog's accessible name from the trigger button label (via `aria-labelledby`), not from any `aria-label` prop passed to the popover container. When asserting `getByRole('dialog', { name: '...' })` for a `PopoverProvider`-based popover, use the trigger button's visible text as the name.
 
 ---
 

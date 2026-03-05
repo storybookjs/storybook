@@ -22,7 +22,7 @@ export async function vueDocgen(): Promise<Plugin> {
       s.append(`;_sfc_main.__docgenInfo = Object.assign({
         displayName: _sfc_main.name ?? _sfc_main.__name
       }, ${JSON.stringify(metaData)});`);
-      
+
       return {
         code: s.toString(),
         map: s.generateMap({ hires: true, source: id }),

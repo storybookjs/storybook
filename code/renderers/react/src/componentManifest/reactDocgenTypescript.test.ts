@@ -7,7 +7,7 @@ import { parseWithReactDocgenTypescript } from './reactDocgenTypescript';
 const fixture = (name: string) => join(__dirname, '__testfixtures__', name);
 
 // Strip absolute paths so snapshots are portable across machines and CI environments
-function normalize(results: unknown[]) {
+function normalize(results: any[]) {
   return JSON.parse(
     JSON.stringify(results, (key, value) => {
       if ((key === 'filePath' || key === 'fileName') && typeof value === 'string') {
@@ -1207,6 +1207,363 @@ describe('parseFile', () => {
       `);
   });
 
-  // DtsComponent, ForwardRef, RenamedExport, DisplayNameOverride, Barrel —
-  // RDT returns [] for all of these. These patterns are covered by RPT tests instead.
+  test('DtsComponent (extends React.ButtonHTMLAttributes from .d.ts)', () => {
+    const results = normalize(parseWithReactDocgenTypescript(fixture('DtsComponent.tsx')));
+
+    expect(results).toHaveLength(1);
+    expect(results[0].displayName).toBe('HtmlButton');
+    expect(results[0].exportName).toBe('HtmlButton');
+
+    // User-defined prop should always be present
+    expect(results[0].props.variant).toMatchInlineSnapshot(`
+      {
+        "declarations": [
+          {
+            "fileName": "DtsComponent.tsx",
+            "name": "HtmlButtonProps",
+          },
+        ],
+        "defaultValue": null,
+        "description": "The button variant",
+        "name": "variant",
+        "parent": {
+          "fileName": "DtsComponent.tsx",
+          "name": "HtmlButtonProps",
+        },
+        "required": false,
+        "type": {
+          "name": "enum",
+          "raw": ""solid" | "outline"",
+          "value": [
+            {
+              "value": ""solid"",
+            },
+            {
+              "value": ""outline"",
+            },
+          ],
+        },
+      }
+    `);
+
+    // Bulk system props (>30 from one .d.ts source) should be filtered out
+    // The exact set of remaining small-source props varies by @types/react version,
+    // so we only assert the structural invariant
+    const propNames = Object.keys(results[0].props);
+    expect(propNames).toContain('variant');
+    expect(propNames).not.toContain('className');
+    expect(propNames).not.toContain('onClick');
+    expect(propNames).not.toContain('children');
+  });
+
+  test('ForwardRef', () => {
+    expect(normalize(parseWithReactDocgenTypescript(fixture('ForwardRef.tsx'))))
+      .toMatchInlineSnapshot(`
+        [
+          {
+            "description": "",
+            "displayName": "TextInput",
+            "exportName": "TextInput",
+            "filePath": "ForwardRef.tsx",
+            "methods": [],
+            "props": {
+              "key": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/index.d.ts",
+                    "name": "Attributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "key",
+                "parent": {
+                  "fileName": "node_modules/@types/react/index.d.ts",
+                  "name": "Attributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "Key | null",
+                },
+              },
+              "label": {
+                "declarations": [
+                  {
+                    "fileName": "ForwardRef.tsx",
+                    "name": "TextInputProps",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "Input label",
+                "name": "label",
+                "parent": {
+                  "fileName": "ForwardRef.tsx",
+                  "name": "TextInputProps",
+                },
+                "required": true,
+                "type": {
+                  "name": "string",
+                },
+              },
+              "onChange": {
+                "declarations": [
+                  {
+                    "fileName": "ForwardRef.tsx",
+                    "name": "TextInputProps",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "Change handler",
+                "name": "onChange",
+                "parent": {
+                  "fileName": "ForwardRef.tsx",
+                  "name": "TextInputProps",
+                },
+                "required": false,
+                "type": {
+                  "name": "((value: string) => void)",
+                },
+              },
+              "placeholder": {
+                "declarations": [
+                  {
+                    "fileName": "ForwardRef.tsx",
+                    "name": "TextInputProps",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "Placeholder text",
+                "name": "placeholder",
+                "parent": {
+                  "fileName": "ForwardRef.tsx",
+                  "name": "TextInputProps",
+                },
+                "required": false,
+                "type": {
+                  "name": "string",
+                },
+              },
+              "ref": {
+                "declarations": [
+                  {
+                    "fileName": "node_modules/@types/react/index.d.ts",
+                    "name": "RefAttributes",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "Allows getting a ref to the component instance.
+        Once the component unmounts, React will set \`ref.current\` to \`null\`
+        (or call the ref with \`null\` if you passed a callback ref).
+        @see {@link https://react.dev/learn/referencing-values-with-refs#refs-and-the-dom React Docs}",
+                "name": "ref",
+                "parent": {
+                  "fileName": "node_modules/@types/react/index.d.ts",
+                  "name": "RefAttributes",
+                },
+                "required": false,
+                "type": {
+                  "name": "LegacyRef<HTMLInputElement>",
+                },
+              },
+            },
+            "tags": {},
+          },
+        ]
+      `);
+  });
+
+  test('RenamedExport (export { Foo as Bar } — displayName differs from exportName)', () => {
+    const result = normalize(parseWithReactDocgenTypescript(fixture('RenamedExport.ts')));
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "description": "",
+          "displayName": "Alert",
+          "exportName": "NotificationBanner",
+          "filePath": "RenamedExport.ts",
+          "methods": [],
+          "props": {
+            "message": {
+              "declarations": [
+                {
+                  "fileName": "RenamedExport.ts",
+                  "name": "AlertProps",
+                },
+              ],
+              "defaultValue": null,
+              "description": "",
+              "name": "message",
+              "parent": {
+                "fileName": "RenamedExport.ts",
+                "name": "AlertProps",
+              },
+              "required": true,
+              "type": {
+                "name": "string",
+              },
+            },
+            "severity": {
+              "declarations": [
+                {
+                  "fileName": "RenamedExport.ts",
+                  "name": "AlertProps",
+                },
+              ],
+              "defaultValue": null,
+              "description": "",
+              "name": "severity",
+              "parent": {
+                "fileName": "RenamedExport.ts",
+                "name": "AlertProps",
+              },
+              "required": false,
+              "type": {
+                "name": "enum",
+                "raw": ""info" | "warning" | "error"",
+                "value": [
+                  {
+                    "value": ""info"",
+                  },
+                  {
+                    "value": ""warning"",
+                  },
+                  {
+                    "value": ""error"",
+                  },
+                ],
+              },
+            },
+          },
+          "tags": {},
+        },
+      ]
+    `);
+    // Key assertion: displayName is the internal name, exportName is what consumers import
+    expect(result[0].displayName).toBe('Alert');
+    expect(result[0].exportName).toBe('NotificationBanner');
+  });
+
+  test('DisplayNameOverride (component.displayName set explicitly)', () => {
+    const result = normalize(parseWithReactDocgenTypescript(fixture('DisplayNameOverride.ts')));
+    // The export name should be "Modal" (the export alias), not "InternalModal" or "FancyModal"
+    expect(result[0].exportName).toBe('Modal');
+    expect(result[0].props).toHaveProperty('title');
+    expect(result[0].props).toHaveProperty('open');
+  });
+
+  test('Barrel (export * from barrel index)', () => {
+    expect(normalize(parseWithReactDocgenTypescript(fixture('barrel/index.ts'))))
+      .toMatchInlineSnapshot(`
+        [
+          {
+            "description": "",
+            "displayName": "Button",
+            "exportName": "Button",
+            "filePath": "barrel/index.ts",
+            "methods": [],
+            "props": {
+              "label": {
+                "declarations": [
+                  {
+                    "fileName": "barrel/Button.ts",
+                    "name": "ButtonProps",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "label",
+                "parent": {
+                  "fileName": "barrel/Button.ts",
+                  "name": "ButtonProps",
+                },
+                "required": true,
+                "type": {
+                  "name": "string",
+                },
+              },
+              "size": {
+                "declarations": [
+                  {
+                    "fileName": "barrel/Button.ts",
+                    "name": "ButtonProps",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "size",
+                "parent": {
+                  "fileName": "barrel/Button.ts",
+                  "name": "ButtonProps",
+                },
+                "required": false,
+                "type": {
+                  "name": "enum",
+                  "raw": ""sm" | "md" | "lg"",
+                  "value": [
+                    {
+                      "value": ""sm"",
+                    },
+                    {
+                      "value": ""md"",
+                    },
+                    {
+                      "value": ""lg"",
+                    },
+                  ],
+                },
+              },
+            },
+            "tags": {},
+          },
+          {
+            "description": "",
+            "displayName": "Input",
+            "exportName": "Input",
+            "filePath": "barrel/index.ts",
+            "methods": [],
+            "props": {
+              "onChange": {
+                "declarations": [
+                  {
+                    "fileName": "barrel/Input.ts",
+                    "name": "InputProps",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "onChange",
+                "parent": {
+                  "fileName": "barrel/Input.ts",
+                  "name": "InputProps",
+                },
+                "required": true,
+                "type": {
+                  "name": "(value: string) => void",
+                },
+              },
+              "value": {
+                "declarations": [
+                  {
+                    "fileName": "barrel/Input.ts",
+                    "name": "InputProps",
+                  },
+                ],
+                "defaultValue": null,
+                "description": "",
+                "name": "value",
+                "parent": {
+                  "fileName": "barrel/Input.ts",
+                  "name": "InputProps",
+                },
+                "required": true,
+                "type": {
+                  "name": "string",
+                },
+              },
+            },
+            "tags": {},
+          },
+        ]
+      `);
+  });
 });

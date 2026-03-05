@@ -26,12 +26,14 @@ import devInstructions from './instructions/dev-instructions.md';
 import testInstructions from './instructions/test-instructions.md';
 
 function buildServerInstructions(options: {
-	testAvailable: boolean;
-	docsAvailable: boolean;
+	devEnabled: boolean;
+	testEnabled: boolean;
+	docsEnabled: boolean;
 }): string {
-	const parts: string[] = [devInstructions];
-	if (options.testAvailable) parts.push(testInstructions);
-	if (options.docsAvailable) parts.push(STORYBOOK_MCP_INSTRUCTIONS);
+	const parts: string[] = [];
+	if (options.devEnabled) parts.push(devInstructions);
+	if (options.testEnabled) parts.push(testInstructions);
+	if (options.docsEnabled) parts.push(STORYBOOK_MCP_INSTRUCTIONS);
 	return parts.join('\n\n');
 }
 
@@ -51,23 +53,30 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const manifestStatus = await getManifestStatus(options);
 	a11yEnabled = await isAddonA11yEnabled(options);
 
-	const server = new McpServer(
+	let server: McpServer<any, AddonContext>;
+
+	const serverOptions = {
+		adapter: new ValibotJsonSchemaAdapter(),
+		get instructions() {
+			return buildServerInstructions({
+				devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
+				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && !!addonVitestConstants,
+				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && manifestStatus.available,
+			});
+		},
+		capabilities: {
+			tools: { listChanged: true },
+			resources: { listChanged: true },
+		},
+	};
+
+	server = new McpServer(
 		{
 			name: pkgJson.name,
 			version: pkgJson.version,
 			description: pkgJson.description,
 		},
-		{
-			adapter: new ValibotJsonSchemaAdapter(),
-			instructions: buildServerInstructions({
-				testAvailable: !!addonVitestConstants,
-				docsAvailable: manifestStatus.available,
-			}),
-			capabilities: {
-				tools: { listChanged: true },
-				resources: { listChanged: true },
-			},
-		},
+		serverOptions,
 	).withContext<AddonContext>();
 
 	if (!disableTelemetry) {

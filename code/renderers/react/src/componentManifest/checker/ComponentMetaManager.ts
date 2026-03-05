@@ -35,8 +35,8 @@ export class ComponentMetaManager {
   private static instance: Promise<ComponentMetaManager | null> | undefined;
 
   /**
-   * Lazy singleton — dynamically imports TypeScript and creates a single manager instance.
-   * Returns null if TypeScript is not available.
+   * Lazy singleton — dynamically imports TypeScript and creates a single manager instance. Returns
+   * null if TypeScript is not available.
    */
   static getInstance(): Promise<ComponentMetaManager | null> {
     if (!this.instance) {
@@ -93,8 +93,8 @@ export class ComponentMetaManager {
   }
 
   /**
-   * Batch-extract component props across all entries, grouping by tsconfig project so each
-   * project builds its TS program only once.
+   * Batch-extract component props across all entries, grouping by tsconfig project so each project
+   * builds its TS program only once.
    */
   batchExtract(
     entries: Array<{

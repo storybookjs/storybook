@@ -173,11 +173,7 @@ export const manifests: PresetPropertyFn<
       typescriptOptions,
       experimentalReactComponentMeta: docgenEngine === 'react-component-meta',
     });
-    const component = findMatchingComponent(
-      allComponents,
-      componentName,
-      entry.title
-    );
+    const component = findMatchingComponent(allComponents, componentName, entry.title);
     return {
       entry,
       storyFilePath,

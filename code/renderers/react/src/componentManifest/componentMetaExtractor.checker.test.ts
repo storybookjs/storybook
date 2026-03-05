@@ -542,10 +542,18 @@ const TEST_FILES: Record<string, string> = {
   `,
   'extract/optional_nested_undefined.tsx': `
     import React from 'react';
+    type A = { a: string };
+    type B = { b: number };
     interface Props {
       config?: Record<string, number | undefined>;
       onChange?: (value: string | undefined) => void;
       label: string;
+      /** function type in a multi-member union — needs parens */
+      handler?: ((x: number) => void) | string;
+      /** intersection in a multi-member union — needs parens */
+      combo?: (A & B) | string;
+      /** boolean union with another type */
+      boolOrStr?: boolean | string;
     }
     export const Widget = (props: Props) => <div />;
   `,
@@ -1591,7 +1599,7 @@ describe('componentMetaExtractor (LSP)', () => {
       expect(props.count.required).toBe(true);
 
       expect(props.disabled).toBeDefined();
-      expect(props.disabled.type.name).toBe('boolean');
+      expect(props.disabled.type.name).toBe('boolean | undefined');
       expect(props.disabled.required).toBe(false);
     });
 
@@ -1732,7 +1740,7 @@ describe('componentMetaExtractor (LSP)', () => {
       // Props
       expect(doc.props.primary).toBeDefined();
       expect(doc.props.primary.required).toBe(false);
-      expect(doc.props.primary.type.name).toBe('boolean');
+      expect(doc.props.primary.type.name).toBe('boolean | undefined');
       expect(doc.props.primary.description).toBe('Description of primary');
 
       expect(doc.props.label).toBeDefined();
@@ -1896,6 +1904,17 @@ describe('componentMetaExtractor (LSP)', () => {
       // Non-optional prop should be unaffected
       expect(props.label.required).toBe(true);
       expect(props.label.type.name).toBe('string');
+
+      // Multi-member unions keep `| undefined` — stripping would require reconstructing
+      // TypeScript's typeToString behavior (boolean collapsing, parenthesization, ordering).
+      expect(props.handler.required).toBe(false);
+      expect(props.handler.type.name).toBe('string | ((x: number) => void) | undefined');
+
+      expect(props.combo.required).toBe(false);
+      expect(props.combo.type.name).toBe('string | (A & B) | undefined');
+
+      expect(props.boolOrStr.required).toBe(false);
+      expect(props.boolOrStr.type.name).toBe('string | boolean | undefined');
     });
 
     it('extracts function prop types', () => {

@@ -400,25 +400,21 @@ function serializeType(
       };
     }
 
-    // For optional props, strip the top-level `undefined` from the serialized type.
-    // When there's a single non-undefined type, serialize it directly — this avoids
-    // regex stripping which can't distinguish top-level `| undefined` from nested
-    // occurrences inside generic parameters (e.g. `Record<string, number | undefined>`).
-    // For multi-member unions (e.g. boolean = false|true internally, or string | number),
-    // we must use typeToString on the FULL union to preserve TS's own simplifications
-    // (boolean is internally false|true), then regex-strip. This still has an edge case
-    // for multi-member unions with nested `| undefined` (e.g. `Record<K, V | undefined>
-    // | string | undefined`), but that pattern is extremely rare for React props.
-    if (!isRequired && nonUndefinedTypes.length < type.types.length) {
-      if (nonUndefinedTypes.length === 1) {
-        return { name: checker.typeToString(nonUndefinedTypes[0]) };
-      }
-      const fullString = checker.typeToString(type);
-      const stripped = fullString
-        .replace(/\s*\|\s*undefined\b/g, '')
-        .replace(/^undefined\b\s*\|\s*/, '')
-        .trim();
-      return { name: stripped || 'undefined' };
+    // For optional props with a single non-undefined type, serialize that type directly.
+    // This strips the implicit `| undefined` added by strictNullChecks without any string
+    // manipulation, so nested `| undefined` in generics (e.g. `Record<string, number |
+    // undefined>`) is preserved correctly.
+    //
+    // For multi-member unions we don't strip — reconstructing TypeScript's typeToString
+    // behavior (boolean collapsing, parenthesization, ordering) is fragile and error-prone.
+    // The `required: false` field already captures optionality; keeping `| undefined` in
+    // the type name for these rare cases is the safest choice.
+    if (
+      !isRequired &&
+      nonUndefinedTypes.length === 1 &&
+      nonUndefinedTypes.length < type.types.length
+    ) {
+      return { name: checker.typeToString(nonUndefinedTypes[0]) };
     }
   }
 

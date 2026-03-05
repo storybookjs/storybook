@@ -1566,4 +1566,31 @@ describe('parseFile', () => {
         ]
       `);
   });
+
+  test('OptionalNested – rdt output for optional props with nested undefined', () => {
+    const results = normalize(parseWithReactDocgenTypescript(fixture('OptionalNested.ts')));
+    const props = results[0]?.props;
+
+    // What does rdt actually produce for these optional props?
+    expect(props.name.type).toMatchInlineSnapshot(`
+      {
+        "name": "string",
+      }
+    `);
+    expect(props.config.type).toMatchInlineSnapshot(`
+      {
+        "name": "Record<string, number>",
+      }
+    `);
+    expect(props.onChange.type).toMatchInlineSnapshot(`
+      {
+        "name": "((value: string) => void)",
+      }
+    `);
+    expect(props.id.type).toMatchInlineSnapshot(`
+      {
+        "name": "number",
+      }
+    `);
+  });
 });

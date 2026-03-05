@@ -191,7 +191,7 @@ If you are on an older Storybook version that doesn't default to `true`, you may
 export default {
 	// ... other config
 	features: {
-		// For Storybook 10.1.x and later:
+		// For Storybook 10.3.x and later:
 		componentsManifest: true,
 		// For older Storybook versions (before the flag was renamed):
 		// experimentalComponentsManifest: true,

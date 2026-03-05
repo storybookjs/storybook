@@ -47,7 +47,6 @@
     "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/node": "^22.0.0",
     "@types/react": "^18.0.0",
-    "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
     "aria-query@5.3.0": "^5.3.0",
     "esbuild": "^0.27.0",
     "playwright": "1.52.0",
@@ -55,7 +54,8 @@
     "react": "^18.2.0",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@vitest/expect@npm:4.0.18": "patch:@vitest/expect@npm%3A4.0.18#~/.yarn/patches/@vitest-expect-npm-4.0.18-03919ccd0b.patch"
   },
   "devDependencies": {
     "@nx/workspace": "^22.1.3",

@@ -1,6 +1,4 @@
-import { useState } from 'react';
-
-import { expect, fireEvent, fn, mocked } from 'storybook/test';
+import { expect, fireEvent, fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { NumericInput } from './NumericInput';
@@ -11,12 +9,6 @@ const meta = preview.meta({
   args: {
     setValue: fn(),
   },
-  render: (args) => {
-    const [value, setValue] = useState(args.value);
-    args.value = value;
-    args.setValue = mocked(args.setValue).mockImplementation(setValue);
-    return <NumericInput {...args} />;
-  },
 });
 
 export default meta;
@@ -25,15 +17,14 @@ export const Default = meta.story({
   args: {
     value: '10',
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ canvas }) => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input).toHaveValue('11');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input).toHaveValue('12');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     expect(input).toHaveValue('11');
-    expect(args.setValue).toHaveBeenNthCalledWith(1, '11');
-    expect(args.setValue).toHaveBeenNthCalledWith(2, '12');
-    expect(args.setValue).toHaveBeenNthCalledWith(3, '11');
   },
 });
 
@@ -41,15 +32,14 @@ export const WithParsedUnit = meta.story({
   args: {
     value: '10em',
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ canvas }) => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input).toHaveValue('11em');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input).toHaveValue('12em');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     expect(input).toHaveValue('11em');
-    expect(args.setValue).toHaveBeenNthCalledWith(1, '11em');
-    expect(args.setValue).toHaveBeenNthCalledWith(2, '12em');
-    expect(args.setValue).toHaveBeenNthCalledWith(3, '11em');
   },
 });
 
@@ -58,15 +48,14 @@ export const WithExplicitUnit = meta.story({
     value: '10',
     unit: 'vw',
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ canvas }) => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input.parentElement!).toHaveTextContent('11vw');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input.parentElement!).toHaveTextContent('12vw');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
-    expect(input).toHaveValue('11');
-    expect(args.setValue).toHaveBeenNthCalledWith(1, '11vw');
-    expect(args.setValue).toHaveBeenNthCalledWith(2, '12vw');
-    expect(args.setValue).toHaveBeenNthCalledWith(3, '11vw');
+    expect(input.parentElement!).toHaveTextContent('11vw');
   },
 });
 
@@ -75,15 +64,14 @@ export const WithBaseUnit = meta.story({
     value: '10em',
     baseUnit: 'em',
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ canvas }) => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input.parentNode!).toHaveTextContent('11em');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input.parentNode!).toHaveTextContent('12em');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
-    expect(input).toHaveValue('11');
-    expect(args.setValue).toHaveBeenNthCalledWith(1, '11em');
-    expect(args.setValue).toHaveBeenNthCalledWith(2, '12em');
-    expect(args.setValue).toHaveBeenNthCalledWith(3, '11em');
+    expect(input.parentNode!).toHaveTextContent('11em');
   },
 });
 
@@ -93,21 +81,19 @@ export const WithMinAndMax = meta.story({
     minValue: 9,
     maxValue: 11,
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ canvas }) => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input).toHaveValue('11em');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input).toHaveValue('11em');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     expect(input).toHaveValue('11em');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
-    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(input).toHaveValue('10em');
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     expect(input).toHaveValue('9em');
-    expect(args.setValue).toHaveBeenNthCalledWith(1, '11em');
-    expect(args.setValue).toHaveBeenNthCalledWith(2, '11em');
-    expect(args.setValue).toHaveBeenNthCalledWith(3, '11em');
-    expect(args.setValue).toHaveBeenNthCalledWith(4, '10em');
-    expect(args.setValue).toHaveBeenNthCalledWith(5, '9em');
-    expect(args.setValue).toHaveBeenNthCalledWith(6, '9em');
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(input).toHaveValue('9em');
   },
 });

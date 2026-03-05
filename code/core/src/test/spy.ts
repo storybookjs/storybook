@@ -1,59 +1,35 @@
-import type { Mock, MockInstance } from '@vitest/spy';
+import type { MockInstance } from '@vitest/spy';
 import {
   type MaybeMocked,
   type MaybeMockedDeep,
   type MaybePartiallyMocked,
   type MaybePartiallyMockedDeep,
+  createMockInstance as VitestSpyCreateMockInstance,
   isMockFunction,
-  mocks,
   fn as vitestFn,
   spyOn as vitestSpyOn,
 } from '@vitest/spy';
-import type { SpyInternalImpl } from 'tinyspy';
-import * as tinyspy from 'tinyspy';
+import * as vitestSpy from '@vitest/spy';
 
 export type * from '@vitest/spy';
 
-export { isMockFunction, mocks };
+export { isMockFunction, vitestSpyOn as spyOn, vitestFn as fn };
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;
 const listeners = new Set<Listener>();
+
+let mocks = new Set<MockInstance>();
 
 export function onMockCall(callback: Listener): () => void {
   listeners.add(callback);
   return () => void listeners.delete(callback);
 }
 
-// @ts-expect-error Make sure we export the exact same type as @vitest/spy
-export const spyOn: typeof vitestSpyOn = (...args) => {
-  const mock = vitestSpyOn(...(args as Parameters<typeof vitestSpyOn>));
-  return reactiveMock(mock);
-};
-
-type Procedure = (...args: any[]) => any;
-
-export function fn<T extends Procedure = Procedure>(implementation?: T): Mock<T>;
-export function fn(implementation?: Procedure) {
-  const mock = implementation ? vitestFn(implementation) : vitestFn();
-  return reactiveMock(mock);
-}
-
-function reactiveMock(mock: MockInstance) {
-  const reactive = listenWhenCalled(mock);
-  const originalMockImplementation = reactive.mockImplementation.bind(null);
-  reactive.mockImplementation = (fn) => listenWhenCalled(originalMockImplementation(fn));
-  return reactive;
-}
-
-function listenWhenCalled(mock: MockInstance) {
-  const state = tinyspy.getInternalState(mock as unknown as SpyInternalImpl);
-  const impl = state.impl;
-  state.willCall(function (this: unknown, ...args) {
-    listeners.forEach((listener) => listener(mock, args));
-    return impl?.apply(this, args);
-  });
+export const createMockInstance: typeof VitestSpyCreateMockInstance = (...args) => {
+  const mock = VitestSpyCreateMockInstance(...args);
+  mocks.add(mock);
   return mock;
-}
+};
 
 /**
  * Calls [`.mockClear()`](https://vitest.dev/api/mock#mockclear) on every mocked function. This will
@@ -62,7 +38,12 @@ function listenWhenCalled(mock: MockInstance) {
  * It is useful if you need to clean up mock between different assertions.
  */
 export function clearAllMocks() {
-  mocks.forEach((spy) => spy.mockClear());
+  if (mocks) {
+    mocks.forEach((spy) => spy.mockClear());
+    mocks = new Set<MockInstance>();
+  } else {
+    vitestSpy.clearAllMocks();
+  }
 }
 
 /**
@@ -73,7 +54,12 @@ export function clearAllMocks() {
  * This is useful when you want to completely reset a mock to the default state.
  */
 export function resetAllMocks() {
-  mocks.forEach((spy) => spy.mockReset());
+  if (mocks) {
+    mocks.forEach((spy) => spy.mockReset());
+    mocks = new Set<MockInstance>();
+  } else {
+    vitestSpy.resetAllMocks();
+  }
 }
 
 /**
@@ -81,7 +67,12 @@ export function resetAllMocks() {
  * will restore all original implementations.
  */
 export function restoreAllMocks() {
-  mocks.forEach((spy) => spy.mockRestore());
+  if (mocks) {
+    mocks.forEach((spy) => spy.mockRestore());
+    mocks = new Set<MockInstance>();
+  } else {
+    vitestSpy.restoreAllMocks();
+  }
 }
 
 /**

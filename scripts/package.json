@@ -176,7 +176,7 @@
     "type-fest": "~2.19",
     "typescript": "^5.9.3",
     "uuid": "^9.0.1",
-    "vitest": "^4.0.14",
+    "vitest": "^4.1.0-beta.5",
     "wait-on": "^8.0.3",
     "window-size": "^1.1.1",
     "yaml": "^2.8.1",

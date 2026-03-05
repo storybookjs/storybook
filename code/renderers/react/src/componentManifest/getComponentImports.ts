@@ -284,6 +284,7 @@ export const getComponents = ({
               message: `File: ${path}\n${message}`,
             };
           }
+          // Extract importOverride from RDT's description (same JSDoc parsing as react-docgen)
           const importOverride = reactDocgenTypescript
             ? getImportTag(reactDocgenTypescript)
             : undefined;
@@ -299,7 +300,6 @@ export const getComponents = ({
 
         if (reactDocgenConfig === 'react-docgen') {
           const reactDocgen = getReactDocgen(path, componentWithPackage);
-
           return {
             ...componentWithPackage,
             path,

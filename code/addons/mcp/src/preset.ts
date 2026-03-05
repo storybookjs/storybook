@@ -120,7 +120,7 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 			});
 		}
 
-		// Browser request - send HTML with redirect
+		// Browser request - send HTML
 		res.writeHead(200, { 'Content-Type': 'text/html' });
 
 		let docsNotice = '';
@@ -137,7 +137,7 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 
 		const testNoticeLines = [
 			!addonVitestConstants &&
-				`This toolset requires <code>@storybook/addon-vitest</code>. <a target="_blank" href="https://storybook.js.org/docs/writing-tests/test-addon">Learn how to set it up</a>`,
+				`This toolset requires Storybook 10.3.0+ with <code>@storybook/addon-vitest</code>. <a target="_blank" href="https://storybook.js.org/docs/writing-tests/test-addon">Learn how to set it up</a>`,
 			!a11yEnabled &&
 				`Add <code>@storybook/addon-a11y</code> for accessibility testing. <a target="_blank" href="https://storybook.js.org/docs/writing-tests/accessibility-testing">Learn more</a>`,
 		].filter(Boolean);
@@ -150,19 +150,17 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 			: '';
 
 		const html = htmlTemplate
-			.replace(
-				'{{REDIRECT_META}}',
-				manifestStatus.available
-					? // redirect the user to the component manifest page after 10 seconds
-						'<meta http-equiv="refresh" content="10;url=/manifests/components.html" />'
-					: // ... or hide the message about redirection
-						'<style>#redirect-message { display: none; }</style>',
-			)
 			.replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
 			.replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
 			.replace('{{DOCS_NOTICE}}', docsNotice)
 			.replaceAll('{{TEST_STATUS}}', isTestEnabled ? 'enabled' : 'disabled')
 			.replace('{{TEST_NOTICE}}', testNotice)
+			.replace(
+				'{{MANIFEST_DEBUGGER_LINK}}',
+				manifestStatus.available
+					? '<p>View the <a href="/manifests/components.html">component manifest debugger</a>.</p>'
+					: '',
+			)
 			.replace('{{A11Y_BADGE}}', a11yBadge);
 		res.end(html);
 	});

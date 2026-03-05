@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
 import { experimental_devServer } from './preset.ts';
+import * as runStoryTests from './tools/run-story-tests.ts';
 
 describe('experimental_devServer', () => {
 	let mockApp: any;
@@ -65,6 +66,53 @@ describe('experimental_devServer', () => {
 			'Content-Type': 'text/html',
 		});
 		expect(mockRes.end).toHaveBeenCalledWith(expect.stringContaining('<html'));
+	});
+
+	it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {
+		vi.spyOn(runStoryTests, 'getAddonVitestConstants').mockResolvedValue(undefined);
+		const manifestEnabledOptions = {
+			presets: {
+				apply: vi.fn((key: string) => {
+					if (key === 'features') {
+						return Promise.resolve({ experimentalComponentsManifest: true });
+					}
+					if (key === 'experimental_manifests') {
+						return Promise.resolve({});
+					}
+					return Promise.resolve(undefined);
+				}),
+			},
+		} as unknown as Options;
+
+		const handlers: Record<string, any> = {};
+		mockApp.get = vi.fn((path: string, handler: any) => {
+			handlers[path] = handler;
+		});
+
+		await (experimental_devServer as any)(mockApp, manifestEnabledOptions);
+		const getMcpHandler = handlers['/mcp'];
+		expect(getMcpHandler).toBeDefined();
+
+		const mockReq = {
+			headers: {
+				accept: 'text/html',
+			},
+		} as any;
+		const mockRes = {
+			writeHead: vi.fn(),
+			end: vi.fn(),
+		} as any;
+
+		await getMcpHandler(mockReq, mockRes);
+
+		expect(mockRes.end).toHaveBeenCalledWith(
+			expect.stringContaining('This toolset requires Storybook 10.3.0+ with'),
+		);
+		expect(mockRes.end).toHaveBeenCalledWith(
+			expect.stringContaining(
+				'View the <a href="/manifests/components.html">component manifest debugger</a>.',
+			),
+		);
 	});
 
 	it('should handle POST requests as MCP protocol', async () => {

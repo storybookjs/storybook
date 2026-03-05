@@ -18,7 +18,7 @@ const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-co
 
 const config = defineMain({
   stories: [
-    './bench/*.stories.@(js|jsx|ts|tsx)',
+    // './bench/*.stories.@(js|jsx|ts|tsx)',
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',
@@ -174,7 +174,12 @@ const config = defineMain({
       server: {
         watch: {
           // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
-          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+          ignored: [
+            '**/.nx/cache/**',
+            '**/tsconfig.json',
+            '**/playwright-results/**',
+            '**/playwright-report/**',
+          ],
         },
       },
     } satisfies typeof viteConfig);

@@ -288,22 +288,22 @@ test.describe('Manager UI', () => {
     }) => {
       const sbPage = new SbPage(page, expect);
 
-      // Navigate to the story with a long union type in its Controls panel
-      await page.goto(
-        `${storybookUrl}/?path=/story/core-controls-popover-overflow--long-type-detail`
-      );
-      await sbPage.waitUntilLoaded();
+      // Navigate to the story with a long union type in its Controls panel via sidebar
+      await sbPage.navigateToStory('core/controls/popover-overflow', 'Long Type Detail');
 
-      // Open the Controls panel
+      // Ensure the Controls panel tab is active
       await sbPage.viewAddonPanel('Controls');
 
+      // Wait for the expandable type trigger to appear in the panel
+      const expandable = page.locator('.sbdocs-expandable').first();
+      await expect(expandable).toBeVisible({ timeout: 10000 });
+
       // Click the expandable type trigger to open the argType detail popover
-      const expandable = sbPage.panelContent().locator('.sbdocs-expandable').first();
       await expandable.click();
 
-      // The popover should be visible
-      const popover = page.getByRole('dialog', { name: 'Arg value details' });
-      await expect(popover).toBeVisible();
+      // The popover should be visible (accessible name is the trigger button's label)
+      const popover = page.getByRole('dialog', { name: 'ComplexUnionType' });
+      await expect(popover).toBeVisible({ timeout: 5000 });
 
       // Verify the popover does not overflow the viewport
       const viewportHeight = page.viewportSize()!.height;

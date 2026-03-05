@@ -12,8 +12,13 @@ export default {
     controls: { expanded: true },
     chromatic: { disableSnapshot: true },
   },
+  args: {
+    complexType: 'very-long-option-name-01',
+    object: {},
+  },
   argTypes: {
     complexType: {
+      control: 'text',
       table: {
         type: {
           summary: 'ComplexUnionType',
@@ -25,6 +30,5 @@ export default {
 };
 
 export const LongTypeDetail = {
-  args: { object: {} },
   parameters: { chromatic: { disableSnapshot: true } },
 };

@@ -16,13 +16,7 @@ import path from 'pathe';
 import { ComponentMetaManager } from './checker';
 import type { ComponentDoc } from './componentMetaExtractor';
 import { getCodeSnippet } from './generateCodeSnippet';
-import {
-  type TypescriptOptions,
-  docgenTimings,
-  getComponents,
-  getImports,
-  resetDocgenTimings,
-} from './getComponentImports';
+import { type TypescriptOptions, getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
 import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
@@ -61,23 +55,6 @@ function getManager(): Promise<ComponentMetaManager | null> {
       });
   }
   return managerPromise;
-}
-
-/**
- * Context needed for prop extraction, kept separate from the manifest object. Avoids injecting temp
- * fields onto the manifest and cleaning them up via `any`.
- */
-interface ComponentMetaContext {
-  componentPath: string;
-  importName?: string;
-  importId?: string;
-  storyFilePath: string;
-  /**
-   * For compound components (e.g. `<Accordion.Root>`), the sub-property name detected from the
-   * story's JSX usage. Tells the extractor to match `<Accordion.Root />` JSX elements.
-   */
-  memberAccess?: string;
-  metaJsDoc?: string;
 }
 
 function findMatchingComponent(
@@ -173,6 +150,8 @@ function extractComponentDescription(
   };
 }
 
+type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+
 export const manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
@@ -183,12 +162,16 @@ export const manifests: PresetPropertyFn<
   const typescriptOptions =
     (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
   const features = await presets?.apply('features', {});
-  const experimentalReactComponentMeta = !!features?.experimentalReactComponentMeta;
+
+  const docgenEngine: DocgenEngine = features?.experimentalReactComponentMeta
+    ? 'react-component-meta'
+    : (typescriptOptions.reactDocgen ?? 'react-docgen');
 
   invalidateCache();
   invalidateParser();
 
   const startTime = performance.now();
+  const manager = docgenEngine === 'react-component-meta' ? await getManager() : null;
 
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
@@ -203,40 +186,71 @@ export const manifests: PresetPropertyFn<
     (entry) => entry.id.split('--')[0]
   );
 
-  resetDocgenTimings();
-  const docgenStartTime = performance.now();
+  // Step 1: Resolve components for all entries
+  const resolvedEntries = entriesByUniqueComponent.map((entry) => {
+    const storyFilePath =
+      entry.type === 'story'
+        ? entry.importPath
+        : // For attached docs entries, storiesImports[0] points to the stories file being attached to
+          (entry as DocsIndexEntry).storiesImports[0];
+    const absoluteImportPath = path.join(process.cwd(), storyFilePath);
+    const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
+    const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
+    const componentName = csf._meta?.component;
+    const allComponents = getComponents({
+      csf,
+      storyFilePath: absoluteImportPath,
+      typescriptOptions,
+      experimentalReactComponentMeta: docgenEngine === 'react-component-meta',
+    });
+    const component = findMatchingComponent(
+      allComponents,
+      componentName,
+      entry.title.replace(/\s+/g, '')
+    );
+    return {
+      entry,
+      storyFilePath,
+      absoluteImportPath,
+      storyFile,
+      csf,
+      componentName,
+      allComponents,
+      component,
+    };
+  });
 
-  const results = entriesByUniqueComponent
+  // Step 2: Batch extract rcm props (one TS program build per tsconfig project)
+  const rcmResults =
+    docgenEngine === 'react-component-meta' && manager
+      ? manager.batchExtract(
+          resolvedEntries
+            .filter((r) => r.component?.path)
+            .map((r) => ({
+              storyFilePath: r.absoluteImportPath,
+              componentPath: r.component!.path!,
+              exportName: r.component!.importName ?? 'default',
+              importId: r.component!.importId,
+              memberAccess: r.component!.member,
+            }))
+        )
+      : undefined;
+
+  // Step 3: Build manifests
+  const components = resolvedEntries
     .map(
-      (
-        entry
-      ):
-        | { manifest: ReactComponentManifest; componentMetaCtx?: ComponentMetaContext }
-        | undefined => {
-        const storyFilePath =
-          entry.type === 'story'
-            ? entry.importPath
-            : // For attached docs entries, storiesImports[0] points to the stories file being attached to
-              (entry as DocsIndexEntry).storiesImports[0];
-        const absoluteImportPath = path.join(process.cwd(), storyFilePath);
-        const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
-        const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
-
-        const componentName = csf._meta?.component;
+      ({
+        entry,
+        storyFilePath,
+        absoluteImportPath,
+        storyFile,
+        csf,
+        componentName,
+        allComponents,
+        component,
+      }): ReactComponentManifest | undefined => {
         const id = entry.id.split('--')[0];
         const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-
-        const allComponents = getComponents({
-          csf,
-          storyFilePath: absoluteImportPath,
-          typescriptOptions,
-          experimentalReactComponentMeta,
-        });
-        const component = findMatchingComponent(
-          allComponents,
-          componentName,
-          entry.title.replace(/\s+/g, '')
-        );
 
         const packageName = getPackageInfo(component?.path, absoluteImportPath);
         const fallbackImport =
@@ -256,9 +270,29 @@ export const manifests: PresetPropertyFn<
           jsDocTags: {},
         } satisfies Partial<ComponentManifest>;
 
-        const hasDocgen = component?.reactDocgen || component?.reactDocgenTypescript;
+        // --- Extract props via the active engine ---
+        let reactDocgen;
+        let reactDocgenTypescript;
+        let reactComponentMeta;
+        let docgenDescription;
+        let docgenError;
 
-        if (!experimentalReactComponentMeta && !hasDocgen) {
+        if (docgenEngine === 'react-docgen') {
+          const result = component?.reactDocgen;
+          reactDocgen = result?.type === 'success' ? result.data : undefined;
+          docgenDescription = reactDocgen?.description;
+          docgenError = result?.type === 'error' ? result.error : undefined;
+        } else if (docgenEngine === 'react-docgen-typescript') {
+          reactDocgenTypescript = component?.reactDocgenTypescript;
+          docgenDescription = reactDocgenTypescript?.description;
+          docgenError = component?.reactDocgenTypescriptError;
+        } else {
+          const exportName = component?.importName ?? 'default';
+          reactComponentMeta = rcmResults?.get(absoluteImportPath)?.get(exportName)?.[0];
+          docgenDescription = reactComponentMeta?.description;
+        }
+
+        if (!reactDocgen && !reactDocgenTypescript && !reactComponentMeta) {
           const error = !csf._meta?.component
             ? {
                 name: 'No component found',
@@ -271,137 +305,42 @@ export const manifests: PresetPropertyFn<
               };
 
           return {
-            manifest: {
-              ...base,
-              error: {
-                name: error.name,
-                message:
-                  (csf._metaStatementPath?.buildCodeFrameError(error.message).message ??
-                    error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
-              },
+            ...base,
+            error: docgenError ?? {
+              name: error.name,
+              message:
+                (csf._metaStatementPath?.buildCodeFrameError(error.message).message ??
+                  error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
             },
           };
         }
 
-        // Extract description from whichever engine is active
-        const docgenResult = component.reactDocgen;
-        const docgen = docgenResult?.type === 'success' ? docgenResult.data : undefined;
-        const reactDocgenTypescriptDoc = component.reactDocgenTypescript;
-
         const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
-        const docgenDescription = docgen?.description ?? reactDocgenTypescriptDoc?.description;
         const { description, summary, jsDocTags } = extractComponentDescription(
           metaJsDoc,
           docgenDescription
         );
 
         return {
-          manifest: {
-            ...base,
-            description,
-            summary,
-            import: imports,
-            ...(docgen ? { reactDocgen: docgen } : {}),
-            ...(reactDocgenTypescriptDoc
-              ? { reactDocgenTypescript: reactDocgenTypescriptDoc }
-              : {}),
-            jsDocTags,
-            error:
-              (docgenResult?.type === 'error' ? docgenResult.error : undefined) ??
-              component.reactDocgenTypescriptError,
-          } satisfies ReactComponentManifest,
-          componentMetaCtx: component.path
-            ? {
-                componentPath: component.path,
-                importName: component.importName,
-                importId: component.importId,
-                storyFilePath: absoluteImportPath,
-                memberAccess: component.member,
-                metaJsDoc,
-              }
-            : undefined,
+          ...base,
+          description,
+          summary,
+          import: imports,
+          reactDocgen,
+          reactDocgenTypescript,
+          reactComponentMeta,
+          jsDocTags,
+          error: docgenError,
         };
       }
     )
-    .filter((r) => r !== undefined);
+    .filter((component) => component !== undefined);
 
-  const docgenDurationMs = Math.round(performance.now() - docgenStartTime);
-
-  const components = results.map((r) => r.manifest);
-  const componentMetaContextById = new Map(
-    results
-      .filter((r) => r.componentMetaCtx)
-      .map((r) => [r.manifest.id, r.componentMetaCtx!] as const)
-  );
-
-  // --- reactComponentMeta: probe-free extraction from story JSX ---
-  let componentMetaCount = 0;
-  const componentMetaStartTime = performance.now();
-  const componentMetaDebug: Record<string, unknown> = {};
-  const manager = experimentalReactComponentMeta ? await getManager() : null;
-  if (manager) {
-    // Group components by project for batch extraction — one getProgram() per project.
-    type ProjectEntry = { component: ComponentManifest; ctx: ComponentMetaContext };
-    const byProject = new Map<ReturnType<typeof manager.getProjectForFile>, ProjectEntry[]>();
-    for (const component of components) {
-      const ctx = componentMetaContextById.get(component.id);
-      if (!ctx) {
-        continue;
-      }
-      try {
-        const project = manager.getProjectForFile(ctx.storyFilePath);
-        let entries = byProject.get(project);
-        if (!entries) {
-          entries = [];
-          byProject.set(project, entries);
-        }
-        entries.push({ component, ctx });
-      } catch (err) {
-        logger.debug(
-          `[reactComponentMeta] Failed to find project for ${ctx.storyFilePath}: ${err}`
-        );
-      }
-    }
-
-    const t1 = performance.now();
-    for (const [project, entries] of byProject) {
-      const extractionResults = project.extractPropsFromStories(
-        entries.map(({ ctx }) => ({
-          storyFilePath: ctx.storyFilePath,
-          componentPath: ctx.componentPath,
-          exportName: ctx.importName ?? 'default',
-          importId: ctx.importId,
-          memberAccess: ctx.memberAccess,
-        }))
-      );
-
-      for (const { component, ctx } of entries) {
-        const docs = extractionResults.get(ctx.storyFilePath)?.get(ctx.importName ?? 'default');
-        if (docs && docs.length > 0) {
-          const m = component as ReactComponentManifest;
-          m.reactComponentMeta = docs[0];
-          componentMetaCount++;
-
-          if (!m.description && docs[0].description) {
-            const extracted = extractComponentDescription(ctx.metaJsDoc, docs[0].description);
-            m.description = extracted.description;
-            m.summary = extracted.summary;
-            m.jsDocTags = extracted.jsDocTags;
-          }
-        }
-      }
-    }
-    componentMetaDebug.extractionMs = Math.round(performance.now() - t1);
-    componentMetaDebug.components = components.length;
-
-    // Start watching AFTER extraction — projects and TS programs are now populated,
-    // so watchProgramSourceDirs() can discover all source file directories
-    // (including those reached via path aliases in monorepo setups).
-    if (watch) {
-      manager.startWatching();
-    }
+  // Start watching AFTER extraction — projects and TS programs are now populated,
+  // so watchProgramSourceDirs() can discover all source file directories.
+  if (manager && watch) {
+    manager.startWatching();
   }
-  const componentMetaDurationMs = Math.round(performance.now() - componentMetaStartTime);
 
   const durationMs = Math.round(performance.now() - startTime);
 
@@ -411,18 +350,8 @@ export const manifests: PresetPropertyFn<
       v: 0,
       components: Object.fromEntries(components.map((component) => [component.id, component])),
       meta: {
-        docgen: experimentalReactComponentMeta
-          ? 'react-component-meta'
-          : (typescriptOptions.reactDocgen ?? 'react-docgen'),
+        docgen: docgenEngine,
         durationMs,
-        timings: {
-          docgen: docgenDurationMs,
-          reactDocgen: Math.round(docgenTimings.reactDocgenMs),
-          reactDocgenTypescript: Math.round(docgenTimings.reactDocgenTypescriptMs),
-          reactComponentMeta: componentMetaDurationMs,
-          reactComponentMetaComponents: componentMetaCount,
-        },
-        debug: componentMetaDebug,
       },
     },
   };

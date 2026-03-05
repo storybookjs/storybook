@@ -19,7 +19,7 @@ import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
 import type ts from 'typescript';
 
-import { ComponentMetaProject } from './ComponentMetaProject';
+import { ComponentMetaProject, type StoryExtractionEntry } from './ComponentMetaProject';
 
 // Volar LS pattern (typescriptProject.ts line 18)
 const rootTsConfigNames = ['tsconfig.json', 'jsconfig.json'];
@@ -65,6 +65,36 @@ export class ComponentMetaManager {
       );
     }
     return this.getOrCreateInferredProject(fileName);
+  }
+
+  /**
+   * Batch-extract component props across all entries, grouping by tsconfig project so each
+   * project builds its TS program only once.
+   */
+  batchExtract(entries: StoryExtractionEntry[]) {
+    const byProject = new Map<ComponentMetaProject, StoryExtractionEntry[]>();
+    for (const entry of entries) {
+      const project = this.getProjectForFile(entry.storyFilePath);
+      let group = byProject.get(project);
+      if (!group) {
+        group = [];
+        byProject.set(project, group);
+      }
+      group.push(entry);
+    }
+
+    const results: ReturnType<ComponentMetaProject['extractPropsFromStories']> = new Map();
+    for (const [project, projectEntries] of byProject) {
+      try {
+        const projectResults = project.extractPropsFromStories(projectEntries);
+        for (const [storyPath, exportMap] of projectResults) {
+          results.set(storyPath, exportMap);
+        }
+      } catch (err) {
+        logger.debug(`[reactComponentMeta] Batch extraction failed: ${err}`);
+      }
+    }
+    return results;
   }
 
   // ---------------------------------------------------------------------------

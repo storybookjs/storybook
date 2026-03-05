@@ -34,47 +34,34 @@ interface ReactComponentManifest extends ComponentManifest {
   reactComponentMeta?: ComponentDoc;
 }
 
-// ---------------------------------------------------------------------------
-// Eager singleton ComponentMetaManager — created as soon as this preset is
-// loaded so TypeScript is already warm by the first manifests() call.
-// Survives across dev requests, dies on build process exit.
-// TypeScript is an optional peer dep.
-//
-// Dev mode (primary flow): the `watch` flag from the preset options enables
-// file watching. Actual fs.watch instances are created lazily when projects
-// are discovered during the first extraction. Subsequent requests benefit
-// from incremental updates — only changed files are recompiled.
-//
-// Build mode: watch is false — no watchers, no event handling. One-shot.
-// ---------------------------------------------------------------------------
+/** Lazy singleton — only created on the first call when the feature flag is on. */
+let managerPromise: Promise<ComponentMetaManager | null> | undefined;
 
-const managerWarmup: Promise<ComponentMetaManager | null> = (async () => {
-  try {
-    const ts = await import('typescript');
-    const manager = new ComponentMetaManager(ts);
-
-    // Clean up TS LanguageService instances + watchers on process exit.
-    // The dev server has no shutdown hook, so we rely on process events.
-    process.on('exit', () => manager.dispose());
-    for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-      process.once(signal, () => {
-        try {
-          manager.dispose();
-        } catch {
-          // Best-effort cleanup — don't prevent the process from exiting.
+function getManager(): Promise<ComponentMetaManager | null> {
+  if (!managerPromise) {
+    managerPromise = import('typescript')
+      .then((ts) => {
+        const manager = new ComponentMetaManager(ts);
+        process.on('exit', () => manager.dispose());
+        for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+          process.once(signal, () => {
+            try {
+              manager.dispose();
+            } catch {}
+            process.kill(process.pid, signal);
+          });
         }
-        process.kill(process.pid, signal);
+        return manager;
+      })
+      .catch(() => {
+        logger.debug(
+          '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
+        );
+        return null;
       });
-    }
-
-    return manager;
-  } catch {
-    logger.debug(
-      '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
-    );
-    return null;
   }
-})();
+  return managerPromise;
+}
 
 /**
  * Context needed for prop extraction, kept separate from the manifest object. Avoids injecting temp
@@ -202,9 +189,6 @@ export const manifests: PresetPropertyFn<
   invalidateParser();
 
   const startTime = performance.now();
-
-  // managerWarmup was kicked off at module load time — TypeScript should
-  // already be imported and the manager ready by now.
 
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
@@ -352,10 +336,10 @@ export const manifests: PresetPropertyFn<
 
   // --- reactComponentMeta: probe-free extraction from story JSX ---
   let componentMetaCount = 0;
-  const manager = await managerWarmup;
   const componentMetaStartTime = performance.now();
   const componentMetaDebug: Record<string, unknown> = {};
-  if (manager && experimentalReactComponentMeta) {
+  const manager = experimentalReactComponentMeta ? await getManager() : null;
+  if (manager) {
     // Group components by project for batch extraction — one getProgram() per project.
     type ProjectEntry = { component: ComponentManifest; ctx: ComponentMetaContext };
     const byProject = new Map<ReturnType<typeof manager.getProjectForFile>, ProjectEntry[]>();

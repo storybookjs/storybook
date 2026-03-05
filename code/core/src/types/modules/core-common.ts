@@ -374,6 +374,8 @@ export interface ComponentsManifest {
     durationMs: number;
     timings?: {
       docgen: number;
+      reactDocgen: number;
+      reactDocgenTypescript: number;
       reactComponentMeta: number;
       reactComponentMetaComponents: number;
     };

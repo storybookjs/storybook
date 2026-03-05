@@ -54,12 +54,6 @@ export async function writeManifests(outputDir: string, presets: Presets) {
 }
 
 export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
-  // Eagerly warm up: trigger the first extraction in the background so TypeScript
-  // LanguageService, program, and type checker are ready before the first request.
-  getManifests(presets, { watch: true }).catch((err) => {
-    logger.debug(`[manifests] Background warmup failed: ${err}`);
-  });
-
   app.get('/manifests/:name.json', async (req, res) => {
     try {
       const manifests = await getManifests(presets, { watch: true });

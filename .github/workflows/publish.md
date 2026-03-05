@@ -17,7 +17,7 @@
    4. Remove the deployment branch name added in step 1
 9.  Merge `hotfix/v<next-patch-release-version>` into `v9`
 10. Observe the `publish-normal` job
-11. Observe the generated release in GitHuB releases page and make modifications to the release notes if necessary
+11. Observe the generated release in GitHub releases page and make modifications to the release notes if necessary
 
 
 ## Prepare major release branch for publishing

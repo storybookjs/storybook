@@ -11,7 +11,7 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
-import { join, relative, resolve } from 'pathe';
+import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module';
 
@@ -68,7 +68,13 @@ export async function loadStorybook(
   const builderName = typeof builder === 'string' ? builder : builder?.name;
 
   if (builderName) {
-    corePresets.push(join(resolvePackageDir(builderName), 'preset.js'));
+    /* builderName can be a bare package name (e.g. '@storybook/builder-vite') or an already-resolved
+       file URL / absolute path (e.g. 'file:///.../.../dist/index.js'). For bare package names, we
+       need to resolve the package directory first; for already-resolved paths, dirname works directly.
+    */
+    const isResolved = builderName.startsWith('file:') || isAbsolute(builderName);
+    const builderPresetDir = isResolved ? dirname(builderName) : resolvePackageDir(builderName);
+    corePresets.push(join(builderPresetDir, 'preset.js'));
   }
 
   // Load second pass: all presets are applied in order

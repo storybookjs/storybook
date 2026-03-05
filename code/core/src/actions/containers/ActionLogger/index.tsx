@@ -6,8 +6,9 @@ import { dequal as deepEqual } from 'dequal';
 import type { API } from 'storybook/manager-api';
 
 import { ActionLogger as ActionLoggerComponent } from '../../components/ActionLogger';
-import { CLEAR_ID, EVENT_ID } from '../../constants';
+import { CLEAR_ID, EVENT_ID, PARAM_KEY } from '../../constants';
 import type { ActionDisplay } from '../../models';
+import type { ActionsParameters } from '../../types';
 
 interface ActionLoggerProps {
   active: boolean;
@@ -16,6 +17,7 @@ interface ActionLoggerProps {
 
 interface ActionLoggerState {
   actions: ActionDisplay[];
+  expandLevel: number;
 }
 
 const safeDeepEqual = (a: any, b: any): boolean => {
@@ -34,7 +36,7 @@ export default class ActionLogger extends Component<ActionLoggerProps, ActionLog
 
     this.mounted = false;
 
-    this.state = { actions: [] };
+    this.state = { actions: [], expandLevel: 1 };
   }
 
   override componentDidMount() {
@@ -43,6 +45,10 @@ export default class ActionLogger extends Component<ActionLoggerProps, ActionLog
 
     api.on(EVENT_ID, this.addAction);
     api.on(STORY_CHANGED, this.handleStoryChange);
+
+    const expandLevel =
+      api.getCurrentParameter<ActionsParameters['actions']>(PARAM_KEY)?.expandLevel ?? 1;
+    this.setState({ expandLevel });
   }
 
   override componentWillUnmount() {
@@ -54,10 +60,14 @@ export default class ActionLogger extends Component<ActionLoggerProps, ActionLog
   }
 
   handleStoryChange = () => {
+    const { api } = this.props;
     const { actions } = this.state;
     if (actions.length > 0 && actions[0].options.clearOnStoryChange) {
       this.clearActions();
     }
+    const expandLevel =
+      api.getCurrentParameter<ActionsParameters['actions']>(PARAM_KEY)?.expandLevel ?? 1;
+    this.setState({ expandLevel });
   };
 
   addAction = (action: ActionDisplay) => {
@@ -83,10 +93,11 @@ export default class ActionLogger extends Component<ActionLoggerProps, ActionLog
   };
 
   override render() {
-    const { actions = [] } = this.state;
+    const { actions = [], expandLevel } = this.state;
     const { active } = this.props;
     const props = {
       actions,
+      expandLevel,
       onClear: this.clearActions,
     };
     return active ? <ActionLoggerComponent {...props} /> : null;

@@ -18,6 +18,14 @@ export type PresetColor = ColorValue | { color: ColorValue; title?: string };
 export interface ColorConfig {
   presetColors?: PresetColor[];
   /**
+   * Maximum number of preset colors shown in the color picker. When the number of presets exceeds
+   * this value, the oldest presets are removed first (most-recently-used order). Set to `Infinity`
+   * or `0` to disable the limit and show all presets.
+   *
+   * @default 27
+   */
+  maxPresetColors?: number;
+  /**
    * Whether the color picker should be open by default when rendered.
    *
    * @default false

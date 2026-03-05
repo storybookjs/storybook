@@ -1,0 +1,41 @@
+
+┌  Building storybook v10.3.0-alpha.12
+│
+◇  Cleaning outputDir: storybook-static
+│
+◇  Loading presets
+│
+◇  Building manager..
+│
+●  Building preview..
+│
+●  Addon-docs: using MDX3
+│
+●  Using implicit CSS loaders
+│
+●  Using default Webpack5 setup
+│
+●  Mock map updated with 7 mocks.
+│
+▲  asset size limit: The following asset(s) exceed the recommended size
+│  limit (<SIZE>).
+│  This can impact web performance.
+│  Assets:
+│  static/media/addon-library.<HASH>.png (<SIZE>)
+│  <CHUNK>.<HASH>.iframe.bundle.js (<SIZE>)
+│  <CHUNK>.<HASH>.iframe.bundle.js (<SIZE>)
+│
+▲  entrypoint size limit: The following entrypoint(s) combined asset size
+│  exceeds the recommended limit (<SIZE>). This can impact web
+│  performance.
+│  Entrypoints:
+│  main (<SIZE>)
+│  runtime~main.<HASH>.iframe.bundle.js
+│  <CHUNK>.<HASH>.iframe.bundle.js
+│  main.<HASH>.iframe.bundle.js
+
+│
+◇  Output directory:
+│  <ROOT>-sandboxes/react-webpack-18-ts/storybook-static
+│
+└  Storybook build completed successfully

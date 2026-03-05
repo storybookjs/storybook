@@ -301,9 +301,9 @@ export class ComponentMetaProject {
             this.commandLine.options,
             this.typescript.sys
           );
-          if (resolved.resolvedModule) {
-            componentSourceFile = program.getSourceFile(resolved.resolvedModule.resolvedFileName);
-          }
+          componentSourceFile = resolved.resolvedModule
+            ? program.getSourceFile(resolved.resolvedModule.resolvedFileName)
+            : program.getSourceFile(entry.componentPath);
         } else {
           componentSourceFile = program.getSourceFile(entry.componentPath);
         }

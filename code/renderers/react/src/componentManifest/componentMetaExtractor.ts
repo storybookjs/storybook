@@ -150,6 +150,19 @@ export function resolvePropsFromStoryFile(
         }
       }
     }
+    // Namespace import: import * as Ns from '...'
+    // Only applies when memberAccess is set (compound components accessed as <Ns.Member />).
+    // Without this guard, a namespace import from the same module could shadow a named
+    // import we're actually looking for (e.g. `import * as X from './m'; import { Y } from './m'`).
+    if (
+      !importSymbol &&
+      memberAccess &&
+      clause.namedBindings &&
+      typescript.isNamespaceImport(clause.namedBindings)
+    ) {
+      importSymbol = checker.getSymbolAtLocation(clause.namedBindings.name);
+    }
+
     if (importSymbol) {
       break;
     }
@@ -387,12 +400,19 @@ function serializeType(
       };
     }
 
-    // For optional props, strip `undefined` from the serialized type.
-    // We use checker.typeToString on the FULL union (not individual members) to
-    // preserve TS's own simplifications — e.g. TS represents `boolean` internally
-    // as `false | true`, but typeToString correctly prints "boolean".
-    // We only enter this branch when we confirmed undefined members exist.
+    // For optional props, strip the top-level `undefined` from the serialized type.
+    // When there's a single non-undefined type, serialize it directly — this avoids
+    // regex stripping which can't distinguish top-level `| undefined` from nested
+    // occurrences inside generic parameters (e.g. `Record<string, number | undefined>`).
+    // For multi-member unions (e.g. boolean = false|true internally, or string | number),
+    // we must use typeToString on the FULL union to preserve TS's own simplifications
+    // (boolean is internally false|true), then regex-strip. This still has an edge case
+    // for multi-member unions with nested `| undefined` (e.g. `Record<K, V | undefined>
+    // | string | undefined`), but that pattern is extremely rare for React props.
     if (!isRequired && nonUndefinedTypes.length < type.types.length) {
+      if (nonUndefinedTypes.length === 1) {
+        return { name: checker.typeToString(nonUndefinedTypes[0]) };
+      }
       const fullString = checker.typeToString(type);
       const stripped = fullString
         .replace(/\s*\|\s*undefined\b/g, '')

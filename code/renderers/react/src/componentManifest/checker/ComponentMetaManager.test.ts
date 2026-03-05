@@ -58,26 +58,51 @@ function cleanup(dir: string) {
   }
 }
 
-/** Test helper: extract docs for known exports via Path 2 (no story file needed). */
+/**
+ * Test helper: extract docs for known exports via Path 2 (meta.component).
+ *
+ * Creates a synthetic story file per export that imports the component and declares it as
+ * `meta.component`, then extracts via the project's LanguageService — the same pattern used in
+ * componentMetaExtractor.checker.test.ts.
+ */
 function extractDocs(
   project: ComponentMetaProject,
   componentPath: string,
   exportNames: string[]
 ): ComponentDoc[] {
-  const entries = exportNames.map((name) => ({
-    storyFilePath: componentPath,
-    componentPath,
-    exportName: name,
-  }));
-  const results = project.extractPropsFromStories(entries);
-  const storyMap = results.get(componentPath);
-  if (!storyMap) {
-    return [];
-  }
+  const dir = path.dirname(componentPath);
+  const baseName = path.basename(componentPath, path.extname(componentPath));
   const allDocs: ComponentDoc[] = [];
-  for (const [, d] of storyMap) {
-    allDocs.push(...d);
+
+  for (const name of exportNames) {
+    const importLine =
+      name === 'default'
+        ? `import __Component__ from './${baseName}';`
+        : `import { ${name} as __Component__ } from './${baseName}';`;
+
+    const storyContent = `${importLine}\nexport default { component: __Component__ };`;
+    const storyPath = path.join(dir, `${baseName}.__story_${name}__.tsx`);
+
+    sys.writeFile(storyPath, storyContent);
+    project.ensureFiles([storyPath]);
+
+    const entries = [
+      {
+        storyFilePath: storyPath,
+        componentPath,
+        exportName: name,
+      },
+    ];
+
+    const results = project.extractPropsFromStories(entries);
+    const storyMap = results.get(storyPath);
+    if (storyMap) {
+      for (const [, d] of storyMap) {
+        allDocs.push(...d);
+      }
+    }
   }
+
   return allDocs;
 }
 
@@ -460,5 +485,60 @@ describe('ComponentMetaManager', () => {
     const docs = extractDocs(project, filePath, ['Button']);
     expect(docs).toHaveLength(1);
     expect(docs[0].displayName).toBe('Button');
+  });
+
+  it('extracts via Path 1 (importId + JSX in story file)', { timeout: 30_000 }, () => {
+    tempDir = createTempDir();
+
+    writeFiles(tempDir, {
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: {
+          target: 'ES2020',
+          module: 'ESNext',
+          jsx: 'react-jsx',
+          strict: true,
+          esModuleInterop: true,
+          moduleResolution: 'bundler',
+        },
+        include: ['./**/*.tsx'],
+      }),
+      'Button.tsx': `
+        import React from 'react';
+        export const Button = (_props: { label: string; disabled?: boolean }) => <button />;
+      `,
+      'Button.stories.tsx': `
+        import { Button } from './Button';
+        const _story = () => <Button label="click me" />;
+      `,
+    });
+
+    manager = new ComponentMetaManager(ts);
+    const componentPath = path.join(tempDir, 'Button.tsx');
+    const storyPath = path.join(tempDir, 'Button.stories.tsx');
+    const project = manager.getProjectForFile(componentPath);
+
+    project.ensureFiles([storyPath]);
+
+    const results = project.extractPropsFromStories([
+      {
+        storyFilePath: storyPath,
+        componentPath,
+        exportName: 'Button',
+        importId: './Button',
+      },
+    ]);
+
+    const storyMap = results.get(storyPath);
+    expect(storyMap).toBeDefined();
+
+    const docs: ComponentDoc[] = [];
+    for (const [, d] of storyMap!) {
+      docs.push(...d);
+    }
+
+    expect(docs).toHaveLength(1);
+    expect(docs[0].displayName).toBe('Button');
+    expect(docs[0].props.label).toBeDefined();
+    expect(docs[0].props.disabled).toBeDefined();
   });
 });

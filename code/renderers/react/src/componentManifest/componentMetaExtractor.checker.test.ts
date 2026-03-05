@@ -540,6 +540,15 @@ const TEST_FILES: Record<string, string> = {
     interface Props { value: string | number }
     export const Input = (props: Props) => <input />;
   `,
+  'extract/optional_nested_undefined.tsx': `
+    import React from 'react';
+    interface Props {
+      config?: Record<string, number | undefined>;
+      onChange?: (value: string | undefined) => void;
+      label: string;
+    }
+    export const Widget = (props: Props) => <div />;
+  `,
   'extract/function_props.tsx': `
     import React from 'react';
     interface Props {
@@ -1173,6 +1182,26 @@ const TEST_FILES: Record<string, string> = {
         <Accordion.Item value="a" />
       </Accordion.Root>
     );
+  `,
+
+  'path1/NamespaceCompound.tsx': `
+    import React from 'react';
+    interface PanelProps {
+      /** Whether the panel is open */
+      open?: boolean;
+      label: string;
+    }
+    export const Panel = (props: PanelProps) => <div />;
+    interface TriggerProps {
+      onClick: () => void;
+    }
+    export const Trigger = (props: TriggerProps) => <button />;
+  `,
+  'path1/NamespaceCompound.stories.tsx': `
+    import React from 'react';
+    import * as Popover from './NamespaceCompound';
+    export default {};
+    export const Default = () => <Popover.Panel open label="hello" />;
   `,
 
   'path1/DefaultExport.tsx': `
@@ -1854,6 +1883,21 @@ describe('componentMetaExtractor (LSP)', () => {
       expect(props.value.type.name).toBe('string | number');
     });
 
+    it('preserves nested | undefined in optional props with generic types', () => {
+      const { props } = docs('extract/optional_nested_undefined.tsx')[0];
+      // Optional props should strip the top-level `| undefined` but preserve
+      // `| undefined` nested inside generic parameters and function signatures.
+      expect(props.config.required).toBe(false);
+      expect(props.config.type.name).toBe('Record<string, number | undefined>');
+
+      expect(props.onChange.required).toBe(false);
+      expect(props.onChange.type.name).toBe('(value: string | undefined) => void');
+
+      // Non-optional prop should be unaffected
+      expect(props.label.required).toBe(true);
+      expect(props.label.type.name).toBe('string');
+    });
+
     it('extracts function prop types', () => {
       const { props } = docs('extract/function_props.tsx')[0];
       expect(props.onClick.type.name).toBe('() => void');
@@ -2258,6 +2302,23 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
     // Should NOT have Item props
     expect(result[0].props.value).toBeUndefined();
     expect(result[0].props.disabled).toBeUndefined();
+  });
+
+  it('extracts props from namespace import via story JSX', () => {
+    const result = storyDocs(
+      'path1/NamespaceCompound.stories.tsx',
+      'path1/NamespaceCompound.tsx',
+      'Panel',
+      './NamespaceCompound',
+      'Panel'
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].props.open).toBeDefined();
+    expect(result[0].props.open.description).toBe('Whether the panel is open');
+    expect(result[0].props.label).toBeDefined();
+    // Should NOT have Trigger props
+    expect(result[0].props.onClick).toBeUndefined();
   });
 
   it('extracts props from a default export via story JSX', () => {

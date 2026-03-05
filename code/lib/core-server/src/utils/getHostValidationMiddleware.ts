@@ -1,9 +1,7 @@
-import type { IncomingMessage } from 'node:http';
+import type { RequestHandler } from 'express';
 
 // eslint-disable-next-line import/no-unresolved
 import { isHostAllowed } from 'host-validation-middleware';
-
-import type { Middleware } from '@storybook/types';
 
 export type HostValidationOptions = {
   host?: string;
@@ -52,9 +50,7 @@ export const isValidHost = (host: string | undefined, options: HostValidationOpt
  * Validates the Host header against known local/network addresses and allowed hosts. Requests with
  * no Host header (e.g. same-origin navigation, GET from address bar) are not allowed.
  */
-export function getHostValidationMiddleware(
-  options: HostValidationOptions
-): Middleware<IncomingMessage> {
+export function getHostValidationMiddleware(options: HostValidationOptions): RequestHandler {
   return (req, res, next) => {
     const { host } = req.headers;
     const allowedHosts = options.allowedHosts ?? DEFAULT_ALLOWED_HOSTS;

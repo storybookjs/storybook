@@ -5,5 +5,6 @@ declare module 'open';
 declare module '@aw-web-design/x-default-browser';
 declare module '@discoveryjs/json-ext';
 declare module 'watchpack';
+declare module 'host-validation-middleware';
 
 declare var FEATURES: import('@storybook/types').StorybookConfig['features'];

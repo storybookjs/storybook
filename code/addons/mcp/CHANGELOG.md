@@ -1,5 +1,18 @@
 # @storybook/addon-mcp
 
+## 0.3.4
+
+### Patch Changes
+
+- [#179](https://github.com/storybookjs/mcp/pull/179) [`ec300bd`](https://github.com/storybookjs/mcp/commit/ec300bd9bf76169f537ae3358418db8973628bcf) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Improve `/mcp` HTML response
+
+- [#181](https://github.com/storybookjs/mcp/pull/181) [`ff217d8`](https://github.com/storybookjs/mcp/commit/ff217d8d901b3b6ec932613792df17118b452fe3) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Rename feature flag `experimentalComponentsManifest` → `componentsManifest`
+
+  The Storybook feature flag has been renamed from `experimentalComponentsManifest` to `componentsManifest` and now defaults to `true` in Storybook core.
+
+- Updated dependencies [[`ff217d8`](https://github.com/storybookjs/mcp/commit/ff217d8d901b3b6ec932613792df17118b452fe3)]:
+  - @storybook/mcp@0.5.1
+
 ## 0.3.3
 
 ### Patch Changes

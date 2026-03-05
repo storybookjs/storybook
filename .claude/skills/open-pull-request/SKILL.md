@@ -1,11 +1,11 @@
 ---
 name: open-pull-request
-description: Prepare PR content and description with flow-specific evidence (GitHub Copilot handles branch push and PR creation automatically).
+description: Push branch, open PR targeting next, and apply required labels. Works in both CLI (Claude Code) and GitHub.com Copilot agent environments.
 ---
 
 # Open Pull Request Workflow
 
-**What this skill does**: Prepares the PR title and description with flow-specific evidence templates. GitHub Copilot on GitHub.com automatically handles branch pushing and PR creation.
+**What this skill does**: Pushes the feature branch, creates the PR targeting `next`, applies required labels (`agent`, `bug`) via a separate `gh pr edit` command, and populates the PR body with flow-specific evidence.
 
 ## Input & Prerequisites
 
@@ -35,7 +35,7 @@ Step 1: Prepare PR Title
          ↓
 Step 2: Prepare PR Body with Flow-Specific Evidence
          ↓
-Step 3: GitHub Copilot handles branch push and PR creation automatically
+Step 3: Push branch → create PR → apply labels
          ↓ [DONE: PR created, labeled, and ready]
 ```
 

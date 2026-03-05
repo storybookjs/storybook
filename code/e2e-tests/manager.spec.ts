@@ -282,6 +282,35 @@ test.describe('Manager UI', () => {
       const sbPage = new SbPage(page, expect);
       await expect(sbPage.page.locator('a[title="Storybook"]')).toBeVisible();
     });
+
+    test('argType detail popover is bounded by viewport when content is tall (#33952)', async ({
+      page,
+    }) => {
+      const sbPage = new SbPage(page, expect);
+
+      // Navigate to the story with a long union type in its Controls panel
+      await page.goto(
+        `${storybookUrl}/?path=/story/core-controls-popover-overflow--long-type-detail`
+      );
+      await sbPage.waitUntilLoaded();
+
+      // Open the Controls panel
+      await sbPage.viewAddonPanel('Controls');
+
+      // Click the expandable type trigger to open the argType detail popover
+      const expandable = sbPage.panelContent().locator('.sbdocs-expandable').first();
+      await expandable.click();
+
+      // The popover should be visible
+      const popover = page.getByRole('dialog', { name: 'Arg value details' });
+      await expect(popover).toBeVisible();
+
+      // Verify the popover does not overflow the viewport
+      const viewportHeight = page.viewportSize()!.height;
+      const popoverBox = await popover.boundingBox();
+      expect(popoverBox).not.toBeNull();
+      expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(viewportHeight + 1);
+    });
   });
 
   test.describe('Mobile', () => {

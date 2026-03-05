@@ -2,7 +2,6 @@ import { recast } from 'storybook/internal/babel';
 import { Tag } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
   type ComponentManifest,
@@ -28,34 +27,6 @@ interface ReactComponentManifest extends ComponentManifest {
   reactComponentMeta?: ComponentDoc;
 }
 
-/** Lazy singleton — only created on the first call when the feature flag is on. */
-let managerPromise: Promise<ComponentMetaManager | null> | undefined;
-
-function getManager(): Promise<ComponentMetaManager | null> {
-  if (!managerPromise) {
-    managerPromise = import('typescript')
-      .then((ts) => {
-        const manager = new ComponentMetaManager(ts);
-        process.on('exit', () => manager.dispose());
-        for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-          process.once(signal, () => {
-            try {
-              manager.dispose();
-            } catch {}
-            process.kill(process.pid, signal);
-          });
-        }
-        return manager;
-      })
-      .catch(() => {
-        logger.debug(
-          '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
-        );
-        return null;
-      });
-  }
-  return managerPromise;
-}
 
 function findMatchingComponent(
   components: ReturnType<typeof getComponents>,
@@ -171,7 +142,8 @@ export const manifests: PresetPropertyFn<
   invalidateParser();
 
   const startTime = performance.now();
-  const manager = docgenEngine === 'react-component-meta' ? await getManager() : null;
+  const manager =
+    docgenEngine === 'react-component-meta' ? await ComponentMetaManager.getInstance() : null;
 
   const entriesByUniqueComponent = uniqBy(
     manifestEntries.filter(
@@ -223,17 +195,7 @@ export const manifests: PresetPropertyFn<
   // Step 2: Batch extract rcm props (one TS program build per tsconfig project)
   const rcmResults =
     docgenEngine === 'react-component-meta' && manager
-      ? manager.batchExtract(
-          resolvedEntries
-            .filter((r) => r.component?.path)
-            .map((r) => ({
-              storyFilePath: r.absoluteImportPath,
-              componentPath: r.component!.path!,
-              exportName: r.component!.importName ?? 'default',
-              importId: r.component!.importId,
-              memberAccess: r.component!.member,
-            }))
-        )
+      ? manager.batchExtract(resolvedEntries)
       : undefined;
 
   // Step 3: Build manifests

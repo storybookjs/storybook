@@ -32,6 +32,31 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
 };
 
 export class ComponentMetaManager {
+  private static instance: Promise<ComponentMetaManager | null> | undefined;
+
+  /**
+   * Lazy singleton — dynamically imports TypeScript and creates a single manager instance.
+   * Returns null if TypeScript is not available.
+   */
+  static getInstance(): Promise<ComponentMetaManager | null> {
+    if (!this.instance) {
+      this.instance = import('typescript').then(
+        (ts) => {
+          const manager = new ComponentMetaManager(ts);
+          process.on('exit', () => manager.dispose());
+          return manager;
+        },
+        () => {
+          logger.debug(
+            '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
+          );
+          return null;
+        }
+      );
+    }
+    return this.instance;
+  }
+
   // Volar LS pattern (typescriptProject.ts lines 34-37)
   private configProjects = new Map<string, ComponentMetaProject>();
   private inferredProject: ComponentMetaProject | undefined;
@@ -71,10 +96,25 @@ export class ComponentMetaManager {
    * Batch-extract component props across all entries, grouping by tsconfig project so each
    * project builds its TS program only once.
    */
-  batchExtract(entries: StoryExtractionEntry[]) {
+  batchExtract(
+    entries: Array<{
+      absoluteImportPath: string;
+      component?: { path?: string; importName?: string; importId?: string; member?: string };
+    }>
+  ) {
     const byProject = new Map<ComponentMetaProject, StoryExtractionEntry[]>();
-    for (const entry of entries) {
-      const project = this.getProjectForFile(entry.storyFilePath);
+    for (const { absoluteImportPath, component } of entries) {
+      if (!component?.path) {
+        continue;
+      }
+      const entry: StoryExtractionEntry = {
+        storyFilePath: absoluteImportPath,
+        componentPath: component.path,
+        exportName: component.importName ?? 'default',
+        importId: component.importId,
+        memberAccess: component.member,
+      };
+      const project = this.getProjectForFile(absoluteImportPath);
       let group = byProject.get(project);
       if (!group) {
         group = [];

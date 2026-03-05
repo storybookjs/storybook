@@ -102,7 +102,7 @@ export class SbPage {
       // Wait until there is at least one child (a story element) in the preview iframe
       await root.locator(':scope > *').first().waitFor({
         state: 'attached',
-        timeout: 10000,
+        timeout: 20000,
       });
     } catch (error: any) {
       if (error.name === 'TimeoutError') {

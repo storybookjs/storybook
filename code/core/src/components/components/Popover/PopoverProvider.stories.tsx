@@ -262,3 +262,22 @@ export const WithLongContent = meta.story({
     ),
   },
 });
+
+export const TallContent = meta.story({
+  name: 'Tall Content (viewport overflow)',
+  args: {
+    ariaLabel: 'Tall popover',
+    visible: true,
+    children: <Trigger>Open tall popover</Trigger>,
+    placement: 'bottom-start',
+    popover: (
+      <div style={{ padding: '8px', width: '200px' }}>
+        {Array.from({ length: 40 }, (_, i) => (
+          <div key={i} style={{ padding: '4px 0', borderBottom: '1px solid #eee', fontSize: 12 }}>
+            Item {i + 1}
+          </div>
+        ))}
+      </div>
+    ),
+  },
+});

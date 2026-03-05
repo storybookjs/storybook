@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "9.1.19",
+  "version": "9.1.20",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",

@@ -45,7 +45,7 @@ export interface CoreConfig {
    */
   enableCrashReports?: boolean;
   /**
-   * Enable hostname validation, currently only for WebSocket connections. Set to `[]` to disallow
+   * Enable hostname validation for HTTP requests and WebSocket connections. Set to `[]` to disallow
    * all hosts except known local/network address, or `true` to allow all hosts.
    */
   allowedHosts?: string[] | true;

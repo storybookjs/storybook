@@ -246,33 +246,47 @@ Combine the base template (Section 2a) with your flow-specific section (Section 
 
 ---
 
-## Step 3: GitHub Copilot Creates the PR
+## Step 3: Push Branch and Create PR
 
-**What happens automatically**:
+Run these commands from the repo root:
 
-- ✅ Your feature branch (`agent/fix-issue-$ARGUMENTS[0]`) is pushed to GitHub
-- ✅ PR is created targeting the `next` branch (all PRs go to `next`, not `main`)
-- ✅ PR is created with your prepared title and body
-- ✅ Required labels (`agent`, `ci:normal`, `bug`) are added automatically
-- ✅ PR links to issue #$ARGUMENTS[0] (via "Closes #..." in body)
+```bash
+# Push branch
+git push origin agent/fix-issue-NNNN
+
+# Create PR targeting next (do NOT include --label here — apply labels separately)
+gh pr create \
+  --base next \
+  --title "YOUR TITLE HERE" \
+  --body 'YOUR BODY HERE'
+
+# Apply labels separately (more reliable than --label in gh pr create)
+gh pr edit <PR-NUMBER> --add-label "agent,bug"
+```
+
+⚠️ **Always apply labels with `gh pr edit --add-label` after creation**, not via `--label` in `gh pr create`. The `--label` flag in `gh pr create` fails silently when the GitHub API is slow to resolve label names, leaving the PR unlabeled.
+
+**Required labels**:
+- `agent` — marks this PR as AI-agent-created (label exists in storybookjs/storybook)
+- `bug` — issue type label
 
 **Success Criteria**:
 
 - [ ] PR appears on GitHub.com
 - [ ] Title matches your prepared title
 - [ ] Body matches your prepared description
-- [ ] Labels are applied
-- [ ] Issue is linked
+- [ ] Labels `agent` and `bug` are applied
+- [ ] Issue is linked via "Closes #NNNN"
 
 ---
 
 ## Error Handling & Recovery
 
-### "PR was not created automatically"
+### "PR was not created / labels missing"
 
-→ Check GitHub.com to verify branch was pushed (`agent/fix-issue-$ARGUMENTS[0]`)
-→ If branch exists, manually create PR using your prepared title and body
-→ Ensure all required labels are added
+→ Check if branch is pushed: `git push origin agent/fix-issue-NNNN`
+→ Create PR manually: `gh pr create --base next --title "..." --body "..."`
+→ Apply labels separately: `gh pr edit <PR-NUMBER> --add-label "agent,bug"`
 
 ### "Description is incomplete or missing evidence"
 
@@ -284,10 +298,8 @@ Combine the base template (Section 2a) with your flow-specific section (Section 
 
 ## Summary
 
-This skill prepares everything GitHub Copilot needs:
-
 1. **Prepare PR Title** (clear, descriptive format)
 2. **Prepare PR Body** (base template + flow-specific evidence)
-3. **Copilot handles the rest** (push, create, label)
+3. **Push branch, create PR, then apply labels separately** via `gh pr edit --add-label`
 
-Success is when: ✅ PR prepared, ✅ Evidence complete, ✅ Ready for Copilot to open PR.
+Success is when: ✅ PR open on GitHub, ✅ `agent` + `bug` labels applied, ✅ Evidence complete.

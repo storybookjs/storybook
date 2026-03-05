@@ -108,6 +108,9 @@ describe('ServerChannelTransport', () => {
     // Simulate upgrade request with wrong token
     const request = {
       url: '/storybook-server-channel?token=wrong-token',
+      headers: {
+        origin: 'http://localhost:6006',
+      },
     } as any;
     const head = Buffer.from('');
 
@@ -119,7 +122,35 @@ describe('ServerChannelTransport', () => {
     expect(destroySpy).toHaveBeenCalled();
   });
 
-  it('accepts connections with valid token', () => {
+  it('rejects connections with invalid origin', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter() as any;
+    socket.write = jest.fn();
+    socket.destroy = jest.fn();
+    const destroySpy = jest.spyOn(socket, 'destroy');
+    const transport = new ServerChannelTransport(server, options);
+
+    const handler = jest.fn();
+    transport.setHandler(handler);
+
+    // Simulate upgrade request with wrong token
+    const request = {
+      url: `/storybook-server-channel?token=${options.token}`,
+      headers: {
+        origin: 'http://illegal-host.com',
+      },
+    } as any;
+    const head = Buffer.from('');
+
+    server.listeners('upgrade')[0](request, socket, head);
+
+    expect(socket.write).toHaveBeenCalledWith(
+      'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
+    );
+    expect(destroySpy).toHaveBeenCalled();
+  });
+
+  it('accepts connections with valid token and origin', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
     socket.write = jest.fn();
@@ -135,6 +166,9 @@ describe('ServerChannelTransport', () => {
     // Simulate upgrade request with correct token
     const request = {
       url: `/storybook-server-channel?token=${options.token}`,
+      headers: {
+        origin: 'http://localhost:6006',
+      },
     } as any;
     const head = Buffer.from('');
 

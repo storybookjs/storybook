@@ -16597,6 +16597,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"host-validation-middleware@npm:^0.1.2":
+  version: 0.1.2
+  resolution: "host-validation-middleware@npm:0.1.2"
+  checksum: 10c0/42a36849ed4898b7af574b4e5ea57070d8fcd7b98f6c7c027cd301612a83a48bf812066ef83fbc2ba9e7a50bc5986215ec802f06b64e14988f2117fbeb6bc24c
+  languageName: node
+  linkType: hard
+
 "hosted-git-info@npm:^7.0.0":
   version: 7.0.2
   resolution: "hosted-git-info@npm:7.0.2"
@@ -25141,6 +25148,7 @@ __metadata:
     get-npm-tarball-url: "npm:^2.0.3"
     glob: "npm:^10.0.0"
     globby: "npm:^14.0.1"
+    host-validation-middleware: "npm:^0.1.2"
     jiti: "npm:^1.21.6"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"

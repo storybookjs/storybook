@@ -10,7 +10,7 @@ export async function getServer(options: {
   sslCert?: string;
   sslKey?: string;
   sslCa?: string[];
-}) {
+}): Promise<http.Server | https.Server> {
   if (!options.https) {
     return http.createServer();
   }

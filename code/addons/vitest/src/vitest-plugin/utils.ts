@@ -54,8 +54,8 @@ export async function requiresProjectAnnotations(
   if (hasStorybookAnnotations) {
     logBoxOnce(dedent`
       ${CLI_COLORS.warning('Warning')}: Found a setup file with "setProjectAnnotations".
-      Skipping automatic provision to avoid conflicts. Since Storybook 10.3, "@storybook/addon-vitest" applies these automatically.
-      You can safely remove your vitest.setup file and its "test.setupFiles" reference.
+      Skipping automatic provisioning of preview annotations to avoid conflicts. Since Storybook 10.3, "@storybook/addon-vitest" applies these automatically.
+      You can safely remove the "setProjectAnnotations" call from your setup file.
     `);
 
     return false;

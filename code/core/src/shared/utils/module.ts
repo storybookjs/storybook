@@ -37,8 +37,8 @@ export const resolvePackageDir = (
       return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'))));
     } catch {
       // Fallback using require.resolve for strict pnpm environments where import.meta.resolve may fail
-      const require = createRequire(import.meta.url);
-      return dirname(require.resolve(join(pkg, 'package.json')));
+      const req = createRequire(parent ?? import.meta.url);
+      return dirname(req.resolve(join(pkg, 'package.json')));
     }
   }
 };

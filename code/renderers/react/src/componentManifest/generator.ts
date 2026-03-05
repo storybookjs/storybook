@@ -27,27 +27,26 @@ interface ReactComponentManifest extends ComponentManifest {
   reactComponentMeta?: ComponentDoc;
 }
 
-
 function findMatchingComponent(
   components: ReturnType<typeof getComponents>,
   componentName: string | undefined,
-  trimmedTitle: string
+  title: string
 ) {
-  const byName = (it: (typeof components)[number]) =>
-    [it.componentName, it.localImportName, it.importName].includes(componentName!);
-  const byTitle = (it: (typeof components)[number]) =>
-    trimmedTitle.includes(it.componentName) ||
-    (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
-    (it.importName && trimmedTitle.includes(it.importName));
-
-  let matches = componentName ? components.filter(byName) : components.filter(byTitle);
-
-  // If componentName was given but none of the matches have JSX usage,
-  // the component is likely a namespace object (e.g. Accordion) rather than
-  // a renderable component. Fall back to title matching instead.
-  if (componentName && matches.length > 0 && matches.every((m) => m.jsxDepth === undefined)) {
-    matches = components.filter(byTitle);
+  // When meta.component is set, find the exact match.
+  // meta.component is the local variable name (e.g. "Button", "Accordion"),
+  // and getComponents adds it to the component set as-is, so componentName matches directly.
+  if (componentName) {
+    return components.find((it) => it.componentName === componentName);
   }
+
+  // No meta.component — guess by title match.
+  const trimmedTitle = title.replace(/\s+/g, '');
+  const matches = components.filter(
+    (it) =>
+      trimmedTitle.includes(it.componentName) ||
+      (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
+      (it.importName && trimmedTitle.includes(it.importName))
+  );
 
   if (matches.length <= 1) {
     return matches[0];
@@ -126,10 +125,9 @@ type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-componen
 export const manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
-  { manifestEntries: IndexEntry[] }
+  { manifestEntries: IndexEntry[]; watch: boolean }
 > = async (existingManifests = {}, options) => {
-  // `watch` is injected by the dev server but not declared in the preset function signature.
-  const { manifestEntries, presets, watch } = options as typeof options & { watch?: boolean };
+  const { manifestEntries, presets, watch } = options;
   const typescriptOptions =
     (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
   const features = await presets?.apply('features', {});
@@ -178,7 +176,7 @@ export const manifests: PresetPropertyFn<
     const component = findMatchingComponent(
       allComponents,
       componentName,
-      entry.title.replace(/\s+/g, '')
+      entry.title
     );
     return {
       entry,

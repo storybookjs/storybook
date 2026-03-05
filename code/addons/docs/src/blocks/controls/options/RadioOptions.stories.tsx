@@ -115,3 +115,28 @@ export const ArrayReadonly: Story = {
     },
   },
 };
+
+// Regression test for https://github.com/storybookjs/storybook/issues/30142
+// Options whose names match Array prototype methods (e.g. 'reverse') must be
+// displayed as plain text, not as the stringified native function.
+const optionsWithArrayMethodNames = ['normal', 'reverse', 'filter', 'map'];
+export const ArrayWithBuiltinNames: Story = {
+  name: 'Array with option names matching built-in Array methods',
+  args: {
+    value: optionsWithArrayMethodNames[0],
+    argType: { options: optionsWithArrayMethodNames },
+  },
+};
+
+// Reproduces the exact bug from issue #30142: when `labels` is inadvertently an array
+// (instead of a Record), `labels?.['reverse']` resolves to `Array.prototype.reverse` — a
+// truthy native function — causing the label to render as "function reverse() { [native code] }".
+export const ArrayWithBuiltinNamesAndArrayLabels: Story = {
+  name: 'Array with built-in names and labels accidentally passed as array (bug #30142)',
+  args: {
+    value: optionsWithArrayMethodNames[0],
+    argType: { options: optionsWithArrayMethodNames },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    labels: optionsWithArrayMethodNames as any,
+  },
+};

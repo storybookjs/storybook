@@ -248,6 +248,14 @@ Combine the base template (Section 2a) with your flow-specific section (Section 
 
 ## Step 3: Push Branch and Create PR
 
+⚠️ **Before proceeding**: Confirm ALL of the following are true — `ci:normal` must only be applied when verification is fully complete:
+
+- [ ] `verification-checklist` passed (all unit tests green, fix addresses root cause)
+- [ ] Flow-specific verification done (E2E passing / snapshot updated / renderer verified)
+- [ ] PR body `## Verification Evidence` section is fully populated (no placeholder text, before/after screenshots uploaded)
+
+If any box is unchecked, **do not proceed** — return to the appropriate verification step.
+
 Run these commands from the repo root:
 
 ```bash
@@ -261,15 +269,16 @@ gh pr create \
   --body 'YOUR BODY HERE'
 
 # Attempt to apply labels (may fail for non-maintainers — see note below)
-gh pr edit <PR-NUMBER> --add-label "agent,bug" || true
+# ci:normal is only added here because verification is confirmed complete above
+gh pr edit <PR-NUMBER> --add-label "agent,bug,ci:normal" || true
 ```
 
-**Required labels**: `agent` (AI-agent-created), `bug` (issue type).
+**Required labels**: `agent` (AI-agent-created), `bug` (issue type), `ci:normal` (triggers CI — only valid once all verification evidence is complete).
 
 ⚠️ **Label permissions**: Only maintainers and Copilot agents with write access can apply labels. If `gh pr edit --add-label` fails, leave a comment on the PR instead:
 
 ```bash
-gh pr comment <PR-NUMBER> --body "Labels to apply: \`agent\`, \`bug\`"
+gh pr comment <PR-NUMBER> --body "Labels to apply: \`agent\`, \`bug\`, \`ci:normal\`"
 ```
 
 **Success Criteria**:
@@ -286,8 +295,9 @@ gh pr comment <PR-NUMBER> --body "Labels to apply: \`agent\`, \`bug\`"
 
 ### "Labels not applied"
 
-→ If you have write access: `gh pr edit <PR-NUMBER> --add-label "agent,bug"`
-→ If you lack permissions (non-maintainer): `gh pr comment <PR-NUMBER> --body "Labels to apply: \`agent\`, \`bug\`"`
+→ If you have write access: `gh pr edit <PR-NUMBER> --add-label "agent,bug,ci:normal"`
+→ If you lack permissions (non-maintainer): `gh pr comment <PR-NUMBER> --body "Labels to apply: \`agent\`, \`bug\`, \`ci:normal\`"`
+→ **Never apply `ci:normal` if verification evidence is incomplete** — remove it and fix the PR body first
 
 ### "Description is incomplete or missing evidence"
 

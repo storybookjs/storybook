@@ -34,117 +34,123 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
   return {
     name: 'storybook:vue-component-meta-plugin',
-    async transform(src, id) {
-      if (!filter(id)) {
-        return undefined;
-      }
-
-      try {
-        const exportNames = checker.getExportNames(id);
-        let componentsMeta = exportNames.map((name) => checker.getComponentMeta(id, name));
-        componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
-
-        const metaSources: MetaSource[] = [];
-
-        componentsMeta.forEach((meta, index) => {
-          // filter out empty meta
-          const isEmpty =
-            !meta.props.length && !meta.events.length && !meta.slots.length && !meta.exposed.length;
-
-          if (isEmpty || meta.type === TypeMeta.Unknown) {
-            return;
-          }
-
-          const exportName = exportNames[index];
-
-          // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
-          // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
-          // it also reduced the bundle size when running "storybook build" when such schemas are used
-          (['props', 'events', 'slots', 'exposed'] as const).forEach((key) => {
-            meta[key].forEach((value) => {
-              if (Array.isArray(value.schema)) {
-                value.schema.forEach((eventSchema) => removeNestedSchemas(eventSchema));
-              } else {
-                removeNestedSchemas(value.schema);
-              }
-            });
-          });
-
-          const exposed =
-            // the meta also includes duplicated entries in the "exposed" array with "on"
-            // prefix (e.g. onClick instead of click), so we need to filter them out here
-            meta.exposed
-              .filter((expose) => {
-                let nameWithoutOnPrefix = expose.name;
-
-                if (nameWithoutOnPrefix.startsWith('on')) {
-                  nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
-                }
-
-                const hasEvent = meta.events.find((event) => event.name === nameWithoutOnPrefix);
-                return !hasEvent;
-              })
-              // remove unwanted duplicated "$slots" expose
-              .filter((expose) => {
-                if (expose.name === '$slots') {
-                  const slotNames = meta.slots.map((slot) => slot.name);
-                  return !slotNames.every((slotName) => expose.type.includes(slotName));
-                }
-                return true;
-              });
-
-          metaSources.push({
-            exportName,
-            displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
-            ...meta,
-            exposed,
-            sourceFiles: id,
-          });
-        });
-
-        // if there is no component meta, return undefined
-
-        // if there is no component meta, return undefined
-        if (metaSources.length === 0) {
+    transform: {
+      filter: { id: { include, exclude } },
+      async handler(src, id) {
+        if (!filter(id)) {
           return undefined;
         }
 
-        const s = new MagicString(src);
+        try {
+          const exportNames = checker.getExportNames(id);
+          let componentsMeta = exportNames.map((name) => checker.getComponentMeta(id, name));
+          componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
 
-        metaSources.forEach((meta) => {
-          const isDefaultExport = meta.exportName === 'default';
-          const name = isDefaultExport ? '_sfc_main' : meta.exportName;
+          const metaSources: MetaSource[] = [];
 
-          // we can only add the "__docgenInfo" to variables that are actually defined in the current file
-          // so e.g. re-exports like "export { default as MyComponent } from './MyComponent.vue'" must be ignored
-          // to prevent runtime errors
-          if (
-            new RegExp(`export {.*${name}.*}`).test(src) ||
-            new RegExp(`export \\* from ['"]\\S*${name}['"]`).test(src) ||
-            // when using re-exports, some exports might be resolved via checker.getExportNames
-            // but are not directly exported inside the current file so we need to ignore them too
-            !src.includes(name)
-          ) {
-            return;
+          componentsMeta.forEach((meta, index) => {
+            // filter out empty meta
+            const isEmpty =
+              !meta.props.length &&
+              !meta.events.length &&
+              !meta.slots.length &&
+              !meta.exposed.length;
+
+            if (isEmpty || meta.type === TypeMeta.Unknown) {
+              return;
+            }
+
+            const exportName = exportNames[index];
+
+            // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
+            // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
+            // it also reduced the bundle size when running "storybook build" when such schemas are used
+            (['props', 'events', 'slots', 'exposed'] as const).forEach((key) => {
+              meta[key].forEach((value) => {
+                if (Array.isArray(value.schema)) {
+                  value.schema.forEach((eventSchema) => removeNestedSchemas(eventSchema));
+                } else {
+                  removeNestedSchemas(value.schema);
+                }
+              });
+            });
+
+            const exposed =
+              // the meta also includes duplicated entries in the "exposed" array with "on"
+              // prefix (e.g. onClick instead of click), so we need to filter them out here
+              meta.exposed
+                .filter((expose) => {
+                  let nameWithoutOnPrefix = expose.name;
+
+                  if (nameWithoutOnPrefix.startsWith('on')) {
+                    nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
+                  }
+
+                  const hasEvent = meta.events.find((event) => event.name === nameWithoutOnPrefix);
+                  return !hasEvent;
+                })
+                // remove unwanted duplicated "$slots" expose
+                .filter((expose) => {
+                  if (expose.name === '$slots') {
+                    const slotNames = meta.slots.map((slot) => slot.name);
+                    return !slotNames.every((slotName) => expose.type.includes(slotName));
+                  }
+                  return true;
+                });
+
+            metaSources.push({
+              exportName,
+              displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
+              ...meta,
+              exposed,
+              sourceFiles: id,
+            });
+          });
+
+          // if there is no component meta, return undefined
+
+          // if there is no component meta, return undefined
+          if (metaSources.length === 0) {
+            return undefined;
           }
 
-          if (!id.endsWith('.vue') && isDefaultExport) {
-            // we can not add the __docgenInfo if the component is default exported directly
-            // so we need to safe it to a variable instead and export default it instead
-            s.replace('export default ', 'const _sfc_main = ');
-            s.append('\nexport default _sfc_main;');
-          }
+          const s = new MagicString(src);
 
-          s.append(`\n;${name}.__docgenInfo = ${JSON.stringify(meta)}`);
-        });
+          metaSources.forEach((meta) => {
+            const isDefaultExport = meta.exportName === 'default';
+            const name = isDefaultExport ? '_sfc_main' : meta.exportName;
 
-        return {
-          code: s.toString(),
-          map: s.generateMap({ hires: true, source: id }),
-        };
-      } catch (e) {
-        return undefined;
-      }
+            // we can only add the "__docgenInfo" to variables that are actually defined in the current file
+            // so e.g. re-exports like "export { default as MyComponent } from './MyComponent.vue'" must be ignored
+            // to prevent runtime errors
+            if (
+              new RegExp(`export {.*${name}.*}`).test(src) ||
+              new RegExp(`export \\* from ['"]\\S*${name}['"]`).test(src) ||
+              // when using re-exports, some exports might be resolved via checker.getExportNames
+              // but are not directly exported inside the current file so we need to ignore them too
+              !src.includes(name)
+            ) {
+              return;
+            }
+
+            if (!id.endsWith('.vue') && isDefaultExport) {
+              // we can not add the __docgenInfo if the component is default exported directly
+              // so we need to safe it to a variable instead and export default it instead
+              s.replace('export default ', 'const _sfc_main = ');
+              s.append('\nexport default _sfc_main;');
+            }
+
+            s.append(`\n;${name}.__docgenInfo = ${JSON.stringify(meta)}`);
+          });
+
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: true, source: id }),
+          };
+        } catch (e) {
+          return undefined;
+        }
+      },
     },
     // handle hot updates to update the component meta on file changes
     async handleHotUpdate({ file, read, server, modules, timestamp }) {

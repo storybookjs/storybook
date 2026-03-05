@@ -10,20 +10,23 @@ export async function vueDocgen(): Promise<Plugin> {
 
   return {
     name: 'storybook:vue-docgen-plugin',
-    async transform(src, id) {
-      if (!filter(id)) {
-        return undefined;
-      }
+    transform: {
+      filter: { id: include },
+      async handler(src, id) {
+        if (!filter(id)) {
+          return undefined;
+        }
 
-      const metaData = await parse(id);
+        const metaData = await parse(id);
 
-      const s = new MagicString(src);
-      s.append(`;_sfc_main.__docgenInfo = ${JSON.stringify(metaData)}`);
+        const s = new MagicString(src);
+        s.append(`;_sfc_main.__docgenInfo = ${JSON.stringify(metaData)}`);
 
-      return {
-        code: s.toString(),
-        map: s.generateMap({ hires: true, source: id }),
-      };
+        return {
+          code: s.toString(),
+          map: s.generateMap({ hires: true, source: id }),
+        };
+      },
     },
   };
 }

@@ -41,11 +41,14 @@ export const viteInjectMockerRuntime = (options: {
         });
       }
     },
-    resolveId(source) {
-      if (source === ENTRY_PATH) {
-        return mockerRuntimePath;
-      }
-      return undefined;
+    resolveId: {
+      filter: { id: /\/vite-inject-mocker-entry\.js/ },
+      handler(source) {
+        if (source === ENTRY_PATH) {
+          return mockerRuntimePath;
+        }
+        return undefined;
+      },
     },
     transformIndexHtml(html: string) {
       const headTag = html.match(/<head[^>]*>/);

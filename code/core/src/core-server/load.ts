@@ -11,7 +11,7 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
-import { dirname, join, relative, resolve } from 'pathe';
+import { join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module';
 

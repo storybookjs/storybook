@@ -100,6 +100,14 @@ Add your test inside the `Desktop` describe block in `code/e2e-tests/manager.spe
 
 **Important**: Always use `sbPage.navigateToStory(title, storyName)` to navigate to a story — it waits for the sidebar selection, URL change, and full story load. Do NOT use `page.goto()` + `waitUntilLoaded()` for story navigation; it has race conditions and the session storage init script won't apply retroactively.
 
+**Finding the correct `title` and `name` to pass**: Do not guess from the file path. Look up the story in the live index:
+
+```bash
+.claude/scripts/find-story.sh "your-fragment"
+# Output: id | title | name | exportName | importPath
+# Use `title` as the first arg and `name` as the second arg to navigateToStory
+```
+
 **Pattern for Controls panel tests:**
 
 ```ts

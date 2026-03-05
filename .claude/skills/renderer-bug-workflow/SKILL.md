@@ -83,9 +83,14 @@ If the bug is resolved in the screenshot, save it locally (e.g., in a temp folde
 
 ### Story URL Pattern
 
-The story URL follows the pattern `http://localhost:6006/?path=/story/<title-prefix>-<story-name>--<export-name>`.
+The story URL follows the pattern `http://localhost:6006/?path=/story/<id>` where `<id>` comes from Storybook's title calculation logic — **do not guess it**. Instead, look it up:
 
-For example, a story exported as `Primary` in `code/renderers/react/template/stories/visual-render-verification.stories.tsx` would be at `http://localhost:6006/?path=/story/renderers-react-visual-render-verification--primary`.
+```bash
+.claude/scripts/find-story.sh "your-fragment"
+# Output: id | title | name | exportName | importPath
+```
+
+Use the `id` field in the URL. See `.claude/scripts/find-story.sh` for full usage (`--port` option, no-fragment to list all).
 
 ## Step 6: Fallback Path (if bug persists)
 

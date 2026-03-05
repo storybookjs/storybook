@@ -6,6 +6,6 @@ type CardProps = Pick<SharedProps, 'id'> &
     subtitle?: string;
   };
 
-export function Card(_props: CardProps) {
+export function Card(props: CardProps) {
   return null;
 }

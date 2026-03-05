@@ -1,4 +1,4 @@
 interface CardProps {
   title: string;
 }
-export const Card = (_props: CardProps) => null;
+export const Card = (props: CardProps) => null;

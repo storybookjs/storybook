@@ -4,10 +4,10 @@ interface ListProps<T> {
   emptyMessage?: string;
 }
 
-export function StringList(_props: ListProps<string>) {
+export function StringList(props: ListProps<string>) {
   return null;
 }
 
-export function NumberList(_props: ListProps<number>) {
+export function NumberList(props: ListProps<number>) {
   return null;
 }

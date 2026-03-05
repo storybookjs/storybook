@@ -2,6 +2,6 @@ interface CallbackProps {
   onClick?: (id: string) => void;
   onSubmit: () => boolean;
 }
-export function Callback(_props: CallbackProps) {
+export function Callback(props: CallbackProps) {
   return null;
 }

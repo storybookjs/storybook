@@ -3,6 +3,6 @@ interface TooltipProps {
   content: string;
 }
 /** A tooltip component. */
-export function Tooltip(_props: TooltipProps) {
+export function Tooltip(props: TooltipProps) {
   return null;
 }

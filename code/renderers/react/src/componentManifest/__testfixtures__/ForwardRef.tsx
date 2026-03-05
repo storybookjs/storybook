@@ -10,7 +10,7 @@ interface TextInputProps {
 }
 
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-  function TextInput(_props, _ref) {
+  function TextInput(props, ref) {
     return null;
   }
 );

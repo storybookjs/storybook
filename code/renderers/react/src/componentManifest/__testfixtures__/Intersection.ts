@@ -14,6 +14,6 @@ type ItemProps = Base &
     onSave: () => Promise<void>;
   };
 
-export function Item(_props: ItemProps) {
+export function Item(props: ItemProps) {
   return null;
 }

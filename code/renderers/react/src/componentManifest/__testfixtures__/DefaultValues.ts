@@ -2,6 +2,6 @@ interface AlertProps {
   message: string;
   severity?: string;
 }
-export function Alert({ message: _message, severity: _severity = 'info' }: AlertProps) {
+export function Alert({ message, severity = 'info' }: AlertProps) {
   return null;
 }

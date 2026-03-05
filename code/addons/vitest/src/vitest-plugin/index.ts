@@ -415,6 +415,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
+            'storybook/preview-api',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),

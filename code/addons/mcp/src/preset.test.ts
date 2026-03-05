@@ -84,12 +84,14 @@ describe('experimental_devServer', () => {
 			},
 		} as unknown as Options;
 
-		let getHandler: any;
-		mockApp.get = vi.fn((path, handler) => {
-			getHandler = handler;
+		const handlers: Record<string, any> = {};
+		mockApp.get = vi.fn((path: string, handler: any) => {
+			handlers[path] = handler;
 		});
 
 		await (experimental_devServer as any)(mockApp, manifestEnabledOptions);
+		const getMcpHandler = handlers['/mcp'];
+		expect(getMcpHandler).toBeDefined();
 
 		const mockReq = {
 			headers: {
@@ -101,7 +103,7 @@ describe('experimental_devServer', () => {
 			end: vi.fn(),
 		} as any;
 
-		await getHandler(mockReq, mockRes);
+		await getMcpHandler(mockReq, mockRes);
 
 		expect(mockRes.end).toHaveBeenCalledWith(
 			expect.stringContaining('This toolset requires Storybook 10.3.0+ with'),

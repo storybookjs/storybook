@@ -1,31 +1,38 @@
-import type { Server } from 'http';
 import { Channel } from '@storybook/channels';
 
 import { EventEmitter } from 'events';
+import type { Server } from 'http';
 import { stringify } from 'telejson';
-import { getServerChannel, ServerChannelTransport } from '../get-server-channel';
+
+import { ServerChannelTransport, getServerChannel } from '../get-server-channel';
+
+const mockToken = 'test-token-123';
+
+const options = {
+  localAddress: 'http://localhost:6006',
+  networkAddress: 'http://192.168.1.100:6006',
+  token: mockToken,
+} as any;
 
 describe('getServerChannel', () => {
   test('should return a channel', () => {
     const server = { on: jest.fn() } as any as Server;
-    const result = getServerChannel(server, 'test-token-123');
+    const result = getServerChannel(server, options);
     expect(result).toBeInstanceOf(Channel);
   });
 
   test('should attach to the http server', () => {
     const server = { on: jest.fn() } as any as Server;
-    getServerChannel(server, 'test-token-123');
+    getServerChannel(server, options);
     expect(server.on).toHaveBeenCalledWith('upgrade', expect.any(Function));
   });
 });
 
 describe('ServerChannelTransport', () => {
-  const mockToken = 'test-token-123';
-
   it('parses simple JSON', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, mockToken);
+    const transport = new ServerChannelTransport(server, options);
     const handler = jest.fn();
     transport.setHandler(handler);
 
@@ -39,7 +46,7 @@ describe('ServerChannelTransport', () => {
   it('parses object JSON', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, mockToken);
+    const transport = new ServerChannelTransport(server, options);
     const handler = jest.fn();
     transport.setHandler(handler);
 
@@ -52,7 +59,7 @@ describe('ServerChannelTransport', () => {
   test('supports telejson cyclical data', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, mockToken);
+    const transport = new ServerChannelTransport(server, options);
     const handler = jest.fn();
     transport.setHandler(handler);
 
@@ -73,7 +80,7 @@ describe('ServerChannelTransport', () => {
   test('skips telejson classes and functions in data', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, mockToken);
+    const transport = new ServerChannelTransport(server, options);
     const handler = jest.fn();
     transport.setHandler(handler);
 
@@ -93,7 +100,7 @@ describe('ServerChannelTransport', () => {
     socket.write = jest.fn();
     socket.destroy = jest.fn();
     const destroySpy = jest.spyOn(socket, 'destroy');
-    const transport = new ServerChannelTransport(server, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     const handler = jest.fn();
     transport.setHandler(handler);
@@ -119,7 +126,7 @@ describe('ServerChannelTransport', () => {
     socket.destroy = jest.fn();
     const destroySpy = jest.spyOn(socket, 'destroy');
     const handleUpgradeSpy = jest.fn();
-    const transport = new ServerChannelTransport(server, mockToken);
+    const transport = new ServerChannelTransport(server, options);
 
     // Mock handleUpgrade to track if it's called
     // @ts-expect-error (accessing private property)
@@ -127,7 +134,7 @@ describe('ServerChannelTransport', () => {
 
     // Simulate upgrade request with correct token
     const request = {
-      url: `/storybook-server-channel?token=${mockToken}`,
+      url: `/storybook-server-channel?token=${options.token}`,
     } as any;
     const head = Buffer.from('');
 

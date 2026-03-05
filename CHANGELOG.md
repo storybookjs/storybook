@@ -1,3 +1,7 @@
+## 7.6.24
+
+- Add request validation
+
 ## 7.6.23
 
 - Harden websocke connection

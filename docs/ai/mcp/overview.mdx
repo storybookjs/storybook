@@ -11,7 +11,7 @@ sidebar:
 
 <If renderer={['react']}>
 
-Storybook's MCP server connects your Storybook to AI agents, allowing them to understand your components and documentation, generate stories, run tests, and more. Agents will be equipped to re-use your existing components and follow your documented usage guidelines when generating UI, which helps ensure that the generated UI is consistent with your existing design system. Then they can write stories so you can preview the generated UI and automatically run interaction tests (and accessibility checks) on those stories to validate their work. If any issues are found, the agent can fix them and re-run the tests to confirm that the issues are resolved, creating a self-healing loop that helps ensure the quality of the generated UI without requiring you to intervene.
+Storybook's MCP server connects your Storybook to AI agents, allowing them to understand your components and documentation, generate stories, run tests, and more. Agents will be equipped to reuse your existing components and follow your documented usage guidelines when generating UI, helping ensure the generated UI is consistent with your existing design system. Then they can write stories so you can preview the generated UI and automatically run interaction tests (and accessibility checks) on those stories to validate their work. If any issues are found, the agent can fix them and re-run the tests to confirm they are resolved, creating a self-healing loop that helps ensure the quality of the generated UI without requiring you to intervene.
 
 </If>
 
@@ -41,7 +41,7 @@ Then run this command to configure your agent to use the MCP server:
 
 You may need to update the port number in the URL. You will be prompted for a name for your MCP server toolset (e.g. "my-project-sb-mcp"). This is the name you'll use when calling the tools from your agent, so choose something descriptive and unique to avoid confusion with other tools.
 
-[`mcp-add`](https://github.com/paoloricciuti/mcp-add) is a CLI tool built to simplify the process of adding MCP servers to various agents.
+[`mcp-add`](https://github.com/paoloricciuti/mcp-add) is a CLI tool designed to simplify adding MCP servers to various agents.
 
 You can also follow your agent's documentation to add the MCP server as a tool provider manually, e.g. [Claude Code](https://code.claude.com/docs/en/mcp#option-1-add-a-remote-http-server), [Google Gemini CLI](https://geminicli.com/docs/tools/mcp-server/#adding-an-http-server), [OpenAI Codex](https://developers.openai.com/codex/mcp/), [VS Code Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file), etc.
 
@@ -134,7 +134,7 @@ _Prompt: Build a login form_
 
 **2. Previewing work with stories**
 
-_Prompt: Show me Button in dark mode_
+_Prompt: Show me the Button in dark mode_
 
 1. The agent uses the [development toolset](#development) to share a preview of or link to the default Button story in dark mode.
 
@@ -186,7 +186,7 @@ Returns story previews rendered in the agent's chat interface, if the agent supp
 
 ### Docs
 
-The docs toolset provides tools that help the agent to re-use the components in your Storybook when generating UI. The agent can query the manifests to find components that match the requirements of the UI it's trying to build, and reference your documentation to understand how to use those components correctly. This helps ensure that the generated UI is consistent with your existing design system and makes use of the components you've already built.
+The docs toolset provides tools that help the agent reuse components from your Storybook when generating UI. The agent can query the manifests to find components that match the requirements of the UI it's trying to build, and reference your documentation to understand how to use those components correctly. This helps ensure the generated UI is consistent with your existing design system and uses the components you've already built.
 
 The docs toolset includes the following tools:
 
@@ -206,13 +206,13 @@ Returns an index containing components and unattached docs entries.
 
 ### Testing
 
-If you have [Storybook Test](../../writing-tests/index.mdx) set up in your Storybook, the testing toolset provides tools that allow the agent to run component tests (including [accessibility checks](../../writing-tests/accessibility-testing.mdx), if set up) and interpret their results. It also includes instructions to resolve issues. As the agent develops, it can choose to run tests to validate its work. If it finds issues, it can fix them and re-run the tests to confirm that the issues are resolved. This creates a _self-healing_ loop that helps ensure the quality of the generated UI, without requiring you to intervene.
+If you have [Storybook Test](../../writing-tests/index.mdx) set up in your Storybook, the testing toolset provides tools that allow the agent to run component tests (including [accessibility checks](../../writing-tests/accessibility-testing.mdx), if set up) and interpret their results. It also includes instructions to resolve issues. As the agent develops, it can choose to run tests to validate its work. If it finds issues, it can fix them and re-run the tests to confirm they are resolved. This creates a _self-healing_ loop that helps ensure the quality of the generated UI, without requiring you to intervene.
 
 The testing toolset includes the following tool:
 
 #### `run-story-tests`
 
-Runs the tests for specific stories and returns the results, including any accessibility issues (if set up). Also instructs the agent to interpret the results and resolve any issues found.
+Runs tests for specific stories and returns results, including any accessibility issues (if configured). Also instructs the agent to interpret the results and resolve any issues found.
 
 <If renderer={['react']}>
 

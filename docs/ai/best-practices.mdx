@@ -33,7 +33,7 @@ You might be wondering how well an agent handles abstractions like [`args`](../w
 
 ## Documenting your components
 
-To re-use your components effectively, agents depend on how well you document their purpose, usages, and API. There are a few key aspects that are well worth taking the time to document (ask your agent to help!). To provide these details, you can use [JSDoc comments](https://jsdoc.app/about-getting-started) in your code, which Storybook will automatically extract and include in the generated [manifest](./manifests.mdx) for the agent.
+To reuse your components effectively, agents depend on how well you document their purpose, usage, and APIs. There are a few key aspects that are well worth taking the time to document (ask your agent to help!). To provide these details, you can use [JSDoc comments](https://jsdoc.app/about-getting-started) in your code, which Storybook will automatically extract and include in the generated [manifest](./manifests.mdx) for the agent.
 
 Of course, with [Autodocs](../writing-docs/autodocs.mdx), any documentation efforts you make will help human developers, too!
 
@@ -90,7 +90,7 @@ import { Meta } from '@storybook/addon-docs';
 
 ## Docs content
 
-Storybook generates this docs manifest through static analysis of your MDX files, which means it is limited to the information that is explicitly present in those files. For example, the manifest will _not_ include the color tokens in the document below, because their values are not in explicitly in the source:
+Storybook generates this docs manifest through static analysis of your MDX files, which means it is limited to the information that is explicitly present in those files. For example, the manifest will _not_ include the color tokens in the document below, because their values are not explicitly in the source:
 
 ```jsx title="Colors.mdx"
 import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs/blocks';

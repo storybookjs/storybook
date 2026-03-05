@@ -1,6 +1,4 @@
-# Storybook MCP Server Instructions
-
-This server provides access to Storybook component and documentation manifests.
+Use these tools to access Storybook component and documentation manifests.
 
 ## Tool Workflow
 

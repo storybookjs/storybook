@@ -18,13 +18,22 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
-import { addRunStoryTestsTool } from './tools/run-story-tests.ts';
+import { addRunStoryTestsTool, getAddonVitestConstants } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
-import addonInstructions from './instructions/mcp-server-instructions.md';
+import devInstructions from './instructions/dev-instructions.md';
+import testInstructions from './instructions/test-instructions.md';
 
-const MCP_SERVER_INSTRUCTIONS = `${STORYBOOK_MCP_INSTRUCTIONS}\n\n${addonInstructions}`;
+function buildServerInstructions(options: {
+	testAvailable: boolean;
+	docsAvailable: boolean;
+}): string {
+	const parts: string[] = [devInstructions];
+	if (options.testAvailable) parts.push(testInstructions);
+	if (options.docsAvailable) parts.push(STORYBOOK_MCP_INSTRUCTIONS);
+	return parts.join('\n\n');
+}
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -37,6 +46,11 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const core = await options.presets.apply('core', {});
 	disableTelemetry = core?.disableTelemetry ?? false;
 
+	// Determine tool availability before creating server so instructions can be tailored
+	const addonVitestConstants = await getAddonVitestConstants();
+	const manifestStatus = await getManifestStatus(options);
+	a11yEnabled = await isAddonA11yEnabled(options);
+
 	const server = new McpServer(
 		{
 			name: pkgJson.name,
@@ -45,7 +59,10 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		},
 		{
 			adapter: new ValibotJsonSchemaAdapter(),
-			instructions: MCP_SERVER_INSTRUCTIONS,
+			instructions: buildServerInstructions({
+				testAvailable: !!addonVitestConstants,
+				docsAvailable: manifestStatus.available,
+			}),
 			capabilities: {
 				tools: { listChanged: true },
 				resources: { listChanged: true },
@@ -64,11 +81,9 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	await addGetUIBuildingInstructionsTool(server);
 
 	// Register test addon tools
-	a11yEnabled = await isAddonA11yEnabled(options);
 	await addRunStoryTestsTool(server, { a11yEnabled });
 
 	// Only register the additional tools if the component manifest feature is enabled
-	const manifestStatus = await getManifestStatus(options);
 	if (manifestStatus.available) {
 		logger.info('Experimental components manifest feature detected - registering component tools');
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;

@@ -1,3 +1,13 @@
+## 10.3.0-alpha.14
+
+- CSF-Factories: Fix ConfigFile parser false warning on `definePreview({...}).type<T>()` export default - [#33885](https://github.com/storybookjs/storybook/pull/33885), thanks @copilot-swe-agent!
+- Core: Add host/origin validation to requests and websocket connections - [#33835](https://github.com/storybookjs/storybook/pull/33835), thanks @ghengeveld!
+- Core: Storybook failed to load iframe.html when publishing - [#33896](https://github.com/storybookjs/storybook/pull/33896), thanks @danielalanbates!
+- Core: Zoom tool refinements - Hide reset button when value is initial - [#33635](https://github.com/storybookjs/storybook/pull/33635), thanks @superLipbalm!
+- Docs: Edit JSON button is now accessible at 320x256 viewport (WCAG 2.1 Reflow test) - [#33707](https://github.com/storybookjs/storybook/pull/33707), thanks @TheSeydiCharyyev!
+- Manager-API: Update refs sequentially in experimental_setFilter - [#33958](https://github.com/storybookjs/storybook/pull/33958), thanks @ia319!
+- UI: Allow direct kb/mouse actions on zoom tool button - [#33496](https://github.com/storybookjs/storybook/pull/33496), thanks @Sidnioulz!
+
 ## 10.3.0-alpha.13
 
 - A11y: Add ScrollArea prop focusable for when it has static children - [#33876](https://github.com/storybookjs/storybook/pull/33876), thanks @Sidnioulz!

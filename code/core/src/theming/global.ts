@@ -9,6 +9,19 @@ interface Return {
   };
 }
 
+export const srOnlyStyles = {
+  position: 'absolute' as const,
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  whiteSpace: 'nowrap' as const,
+  clip: 'rect(0, 0, 0, 0)',
+  clipPath: 'inset(50%)',
+  border: 0,
+};
+
 export const createReset = memoize(1)(
   ({ typography }: { typography: Typography }): Return => ({
     body: {
@@ -112,18 +125,7 @@ export const createGlobal = memoize(1)(({
       borderTop: `1px solid ${color.border}`,
     },
 
-    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': {
-      position: 'absolute',
-      width: 1,
-      height: 1,
-      padding: 0,
-      margin: -1,
-      overflow: 'hidden',
-      whiteSpace: 'nowrap',
-      clip: 'rect(0, 0, 0, 0)',
-      clipPath: 'inset(50%)',
-      border: 0,
-    },
+    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': srOnlyStyles,
 
     '.sb-hidden-until-focus': {
       opacity: 0,

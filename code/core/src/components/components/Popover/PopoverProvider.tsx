@@ -115,7 +115,7 @@ export const PopoverProvider = ({
         aria-label={ariaLabel}
         placement={placement}
         offset={offset}
-        style={{ outline: 'none' }}
+        style={{ outline: 'none', overflow: 'auto' }}
       >
         <Popover
           hasChrome={hasChrome}

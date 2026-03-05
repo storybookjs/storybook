@@ -1,27 +1,15 @@
 ---
 title: Using Storybook with AI
-hideRendererSelector: true
 sidebar:
   order: 5
   title: AI
 ---
 
-<If notRenderer={['react']}>
-  
-<Callout variant="info">
-  While they are in [preview](../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the manifest and MCP server) are currently only supported for [React](?renderer=react) projects.
-</Callout>
-
-</If>
-{/* End non-supported renderers */}
-
-<If renderer={['react']}>
-
 <Callout variant="warning" icon="🧪">
   This is a [**preview**](../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
 </Callout>
 
-With Storybook's AI capabilities, you can leverage the power of AI agents to speed up your development workflow. By connecting your Storybook to an AI agent via the MCP server, you can enable your agent to understand your components and documentation, generate stories, run tests, and more.
+With Storybook's AI capabilities, you can leverage the power of AI agents to speed up your development workflow. By connecting your Storybook to an AI agent via the [Storybook MCP server](./mcp/overview.mdx), you can enable your agent to <If renderer={['react']}>understand your components and documentation, </If>generate stories, run tests, and more.
 
 ## Get started
 
@@ -29,45 +17,63 @@ First, run this command to install and register the Storybook MCP addon:
 
 <CodeSnippets path="addon-mcp-add.md" />
 
-After restarting your Storybook, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a splash page that will redirect to the [manifest debugger](./manifests.mdx#debugging) after a few seconds.
+After restarting your Storybook, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available and a link to the [manifest debugger](./manifests.mdx#debugging).
 
-![The MCP server splash page](../_assets/ai/addon-mcp-splash.png)
+![The MCP server page in the browser](../_assets/ai/addon-mcp-splash.png)
 
-Second, configure your agent to use the MCP server's tools:
+Second, configure your agent to use the MCP server:
 
 <CodeSnippets path="mcp-add.md" />
 
-_You should update both the `name` and `url` values to match your project's name and Storybook's MCP server URL._
+You may need to update the port number in the URL. You will be prompted for a name for your MCP server toolset (e.g. "my-project-sb-mcp"). This is the name you'll use when calling the tools from your agent, so choose something descriptive and unique to avoid confusion with other tools.
 
 [`mcp-add`](https://github.com/paoloricciuti/mcp-add) is a CLI tool built to simplify the process of adding MCP servers to various agents.
 
-You can also follow your agent's documentation to add the MCP server as a tool provider manually, e.g. [Claude Code](https://code.claude.com/docs/en/mcp#option-1-add-a-remote-http-server), [VS Code Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file), [Google Gemini CLI](https://geminicli.com/docs/tools/mcp-server/#adding-an-http-server), etc.
+You can also follow your agent's documentation to add the MCP server as a tool provider manually, e.g. [Claude Code](https://code.claude.com/docs/en/mcp#option-1-add-a-remote-http-server), [Google Gemini CLI](https://geminicli.com/docs/tools/mcp-server/#adding-an-http-server), [OpenAI Codex](https://developers.openai.com/codex/mcp/), [VS Code Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file), etc.
 
-Next, to guide your agent to use your MCP server, adjust your [`AGENTS.md`](https://agents.md/) (or [`CLAUDE.md`](https://code.claude.com/docs/en/memory#claude-md-files), if you're using Claude). The specifics will depend on your project and how you use agents in your development process, but something like this is a good starting point:
+Next, to guide your agent to use your MCP server, adjust your [`AGENTS.md`](https://agents.md/) (or [`CLAUDE.md`](https://code.claude.com/docs/en/memory#claude-md-files), if you're using Claude). The specifics will depend on your project and how you use agents in your development process, but something like this is a good starting point. Just make sure to replace `your-project-sb-mcp` with the name you chose for your MCP server toolset in the previous step.
 
 <details>
 <summary>AGENTS.md</summary>
 
+<If renderer={['react']}>
 ```md title="AGENTS.md"
-Leverage the following Storybook MCP tools for guidance and best practices when working with component stories:
+When working on UI components, always use the `your-project-sb-mcp` MCP tools to access Storybook's component and documentation knowledge before answering or taking any action.
 
-- Use the `your-project-sb-mcp` tool `get-storybook-story-instructions` to fetch the latest instructions for creating or updating stories. This will ensure you follow current conventions and recommendations.
-
-**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component from a design system (including common-sounding ones `shadow`, etc.), you MUST use the `your-project-sb-mcp` MCP server:
-
-1. Query `list-all-documentation` to get a list of all components
-2. Query `get-documentation` for that component to see all available properties and examples
-3. Only use properties that are explicitly documented or shown in example stories
-4. If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries. Check back with the user in these cases.
+- **CRITICAL: Never hallucinate component properties!** Before using ANY property on a component from a design system (including common-sounding ones like `shadow`, etc.), you MUST use the MCP tools to check if the property is actually documented for that component.
+- Query `list-all-documentation` to get a list of all components
+- Query `get-documentation` for that component to see all available properties and examples
+- Only use properties that are explicitly documented or shown in example stories
+- If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries. Check back with the user in these cases.
+- Use the `get-storybook-story-instructions` tool to fetch the latest instructions for creating or updating stories. This will ensure you follow current conventions and recommendations.
+- Check your work by running `run-story-tests`.
 
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
-
-Check your work by running `run-story-tests`.
 ```
+</If>
+
+<If notRenderer={['react']}>
+```md title="AGENTS.md"
+When working on UI components, always use the `your-project-sb-mcp` MCP tools to write stories and run tests for your components.
+
+- Use the `get-storybook-story-instructions` tool to fetch the latest instructions for creating or updating stories. This will ensure you follow current conventions and recommendations.
+- Check your work by running `run-story-tests`.
+```
+</If>
 
 </details>
 
+<If renderer={['react']}>
+
 Finally, test your agent's access to the MCP server by running a prompt like "List all documented components". You should see a call to the `list-all-documentation` tool with a response listing components from your Storybook.
+
+</If>
+
+<If notRenderer={['react']}>
+
+Finally, test your agent's access to the MCP server by running a prompt like "Run tests for the button component". You should see a call to the `run-story-tests` tool with a response summarizing the results of the tests.
+
+</If>
 
 ## Key concepts
 
@@ -90,6 +96,3 @@ These manifests are automatically generated and updated as you work on your Stor
 - [Sharing your MCP server](./mcp/sharing.mdx)
 - [Best practices for using Storybook with AI](./best-practices.mdx)
 - [Manifests](./manifests.mdx)
-
-</If>
-{/* End supported renderers */}

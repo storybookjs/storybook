@@ -5,22 +5,8 @@ sidebar:
   order: 1
 ---
 
-<If notRenderer={['react']}>
-
-<Callout variant="info">
-  While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the manifest and MCP server) are currently only supported for [React](?renderer=react) projects.
-</Callout>
-
-</If>
-{/* End non-supported renderers */}
-
-<If renderer={['react']}>
-
 Storybook's MCP server connects your Storybook to AI agents, enabling them to understand your components and documentation, generate stories, run tests, and more. It follows the [Model Context Protocol](https://modelcontextprotocol.io/) standard, so any MCP-compatible agent can use it.
 
 - [**Overview**](./overview.mdx) — Learn how the MCP server works, how to install and configure it, and see a walkthrough of a typical workflow.
 - [**API**](./api.mdx) — Reference documentation for the addon configuration options and MCP server tools.
 - [**Sharing**](./sharing.mdx) — Publish or self-host your MCP server so your team or community can use it.
-
-</If>
-{/* End supported renderers */}

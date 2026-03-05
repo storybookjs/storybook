@@ -9,7 +9,7 @@ sidebar:
 <If notRenderer={['react']}>
   
 <Callout variant="info">
-  While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the manifest and MCP server) are currently only supported for [React](?renderer=react) projects.
+  The published MCP server only provides the [docs toolset](./overview.mdx#docs), which is currently only supported for [React](?renderer=react) projects.
 </Callout>
 
 </If>
@@ -21,7 +21,11 @@ sidebar:
   This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
 </Callout>
 
-Just as [publishing your Storybook](../../sharing/publish-storybook.mdx) can help your team work more effectively, sharing your MCP server can enable your team to share the benefits of AI-assisted development. There are two different ways you can share your MCP server.
+Just as [publishing your Storybook](../../sharing/publish-storybook.mdx) can help your team work more effectively, sharing your MCP server can enable your team to share the benefits of AI-assisted development.
+
+The MCP server is made of [development](./overview.mdx#development), [docs](./overview.mdx#docs), and [testing](./overview.mdx#testing) toolsets that an agent can call to interact with your Storybook. The development and testing toolsets are only relevant to the locally-running Storybook instance, but the docs toolset can be published and shared so that agents outside of your local environment can access the knowledge from your Storybook's [manifest](../manifests.mdx) to reference your components and documentation when generating UI.
+
+There are two different ways you can share your MCP server.
 
 ## Automatic publishing with Chromatic
 
@@ -37,16 +41,10 @@ If you prefer to have full control over your MCP server, you can choose to self-
 
 We provide a package, `@storybook/mcp`, which is a library that creates a [`tmcp`-based](https://github.com/paoloricciuti/tmcp/) MCP server exposing Storybook component/docs knowledge from [manifests](../manifests.mdx).
 
-The server exposes three tools:
-
-- `list-all-documentation`
-- `get-documentation`
-- `get-documentation-for-story`
-
 ### Prerequisites
 
 - Node.js 20+
-- A manifest source containing:
+- A [manifest](../manifests.mdx) source containing:
   - `components.json` (required)
   - `docs.json` (optional)
 
@@ -57,8 +55,6 @@ The full API for `@storybook/mcp` is documented in the [package's repository](ht
 ### Example implementation
 
 You can reference [self-hosting patterns](https://github.com/storybookjs/mcp/tree/main/apps/self-host-mcp) for both a Node.js process and a Netlify Function.
-
-#### Minimal implementation
 
 This is the minimal implementation of a server using `@storybook/mcp`:
 
@@ -76,12 +72,12 @@ export async function handleRequest(request: Request): Promise<Response> {
 }
 ```
 
+</If>
+{/* End supported renderers */}
+
 **More AI resources**
 
 - [MCP server overview](./overview.mdx)
 - [MCP server API](./api.mdx)
 - [Best practices for using Storybook with AI](../best-practices.mdx)
 - [Manifests](../manifests.mdx)
-
-</If>
-{/* End supported renderers */}

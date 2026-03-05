@@ -8,6 +8,8 @@ export default {
 /**
  * Primary buttons are used for the main action in a view.
  * There should not be more than one primary button per view.
+ *
+ * @summary for the main action in a view
  */
 export const Primary = {
   args: { primary: true },
@@ -31,6 +33,8 @@ type Story = StoryObj<typeof meta>;
 /**
  * Primary buttons are used for the main action in a view.
  * There should not be more than one primary button per view.
+ *
+ * @summary for the main action in a view
  */
 export const Primary: Story = {
   args: { primary: true },
@@ -49,6 +53,8 @@ const meta = preview.meta({
 /**
  * Primary buttons are used for the main action in a view.
  * There should not be more than one primary button per view.
+ *
+ * @summary for the main action in a view
  */
 export const Primary = meta.story({
   args: { primary: true },
@@ -69,6 +75,8 @@ const meta = preview.meta({
 /**
  * Primary buttons are used for the main action in a view.
  * There should not be more than one primary button per view.
+ *
+ * @summary for the main action in a view
  */
 export const Primary = meta.story({
   args: { primary: true },

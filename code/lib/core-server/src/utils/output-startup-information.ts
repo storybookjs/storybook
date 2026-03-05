@@ -17,8 +17,16 @@ export function outputStartupInformation(options: {
   managerTotalTime?: [number, number];
   previewTotalTime?: [number, number];
 }) {
-  const { updateInfo, version, name, address, networkAddress, allowedHosts, managerTotalTime, previewTotalTime } =
-    options;
+  const {
+    updateInfo,
+    version,
+    name,
+    address,
+    networkAddress,
+    allowedHosts,
+    managerTotalTime,
+    previewTotalTime,
+  } = options;
 
   const updateMessage = createUpdateMessage(updateInfo, version);
 
@@ -51,8 +59,13 @@ export function outputStartupInformation(options: {
     ['Local:', chalk.cyan(address)],
     ['On your network:', chalk.cyan(networkAddress)]
   );
-  
-  const otherAllowedHosts = allowedHosts === true ? 'all (insecure)' : allowedHosts?.length ? allowedHosts.join(', ') : undefined;
+
+  let otherAllowedHosts: string | undefined;
+  if (allowedHosts === true) {
+    otherAllowedHosts = 'all (insecure)';
+  } else if (allowedHosts?.length) {
+    otherAllowedHosts = allowedHosts.join(', ');
+  }
   if (otherAllowedHosts) {
     serveMessage.push(['Other allowed hosts:', chalk.cyan(otherAllowedHosts)]);
   }

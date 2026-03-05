@@ -90,7 +90,6 @@ export async function storybookDevServer(options: Options) {
 
   app.use(router);
 
-
   const listening = new Promise<void>((resolve, reject) => {
     // @ts-expect-error (Following line doesn't match TypeScript signature at all 🤔)
     server.listen({ port, host }, (error: Error) => (error ? reject(error) : resolve()));

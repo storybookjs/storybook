@@ -7700,6 +7700,7 @@ __metadata:
     express: "npm:^4.17.3"
     fs-extra: "npm:^11.1.0"
     globby: "npm:^11.0.2"
+    host-validation-middleware: "npm:^0.1.2"
     jest-os-detection: "npm:^1.3.1"
     jest-specific-snapshot: "npm:^8.0.0"
     lodash: "npm:^4.17.21"

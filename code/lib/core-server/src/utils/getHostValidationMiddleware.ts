@@ -1,5 +1,6 @@
 import type { IncomingMessage } from 'node:http';
 
+// eslint-disable-next-line import/no-unresolved
 import { isHostAllowed } from 'host-validation-middleware';
 
 import type { Middleware } from '@storybook/types';
@@ -55,7 +56,7 @@ export function getHostValidationMiddleware(
   options: HostValidationOptions
 ): Middleware<IncomingMessage> {
   return (req, res, next) => {
-    const host = req.headers.host;
+    const { host } = req.headers;
     const allowedHosts = options.allowedHosts ?? DEFAULT_ALLOWED_HOSTS;
     if (allowedHosts !== true && !isValidHost(host, options)) {
       res.writeHead(403, { 'Content-Type': 'text/plain' });

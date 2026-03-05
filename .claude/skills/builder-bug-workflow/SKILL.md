@@ -60,7 +60,7 @@ Use the Browser MCP to:
 2. Navigate to your template story
 3. Take a screenshot showing the fix works correctly
 
-Attach the screenshot to your PR description.
+Save the screenshot locally. It will be uploaded directly into the PR description — do **not** commit it to the repository.
 
 ## Step 5: Fallback Path (if bug persists)
 
@@ -73,6 +73,10 @@ If the browser output still shows the bug:
    - Destination: `../storybook-sandboxes/<sandbox-dir>/node_modules/@storybook/<package-name>/dist/`
 4. Restart the dev server: `cd ../storybook-sandboxes/<sandbox-dir> && yarn storybook --ci`
 5. Re-verify with a new screenshot
+
+---
+
+✅ **Flow 2 COMPLETE** — Before/after screenshots captured locally. Return to `/implement-and-verify-fix` Step 6 to commit the template story file and prepare screenshots for the PR body.
 
 ---
 
@@ -148,3 +152,7 @@ If the diff is large or unexpected:
 2. Verify the changes are a direct result of your builder modification
 3. Iterate on your fix until the diff is clean and focused
 4. Run the capture script again: `jiti scripts/capture-terminal-output.ts --builder <builder-name>`
+
+---
+
+✅ **Flow 3 COMPLETE** — Snapshot updated in `scripts/terminal-output-snapshots/`. Return to `/implement-and-verify-fix` Step 6 to commit artifacts.

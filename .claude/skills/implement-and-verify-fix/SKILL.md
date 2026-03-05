@@ -20,7 +20,9 @@ Step 4: Commit Changes
          ↓
 Step 5: Run Verification Workflow (flow-specific)
          ↓ [MUST PASS: Verification evidence gathered]
-         ✅ COMPLETE — Ready for PR
+Step 6: Commit Code Artifacts (stories / snapshots / E2E tests — not screenshots)
+         ↓
+         ✅ COMPLETE — Ready for /verification-checklist
 ```
 
 ---
@@ -99,17 +101,30 @@ cd code && yarn test
 
 ## Step 4: Commit Changes
 
-**Action**: Create commit with clear, descriptive message
+**Action**: Create a commit with a clear, descriptive message.
+
+First, derive the issue number from the current branch name:
+
+```bash
+git branch --show-current
+# e.g. agent/fix-issue-12345 → issue number is 12345
+```
+
+Then commit:
 
 ```bash
 git add <changed-files>
-git commit -m "Fix: Issue #$ARGUMENTS[0] — [Brief description from issue title]"
+git commit -m "Fix: Issue #[issue-number] — [Brief description from issue title]
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
 
 Example:
 
 ```bash
-git commit -m "Fix: Issue #12345 — React renderer not applying CSS to styled components"
+git commit -m "Fix: Issue #12345 — React renderer not applying CSS to styled components
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
 
 **Success Criteria**: Commit created with clear message. `git log --oneline` shows the commit.
@@ -120,36 +135,92 @@ git commit -m "Fix: Issue #12345 — React renderer not applying CSS to styled c
 
 **Action**: Invoke the verification skill matching your flow (determined in `/plan-bug-fix` Step 2).
 
-### Routing Logic
+Check the flow number from your plan, then invoke the corresponding skill below.
+
+**Flow 0** (Pure Logic / No UI): verification is already satisfied by Step 2 (all tests passed). Skip directly to Step 6.
+
+⚠️ **Double-check before accepting Flow 0**: If a user can reproduce this bug in the browser, Flow 0 is wrong — return to `/plan-bug-fix` Step 2 to re-route.
+
+---
+
+**Flow 1** — Renderer bug (`code/renderers/**`):
+
+Invoke:
 
 ```
-IF Flow 0 (Pure Logic / No UI)
-  ✓ Already satisfied by Step 2 (yarn test passed)
-  ✓ Skip to completion
-  ⚠️ Double-check: re-read /plan-bug-fix Step 2 criteria before accepting Flow 0.
-     If a user can reproduce this bug in the browser, this is wrong.
+/renderer-bug-workflow
+```
 
-ELSE IF Flow 1 (Renderer)
-  ✓ Invoke: /renderer-bug-workflow
-  ✓ Expected output: Template story, screenshot of fixed renderer
+Expected output: Template story created, screenshot of fixed renderer.
 
-ELSE IF Flow 2 (Builder Frontend)
-  ✓ Invoke: /builder-bug-workflow (Flow 2 section only)
-  ✓ Expected output: Screenshot of browser output showing fix
+---
 
-ELSE IF Flow 3 (Builder Terminal)
-  ✓ Invoke: /builder-bug-workflow (Flow 3 section only)
-  ✓ Expected output: Updated snapshot diff showing fix
+**Flow 2** — Builder frontend output bug (`code/builders/**`):
 
-ELSE IF Flow 4 (Manager UI)
-  ✓ Invoke: /manager-bug-workflow
-  ✓ Expected output: Passing E2E test + screenshot of Manager UI
+Invoke:
+
+```
+/builder-bug-workflow
+```
+
+Follow the **Flow 2** section of that skill only.
+
+Expected output: Screenshot of browser output showing fix.
+
+---
+
+**Flow 3** — Builder terminal output bug (`code/builders/**`):
+
+Invoke:
+
+```
+/builder-bug-workflow
+```
+
+Follow the **Flow 3** section of that skill only.
+
+Expected output: Updated snapshot diff showing fix.
+
+---
+
+**Flow 4** — Manager UI bug:
+
+Invoke:
+
+```
+/manager-bug-workflow
+```
+
+Expected output: Passing E2E test + screenshot of Manager UI.
+
+---
+
+## Step 6: Commit Code Artifacts
+
+**Action**: Commit any new or modified code artifacts produced by the verification workflow. Screenshots are **not** committed — they will be uploaded directly in the PR description.
+
+Artifacts to commit (only those that apply to your flow):
+
+```bash
+# Flow 1 / Flow 2: new template story file
+git add code/renderers/<renderer>/template/stories/<new-story-file>.stories.tsx
+
+# Flow 3: updated terminal output snapshot
+git add scripts/terminal-output-snapshots/
+
+# Flow 4: new or updated E2E test file
+git add code/e2e-tests/manager.spec.ts
+
+git commit -m "Add: Verification artifacts for issue #[issue-number]
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
 
 **Success Criteria** (all must be true):
 
 - [ ] Verification skill completed without errors
-- [ ] Artifacts exist: screenshot, snapshot, or E2E results and are saved in the repository so that they can be commited with the fix
+- [ ] Code artifacts (story files / snapshots / E2E tests) committed where applicable
+- [ ] Screenshots saved locally and ready to embed in PR description
 - [ ] Fix visibly resolves the original issue
 - [ ] No new issues introduced
 
@@ -159,6 +230,10 @@ IF verification fails:
 
 1. Read the error message carefully
 2. Did the original issue get fixed? (Check visual evidence)
-3. If NO: Adjust code in Step 1, re-test (Step 3), re-verify (this step)
+3. If NO: Adjust code in Step 1, re-test (Step 2), re-verify (this step)
 4. If YES but artifacts wrong: Re-run verification skill
 5. If stuck: Review the specific verification skill's troubleshooting section
+
+---
+
+✅ **COMPLETE** — Code implemented, tests passing, verification evidence committed. Ready for `/verification-checklist`.

@@ -16,6 +16,8 @@ Step 2: Determine Verification Flow (0/1/2/3/4)
          ↓ [CHECKPOINT: Confirm routing]
 Step 3: Create Fix Plan (root cause, files, logic)
          ↓ [CHECKPOINT: Review plan completeness]
+Step 4: Create Feature Branch
+         ↓
          ✅ COMPLETE — Ready for implementation
 ```
 
@@ -139,3 +141,23 @@ Evidence: [screenshot / snapshot / E2E result]
 - [ ] You know which verification flow applies
 
 **Checkpoint**: Review plan for completeness. If ANY part is unclear, research more before proceeding.
+
+---
+
+## Step 4: Create Feature Branch
+
+**Action**: Create and checkout a dedicated branch for this fix.
+
+```bash
+git checkout -b agent/fix-issue-$ARGUMENTS[0]
+```
+
+Example:
+
+```bash
+git checkout -b agent/fix-issue-12345
+```
+
+**Success Criteria**:
+
+- [ ] On branch `agent/fix-issue-$ARGUMENTS[0]` (verify with `git branch --show-current`)

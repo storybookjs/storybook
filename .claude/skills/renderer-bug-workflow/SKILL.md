@@ -72,7 +72,7 @@ Use the Browser MCP to:
 - ✅ The story renders without errors or warnings
 - ✅ Visual output matches expected behavior described in the issue
 
-If the bug is resolved in the screenshot, move the screenshot from tmp directory to the repository (`verification/screenshots/`) and attach it to your PR description.
+If the bug is resolved in the screenshot, save it locally (e.g., in a temp folder). It will be uploaded directly into the PR description — do **not** commit it to the repository.
 
 **Evidence quality checklist**:
 
@@ -106,3 +106,7 @@ For PRs that fix multiple distinct scenarios:
 - Use one primary template
 - Include one screenshot per distinct scenario type
 - Ensure each screenshot clearly demonstrates the fix for that specific scenario
+
+---
+
+✅ **COMPLETE** — Template story created, before/after screenshots captured locally. Return to `/implement-and-verify-fix` Step 6 to commit the story file and prepare screenshots for the PR body.

@@ -71,51 +71,73 @@ Use the this base template and flow-specific evidence as reference:
 
 ### 2a: Base Template
 
-```markdown
-## Issue
+The PR body must follow `.github/PULL_REQUEST_TEMPLATE.md`. Use this structure:
 
-Fixes #$ARGUMENTS[0]
+```markdown
+Closes #[issue-number]
+
+## What I did
+
+[2-3 sentences summarising what was broken and how you fixed it — draw from your fix plan's Root Cause and Solution]
 
 ## Root Cause
 
-[2-3 sentences from your Step 3 plan explaining what was broken]
-[Include code location if relevant]
+[2-3 sentences from your fix plan explaining exactly what was broken in the code and where]
 
 ## Solution
 
-[2-3 sentences explaining your code fix]
-[Highlight key changes]
+[2-3 sentences explaining your code change and why it fixes the root cause]
 
-## Tests
+## Checklist for Contributors
 
-✅ All tests passing (Flow [0/1/2/3/4])
+### Testing
+
+The changes in this PR are covered in the following automated tests:
+
+- [ ] stories
+- [x] unit tests
+- [ ] integration tests
+- [ ] end-to-end tests
+
+#### Manual testing
+
+<!-- Steps a reviewer can follow to manually verify the fix: -->
+
+1. [E.g., "Run `yarn nx sandbox react-vite/default-ts -c production`"]
+2. [E.g., "Open Storybook in your browser"]
+3. [E.g., "Navigate to the [story name] story"]
+4. [E.g., "Observe that [previously broken behavior] is now fixed"]
+
+### Documentation
+
+- [ ] Add or update documentation reflecting your changes
+- [ ] If you are deprecating/removing a feature, make sure to update [MIGRATION.MD](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md)
 
 ---
 
 ## Verification Evidence
 
-[Flow-specific section below - choose ONE based on your flow]
+[Flow-specific section below — choose ONE]
 ```
 
 ### 2b: Flow-Specific Evidence Sections
 
-Choose **ONE** of the following based on your verification flow:
+Choose **ONE** of the following based on your verification flow.
+
+⚠️ **Screenshot requirement (Flows 1, 2, 4)**: Screenshots must be **uploaded directly into the PR description** (drag-and-drop or paste into the GitHub PR editor). They are never committed to the repository. Each flow requires both a **Before** and **After** screenshot so reviewers can see the change.
 
 #### **Flow 0** (Pure Logic / Unit Tests Only):
 
 ````markdown
 ✅ Flow 0 — Unit Tests Only
 
-All existing and new tests pass:
+- [x] unit tests
 
-```bash
-yarn test
-# Output: [Results showing all tests passing]
-```
-````
+All existing and new unit tests pass. Root cause was purely algorithmic/logic with no visible UI impact.
 
-Root cause was purely algorithmic/logic, with no visible UI impact.
+#### Manual testing
 
+No browser interaction required to reproduce or verify this bug. The fix is verified by the passing unit tests above.
 ````
 
 #### **Flow 1** (Renderer Bug):
@@ -123,16 +145,16 @@ Root cause was purely algorithmic/logic, with no visible UI impact.
 ```markdown
 ✅ Flow 1 — Renderer Verification
 
-- Template story created: `code/renderers/<renderer>/template/stories/fix-story.stories.tsx`
+- Template story: `code/renderers/<renderer>/template/stories/<story-file>.stories.tsx`
 - Sandbox: `<template-name>` (generated at `../storybook-sandboxes/<template-name>`)
-- Story verified at: `http://localhost:6006/?path=/story/<story-path>`
+- Story URL: `http://localhost:6006/?path=/story/<story-path>`
 
 **Before Fix:**
-[Screenshot showing broken renderer output]
+<!-- Upload screenshot here showing the broken renderer output -->
 
 **After Fix:**
-[Screenshot showing fixed renderer output]
-````
+<!-- Upload screenshot here showing the fixed renderer output -->
+```
 
 #### **Flow 2** (Builder Frontend Output):
 
@@ -142,11 +164,11 @@ Root cause was purely algorithmic/logic, with no visible UI impact.
 - Sandbox: `<template-name>` (generated at `../storybook-sandboxes/<template-name>`)
 - Built output verified in browser
 
-**Browser output before fix:**
-[Screenshot showing broken HTML/CSS/styling]
+**Before Fix:**
+<!-- Upload screenshot here showing the broken HTML/CSS/styling -->
 
-**Browser output after fix:**
-[Screenshot showing correct HTML/CSS/styling]
+**After Fix:**
+<!-- Upload screenshot here showing the correct HTML/CSS/styling -->
 ```
 
 #### **Flow 3** (Builder Terminal Output):
@@ -180,38 +202,47 @@ Terminal output now matches expected format without build-specific noise.
 
 **Story setup**: `code/core/template-stories/` or `code/addons/<addon>/template-stories/`
 
-**Before fix (expected to fail):**
-[Screenshot of Manager UI showing broken behavior]
+**Before Fix:**
+<!-- Upload screenshot here showing the broken Manager UI behavior -->
 
-**After fix (test now passes):**
-[Screenshot of Manager UI showing correct behavior]
+**After Fix:**
+<!-- Upload screenshot here showing the correct Manager UI behavior -->
 ```
 
 ### 2c: AI Disclaimer section
 
-Add an AI disclaimer explaining that the PR was created by AI, and show which agent and model was used.
+Add an AI disclaimer explaining that the PR was created by AI, listing every skill that was invoked during the workflow.
 
 ```markdown
 ## AI Disclaimer
 
 - Agent: <copilot-coding-agent | claude-code | other>
 - Model: <exact model id/name>
-- Skills/Workflow: <skill names or flow id>
+- Skills used:
+  - `/fix-bug`
+  - `/plan-bug-fix`
+  - `/implement-and-verify-fix`
+  - `/verification-checklist`
+  - `/<flow-specific-skill>` (e.g. `/renderer-bug-workflow`, `/builder-bug-workflow`, `/manager-bug-workflow` — omit if Flow 0)
+  - `/open-pull-request`
 - Human Oversight: <reviewed-by-human yes/no + notes>
 ```
 
 ### 2d: Complete Your PR Description
 
-Combine the base template (Section 2a) with your flow-specific section (Section 2b) and add the AI disclaimer (Section 2c) at the end.
+Combine the base template (Section 2a) with your flow-specific section (Section 2b) and add the AI disclaimer (Section 2c) at the end. Ensure all placeholder text (issue number, evidence, story paths, screenshots) is fully populated — no `[placeholder]` text should remain.
 
 **Success Criteria**:
 
 - [ ] PR title is prepared
-- [ ] PR body includes base template
-- [ ] Flow-specific evidence section is included
-- [ ] All placeholders ($ARGUMENTS[0], issue links, evidence) are populated
-- [ ] Screenshots/diffs are embedded or linked
+- [ ] `Closes #[issue-number]` at the top of body
+- [ ] `## What I did` section populated
+- [ ] `## Root Cause` and `## Solution` sections populated
+- [ ] Testing checklist boxes checked appropriately
+- [ ] `#### Manual testing` steps written out
+- [ ] Flow-specific `## Verification Evidence` section included with before/after screenshots **uploaded** (not committed) to the PR body
 - [ ] AI disclaimer present with agent + model
+- [ ] No placeholder text remaining
 
 ---
 
@@ -220,9 +251,10 @@ Combine the base template (Section 2a) with your flow-specific section (Section 
 **What happens automatically**:
 
 - ✅ Your feature branch (`agent/fix-issue-$ARGUMENTS[0]`) is pushed to GitHub
+- ✅ PR is created targeting the `next` branch (all PRs go to `next`, not `main`)
 - ✅ PR is created with your prepared title and body
 - ✅ Required labels (`agent`, `ci:normal`, `bug`) are added automatically
-- ✅ PR links to issue #$ARGUMENTS[0] (via "Fixes #..." in body)
+- ✅ PR links to issue #$ARGUMENTS[0] (via "Closes #..." in body)
 
 **Success Criteria**:
 

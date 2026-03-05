@@ -185,7 +185,7 @@ Use the Browser MCP to:
 - ✅ Interactive elements respond correctly to user actions
 - ✅ No error messages or console errors visible
 
-Move the screenshot to the repository (`verification/screenshots/`) and attach the screenshot to your PR description.
+Save the screenshot locally. It will be uploaded directly into the PR description — do **not** commit it to the repository.
 
 **Evidence quality checklist**:
 
@@ -226,3 +226,7 @@ If the test fails with "Storybook iframe did not have children", it means the st
 1. The story ID in the URL is correct (derive it from title prefix + story title + export name, all lowercased kebab-case)
 2. The dev server is running and the story is visible at `http://localhost:6006/?path=/story/{id}`
 3. If you created the story after the build (not the dev server), restart using the dev server
+
+---
+
+✅ **Flow 4 COMPLETE** — E2E test passing, before/after screenshots captured locally. Return to `/implement-and-verify-fix` Step 6 to commit the E2E test file and prepare screenshots for the PR body.

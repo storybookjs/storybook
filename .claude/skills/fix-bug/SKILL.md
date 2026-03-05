@@ -6,19 +6,16 @@ description: Complete end-to-end workflow to fetch a GitHub issue, understand th
 ## Workflow Overview
 
 ```
-Step 1: Understand & Plan the Fix
+Step 1: /plan-bug-fix [issue-number]
+         ↓ [MUST PASS: Plan complete, branch created]
+Step 2: /implement-and-verify-fix
+         ↓ [MUST PASS: Tests pass, evidence gathered]
+Step 3: /verification-checklist
+         ↓ [MUST PASS: Root cause confirmed, no regressions]
+Step 4: Documentation Self-Improvement (if needed)
          ↓
-Step 2: Implement Code Changes
-         ↓
-Step 3: Write Tests & Run Full Suite
-         ↓ [MUST PASS: All tests]
-         ↓
-Step 4: Format and Lint
-         ↓
-Step 5: Run Verification Workflow (flow-specific)
-         ↓ [MUST PASS: Verification evidence gathered]
-         ↓
-Step 6: Documentation Self-Improvement (if needed)
+Step 5: /open-pull-request [issue-number]
+         ↓ [DONE: PR created and ready for review]
 ```
 
 ---
@@ -27,18 +24,7 @@ Step 6: Documentation Self-Improvement (if needed)
 
 **Action**: Fetch the GitHub issue and create a detailed fix plan before implementing.
 
-**Sub-steps**:
-
-### 1a: Fetch Issue and Understand the Bug
-
-Use the `/plan-bug-fix` skill to:
-
-- Fetch issue #[issue-number] from GitHub
-- Extract all required information (title, description, labels, repro steps, etc.)
-- Route to correct verification flow (0–4) based on where bug manifests
-- Create detailed fix plan (root cause, affected files, implementation logic, required tests)
-
-**Invoke with**:
+**Invoke**:
 
 ```
 /plan-bug-fix [issue-number]
@@ -55,12 +41,7 @@ Example:
 - ✅ Issue clearly understood with full context
 - ✅ Verification flow determined (0 = Pure Logic, 1 = Renderer, 2 = Builder Frontend, 3 = Builder Terminal, 4 = Manager UI)
 - ✅ Feature branch created (e.g., `agent/fix-issue-12345`)
-- ✅ Fix plan documented with:
-  - Root cause analysis
-  - Files to modify
-  - Logic/implementation details
-  - Test requirements
-  - Expected verification evidence
+- ✅ Fix plan documented and ready to follow
 
 **Success Criteria**:
 
@@ -70,151 +51,60 @@ Example:
 - [ ] Fix plan is documented and ready to follow
 - [ ] No blockers or unclear items remain
 
----
-
-## Step 2: Implement Code Changes
-
-**Action**: Implement the fix following your plan from Step 1 exactly.
-
-**Rules**:
-
-- Only modify files listed in your plan
-- Add inline comments if fix is non-obvious
-- Do NOT make unrelated refactors
-- Do NOT change anything not in the plan
-
-**Success Criteria**:
-
-- [ ] Code matches your plan exactly
-- [ ] No extra changes or refactors
-- [ ] All targeted files are modified
+⚠️ **CRITICAL**: Do NOT proceed to Step 2 until all success criteria above are met.
 
 ---
 
-## Step 3: Write Tests & Run Full Suite
+## Step 2: Implement, Test, and Verify
 
-**Action**: Add or update tests as specified in your plan, then run all tests.
+**Action**: Implement the fix, run tests, and gather verification evidence.
 
-### 3a: Write/Update Tests
+**Invoke**:
 
-**IF plan says "new test needed"**:
-
-- Write the test to FAIL without the fix and PASS with it
-- Place it in the appropriate test file
-- Verify test fails without fix:
-  ```bash
-  cd code && yarn test
-  ```
-- Apply fix and verify test passes
-
-**IF plan says "existing test covers this"**:
-
-- No new test needed
-- Run existing tests to verify:
-  ```bash
-  cd code && yarn test
-  ```
-
-### 3b: Run Full Test Suite
-
-Execute full test suite:
-
-```bash
-cd code && yarn test
 ```
+/implement-and-verify-fix
+```
+
+**Expected Output**:
+
+- ✅ Code implemented following plan
+- ✅ All tests pass
+- ✅ Code formatted and linted
+- ✅ Changes committed to feature branch
+- ✅ Verification evidence gathered (flow-specific)
 
 **Success Criteria**:
 
-```
-✅ ALL tests pass (new and existing)
-✅ No test failures
-✅ No skipped tests (unless pre-existing)
-```
-
-⚠️ **CRITICAL**: Do NOT proceed to Step 4 unless ALL tests pass.
-
----
-
-## Step 4: Format and Lint
-
-**Action**: Clean up code formatting and catch style issues.
-
-```bash
-yarn prettier --write <changed-files>
-yarn --cwd=./code lint:js:cmd <changed-files> --fix
-```
-
-(Note: For `lint:js:cmd`, the file root is `code/`, so adjust paths accordingly)
-
-Then re-run tests to ensure linting didn't break anything:
-
-```bash
-cd code && yarn test
-```
-
-**Success Criteria**:
-
+- [ ] All tests pass (`cd code && yarn test`)
 - [ ] No linting errors
-- [ ] All tests still pass
-- [ ] Code is properly formatted
+- [ ] Changes committed
+- [ ] Verification artifacts saved
+
+⚠️ **CRITICAL**: Do NOT proceed to Step 3 until all success criteria above are met.
 
 ---
 
-## Step 5: Run Verification Workflow
+## Step 3: Run Verification Checklist
 
-**Action**: Run the verification workflow matching your flow type (determined in Step 1).
+**Action**: Run the universal pre-PR verification checklist to ensure the fix is complete and correct.
 
-### Routing Logic
+**Invoke**:
 
 ```
-IF Flow 0 (Pure Logic / No UI)
-  ✓ Already satisfied by Step 3 (yarn test passed)
-  ✓ Skip verification workflow
-  ⚠️ Double-check: re-read Step 1 criteria
-     If a user can reproduce this bug in the browser, this is wrong.
-
-ELSE IF Flow 1 (Renderer in code/renderers/**)
-  -> Read .claude/skills/renderer-bug-workflow/SKILL.md for further instructions
-  ✓ Expected: Template story, screenshot of fixed renderer
-
-ELSE IF Flow 2 (Builder Frontend in code/builders/**)
-  -> Read .claude/skills/builder-bug-workflow/SKILL.md for further instructions (Flow 2 section)
-  ✓ Expected: Screenshot of browser output showing fix
-
-ELSE IF Flow 3 (Builder Terminal Output)
-  -> Read .claude/skills/builder-bug-workflow/SKILL.md for further instructions (Flow 3 section)
-  ✓ Expected: Updated snapshot diff showing fix
-
-ELSE IF Flow 4 (Manager UI in code/core/src/manager/**)
-  -> Read .claude/skills/manager-bug-workflow/SKILL.md for further instructions
-  ✓ Expected: Passing E2E test + screenshot of Manager UI
+/verification-checklist
 ```
 
-**Success Criteria** (all must be true):
+**Expected Output**:
 
-- [ ] Verification workflow completed without errors
-- [ ] Artifacts exist and are saved in repository:
-  - Flow 1: Screenshot(s) of renderer output
-  - Flow 2: Screenshot(s) of browser/frontend output
-  - Flow 3: Updated snapshot files
-  - Flow 4: E2E test results + screenshot(s)
-- [ ] Fix visibly resolves the original issue
-- [ ] No new issues introduced
-- [ ] All artifacts are committed with the fix
+- ✅ All checklist items pass
+- ✅ Fix addresses root cause (not just symptoms)
+- ✅ No regressions
 
-### Error Recovery
-
-IF verification fails:
-
-1. Read the error message carefully
-2. Did the original issue get fixed? (Check visual evidence)
-3. If NO: Adjust code in Step 2, re-test (Step 3), re-verify
-4. If YES but artifacts wrong: Re-run verification workflow
-5. If stuck: Review the specific verification workflow's troubleshooting section
+⚠️ **CRITICAL**: Do NOT proceed to Step 4 until the checklist passes.
 
 ---
 
-## Step 6: Documentation Self-Improvement
+## Step 4: Documentation Self-Improvement
 
 **IMPORTANT**: Reflect on your workflow execution before opening the PR.
 
@@ -242,3 +132,28 @@ IF verification fails:
 - [ ] All documentation issues identified during workflow execution are fixed (or none found)
 - [ ] Documentation improvements committed to feature branch (if any)
 - [ ] Ready to proceed with PR preparation
+
+---
+
+## Step 5: Open Pull Request
+
+**Action**: Prepare the PR content and open the pull request.
+
+**Invoke**:
+
+```
+/open-pull-request [issue-number]
+```
+
+Example:
+
+```
+/open-pull-request 12345
+```
+
+**Expected Output**:
+
+- ✅ PR title prepared (`Fix: [description]`)
+- ✅ PR body complete with root cause, solution, tests, and flow-specific evidence
+- ✅ AI disclaimer included
+- ✅ PR created on GitHub with correct labels and issue linked

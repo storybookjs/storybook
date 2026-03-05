@@ -57,16 +57,6 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
 };
 
 /**
- * Accumulated timing for react-docgen and react-docgen-typescript. Reset via `resetDocgenTimings()`
- * before a manifest pass, then read after.
- */
-export const docgenTimings = { reactDocgenMs: 0, reactDocgenTypescriptMs: 0 };
-export function resetDocgenTimings() {
-  docgenTimings.reactDocgenMs = 0;
-  docgenTimings.reactDocgenTypescriptMs = 0;
-}
-
-/**
  * Collects all React component references used by a CSF story file and resolves as much import and
  * docgen information as possible.
  *
@@ -281,7 +271,6 @@ export const getComponents = ({
         if (reactDocgenConfig === 'react-docgen-typescript') {
           let reactDocgenTypescript: ComponentDocWithExportName | undefined;
           let reactDocgenTypescriptError: { name: string; message: string } | undefined;
-          const rdtStart = performance.now();
           try {
             reactDocgenTypescript = matchComponentDoc(
               parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
@@ -295,8 +284,6 @@ export const getComponents = ({
               message: `File: ${path}\n${message}`,
             };
           }
-          docgenTimings.reactDocgenTypescriptMs += performance.now() - rdtStart;
-
           const importOverride = reactDocgenTypescript
             ? getImportTag(reactDocgenTypescript)
             : undefined;
@@ -311,9 +298,7 @@ export const getComponents = ({
         }
 
         if (reactDocgenConfig === 'react-docgen') {
-          const rdgStart = performance.now();
           const reactDocgen = getReactDocgen(path, componentWithPackage);
-          docgenTimings.reactDocgenMs += performance.now() - rdgStart;
 
           return {
             ...componentWithPackage,

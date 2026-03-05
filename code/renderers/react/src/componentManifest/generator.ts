@@ -27,7 +27,6 @@ interface ReactComponentManifest extends ComponentManifest {
   reactComponentMeta?: ComponentDoc;
 }
 
-
 function findMatchingComponent(
   components: ReturnType<typeof getComponents>,
   componentName: string | undefined,

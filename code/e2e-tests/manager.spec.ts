@@ -282,6 +282,34 @@ test.describe('Manager UI', () => {
       const sbPage = new SbPage(page, expect);
       await expect(sbPage.page.locator('a[title="Storybook"]')).toBeVisible();
     });
+
+    // https://github.com/storybookjs/storybook/issues/30165
+    test('argType detail popover does not overflow viewport when content is tall', async ({
+      page,
+    }) => {
+      const sbPage = new SbPage(page, expect);
+      await sbPage.navigateToStory('core/controls/popover-overflow', 'Long Detail');
+      await sbPage.viewAddonPanel('Controls');
+
+      // Click the expandable button to open the detail popover
+      const expandable = sbPage.panelContent().locator('.sbdocs-expandable').first();
+      await expandable.click();
+
+      // The popover dialog should be visible
+      const dialog = page.getByRole('dialog', { name: 'IconName' });
+      await expect(dialog).toBeVisible();
+
+      // The popover should not overflow the viewport
+      const dialogBox = await dialog.boundingBox();
+      expect(dialogBox).not.toBeNull();
+      const viewportSize = page.viewportSize();
+      expect(viewportSize).not.toBeNull();
+      expect(dialogBox!.y + dialogBox!.height).toBeLessThanOrEqual(viewportSize!.height);
+
+      // The popover should be scrollable (overflow: auto)
+      const overflowY = await dialog.evaluate((el) => getComputedStyle(el).overflowY);
+      expect(['auto', 'scroll']).toContain(overflowY);
+    });
   });
 
   test.describe('Mobile', () => {

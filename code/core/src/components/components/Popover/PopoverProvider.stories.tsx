@@ -262,3 +262,29 @@ export const WithLongContent = meta.story({
     ),
   },
 });
+
+export const WithTallContent = meta.story({
+  args: {
+    visible: true,
+    placement: 'bottom',
+    children: <Trigger>Tall content</Trigger>,
+    popover: (
+      <div style={{ padding: '8px', width: '200px' }}>
+        {Array.from({ length: 50 }, (_, i) => (
+          <div key={i} style={{ padding: '4px 0', fontSize: '12px' }}>
+            Item {i + 1}
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  play: async () => {
+    const popover = await screen.findByRole('dialog');
+    await expect(popover).toBeInTheDocument();
+    // The popover should be scrollable, not overflowing the viewport
+    await expect(popover).toHaveStyle({ overflow: 'auto' });
+    // The popover should not exceed the viewport height
+    const rect = popover.getBoundingClientRect();
+    await expect(rect.bottom).toBeLessThanOrEqual(window.innerHeight);
+  },
+});

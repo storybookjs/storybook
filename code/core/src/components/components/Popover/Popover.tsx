@@ -36,6 +36,8 @@ const Wrapper = styled.div<{
     display: 'inline-block',
     position: 'relative',
     minHeight: hasCloseButton ? 36 : undefined,
+    maxHeight: 'inherit',
+    overflow: 'auto',
     zIndex: 2147483647,
     colorScheme: 'light dark',
     padding,

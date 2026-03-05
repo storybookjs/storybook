@@ -260,33 +260,34 @@ gh pr create \
   --title "YOUR TITLE HERE" \
   --body 'YOUR BODY HERE'
 
-# Apply labels separately (more reliable than --label in gh pr create)
-gh pr edit <PR-NUMBER> --add-label "agent,bug"
+# Attempt to apply labels (may fail for non-maintainers — see note below)
+gh pr edit <PR-NUMBER> --add-label "agent,bug" || true
 ```
 
-⚠️ **Always apply labels with `gh pr edit --add-label` after creation**, not via `--label` in `gh pr create`. The `--label` flag in `gh pr create` fails silently when the GitHub API is slow to resolve label names, leaving the PR unlabeled.
+**Required labels**: `agent` (AI-agent-created), `bug` (issue type).
 
-**Required labels**:
-- `agent` — marks this PR as AI-agent-created (label exists in storybookjs/storybook)
-- `bug` — issue type label
+⚠️ **Label permissions**: Only maintainers and Copilot agents with write access can apply labels. If `gh pr edit --add-label` fails, leave a comment on the PR instead:
+
+```bash
+gh pr comment <PR-NUMBER> --body "Labels to apply: \`agent\`, \`bug\`"
+```
 
 **Success Criteria**:
 
 - [ ] PR appears on GitHub.com
 - [ ] Title matches your prepared title
 - [ ] Body matches your prepared description
-- [ ] Labels `agent` and `bug` are applied
+- [ ] Labels applied (or comment left requesting them if permissions denied)
 - [ ] Issue is linked via "Closes #NNNN"
 
 ---
 
 ## Error Handling & Recovery
 
-### "PR was not created / labels missing"
+### "Labels not applied"
 
-→ Check if branch is pushed: `git push origin agent/fix-issue-NNNN`
-→ Create PR manually: `gh pr create --base next --title "..." --body "..."`
-→ Apply labels separately: `gh pr edit <PR-NUMBER> --add-label "agent,bug"`
+→ If you have write access: `gh pr edit <PR-NUMBER> --add-label "agent,bug"`
+→ If you lack permissions (non-maintainer): `gh pr comment <PR-NUMBER> --body "Labels to apply: \`agent\`, \`bug\`"`
 
 ### "Description is incomplete or missing evidence"
 

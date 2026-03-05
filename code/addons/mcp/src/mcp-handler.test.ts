@@ -329,7 +329,7 @@ describe('mcpServerHandler', () => {
 				return { disableTelemetry: false };
 			}
 			if (key === 'features') {
-				return { experimentalComponentsManifest: true };
+				return { componentsManifest: true };
 			}
 			if (key === 'experimental_manifests') {
 				return vi.fn();

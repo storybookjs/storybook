@@ -22,7 +22,9 @@ export const getManifestStatus = async (options: Options): Promise<ManifestStatu
 	]);
 
 	const hasManifests = !!manifests || !!legacyComponentManifestGenerator;
-	const hasFeatureFlag = !!features?.experimentalComponentsManifest;
+	const hasFeatureFlag = !!(
+		features?.componentsManifest ?? features?.experimentalComponentsManifest
+	);
 
 	return {
 		available: hasFeatureFlag && hasManifests,

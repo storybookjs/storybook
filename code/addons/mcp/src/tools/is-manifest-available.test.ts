@@ -4,11 +4,13 @@ import type { Options } from 'storybook/internal/types';
 
 function createMockOptions({
 	featureFlag = false,
+	featureFlagName = 'componentsManifest' as 'componentsManifest' | 'experimentalComponentsManifest',
 	hasManifests = false,
 	hasLegacyComponentManifestGenerator = false,
 	hasFeaturesObject = true,
 }: {
 	featureFlag?: boolean;
+	featureFlagName?: 'componentsManifest' | 'experimentalComponentsManifest';
 	hasManifests?: boolean;
 	hasLegacyComponentManifestGenerator?: boolean;
 	hasFeaturesObject?: boolean;
@@ -17,7 +19,7 @@ function createMockOptions({
 		presets: {
 			apply: vi.fn(async (key: string) => {
 				if (key === 'features') {
-					return hasFeaturesObject ? { experimentalComponentsManifest: featureFlag } : {};
+					return hasFeaturesObject ? { [featureFlagName]: featureFlag } : {};
 				}
 				if (key === 'experimental_manifests') {
 					return hasManifests ? { components: { v: 1, components: {} } } : undefined;
@@ -65,6 +67,24 @@ describe('getManifestStatus', () => {
 		{
 			description: 'features object is missing the flag',
 			options: { hasManifests: true, hasFeaturesObject: false },
+			expected: { available: false, hasManifests: true, hasFeatureFlag: false },
+		},
+		{
+			description: 'legacy experimentalComponentsManifest flag is true (backwards compat)',
+			options: {
+				featureFlag: true,
+				featureFlagName: 'experimentalComponentsManifest' as const,
+				hasManifests: true,
+			},
+			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
+		},
+		{
+			description: 'legacy experimentalComponentsManifest flag is false (backwards compat)',
+			options: {
+				featureFlag: false,
+				featureFlagName: 'experimentalComponentsManifest' as const,
+				hasManifests: true,
+			},
 			expected: { available: false, hasManifests: true, hasFeatureFlag: false },
 		},
 	])('should return correct status when $description', async ({ options, expected }) => {

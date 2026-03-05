@@ -22,19 +22,13 @@ Step 5: /open-pull-request [issue-number]
 
 ## Step 1: Understand & Plan the Fix
 
-**Action**: Fetch the GitHub issue and create a detailed fix plan before implementing.
+**Action**: Read and follow `.claude/skills/plan-bug-fix/SKILL.md` with the issue number.
 
-**Invoke**:
-
-```
-/plan-bug-fix [issue-number]
-```
-
-Example:
-
-```
-/plan-bug-fix 12345
-```
+That skill will:
+- Fetch the GitHub issue
+- Determine the verification flow (0–4)
+- Create a detailed fix plan
+- Create the feature branch `agent/fix-issue-[number]`
 
 **Expected Output**:
 
@@ -57,13 +51,13 @@ Example:
 
 ## Step 2: Implement, Test, and Verify
 
-**Action**: Implement the fix, run tests, and gather verification evidence.
+**Action**: Read and follow `.claude/skills/implement-and-verify-fix/SKILL.md`.
 
-**Invoke**:
-
-```
-/implement-and-verify-fix
-```
+That skill will:
+- Implement the code fix
+- Run tests and lint
+- Commit the changes
+- Run the flow-specific verification skill (reading its SKILL.md file)
 
 **Expected Output**:
 
@@ -86,13 +80,9 @@ Example:
 
 ## Step 3: Run Verification Checklist
 
-**Action**: Run the universal pre-PR verification checklist to ensure the fix is complete and correct.
+**Action**: Read and follow `.claude/skills/verification-checklist/SKILL.md`.
 
-**Invoke**:
-
-```
-/verification-checklist
-```
+That skill confirms the fix addresses root cause, all tests pass, and no regressions were introduced.
 
 **Expected Output**:
 
@@ -137,19 +127,9 @@ Example:
 
 ## Step 5: Open Pull Request
 
-**Action**: Prepare the PR content and open the pull request.
+**Action**: Read and follow `.claude/skills/open-pull-request/SKILL.md` with the issue number.
 
-**Invoke**:
-
-```
-/open-pull-request [issue-number]
-```
-
-Example:
-
-```
-/open-pull-request 12345
-```
+That skill will prepare the PR title and body (following `.github/PULL_REQUEST_TEMPLATE.md`) and open the PR.
 
 **Expected Output**:
 

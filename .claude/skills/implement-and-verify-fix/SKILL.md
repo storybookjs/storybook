@@ -133,65 +133,45 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 ## Step 5: Run Verification Workflow
 
-**Action**: Invoke the verification skill matching your flow (determined in `/plan-bug-fix` Step 2).
+**Action**: Read and follow the verification skill file matching your flow (determined in `plan-bug-fix`).
 
-Check the flow number from your plan, then invoke the corresponding skill below.
+Check the flow number from your plan, then read and follow the corresponding file:
 
 **Flow 0** (Pure Logic / No UI): verification is already satisfied by Step 2 (all tests passed). Skip directly to Step 6.
 
-⚠️ **Double-check before accepting Flow 0**: If a user can reproduce this bug in the browser, Flow 0 is wrong — return to `/plan-bug-fix` Step 2 to re-route.
+⚠️ **Double-check before accepting Flow 0**: If a user can reproduce this bug in the browser, Flow 0 is wrong — return to `plan-bug-fix` Step 2 to re-route.
 
 ---
 
 **Flow 1** — Renderer bug (`code/renderers/**`):
 
-Invoke:
+Read and follow: `.claude/skills/renderer-bug-workflow/SKILL.md`
 
-```
-/renderer-bug-workflow
-```
-
-Expected output: Template story created, screenshot of fixed renderer.
+Expected output: Template story created, before/after screenshots captured.
 
 ---
 
 **Flow 2** — Builder frontend output bug (`code/builders/**`):
 
-Invoke:
+Read and follow: `.claude/skills/builder-bug-workflow/SKILL.md` (Flow 2 section only)
 
-```
-/builder-bug-workflow
-```
-
-Follow the **Flow 2** section of that skill only.
-
-Expected output: Screenshot of browser output showing fix.
+Expected output: Before/after screenshots of browser output.
 
 ---
 
 **Flow 3** — Builder terminal output bug (`code/builders/**`):
 
-Invoke:
+Read and follow: `.claude/skills/builder-bug-workflow/SKILL.md` (Flow 3 section only)
 
-```
-/builder-bug-workflow
-```
-
-Follow the **Flow 3** section of that skill only.
-
-Expected output: Updated snapshot diff showing fix.
+Expected output: Updated snapshot file in `scripts/terminal-output-snapshots/`.
 
 ---
 
 **Flow 4** — Manager UI bug:
 
-Invoke:
+Read and follow: `.claude/skills/manager-bug-workflow/SKILL.md`
 
-```
-/manager-bug-workflow
-```
-
-Expected output: Passing E2E test + screenshot of Manager UI.
+Expected output: Passing E2E test + before/after screenshots of Manager UI.
 
 ---
 

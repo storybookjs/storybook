@@ -87,51 +87,32 @@ cd code && yarn test
 
 ## Bug Verification Workflows
 
-When fixing bugs in Storybook, use the comprehensive `/fix-bug` workflow:
+When fixing bugs in Storybook, follow the workflow defined in `.claude/skills/fix-bug/SKILL.md`. Read that file and follow every step in order. Each step will direct you to read additional skill files — always read them before executing their steps.
 
-- **`/fix-bug [issue-number]`**: Complete end-to-end workflow — Understand the issue, plan the fix, implement code changes, run tests, verify the fix, handle documentation improvements, and prepare PR content. This is a single linear workflow that handles all steps from issue to PR.
+The skill files live in `.claude/skills/` and cover the full workflow:
 
-The workflow includes built-in verification for all bug types:
-
-- **Flow 0**: Pure logic bugs (tests only)
-- **Flow 1** (Renderer bugs): Renderer verification in `code/renderers/**`
-- **Flow 2** (Builder Frontend): Frontend output verification in `code/builders/**`
-- **Flow 3** (Builder Terminal): Terminal output verification in `code/builders/**`
-- **Flow 4** (Manager UI): Manager UI verification in `code/core/src/manager/**` or `code/core/src/builder-manager/**`
-
-Additional supporting skills for specific verification flows (if needed for detailed guidance):
-
-- **`/renderer-bug-workflow`**: Detailed renderer bug verification
-- **`/builder-bug-workflow`**: Detailed builder bug verification (Flow 2 & 3)
-- **`/manager-bug-workflow`**: Detailed manager UI verification (Flow 4)
+| Skill file | Purpose |
+|---|---|
+| `.claude/skills/fix-bug/SKILL.md` | **Entry point** — orchestrates the full workflow |
+| `.claude/skills/plan-bug-fix/SKILL.md` | Fetch issue, determine flow (0–4), create plan, create branch |
+| `.claude/skills/implement-and-verify-fix/SKILL.md` | Implement fix, run tests, lint, commit, run verification |
+| `.claude/skills/verification-checklist/SKILL.md` | Universal pre-PR checklist |
+| `.claude/skills/renderer-bug-workflow/SKILL.md` | Flow 1: renderer visual verification |
+| `.claude/skills/builder-bug-workflow/SKILL.md` | Flow 2 & 3: builder verification |
+| `.claude/skills/manager-bug-workflow/SKILL.md` | Flow 4: Manager UI E2E verification |
+| `.claude/skills/open-pull-request/SKILL.md` | Prepare and open the PR |
 
 **When to use**:
 
 - Fixing bugs from GitHub issues
 - Need automated end-to-end bug fix workflow
-- For IDE/VS Code or GitHub.com Copilot
 
 **When NOT to use**:
 
 - Feature requests or enhancements (not bugs)
 - Documentation-only changes
-- Exploratory investigation (use `/plan-bug-fix` only if you just want the plan)
+- Exploratory investigation
 
 ## Custom GitHub Copilot Agent
 
-For GitHub.com Copilot coding agent, a specialized custom agent is available at `.github/copilot/agents/storybook-bug-fixer.agent.md`:
-
-**`@storybook-bug-fixer`**: Specialized agent that leverages the `/fix-bug` skill for end-to-end bug fixing workflows on GitHub.com. Simply provide an issue number (e.g., "Fix issue 12345") and the agent orchestrates the complete workflow from understanding to PR creation.
-
-**When to use**:
-
-- Fixing bugs from GitHub issues on GitHub.com
-- Need automated end-to-end bug fix workflow
-- Working within GitHub Copilot coding agent interface
-
-**When NOT to use**:
-
-- IDE/VS Code development (use `/fix-bug` skill directly instead)
-- Feature requests or enhancements (not bugs)
-- Documentation-only changes
-- Exploratory investigation before fixing
+For GitHub.com Copilot coding agent, a specialized custom agent is available at `.github/copilot/agents/storybook-bug-fixer.agent.md`. Assign issues to `@storybook-bug-fixer` and it will read and follow the `.claude/skills/` workflow files end-to-end.

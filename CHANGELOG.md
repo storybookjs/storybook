@@ -1,3 +1,7 @@
+## 8.6.18
+
+- Add request validation
+
 ## 8.6.17
 
 - Harden websocket connection

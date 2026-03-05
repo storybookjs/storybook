@@ -2,7 +2,7 @@
 
 ## Repository Structure
 
-```
+```text
 storybook/                        # Yarn monorepo root
 ├── .github/                      # GitHub configurations and workflows
 ├── .nx/                          # NX workflows and configuration
@@ -27,9 +27,8 @@ storybook/                        # Yarn monorepo root
 ### Compilation
 
 ```bash
-// Temporary workaround for NX cloud login issues
-yarn nx run-many -t compile --no-cloud
-yarn nx compile <package-name> --no-cloud
+yarn nx run-many -t compile
+yarn nx compile <package-name>
 ```
 
 ### Type Checking

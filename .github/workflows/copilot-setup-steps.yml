@@ -36,4 +36,6 @@ jobs:
         run: cd code && yarn playwright install --with-deps chromium
 
       - name: Compile
-        run: yarn nx run-many --targets compile --no-cloud
+        run: yarn nx run-many --targets compile
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ vars.COPILOT_NX_CLOUD_ACCESS_TOKEN }}

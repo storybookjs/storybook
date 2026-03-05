@@ -44,7 +44,7 @@ When given an issue number (e.g., "Fix issue 12345" or "Work on #12345"):
 
 **Key Commands** (available in the repo):
 
-- Compile: `yarn nx compile <package> -c production --no-cloud`
+- Compile: `yarn nx compile <package> -c production`
 - Test: `cd code && yarn test`
 - Lint/Format: `yarn prettier --write <file>` and `yarn --cwd code lint:js:cmd <file> --fix`
 - Sandbox: `yarn nx sandbox <template> -c production`

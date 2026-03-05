@@ -87,17 +87,6 @@ The story URL follows the pattern `http://localhost:6006/?path=/story/<title-pre
 
 For example, a story exported as `Primary` in `code/renderers/react/template/stories/visual-render-verification.stories.tsx` would be at `http://localhost:6006/?path=/story/renderers-react-visual-render-verification--primary`.
 
-**If you're unsure of the exact story ID**, query the running Storybook index instead of guessing:
-
-```bash
-curl -s http://localhost:6006/index.json | node -e \
-  "const d=require('fs').readFileSync('/dev/stdin','utf8'); \
-   const entries=JSON.parse(d).entries; \
-   Object.values(entries).filter(e=>e.title.includes('YOUR_TITLE_FRAGMENT')).forEach(e=>console.log(e.id, e.title, e.name))"
-```
-
-Or open `http://localhost:6006/index.json` in a browser and search for the `exportName` or `title` of your story. The `id` field is what goes in the URL (`?path=/story/<id>`) and in `navigateToStory` calls.
-
 ## Step 6: Fallback Path (if bug persists)
 
 If the story still shows the bug after initial verification:

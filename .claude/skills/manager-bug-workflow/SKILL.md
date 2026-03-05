@@ -100,17 +100,6 @@ Add your test inside the `Desktop` describe block in `code/e2e-tests/manager.spe
 
 **Important**: Always use `sbPage.navigateToStory(title, storyName)` to navigate to a story — it waits for the sidebar selection, URL change, and full story load. Do NOT use `page.goto()` + `waitUntilLoaded()` for story navigation; it has race conditions and the session storage init script won't apply retroactively.
 
-**Finding the correct story title and name**: If you're unsure of the exact values to pass to `navigateToStory`, query `/index.json` from the running Storybook:
-
-```bash
-curl -s http://localhost:6006/index.json | node -e \
-  "const d=require('fs').readFileSync('/dev/stdin','utf8'); \
-   const entries=JSON.parse(d).entries; \
-   Object.values(entries).filter(e=>e.title.includes('YOUR_FRAGMENT')).forEach(e=>console.log('id:',e.id,'title:',e.title,'name:',e.name))"
-```
-
-The `title` field maps to the first arg of `navigateToStory`; `name` maps to the second. The `id` field is what goes in `?path=/story/<id>` URLs.
-
 **Pattern for Controls panel tests:**
 
 ```ts

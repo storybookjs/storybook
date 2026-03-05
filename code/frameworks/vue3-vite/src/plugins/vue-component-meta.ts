@@ -144,7 +144,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
           code: s.toString(),
           map: s.generateMap({ hires: true, source: id }),
         };
-      } catch (e) {
+      } catch {
         return undefined;
       }
     },

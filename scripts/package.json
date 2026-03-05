@@ -42,11 +42,6 @@
     "upgrade": "jiti ./task.ts",
     "upload-bench": "jiti ./upload-bench.ts"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "yarn lint-staged"
-    }
-  },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
       "yarn lint:js:cmd --fix"
@@ -130,7 +125,6 @@
     "glob": "^10.5.0",
     "globby": "^14.1.0",
     "http-server": "^14.1.1",
-    "husky": "^4.3.7",
     "jiti": "^2.6.1",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",

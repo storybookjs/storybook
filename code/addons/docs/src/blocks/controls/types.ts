@@ -2,6 +2,7 @@ import type { ArgType } from '../components/ArgsTable/types';
 
 export interface ControlProps<T> {
   name: string;
+  storyId?: string;
   value?: T;
   defaultValue?: T;
   argType?: ArgType;

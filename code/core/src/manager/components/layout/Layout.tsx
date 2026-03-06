@@ -1,7 +1,6 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, FC } from 'react';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 
-import { Match } from 'storybook/internal/router';
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
 import { type API, useStorybookApi } from 'storybook/manager-api';
@@ -10,7 +9,10 @@ import { styled } from 'storybook/theming';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Notifications } from '../../container/Notifications';
 import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
+import { Drag } from './Drag';
 import { useLayout } from './LayoutProvider';
+import { MainAreaContainer } from './MainAreaContainer';
+import { PanelContainer } from './PanelContainer';
 import { useDragging } from './useDragging';
 import { useLandmarkIndicator } from './useLandmarkIndicator';
 
@@ -104,7 +106,9 @@ const useLayoutSyncingState = ({
   }, [internalDraggingSizeState, setManagerLayoutState]);
 
   const isPagesShown =
-    managerLayoutState.viewMode !== 'story' && managerLayoutState.viewMode !== 'docs';
+    managerLayoutState.viewMode !== undefined &&
+    managerLayoutState.viewMode !== 'story' &&
+    managerLayoutState.viewMode !== 'docs';
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
   const { panelResizerRef, sidebarResizerRef } = useDragging({
@@ -132,14 +136,6 @@ const useLayoutSyncingState = ({
   };
 };
 
-const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-      {({ match }) => <ContentContainer shown={!!match}>{children}</ContentContainer>}
-    </Match>
-  );
-};
-
 const OrderedMobileNavigation = styled(MobileNavigation)({
   order: 1,
 });
@@ -157,7 +153,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     sidebarResizerRef,
     showPages,
     showPanel,
-    isDragging,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   // Install landmark navigation listener in parent container of all landmarks.
@@ -175,7 +170,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
         } as CSSProperties
       }
     >
-      {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
       <>
         {isDesktop && (
           <SidebarContainer>
@@ -191,16 +185,19 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           />
         )}
 
-        <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+        <MainAreaContainer
+          showPages={showPages}
+          slotMain={slots.slotMain}
+          slotPages={slots.slotPages}
+        />
 
         {isDesktop && showPanel && (
-          <PanelContainer position={panelPosition}>
-            <Drag
-              orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
-              overlapping={panelPosition === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
-              position={panelPosition === 'bottom' ? 'left' : 'right'}
-              ref={panelResizerRef}
-            />
+          <PanelContainer
+            bottomPanelHeight={bottomPanelHeight}
+            rightPanelWidth={rightPanelWidth}
+            panelResizerRef={panelResizerRef}
+            position={panelPosition}
+          >
             {slots.slotPanel}
           </PanelContainer>
         )}
@@ -249,104 +246,3 @@ const SidebarContainer = styled.div(({ theme }) => ({
   position: 'relative',
   borderRight: `1px solid ${theme.appBorderColor}`,
 }));
-
-const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
-  flex: 1,
-  position: 'relative',
-  backgroundColor: theme.appContentBg,
-  display: shown ? 'grid' : 'none', // This is needed to make the content container fill the available space
-  overflow: 'auto',
-
-  [MEDIA_DESKTOP_BREAKPOINT]: {
-    flex: 'auto',
-    gridArea: 'content',
-  },
-}));
-
-const PagesContainer = styled.div(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gridRowStart: 'sidebar-start',
-  gridRowEnd: '-1',
-  gridColumnStart: 'sidebar-end',
-  gridColumnEnd: '-1',
-  backgroundColor: theme.appContentBg,
-  zIndex: 1,
-}));
-
-const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
-  ({ theme, position }) => ({
-    gridArea: 'panel',
-    position: 'relative',
-    backgroundColor: theme.appContentBg,
-    borderTop: position === 'bottom' ? `1px solid ${theme.appBorderColor}` : undefined,
-    borderLeft: position === 'right' ? `1px solid ${theme.appBorderColor}` : undefined,
-    '& > aside': {
-      overflow: 'hidden',
-    },
-  })
-);
-
-/**
- * Drag handle for the sidebar and panel resizers. Can be horizontal (bottom panel) or vertical
- * (sidebar or right panel). Can optionally be set to not overlap the content area (only render
- * outside of it), which is necessary when the panel is collapsed to prevent a layout shift when
- * scrollIntoView is used.
- */
-const Drag = styled.div<{
-  orientation?: 'horizontal' | 'vertical';
-  overlapping?: boolean;
-  position?: 'left' | 'right';
-}>(
-  ({ theme }) => ({
-    position: 'absolute',
-    opacity: 0,
-    transition: 'opacity 0.2s ease-in-out',
-    zIndex: 100,
-
-    '&:after': {
-      content: '""',
-      display: 'block',
-      backgroundColor: theme.color.secondary,
-    },
-
-    '&:hover': {
-      opacity: 1,
-    },
-  }),
-  ({ orientation = 'vertical', overlapping = true, position = 'left' }) =>
-    orientation === 'vertical'
-      ? {
-          width: overlapping ? (position === 'left' ? 10 : 13) : 7,
-          height: '100%',
-          top: 0,
-          right: position === 'left' ? -7 : undefined,
-          left: position === 'right' ? -7 : undefined,
-
-          '&:after': {
-            width: 1,
-            height: '100%',
-            marginLeft: position === 'left' ? 3 : 6,
-          },
-
-          '&:hover': {
-            cursor: 'col-resize',
-          },
-        }
-      : {
-          width: '100%',
-          height: overlapping ? 13 : 7,
-          top: -7,
-          left: 0,
-
-          '&:after': {
-            width: '100%',
-            height: 1,
-            marginTop: 6,
-          },
-
-          '&:hover': {
-            cursor: 'row-resize',
-          },
-        }
-);

@@ -14,9 +14,6 @@ describe('postinstall helpers', () => {
             {
               extends: true,
               plugins: [storybookTest({ configDir: '.storybook' })],
-              test: {
-                setupFiles: ['./.storybook/vitest.setup.ts'],
-              },
             },
           ],
         },
@@ -35,9 +32,6 @@ describe('postinstall helpers', () => {
           projects: [
             {
               extends: true,
-              test: {
-                setupFiles: ['./.storybook/vitest.setup.ts'],
-              },
             },
           ],
         },

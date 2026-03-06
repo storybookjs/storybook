@@ -34,7 +34,8 @@
     "upload-bench": "cd scripts; yarn upload-bench",
     "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",
     "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
-    "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts"
+    "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts",
+    "prepare": "husky"
   },
   "resolutions": {
     "@babel/runtime": "latest",
@@ -62,6 +63,7 @@
     "@playwright/test": "^1.52.0",
     "@types/kill-port": "^2.0.3",
     "http-server": "^14.1.1",
+    "husky": "^9.1.7",
     "jiti": "^2.6.1",
     "kill-port": "^2.0.1",
     "nx": "^22.1.3",

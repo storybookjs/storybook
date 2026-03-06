@@ -29,7 +29,7 @@ Run this command to install and register the Storybook MCP addon:
 
 <CodeSnippets path="addon-mcp-add.md" />
 
-After restarting your Storybook, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available and a link to the [manifest debugger](../manifests.mdx#debugging).
+After restarting your Storybook, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available<If renderer={['react']}> and a link to the [manifest debugger](../manifests.mdx#debugging)</If>.
 
 ![The MCP server page in the browser](../../_assets/ai/addon-mcp-splash.png)
 
@@ -98,7 +98,7 @@ _Prompt: Build a login form_
 
 1. The agent queries the [docs toolset](#docs) to find components that match the requirements of a login form, e.g. a `TextInput` component for the username and password fields, and a `Button` component for the submit button.
 
-1. The agent queries the [docs toolset](#docs) again to reference specific component's more detailed documentation, e.g. it learns that the `TextInput` component has a `type` prop that can be set to "password" to obscure the input.
+1. The agent queries the [docs toolset](#docs) again to reference more detailed information about specific components, e.g., it learns that the `TextInput` component has a `type` prop that can be set to "password" to obscure the input.
 
 1. The agent generates a LoginForm component that composes those components together.
 
@@ -176,7 +176,7 @@ The development toolset includes the following tools:
 
 #### `get-storybook-story-instructions`
 
-Returns instructions to author useful stories, including which props to capture and how to write interaction tests for the story (if applicable).
+Returns instructions on how to write useful stories, including which props to capture and how to write interaction tests for the story (if applicable).
 
 #### `preview-stories`
 

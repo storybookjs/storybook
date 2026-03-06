@@ -69,8 +69,9 @@ describe("vitePluginNextSwc env detection", () => {
     });
 
     const swcTransform = await import("../../utils/swc/transform");
-    vi.mocked(swcTransform.getVitestSWCTransformConfig).mockReturnValue(
-      {} as ReturnType<typeof swcTransform.getVitestSWCTransformConfig>,
+    vi.mocked(swcTransform.getVitestSWCTransformConfig).mockResolvedValue(
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      {} as any,
     );
   };
 

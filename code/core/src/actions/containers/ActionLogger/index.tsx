@@ -44,7 +44,7 @@ export default function ActionLogger({ active, api }: ActionLoggerProps) {
         action.count = 1;
         newActions.push(action);
       }
-      return newActions.slice(0, action.options.limit);
+      return action.options.limit ? newActions.slice(-action.options.limit) : newActions;
     });
   }, []);
 

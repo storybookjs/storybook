@@ -53,7 +53,7 @@ export async function requiresProjectAnnotations(
 
   if (hasStorybookAnnotations) {
     logBoxOnce(dedent`
-      ${CLI_COLORS.warning('Warning')}: Found a setup file with "setProjectAnnotations".
+      ${CLI_COLORS.info('Info')}: Found a setup file with "setProjectAnnotations".
       Skipping automatic provisioning of preview annotations to avoid conflicts. Since Storybook 10.3, "@storybook/addon-vitest" applies these automatically.
       You can safely remove the "setProjectAnnotations" call from your setup file, or remove the file entirely if you don't have custom code there.
     `);

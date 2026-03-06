@@ -1,0 +1,11 @@
+{
+  "name": "angular-vite",
+  "projectType": "library",
+  "targets": {
+    "compile": {},
+    "check": {}
+  },
+  "tags": [
+    "library"
+  ]
+}

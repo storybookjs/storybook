@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "projects": {
+    "foo-project": {
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "options": {
+            "optimization": false,
+            "tsConfig": "src/tsconfig.app.json",
+            "assets": []
+          }
+        }
+      }
+    }
+  },
+  "defaultProject": "foo-project"
+}

@@ -104,6 +104,8 @@ jobs:
         run: yarn release:is-prerelease "$CURRENT_VERSION" --verbose
 
       - name: Publish
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
         if: steps.publish-needed.outputs.published == 'false'
         run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 

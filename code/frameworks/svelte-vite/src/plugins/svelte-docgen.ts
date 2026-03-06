@@ -116,31 +116,34 @@ export async function svelteDocgen(): Promise<PluginOption> {
 
   return {
     name: 'storybook:svelte-docgen-plugin',
-    async transform(src: string, id: string) {
-      if (id.startsWith('\0') || !filter(id)) {
-        return undefined;
-      }
+    transform: {
+      filter: { id: { include, exclude } },
+      async handler(src: string, id: string) {
+        if (id.startsWith('\0') || !filter(id)) {
+          return undefined;
+        }
 
-      const resource = relative(cwd, id);
+        const resource = relative(cwd, id);
 
-      // Get props information
-      const docgen = generateDocgen(resource, sourceFileCache);
-      const data = transformToSvelteDocParserDataItems(docgen);
+        // Get props information
+        const docgen = generateDocgen(resource, sourceFileCache);
+        const data = transformToSvelteDocParserDataItems(docgen);
 
-      const componentDoc: SvelteComponentDoc & { keywords?: string[] } = {
-        data: data,
-        name: basename(resource),
-      };
+        const componentDoc: SvelteComponentDoc & { keywords?: string[] } = {
+          data: data,
+          name: basename(resource),
+        };
 
-      const s = new MagicString(src);
-      const outputAst = this.parse(src);
-      const componentName = getComponentName(outputAst as unknown as AST.Program);
-      s.append(`\n;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
+        const s = new MagicString(src);
+        const outputAst = this.parse(src);
+        const componentName = getComponentName(outputAst as unknown as AST.Program);
+        s.append(`\n;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
 
-      return {
-        code: s.toString(),
-        map: s.generateMap({ hires: true, source: id }),
-      };
+        return {
+          code: s.toString(),
+          map: s.generateMap({ hires: true, source: id }),
+        };
+      },
     },
   };
 }

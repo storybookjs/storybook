@@ -144,6 +144,8 @@ const OcticonHeaders = SUPPORTED_MDX_HEADERS.reduce(
   (acc, headerType) => ({
     ...acc,
     [headerType]: styled(headerType)({
+      paddingLeft: 24,
+      marginLeft: -24,
       '& svg': {
         position: 'relative',
         top: '-0.1em',

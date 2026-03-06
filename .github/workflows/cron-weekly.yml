@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: "0 9 * * 1"
 
+permissions:
+  contents: read # to fetch repository files for markdown link checks
+
 jobs:
   check-links:
     if: github.repository_owner == 'storybookjs'

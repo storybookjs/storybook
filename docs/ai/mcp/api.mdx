@@ -1,0 +1,102 @@
+---
+title: MCP server API
+hideRendererSelector: true
+sidebar:
+  order: 2
+  title: API
+---
+
+<Callout variant="warning" icon="🧪">
+  This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+</Callout>
+
+## `@storybook/addon-mcp` options
+
+The MCP server addon accepts the following options to configure the tools provided by the MCP server. You can provide these options when registering the addon in your `main.js|ts` file:
+
+<CodeSnippets path="addon-mcp-options.md" />
+
+### `toolsets`
+
+<If renderer={['react']}>
+
+Type:
+
+```ts
+{
+  dev?: boolean;
+  docs?: boolean;
+  test?: boolean;
+}
+```
+
+Default: 
+
+```ts
+{
+  dev: true,
+  docs: true,
+  test: true,
+}
+```
+
+</If>
+
+<If notRenderer={['react']}>
+
+Type:
+
+```ts
+{
+  dev?: boolean;
+  test?: boolean;
+}
+```
+
+Default: 
+
+```ts
+{
+  dev: true,
+  test: true,
+}
+```
+
+</If>
+
+Configuration object to toggle which toolsets are enabled in the MCP server. By default, all toolsets are enabled.
+
+#### `dev`
+
+Type: `boolean`
+
+Default: `true`
+
+The development toolset includes the [`get-storybook-story-instructions`](./overview.mdx#get-storybook-story-instructions) and [`preview-stories`](./overview.mdx#preview-stories) tools.
+
+<If renderer={['react']}>
+
+#### `docs`
+
+Type: `boolean`
+
+Default: `true`
+
+The docs toolset includes the [`get-documentation`](./overview.mdx#get-documentation), [`get-documentation-for-story`](./overview.mdx#get-documentation-for-story), and [`list-all-documentation`](./overview.mdx#list-all-documentation) tools.
+
+</If>
+
+#### `test`
+
+Type: `boolean`
+
+Default: `true`
+
+The testing toolset includes the [`run-story-tests`](./overview.mdx#run-story-tests) tool.
+
+**More AI resources**
+
+- [MCP server overview](./overview.mdx)
+- [Sharing your MCP server](./sharing.mdx)
+- [Best practices for using Storybook with AI](../best-practices.mdx)
+- [Manifests](../manifests.mdx)

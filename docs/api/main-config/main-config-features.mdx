@@ -16,8 +16,10 @@ Type:
   actions?: boolean;
   argTypeTargetsV7?: boolean;
   backgrounds?: boolean;
+  componentsManifest?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
+  experimentalCodeExamples?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
@@ -110,6 +112,20 @@ Type: `boolean`
 
 Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
 
+<If renderer="react">
+
+## `componentsManifest`
+
+Type: `boolean`
+
+Default: `true`
+
+Generate a [components manifest](../../ai/manifests.mdx#components-manifest), used by the [MCP server](../../ai/mcp/overview.mdx).
+
+<CodeSnippets path="main-config-features-components-manifest.md" />
+
+</If>
+
 ## `controls`
 
 Type: `boolean`
@@ -129,6 +145,18 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 {/* prettier-ignore-end */}
 
 <If renderer="react">
+
+## `experimentalCodeExamples`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Enable the new code example generation method for React components (as seen in the story previews in an [autodocs](../../writing-docs/autodocs.mdx) page).
+
+Unlike the current implementation, this method reads the actual stories source file, which is faster to generate, more readable, and more accurate. However, they are not dynamic: they won't update if you change values in the Controls table.
+
+<CodeSnippets path="main-config-features-experimental-code-examples.md" />
 
 ## `experimentalTestSyntax`
 

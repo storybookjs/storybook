@@ -45,10 +45,6 @@
     "./preview": {
       "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
-    },
-    "./server-fn-stubs": {
-      "types": "./dist/server-fn-stubs.d.ts",
-      "default": "./dist/server-fn-stubs.js"
     }
   },
   "files": [

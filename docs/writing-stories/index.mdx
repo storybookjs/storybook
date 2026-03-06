@@ -30,6 +30,26 @@ components/
 │  ├─ Button.stories.js | ts | jsx | tsx | svelte
 ```
 
+<Callout variant="info">
+  You can place stories anywhere, as long as your [`.storybook/main.js|.ts` stories globs](../configure/index.mdx#configure-story-rendering) include those paths.
+</Callout>
+
+When you run `npm create storybook@latest`, the generated `stories` configuration uses a single root (`../src` when that directory exists, otherwise `../stories`). If your stories live in additional folders, add matching globs in your Storybook config:
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/your-framework';
+
+const config: StorybookConfig = {
+  stories: [
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    '../packages/**/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+  ],
+};
+
+export default config;
+```
+
 ## Component Story Format
 
 <If renderer="svelte">

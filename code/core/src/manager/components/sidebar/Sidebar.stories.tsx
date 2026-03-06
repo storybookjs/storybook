@@ -51,6 +51,8 @@ const managerContext: any = {
     getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
       'api::getShortcutKeys'
     ),
+    getIncludedTagFilters: fn(() => []).mockName('api::getIncludedTagFilters'),
+    getExcludedTagFilters: fn(() => []).mockName('api::getExcludedTagFilters'),
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),

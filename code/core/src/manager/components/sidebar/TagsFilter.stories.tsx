@@ -1,32 +1,28 @@
+import type { DocsIndexEntry, StoryIndexEntry } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { findByRole, fn } from 'storybook/test';
+import type { API } from 'storybook/manager-api';
+import { expect, screen, waitFor } from 'storybook/test';
 
 import { TagsFilter } from './TagsFilter';
+import { MockAPIDecorator } from './TagsFilter.story-helpers';
 
 const meta = {
   component: TagsFilter,
   title: 'Sidebar/TagsFilter',
   tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
+  decorators: [MockAPIDecorator],
   args: {
-    api: {
-      experimental_setFilter: fn(),
-      getDocsUrl: () => 'https://storybook.js.org/docs/',
-      getUrlState: () => ({
-        queryParams: {},
-        path: '',
-        viewMode: 'story',
-        url: 'http://localhost:6006/',
-      }),
-      applyQueryParams: fn().mockName('api::applyQueryParams'),
-    } as any,
-    tagPresets: {},
+    api: {} as API, // Will be overridden by MockAPIWrapper
     indexJson: {
       v: 6,
       entries: {
-        'c1-s1': { tags: ['A', 'B', 'C', 'dev', 'play-fn'], type: 'story' } as any,
-        'c1-test': { tags: ['test-fn'], type: 'story', subtype: 'test' } as any,
-        'c1-doc': { tags: [], type: 'docs' } as any,
+        'c1-s1': { tags: ['A', 'B', 'C', 'dev', 'play-fn'], type: 'story' } as StoryIndexEntry,
+        'c1-test': { tags: ['test-fn'], type: 'story', subtype: 'test' } as StoryIndexEntry,
+        'c1-doc': { tags: [], type: 'docs' } as unknown as DocsIndexEntry,
       },
     },
   },
@@ -38,21 +34,63 @@ type Story = StoryObj<typeof meta>;
 
 export const Closed: Story = {};
 
-export const ClosedWithSelection: Story = {
-  args: {
-    ...Closed.args,
-    tagPresets: {
+export const ClosedWithDefaultTags: Story = {
+  beforeEach: () => {
+    const originalTagsOptions = global.TAGS_OPTIONS;
+    global.TAGS_OPTIONS = {
       A: { defaultFilterSelection: 'include' },
       B: { defaultFilterSelection: 'include' },
+    };
+
+    return () => {
+      global.TAGS_OPTIONS = originalTagsOptions;
+    };
+  },
+};
+
+export const ClosedWithSelection: Story = {
+  parameters: {
+    initialStoryState: {
+      layout: {
+        includedTagFilters: ['A', 'B'],
+      },
     },
   },
 };
 
 export const Clear = {
-  ...Closed,
-  play: async ({ canvasElement }) => {
-    const button = await findByRole(canvasElement, 'button', {}, { timeout: 3000 });
+  ...ClosedWithSelection,
+  play: async ({ canvas }) => {
+    const button = await canvas.findByRole('button', {}, { timeout: 3000 });
     button.click();
+
+    const clearButton = await screen.findByRole('button', { name: 'Clear filters' });
+
+    expect(clearButton).toBeInTheDocument();
+    clearButton.click();
+    await waitFor(() => expect(clearButton).not.toBeInTheDocument());
+  },
+} satisfies Story;
+
+export const ResetToDefaults: Story = {
+  ...ClosedWithDefaultTags,
+  parameters: {
+    initialStoryState: {
+      layout: {
+        excludedTagFilters: ['A', 'B', 'C'],
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    const button = await canvas.findByRole('button', {}, { timeout: 3000 });
+    button.click();
+
+    const resetButton = await screen.findByRole('button', { name: 'Reset filters' });
+
+    expect(resetButton).toBeInTheDocument();
+    expect(resetButton).not.toBeDisabled();
+    resetButton.click();
+    await waitFor(() => expect(resetButton).toBeDisabled());
   },
 } satisfies Story;
 
@@ -63,9 +101,9 @@ export const NoUserTags = {
     indexJson: {
       v: 6,
       entries: {
-        'c1-s1': { tags: ['dev', 'play-fn'], type: 'story' } as any,
-        'c1-test': { tags: ['test-fn'], type: 'story', subtype: 'test' } as any,
-        'c1-doc': { tags: [], type: 'docs' } as any,
+        'c1-s1': { tags: ['dev', 'play-fn'], type: 'story' } as StoryIndexEntry,
+        'c1-test': { tags: ['test-fn'], type: 'story', subtype: 'test' } as StoryIndexEntry,
+        'c1-doc': { tags: [], type: 'docs' } as unknown as DocsIndexEntry,
       },
     },
   },
@@ -78,22 +116,23 @@ export const WithSelection = {
 
 export const WithSelectionInverted = {
   ...Clear,
-  args: {
-    ...Clear.args,
-    tagPresets: {
-      A: { defaultFilterSelection: 'exclude' },
-      B: { defaultFilterSelection: 'exclude' },
+  parameters: {
+    initialStoryState: {
+      layout: {
+        excludedTagFilters: ['A', 'B'],
+      },
     },
   },
 } satisfies Story;
 
 export const WithSelectionMixed = {
   ...Clear,
-  args: {
-    ...Clear.args,
-    tagPresets: {
-      A: { defaultFilterSelection: 'include' },
-      B: { defaultFilterSelection: 'exclude' },
+  parameters: {
+    initialStoryState: {
+      layout: {
+        includedTagFilters: ['A'],
+        excludedTagFilters: ['B'],
+      },
     },
   },
 } satisfies Story;
@@ -105,7 +144,13 @@ export const Empty: Story = {
       entries: {},
     },
   },
-  play: Clear.play,
+  play: async ({ canvas }) => {
+    const button = await canvas.findByRole('button', {}, { timeout: 3000 });
+    button.click();
+
+    const learnButton = await screen.findByText('Learn how to add tags');
+    expect(learnButton).toBeInTheDocument();
+  },
 };
 
 /** Production is equal to development now */
@@ -113,5 +158,5 @@ export const EmptyProduction: Story = {
   args: {
     ...Empty.args,
   },
-  play: Clear.play,
+  play: Empty.play,
 };

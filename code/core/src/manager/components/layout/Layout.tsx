@@ -131,7 +131,9 @@ const useLayoutSyncingState = ({
     panelResizerRef,
     sidebarResizerRef,
     showPages: isPagesShown,
-    showPanel: customisedShowPanel,
+    showPanel:
+      customisedShowPanel &&
+      (managerLayoutState.panelPosition === 'right' ? rightPanelWidth > 0 : bottomPanelHeight > 0),
     isDragging: internalDraggingSizeState.isDragging,
   };
 };

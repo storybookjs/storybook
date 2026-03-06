@@ -1,3 +1,5 @@
+import { execSync } from 'node:child_process';
+import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,18 +15,28 @@ import type { ComponentMetaProject } from './ComponentMetaProject';
 // ---------------------------------------------------------------------------
 
 const sys = ts.sys;
-const MONOREPO_ROOT = path.resolve(__dirname, '../../../../..');
+const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');
+
+/** Copy the minimal node_modules packages TypeScript needs for React type resolution. */
+function copyNodeModules(projectDir: string) {
+  const dest = path.join(projectDir, 'node_modules');
+  const typesSrc = path.join(NODE_MODULES_DIR, '@types');
+  execSync(`mkdir -p "${dest}/@types"`);
+  for (const pkg of ['react', 'csstype']) {
+    execSync(`cp -rL "${path.join(NODE_MODULES_DIR, pkg)}" "${path.join(dest, pkg)}"`);
+  }
+  for (const pkg of ['react', 'prop-types']) {
+    execSync(`cp -rL "${path.join(typesSrc, pkg)}" "${path.join(dest, '@types', pkg)}"`);
+  }
+}
 
 function createTempDir(): string {
-  const fixturesDir = path.join(MONOREPO_ROOT, '.test-fixtures');
-  if (!sys.directoryExists(fixturesDir)) {
-    sys.createDirectory(fixturesDir);
-  }
   const dir = path.join(
-    fixturesDir,
+    os.tmpdir(),
     `manager-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
   );
   sys.createDirectory(dir);
+  copyNodeModules(dir);
   return dir;
 }
 
@@ -50,11 +62,10 @@ function writeFiles(baseDir: string, files: Record<string, string>): Record<stri
 }
 
 function cleanup(dir: string) {
-  if (!sys.directoryExists(dir)) {
-    return;
-  }
-  for (const entry of sys.readDirectory(dir, undefined, undefined, ['**/*'])) {
-    sys.deleteFile!(entry);
+  try {
+    execSync(`rm -rf "${dir}"`);
+  } catch {
+    // best-effort cleanup
   }
 }
 
@@ -241,7 +252,7 @@ describe('ComponentMetaManager', () => {
 
     // File without any tsconfig.json in its ancestry (relative to temp dir)
     // We create the file deep enough that walking up won't find a tsconfig
-    // before hitting .test-fixtures root
+    // before hitting the temp dir root
     writeFiles(tempDir, {
       'Button.tsx': `
         import React from 'react';

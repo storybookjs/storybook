@@ -8,6 +8,8 @@
  *
  * The original tests in componentMetaExtractor.test.ts are kept for reference.
  */
+import { execSync } from 'node:child_process';
+import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -27,8 +29,7 @@ import type { ComponentDoc } from './componentMetaExtractor';
  */
 const sys = ts.sys;
 
-/** Path to the monorepo root where node_modules with @types/react lives */
-const MONOREPO_ROOT = path.resolve(__dirname, '../../../../..');
+const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');
 
 /**
  * All test source files, keyed by relative path within the temp project. Written to disk in
@@ -1238,26 +1239,34 @@ let project: ComponentMetaProject;
 let tempDir: string;
 let filePaths: Record<string, string>;
 
-/** Recursively delete a directory using ts.sys (bypasses memfs mock). */
 function rmrf(dir: string) {
-  if (!sys.directoryExists(dir)) {
-    return;
+  try {
+    execSync(`rm -rf "${dir}"`);
+  } catch {
+    // best-effort cleanup
   }
-  for (const entry of sys.readDirectory(dir, undefined, undefined, ['**/*'])) {
-    sys.deleteFile!(entry);
+}
+
+/** Copy the minimal node_modules packages TypeScript needs for React type resolution. */
+function copyNodeModules(projectDir: string) {
+  const dest = path.join(projectDir, 'node_modules');
+  const typesSrc = path.join(NODE_MODULES_DIR, '@types');
+  execSync(`mkdir -p "${dest}/@types"`);
+  for (const pkg of ['react', 'csstype']) {
+    execSync(`cp -rL "${path.join(NODE_MODULES_DIR, pkg)}" "${path.join(dest, pkg)}"`);
   }
-  // Directories are left empty — OS/CI cleans up, .gitignore prevents commits
+  for (const pkg of ['react', 'prop-types']) {
+    execSync(`cp -rL "${path.join(typesSrc, pkg)}" "${path.join(dest, '@types', pkg)}"`);
+  }
 }
 
 beforeAll(() => {
-  // Create temp project under monorepo root for node_modules resolution
-  const fixturesDir = path.join(MONOREPO_ROOT, '.test-fixtures');
-  sys.createDirectory(fixturesDir);
   tempDir = path.join(
-    fixturesDir,
+    os.tmpdir(),
     `lsp-propext-${Date.now()}-${Math.random().toString(36).slice(2)}`
   );
   sys.createDirectory(tempDir);
+  copyNodeModules(tempDir);
 
   // Write all test files
   filePaths = {};

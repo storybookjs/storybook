@@ -41,6 +41,7 @@ test('manifests generates correct id, name, description and examples ', async ()
           },
           "name": "Button",
           "path": "./src/stories/Button.stories.ts",
+          "reactComponentMeta": undefined,
           "reactDocgen": {
             "actualName": "Button",
             "definedInFile": "./src/stories/Button.tsx",
@@ -118,6 +119,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               },
             },
           },
+          "reactDocgenTypescript": undefined,
           "stories": [
             {
               "description": undefined,
@@ -162,6 +164,7 @@ test('manifests generates correct id, name, description and examples ', async ()
           },
           "name": "Header",
           "path": "./src/stories/Header.stories.ts",
+          "reactComponentMeta": undefined,
           "reactDocgen": {
             "actualName": "",
             "definedInFile": "./src/stories/Header.tsx",
@@ -223,6 +226,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               },
             },
           },
+          "reactDocgenTypescript": undefined,
           "stories": [
             {
               "description": undefined,
@@ -335,6 +339,7 @@ test('fall back to index title when no component name', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -356,6 +361,7 @@ test('fall back to index title when no component name', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "description": undefined,
@@ -383,6 +389,7 @@ test('component exported from other file', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -404,6 +411,7 @@ test('component exported from other file', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "error": {
@@ -436,6 +444,7 @@ test('unknown expressions', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -457,6 +466,7 @@ test('unknown expressions', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "error": {
@@ -547,6 +557,7 @@ test('should create component manifest when only attached-mdx docs have manifest
             "jsDocTags": {},
             "name": "Button",
             "path": "./src/stories/Button.stories.ts",
+            "reactComponentMeta": undefined,
             "reactDocgen": {
               "actualName": "Button",
               "definedInFile": "./src/stories/Button.tsx",
@@ -575,6 +586,7 @@ test('should create component manifest when only attached-mdx docs have manifest
                 },
               },
             },
+            "reactDocgenTypescript": undefined,
             "stories": [],
             "summary": undefined,
           },

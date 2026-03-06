@@ -87,7 +87,7 @@ export function vitePluginNextSwc(
 
       const output = await transform(
         code,
-        getVitestSWCTransformConfig({
+        await getVitestSWCTransformConfig({
           filename: id,
           inputSourceMap,
           isServerEnvironment,

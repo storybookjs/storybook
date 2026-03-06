@@ -31,8 +31,12 @@ export function invariant(
   throw new Error((typeof message === 'function' ? message() : message) ?? 'Invariant failed');
 }
 
-// Module-level cache store: per-function caches keyed by derived string keys
+// Module-level cache stores: per-function caches keyed by derived string keys
 let memoStore: WeakMap<(...args: any[]) => any, Map<string, unknown>> = new WeakMap();
+let asyncMemoStore: WeakMap<
+  (...args: any[]) => Promise<unknown>,
+  Map<string, Promise<unknown>>
+> = new WeakMap();
 
 // Generic cache/memoization helper (synchronous only)
 // - Caches by a derived key from the function arguments (must be a string)
@@ -81,9 +85,63 @@ export const cached = <A extends unknown[], R>(
   };
 };
 
+// Generic cache/memoization helper for async functions
+// - Caches the in-flight Promise so concurrent callers share work
+// - Drops rejected Promises from the cache so retries can succeed
+// - Uses a module-level store so multiple wrappers around the same function share cache
+export const asyncCache = <A extends unknown[], R>(
+  fn: (...args: A) => Promise<R>,
+  opts: { key?: (...args: A) => string; name?: string } = {}
+): ((...args: A) => Promise<R>) => {
+  const keyOf: (...args: A) => string =
+    opts.key ??
+    ((...args: A) => {
+      try {
+        return JSON.stringify(args);
+      } catch {
+        return String(args[0]);
+      }
+    });
+
+  return (...args: A) => {
+    const k = keyOf(...args);
+    const name = fn.name || opts.name || 'anonymous';
+
+    let store = asyncMemoStore.get(fn);
+    if (!store) {
+      store = new Map<string, Promise<unknown>>();
+      asyncMemoStore.set(fn, store);
+    }
+
+    const existing = store.get(k);
+    if (existing) {
+      logger.verbose(`[cache] hit ${name} key=${k}`);
+      return existing as Promise<R>;
+    }
+
+    const start = Date.now();
+    const pending = fn(...args)
+      .then((result) => {
+        logger.verbose(`[cache] miss ${name} took ${Date.now() - start}ms key=${k}`);
+        return result;
+      })
+      .catch((error) => {
+        if (store.get(k) === pending) {
+          store.delete(k);
+        }
+        logger.verbose(`[cache] miss ${name} failed after ${Date.now() - start}ms key=${k}`);
+        throw error;
+      });
+
+    store.set(k, pending);
+    return pending;
+  };
+};
+
 export const invalidateCache = () => {
   // Reinitialize the module-level store
   memoStore = new WeakMap();
+  asyncMemoStore = new WeakMap();
 };
 
 export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' });

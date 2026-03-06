@@ -15,7 +15,12 @@ import path from 'pathe';
 import { ComponentMetaManager } from './checker';
 import type { ComponentDoc } from './componentMetaExtractor';
 import { getCodeSnippet } from './generateCodeSnippet';
-import { type TypescriptOptions, getComponents, getImports } from './getComponentImports';
+import {
+  type ComponentRef,
+  type TypescriptOptions,
+  getComponents,
+  getImports,
+} from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
 import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
@@ -28,7 +33,7 @@ interface ReactComponentManifest extends ComponentManifest {
 }
 
 function findMatchingComponent(
-  components: ReturnType<typeof getComponents>,
+  components: ComponentRef[],
   componentName: string | undefined,
   title: string
 ) {
@@ -157,34 +162,36 @@ export const manifests: PresetPropertyFn<
   );
 
   // Step 1: Resolve components for all entries
-  const resolvedEntries = entriesByUniqueComponent.map((entry) => {
-    const storyFilePath =
-      entry.type === 'story'
-        ? entry.importPath
-        : // For attached docs entries, storiesImports[0] points to the stories file being attached to
-          (entry as DocsIndexEntry).storiesImports[0];
-    const absoluteImportPath = path.join(process.cwd(), storyFilePath);
-    const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
-    const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
-    const componentName = csf._meta?.component;
-    const allComponents = getComponents({
-      csf,
-      storyFilePath: absoluteImportPath,
-      typescriptOptions,
-      experimentalReactComponentMeta: docgenEngine === 'react-component-meta',
-    });
-    const component = findMatchingComponent(allComponents, componentName, entry.title);
-    return {
-      entry,
-      storyFilePath,
-      absoluteImportPath,
-      storyFile,
-      csf,
-      componentName,
-      allComponents,
-      component,
-    };
-  });
+  const resolvedEntries = await Promise.all(
+    entriesByUniqueComponent.map(async (entry) => {
+      const storyFilePath =
+        entry.type === 'story'
+          ? entry.importPath
+          : // For attached docs entries, storiesImports[0] points to the stories file being attached to
+            (entry as DocsIndexEntry).storiesImports[0];
+      const absoluteImportPath = path.join(process.cwd(), storyFilePath);
+      const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
+      const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
+      const componentName = csf._meta?.component;
+      const allComponents = await getComponents({
+        csf,
+        storyFilePath: absoluteImportPath,
+        typescriptOptions,
+        experimentalReactComponentMeta: docgenEngine === 'react-component-meta',
+      });
+      const component = findMatchingComponent(allComponents, componentName, entry.title);
+      return {
+        entry,
+        storyFilePath,
+        absoluteImportPath,
+        storyFile,
+        csf,
+        componentName,
+        allComponents,
+        component,
+      };
+    })
+  );
 
   // Step 2: Batch extract rcm props (one TS program build per tsconfig project)
   const rcmResults =

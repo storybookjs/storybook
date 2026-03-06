@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest';
 
-import { cached, groupBy, invalidateCache, invariant } from './utils';
+import { asyncCache, cached, groupBy, invalidateCache, invariant } from './utils';
 
 // Helpers
 const calls = () => {
@@ -112,6 +112,38 @@ test('cached shares cache across wrappers of the same function', () => {
   expect(c.count()).toBe(1);
 });
 
+test('asyncCache memoizes in-flight work and resolved results', async () => {
+  const c = calls();
+  const f = async (x: number) => {
+    c.inc();
+    return x * 2;
+  };
+  const m = asyncCache(f);
+
+  const [first, second] = await Promise.all([m(2), m(2)]);
+
+  expect(first).toBe(4);
+  expect(second).toBe(4);
+  expect(c.count()).toBe(1);
+  expect(await m(2)).toBe(4);
+  expect(c.count()).toBe(1);
+});
+
+test('asyncCache drops rejected promises so retries can recompute', async () => {
+  const c = calls();
+  const f = async (x: string) => {
+    if (c.inc() === 1) {
+      throw new Error('boom');
+    }
+    return x.toUpperCase();
+  };
+  const m = asyncCache(f);
+
+  await expect(m('hit')).rejects.toThrow('boom');
+  await expect(m('hit')).resolves.toBe('HIT');
+  expect(c.count()).toBe(2);
+});
+
 test('invalidateCache clears the module-level memo store', () => {
   const c = calls();
   const f = (x: number) => (c.inc(), x * 2);
@@ -127,5 +159,21 @@ test('invalidateCache clears the module-level memo store', () => {
   // Invalidate and ensure it recomputes
   invalidateCache();
   expect(m(2)).toBe(4);
+  expect(c.count()).toBe(2);
+});
+
+test('invalidateCache clears async module-level memo store', async () => {
+  const c = calls();
+  const f = async (x: number) => (c.inc(), x * 2);
+  const m = asyncCache(f);
+
+  expect(await m(2)).toBe(4);
+  expect(c.count()).toBe(1);
+
+  expect(await m(2)).toBe(4);
+  expect(c.count()).toBe(1);
+
+  invalidateCache();
+  expect(await m(2)).toBe(4);
   expect(c.count()).toBe(2);
 });

@@ -23,6 +23,12 @@
 
 Some CI failures are known and acceptable, so long as they do not impact the patch changes. Here's an overview of currently known and ignorable CI failures:
 
+- UI Review: bench/react-vite-default-ts-test-build
+- UI Review: bench/react-webpack-18-ts-test-build
+- UI Review: storybook-ui
+
+Additionally, certain jobs will fail with known and acceptable issues:
+
 ### Test Runner Production: Running Test Runner
 
 103 failures:

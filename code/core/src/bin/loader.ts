@@ -54,8 +54,8 @@ function getDirectoryFiles(dir: string): Set<string> {
 /**
  * Resolves an extensionless file path by trying different extensions. Returns the path with the
  * correct extension if found, otherwise returns the original path.
- * Also handles .js → .ts resolution for TypeScript projects using moduleResolution "Node16"
- * or "NodeNext", where imports use .js extensions but source files are .ts.
+ * Also handles .js → .ts resolution for TypeScript projects using moduleResolution
+ * "Node16" or "NodeNext", where imports use .js extensions but source files are .ts.
  */
 export function resolveWithExtension(importPath: string, currentFilePath: string): string {
   const extImportPath = path.extname(importPath);

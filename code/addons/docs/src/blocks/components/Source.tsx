@@ -45,6 +45,8 @@ export interface SourceCodeProps {
   format?: ComponentProps<typeof SyntaxHighlighter>['format'];
   /** Display the source snippet in a dark mode. */
   dark?: boolean;
+  /** Whether to show the copy button. Defaults to true. */
+  copyable?: boolean;
 }
 
 export interface SourceProps extends SourceCodeProps {
@@ -91,6 +93,7 @@ const Source: FunctionComponent<SourceProps> = ({
   code,
   dark,
   format = true,
+  copyable = true,
   ...rest
 }) => {
   const { typography } = useTheme();
@@ -104,7 +107,7 @@ const Source: FunctionComponent<SourceProps> = ({
   const syntaxHighlighter = (
     <StyledSyntaxHighlighter
       bordered
-      copyable
+      copyable={copyable}
       format={format}
       language={language ?? 'jsx'}
       className="docblock-source sb-unstyled"

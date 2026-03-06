@@ -50,6 +50,11 @@ export interface CoreConfig {
    */
   enableCrashReports?: boolean;
   /**
+   * Enable hostname validation for HTTP requests and WebSocket connections. Set to `[]` to disallow
+   * all hosts except known local/network address, or `true` to allow all hosts.
+   */
+  allowedHosts?: string[] | true;
+  /**
    * enable CORS headings to run document in a "secure context"
    * see: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
    * This enables these headers in development-mode:
@@ -175,6 +180,8 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  localAddress?: string;
+  networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {

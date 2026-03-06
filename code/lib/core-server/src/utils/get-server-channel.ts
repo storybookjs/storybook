@@ -2,11 +2,17 @@ import WebSocket, { WebSocketServer } from 'ws';
 import { isJSON, parse, stringify } from 'telejson';
 import type { ChannelHandler } from '@storybook/channels';
 import { Channel } from '@storybook/channels';
+import { logger } from '@storybook/node-logger';
 import type { IncomingMessage } from 'node:http';
 
+import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware';
 import { isValidToken } from './validate-websocket-token';
 
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
+
+type ServerChannelTransportOptions = HostValidationOptions & {
+  token: string;
+};
 
 /**
  * This class represents a channel transport that allows for a one-to-many relationship between the server and clients.
@@ -17,27 +23,33 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
-  private token: string;
-
-  constructor(server: Server, token: string) {
-    this.token = token;
+  constructor(server: Server, options: ServerChannelTransportOptions) {
     this.socket = new WebSocketServer({ noServer: true });
 
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
-      if (request.url) {
-        const url = new URL(request.url, 'http://localhost');
-        if (url.pathname === '/storybook-server-channel') {
-          const requestToken = url.searchParams.get('token');
-          if (!isValidToken(requestToken, this.token)) {
-            socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
-            socket.destroy();
-            return;
-          }
-
-          this.socket.handleUpgrade(request, socket, head, (ws) => {
-            this.socket.emit('connection', ws, request);
-          });
+      try {
+        const url = request.url && new URL(request.url, options.localAddress);
+        if (!url || url.pathname !== '/storybook-server-channel') {
+          return;
         }
+
+        const originHost = request.headers.origin && new URL(request.headers.origin).host;
+        if (!isValidHost(originHost, options)) {
+          throw new Error('Invalid websocket origin');
+        }
+
+        const requestToken = url.searchParams.get('token');
+        if (!isValidToken(requestToken, options.token)) {
+          throw new Error('Invalid websocket token');
+        }
+
+        this.socket.handleUpgrade(request, socket, head, (ws) => {
+          this.socket.emit('connection', ws, request);
+        });
+      } catch (error) {
+        logger.warn(`Rejecting WebSocket connection: ${error}`);
+        socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+        socket.destroy();
       }
     });
     this.socket.on('connection', (wss) => {
@@ -65,8 +77,8 @@ export class ServerChannelTransport {
   }
 }
 
-export function getServerChannel(server: Server, token: string) {
-  const transports = [new ServerChannelTransport(server, token)];
+export function getServerChannel(server: Server, options: ServerChannelTransportOptions) {
+  const transports = [new ServerChannelTransport(server, options)];
 
   return new Channel({ transports, async: true });
 }

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "8.6.17",
+  "version": "8.6.18",
   "description": "Storybook Addon Onboarding - Introduces a new onboarding experience",
   "keywords": [
     "storybook-addons",

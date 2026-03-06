@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "8.6.17",
+  "version": "8.6.18",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"

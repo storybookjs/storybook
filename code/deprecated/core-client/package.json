@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core-client",
-  "version": "7.6.23",
+  "version": "7.6.24",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"

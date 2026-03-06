@@ -1,7 +1,6 @@
 import type { RequestHandler } from 'express';
 
-// eslint-disable-next-line import/no-unresolved
-import { isHostAllowed } from 'host-validation-middleware';
+import { isHostAllowed } from './isHostAllowed';
 
 export type HostValidationOptions = {
   host?: string;

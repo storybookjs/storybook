@@ -87,7 +87,6 @@
     "express": "^4.17.3",
     "fs-extra": "^11.1.0",
     "globby": "^11.0.2",
-    "host-validation-middleware": "^0.1.2",
     "lodash": "^4.17.21",
     "open": "^8.4.0",
     "pretty-hrtime": "^1.0.3",

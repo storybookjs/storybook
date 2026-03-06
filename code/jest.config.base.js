@@ -31,7 +31,6 @@ const modulesToTransform = [
   'is-absolute-url',
   'lit-html',
   'lit',
-  'host-validation-middleware',
   'mdast',
   'micromark',
   'nanoid',

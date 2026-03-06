@@ -19,3 +19,19 @@
 10. Merge `hotfix/v<next-patch-release-version>` into `v7`
 11. Observe the `publish-normal` job
 12. Observe the generated release in GitHub releases page and make modifications to the release notes if necessary
+
+## Known CI issues
+
+Some CI failures are known and acceptable, so long as they do not impact the patch changes. Here's an overview of currently known and ignorable CI failures:
+
+- ci/circleci: chromatic-sandboxes
+- UI Tests: storybook-ui
+- UI Tests: svelte-kit/skeleton-js
+- UI Tests: svelte-kit/skeleton-ts
+- UI Tests: svelte-vite/default-js
+- UI Tests: svelte-vite/default-ts
+- UI Review: bench/react-vite-default-ts-test-build
+- UI Review: bench/react-webpack-18-ts-test-build
+- UI Review: storybook-ui
+
+The Chromatic CLI is yielding an error status code due to some broken stories.

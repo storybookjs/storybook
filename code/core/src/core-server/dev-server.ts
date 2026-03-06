@@ -35,9 +35,9 @@ export async function storybookDevServer(options: Options) {
     getServerChannel(server, {
       token: core.channelOptions.wsToken,
       host: options.host,
-      allowedHosts,
-      localAddress,
-      networkAddress,
+      allowedHosts: core?.allowedHosts,
+      localAddress: options.localAddress,
+      networkAddress: options.networkAddress,
     })
   );
 

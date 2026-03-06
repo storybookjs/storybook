@@ -379,6 +379,44 @@ The most common fix is to pre-optimize your dependencies. You can do this by add
 
 This prevents mid-test dependency optimization, which can interfere with Vitest's test suite management.
 
+### Why do my tests fail in CI with "Failed to fetch dynamically imported module" or "Cannot connect to the iframe"?
+
+These errors typically occur in CI environments when running a large number of tests simultaneously, which can overwhelm the available resources. They do not usually appear locally because local machines tend to have more available resources or fewer tests run in parallel.
+
+There are two recommended approaches to fix this:
+
+**1. Disable isolation mode**
+
+By default, Vitest isolates each test file in its own environment. Disabling this can reduce resource consumption and prevent the errors:
+
+```ts title="vitest.config.ts"
+export default defineConfig({
+  test: {
+    // ...
+    isolate: false,
+  },
+});
+```
+
+See [Vitest's `isolate` configuration](https://vitest.dev/config/isolate.html#isolate) for more details.
+
+**2. Use sharding to split tests across multiple CI jobs**
+
+Sharding distributes your test files across several parallel CI jobs, reducing the load on each individual runner:
+
+```bash
+# Run shard 1 of 3
+vitest run --shard=1/3
+
+# Run shard 2 of 3
+vitest run --shard=2/3
+
+# Run shard 3 of 3
+vitest run --shard=3/3
+```
+
+See [Vitest's sharding guide](https://vitest.dev/guide/improving-performance.html#sharding) for more details on how to integrate this into your CI pipeline.
+
 ## API
 
 ### Exports

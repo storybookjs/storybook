@@ -42,6 +42,9 @@ export const metaFrameworks = {
   '@react-router/dev': 'react-router',
   '@remix-run/dev': 'remix',
   expo: 'expo',
+  'vike-react': 'vike-react',
+  'vike-vue': 'vike-vue',
+  'vike-solid': 'vike-solid',
 } as Record<string, string>;
 
 export const sanitizeAddonName = (name: string) => {

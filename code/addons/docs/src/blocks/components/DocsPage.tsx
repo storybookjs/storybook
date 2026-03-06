@@ -116,8 +116,8 @@ export const DocsContent = styled.div(({ theme }) => {
       color: theme.color.secondary,
       // Ensure WCAG Level A compliance (SC 1.4.1), see https://www.w3.org/WAI/WCAG22/Techniques/failures/F73
       textDecoration: 'underline',
-      textDecorationThickness: '0.5px',
-    textUnderlineOffset: '0.2em',
+      textDecorationThickness: '0.03125rem',
+      textUnderlineOffset: '0.11em',
       '&.absent': {
         color: '#cc0000',
       },
@@ -131,6 +131,9 @@ export const DocsContent = styled.div(({ theme }) => {
         left: 0,
         bottom: 0,
         textDecoration: 'none',
+      },
+      '&.anchor:hover, &.anchor:focus': {
+        textDecoration: 'underline',
       },
     },
     [toGlobalSelector('blockquote')]: {

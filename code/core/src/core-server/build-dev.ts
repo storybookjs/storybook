@@ -23,7 +23,6 @@ import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import Channel from '../channels';
 import { detectPnp } from '../cli/detect';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
@@ -32,7 +31,6 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { outputStartupInformation } from './utils/output-startup-information';
 import { outputStats } from './utils/output-stats';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address';
-import { getServer } from './utils/server-init';
 import { updateCheck } from './utils/update-check';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
@@ -119,7 +117,7 @@ export async function buildDevStandalone(
   }
 
   const config = await loadMainConfig(options);
-  const { core, framework } = config;
+  const { framework } = config;
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;

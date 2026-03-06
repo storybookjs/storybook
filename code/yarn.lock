@@ -8399,6 +8399,7 @@ __metadata:
     get-npm-tarball-url: "npm:^2.0.3"
     glob: "npm:^10.0.0"
     globby: "npm:^14.0.1"
+    host-validation-middleware: "npm:^0.1.2"
     jiti: "npm:^1.21.6"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"
@@ -20165,6 +20166,13 @@ __metadata:
   dependencies:
     parse-passwd: "npm:^1.0.0"
   checksum: 10c0/3c099844f94b8b438f124bd5698bdcfef32b2d455115fb8050d7148e7f7b95fc89ba9922586c491f0e1cdebf437b1053c84ecddb8d596e109e9ac69c5b4a9e27
+  languageName: node
+  linkType: hard
+
+"host-validation-middleware@npm:^0.1.2":
+  version: 0.1.2
+  resolution: "host-validation-middleware@npm:0.1.2"
+  checksum: 10c0/42a36849ed4898b7af574b4e5ea57070d8fcd7b98f6c7c027cd301612a83a48bf812066ef83fbc2ba9e7a50bc5986215ec802f06b64e14988f2117fbeb6bc24c
   languageName: node
   linkType: hard
 

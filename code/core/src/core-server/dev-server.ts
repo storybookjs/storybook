@@ -15,6 +15,7 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
+import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware';
 import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-in-browser';
@@ -28,9 +29,20 @@ export async function storybookDevServer(options: Options) {
 
   assert(core?.channelOptions?.wsToken, 'wsToken is required for securing the server channel');
 
+  const { port, host, initialPath } = options;
+  invariant(port, 'expected options to have a port');
+  const proto = options.https ? 'https' : 'http';
+  const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
+
   const serverChannel = await options.presets.apply(
     'experimental_serverChannel',
-    getServerChannel(server, core.channelOptions.wsToken)
+    getServerChannel(server, {
+      token: core.channelOptions.wsToken,
+      host,
+      allowedHosts: core.allowedHosts,
+      localAddress: address,
+      networkAddress,
+    })
   );
 
   let indexError: Error | undefined;
@@ -47,15 +59,18 @@ export async function storybookDevServer(options: Options) {
     options.extendServer(server);
   }
 
+  app.use(
+    getHostValidationMiddleware({
+      host,
+      allowedHosts: core?.allowedHosts,
+      localAddress: address,
+      networkAddress,
+    })
+  );
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 
   getMiddleware(options.configDir)(app);
-
-  const { port, host, initialPath } = options;
-  invariant(port, 'expected options to have a port');
-  const proto = options.https ? 'https' : 'http';
-  const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
 
   if (!core?.builder) {
     throw new MissingBuilderError();

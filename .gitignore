@@ -26,7 +26,6 @@ tsconfig.vitest-temp.json
 !/**/.yarn/versions
 !/**/.yarn/patches
 /**/.pnp.*
-!/node_modules
 
 # test-storybooks
 test-storybooks/ember-cli/ember-output

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "10.3.0-alpha.12",
+  "version": "10.3.0-alpha.14",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -42,11 +42,6 @@
     "task": "yarn --cwd ../scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "if [ -z \"$SKIP_STORYBOOK_GIT_HOOKS\" ]; then yarn lint-staged; fi"
-    }
   },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
@@ -134,7 +129,6 @@
     "eslint": "^8.57.1",
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
-    "husky": "^4.3.7",
     "knip": "^5.70.2",
     "lint-staged": "^16.2.7",
     "mock-require": "^3.0.3",

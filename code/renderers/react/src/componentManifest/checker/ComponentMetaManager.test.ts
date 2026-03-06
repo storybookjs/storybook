@@ -1,5 +1,3 @@
-import { execSync } from 'node:child_process';
-import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -9,65 +7,7 @@ import ts from 'typescript';
 import type { ComponentDoc } from '../componentMetaExtractor';
 import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager';
 import type { ComponentMetaProject } from './ComponentMetaProject';
-
-// ---------------------------------------------------------------------------
-// Test helper: create real tsconfig projects in a temp directory
-// ---------------------------------------------------------------------------
-
-const sys = ts.sys;
-const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');
-
-/** Copy the minimal node_modules packages TypeScript needs for React type resolution. */
-function copyNodeModules(projectDir: string) {
-  const dest = path.join(projectDir, 'node_modules');
-  const typesSrc = path.join(NODE_MODULES_DIR, '@types');
-  execSync(`mkdir -p "${dest}/@types"`);
-  for (const pkg of ['react', 'csstype']) {
-    execSync(`cp -rL "${path.join(NODE_MODULES_DIR, pkg)}" "${path.join(dest, pkg)}"`);
-  }
-  for (const pkg of ['react', 'prop-types']) {
-    execSync(`cp -rL "${path.join(typesSrc, pkg)}" "${path.join(dest, '@types', pkg)}"`);
-  }
-}
-
-function createTempDir(): string {
-  const dir = path.join(
-    os.tmpdir(),
-    `manager-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
-  );
-  sys.createDirectory(dir);
-  copyNodeModules(dir);
-  return dir;
-}
-
-function writeFiles(baseDir: string, files: Record<string, string>): Record<string, string> {
-  const filePaths: Record<string, string> = {};
-  for (const [name, content] of Object.entries(files)) {
-    const filePath = path.join(baseDir, name);
-    const dir = path.dirname(filePath);
-    if (!sys.directoryExists(dir)) {
-      const parts = path.relative(baseDir, dir).split(path.sep);
-      let current = baseDir;
-      for (const part of parts) {
-        current = path.join(current, part);
-        if (!sys.directoryExists(current)) {
-          sys.createDirectory(current);
-        }
-      }
-    }
-    sys.writeFile(filePath, content);
-    filePaths[name] = filePath;
-  }
-  return filePaths;
-}
-
-function cleanup(dir: string) {
-  try {
-    execSync(`rm -rf "${dir}"`);
-  } catch {
-    // best-effort cleanup
-  }
-}
+import { cleanup, createTempDir, sys, writeFiles } from './test-helpers';
 
 /**
  * Test helper: extract docs for known exports via Path 2 (meta.component).

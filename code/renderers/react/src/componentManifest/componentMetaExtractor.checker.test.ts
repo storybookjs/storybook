@@ -8,8 +8,6 @@
  *
  * The original tests in componentMetaExtractor.test.ts are kept for reference.
  */
-import { execSync } from 'node:child_process';
-import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -17,19 +15,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import ts from 'typescript';
 
 import { ComponentMetaProject } from './checker/ComponentMetaProject';
+import { cleanup, createTempDir, sys, writeFiles } from './checker/test-helpers';
 import type { ComponentDoc } from './componentMetaExtractor';
-
-// ---------------------------------------------------------------------------
-// Shared infrastructure — one ComponentMetaProject for all tests
-// ---------------------------------------------------------------------------
-
-/**
- * Use ts.sys for all file I/O. The react vitest setup mocks node:fs with memfs, but ts.sys uses the
- * real filesystem (it imported fs before mocks were applied).
- */
-const sys = ts.sys;
-
-const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');
 
 /**
  * All test source files, keyed by relative path within the temp project. Written to disk in
@@ -1239,72 +1226,31 @@ let project: ComponentMetaProject;
 let tempDir: string;
 let filePaths: Record<string, string>;
 
-function rmrf(dir: string) {
-  try {
-    execSync(`rm -rf "${dir}"`);
-  } catch {
-    // best-effort cleanup
-  }
-}
-
-/** Copy the minimal node_modules packages TypeScript needs for React type resolution. */
-function copyNodeModules(projectDir: string) {
-  const dest = path.join(projectDir, 'node_modules');
-  const typesSrc = path.join(NODE_MODULES_DIR, '@types');
-  execSync(`mkdir -p "${dest}/@types"`);
-  for (const pkg of ['react', 'csstype']) {
-    execSync(`cp -rL "${path.join(NODE_MODULES_DIR, pkg)}" "${path.join(dest, pkg)}"`);
-  }
-  for (const pkg of ['react', 'prop-types']) {
-    execSync(`cp -rL "${path.join(typesSrc, pkg)}" "${path.join(dest, '@types', pkg)}"`);
-  }
-}
-
 beforeAll(() => {
-  tempDir = path.join(
-    os.tmpdir(),
-    `lsp-propext-${Date.now()}-${Math.random().toString(36).slice(2)}`
-  );
-  sys.createDirectory(tempDir);
-  copyNodeModules(tempDir);
+  tempDir = createTempDir('lsp-propext');
+  filePaths = writeFiles(tempDir, TEST_FILES);
 
-  // Write all test files
-  filePaths = {};
-  for (const [name, content] of Object.entries(TEST_FILES)) {
-    const fp = path.join(tempDir, name);
-    // Ensure parent directories exist
-    const dir = path.dirname(fp);
-    if (!sys.directoryExists(dir)) {
-      // Create nested dirs one level at a time
-      const parts = path.relative(tempDir, dir).split(path.sep);
-      let current = tempDir;
-      for (const part of parts) {
-        current = path.join(current, part);
-        if (!sys.directoryExists(current)) {
-          sys.createDirectory(current);
-        }
-      }
-    }
-    sys.writeFile(fp, content);
-    filePaths[name] = fp;
-  }
-
-  // Write tsconfig.json
-  const tsconfig = {
-    compilerOptions: {
-      target: 'ES2020',
-      module: 'ESNext',
-      jsx: 'react-jsx',
-      strict: true,
-      esModuleInterop: true,
-      moduleResolution: 'bundler',
-    },
-    include: ['./**/*.ts', './**/*.tsx'],
-  };
+  // Write tsconfig.json and create a single shared project
   const configPath = path.join(tempDir, 'tsconfig.json');
-  sys.writeFile(configPath, JSON.stringify(tsconfig, null, 2));
+  sys.writeFile(
+    configPath,
+    JSON.stringify(
+      {
+        compilerOptions: {
+          target: 'ES2020',
+          module: 'ESNext',
+          jsx: 'react-jsx',
+          strict: true,
+          esModuleInterop: true,
+          moduleResolution: 'bundler',
+        },
+        include: ['./**/*.ts', './**/*.tsx'],
+      },
+      null,
+      2
+    )
+  );
 
-  // Parse and create a single shared project
   const parsed = ts.parseJsonSourceFileConfigFileContent(
     ts.readJsonConfigFile(configPath, sys.readFile),
     sys,
@@ -1318,7 +1264,7 @@ beforeAll(() => {
 afterAll(() => {
   project?.dispose();
   if (tempDir) {
-    rmrf(tempDir);
+    cleanup(tempDir);
   }
 });
 

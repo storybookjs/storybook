@@ -253,11 +253,6 @@ export class ComponentMetaProject {
   // Primary extraction method — probe-free
   // ---------------------------------------------------------------------------
 
-  extractPropsFromStory(entry: StoryExtractionEntry): ComponentDoc[] {
-    const results = this.extractPropsFromStories([entry]);
-    return results.get(entry.storyFilePath)?.get(entry.exportName) ?? [];
-  }
-
   extractPropsFromStories(
     entries: StoryExtractionEntry[]
   ): Map<string, Map<string, ComponentDoc[]>> {

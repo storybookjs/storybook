@@ -8,6 +8,9 @@ const SNAP_THRESHOLD_PX = 30;
 const SIDEBAR_MIN_WIDTH_PX = 240;
 const RIGHT_PANEL_MIN_WIDTH_PX = 270;
 const MIN_WIDTH_STIFFNESS = 0.9;
+const KEYBOARD_STEP_PX = 10;
+const KEYBOARD_SHIFT_MULTIPLIER = 5;
+const RESIZE_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
 
 /** Clamps a value between min and max. */
 function clamp(value: number, min: number, max: number): number {
@@ -17,6 +20,65 @@ function clamp(value: number, min: number, max: number): number {
 /** Interpolates a value between min and max based on the relativeValue. */
 function interpolate(relativeValue: number, min: number, max: number): number {
   return min + (max - min) * relativeValue;
+}
+
+/**
+ * Given the current layout state, the position of the resize handle, and the key pressed,
+ * returns the next layout state with the resized panel/sidebar.
+ *
+ * @param position - The position of the resize handle relative to the content it resizes.
+ *   'left' for sidebar, 'bottom' or 'right' for the addon panel.
+ */
+function applyResizeKeyboard(
+  state: LayoutState,
+  position: 'left' | 'right' | 'bottom' | 'top',
+  key: string,
+  step: number
+): LayoutState {
+  const sizeKey =
+    position === 'left'
+      ? 'navSize'
+      : position === 'bottom' || position === 'top'
+        ? 'bottomPanelHeight'
+        : 'rightPanelWidth';
+  const maxSize =
+    position === 'bottom' || position === 'top' ? window.innerHeight : window.innerWidth;
+
+  let increaseKey: string;
+  let decreaseKey: string;
+  switch (position) {
+    case 'left':
+      increaseKey = 'ArrowRight';
+      decreaseKey = 'ArrowLeft';
+      break;
+    case 'right':
+      increaseKey = 'ArrowLeft';
+      decreaseKey = 'ArrowRight';
+      break;
+    case 'bottom':
+      increaseKey = 'ArrowUp';
+      decreaseKey = 'ArrowDown';
+      break;
+    case 'top':
+      increaseKey = 'ArrowDown';
+      decreaseKey = 'ArrowUp';
+      break;
+  }
+
+  const currentSize = state[sizeKey];
+
+  switch (key) {
+    case increaseKey:
+      return { ...state, [sizeKey]: clamp(currentSize + step, 0, maxSize) };
+    case decreaseKey:
+      return { ...state, [sizeKey]: clamp(currentSize - step, 0, maxSize) };
+    case 'Home':
+      return { ...state, [sizeKey]: 0 };
+    case 'End':
+      return { ...state, [sizeKey]: maxSize };
+    default:
+      return state;
+  }
 }
 
 export function useDragging({
@@ -172,12 +234,38 @@ export function useDragging({
       });
     };
 
+    const onSidebarKeyDown = (e: KeyboardEvent) => {
+      if (!RESIZE_KEYS.includes(e.key)) {
+        return;
+      }
+      e.preventDefault();
+      const step = e.shiftKey
+        ? KEYBOARD_STEP_PX * KEYBOARD_SHIFT_MULTIPLIER
+        : KEYBOARD_STEP_PX;
+      setState((state) => applyResizeKeyboard(state, 'left', e.key, step));
+    };
+
+    const onPanelKeyDown = (e: KeyboardEvent) => {
+      if (!RESIZE_KEYS.includes(e.key)) {
+        return;
+      }
+      e.preventDefault();
+      const step = e.shiftKey
+        ? KEYBOARD_STEP_PX * KEYBOARD_SHIFT_MULTIPLIER
+        : KEYBOARD_STEP_PX;
+      setState((state) => applyResizeKeyboard(state, state.panelPosition, e.key, step));
+    };
+
     panelResizer?.addEventListener('mousedown', onDragStart);
     sidebarResizer?.addEventListener('mousedown', onDragStart);
+    panelResizer?.addEventListener('keydown', onPanelKeyDown);
+    sidebarResizer?.addEventListener('keydown', onSidebarKeyDown);
 
     return () => {
       panelResizer?.removeEventListener('mousedown', onDragStart);
       sidebarResizer?.removeEventListener('mousedown', onDragStart);
+      panelResizer?.removeEventListener('keydown', onPanelKeyDown);
+      sidebarResizer?.removeEventListener('keydown', onSidebarKeyDown);
       // make iframe capture pointer events again
       previewIframe?.removeAttribute('style');
     };

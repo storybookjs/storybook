@@ -7,6 +7,7 @@ import type { ViteUserConfig } from 'vitest/config';
 import {
   DEFAULT_FILES_PATTERN,
   getInterpretedFile,
+  loadPreviewOrConfigFile,
   normalizeStories,
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
@@ -18,7 +19,12 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
+import {
+  componentTransform,
+  isCsfFactoryPreview,
+  readConfig,
+  vitestTransform,
+} from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
@@ -35,15 +41,16 @@ import type { PluginOption } from 'vite';
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
+import { requiresProjectAnnotations } from './utils';
 
 const WORKING_DIR = process.cwd();
 
-const defaultOptions: UserOptions = {
+const defaultOptions = {
   storybookScript: undefined,
   configDir: resolve(join(WORKING_DIR, '.storybook')),
   storybookUrl: 'http://localhost:6006',
   disableAddonDocs: true,
-};
+} satisfies UserOptions;
 
 const extractTagsFromPreview = async (configDir: string) => {
   const previewConfigPath = getInterpretedFile(join(resolve(configDir), 'preview'));
@@ -296,12 +303,31 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
 
+      const previewOrConfigFile = loadPreviewOrConfigFile({ configDir: finalOptions.configDir });
+      const previewConfig = previewOrConfigFile ? await readConfig(previewOrConfigFile) : undefined;
+      const isCSF4 = previewConfig ? isCsfFactoryPreview(previewConfig) : false;
+
+      const areProjectAnnotationRequired = await requiresProjectAnnotations(
+        nonMutableInputConfig.test,
+        finalOptions,
+        isCSF4
+      );
+
+      const internalSetupFiles = (
+        [
+          '@storybook/addon-vitest/internal/setup-file',
+          areProjectAnnotationRequired &&
+            '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+          isCSF4 && previewOrConfigFile,
+        ].filter(Boolean) as string[]
+      ).map((filePath) => fileURLToPath(import.meta.resolve(filePath)));
+
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
           expect: { requireAssertions: false },
           setupFiles: [
-            fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/setup-file')),
+            ...internalSetupFiles,
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
             typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
               nonMutableInputConfig.test?.setupFiles,
@@ -389,6 +415,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
+            'storybook/preview-api',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),

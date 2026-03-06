@@ -90,8 +90,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -170,8 +169,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -281,8 +279,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -365,8 +362,7 @@ describe('updateConfigFile', () => {
   +           instances: [{
   +             browser: 'chromium'
   +           }]
-  +         },
-  +         setupFiles: ['../.storybook/vitest.setup.ts']
+  +         }
   +       }
   +     }]
   +   }
@@ -446,8 +442,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       + 
             }]
@@ -525,8 +520,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -600,8 +594,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       +   }
@@ -687,8 +680,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -769,8 +761,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -845,8 +836,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       +   }
@@ -929,8 +919,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -1018,8 +1007,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       + 
             }]
@@ -1117,8 +1105,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -1216,8 +1203,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -1277,8 +1263,7 @@ describe('updateWorkspaceFile', () => {
       +       instances: [{
       +         browser: 'chromium'
       +       }]
-      +     },
-      +     setupFiles: ['../.storybook/vitest.setup.ts']
+      +     }
       +   }
       + }];"
     `);
@@ -1336,8 +1321,7 @@ describe('updateWorkspaceFile', () => {
       +       instances: [{
       +         browser: 'chromium'
       +       }]
-      +     },
-      +     setupFiles: ['../.storybook/vitest.setup.ts']
+      +     }
       +   }
       + }]);"
     `);

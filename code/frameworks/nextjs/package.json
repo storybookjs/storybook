@@ -132,7 +132,7 @@
     "@types/react-refresh": "^0",
     "next": "^15.2.3",
     "typescript": "^5.9.3",
-    "webpack": "^5.65.0"
+    "webpack": "^5.105.4"
   },
   "peerDependencies": {
     "next": "^14.1.0 || ^15.0.0 || ^16.0.0",

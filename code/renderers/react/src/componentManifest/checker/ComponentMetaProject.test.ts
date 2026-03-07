@@ -21,8 +21,11 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
 
   it('extracts props for compound component sub-property via memberAccess', () => {
     // Simulates the Park UI / Ark UI pattern:
-    // A namespace object `Accordion` with sub-components `.Root`, `.Item`, etc.
+    // a namespace import base with sub-components `.Root`, `.Item`, etc.
     // The story uses `<Accordion.Root>`, so memberAccess = 'Root'.
+    // Path 1 is driven by importId + memberAccess below, so the CSF meta only
+    // needs to exist; we intentionally avoid `component: Accordion` because
+    // this fixture's `Accordion` is a namespace object, not a Storybook component.
     const { projectDir, configPath, filePaths } = createTempProject({
       'accordion.tsx': `
         import React from 'react';
@@ -51,7 +54,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       'accordion.stories.tsx': `
         import React from 'react';
         import { Accordion } from './accordion';
-        export default { component: Accordion };
+        export default {};
         export const Default = () => <Accordion.Root multiple><Accordion.Item value="a"><Accordion.Trigger /></Accordion.Item></Accordion.Root>;
       `,
     });
@@ -196,6 +199,8 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
   });
 
   it('extracts props for different member accesses per entry', () => {
+    // Same rationale as above: this test exercises memberAccess directly, so
+    // the compound-component story should not encode an unsupported meta.component.
     const { projectDir, configPath, filePaths } = createTempProject({
       'dialog.tsx': `
         import React from 'react';
@@ -225,7 +230,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       'dialog.stories.tsx': `
         import React from 'react';
         import { Dialog } from './dialog';
-        export default { component: Dialog };
+        export default {};
         export const Default = () => <Dialog.Root open><Dialog.Content trapFocus /></Dialog.Root>;
       `,
       'button.stories.tsx': `

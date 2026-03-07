@@ -610,6 +610,89 @@ function collectBindingDefaults(
   }
 }
 
+function unwrapExpression(typescript: typeof ts, expression: ts.Expression): ts.Expression {
+  let current = expression;
+
+  while (
+    typescript.isParenthesizedExpression(current) ||
+    typescript.isAsExpression(current) ||
+    typescript.isNonNullExpression(current) ||
+    (typescript.isSatisfiesExpression?.(current) ?? false)
+  ) {
+    current = current.expression;
+  }
+
+  return current;
+}
+
+function isPropsIdentifier(
+  typescript: typeof ts,
+  node: ts.Expression,
+  paramName: ts.Identifier,
+  checker?: ts.TypeChecker
+): boolean {
+  if (!typescript.isIdentifier(node)) {
+    return false;
+  }
+
+  if (!checker) {
+    return node.text === paramName.text;
+  }
+
+  const symbol = checker.getSymbolAtLocation(node);
+  const paramSymbol = checker.getSymbolAtLocation(paramName);
+
+  return symbol !== undefined && symbol === paramSymbol;
+}
+
+function isPropsDerivedInitializer(
+  typescript: typeof ts,
+  initializer: ts.Expression,
+  paramName: ts.Identifier,
+  checker?: ts.TypeChecker
+): boolean {
+  const expr = unwrapExpression(typescript, initializer);
+
+  if (isPropsIdentifier(typescript, expr, paramName, checker)) {
+    return true;
+  }
+
+  if (typescript.isAwaitExpression(expr)) {
+    return isPropsDerivedInitializer(typescript, expr.expression, paramName, checker);
+  }
+
+  if (
+    typescript.isBinaryExpression(expr) &&
+    [
+      typescript.SyntaxKind.BarBarToken,
+      typescript.SyntaxKind.QuestionQuestionToken,
+      typescript.SyntaxKind.AmpersandAmpersandToken,
+    ].includes(expr.operatorToken.kind)
+  ) {
+    return (
+      isPropsDerivedInitializer(typescript, expr.left, paramName, checker) ||
+      isPropsDerivedInitializer(typescript, expr.right, paramName, checker)
+    );
+  }
+
+  if (typescript.isConditionalExpression(expr)) {
+    return (
+      isPropsDerivedInitializer(typescript, expr.whenTrue, paramName, checker) ||
+      isPropsDerivedInitializer(typescript, expr.whenFalse, paramName, checker)
+    );
+  }
+
+  if (typescript.isCallExpression(expr) || typescript.isNewExpression(expr)) {
+    return (
+      expr.arguments?.some((arg) =>
+        isPropsDerivedInitializer(typescript, arg, paramName, checker)
+      ) ?? false
+    );
+  }
+
+  return false;
+}
+
 /**
  * Extracts destructuring default values from the component function.
  *
@@ -672,9 +755,11 @@ function extractDestructuringDefaults(
     return defaults;
   }
 
+  const propsParamName = typescript.isIdentifier(firstParam.name) ? firstParam.name : undefined;
+
   // Case 2: Body-level destructuring — (props) => { const { size = 'md' } = props; }
   // Also handles: const { size = 'md' } = resolveProps(props, ...)
-  if (fn.body) {
+  if (fn.body && propsParamName) {
     const body = typescript.isBlock(fn.body) ? fn.body : undefined;
     if (body) {
       for (const stmt of body.statements) {
@@ -682,7 +767,11 @@ function extractDestructuringDefaults(
           continue;
         }
         for (const varDecl of stmt.declarationList.declarations) {
-          if (typescript.isObjectBindingPattern(varDecl.name) && varDecl.initializer) {
+          if (
+            typescript.isObjectBindingPattern(varDecl.name) &&
+            varDecl.initializer &&
+            isPropsDerivedInitializer(typescript, varDecl.initializer, propsParamName, checker)
+          ) {
             collectBindingDefaults(typescript, varDecl.name, defaults, checker);
           }
         }
@@ -1167,7 +1256,7 @@ function extractDefaultsFromSourceFile(
   // Build a map of top-level variable names → initializer nodes.
   // This lets us follow references like: export const Stack = Object.assign(StackImpl, ...)
   // where StackImpl is defined as: const StackImpl = forwardRef(...)
-  const varMap = new Map<string, ts.Expression>();
+  const varMap = new Map<string, ts.Expression | ts.FunctionDeclaration>();
   for (const stmt of sf.statements) {
     if (typescript.isVariableStatement(stmt)) {
       for (const decl of stmt.declarationList.declarations) {
@@ -1177,7 +1266,7 @@ function extractDefaultsFromSourceFile(
       }
     }
     if (typescript.isFunctionDeclaration(stmt) && stmt.name) {
-      varMap.set(stmt.name.text, stmt as unknown as ts.Expression);
+      varMap.set(stmt.name.text, stmt);
     }
   }
 
@@ -1198,15 +1287,21 @@ function extractDefaultsFromSourceFile(
   if (typescript.isObjectBindingPattern(firstParam.name)) {
     collectBindingDefaults(typescript, firstParam.name, defaults);
   } else if (fn.body) {
+    const propsParamName = typescript.isIdentifier(firstParam.name) ? firstParam.name : undefined;
+
     // Body destructuring: (props) => { const { x = 1 } = props; }
     const body = typescript.isBlock(fn.body) ? fn.body : undefined;
-    if (body) {
+    if (body && propsParamName) {
       for (const stmt of body.statements) {
         if (!typescript.isVariableStatement(stmt)) {
           continue;
         }
         for (const varDecl of stmt.declarationList.declarations) {
-          if (typescript.isObjectBindingPattern(varDecl.name) && varDecl.initializer) {
+          if (
+            typescript.isObjectBindingPattern(varDecl.name) &&
+            varDecl.initializer &&
+            isPropsDerivedInitializer(typescript, varDecl.initializer, propsParamName)
+          ) {
             collectBindingDefaults(typescript, varDecl.name, defaults);
           }
         }
@@ -1225,9 +1320,9 @@ function findExportedFunction(
   typescript: typeof ts,
   sf: ts.SourceFile,
   exportName: string,
-  varMap: Map<string, ts.Expression>
+  varMap: Map<string, ts.Expression | ts.FunctionDeclaration>
 ): ts.FunctionLikeDeclaration | undefined {
-  let targetExpr: ts.Expression | undefined;
+  let targetExpr: ts.Node | undefined;
 
   for (const stmt of sf.statements) {
     // export default X
@@ -1272,7 +1367,7 @@ function findExportedFunction(
         const exported = spec.name.text;
         const local = spec.propertyName ? spec.propertyName.text : spec.name.text;
         if (exported === exportName) {
-          targetExpr = varMap.get(local) as ts.Expression | undefined;
+          targetExpr = varMap.get(local);
           break;
         }
       }
@@ -1285,7 +1380,7 @@ function findExportedFunction(
   if (!targetExpr) {
     // Not explicitly exported — might be via barrel: import { X } from './...'
     // Try to find a top-level variable matching the export name
-    targetExpr = varMap.get(exportName) as ts.Expression | undefined;
+    targetExpr = varMap.get(exportName);
   }
 
   if (!targetExpr) {
@@ -1302,7 +1397,7 @@ function findExportedFunction(
 function unwrapToFunctionAST(
   typescript: typeof ts,
   node: ts.Node,
-  varMap: Map<string, ts.Expression>,
+  varMap: Map<string, ts.Expression | ts.FunctionDeclaration>,
   depth: number
 ): ts.FunctionLikeDeclaration | undefined {
   if (depth > MAX_UNWRAP_DEPTH) {

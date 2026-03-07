@@ -337,6 +337,24 @@ const TEST_FILES: Record<string, string> = {
       return <div ref={ref} />;
     });
   `,
+  'extract/dv_body_destructuring_helper.tsx': `
+    import React from 'react';
+    interface Props { color?: string; rounded?: boolean; label: string }
+    const resolveProps = (props: Props) => props;
+    export const Alert = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
+      const { color = 'info', rounded = true, label } = resolveProps(props);
+      return <div ref={ref} />;
+    });
+  `,
+  'extract/dv_body_destructuring_unrelated.tsx': `
+    import React from 'react';
+    interface Props { color?: string; label: string }
+    const theme = { color: 'danger' };
+    export const Alert = (props: Props) => {
+      const { color = 'danger' } = theme;
+      return <div data-color={color}>{props.label}</div>;
+    };
+  `,
   'extract/dv_identifier_resolution.tsx': `
     import React from 'react';
     const DEFAULT_SIZE = 'md';
@@ -1172,7 +1190,7 @@ const TEST_FILES: Record<string, string> = {
   'path1/Compound.stories.tsx': `
     import React from 'react';
     import { Accordion } from './Compound';
-    export default { component: Accordion };
+    export default {};
     export const Default = () => (
       <Accordion.Root multiple>
         <Accordion.Item value="a" />
@@ -1658,6 +1676,19 @@ describe('componentMetaExtractor (LSP)', () => {
       const { props } = docs('extract/dv_body_destructuring.tsx')[0];
       expect(props.color.defaultValue).toEqual({ value: "'info'" });
       expect(props.rounded.defaultValue).toEqual({ value: 'true' });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('extracts defaults from helper calls that receive props directly', () => {
+      const { props } = docs('extract/dv_body_destructuring_helper.tsx')[0];
+      expect(props.color.defaultValue).toEqual({ value: "'info'" });
+      expect(props.rounded.defaultValue).toEqual({ value: 'true' });
+      expect(props.label.defaultValue).toBeNull();
+    });
+
+    it('ignores body-level destructuring from unrelated local objects', () => {
+      const { props } = docs('extract/dv_body_destructuring_unrelated.tsx')[0];
+      expect(props.color.defaultValue).toBeNull();
       expect(props.label.defaultValue).toBeNull();
     });
 

@@ -197,11 +197,6 @@ const SizeInput = styled(NumericInput)({
   minHeight: 28,
 });
 
-const parseNumber = (value: string) => {
-  const [match, number, unit] = value.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/) || [];
-  return match ? { number: Number(number), unit } : undefined;
-};
-
 export const Viewport = ({
   active,
   id,
@@ -278,18 +273,20 @@ export const Viewport = ({
   }, [resize, scale]);
 
   const dimensions = useMemo(() => {
-    const { number: nx, unit: ux = 'px' } = parseNumber(width) ?? { number: 0, unit: 'px' };
-    const { number: ny, unit: uy = 'px' } = parseNumber(height) ?? { number: 0, unit: 'px' };
-    const frameWidth = Math.max(VIEWPORT_MIN_WIDTH, nx * scale);
-    const frameHeight = Math.max(VIEWPORT_MIN_HEIGHT, ny * scale);
+    const [, nx = '', ux = 'px'] = width.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{1,4})?$/) || [];
+    const [, ny = '', uy = 'px'] = height.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{1,4})?$/) || [];
     return {
       frame: {
-        width: `${frameWidth}${ux}`,
-        height: `${frameHeight}${uy}`,
+        width: `calc(${width} * ${scale})`,
+        height: `calc(${height} * ${scale})`,
       },
       display: {
-        width: `${nx}${ux === 'px' ? '' : ux}`,
-        height: `${ny}${uy === 'px' ? '' : uy}`,
+        width: `${nx || width}${ux === 'px' ? '' : ux}`,
+        height: `${ny || height}${uy === 'px' ? '' : uy}`,
+      },
+      locked: {
+        width: !nx,
+        height: !ny,
       },
     };
   }, [width, height, scale]);
@@ -311,6 +308,7 @@ export const Viewport = ({
               value={width}
               minValue={0}
               setValue={(value) => resize(value, height)}
+              disabled={dimensions.locked.width}
             />
             <ActionList.Button
               key="viewport-rotate"
@@ -333,6 +331,7 @@ export const Viewport = ({
               value={height}
               minValue={0}
               setValue={(value) => resize(width, value)}
+              disabled={dimensions.locked.height}
             />
             {isCustom && lastSelectedOption && (
               <ActionList.Button
@@ -372,19 +371,25 @@ export const Viewport = ({
             </>
           )}
         </div>
-        <DragHandle
-          ref={dragRefX}
-          isDefault={isDefault}
-          data-side="right"
-          data-value={dimensions.display.width}
-        />
-        <DragHandle
-          ref={dragRefY}
-          isDefault={isDefault}
-          data-side="bottom"
-          data-value={dimensions.display.height}
-        />
-        <DragHandle ref={dragRefXY} isDefault={isDefault} data-side="both" />
+        {!dimensions.locked.width && (
+          <DragHandle
+            ref={dragRefX}
+            isDefault={isDefault}
+            data-side="right"
+            data-value={dimensions.display.width}
+          />
+        )}
+        {!dimensions.locked.height && (
+          <DragHandle
+            ref={dragRefY}
+            isDefault={isDefault}
+            data-side="bottom"
+            data-value={dimensions.display.height}
+          />
+        )}
+        {!dimensions.locked.width && !dimensions.locked.height && (
+          <DragHandle ref={dragRefXY} isDefault={isDefault} data-side="both" />
+        )}
       </FrameWrapper>
     </ViewportWrapper>
   );

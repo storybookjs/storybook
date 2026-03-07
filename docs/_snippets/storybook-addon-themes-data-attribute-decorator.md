@@ -66,6 +66,28 @@ export default definePreview({
 });
 ```
 
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+import addonThemes from '@storybook/addon-themes';
+
+import '../src/styles.css'; // Your application's global CSS file
+
+export default definePreview({
+  addons: [addonThemes()],
+  decorators: [
+    addonThemes.withThemeByDataAttribute({
+      themes: {
+        light: 'light',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+      attributeName: 'data-theme',
+    }),
+  ],
+});
+```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"

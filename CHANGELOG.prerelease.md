@@ -1,3 +1,20 @@
+## 10.3.0-alpha.15
+
+- Actions: Add expandLevel parameter to configure tree depth - [#33977](https://github.com/storybookjs/storybook/pull/33977), thanks @mixelburg!
+- Actions: Fix HandlerFunction type to support async callback props - [#33864](https://github.com/storybookjs/storybook/pull/33864), thanks @mixelburg!
+- Addon-Vitest: Refactor Vitest setup to eliminate the need for a dedicated setup file - [#34025](https://github.com/storybookjs/storybook/pull/34025), thanks @valentinpalkovic!
+- Build: Update @types/node - [#34037](https://github.com/storybookjs/storybook/pull/34037), thanks @valentinpalkovic!
+- Builder-Vite: Fix cold-cache vitest failures for story paths containing glob special characters - [#34044](https://github.com/storybookjs/storybook/pull/34044), thanks @copilot-swe-agent!
+- CI:: declare explicit permissions for stale and weekly cron workflows - [#33902](https://github.com/storybookjs/storybook/pull/33902), thanks @Rohan5commit!
+- Core: Add vike metadata frameworks - [#33965](https://github.com/storybookjs/storybook/pull/33965), thanks @yannbf!
+- Core: Resolve builder preset path correctly in pnpm strict mode - [#34032](https://github.com/storybookjs/storybook/pull/34032), thanks @braedenfoster!
+- Core: Update default allowed hosts in host validation middleware - [#34045](https://github.com/storybookjs/storybook/pull/34045), thanks @ghengeveld!
+- Next.js: Add support for v16.2 - [#34046](https://github.com/storybookjs/storybook/pull/34046), thanks @valentinpalkovic!
+- UI: Fix code/copy buttons overlap with content - [#33889](https://github.com/storybookjs/storybook/pull/33889), thanks @Sidnioulz!
+- UI: Fix modal text selection - [#33967](https://github.com/storybookjs/storybook/pull/33967), thanks @Sidnioulz!
+- UI: Fix tab navigation after closing addon panel - [#33971](https://github.com/storybookjs/storybook/pull/33971), thanks @copilot-swe-agent!
+- UI: Handle kb nav edge cases when preview and panel are hidden - [#33588](https://github.com/storybookjs/storybook/pull/33588), thanks @Sidnioulz!
+
 ## 10.3.0-alpha.14
 
 - CSF-Factories: Fix ConfigFile parser false warning on `definePreview({...}).type<T>()` export default - [#33885](https://github.com/storybookjs/storybook/pull/33885), thanks @copilot-swe-agent!

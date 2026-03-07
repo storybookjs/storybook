@@ -1,5 +1,6 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import { useRef, emitTransformCode, useEffect } from 'storybook/preview-api';
+import { collapseEmptyAngularTags } from './transformSource';
 import type { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
 
 import { computesTemplateSourceFromComponent } from '../../renderer';
@@ -46,15 +47,16 @@ export const sourceDecorator = (
 
       // We might have a story with a Directive or Service defined as the component
       // In these cases there might exist a template, even if we aren't able to create source from component
-      const newSource = sourceFromComponent || template;
+      const newSource = collapseEmptyAngularTags(sourceFromComponent || template || '');
 
       if (newSource && newSource !== source.current) {
         emitTransformCode(newSource, context);
         source.current = newSource;
       }
     } else if (template && template !== source.current) {
-      emitTransformCode(template, context);
-      source.current = template;
+      const transformed = collapseEmptyAngularTags(template || '');
+      emitTransformCode(transformed, context);
+      source.current = transformed;
     }
   });
 

@@ -245,4 +245,52 @@ describe('buildArgsParam', () => {
       expect(param).toEqual('obj.nested[1].three:3');
     });
   });
+
+  describe('special characters in values', () => {
+    it('preserves values containing slashes', () => {
+      const param = buildArgsParam({}, { path: 'foo/bar/baz' });
+      expect(param).toContain('path:');
+      expect(param).not.toEqual('');
+    });
+
+    it('preserves values containing dots', () => {
+      const param = buildArgsParam({}, { file: 'image.png' });
+      expect(param).toEqual('file:image.png');
+    });
+
+    it('preserves values containing @ symbols', () => {
+      const param = buildArgsParam({}, { email: 'user@example.com' });
+      expect(param).toContain('email:');
+    });
+
+    it('preserves values containing common punctuation', () => {
+      const param = buildArgsParam({}, { label: "Hello, world! It's great" });
+      expect(param).toContain('label:');
+    });
+
+    it('omits values containing semicolons (structural delimiter)', () => {
+      const param = buildArgsParam({}, { key: 'a;b' });
+      expect(param).toEqual('');
+    });
+
+    it('omits values containing colons (structural delimiter)', () => {
+      const param = buildArgsParam({}, { key: 'a:b' });
+      expect(param).toEqual('');
+    });
+
+    it('omits values containing angle brackets (HTML injection)', () => {
+      const param = buildArgsParam({}, { key: '<script>' });
+      expect(param).toEqual('');
+    });
+
+    it('omits values containing double quotes (HTML injection)', () => {
+      const param = buildArgsParam({}, { key: 'a"b' });
+      expect(param).toEqual('');
+    });
+
+    it('omits values containing backticks (HTML injection)', () => {
+      const param = buildArgsParam({}, { key: 'a`b' });
+      expect(param).toEqual('');
+    });
+  });
 });

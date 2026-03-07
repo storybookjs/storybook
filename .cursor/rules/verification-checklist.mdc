@@ -1,0 +1,25 @@
+---
+description: Universal verification checklist — always run before opening any PR
+alwaysApply: true
+---
+
+# Universal Verification Checklist
+
+Before opening any PR, always perform these verification steps:
+
+## Required Steps
+
+1. **Run unit tests**: Execute `cd code && yarn test` and wait for all results.
+2. **Fix any failures**: Address any failing tests before proceeding.
+3. **Re-read the problem**: Review the original problem description in full.
+4. **Verify root cause fix**: Trace through your fix and confirm it addresses the root cause described, not just a symptom.
+5. **Iterate if needed**: If the fix is incomplete or misaligned with the problem description, revise and re-test before opening a PR.
+
+## Checklist
+
+- [ ] All unit tests pass
+- [ ] Fix addresses the root cause, not just a symptom
+- [ ] Problem statement has been re-read and verified
+- [ ] Ready to open PR with appropriate evidence (see bug type flows)
+
+This verification flow applies to all changes, regardless of which specific bug type flow (1–4) is also required.

@@ -15,8 +15,10 @@ type StepOptions = {
 export const exec = async (
   command: string | string[],
   options: Options = {},
-  { startMessage, errorMessage, dryRun, debug, signal }: StepOptions = {}
-): Promise<void> => {
+  stepOptions: StepOptions = {},
+  captureOutput?: boolean
+): Promise<string | void> => {
+  const { startMessage, errorMessage, dryRun, debug, signal } = stepOptions;
   logger.info();
 
   if (startMessage) {
@@ -30,9 +32,10 @@ export const exec = async (
 
   const defaultOptions: Options = {
     shell: true,
-    stdout: debug ? 'inherit' : 'pipe',
-    stderr: debug ? 'inherit' : 'pipe',
+    stdout: captureOutput || debug ? (captureOutput ? 'pipe' : 'inherit') : 'pipe',
+    stderr: captureOutput || debug ? (captureOutput ? 'pipe' : 'inherit') : 'pipe',
     stdin: 'inherit',
+    ...(captureOutput && { all: true }),
     ...(signal && { cancelSignal: signal }),
   };
   let currentChild: ResultPromise;
@@ -41,12 +44,18 @@ export const exec = async (
     if (typeof command === 'string') {
       logger.debug(`> ${command}`);
       currentChild = execa(command, { ...defaultOptions, ...options });
-      await currentChild;
+      const result = await currentChild;
+      if (captureOutput) {
+        return result.all ?? '';
+      }
     } else {
       for (const subcommand of command) {
         logger.debug(`> ${subcommand}`);
         currentChild = execa(subcommand, { ...defaultOptions, ...options });
-        await currentChild;
+        const result = await currentChild;
+        if (captureOutput && subcommand === command[command.length - 1]) {
+          return result.all ?? '';
+        }
       }
     }
   } catch (err) {

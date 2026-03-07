@@ -1,11 +1,39 @@
 import type { PreparedStory } from 'storybook/internal/types';
 import type { Args, StoryId } from 'storybook/internal/types';
 
+import { isPlainObject } from 'es-toolkit/predicate';
+
 import { DEEPLY_EQUAL, combineArgs, deepDiff, mapArgsToTypes, validateOptions } from './args';
 
 function deleteUndefined(obj: Record<string, any>) {
   Object.keys(obj).forEach((key) => obj[key] === undefined && delete obj[key]);
   return obj;
+}
+
+/**
+ * Merges an arg update into the current value, preserving function properties from the current
+ * value that are not present in the update.
+ *
+ * This is needed because function args cannot be serialized through the channel (from preview to
+ * manager), so the manager's view of object args is missing function properties. When the manager
+ * sends back an update, we must not discard functions that were present in the preview's current
+ * args.
+ */
+function mergeArgsPreservingFunctions(current: any, update: any): any {
+  if (!isPlainObject(current) || !isPlainObject(update)) {
+    return update;
+  }
+  const result: Record<string, any> = { ...update };
+  for (const [key, value] of Object.entries(current)) {
+    if (!(key in update) && typeof value === 'function') {
+      // Preserve function properties that weren't included in the update
+      result[key] = value;
+    } else if (key in update && isPlainObject(value) && isPlainObject(update[key])) {
+      // Recursively merge nested plain objects
+      result[key] = mergeArgsPreservingFunctions(value, update[key]);
+    }
+  }
+  return result;
 }
 
 export class ArgsStore {
@@ -60,9 +88,15 @@ export class ArgsStore {
       throw new Error(`No args known for ${storyId} -- has it been rendered yet?`);
     }
 
-    this.argsByStoryId[storyId] = deleteUndefined({
-      ...this.argsByStoryId[storyId],
-      ...argsUpdate,
-    });
+    const current = this.argsByStoryId[storyId];
+    const merged: Record<string, any> = {};
+    for (const key of new Set([...Object.keys(current), ...Object.keys(argsUpdate)])) {
+      if (key in argsUpdate) {
+        merged[key] = mergeArgsPreservingFunctions(current[key], argsUpdate[key]);
+      } else {
+        merged[key] = current[key];
+      }
+    }
+    this.argsByStoryId[storyId] = deleteUndefined(merged);
   }
 }

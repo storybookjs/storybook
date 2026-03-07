@@ -508,4 +508,167 @@ describe('StoryRender', () => {
       });
     });
   });
+
+  describe('storyAutoplay global', () => {
+    it('does not run play function when storyAutoplay global is "never"', async () => {
+      const story = buildStory();
+      const store = buildStore({
+        getStoryContext: () =>
+          ({
+            reporting: new ReporterAPI(),
+            globals: { storyAutoplay: 'never' },
+          }) as any,
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      await render.renderToElement({} as any);
+      expect(story.playFunction).not.toHaveBeenCalled();
+    });
+
+    it('runs play function when storyAutoplay global is "always"', async () => {
+      const story = buildStory();
+      const store = buildStore({
+        getStoryContext: () =>
+          ({
+            reporting: new ReporterAPI(),
+            globals: { storyAutoplay: 'always' },
+          }) as any,
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      await render.renderToElement({} as any);
+      expect(story.playFunction).toHaveBeenCalled();
+    });
+
+    it('does not run play function when storyAutoplay is "no-reduced-motion" and prefers-reduced-motion is enabled', async () => {
+      const matchMediaSpy = vi
+        .spyOn(globalThis, 'matchMedia')
+        .mockReturnValue({ matches: true } as MediaQueryList);
+
+      const story = buildStory();
+      const store = buildStore({
+        getStoryContext: () =>
+          ({
+            reporting: new ReporterAPI(),
+            globals: { storyAutoplay: 'no-reduced-motion' },
+          }) as any,
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      await render.renderToElement({} as any);
+      expect(story.playFunction).not.toHaveBeenCalled();
+
+      matchMediaSpy.mockRestore();
+    });
+
+    it('runs play function when storyAutoplay is "no-reduced-motion" and prefers-reduced-motion is not enabled', async () => {
+      const matchMediaSpy = vi
+        .spyOn(globalThis, 'matchMedia')
+        .mockReturnValue({ matches: false } as MediaQueryList);
+
+      const story = buildStory();
+      const store = buildStore({
+        getStoryContext: () =>
+          ({
+            reporting: new ReporterAPI(),
+            globals: { storyAutoplay: 'no-reduced-motion' },
+          }) as any,
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      await render.renderToElement({} as any);
+      expect(story.playFunction).toHaveBeenCalled();
+
+      matchMediaSpy.mockRestore();
+    });
+
+    it('always autoplays when story uses mount even when storyAutoplay is "never"', async () => {
+      const story = buildStory({
+        usesMount: true,
+        playFunction: async ({ mount }) => {
+          await mount();
+        },
+      });
+      const store = buildStore({
+        getStoryContext: () =>
+          ({
+            reporting: new ReporterAPI(),
+            globals: { storyAutoplay: 'never' },
+          }) as any,
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      await render.renderToElement({} as any);
+      expect(mountSpy).toHaveBeenCalledOnce();
+    });
+
+    it('does not autoplay when renderOptions.autoplay is false (docs mode) even with storyAutoplay "always"', async () => {
+      const story = buildStory();
+      const store = buildStore({
+        getStoryContext: () =>
+          ({
+            reporting: new ReporterAPI(),
+            globals: { storyAutoplay: 'always' },
+          }) as any,
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: false },
+        story
+      );
+
+      await render.renderToElement({} as any);
+      expect(story.playFunction).not.toHaveBeenCalled();
+    });
+  });
 });

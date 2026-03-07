@@ -9,9 +9,11 @@ import { fsMocks, indexJson } from './fixtures';
 import { manifests } from './generator';
 
 /** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test data has widened literal types
-const runManifests = (entries: any[]) =>
-  manifests(undefined, { manifestEntries: entries } as Parameters<typeof manifests>[1]);
+type ManifestOptions = Parameters<typeof manifests>[1];
+type ManifestEntries = ManifestOptions['manifestEntries'];
+
+const runManifests = (manifestEntries: ManifestEntries) =>
+  manifests(undefined, { manifestEntries } as ManifestOptions);
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');

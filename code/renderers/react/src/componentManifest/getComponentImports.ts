@@ -184,8 +184,8 @@ export const getComponents = async ({
     const binding = program.scope.getBinding(base);
 
     if (!binding) {
-      return false;
-    } // missing binding -> keep (will become null import) // missing binding -> keep (will become null import)
+      return false; // missing binding -> keep (will become null import)
+    }
     const isImportBinding = Boolean(
       binding.path.isImportSpecifier?.() ||
       binding.path.isImportDefaultSpecifier?.() ||

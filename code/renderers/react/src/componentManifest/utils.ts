@@ -32,11 +32,8 @@ export function invariant(
 }
 
 // Module-level cache stores: per-function caches keyed by derived string keys
-let memoStore: WeakMap<(...args: any[]) => any, Map<string, unknown>> = new WeakMap();
-let asyncMemoStore: WeakMap<
-  (...args: any[]) => Promise<unknown>,
-  Map<string, Promise<unknown>>
-> = new WeakMap();
+let memoStore: WeakMap<object, Map<string, unknown>> = new WeakMap();
+let asyncMemoStore: WeakMap<object, Map<string, Promise<unknown>>> = new WeakMap();
 
 // Generic cache/memoization helper (synchronous only)
 // - Caches by a derived key from the function arguments (must be a string)
@@ -148,7 +145,10 @@ export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' 
 
 export const cachedFindUp = cached(find.up, { name: 'findUp' });
 
-export const cachedResolveImport: any = cached(resolveImport, { name: 'resolveImport' });
+/** Preserve `resolveImport` overloads at call sites after wrapping it in the generic cache helper. */
+export const cachedResolveImport: typeof resolveImport = cached(resolveImport, {
+  name: 'resolveImport',
+}) as typeof resolveImport;
 
 export const findTsconfigPath = cached(
   (cwd: string): string | undefined => {

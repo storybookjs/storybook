@@ -29,7 +29,7 @@
 #   Imports:
 #     - shared/mood.md
 #
-# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"333f10453f05fd84274dcffa8ae24ad44fe3882862f9bd7209cb04ec3e62ed83","compiler_version":"v0.55.0","strict":true}
+# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"8f718997fab9f4077b50cf09e67d1c93cb5d11105def34e97ec4d56929ca4323","compiler_version":"v0.55.0","strict":true}
 
 name: "Duplicate Code Detector"
 "on":

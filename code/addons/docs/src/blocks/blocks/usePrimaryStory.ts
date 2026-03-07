@@ -7,10 +7,15 @@ import { DocsContext } from './DocsContext';
 
 /**
  * A hook to get the primary story for the current component's doc page. It defines the primary
- * story as the first story that includes the 'autodocs' tag
+ * story as the first story that includes the 'autodocs' tag. If no story has the 'autodocs' tag
+ * (e.g. in a custom MDX docs page), it falls back to the first story that doesn't explicitly
+ * exclude itself from autodocs.
  */
 export const usePrimaryStory = (): PreparedStory | undefined => {
   const context = useContext(DocsContext);
   const stories = context.componentStories();
-  return stories.find((story) => story.tags.includes(Tag.AUTODOCS));
+  return (
+    stories.find((story) => story.tags.includes(Tag.AUTODOCS)) ??
+    stories.find((story) => !story.tags.includes(`!${Tag.AUTODOCS}`))
+  );
 };

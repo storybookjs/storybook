@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import type { FC, PropsWithChildren } from 'react';
 
-import { Tag } from 'storybook/internal/core-server';
+import { Tag } from 'storybook/internal/preview-api';
 import type { PreparedStory } from 'storybook/internal/types';
 
 import type { DocsContextProps } from './DocsContext';
@@ -49,8 +49,16 @@ describe('usePrimaryStory', () => {
     expect(result.current?.name).toBe('Story Two');
   });
 
-  it('returns undefined if no story has "autodocs" tag', () => {
+  it('falls back to first non-!autodocs story when no story has "autodocs" tag', () => {
     const mockContext = createMockContext([stories.story1, stories.story4] as PreparedStory[]);
+    const { result } = renderHook(() => usePrimaryStory(), {
+      wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
+    });
+    expect(result.current?.name).toBe('Story Four');
+  });
+
+  it('returns undefined when all stories have !autodocs and no autodocs tagged stories', () => {
+    const mockContext = createMockContext([stories.story1] as PreparedStory[]);
     const { result } = renderHook(() => usePrimaryStory(), {
       wrapper: ({ children }) => <Wrapper context={mockContext}>{children}</Wrapper>,
     });

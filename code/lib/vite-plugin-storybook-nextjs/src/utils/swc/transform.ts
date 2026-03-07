@@ -119,11 +119,13 @@ async function getSupportedBrowsers(
   isDevelopment: boolean,
 ) {
   try {
-    return (
+    const getSupportedBrowserModule = await import(
       // @ts-expect-error - Correct import since Next.js v16.2
-      (
-        await import("next/dist/build/get-supported-browsers.js")
-      ).getSupportedBrowsers(projectRoot, isDevelopment)
+      "next/dist/build/get-supported-browsers.js"
+    );
+    return getSupportedBrowserModule.getSupportedBrowsers(
+      projectRoot,
+      isDevelopment,
     );
   } catch (e) {
     // TODO: Remove as soon as we don't have to support Next.js < 16.2 anymore

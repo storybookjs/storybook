@@ -35,6 +35,7 @@ const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, 
   maxHeight: '100vh',
   paddingBottom: showSaveFromUI ? 41 : 0,
   backgroundColor: theme.background.content,
+  overflow: 'auto',
 
   table: {
     backgroundColor: theme.background.app,

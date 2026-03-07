@@ -165,6 +165,11 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
+  # Remove once @stencil/storybook-plugin doesn't rely on @storybook/addon-actions anymore
+  "@storybook/addon-actions":
+    access: $all
+    publish: $all
+    proxy: npmjs
   '@storybook/semver':
     # TODO: remove this when new versions of all dependents have been published and updated. It is not used anymore but still referenced in the latest packages
     access: $all

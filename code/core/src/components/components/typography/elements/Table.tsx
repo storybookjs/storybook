@@ -1,8 +1,11 @@
+import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
 import { withMargin, withReset } from '../lib/common';
 
-export const Table = styled.table(withReset, withMargin, ({ theme }) => ({
+export const Table = styled.table(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
+  ...withMargin,
   fontSize: theme.typography.size.s2,
   lineHeight: '24px',
   padding: 0,

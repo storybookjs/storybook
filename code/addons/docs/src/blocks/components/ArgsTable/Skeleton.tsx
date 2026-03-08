@@ -7,11 +7,18 @@ const TableWrapper = styled.div(({ theme }) => ({
   width: '100%',
   borderSpacing: 0,
   color: theme.color.defaultText,
+  '@media (forced-colors: active)': {
+    outline: '1px solid CanvasText',
+    outlineOffset: -1,
+  },
 }));
 
 const Row = styled.div(({ theme }) => ({
   display: 'flex',
   borderBottom: `1px solid ${theme.appBorderColor}`,
+  '@media (forced-colors: active)': {
+    borderBottomColor: 'CanvasText',
+  },
 
   '&:last-child': {
     borderBottom: 0,

@@ -7,6 +7,8 @@ import { dedent } from 'ts-dedent';
 
 // Keep this in sync with validateArgs in router/src/utils.ts
 const VALIDATION_REGEXP = /^[a-zA-Z0-9 _-]*$/;
+// Matches any string that contains only printable characters (no control characters)
+const PRINTABLE_STRING_REGEXP = /^[^\x00-\x1F\x7F]*$/;
 const NUMBER_REGEXP = /^-?[0-9]+(\.[0-9]+)?$/;
 const HEX_REGEXP = /^#([a-f0-9]{3,4}|[a-f0-9]{6}|[a-f0-9]{8})$/i;
 const COLOR_REGEXP =
@@ -34,12 +36,8 @@ const validateArgs = (key = '', value: unknown): boolean => {
     return true;
   }
   if (typeof value === 'string') {
-    return (
-      VALIDATION_REGEXP.test(value) ||
-      NUMBER_REGEXP.test(value) ||
-      HEX_REGEXP.test(value) ||
-      COLOR_REGEXP.test(value)
-    );
+    // Allow any string containing only printable characters (no control chars)
+    return PRINTABLE_STRING_REGEXP.test(value);
   }
 
   if (Array.isArray(value)) {
@@ -82,6 +80,12 @@ const QUERY_OPTIONS: Partial<Options> = {
 
       if (str.startsWith('!hex(') && str.endsWith(')')) {
         return `#${str.slice(5, -1)}`;
+      }
+
+      // Strings starting with '!' are escaped as !str(...) during encoding
+      // to avoid conflict with special value markers like !true, !null, etc.
+      if (str.startsWith('!str(') && str.endsWith(')')) {
+        return `!${str.slice(5, -1)}`;
       }
 
       const color = str.slice(1).match(COLOR_REGEXP);

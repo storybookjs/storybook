@@ -75,6 +75,8 @@ export const deepDiff = (value: any, update: any): any => {
 
 // Keep this in sync with validateArgs in core-client/src/preview/parseArgsParam.ts
 const VALIDATION_REGEXP = /^[a-zA-Z0-9 _-]*$/;
+// Matches any string that contains only printable characters (no control characters)
+const PRINTABLE_STRING_REGEXP = /^[^\x00-\x1F\x7F]*$/;
 const NUMBER_REGEXP = /^-?[0-9]+(\.[0-9]+)?$/;
 const HEX_REGEXP = /^#([a-f0-9]{3,4}|[a-f0-9]{6}|[a-f0-9]{8})$/i;
 const COLOR_REGEXP =
@@ -102,12 +104,8 @@ const validateArgs = (key = '', value: unknown): boolean => {
     return true;
   }
   if (typeof value === 'string') {
-    return (
-      VALIDATION_REGEXP.test(value) ||
-      NUMBER_REGEXP.test(value) ||
-      HEX_REGEXP.test(value) ||
-      COLOR_REGEXP.test(value)
-    );
+    // Allow any string containing only printable characters (no control chars)
+    return PRINTABLE_STRING_REGEXP.test(value);
   }
   if (Array.isArray(value)) {
     return value.every((v) => validateArgs(key, v));
@@ -138,6 +136,13 @@ const encodeSpecialValues = (value: unknown): any => {
     if (COLOR_REGEXP.test(value)) {
       return `!${value.replace(/[\s%]/g, '')}`;
     }
+
+    // Escape strings starting with '!' to avoid conflict with special value encoding
+    // e.g. "!important" -> "!str(important)" so it isn't mistaken for a special value
+    if (value.startsWith('!')) {
+      return `!str(${value.slice(1)})`;
+    }
+
     return value;
   }
 

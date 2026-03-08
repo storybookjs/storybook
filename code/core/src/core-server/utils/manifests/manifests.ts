@@ -10,7 +10,7 @@ import invariant from 'tiny-invariant';
 import { Tag } from '../../../shared/constants/tags';
 import { type DocsManifest, renderComponentsManifest } from './render-components-manifest';
 
-async function getManifests(presets: Presets) {
+async function getManifests(presets: Presets, { watch }: { watch?: boolean } = {}) {
   const generator = await presets.apply('storyIndexGenerator');
   invariant(generator, 'storyIndexGenerator must be configured');
   const index = await generator.getIndex();
@@ -21,6 +21,7 @@ async function getManifests(presets: Presets) {
   return (
     (await presets.apply<Manifests>('experimental_manifests', undefined, {
       manifestEntries,
+      watch,
     })) ?? {}
   );
 }
@@ -55,7 +56,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
 export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
   app.get('/manifests/:name.json', async (req, res) => {
     try {
-      const manifests = await getManifests(presets);
+      const manifests = await getManifests(presets, { watch: true });
       const manifest = manifests[req.params.name];
 
       if (manifest) {
@@ -74,7 +75,7 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
 
   app.get('/manifests/components.html', async (req, res) => {
     try {
-      const manifests = await getManifests(presets);
+      const manifests = await getManifests(presets, { watch: true });
       const componentsManifest = manifests.components;
       const docsManifest = manifests.docs as DocsManifest | undefined;
 

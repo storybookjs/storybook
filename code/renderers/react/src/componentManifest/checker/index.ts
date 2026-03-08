@@ -1,0 +1,1 @@
+export { ComponentMetaManager } from './ComponentMetaManager';

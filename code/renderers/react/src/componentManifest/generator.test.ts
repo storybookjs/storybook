@@ -8,6 +8,13 @@ import { dedent } from 'ts-dedent';
 import { fsMocks, indexJson } from './fixtures';
 import { manifests } from './generator';
 
+/** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
+type ManifestOptions = Parameters<typeof manifests>[1];
+type ManifestEntries = ManifestOptions['manifestEntries'];
+
+const runManifests = (manifestEntries: ManifestEntries) =>
+  manifests(undefined, { manifestEntries } as ManifestOptions);
+
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(fsMocks, '/app');
@@ -17,8 +24,9 @@ test('manifests generates correct id, name, description and examples ', async ()
   const manifestEntries = Object.values(indexJson.entries).filter(
     (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
-  const result = await manifests(undefined, { manifestEntries } as any);
-  const { meta, ...components } = result?.components ?? {};
+  const result = await runManifests(manifestEntries);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
+  const { meta: _meta, ...components } = result?.components ?? {};
 
   expect(components).toMatchInlineSnapshot(`
     {
@@ -35,6 +43,7 @@ test('manifests generates correct id, name, description and examples ', async ()
           },
           "name": "Button",
           "path": "./src/stories/Button.stories.ts",
+          "reactComponentMeta": undefined,
           "reactDocgen": {
             "actualName": "Button",
             "definedInFile": "./src/stories/Button.tsx",
@@ -112,6 +121,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               },
             },
           },
+          "reactDocgenTypescript": undefined,
           "stories": [
             {
               "description": undefined,
@@ -156,6 +166,7 @@ test('manifests generates correct id, name, description and examples ', async ()
           },
           "name": "Header",
           "path": "./src/stories/Header.stories.ts",
+          "reactComponentMeta": undefined,
           "reactDocgen": {
             "actualName": "",
             "definedInFile": "./src/stories/Header.tsx",
@@ -217,6 +228,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               },
             },
           },
+          "reactDocgenTypescript": undefined,
           "stories": [
             {
               "description": undefined,
@@ -286,7 +298,7 @@ async function getManifestForStory(code: string) {
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
 
   return result?.components?.components?.['example-button'];
 }
@@ -329,6 +341,7 @@ test('fall back to index title when no component name', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -350,6 +363,7 @@ test('fall back to index title when no component name', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "description": undefined,
@@ -377,6 +391,7 @@ test('component exported from other file', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -398,6 +413,7 @@ test('component exported from other file', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "error": {
@@ -430,6 +446,7 @@ test('unknown expressions', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -451,6 +468,7 @@ test('unknown expressions', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "error": {
@@ -526,7 +544,8 @@ test('should create component manifest when only attached-mdx docs have manifest
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
   const { meta: _meta, ...components } = result?.components ?? {};
   expect({ components }).toMatchInlineSnapshot(`
     {
@@ -540,6 +559,7 @@ test('should create component manifest when only attached-mdx docs have manifest
             "jsDocTags": {},
             "name": "Button",
             "path": "./src/stories/Button.stories.ts",
+            "reactComponentMeta": undefined,
             "reactDocgen": {
               "actualName": "Button",
               "definedInFile": "./src/stories/Button.tsx",
@@ -568,6 +588,7 @@ test('should create component manifest when only attached-mdx docs have manifest
                 },
               },
             },
+            "reactDocgenTypescript": undefined,
             "stories": [],
             "summary": undefined,
           },
@@ -636,7 +657,7 @@ test('stories are populated when meta has no explicit title', async () => {
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
   const component = result?.components?.components?.['card'];
 
   // When no explicit title is in the meta, stories should still be populated

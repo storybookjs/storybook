@@ -159,6 +159,21 @@ export const TableWrapper = styled.table<{
               borderBottomRightRadius: theme.appBorderRadius,
             },
           }),
+
+      '@media (forced-colors: active)': {
+        filter: 'none',
+
+        '> tr > *': {
+          borderColor: 'CanvasText',
+        },
+
+        ...(inAddonPanel
+          ? null
+          : {
+              outline: '1px solid CanvasText',
+              outlineOffset: -1,
+            }),
+      },
     },
     // End awesome table styling
   },

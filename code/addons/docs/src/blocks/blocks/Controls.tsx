@@ -69,6 +69,7 @@ export const Controls: FC<ControlsProps> = (props) => {
     }
     return (
       <PureArgsTable
+        storyId={story.id}
         rows={filteredArgTypes as any}
         sort={sort}
         args={args}
@@ -101,6 +102,7 @@ export const Controls: FC<ControlsProps> = (props) => {
       globals={globals}
       updateArgs={updateArgs}
       resetArgs={resetArgs}
+      storyId={story.id}
     />
   );
 };

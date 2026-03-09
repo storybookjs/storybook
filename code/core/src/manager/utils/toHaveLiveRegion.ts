@@ -60,7 +60,9 @@ export function toHaveLiveRegion(
     if (typeof text === 'string') {
       textMatches = content.includes(text);
     } else {
-      // Reset lastIndex to avoid false negatives with global/sticky regexes.
+      // Reset lastIndex because RegExp.prototype.test() with the global or sticky flag
+      // mutates lastIndex after each call, causing subsequent tests on different elements
+      // to start matching from the wrong position and potentially return false negatives.
       text.lastIndex = 0;
       textMatches = text.test(content);
     }

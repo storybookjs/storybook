@@ -131,9 +131,7 @@ const useLayoutSyncingState = ({
     panelResizerRef,
     sidebarResizerRef,
     showPages: isPagesShown,
-    showPanel:
-      customisedShowPanel &&
-      (managerLayoutState.panelPosition === 'right' ? rightPanelWidth > 0 : bottomPanelHeight > 0),
+    showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
   };
 };
@@ -178,7 +176,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotSidebar}
             <Drag
               ref={sidebarResizerRef}
-              aria-orientation="vertical"
+              position="left"
               aria-label="Sidebar resize handle"
               aria-valuenow={navSize}
               aria-valuemax={typeof window !== 'undefined' ? window.innerWidth : undefined}
@@ -199,14 +197,14 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           slotPages={slots.slotPages}
         />
 
-        {isDesktop && showPanel && (
+        {isDesktop && (
           <PanelContainer
             bottomPanelHeight={bottomPanelHeight}
             rightPanelWidth={rightPanelWidth}
             panelResizerRef={panelResizerRef}
             position={panelPosition}
           >
-            {slots.slotPanel}
+            {showPanel && slots.slotPanel}
           </PanelContainer>
         )}
         {isMobile && <Notifications />}

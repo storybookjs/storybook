@@ -39,11 +39,9 @@ const PanelContainer = React.memo<PanelContainerProps>(function PanelContainer(p
   return (
     <Container position={position}>
       <Drag
-        orientation={position === 'bottom' ? 'horizontal' : 'vertical'}
-        overlapping={position === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
-        position={position === 'bottom' ? 'left' : 'right'}
         ref={panelResizerRef}
-        aria-orientation={position === 'bottom' ? 'horizontal' : 'vertical'}
+        position={position ?? 'bottom'}
+        overlapping={position === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
         aria-label="Addon panel resize handle"
         aria-valuenow={position === 'bottom' ? bottomPanelHeight : rightPanelWidth}
         aria-valuemax={

@@ -2,21 +2,16 @@ import React, { forwardRef, useMemo } from 'react';
 
 import { styled } from 'storybook/theming';
 
+import type { PopperPlacement } from '../../../components';
 import { TooltipNote } from '../../../components/components/tooltip/TooltipNote';
 import { TooltipProvider } from '../../../components/components/tooltip/TooltipProvider';
 
 interface DragProps {
-  /** Visual orientation of the drag handle line. */
-  orientation?: 'horizontal' | 'vertical';
+  /** Which side the drag handle sits on, relative to the content it resizes. Determines orientation. */
+  position: 'left' | 'right' | 'top' | 'bottom';
 
   /** Whether the drag handle overlaps the adjacent content area. */
   overlapping?: boolean;
-
-  /** Which side the drag handle sits on, relative to the content it resizes. */
-  position?: 'left' | 'right';
-
-  /** Accessible orientation for the separator role (determines arrow key mapping). */
-  'aria-orientation'?: 'horizontal' | 'vertical';
 
   /** Accessible label describing what this separator resizes. */
   'aria-label': string;
@@ -28,6 +23,13 @@ interface DragProps {
   'aria-valuemax'?: number;
 }
 
+const oppositePosition: Record<string, PopperPlacement> = {
+  left: 'right',
+  right: 'left',
+  top: 'bottom',
+  bottom: 'top',
+};
+
 /**
  * Drag handle for the sidebar and panel resizers. Can be horizontal (bottom panel) or vertical
  * (sidebar or right panel). Implements the WAI-ARIA separator role with keyboard resize support.
@@ -37,37 +39,37 @@ interface DragProps {
  */
 export const Drag = forwardRef<HTMLDivElement, DragProps>(function Drag(props, ref) {
   const {
-    orientation,
     overlapping,
     position,
-    'aria-orientation': ariaOrientation = 'horizontal',
     'aria-label': ariaLabel,
     'aria-valuenow': ariaValueNow,
     'aria-valuemax': ariaValueMax,
     ...rest
   } = props;
 
+  const orientation = position === 'left' || position === 'right' ? 'vertical' : 'horizontal';
+
   const tooltipNote = useMemo(() => {
-    if (ariaOrientation === 'vertical') {
+    if (orientation === 'vertical') {
       return '← → to resize';
     }
     return '↑ ↓ to resize';
-  }, [ariaOrientation]);
+  }, [orientation]);
 
   return (
     <TooltipProvider
       triggerOnFocusOnly
-      placement="top"
+      placement={oppositePosition[position]}
       tooltip={<TooltipNote note={tooltipNote} />}
     >
       <DragHandle
         ref={ref}
-        orientation={orientation}
-        overlapping={overlapping}
-        position={position}
+        $orientation={orientation}
+        $overlapping={overlapping}
+        $position={position}
         role="separator"
         tabIndex={0}
-        aria-orientation={ariaOrientation}
+        aria-orientation={orientation}
         aria-label={ariaLabel}
         aria-valuenow={ariaValueNow}
         aria-valuemin={0}
@@ -79,9 +81,9 @@ export const Drag = forwardRef<HTMLDivElement, DragProps>(function Drag(props, r
 });
 
 const DragHandle = styled.div<{
-  orientation?: 'horizontal' | 'vertical';
-  overlapping?: boolean;
-  position?: 'left' | 'right';
+  $orientation?: 'horizontal' | 'vertical';
+  $overlapping?: boolean;
+  $position: 'left' | 'right' | 'top' | 'bottom';
 }>(
   ({ theme }) => ({
     position: 'absolute',
@@ -99,27 +101,29 @@ const DragHandle = styled.div<{
       opacity: 1,
     },
   }),
-  ({ theme, orientation = 'vertical' }) => ({
+  ({ theme, $orientation = 'vertical' }) => ({
     '&:focus-visible': {
       opacity: 1,
       outline: 'none',
-      ...(orientation === 'horizontal' ? { height: 7 } : { width: 7 }),
+      ...($orientation === 'horizontal' ? { height: 7 } : { width: 7 }),
       boxShadow: `inset 0 0 0 4px ${theme.color.secondary}`,
     },
   }),
-  ({ orientation = 'vertical', overlapping = true, position = 'left' }) =>
-    orientation === 'vertical'
+  ({ $orientation = 'vertical', $overlapping = true, $position = 'left' }) =>
+    $orientation === 'vertical'
       ? {
-          width: overlapping ? (position === 'left' ? 10 : 13) : 7,
+          // This is an old code smell, where 10px matches the sidebar and 13px matches the addon panel.
+          // It should be tidied up at some point.
+          width: $overlapping ? ($position === 'left' ? 10 : 13) : 7,
           height: '100%',
           top: 0,
-          right: position === 'left' ? -7 : undefined,
-          left: position === 'right' ? -7 : undefined,
+          right: $position === 'left' ? -7 : undefined,
+          left: $position === 'right' ? -7 : undefined,
 
           '&:after': {
             width: 1,
             height: '100%',
-            marginLeft: position === 'left' ? 3 : 6,
+            marginLeft: $position === 'left' ? 3 : 6,
           },
 
           '&:hover': {
@@ -128,8 +132,9 @@ const DragHandle = styled.div<{
         }
       : {
           width: '100%',
-          height: overlapping ? 13 : 7,
-          top: -7,
+          height: $overlapping ? 13 : 7,
+          top: $position === 'bottom' ? -7 : undefined,
+          bottom: $position === 'top' ? -7 : undefined,
           left: 0,
 
           '&:after': {

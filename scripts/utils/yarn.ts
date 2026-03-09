@@ -124,13 +124,6 @@ export const addWorkaroundResolutions = async ({
     };
   }
 
-  // Next.js v14 and v15 are currently not rolldown compatible so we downgrade to Vite 7
-  if (key === 'nextjs-vite/14-ts' || key === 'nextjs-vite/15-ts') {
-    additionalResolutions = {
-      vite: '^7.3.1',
-    };
-  }
-
   packageJson.resolutions = {
     ...packageJson.resolutions,
     '@testing-library/dom': '^9.3.4',

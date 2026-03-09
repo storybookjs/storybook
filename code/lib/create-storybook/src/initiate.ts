@@ -177,8 +177,9 @@ async function runStorybookDev(result: {
 
     const parts = storybookCommand.split(' ');
 
-    // Angular CLI throws "Unknown argument: silent"
-    if (packageManager.type === 'npm' && projectType !== ProjectType.ANGULAR) {
+    // npm's --silent flag suppresses npm's own output, but ng run commands don't support it
+    const isNgRunCommand = parts[0] === 'ng';
+    if (packageManager.type === 'npm' && !isNgRunCommand) {
       parts.push('--silent');
     }
 

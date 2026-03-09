@@ -53,6 +53,11 @@
       "description": "Suppress verbose build output.",
       "default": false
     },
+    "silent": {
+      "type": "boolean",
+      "description": "Suppress all build output.",
+      "default": false
+    },
     "docs": {
       "type": "boolean",
       "description": "Starts Storybook in documentation mode. Learn more about it : https://storybook.js.org/docs/writing-docs/build-documentation#preview-storybooks-documentation.",

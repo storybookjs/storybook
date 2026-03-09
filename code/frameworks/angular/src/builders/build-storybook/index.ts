@@ -49,6 +49,7 @@ export type StorybookBuilderOptions = JsonObject & {
   assets?: AssetPattern[];
   sourceMap?: SourceMapUnion;
   experimentalZoneless?: boolean;
+  silent?: boolean;
 } & Pick<
     // makes sure the option exists
     CLIOptions,
@@ -113,6 +114,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     test,
     outputDir,
     quiet,
+    silent,
     enableProdMode = true,
     webpackStatsJson,
     statsJson,
@@ -136,7 +138,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     loglevel,
     outputDir,
     test,
-    quiet,
+    quiet: quiet || !!silent,
     enableProdMode,
     disableTelemetry,
     angularBrowserTarget: browserTarget,

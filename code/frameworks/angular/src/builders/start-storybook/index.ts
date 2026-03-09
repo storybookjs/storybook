@@ -48,6 +48,7 @@ export type StorybookBuilderOptions = JsonObject & {
   preserveSymlinks?: boolean;
   sourceMap?: SourceMapUnion;
   experimentalZoneless?: boolean;
+  silent?: boolean;
 } & Pick<
     // makes sure the option exists
     CLIOptions,
@@ -102,7 +103,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         if (options.compodoc) {
           await runCompodoc(
             {
-              compodocArgs: [...options.compodocArgs, ...(options.quiet ? ['--silent'] : [])],
+              compodocArgs: [
+                ...options.compodocArgs,
+                ...(options.quiet || options.silent ? ['--silent'] : []),
+              ],
               tsconfig: docTSConfig ?? tsConfig,
             },
             context
@@ -130,6 +134,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           https,
           port,
           quiet,
+          silent,
           enableProdMode = false,
           smokeTest,
           sslCa,
@@ -161,7 +166,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           host,
           https,
           port,
-          quiet,
+          quiet: quiet || !!silent,
           enableProdMode,
           smokeTest,
           sslCa,

@@ -1,7 +1,13 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
 
-import { MINIMUM_CONTENT_WIDTH_PX } from '../../constants';
+import type { API_Layout } from 'storybook/internal/types';
+
+import {
+  MINIMUM_CONTENT_WIDTH_PX,
+  MINIMUM_HORIZONTAL_PANEL_WIDTH_PX,
+  TOOLBAR_HEIGHT_PX,
+} from '../../constants';
 import type { LayoutState } from './Layout';
 
 // the distance from the edge of the screen at which the panel/sidebar will snap to the edge
@@ -24,62 +30,55 @@ function interpolate(relativeValue: number, min: number, max: number): number {
 }
 
 /**
- * Given the current layout state, the position of the resize handle, and the key pressed, returns
- * the next layout state with the resized panel/sidebar.
+ * Computes the maximum width for the sidebar, accounting for the content minimum and the panel's
+ * estimated horizontal footprint. When the panel is at the bottom its minimum enforced width is
+ * reserved so the browser never squashes it below `MINIMUM_HORIZONTAL_PANEL_WIDTH_PX`.
+ */
+function computeSidebarMaxWidth(
+  panelPosition: API_Layout['panelPosition'],
+  rightPanelWidth: number,
+  isPanelShown: boolean
+): number {
+  const panelWidth = !isPanelShown
+    ? 0
+    : panelPosition === 'right'
+      ? rightPanelWidth
+      : MINIMUM_HORIZONTAL_PANEL_WIDTH_PX;
+  return window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - panelWidth;
+}
+
+/**
+ * Computes the maximum size for the panel:
  *
- * @param position - The position of the resize handle relative to the content it resizes. 'left'
- *   for sidebar, 'bottom' or 'right' for the addon panel.
+ * - Bottom panel: `innerHeight` minus the toolbar so it cannot push the toolbar off-screen.
+ * - Right panel: `innerWidth` minus the content minimum and the sidebar.
+ */
+function computePanelMaxSize(panelPosition: API_Layout['panelPosition'], navSize: number): number {
+  if (panelPosition === 'bottom') {
+    return window.innerHeight - TOOLBAR_HEIGHT_PX;
+  }
+  return window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - navSize;
+}
+
+/**
+ * Given the current layout state, a size key, a max size, and the key pressed, returns the next
+ * layout state with the resized panel/sidebar. All sidebar/panel-specific logic lives in the
+ * callers; this function is fully parameterised.
+ *
+ * @param sizeKey - The layout state key to resize.
+ * @param maxSize - The effective maximum size for the region.
+ * @param increaseKey - The key that grows the region.
+ * @param decreaseKey - The key that shrinks the region.
  */
 function applyResizeKeyboard(
   state: LayoutState,
-  position: 'left' | 'right' | 'bottom' | 'top',
+  sizeKey: 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth',
   key: string,
-  step: number
+  step: number,
+  maxSize: number,
+  increaseKey: string,
+  decreaseKey: string
 ): LayoutState {
-  const sizeKey =
-    position === 'left'
-      ? 'navSize'
-      : position === 'bottom' || position === 'top'
-        ? 'bottomPanelHeight'
-        : 'rightPanelWidth';
-
-  // Compute the effective maximum size for each resizable region, accounting for the CSS grid's
-  // minimum content column width and the space occupied by other regions.
-  let maxSize: number;
-  if (position === 'bottom' || position === 'top') {
-    maxSize = window.innerHeight;
-  } else if (position === 'left') {
-    // Sidebar: content column needs MINIMUM_CONTENT_WIDTH_PX, and right panel occupies space when active
-    maxSize =
-      window.innerWidth -
-      MINIMUM_CONTENT_WIDTH_PX -
-      (state.panelPosition === 'right' ? state.rightPanelWidth : 0);
-  } else {
-    // Right panel: content column needs MINIMUM_CONTENT_WIDTH_PX, and sidebar occupies space
-    maxSize = window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - state.navSize;
-  }
-
-  let increaseKey: string;
-  let decreaseKey: string;
-  switch (position) {
-    case 'left':
-      increaseKey = 'ArrowRight';
-      decreaseKey = 'ArrowLeft';
-      break;
-    case 'right':
-      increaseKey = 'ArrowLeft';
-      decreaseKey = 'ArrowRight';
-      break;
-    case 'bottom':
-      increaseKey = 'ArrowUp';
-      decreaseKey = 'ArrowDown';
-      break;
-    case 'top':
-      increaseKey = 'ArrowDown';
-      decreaseKey = 'ArrowUp';
-      break;
-  }
-
   const currentSize = state[sizeKey];
 
   switch (key) {
@@ -100,13 +99,28 @@ export function useDragging({
   setState,
   isPanelShown,
   isDesktop,
+  navSize,
+  rightPanelWidth,
+  panelPosition,
 }: {
   setState: Dispatch<SetStateAction<LayoutState>>;
   isPanelShown: boolean;
   isDesktop: boolean;
+  navSize: number;
+  rightPanelWidth: number;
+  panelPosition: API_Layout['panelPosition'];
 }) {
   const panelResizerRef = useRef<HTMLDivElement>(null);
   const sidebarResizerRef = useRef<HTMLDivElement>(null);
+
+  // Compute current max sizes so callers can use them for aria attributes without duplicating logic.
+  // Evaluated at render time (from the same values the containers receive), so they stay in sync.
+  const sidebarMaxWidth =
+    typeof window !== 'undefined'
+      ? computeSidebarMaxWidth(panelPosition, rightPanelWidth, isPanelShown)
+      : undefined;
+  const panelMaxSize =
+    typeof window !== 'undefined' ? computePanelMaxSize(panelPosition, navSize) : undefined;
 
   useEffect(() => {
     const panelResizer = panelResizerRef.current;
@@ -136,7 +150,7 @@ export function useDragging({
       }
     };
 
-    const onDragEnd = (e: MouseEvent) => {
+    const onDragEnd = () => {
       setState((state) => {
         if (draggedElement === sidebarResizer) {
           if (state.navSize < SIDEBAR_MIN_WIDTH_PX && state.navSize > 0) {
@@ -176,7 +190,7 @@ export function useDragging({
 
     const onDrag = (e: MouseEvent) => {
       if (e.buttons === 0) {
-        onDragEnd(e);
+        onDragEnd();
         return;
       }
 
@@ -202,8 +216,11 @@ export function useDragging({
           }
           return {
             ...state,
-            // @ts-expect-error (non strict)
-            navSize: clamp(sidebarDragX, 0, e.view.innerWidth),
+            navSize: clamp(
+              sidebarDragX,
+              0,
+              computeSidebarMaxWidth(state.panelPosition, state.rightPanelWidth, isPanelShown)
+            ),
           };
         }
         if (draggedElement === panelResizer) {
@@ -237,12 +254,13 @@ export function useDragging({
             };
           }
 
-          const sizeAxisMax =
-            // @ts-expect-error (non strict)
-            state.panelPosition === 'bottom' ? e.view.innerHeight : e.view.innerWidth;
           return {
             ...state,
-            [sizeAxisState]: clamp(panelDragSize, 0, sizeAxisMax),
+            [sizeAxisState]: clamp(
+              panelDragSize,
+              0,
+              computePanelMaxSize(state.panelPosition, state.navSize)
+            ),
           };
         }
         return state;
@@ -255,7 +273,17 @@ export function useDragging({
       }
       e.preventDefault();
       const step = e.shiftKey ? KEYBOARD_STEP_PX * KEYBOARD_SHIFT_MULTIPLIER : KEYBOARD_STEP_PX;
-      setState((state) => applyResizeKeyboard(state, 'left', e.key, step));
+      setState((state) =>
+        applyResizeKeyboard(
+          state,
+          'navSize',
+          e.key,
+          step,
+          computeSidebarMaxWidth(state.panelPosition, state.rightPanelWidth, isPanelShown),
+          'ArrowRight',
+          'ArrowLeft'
+        )
+      );
     };
 
     const onPanelKeyDown = (e: KeyboardEvent) => {
@@ -264,7 +292,17 @@ export function useDragging({
       }
       e.preventDefault();
       const step = e.shiftKey ? KEYBOARD_STEP_PX * KEYBOARD_SHIFT_MULTIPLIER : KEYBOARD_STEP_PX;
-      setState((state) => applyResizeKeyboard(state, state.panelPosition, e.key, step));
+      setState((state) =>
+        applyResizeKeyboard(
+          state,
+          state.panelPosition === 'bottom' ? 'bottomPanelHeight' : 'rightPanelWidth',
+          e.key,
+          step,
+          computePanelMaxSize(state.panelPosition, state.navSize),
+          state.panelPosition === 'bottom' ? 'ArrowUp' : 'ArrowLeft',
+          state.panelPosition === 'bottom' ? 'ArrowDown' : 'ArrowRight'
+        )
+      );
     };
 
     panelResizer?.addEventListener('mousedown', onDragStart);
@@ -287,5 +325,5 @@ export function useDragging({
     setState,
   ]);
 
-  return { panelResizerRef, sidebarResizerRef };
+  return { panelResizerRef, sidebarResizerRef, sidebarMaxWidth, panelMaxSize };
 }

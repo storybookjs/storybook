@@ -3,14 +3,13 @@ import React from 'react';
 import { styled } from 'storybook/theming';
 
 import type { API_Layout } from '../../../types';
-import { MINIMUM_CONTENT_WIDTH_PX } from '../../constants';
 import { Drag } from './Drag';
 
 interface PanelContainerProps {
   children: React.ReactNode;
   bottomPanelHeight: number;
   rightPanelWidth: number;
-  navSize: number;
+  panelMaxSize: number | undefined;
   panelResizerRef: React.Ref<HTMLDivElement>;
   position: API_Layout['panelPosition'];
 }
@@ -33,23 +32,12 @@ const PanelSlot = styled.div({
  * from the Accessibility Object Model when effectively collapsed.
  */
 const PanelContainer = React.memo<PanelContainerProps>(function PanelContainer(props) {
-  const { children, bottomPanelHeight, rightPanelWidth, navSize, panelResizerRef, position } =
+  const { children, bottomPanelHeight, rightPanelWidth, panelMaxSize, panelResizerRef, position } =
     props;
   const resolvedPosition = position ?? 'bottom';
 
   const shouldHidePanelContent =
     resolvedPosition === 'bottom' ? bottomPanelHeight === 0 : rightPanelWidth === 0;
-
-  // The CSS grid reserves MINIMUM_CONTENT_WIDTH_PX for the content column (and the sidebar
-  // column when the panel is positioned on the right), so the panel cannot actually grow beyond
-  // this effective maximum. Using window.innerWidth alone would cause aria-valuenow to overshoot
-  // the visual size, making keyboard resizing appear unresponsive.
-  const maxSize =
-    typeof window !== 'undefined'
-      ? resolvedPosition === 'bottom'
-        ? window.innerHeight
-        : window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - navSize
-      : undefined;
 
   return (
     <Container position={resolvedPosition}>
@@ -59,7 +47,7 @@ const PanelContainer = React.memo<PanelContainerProps>(function PanelContainer(p
         overlapping={resolvedPosition === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
         aria-label="Addon panel resize handle"
         aria-valuenow={resolvedPosition === 'bottom' ? bottomPanelHeight : rightPanelWidth}
-        aria-valuemax={maxSize}
+        aria-valuemax={panelMaxSize}
       />
       <PanelSlot
         // This ensures that the panel content is not reachable by keyboard or assistive

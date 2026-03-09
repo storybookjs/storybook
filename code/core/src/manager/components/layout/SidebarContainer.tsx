@@ -2,15 +2,12 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import type { API_Layout } from '../../../types';
-import { MINIMUM_CONTENT_WIDTH_PX } from '../../constants';
 import { Drag } from './Drag';
 
 interface SidebarContainerProps {
   children: React.ReactNode;
   navSize: number;
-  rightPanelWidth: number;
-  panelPosition: API_Layout['panelPosition'];
+  sidebarMaxWidth: number | undefined;
   sidebarResizerRef: React.Ref<HTMLDivElement>;
 }
 
@@ -31,20 +28,9 @@ const SidebarSlot = styled.div({
  * excluded from the Accessibility Object Model when effectively collapsed.
  */
 const SidebarContainer = React.memo<SidebarContainerProps>(function SidebarContainer(props) {
-  const { children, navSize, rightPanelWidth, panelPosition, sidebarResizerRef } = props;
+  const { children, navSize, sidebarMaxWidth, sidebarResizerRef } = props;
 
   const shouldHideSidebarContent = navSize === 0;
-
-  // The CSS grid reserves MINIMUM_CONTENT_WIDTH_PX for the content column (and the right panel
-  // column when the panel is positioned on the right), so the sidebar cannot actually grow beyond
-  // this effective maximum. Using window.innerWidth alone would cause aria-valuenow to overshoot
-  // the visual size, making keyboard resizing appear unresponsive.
-  const maxWidth =
-    typeof window !== 'undefined'
-      ? window.innerWidth -
-        MINIMUM_CONTENT_WIDTH_PX -
-        (panelPosition === 'right' ? rightPanelWidth : 0)
-      : undefined;
 
   return (
     <Container>
@@ -61,7 +47,7 @@ const SidebarContainer = React.memo<SidebarContainerProps>(function SidebarConta
         position="left"
         aria-label="Sidebar resize handle"
         aria-valuenow={navSize}
-        aria-valuemax={maxWidth}
+        aria-valuemax={sidebarMaxWidth}
       />
     </Container>
   );

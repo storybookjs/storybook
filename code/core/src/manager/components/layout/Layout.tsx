@@ -110,17 +110,21 @@ const useLayoutSyncingState = ({
     managerLayoutState.viewMode !== 'docs';
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
-  const { panelResizerRef, sidebarResizerRef } = useDragging({
-    setState: setInternalDraggingSizeState,
-    isPanelShown,
-    isDesktop,
-  });
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
     ? internalDraggingSizeState
     : managerLayoutState;
 
   const customisedNavSize = api.getNavSizeWithCustomisations?.(navSize) ?? navSize;
   const customisedShowPanel = api.getShowPanelWithCustomisations?.(isPanelShown) ?? isPanelShown;
+
+  const { panelResizerRef, sidebarResizerRef, sidebarMaxWidth, panelMaxSize } = useDragging({
+    setState: setInternalDraggingSizeState,
+    isPanelShown,
+    isDesktop,
+    navSize: customisedNavSize,
+    rightPanelWidth,
+    panelPosition: managerLayoutState.panelPosition,
+  });
 
   return {
     navSize: customisedNavSize,
@@ -129,6 +133,8 @@ const useLayoutSyncingState = ({
     panelPosition: managerLayoutState.panelPosition,
     panelResizerRef,
     sidebarResizerRef,
+    sidebarMaxWidth,
+    panelMaxSize,
     showPages: isPagesShown,
     showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
@@ -150,6 +156,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     panelPosition,
     panelResizerRef,
     sidebarResizerRef,
+    sidebarMaxWidth,
+    panelMaxSize,
     showPages,
     showPanel,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
@@ -173,8 +181,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
         {isDesktop && (
           <SidebarContainer
             navSize={navSize}
-            rightPanelWidth={rightPanelWidth}
-            panelPosition={panelPosition}
+            sidebarMaxWidth={sidebarMaxWidth}
             sidebarResizerRef={sidebarResizerRef}
           >
             {slots.slotSidebar}
@@ -198,7 +205,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           <PanelContainer
             bottomPanelHeight={bottomPanelHeight}
             rightPanelWidth={rightPanelWidth}
-            navSize={navSize}
+            panelMaxSize={panelMaxSize}
             panelResizerRef={panelResizerRef}
             position={panelPosition}
           >

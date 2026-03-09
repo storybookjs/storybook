@@ -23,7 +23,8 @@ export { isMockFunction, mocks };
  * different `@vitest/spy` instance than the one bundled with storybook/test. This means they won't
  * appear in the `mocks` Set that `clearAllMocks`/`resetAllMocks`/`restoreAllMocks` iterate over.
  *
- * The automock code generation registers spies here so they can be properly cleared between stories.
+ * The automock code generation registers spies here so they can be properly cleared between
+ * stories.
  */
 const moduleMockSpies: Set<MockInstance> = ((globalThis as any).__STORYBOOK_MODULE_MOCK_SPIES__ ??=
   new Set<MockInstance>());

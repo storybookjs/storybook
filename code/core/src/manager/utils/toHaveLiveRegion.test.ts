@@ -80,4 +80,14 @@ describe('toHaveLiveRegion', () => {
     container.innerHTML = '<div aria-live="polite">Tests passed</div>';
     expect(container).not.toHaveLiveRegion({ text: 'Tests failed' });
   });
+
+  it('handles global regex without false negatives across multiple elements', () => {
+    const container = document.createElement('div');
+    container.innerHTML =
+      '<div aria-live="polite">First message</div><div aria-live="polite">Second message</div>';
+    const globalRegex = /message/g;
+    // Call twice to ensure lastIndex reset works
+    expect(container).toHaveLiveRegion({ text: globalRegex });
+    expect(container).toHaveLiveRegion({ text: globalRegex });
+  });
 });

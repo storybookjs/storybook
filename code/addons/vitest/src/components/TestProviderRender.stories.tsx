@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { destroyAnnouncer } from '@react-aria/live-announcer';
 import { ManagerContext, addons } from 'storybook/manager-api';
-import { expect, fn } from 'storybook/test';
+import { expect, fn, userEvent, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { toHaveLiveRegion } from '../../../../core/src/manager/utils/toHaveLiveRegion';
@@ -329,19 +329,34 @@ export const InSidebarContextMenu: Story = {
   },
 };
 
-/** Verifies that transitioning to the running state announces "Test run started." */
+/** Verifies that clicking "Start test run" announces "Test run started." */
 export const AnnouncesTestRunStart: Story = {
   args: {
     testProviderState: 'test-provider-state:pending',
   },
-  play: async ({ mount, args }) => {
-    // First render with pending state (initial)
-    await mount(<TestProviderRender {...args} />);
+  render: function Render(args) {
+    const [state, setState] = React.useState<TestProviderState>(args.testProviderState);
+    React.useEffect(() => {
+      mockStore.send.mockImplementation(((action: { type: string }) => {
+        if (action.type === 'TRIGGER_RUN') {
+          setState('test-provider-state:running');
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any);
+    }, []);
+    return <TestProviderRender {...args} testProviderState={state} />;
+  },
+  play: async ({ canvas, step }) => {
+    await step('Click Start test run to begin testing', async () => {
+      const startButton = canvas.getByRole('button', { name: 'Start test run' });
+      await userEvent.click(startButton);
+    });
 
-    // Re-render with running state to trigger the announcement
-    await mount(<TestProviderRender {...args} testProviderState="test-provider-state:running" />);
-
-    await expect(document.body).toHaveLiveRegion({ text: 'Test run started.', level: 'polite' });
+    await step('Verify "Test run started." is announced', async () => {
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({ text: 'Test run started.', level: 'polite' });
+      });
+    });
   },
 };
 
@@ -355,16 +370,23 @@ export const AnnouncesTestRunFinished: Story = {
       'status-value:error': ['story-id-4'],
     },
   },
-  play: async ({ mount, args }) => {
-    // First render with running state
-    await mount(<TestProviderRender {...args} />);
-
-    // Transition to succeeded to trigger the announcement
-    await mount(<TestProviderRender {...args} testProviderState="test-provider-state:succeeded" />);
-
-    await expect(document.body).toHaveLiveRegion({
-      text: /Test run finished\. 1 component errored, 3 components passed\./,
-      level: 'assertive',
+  render: function Render(args) {
+    const [state, setState] = React.useState<TestProviderState>(args.testProviderState);
+    React.useEffect(() => {
+      // Simulate test completion after a brief delay.
+      const timer = setTimeout(() => setState('test-provider-state:succeeded'), 100);
+      return () => clearTimeout(timer);
+    }, []);
+    return <TestProviderRender {...args} testProviderState={state} />;
+  },
+  play: async ({ step }) => {
+    await step('Verify test results are announced', async () => {
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({
+          text: /Test run finished\. 1 component errored, 3 components passed\./,
+          level: 'assertive',
+        });
+      });
     });
   },
 };
@@ -381,16 +403,23 @@ export const AnnouncesTestRunCrashed: Story = {
       },
     },
   },
-  play: async ({ mount, args }) => {
-    // First render with running state
-    await mount(<TestProviderRender {...args} />);
-
-    // Transition to crashed to trigger the announcement
-    await mount(<TestProviderRender {...args} testProviderState="test-provider-state:crashed" />);
-
-    await expect(document.body).toHaveLiveRegion({
-      text: 'Test run crashed.',
-      level: 'assertive',
+  render: function Render(args) {
+    const [state, setState] = React.useState<TestProviderState>(args.testProviderState);
+    React.useEffect(() => {
+      // Simulate crash after a brief delay.
+      const timer = setTimeout(() => setState('test-provider-state:crashed'), 100);
+      return () => clearTimeout(timer);
+    }, []);
+    return <TestProviderRender {...args} testProviderState={state} />;
+  },
+  play: async ({ step }) => {
+    await step('Verify crash is announced', async () => {
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({
+          text: 'Test run crashed.',
+          level: 'assertive',
+        });
+      });
     });
   },
 };

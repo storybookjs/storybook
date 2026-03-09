@@ -56,7 +56,14 @@ export function toHaveLiveRegion(
 
     // Filter by text content.
     const content = el.textContent ?? '';
-    const textMatches = typeof text === 'string' ? content.includes(text) : text.test(content);
+    let textMatches: boolean;
+    if (typeof text === 'string') {
+      textMatches = content.includes(text);
+    } else {
+      // Reset lastIndex to avoid false negatives with global/sticky regexes.
+      text.lastIndex = 0;
+      textMatches = text.test(content);
+    }
 
     if (textMatches) {
       matchingRegions.push(el);

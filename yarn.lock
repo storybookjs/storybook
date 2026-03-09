@@ -7728,6 +7728,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-vitest@workspace:code/addons/vitest"
   dependencies:
+    "@react-aria/live-announcer": "npm:^3.4.4"
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.1"
@@ -28389,7 +28390,6 @@ __metadata:
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@react-aria/interactions": "npm:^3.25.5"
     "@react-aria/landmark": "npm:^3.0.8"
-    "@react-aria/live-announcer": "npm:^3.4.4"
     "@react-aria/overlays": "npm:^3.29.1"
     "@react-aria/tabs": "npm:^3.10.7"
     "@react-aria/toolbar": "npm:3.0.0-beta.20"

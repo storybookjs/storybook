@@ -1,3 +1,5 @@
+import type { PlayFunctionContext } from 'storybook/internal/types';
+
 import { global as globalThis } from '@storybook/global';
 
 import { fn, userEvent, within } from 'storybook/test';
@@ -32,7 +34,7 @@ export const LimitRetainsNewest = {
       limit: 3,
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('button');
 

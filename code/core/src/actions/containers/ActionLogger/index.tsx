@@ -37,7 +37,8 @@ export default function ActionLogger({ active, api }: ActionLoggerProps) {
   const addAction = useCallback((action: ActionDisplay) => {
     setActions((prevActions) => {
       const previous = prevActions.length > 0 ? prevActions[prevActions.length - 1] : null;
-      const limit = action.options.limit;
+      const rawLimit = action.options.limit;
+      const limit = Number.isFinite(rawLimit) ? Math.max(0, Math.trunc(rawLimit)) : 0;
 
       if (limit <= 0) {
         return [];

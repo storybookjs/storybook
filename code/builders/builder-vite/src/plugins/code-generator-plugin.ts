@@ -11,7 +11,7 @@ import { generateImportFnScriptCode } from '../codegen-importfn-script';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel';
 import { transformIframeHtml } from '../transform-iframe-html';
-import { bundlerOptionsKey, ensureRolldownOptions } from '../utils/vite-features';
+import { bundlerOptionsKey } from '../utils/vite-features';
 import {
   SB_VIRTUAL_FILES,
   SB_VIRTUAL_FILE_IDS,
@@ -54,9 +54,6 @@ export function codeGeneratorPlugin(options: Options) {
           ...build[bundlerOptionsKey],
           input: iframePath,
         };
-
-        // necessary rolldown specific overrides
-        ensureRolldownOptions(config);
       }
     },
     configResolved(config) {

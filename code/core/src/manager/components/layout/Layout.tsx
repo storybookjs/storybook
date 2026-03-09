@@ -9,10 +9,10 @@ import { styled } from 'storybook/theming';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Notifications } from '../../container/Notifications';
 import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
-import { Drag } from './Drag';
 import { useLayout } from './LayoutProvider';
 import { MainAreaContainer } from './MainAreaContainer';
 import { PanelContainer } from './PanelContainer';
+import { SidebarContainer } from './SidebarContainer';
 import { useDragging } from './useDragging';
 import { useLandmarkIndicator } from './useLandmarkIndicator';
 
@@ -172,15 +172,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     >
       <>
         {isDesktop && (
-          <SidebarContainer>
+          <SidebarContainer navSize={navSize} sidebarResizerRef={sidebarResizerRef}>
             {slots.slotSidebar}
-            <Drag
-              ref={sidebarResizerRef}
-              position="left"
-              aria-label="Sidebar resize handle"
-              aria-valuenow={navSize}
-              aria-valuemax={typeof window !== 'undefined' ? window.innerWidth : undefined}
-            />
           </SidebarContainer>
         )}
         {isMobile && (
@@ -244,11 +237,4 @@ const LayoutContainer = styled.div<{
                 "sidebar panel   panel"`;
     })(),
   },
-}));
-
-const SidebarContainer = styled.div(({ theme }) => ({
-  backgroundColor: theme.appBg,
-  gridArea: 'sidebar',
-  position: 'relative',
-  borderRight: `1px solid ${theme.appBorderColor}`,
 }));

@@ -382,7 +382,28 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'toggleNav': {
+          const wasNavShown = fullAPI.getIsNavShown();
+          const sidebarElement = document.getElementById(focusableUIElements.sidebarRegion);
+          const wasFocusInSidebar =
+            sidebarElement &&
+            document.activeElement &&
+            sidebarElement.contains(document.activeElement);
+
           fullAPI.toggleNav();
+
+          if (wasNavShown && wasFocusInSidebar) {
+            // poll: true always returns a Promise.
+            (
+              fullAPI.focusOnUIElement(focusableUIElements.showSidebar, {
+                poll: true,
+              }) as Promise<boolean>
+            ).then((success) => {
+              // Fallback to body for predictable behavior.
+              if (success === false) {
+                document.body.focus();
+              }
+            });
+          }
           break;
         }
 

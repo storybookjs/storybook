@@ -254,7 +254,8 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
-        : global.PREVIEW_URL || `${managerBase.replace(/\/[^/]*$/, '/')}iframe.html`;
+        : global.PREVIEW_URL ||
+          `${managerBase.replace(/\/[^/]*\.html$/, '').replace(/\/?$/, '/')}iframe.html`;
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
       const { args = '', globals = '', ...otherParams } = queryParams;

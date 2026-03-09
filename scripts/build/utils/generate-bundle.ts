@@ -4,6 +4,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
+import { raw as rawPlugin } from 'esbuild-raw-plugin';
 import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -99,6 +100,7 @@ export async function generateBundle({
       'process.env.NODE_ENV': 'process.env.NODE_ENV',
     },
     plugins: [
+      rawPlugin(),
       {
         name: 'postbuild',
         setup(build) {
@@ -128,7 +130,7 @@ export async function generateBundle({
       // The following modules are conditionally called inside of @vitest/mocker
       // The actual function which calls these modules is not imported
       // and therefore we can externalize them.
-      'msw/browser', 
+      'msw/browser',
       'msw/core/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
     alias: {
@@ -205,6 +207,10 @@ export async function generateBundle({
     contexts.push(
       esbuild.context({
         ...sharedOptions,
+        external: [
+          ...(sharedOptions.external as string[]),
+          ...(entries.browser.flatMap((entry) => entry.external) ?? []),
+        ].filter(Boolean),
         entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
         chunkNames: '_browser-chunks/[name]-[hash]',

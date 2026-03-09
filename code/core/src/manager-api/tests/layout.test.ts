@@ -1,5 +1,5 @@
 import type { Mock } from 'vitest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { API_Provider } from 'storybook/internal/types';
 
@@ -538,6 +538,144 @@ describe('layout API', () => {
 
       // not fullscreen anymore
       expect(layoutApi.getIsFullscreen()).toBe(false);
+    });
+  });
+
+  describe('focusOnUIElement', () => {
+    let mockActiveElement: any;
+    let mockGetElementById: ReturnType<typeof vi.fn>;
+    let focusLayoutApi: SubAPI;
+
+    beforeEach(async () => {
+      mockActiveElement = null;
+      mockGetElementById = vi.fn().mockReturnValue(null);
+
+      // Set up mock document on globalThis before re-importing layout module.
+      // @storybook/global resolves to globalThis in Node, so the layout module's
+      // `const { document } = global;` will capture this mock.
+      (globalThis as any).document = {
+        getElementById: mockGetElementById,
+        get activeElement() {
+          return mockActiveElement;
+        },
+      };
+
+      // Re-import the layout module so it captures our mock document
+      vi.resetModules();
+      const { init: freshInit } = await import('../modules/layout');
+      focusLayoutApi = freshInit({
+        store,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs).api;
+    });
+
+    afterEach(() => {
+      delete (globalThis as any).document;
+      vi.restoreAllMocks();
+    });
+
+    const createMockElement = (id: string) => {
+      const element = {
+        id,
+        focus: vi.fn(() => {
+          mockActiveElement = element;
+        }),
+        select: vi.fn(),
+      };
+      mockGetElementById.mockImplementation((queryId: string) => (queryId === id ? element : null));
+      return element;
+    };
+
+    it('should return false when elementId is not provided', () => {
+      const result = focusLayoutApi.focusOnUIElement();
+      expect(result).toBe(false);
+    });
+
+    it('should return false when elementId is undefined', () => {
+      const result = focusLayoutApi.focusOnUIElement(undefined);
+      expect(result).toBe(false);
+    });
+
+    it('should return true and focus element when element exists', () => {
+      const element = createMockElement('test-element');
+      const result = focusLayoutApi.focusOnUIElement('test-element');
+      expect(result).toBe(true);
+      expect(element.focus).toHaveBeenCalled();
+    });
+
+    it('should return true and call select when select option is true (boolean form)', () => {
+      const element = createMockElement('test-element');
+      const result = focusLayoutApi.focusOnUIElement('test-element', true);
+      expect(result).toBe(true);
+      expect(element.focus).toHaveBeenCalled();
+      expect(element.select).toHaveBeenCalled();
+    });
+
+    it('should return true and call select when select option is true (object form)', () => {
+      const element = createMockElement('test-element');
+      const result = focusLayoutApi.focusOnUIElement('test-element', { select: true });
+      expect(result).toBe(true);
+      expect(element.focus).toHaveBeenCalled();
+      expect(element.select).toHaveBeenCalled();
+    });
+
+    it('should not call select when select option is false', () => {
+      const element = createMockElement('test-element');
+      const result = focusLayoutApi.focusOnUIElement('test-element', { select: false });
+      expect(result).toBe(true);
+      expect(element.focus).toHaveBeenCalled();
+      expect(element.select).not.toHaveBeenCalled();
+    });
+
+    it('should return false without polling when element does not exist and poll is false', () => {
+      const result = focusLayoutApi.focusOnUIElement('nonexistent-element', { poll: false });
+      expect(result).toBe(false);
+    });
+
+    it('should return a Promise when element does not exist and poll is true (default)', () => {
+      const result = focusLayoutApi.focusOnUIElement('nonexistent-element');
+      expect(result).toBeInstanceOf(Promise);
+    });
+
+    it('should resolve to true when element appears during polling', async () => {
+      vi.useFakeTimers();
+
+      const element = {
+        id: 'delayed-element',
+        focus: vi.fn(),
+        select: vi.fn(),
+      };
+
+      // Element not available initially
+      const result = focusLayoutApi.focusOnUIElement('delayed-element');
+      expect(result).toBeInstanceOf(Promise);
+
+      // Make element available and focusable
+      mockGetElementById.mockImplementation((id: string) =>
+        id === 'delayed-element' ? element : null
+      );
+      element.focus.mockImplementation(() => {
+        mockActiveElement = element;
+      });
+
+      await vi.advanceTimersByTimeAsync(150);
+      await expect(result).resolves.toBe(true);
+      expect(element.focus).toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it('should resolve to false when element never appears during polling', async () => {
+      vi.useFakeTimers();
+
+      const result = focusLayoutApi.focusOnUIElement('never-appears');
+      expect(result).toBeInstanceOf(Promise);
+
+      await vi.advanceTimersByTimeAsync(600);
+      await expect(result).resolves.toBe(false);
+
+      vi.useRealTimers();
     });
   });
 });

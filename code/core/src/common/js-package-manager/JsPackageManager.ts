@@ -624,7 +624,7 @@ export abstract class JsPackageManager {
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ): ResultPromise;
   public abstract runPackageCommand(
-    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[]; useRemotePkg?: boolean }
   ): ResultPromise;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(

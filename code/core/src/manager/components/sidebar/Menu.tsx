@@ -199,6 +199,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
 
   return (
     <PopoverProvider
+      ariaLabel="Storybook menu"
       placement={'bottom-start'}
       padding={0}
       popover={({ onHide }) => <SidebarMenuList onHide={onHide} menu={menu} />}

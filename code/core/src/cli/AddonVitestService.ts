@@ -115,7 +115,11 @@ export class AddonVitestService {
    * @returns Array of error messages if installation fails
    */
   async installPlaywright(
-    options: { yes?: boolean } = {}
+    options: {
+      yes?: boolean;
+      /** Is set to true if Storybook didn't install the dependencies yet */
+      useRemotePkg?: boolean;
+    } = {}
   ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
@@ -148,6 +152,7 @@ export class AddonVitestService {
           (signal) =>
             this.packageManager.runPackageCommand({
               args: playwrightCommand,
+              useRemotePkg: options.useRemotePkg,
               stdio: ['inherit', 'pipe', 'pipe'],
               signal,
             }),
@@ -238,8 +243,9 @@ export class AddonVitestService {
     // Check Vitest version (>=3.0.0 - stricter requirement from postinstall)
     const vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
     const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
+    const isCanary = coercedVitestVersion?.version.startsWith('0.0.0') ?? false;
 
-    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0')) {
+    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0') && !isCanary) {
       reasons.push(
         `The addon requires Vitest 3.0.0 or higher. You are currently using ${vitestVersionSpecifier}.`
       );

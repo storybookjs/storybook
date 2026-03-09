@@ -3,6 +3,7 @@ import type {
   ChannelArgsMulti,
   ChannelArgsSingle,
   ChannelEvent,
+  ChannelLike,
   ChannelTransport,
   EventsKeyValue,
   Listener,
@@ -18,7 +19,7 @@ const generateRandomId = () => {
   return Math.random().toString(16).slice(2);
 };
 
-export class Channel {
+export class Channel implements ChannelLike {
   readonly isAsync: boolean;
 
   private sender = generateRandomId();

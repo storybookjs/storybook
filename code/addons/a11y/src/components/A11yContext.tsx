@@ -27,7 +27,7 @@ import { convert, themes } from 'storybook/theming';
 import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper';
 import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
 import type { A11yParameters } from '../params';
-import type { A11YReport, EnhancedResult, EnhancedResults, Status } from '../types';
+import type { A11yReport, EnhancedResult, EnhancedResults, Status } from '../types';
 import { RuleType } from '../types';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 
@@ -244,7 +244,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
   const handleReport = useCallback(
     ({ reporters }: StoryFinishedPayload) => {
-      const a11yReport = reporters.find((r) => r.type === 'a11y') as Report<A11YReport> | undefined;
+      const a11yReport = reporters.find((r) => r.type === 'a11y') as Report<A11yReport> | undefined;
 
       if (a11yReport) {
         if ('error' in a11yReport.result) {

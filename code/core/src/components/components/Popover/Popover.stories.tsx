@@ -148,26 +148,25 @@ export const WithoutColor = meta.story({
   },
 });
 
-const PopoverWithModal = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div>
-      <Button ariaLabel={false} onClick={() => setIsOpen(true)}>
-        Open modal
-      </Button>
-      <Modal open={isOpen} onOpenChange={setIsOpen}>
-        <div>Hello</div>
-      </Modal>
-    </div>
-  );
-};
-
 export const WithModal = meta.story({
   render: () => {
-    const [isPopoverOpen, setIsPopoverOpen] = useState(true);
+    const [isPopoverOpen] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     return (
       <>
-        <PopoverProvider visible={isPopoverOpen} popover={<PopoverWithModal />}>
+        <PopoverProvider
+          visible={isPopoverOpen}
+          popover={
+            <div>
+              <Button ariaLabel={false} onClick={() => setIsModalOpen(true)}>
+                Open modal
+              </Button>
+              <Modal open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <div>Hello</div>
+              </Modal>
+            </div>
+          }
+        >
           <Button ariaLabel={false}>Open popover</Button>
         </PopoverProvider>
         <div style={{ width: 100, height: 100, backgroundColor: 'thistle' }}></div>

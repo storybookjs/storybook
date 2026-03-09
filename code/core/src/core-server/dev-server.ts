@@ -5,33 +5,30 @@ import type { Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
-import invariant from 'tiny-invariant';
 
 import { telemetry } from '../telemetry';
 import { type StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
-import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
+import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware';
 import { registerIndexJsonRoute } from './utils/index-json';
 import { registerManifests } from './utils/manifests/manifests';
 import { useStorybookMetadata } from './utils/metadata';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-browser/open-in-browser';
-import { getServerAddresses } from './utils/server-address';
-import { getServer } from './utils/server-init';
+import type { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
 import { summarizeIndex } from './utils/summarizeIndex';
 
-export async function storybookDevServer(options: Options) {
-  const [server, core] = await Promise.all([getServer(options), options.presets.apply('core')]);
-  const app = polka({ server });
+export async function storybookDevServer(
+  options: Options,
+  server: Awaited<ReturnType<typeof getServer>>
+) {
+  const core = await options.presets.apply('core');
 
-  const serverChannel = await options.presets.apply(
-    'experimental_serverChannel',
-    getServerChannel(server)
-  );
+  const app = polka({ server });
 
   const workingDir = process.cwd();
   const configDir = options.configDir;
@@ -52,8 +49,14 @@ export async function storybookDevServer(options: Options) {
     options.extendServer(server);
   }
 
-  // CORS middleware must be registered BEFORE route handlers to ensure all routes
-  // (including /index.json) receive proper CORS headers for Storybook Composition
+  app.use(
+    getHostValidationMiddleware({
+      host: options.host,
+      allowedHosts: core?.allowedHosts,
+      localAddress: options.localAddress,
+      networkAddress: options.networkAddress,
+    })
+  );
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 
@@ -61,7 +64,7 @@ export async function storybookDevServer(options: Options) {
     app,
     storyIndexGeneratorPromise,
     normalizedStories,
-    serverChannel,
+    channel: options.channel,
     workingDir,
     configDir,
   });
@@ -70,14 +73,6 @@ export async function storybookDevServer(options: Options) {
 
   // Apply experimental_devServer preset to allow addons/frameworks to extend the dev server with middlewares, etc.
   await options.presets.apply('experimental_devServer', app);
-
-  const { port, host, initialPath } = options;
-  invariant(port, 'expected options to have a port');
-  const proto = options.https ? 'https' : 'http';
-  const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
-
-  // Expose addresses on options for the manager builder to surface in globals, important for QR code link sharing
-  options.networkAddress = networkAddress;
 
   if (!core?.builder) {
     throw new MissingBuilderError();
@@ -109,7 +104,7 @@ export async function storybookDevServer(options: Options) {
         options,
         router: app,
         server,
-        channel: serverChannel,
+        channel: options.channel,
       });
 
   let previewResult: Awaited<ReturnType<(typeof previewBuilder)['start']>> =
@@ -123,7 +118,7 @@ export async function storybookDevServer(options: Options) {
         options,
         router: app,
         server,
-        channel: serverChannel,
+        channel: options.channel,
       })
       .catch(async (e: any) => {
         logger.error('Failed to build the preview');
@@ -143,15 +138,15 @@ export async function storybookDevServer(options: Options) {
 
   const listening = new Promise<void>((resolve, reject) => {
     server.once('error', reject);
-    app.listen({ port, host }, resolve);
+    app.listen({ port: options.port, host: options.host }, resolve);
   });
 
   try {
     const [indexGenerator] = await Promise.all([storyIndexGeneratorPromise, listening]);
 
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
-      const url = host ? networkAddress : address;
-      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url).catch(() => {
+      const url = options.host ? options.networkAddress : options.localAddress;
+      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url!).catch(() => {
         // the browser window could not be opened, this is non-critical, we just ignore the error
       });
     }
@@ -190,5 +185,5 @@ export async function storybookDevServer(options: Options) {
     process.on('SIGTERM', cancelTelemetry);
   }
 
-  return { previewResult, managerResult, address, networkAddress };
+  return { previewResult, managerResult };
 }

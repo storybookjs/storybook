@@ -79,7 +79,54 @@ export async function storyToCsfFactory(
 
   const sbConfigImportSpecifier = t.importDefaultSpecifier(t.identifier(sbConfigImportName));
 
+  /**
+   * Collect imports from other .stories files.
+   *
+   * When we see: import * as BaseStories from './Button.stories'; import { Primary } from
+   * './Card.stories';
+   *
+   * We store the local names ("BaseStories", "Primary") so we can later transform references like
+   * `BaseStories.Primary.args` → `BaseStories.Primary.input.args`
+   *
+   * Why? Because those imported stories will ALSO be transformed to CSF4, so their properties will
+   * be under `.input` instead of directly on the object.
+   *
+   * We track TWO types of imports:
+   *
+   * - Namespace imports (import * as X): X.Story.args → X.Story.input.args
+   * - Named imports (import { Story }): Story.args → Story.input.args
+   */
+  const namespaceStoryImports = new Set<string>(); // import * as X
+  const namedStoryImports = new Set<string>(); // import { X } or import X
+
   programNode.body.forEach((node) => {
+    if (t.isImportDeclaration(node)) {
+      const importPath = node.source.value;
+
+      // Check if this import is from a .stories file
+      // Matches: ./Button.stories, ../components/Card.stories.tsx, etc.
+      const isStoryFileImport = /\.stories(\.(ts|tsx|js|jsx|mjs|mts))?$/.test(importPath);
+
+      if (isStoryFileImport) {
+        // Collect all imported names from this story file
+        node.specifiers.forEach((specifier) => {
+          if (t.isImportNamespaceSpecifier(specifier)) {
+            // import * as BaseStories from './Button.stories'
+            // BaseStories.Primary is a story, so we need: BaseStories.Primary.input
+            namespaceStoryImports.add(specifier.local.name);
+          } else if (t.isImportSpecifier(specifier)) {
+            // import { Primary } from './Button.stories'
+            // Primary itself is a story, so we need: Primary.input
+            namedStoryImports.add(specifier.local.name);
+          } else if (t.isImportDefaultSpecifier(specifier)) {
+            // import ButtonStories from './Button.stories'
+            // This typically imports the meta, not stories, so we treat it like namespace
+            namespaceStoryImports.add(specifier.local.name);
+          }
+        });
+      }
+    }
+
     if (t.isImportDeclaration(node) && isValidPreviewPath(node.source.value)) {
       const defaultImportSpecifier = node.specifiers.find((specifier) =>
         t.isImportDefaultSpecifier(specifier)
@@ -96,6 +143,9 @@ export async function storyToCsfFactory(
   });
 
   const hasMeta = !!csf._meta;
+
+  // Combined set for quick lookup
+  const storyFileImports = new Set([...namespaceStoryImports, ...namedStoryImports]);
 
   // @TODO: Support unconventional formats:
   // `export function Story() { };` and `export { Story };
@@ -180,7 +230,13 @@ export async function storyToCsfFactory(
   // For each story, replace any reference of story reuse e.g.
   // Story.args -> Story.input.args
   // meta.args -> meta.input.args
+  // BaseStories.Primary.args -> BaseStories.Primary.input.args (cross-file)
   traverse(csf._ast, {
+    /**
+     * Handle SAME-FILE story references.
+     *
+     * Examples: Primary.args → Primary.input.args meta.args → meta.input.args
+     */
     Identifier(nodePath) {
       const identifierName = nodePath.node.name;
       const binding = nodePath.scope.getBinding(identifierName);
@@ -227,14 +283,144 @@ export async function storyToCsfFactory(
             t.memberExpression(t.identifier(identifierName), t.identifier('input'))
           );
         } catch (err: any) {
-          // This is a tough one to support, we just skip for now.
-          // Relates to `Stories.Story.args` where Stories is coming from another file. We can't know whether it should be transformed or not.
+          // This error occurs for cross-file references like `Stories.Story.args`
+          // which are handled by the MemberExpression visitor below.
           if (err.message.includes(`instead got "MemberExpression"`)) {
             return;
           } else {
             throw err;
           }
         }
+      }
+    },
+
+    /**
+     * Handle CROSS-FILE story references.
+     *
+     * When we import stories from another file: import * as BaseStories from './Button.stories';
+     *
+     * And use them like: BaseStories.Primary.args
+     *
+     * We need to transform to: BaseStories.Primary.input.args
+     *
+     * Why? Because the imported file will ALSO be transformed to CSF4, where story properties are
+     * accessed via `.input`.
+     */
+    MemberExpression(nodePath) {
+      const node = nodePath.node;
+
+      // We're looking for patterns like: BaseStories.Primary.args
+      // Which is: MemberExpression { object: MemberExpression { object: Identifier, property }, property }
+      //
+      // We want to find the inner MemberExpression (BaseStories.Primary)
+      // and check if its object (BaseStories) is from a story file import.
+
+      // Check if this is a nested member expression (e.g., BaseStories.Primary.args)
+      // We want to transform BaseStories.Primary → BaseStories.Primary.input
+      // So we look for MemberExpression where object is also a MemberExpression
+
+      const innerObject = node.object;
+
+      // Check if the object is a MemberExpression like BaseStories.Primary
+      if (t.isMemberExpression(innerObject)) {
+        const importName = innerObject.object; // BaseStories
+        const storyName = innerObject.property; // Primary
+        const accessedProperty = node.property; // args
+
+        // Verify: importName is an Identifier that's in our storyFileImports set
+        if (
+          t.isIdentifier(importName) &&
+          storyFileImports.has(importName.name) &&
+          t.isIdentifier(storyName)
+        ) {
+          // Skip if already transformed: BaseStories.Primary.input.args
+          // This check prevents infinite loops when the traverser revisits modified nodes
+          if (t.isIdentifier(storyName, { name: 'input' })) {
+            return;
+          }
+
+          // Only process if the accessed property is an Identifier
+          if (!t.isIdentifier(accessedProperty)) {
+            return;
+          }
+
+          // Skip if the current property being accessed is 'input'
+          // This means we're looking at something like: BaseStories.Primary.input
+          // which was already transformed in a previous iteration
+          if (accessedProperty.name === 'input') {
+            return;
+          }
+
+          // Skip if accessing a property in the disallow list
+          if (reuseDisallowList.includes(accessedProperty.name)) {
+            return;
+          }
+
+          // Transform: BaseStories.Primary.args → BaseStories.Primary.input.args
+          // We do this by replacing the inner object (BaseStories.Primary)
+          // with (BaseStories.Primary.input)
+          nodePath.node.object = t.memberExpression(innerObject, t.identifier('input'));
+
+          // Skip traversing into the newly created node to prevent infinite loops
+          nodePath.skip();
+        }
+      }
+
+      // Handle NAMED IMPORTS: import { Primary } from './Button.stories'
+      // Usage: Primary.args → Primary.input.args
+      //
+      // Pattern: MemberExpression { object: Identifier("Primary"), property: Identifier("args") }
+      // Where "Primary" is in our namedStoryImports set (NOT namespace imports)
+      if (t.isIdentifier(innerObject) && namedStoryImports.has(innerObject.name)) {
+        const accessedProperty = node.property;
+
+        // Only process if the property is an Identifier
+        if (!t.isIdentifier(accessedProperty)) {
+          return;
+        }
+
+        // Skip if this is already accessing .input
+        if (accessedProperty.name === 'input') {
+          return;
+        }
+
+        // Skip if accessing a property in the disallow list
+        if (reuseDisallowList.includes(accessedProperty.name)) {
+          return;
+        }
+
+        // Transform: Primary.args → Primary.input.args
+        nodePath.replaceWith(
+          t.memberExpression(
+            t.memberExpression(innerObject, t.identifier('input')),
+            accessedProperty
+          )
+        );
+        nodePath.skip();
+        return;
+      }
+
+      // Handle NAMESPACE IMPORTS spread: import * as BaseStories from './Button.stories'
+      // Usage: ...BaseStories.Secondary → ...BaseStories.Secondary.input
+      //
+      // Pattern: SpreadElement containing MemberExpression { object: Identifier("BaseStories"), property: Identifier("Secondary") }
+      if (t.isIdentifier(innerObject) && namespaceStoryImports.has(innerObject.name)) {
+        const storyName = node.property;
+
+        // Skip if this is already .input
+        if (t.isIdentifier(storyName, { name: 'input' })) {
+          return;
+        }
+
+        // Check if parent is a SpreadElement (...BaseStories.Secondary)
+        const parent = nodePath.parent;
+        if (t.isSpreadElement(parent)) {
+          // Transform: ...BaseStories.Secondary → ...BaseStories.Secondary.input
+          nodePath.replaceWith(t.memberExpression(node, t.identifier('input')));
+          nodePath.skip();
+        }
+        // Note: For non-spread namespace access like BaseStories.Primary.args,
+        // it's handled by the nested MemberExpression case above
       }
     },
   });

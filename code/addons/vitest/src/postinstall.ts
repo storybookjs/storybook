@@ -9,6 +9,7 @@ import {
   formatFileContent,
   getProjectRoot,
   getStorybookInfo,
+  versions,
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import type { StorybookError } from 'storybook/internal/server-errors';
@@ -161,6 +162,7 @@ export default async function postInstall(options: PostinstallOptions) {
     if (!options.skipInstall) {
       await addonVitestService.installPlaywright({
         yes: options.yes,
+        useRemotePkg: !!options.skipInstall,
       });
     } else {
       logger.warn(dedent`
@@ -172,45 +174,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const fileExtension =
     allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
-
-  const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
-  const existingSetupFile =
-    EXTENSIONS.map((ext) => resolve(options.configDir, `vitest.setup${ext}`)).find(existsSync) ||
-    null;
-
-  if (existingSetupFile) {
-    logger.step(`Found existing Vitest setup file, reusing:`);
-    logger.log(`${existingSetupFile}\n`);
-  } else {
-    logger.step(`Creating a Vitest setup file for Storybook:`);
-    logger.log(`${vitestSetupFile}\n`);
-
-    const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
-      existsSync
-    );
-
-    const annotationsImport = info.frameworkPackage;
-
-    const imports = [`import { setProjectAnnotations } from '${annotationsImport}';`];
-
-    const projectAnnotations = [];
-
-    if (previewExists) {
-      imports.push(`import * as projectAnnotations from './preview';`);
-      projectAnnotations.push('projectAnnotations');
-    }
-
-    await writeFile(
-      vitestSetupFile,
-      dedent`
-      ${imports.join('\n')}
-
-      // This is an important step to apply the right configuration when testing your stories.
-      // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
-      setProjectAnnotations([${projectAnnotations.join(', ')}]);
-    `
-    );
-  }
 
   const vitestWorkspaceFile = findFile('vitest.workspace', ['.ts', '.js', '.json']);
   const viteConfigFile = findFile('vite.config');
@@ -229,11 +192,11 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const getTemplateName = () => {
     if (isVitest4OrNewer) {
-      return 'vitest.config.4.template.ts';
+      return 'vitest.config.4.template';
     } else if (isVitest3_2To4) {
-      return 'vitest.config.3.2.template.ts';
+      return 'vitest.config.3.2.template';
     }
-    return 'vitest.config.template.ts';
+    return 'vitest.config.template';
   };
 
   // If there's an existing workspace file, we update that file to include the Storybook Addon Vitest plugin.
@@ -249,12 +212,11 @@ export default async function postInstall(options: PostinstallOptions) {
       return;
     }
 
-    const workspaceTemplate = await loadTemplate('vitest.workspace.template.ts', {
+    const workspaceTemplate = await loadTemplate('vitest.workspace.template', {
       EXTENDS_WORKSPACE: viteConfigFile
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
         : '',
       CONFIG_DIR: options.configDir,
-      SETUP_FILE: relative(dirname(vitestWorkspaceFile), existingSetupFile ?? vitestSetupFile),
     }).then((t) => t.replace(`\n  'ROOT_CONFIG',`, '').replace(/\s+extends: '',/, ''));
     const source = babelParse(workspaceTemplate);
     const target = babelParse(workspaceFileContent);
@@ -300,7 +262,6 @@ export default async function postInstall(options: PostinstallOptions) {
     if (templateName && !alreadyConfigured) {
       const configTemplate = await loadTemplate(templateName, {
         CONFIG_DIR: options.configDir,
-        SETUP_FILE: relative(dirname(rootConfig), existingSetupFile ?? vitestSetupFile),
       });
 
       const source = babelParse(configTemplate);
@@ -343,7 +304,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
     const configTemplate = await loadTemplate(getTemplateName(), {
       CONFIG_DIR: options.configDir,
-      SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
     });
 
     logger.step(`Creating a Vitest config file:`);
@@ -358,7 +318,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       const command = [
-        'storybook',
+        options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
         'automigrate',
         'addon-a11y-addon-test',
         '--loglevel',
@@ -381,7 +341,12 @@ export default async function postInstall(options: PostinstallOptions) {
 
       await prompt.executeTask(
         // TODO: Remove stdio: 'ignore' once we have a way to log the output of the command properly
-        () => packageManager.runPackageCommand({ args: command, stdio: 'ignore' }),
+        () =>
+          packageManager.runPackageCommand({
+            args: command,
+            stdio: 'ignore',
+            useRemotePkg: !!options.skipInstall,
+          }),
         {
           intro: 'Setting up a11y addon for @storybook/addon-vitest',
           error: 'Failed to setup a11y addon for @storybook/addon-vitest',

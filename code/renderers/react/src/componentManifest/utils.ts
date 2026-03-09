@@ -1,7 +1,7 @@
 // Object.groupBy polyfill
 import { readFileSync } from 'node:fs';
 
-import { resolveImport } from 'storybook/internal/common';
+import { getProjectRoot, resolveImport } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -91,3 +91,10 @@ export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' 
 export const cachedFindUp = cached(find.up, { name: 'findUp' });
 
 export const cachedResolveImport: any = cached(resolveImport, { name: 'resolveImport' });
+
+export const findTsconfigPath = cached(
+  (cwd: string): string | undefined => {
+    return find.up('tsconfig.json', { cwd, last: getProjectRoot() });
+  },
+  { name: 'findTsconfigPath' }
+);

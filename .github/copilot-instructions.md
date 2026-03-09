@@ -9,7 +9,7 @@ Storybook is a large monorepo built with TypeScript, React, and various other fr
 ## System Requirements
 
 - **Node.js**: 22.21.1 (see `.nvmrc`)
-- **Package Manager**: Yarn 4.9.1
+- **Package Manager**: Yarn 4.10.3
 - **Operating System**: Linux/macOS (CI environment)
 
 ## Repository Structure
@@ -63,6 +63,12 @@ yarn nx compile <package-name> -c production # Compile specific package
 
 ```bash
 yarn lint                         # Run all linting checks (~4 min)
+```
+
+Fix linting on all touched files by running the following command before commiting:
+
+```bash
+yarn --cwd code lint:js:cmd <file> --fix
 ```
 
 ### Type Checking

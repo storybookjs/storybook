@@ -19,6 +19,7 @@ export type EventType =
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
+  | 'exit'
   | 'error'
   | 'error-metadata'
   | 'version-update'
@@ -42,6 +43,7 @@ export type EventType =
   | 'migrate'
   | 'preview-first-load'
   | 'doctor'
+  | 'share'
   | 'ghost-stories';
 export interface Dependency {
   version: string | undefined;

@@ -4,13 +4,13 @@ import { existsSync } from 'node:fs';
 import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
+import dedent from 'dedent';
 import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
-import { dedent } from 'ts-dedent';
 
 import { babelParse, types as t } from '../../code/core/src/babel';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
@@ -476,7 +476,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
   const isVue = template.expected.renderer === '@storybook/vue3';
-  // const isAngular = template.expected.framework === '@storybook/angular';
 
   const portableStoriesFrameworks = [
     '@storybook/nextjs-vite',
@@ -545,10 +544,17 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     // Extend existing resolve object with preserveSymlinks: true
     fileContent = fileContent.replace(/(resolve\s*:\s*\{)/, '$1\n    preserveSymlinks: true,');
   } else {
-    // Insert resolve: { preserveSymlinks: true } as a sibling to plugins in the top-level config object
+    // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to plugins
     // Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }])
     fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
-      return `  resolve: {\n    preserveSymlinks: true\n  },\n${match}`;
+      let replacement = `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
+
+      // In linked mode, also add server.fs.allow to allow Vite to serve files from the monorepo root
+      if (options.link) {
+        replacement += `\n  server: {\n    fs: {\n      allow: ['../../..']\n    }\n  },`;
+      }
+
+      return replacement;
     });
   }
   // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line

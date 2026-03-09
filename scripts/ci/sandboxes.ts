@@ -97,6 +97,10 @@ function defineSandboxJob_dev({
                 },
               },
               artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
+              artifact.persist(
+                join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
+                'playwright-results'
+              ),
               testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
             ]
           : [
@@ -289,6 +293,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           },
         },
         artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
+        artifact.persist(
+          join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
+          'playwright-results'
+        ),
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),

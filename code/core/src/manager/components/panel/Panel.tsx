@@ -160,7 +160,7 @@ export const AddonPanel = React.memo<{
   );
 
   return (
-    <Aside ref={asideRef} {...landmarkProps}>
+    <Aside ref={asideRef} id="storybook-panel-region" {...landmarkProps}>
       <h2 id="storybook-panel-heading" className="sb-sr-only">
         Addon panel
       </h2>

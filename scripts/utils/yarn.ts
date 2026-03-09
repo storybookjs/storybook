@@ -98,6 +98,9 @@ export const addWorkaroundResolutions = async ({
   const additionalReact19Resolutions = [
     'nextjs/default-ts',
     'nextjs/prerelease',
+    'nextjs-vite/15-ts',
+    'nextjs-vite/default-ts',
+    'nextjs-vite/14-ts',
     'react-native-web-vite/expo-ts',
   ].includes(key)
     ? {

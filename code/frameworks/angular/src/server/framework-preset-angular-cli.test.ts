@@ -7,6 +7,7 @@ import { logging } from '@angular-devkit/core';
 
 import { getBuilderOptions } from './framework-preset-angular-cli';
 import type { PresetOptions } from './preset-options';
+import { Channel } from 'storybook/internal/channels';
 
 // Mock all dependencies
 vi.mock('storybook/internal/node-logger', () => ({
@@ -89,6 +90,7 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build:development',
+        channel: new Channel({}),
       };
 
       await getBuilderOptions(options, mockBuilderContext);
@@ -119,6 +121,7 @@ describe('framework-preset-angular-cli', () => {
         } as any,
         angularBrowserTarget: 'test-project:build',
         angularBuilderOptions: storybookOptions,
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -139,6 +142,7 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         tsConfig: '/custom/tsconfig.json',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -156,6 +160,7 @@ describe('framework-preset-angular-cli', () => {
         presets: {
           apply: vi.fn(),
         } as any,
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -182,6 +187,7 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -196,6 +202,7 @@ describe('framework-preset-angular-cli', () => {
         presets: {
           apply: vi.fn(),
         } as any,
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -218,6 +225,7 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -238,6 +246,7 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build:production',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -262,6 +271,7 @@ describe('framework-preset-angular-cli', () => {
         } as any,
         angularBrowserTarget: 'test-project:build',
         angularBuilderOptions: {},
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -287,6 +297,7 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);

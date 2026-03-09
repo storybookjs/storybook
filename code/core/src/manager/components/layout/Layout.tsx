@@ -178,12 +178,9 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotSidebar}
             <Drag
               ref={sidebarResizerRef}
-              role="separator"
-              tabIndex={0}
               aria-orientation="vertical"
               aria-label="Sidebar resize handle"
               aria-valuenow={navSize}
-              aria-valuemin={0}
               aria-valuemax={typeof window !== 'undefined' ? window.innerWidth : undefined}
             />
           </SidebarContainer>
@@ -209,25 +206,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             panelResizerRef={panelResizerRef}
             position={panelPosition}
           >
-            <Drag
-              orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
-              overlapping={panelPosition === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
-              position={panelPosition === 'bottom' ? 'left' : 'right'}
-              ref={panelResizerRef}
-              role="separator"
-              tabIndex={0}
-              aria-orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
-              aria-label="Addon panel resize handle"
-              aria-valuenow={panelPosition === 'bottom' ? bottomPanelHeight : rightPanelWidth}
-              aria-valuemin={0}
-              aria-valuemax={
-                typeof window !== 'undefined'
-                  ? panelPosition === 'bottom'
-                    ? window.innerHeight
-                    : window.innerWidth
-                  : undefined
-              }
-            />
             {slots.slotPanel}
           </PanelContainer>
         )}

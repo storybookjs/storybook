@@ -43,6 +43,16 @@ const PanelContainer = React.memo<PanelContainerProps>(function PanelContainer(p
         overlapping={position === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
         position={position === 'bottom' ? 'left' : 'right'}
         ref={panelResizerRef}
+        aria-orientation={position === 'bottom' ? 'horizontal' : 'vertical'}
+        aria-label="Addon panel resize handle"
+        aria-valuenow={position === 'bottom' ? bottomPanelHeight : rightPanelWidth}
+        aria-valuemax={
+          typeof window !== 'undefined'
+            ? position === 'bottom'
+              ? window.innerHeight
+              : window.innerWidth
+            : undefined
+        }
       />
       <PanelSlot
         // This ensures that the panel content is not reachable by keyboard or assistive

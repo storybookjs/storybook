@@ -23,11 +23,11 @@ function interpolate(relativeValue: number, min: number, max: number): number {
 }
 
 /**
- * Given the current layout state, the position of the resize handle, and the key pressed,
- * returns the next layout state with the resized panel/sidebar.
+ * Given the current layout state, the position of the resize handle, and the key pressed, returns
+ * the next layout state with the resized panel/sidebar.
  *
- * @param position - The position of the resize handle relative to the content it resizes.
- *   'left' for sidebar, 'bottom' or 'right' for the addon panel.
+ * @param position - The position of the resize handle relative to the content it resizes. 'left'
+ *   for sidebar, 'bottom' or 'right' for the addon panel.
  */
 function applyResizeKeyboard(
   state: LayoutState,
@@ -239,9 +239,7 @@ export function useDragging({
         return;
       }
       e.preventDefault();
-      const step = e.shiftKey
-        ? KEYBOARD_STEP_PX * KEYBOARD_SHIFT_MULTIPLIER
-        : KEYBOARD_STEP_PX;
+      const step = e.shiftKey ? KEYBOARD_STEP_PX * KEYBOARD_SHIFT_MULTIPLIER : KEYBOARD_STEP_PX;
       setState((state) => applyResizeKeyboard(state, 'left', e.key, step));
     };
 
@@ -250,9 +248,7 @@ export function useDragging({
         return;
       }
       e.preventDefault();
-      const step = e.shiftKey
-        ? KEYBOARD_STEP_PX * KEYBOARD_SHIFT_MULTIPLIER
-        : KEYBOARD_STEP_PX;
+      const step = e.shiftKey ? KEYBOARD_STEP_PX * KEYBOARD_SHIFT_MULTIPLIER : KEYBOARD_STEP_PX;
       setState((state) => applyResizeKeyboard(state, state.panelPosition, e.key, step));
     };
 

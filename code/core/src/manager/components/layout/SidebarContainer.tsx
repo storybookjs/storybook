@@ -33,7 +33,7 @@ const SidebarContainer = React.memo<SidebarContainerProps>(function SidebarConta
   const shouldHideSidebarContent = navSize === 0;
 
   return (
-    <Container id={focusableUIElements.sidebarRegion}>
+    <Container>
       <SidebarSlot
         // This ensures that the sidebar content is not reachable by keyboard or assistive
         // tech when actually collapsed.

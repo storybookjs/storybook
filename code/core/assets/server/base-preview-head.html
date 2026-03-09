@@ -160,6 +160,13 @@
     color: black;
   }
 
+  /* Exclude error code block from the universal reset to preserve ANSI colors and dark theme */
+  .sb-errordisplay_main .sb-errordisplay_code,
+  .sb-errordisplay_main .sb-errordisplay_code * {
+    background: #242424;
+    color: #c6c6c6;
+  }
+
   .sb-errordisplay_main h1 {
     font-family: Nunito Sans;
     font-size: 22px;

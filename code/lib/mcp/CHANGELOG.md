@@ -1,5 +1,13 @@
 # @storybook/mcp
 
+## 0.5.1
+
+### Patch Changes
+
+- [#181](https://github.com/storybookjs/mcp/pull/181) [`ff217d8`](https://github.com/storybookjs/mcp/commit/ff217d8d901b3b6ec932613792df17118b452fe3) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Rename feature flag `experimentalComponentsManifest` → `componentsManifest`
+
+  The Storybook feature flag has been renamed from `experimentalComponentsManifest` to `componentsManifest` and now defaults to `true` in Storybook core.
+
 ## 0.5.0
 
 ### Minor Changes

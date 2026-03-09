@@ -48,21 +48,19 @@ export default {
 			options: {
 				toolsets: {
 					dev: true, // Tools for story URL retrieval and UI building instructions (default: true)
-					docs: true, // Tools for component manifest and documentation (default: true, requires experimental feature flag below 👇)
+					docs: true, // Tools for component manifest and documentation (default: true)
 				},
 			},
 		},
 	],
-	features: {
-		experimentalComponentsManifest: true, // Enable manifest generation for the docs toolset, only supported in React-based setups.
-	},
+	// componentsManifest is enabled by default in recent Storybook versions, no need to set it
 };
 ```
 
 **Available Toolsets:**
 
 - `dev`: Enables [Dev Tools](#dev-tools)
-- `docs`: Enables [Documentation Tools](#docs-tools-experimental)
+- `docs`: Enables [Documentation Tools](#docs-tools)
 
 Disabling the Dev Tools is useful when you want to try out the same experience that your external component consumers will get, because they only get the Component Documentation Tools.
 
@@ -172,24 +170,31 @@ Agent calls tool, gets response:
 http://localhost:6006/?path=/story/example-button--primary
 ```
 
-### Docs Tools (Experimental)
+### Docs Tools
 
-These additional tools are available when the **experimental** component manifest feature is enabled. They provide agents with detailed documentation about your UI components.
+These additional tools are available when the component manifest feature is enabled. They provide agents with detailed documentation about your UI components.
 
 **Requirements:**
 
 - Storybook version 10.1.0 or higher (currently only available as prereleases, `storybook@next`)
 - React-based framework (`react-vite`, `nextjs-vite`, `nextjs`, `react-webpack5`)
-- Feature flag `features.experimentalComponentsManifest` set to `true` in `.storybook/main.js`
+- Feature flag `features.componentsManifest` enabled (defaults to `true` in recent Storybook versions)
 
 **To enable:**
+
+The `componentsManifest` feature is enabled by default in recent Storybook versions — no configuration needed.
+
+If you are on an older Storybook version that doesn't default to `true`, you may need to enable it explicitly. Use the flag that matches your Storybook version:
 
 ```javascript
 // .storybook/main.js
 export default {
 	// ... other config
 	features: {
-		experimentalComponentsManifest: true,
+		// For Storybook 10.3.x and later:
+		componentsManifest: true,
+		// For older Storybook versions (before the flag was renamed):
+		// experimentalComponentsManifest: true,
 	},
 };
 ```

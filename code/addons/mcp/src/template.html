@@ -1,7 +1,6 @@
 <!doctype html>
 <html>
 	<head>
-		{{REDIRECT_META}}
 		<style>
 			@font-face {
 				font-family: 'Nunito Sans';
@@ -233,21 +232,7 @@
 				</div>
 			</div>
 
-			<p id="redirect-message">
-				Automatically redirecting to
-				<a href="/manifests/components.html">component manifest</a>
-				in <span id="countdown">10</span> seconds...
-			</p>
+			{{MANIFEST_DEBUGGER_LINK}}
 		</div>
-		<script>
-			let countdown = 10;
-			const countdownElement = document.getElementById('countdown');
-			if (countdownElement) {
-				setInterval(() => {
-					countdown -= 1;
-					countdownElement.textContent = countdown.toString();
-				}, 1000);
-			}
-		</script>
 	</body>
 </html>

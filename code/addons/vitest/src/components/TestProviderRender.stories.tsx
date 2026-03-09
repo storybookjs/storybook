@@ -343,6 +343,9 @@ export const AnnouncesTestRunStart: Story = {
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any);
+      return () => {
+        mockStore.send.mockReset();
+      };
     }, []);
     return <TestProviderRender {...args} testProviderState={state} />;
   },

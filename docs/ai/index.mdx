@@ -1,15 +1,27 @@
 ---
 title: Using Storybook with AI
+hideRendererSelector: true
 sidebar:
   order: 5
   title: AI
 ---
 
+<If notRenderer={['react']}>
+  
+<Callout variant="info">
+  While they are in [preview](../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](./manifests.mdx) and [MCP server](./mcp/overview.mdx)) are currently only supported for [React](?renderer=react) projects.
+</Callout>
+
+</If>
+{/* End non-supported renderers */}
+
+<If renderer={['react']}>
+
 <Callout variant="warning" icon="🧪">
   This is a [**preview**](../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
 </Callout>
 
-With Storybook's AI capabilities, you can leverage the power of AI agents to speed up your development workflow. By connecting your Storybook to an AI agent via the [Storybook MCP server](./mcp/overview.mdx), you can enable your agent to <If renderer={['react']}>understand your components and documentation, </If>generate stories, run tests, and more.
+With Storybook's AI capabilities, you can leverage the power of AI agents to speed up your development workflow. By connecting your Storybook to an AI agent via the [Storybook MCP server](./mcp/overview.mdx), you can enable your agent to understand your components and documentation, generate stories, run tests, and more.
 
 ## Get started
 
@@ -36,7 +48,6 @@ Next, to guide your agent to use your MCP server, adjust your [`AGENTS.md`](http
 <details>
 <summary>AGENTS.md</summary>
 
-<If renderer={['react']}>
 ```md title="AGENTS.md"
 When working on UI components, always use the `your-project-sb-mcp` MCP tools to access Storybook's component and documentation knowledge before answering or taking any action.
 
@@ -50,30 +61,10 @@ When working on UI components, always use the `your-project-sb-mcp` MCP tools to
 
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
 ```
-</If>
-
-<If notRenderer={['react']}>
-```md title="AGENTS.md"
-When working on UI components, always use the `your-project-sb-mcp` MCP tools to write stories and run tests for your components.
-
-- Use the `get-storybook-story-instructions` tool to fetch the latest instructions for creating or updating stories. This will ensure you follow current conventions and recommendations.
-- Check your work by running `run-story-tests`.
-```
-</If>
 
 </details>
 
-<If renderer={['react']}>
-
 Finally, test your agent's access to the MCP server by running a prompt like "List all documented components". You should see a call to the `list-all-documentation` tool with a response listing components from your Storybook.
-
-</If>
-
-<If notRenderer={['react']}>
-
-Finally, test your agent's access to the MCP server by running a prompt like "Run tests for the button component". You should see a call to the `run-story-tests` tool with a response summarizing the results of the tests.
-
-</If>
 
 ## Key concepts
 
@@ -88,6 +79,9 @@ These manifests are automatically generated and updated as you work on your Stor
 ### MCP server
 
 [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) is a standard for communication between AI agents and external tools. Storybook's [MCP server](./mcp/index.mdx) exposes your Storybook's content and functionality as a set of tools that your agent can call to retrieve component information, generate stories, run component tests, and more.
+
+</If>
+{/* End supported renderers */}
 
 **More AI resources**
 

@@ -1,25 +1,27 @@
 ---
 title: MCP server
+hideRendererSelector: true
 sidebar:
   order: 1
   title: Overview
 ---
 
+<If notRenderer={['react']}>
+  
+<Callout variant="info">
+  While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](../manifests.mdx) and MCP server) are currently only supported for [React](?renderer=react) projects.
+</Callout>
+
+</If>
+{/* End non-supported renderers */}
+
+<If renderer={['react']}>
+
 <Callout variant="warning" icon="🧪">
   This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
 </Callout>
 
-<If renderer={['react']}>
-
 Storybook's MCP server connects your Storybook to AI agents, allowing them to understand your components and documentation, generate stories, run tests, and more. Agents will be equipped to reuse your existing components and follow your documented usage guidelines when generating UI, helping ensure the generated UI is consistent with your existing design system. Then they can write stories so you can preview the generated UI and automatically run interaction tests (and accessibility checks) on those stories to validate their work. If any issues are found, the agent can fix them and re-run the tests to confirm they are resolved, creating a self-healing loop that helps ensure the quality of the generated UI without requiring you to intervene.
-
-</If>
-
-<If notRenderer={['react']}>
-
-Storybook's MCP server connects your Storybook to AI agents, allowing them to generate stories, run tests, and more. Agents can write stories so you can preview the generated UI and automatically run interaction tests (and accessibility checks) on those stories to validate their work. If any issues are found, the agent can fix them and re-run the tests to confirm that the issues are resolved, creating a self-healing loop that helps ensure the quality of the generated UI without requiring you to intervene.
-
-</If>
 
 ## Installation
 
@@ -29,7 +31,7 @@ Run this command to install and register the Storybook MCP addon:
 
 <CodeSnippets path="addon-mcp-add.md" />
 
-After restarting your Storybook, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available<If renderer={['react']}> and a link to the [manifest debugger](../manifests.mdx#debugging)</If>.
+After restarting your Storybook, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available and a link to the [manifest debugger](../manifests.mdx#debugging).
 
 ![The MCP server page in the browser](../../_assets/ai/addon-mcp-splash.png)
 
@@ -49,7 +51,6 @@ You can also follow your agent's documentation to add the MCP server as a tool p
 
 To guide your agent to use your MCP server, you should adjust your [`AGENTS.md`](https://agents.md/) (or [`CLAUDE.md`](https://code.claude.com/docs/en/memory#claude-md-files), if you're using Claude). The specifics will depend on your project and how you use agents in your development process, but something like this is a good starting point. Just make sure to replace `your-project-sb-mcp` with the name you chose for your MCP server toolset in the previous step.
 
-<If renderer={['react']}>
 ```md title="AGENTS.md"
 When working on UI components, always use the `your-project-sb-mcp` MCP tools to access Storybook's component and documentation knowledge before answering or taking any action.
 
@@ -63,34 +64,12 @@ When working on UI components, always use the `your-project-sb-mcp` MCP tools to
 
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
 ```
-</If>
-
-<If notRenderer={['react']}>
-```md title="AGENTS.md"
-When working on UI components, always use the `your-project-sb-mcp` MCP tools to write stories and run tests for your components.
-
-- Use the `get-storybook-story-instructions` tool to fetch the latest instructions for creating or updating stories. This will ensure you follow current conventions and recommendations.
-- Check your work by running `run-story-tests`.
-```
-</If>
-
-<If renderer={['react']}>
 
 Finally, test your agent's access to the MCP server by running a prompt like "List all documented components". You should see a call to the `list-all-documentation` tool with a response listing components from your Storybook.
-
-</If>
-
-<If notRenderer={['react']}>
-
-Finally, test your agent's access to the MCP server by running a prompt like "Run tests for the button component". You should see a call to the `run-story-tests` tool with a response summarizing the results of the tests.
-
-</If>
 
 ## Usage
 
 Once you have your MCP server and agent configured, using it is as simple as prompting your agent to do some UI development. Let's demonstrate how these toolsets can work together in some typical workflows.
-
-<If renderer={['react']}>
 
 **1. Generating UI with existing components**
 
@@ -111,27 +90,6 @@ _Prompt: Build a login form_
 1. The agent uses the [testing toolset](#testing) to re-run the tests to confirm that the issue is resolved.
 1. The agent uses the [development toolset](#development) to show you previews of each relevant story.
 
-</If>
-
-<If notRenderer={['react']}>
-
-**1. Generating UI**
-
-_Prompt: Build a login form_
-
-1. The agent generates a LoginForm component.
-
-1. The agent uses the [development toolset](#development) to generate stories that render LoginForm in its various states.
-
-1. The agent uses the [testing toolset](#testing) to run tests on the generated component, and finds that the submit button does not have an accessible level of color contrast.
-
-1. The agent updates the LoginForm component to use a different color for the submit button.
-
-1. The agent uses the [testing toolset](#testing) to re-run the tests to confirm that the issue is resolved.
-1. The agent uses the [development toolset](#development) to show you previews of each relevant story.
-
-</If>
-
 **2. Previewing work with stories**
 
 _Prompt: Show me the Button in dark mode_
@@ -142,21 +100,9 @@ _Prompt: Show me the Button in dark mode_
 
 _Prompt: Run tests for all the stories that contain the Header component_
 
-<If renderer={['react']}>
-
 1. The agent uses the [docs toolset](#docs) to find all stories that use the Header component.
 
 1. The agent uses the [testing toolset](#testing) to run tests on those stories, and returns a summary of the results.
-
-</If>
-
-<If notRenderer={['react']}>
-
-1. The agent finds all stories that contain the Header component.
-
-1. The agent uses the [testing toolset](#testing) to run tests on those stories, and returns a summary of the results.
-
-</If>
 
 **4. Generating tests**
 
@@ -166,7 +112,7 @@ _Prompt: Write a story to test the login form submit action_
 
 ## Toolsets
 
-The MCP server provides a set of tools that an agent can call to interact with your Storybook. The available tools are organized into <If renderer={['react']}>three toolsets: development, docs, and testing</If><If notRenderer={['react']}>two toolsets: development and testing</If>. Each toolset provides a different set of capabilities for the agent to use when developing UI.
+The MCP server provides a set of tools that an agent can call to interact with your Storybook. The available tools are organized into three toolsets: development, docs, and testing. Each toolset provides a different set of capabilities for the agent to use when developing UI.
 
 ### Development
 
@@ -181,8 +127,6 @@ Returns instructions on how to write useful stories, including which props to ca
 #### `preview-stories`
 
 Returns story previews rendered in the agent's chat interface, if the agent supports [MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview#client-support). Otherwise, it returns links to relevant stories in Storybook.
-
-<If renderer={['react']}>
 
 ### Docs
 
@@ -202,8 +146,6 @@ Returns the full story and associated documentation for a specific story. The ag
 
 Returns an index containing components and unattached docs entries.
 
-</If>
-
 ### Testing
 
 If you have [Storybook Test](../../writing-tests/index.mdx) set up in your Storybook, the testing toolset provides tools that allow the agent to run component tests (including [accessibility checks](../../writing-tests/accessibility-testing.mdx), if set up) and interpret their results. It also includes instructions to resolve issues. As the agent develops, it can choose to run tests to validate its work. If it finds issues, it can fix them and re-run the tests to confirm they are resolved. This creates a _self-healing_ loop that helps ensure the quality of the generated UI, without requiring you to intervene.
@@ -214,13 +156,9 @@ The testing toolset includes the following tool:
 
 Runs tests for specific stories and returns results, including any accessibility issues (if configured). Also instructs the agent to interpret the results and resolve any issues found.
 
-<If renderer={['react']}>
-
 ## Composition
 
 If you need to develop UI using components from multiple Storybooks, you can take advantage of [Storybook composition](../../sharing/storybook-composition.mdx). If a composed Storybook has [manifests](../manifests.mdx), the MCP server will automatically include the content from those manifests in its responses, allowing your agent to access the combined knowledge from all composed Storybooks. This means that your agent can find and reference components from any of the composed Storybooks when generating UI.
-
-</If>
 
 ## FAQ
 
@@ -231,6 +169,9 @@ We built Storybook's capabilities as an MCP server, which is a standard protocol
 ### Why is the docs toolset React-only?
 
 The docs toolset relies on the [manifests](../manifests.mdx) generated by Storybook, which is currently limited to React projects. After we ensure a solid experience with React projects, we plan to expand support to the other core Storybook renderers: Vue, Angular, Web Components, and Svelte.
+
+</If>
+{/* End supported renderers */}
 
 **More AI resources**
 

@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
 
+import { MINIMUM_CONTENT_WIDTH_PX } from '../../constants';
 import type { LayoutState } from './Layout';
 
 // the distance from the edge of the screen at which the panel/sidebar will snap to the edge
@@ -41,8 +42,22 @@ function applyResizeKeyboard(
       : position === 'bottom' || position === 'top'
         ? 'bottomPanelHeight'
         : 'rightPanelWidth';
-  const maxSize =
-    position === 'bottom' || position === 'top' ? window.innerHeight : window.innerWidth;
+
+  // Compute the effective maximum size for each resizable region, accounting for the CSS grid's
+  // minimum content column width and the space occupied by other regions.
+  let maxSize: number;
+  if (position === 'bottom' || position === 'top') {
+    maxSize = window.innerHeight;
+  } else if (position === 'left') {
+    // Sidebar: content column needs MINIMUM_CONTENT_WIDTH_PX, and right panel occupies space when active
+    maxSize =
+      window.innerWidth -
+      MINIMUM_CONTENT_WIDTH_PX -
+      (state.panelPosition === 'right' ? state.rightPanelWidth : 0);
+  } else {
+    // Right panel: content column needs MINIMUM_CONTENT_WIDTH_PX, and sidebar occupies space
+    maxSize = window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - state.navSize;
+  }
 
   let increaseKey: string;
   let decreaseKey: string;

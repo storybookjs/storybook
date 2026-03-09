@@ -6,7 +6,7 @@ import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 import { type API, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants';
 import { Notifications } from '../../container/Notifications';
 import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
 import { useLayout } from './LayoutProvider';
@@ -38,7 +38,6 @@ interface Props {
   slotPages?: React.ReactNode;
   hasTab: boolean;
 }
-const MINIMUM_CONTENT_WIDTH_PX = 100;
 
 const layoutStateIsEqual = (state: ManagerLayoutState, other: ManagerLayoutState) =>
   state.navSize === other.navSize &&
@@ -172,7 +171,12 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     >
       <>
         {isDesktop && (
-          <SidebarContainer navSize={navSize} sidebarResizerRef={sidebarResizerRef}>
+          <SidebarContainer
+            navSize={navSize}
+            rightPanelWidth={rightPanelWidth}
+            panelPosition={panelPosition}
+            sidebarResizerRef={sidebarResizerRef}
+          >
             {slots.slotSidebar}
           </SidebarContainer>
         )}
@@ -194,6 +198,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           <PanelContainer
             bottomPanelHeight={bottomPanelHeight}
             rightPanelWidth={rightPanelWidth}
+            navSize={navSize}
             panelResizerRef={panelResizerRef}
             position={panelPosition}
           >

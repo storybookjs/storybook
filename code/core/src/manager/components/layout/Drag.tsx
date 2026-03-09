@@ -104,9 +104,13 @@ const DragHandle = styled.div<{
   ({ theme, $orientation = 'vertical' }) => ({
     '&:focus-visible': {
       opacity: 1,
-      outline: 'none',
+      outline: '2px solid transparent',
       ...($orientation === 'horizontal' ? { height: 7 } : { width: 7 }),
       boxShadow: `inset 0 0 0 4px ${theme.color.secondary}`,
+
+      '@media (forced-colors: active)': {
+        outline: '2px solid Highlight',
+      },
     },
   }),
   ({ $orientation = 'vertical', $overlapping = true, $position = 'left' }) =>

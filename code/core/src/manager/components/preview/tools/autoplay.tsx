@@ -61,9 +61,7 @@ export const AutoplayTool = memo(function AutoplayTool() {
     <Select
       key="story-autoplay"
       icon={<PlayAllHollowIcon />}
-      ariaLabel={
-        isLocked ? 'Story autoplay set by story parameters' : 'Change story autoplay setting'
-      }
+      ariaLabel={isLocked ? 'Story autoplay set by story parameters' : 'Story autoplay settings'}
       tooltip={isLocked ? 'Story autoplay set by story parameters' : 'Story autoplay'}
       disabled={isLocked}
       defaultOptions={currentValue}

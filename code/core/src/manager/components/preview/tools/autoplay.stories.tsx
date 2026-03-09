@@ -106,12 +106,12 @@ export const LockedByStory: Story = {
               ...managerContext.state,
               globals: { storyAutoplay: 'always' },
               storyGlobals: { storyAutoplay: 'always' },
-              userGlobals: {},
+              userGlobals: { storyAutoplay: 'never' },
             },
             api: {
               ...managerContext.api,
               getGlobals: () => ({ storyAutoplay: 'always' }),
-              getUserGlobals: () => ({}),
+              getUserGlobals: () => ({ storyAutoplay: 'never' }),
               getStoryGlobals: () => ({ storyAutoplay: 'always' }),
             },
           } as any
@@ -121,4 +121,10 @@ export const LockedByStory: Story = {
       </ManagerContext.Provider>
     ),
   ],
+};
+
+export const WithGlobals: Story = {
+  globals: {
+    storyAutoplay: 'always',
+  },
 };

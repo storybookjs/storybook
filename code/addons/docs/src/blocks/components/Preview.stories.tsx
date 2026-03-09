@@ -51,6 +51,19 @@ export const CodeError = () => (
   </Preview>
 );
 
+export const ActionBarWrapping = {
+  render: () => (
+    <Preview inline isExpanded withSource={sourceStories.JSX.args}>
+      <Button ariaLabel={false} variant="outline">
+        Button with long text
+      </Button>
+    </Preview>
+  ),
+  globals: {
+    viewport: { value: 'mobile1' },
+  },
+};
+
 export const Single = () => (
   <Preview inline>
     <Button ariaLabel={false} variant="outline">

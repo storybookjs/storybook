@@ -88,6 +88,14 @@ Disable the action panel.
 
 This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
 
+#### `expandLevel`
+
+Type: `number`
+
+Default: `1`
+
+Controls how many levels deep the action tree is initially expanded. Useful when action arguments contain nested objects and you want to see more detail by default.
+
 ### Exports
 
 ```js

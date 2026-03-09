@@ -1,5 +1,7 @@
 import { global as globalThis } from '@storybook/global';
 
+import { fn, userEvent, within } from 'storybook/test';
+
 import { withActions } from 'storybook/actions/decorator';
 
 export default {
@@ -19,4 +21,25 @@ export const Basic = {
     },
   },
   decorators: [withActions],
+};
+
+export const LimitRetainsNewest = {
+  args: {
+    onClick: fn(),
+  },
+  parameters: {
+    actions: {
+      limit: 3,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByRole('button');
+
+    await userEvent.click(button);
+    await userEvent.click(button);
+    await userEvent.click(button);
+    await userEvent.click(button);
+    await userEvent.click(button);
+  },
 };

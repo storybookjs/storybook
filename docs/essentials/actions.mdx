@@ -96,6 +96,22 @@ Default: `1`
 
 Controls how many levels deep the action tree is initially expanded. Useful when action arguments contain nested objects and you want to see more detail by default.
 
+#### `limit`
+
+Type: `number`
+
+Default: `50`
+
+Controls how many actions are retained in the panel. When the limit is reached, Storybook keeps the **most recent** actions and discards older ones.
+
+#### `clearOnStoryChange`
+
+Type: `boolean`
+
+Default: `true`
+
+Clear the action panel when navigating between stories.
+
 ### Exports
 
 ```js

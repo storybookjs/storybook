@@ -104,9 +104,9 @@ jobs:
         run: yarn release:is-prerelease "$CURRENT_VERSION" --verbose
 
       - name: Publish
-        if: steps.publish-needed.outputs.published == 'false'
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+        if: steps.publish-needed.outputs.published == 'false'
         run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 
       - name: Get target branch
@@ -278,9 +278,9 @@ jobs:
           yarn release:version --exact "0.0.0-pr-$PR_NUMBER-sha-$SHORT_SHA" --verbose
 
       - name: Publish v${{ steps.version.outputs.next-version }}
-        working-directory: scripts
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+        working-directory: scripts
         run: yarn release:publish --tag canary --verbose
 
       - name: Replace Pull Request Body

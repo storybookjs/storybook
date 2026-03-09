@@ -18,6 +18,12 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./internal/setup-file-with-project-annotations'],
+        entryPoint: './src/vitest-plugin/setup-file-with-project-annotations.ts',
+        external: ['virtual:/@storybook/builder-vite/project-annotations.js'],
+        dts: false,
+      },
+      {
         exportEntries: ['./internal/test-utils'],
         entryPoint: './src/vitest-plugin/test-utils.ts',
         dts: false,

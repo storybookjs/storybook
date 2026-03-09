@@ -21,4 +21,6 @@ export type StorybookConfigVite = {
 export type BuilderOptions = {
   /** Path to `vite.config` file, relative to `process.cwd()`. */
   viteConfigPath?: string;
+
+  configLoader?: 'bundle' | 'runner' | 'native'
 };

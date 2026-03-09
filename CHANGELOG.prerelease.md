@@ -74,7 +74,7 @@
 ## 10.3.0-alpha.7
 
 - Core: Require token for websocket connections - [#33820](https://github.com/storybookjs/storybook/pull/33820), thanks @ghengeveld!
-- Next.js: Handle legacyBehavior prop in Link mock component  - [#33862](https://github.com/storybookjs/storybook/pull/33862), thanks @yatishgoel!
+- Next.js: Handle legacyBehavior prop in Link mock component - [#33862](https://github.com/storybookjs/storybook/pull/33862), thanks @yatishgoel!
 - Preact: Support inferring props from component types - [#33828](https://github.com/storybookjs/storybook/pull/33828), thanks @JoviDeCroock!
 
 ## 10.3.0-alpha.6
@@ -88,7 +88,7 @@
 
 - Builder-Vite: Use relative path for mocker entry in production builds - [#33792](https://github.com/storybookjs/storybook/pull/33792), thanks @DukeDeSouth!
 - CLI: Support addon-vitest setup when --skip-install is passed - [#33718](https://github.com/storybookjs/storybook/pull/33718), thanks @valentinpalkovic!
-- CSF: Fix cross-file story imports in csf-factories codemod  - [#33723](https://github.com/storybookjs/storybook/pull/33723), thanks @yatishgoel!
+- CSF: Fix cross-file story imports in csf-factories codemod - [#33723](https://github.com/storybookjs/storybook/pull/33723), thanks @yatishgoel!
 - Compile: reduce VCPUs for CI check task from 4 to 3 - [#33822](https://github.com/storybookjs/storybook/pull/33822), thanks @valentinpalkovic!
 - Core: Ignore empty files when indexing - [#33782](https://github.com/storybookjs/storybook/pull/33782), thanks @JReinhold!
 - Globals: Repair dynamicTitle: false for user-defined tools - [#33284](https://github.com/storybookjs/storybook/pull/33284), thanks @ia319!
@@ -279,7 +279,7 @@
 
 ## 10.2.0-alpha.8
 
-- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!
+- React: Fix several CSF factory bugs - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!
 
 ## 10.2.0-alpha.7
 
@@ -306,7 +306,7 @@
 
 ## 10.2.0-alpha.5
 
-- Addon-Vitest: Added timeout for fetching localhost 6006 during global setup.  - [#33232](https://github.com/storybookjs/storybook/pull/33232), thanks @snippy4!
+- Addon-Vitest: Added timeout for fetching localhost 6006 during global setup. - [#33232](https://github.com/storybookjs/storybook/pull/33232), thanks @snippy4!
 - CLI: Skip vitest transform for CSF Factories in a11y-addon-test automigration - [#31941](https://github.com/storybookjs/storybook/pull/31941), thanks @mrginglymus!
 - Controls: Allow resetting the Select control - [#33289](https://github.com/storybookjs/storybook/pull/33289), thanks @Sidnioulz!
 - Core: Ensure /project.json route is up before builders serve local FS - [#33303](https://github.com/storybookjs/storybook/pull/33303), thanks @Sidnioulz!
@@ -354,7 +354,6 @@
 - Core: Improve globbing using dynamic CWD (REVERT) - [#33201](https://github.com/storybookjs/storybook/pull/33201), thanks @ndelangen!
 
 ## 10.2.0-alpha.0
-
 
 ## 10.1.0-beta.6
 
@@ -413,7 +412,6 @@
 - Guide: Hide items for which their required feature is disabled (controls, viewport, interactions) - [#33113](https://github.com/storybookjs/storybook/pull/33113), thanks @ghengeveld!
 
 ## 10.1.0-beta.0
-
 
 ## 10.1.0-alpha.14
 
@@ -501,7 +499,6 @@
 - Vite: Update `optimizeViteDeps` for addon-docs and addon-vitest - [#32881](https://github.com/storybookjs/storybook/pull/32881), thanks @ndelangen!
 
 ## 10.1.0-alpha.0
-
 
 ## 10.0.0-rc.4
 

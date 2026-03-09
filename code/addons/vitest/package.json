@@ -76,6 +76,7 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@react-aria/live-announcer": "^3.4.4",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.1"
   },

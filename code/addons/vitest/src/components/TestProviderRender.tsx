@@ -177,8 +177,9 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         parts.push(`${passedCount} ${passedCount === 1 ? 'component' : 'components'} passed`);
       }
 
+      let a11yErrorCount = 0;
       if (hasA11yAddon) {
-        const a11yErrorCount = a11yStatusValueToStoryIds['status-value:error'].length;
+        a11yErrorCount = a11yStatusValueToStoryIds['status-value:error'].length;
         const a11yWarningCount = a11yStatusValueToStoryIds['status-value:warning'].length;
         if (a11yErrorCount > 0) {
           parts.push(
@@ -197,7 +198,8 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           ? `Test run finished. ${parts.join(', ')}.`
           : 'Test run finished. No results.';
 
-      announce(message, errorCount > 0 ? 'assertive' : 'polite');
+      const hasErrors = errorCount > 0 || (hasA11yAddon && a11yErrorCount > 0);
+      announce(message, hasErrors ? 'assertive' : 'polite');
     }
   }, [
     testProviderState,

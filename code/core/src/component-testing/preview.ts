@@ -28,7 +28,7 @@ export default () =>
       throwPlayFunctionExceptions: false,
     },
     initialGlobals: {
-      storyAutoplay: 'no-reduced-motion' as StoryAutoplay,
+      storyAutoplay: 'no-reduced-motion' satisfies StoryAutoplay,
     },
     runStep: step,
   });

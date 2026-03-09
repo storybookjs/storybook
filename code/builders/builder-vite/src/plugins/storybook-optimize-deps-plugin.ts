@@ -8,6 +8,16 @@ import { type Plugin } from 'vite';
 import { processPreviewAnnotation } from '../utils/process-preview-annotation';
 import { getUniqueImportPaths } from '../utils/unique-import-paths';
 
+/**
+ * Escapes special glob characters in a file path so Vite's dep optimizer treats it as a literal
+ * path rather than a glob pattern. This is necessary for paths containing characters like `(` and
+ * `)` (e.g. Next.js route group directories such as `src/(group)/...`) which would otherwise be
+ * interpreted as extglob patterns by fast-glob.
+ */
+export function escapeGlobPath(filePath: string): string {
+  return filePath.replace(/[()[\]{}!*?|+@]/g, '\\$&');
+}
+
 /** A Vite plugin that configures dependency optimization for Storybook's dev server. */
 export function storybookOptimizeDepsPlugin(options: Options): Plugin {
   return {
@@ -40,12 +50,14 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
           // Story files + preview annotation files as entry points for the dep optimizer.
           // Vite will crawl these to discover all transitive CJS dependencies that need
           // pre-bundling, removing the need for a hard-coded include list.
+          // Paths are escaped so that special glob characters (e.g. parentheses in Next.js route
+          // group directories) are treated as literal characters, not glob syntax.
           entries: [
             ...(typeof config.optimizeDeps?.entries === 'string'
               ? [config.optimizeDeps.entries]
               : (config.optimizeDeps?.entries ?? [])),
-            ...getUniqueImportPaths(index),
-            ...previewAnnotationEntries,
+            ...getUniqueImportPaths(index).map(escapeGlobPath),
+            ...previewAnnotationEntries.map(escapeGlobPath),
           ],
           // Extra deps explicitly included by Storybook presets (e.g. framework-specific packages).
           include: [...extraOptimizeDeps, ...(config.optimizeDeps?.include ?? [])],

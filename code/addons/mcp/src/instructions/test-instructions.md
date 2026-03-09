@@ -1,3 +1,5 @@
-## Story Testing
+## Validation Workflow
 
-After writing or changing stories, run tests using the **run-story-tests** tool. Fix any failures before reporting success. Do not report stories as complete if tests are failing.
+- After each component or story change, run **run-story-tests**.
+- Use focused runs while iterating, then run a broad pass before final handoff when scope is unclear or wide.
+- Fix failing tests before reporting success. Do not report completion while story tests are failing.

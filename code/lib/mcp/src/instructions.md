@@ -1,21 +1,18 @@
-Use these tools to access Storybook component and documentation manifests.
+## Documentation Workflow
 
-## Tool Workflow
+1. Call **list-all-documentation** once at the start of the task to discover available component and docs IDs.
+2. Call **get-documentation** with an `id` from that list to retrieve full component docs, props, usage examples, and stories.
+3. Call **get-documentation-for-story** when you need additional docs from a specific story variant that was not included in the initial component documentation.
 
-Use tools in this order:
+Use `withStoryIds: true` on **list-all-documentation** when you also need story IDs for tools like `preview-stories` or `get-documentation-for-story`.
 
-1. **list-all-documentation** — Call once at the start of a task to discover available components and docs entries. Use the returned IDs for subsequent calls. Pass `withStoryIds: true` when you also need story IDs (e.g., for use with `preview-stories` or `get-documentation-for-story`) — this adds story sub-entries to the list.
+## Verification Rules
 
-2. **get-documentation** — Call with a specific `id` from the list to retrieve full component documentation including props, usage examples, and stories. Prefer this over re-calling list when you already know the ID.
+- Never assume component props, variants, or API shape. Retrieve documentation before using a component.
+- If a component or prop is not documented, do not invent it. Report that it was not found.
+- Only reference IDs returned by **list-all-documentation**. Do not guess IDs.
 
-3. **get-documentation-for-story** — Call with a story ID when you need documentation scoped to a specific story variant rather than the whole component.
+## Multi-Source Requests
 
-## Anti-Hallucination Rules
-
-- Never assume component props, variants, or API shape. Always retrieve documentation before using a component.
-- If a component or prop is not in the documentation, do not invent it. Tell the user the component was not found.
-- Only reference IDs returned by list-all-documentation. Do not guess IDs.
-
-## Multi-Source Behavior
-
-When multiple Storybook sources are configured, list-all-documentation returns entries from all sources. Use the `storybookId` field in get-documentation to scope requests to a specific source when needed.
+- When multiple Storybook sources are configured, **list-all-documentation** returns entries from all sources.
+- Use `storybookId` in **get-documentation** when you need to scope a request to one source.

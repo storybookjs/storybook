@@ -8,7 +8,6 @@ import {
 	addListAllDocumentationTool,
 	addGetDocumentationTool,
 	addGetStoryDocumentationTool,
-	STORYBOOK_MCP_INSTRUCTIONS,
 	type Source,
 } from '@storybook/mcp';
 import type { Options } from 'storybook/internal/types';
@@ -22,20 +21,7 @@ import { addRunStoryTestsTool, getAddonVitestConstants } from './tools/run-story
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
-import devInstructions from './instructions/dev-instructions.md';
-import testInstructions from './instructions/test-instructions.md';
-
-function buildServerInstructions(options: {
-	devEnabled: boolean;
-	testEnabled: boolean;
-	docsEnabled: boolean;
-}): string {
-	const parts: string[] = [];
-	if (options.devEnabled) parts.push(devInstructions);
-	if (options.testEnabled) parts.push(testInstructions);
-	if (options.docsEnabled) parts.push(STORYBOOK_MCP_INSTRUCTIONS);
-	return parts.join('\n\n');
-}
+import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;

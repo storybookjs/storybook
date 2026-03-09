@@ -167,15 +167,9 @@ export const DesktopCollapsedPanel: Story = {
     managerLayoutState: { ...defaultState, bottomPanelHeight: 0 },
   },
   play: async ({ canvas, step }) => {
-    await step('Verify panel is rendered but collapsed', async () => {
-      const panel = canvas.getByTestId('panel');
-      expect(panel.clientHeight).toBe(0);
-    });
-
-    await step('Verify panel cannot be focused', async () => {
-      const panel = canvas.getByTestId('panel');
-      panel.focus();
-      expect(panel).not.toHaveFocus();
+    await step('Verify panel is not rendered', async () => {
+      const panel = canvas.queryByTestId('panel');
+      expect(panel).not.toBeInTheDocument();
     });
   },
 };

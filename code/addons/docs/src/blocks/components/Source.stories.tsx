@@ -1,3 +1,5 @@
+import React from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Source, SourceError } from './Source';
@@ -74,4 +76,18 @@ export const SourceUnavailable: Story = {
     error: SourceError.SOURCE_UNAVAILABLE,
     format: false,
   },
+};
+
+export const JSXSmallViewport: Story = {
+  args: {
+    ...JSX.args,
+  },
+  parameters: {
+    chromatic: { viewports: [320] },
+  },
+  render: (args) => (
+    <div style={{ width: 320 }}>
+      <Source {...args} />
+    </div>
+  ),
 };

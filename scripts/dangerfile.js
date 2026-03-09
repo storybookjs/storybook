@@ -147,7 +147,7 @@ const checkManualTestingSection = (body) => {
 
 const checkTargetBranch = () => {
   const targetBranch = danger.github.pr.base.ref;
-  const author = danger.github.pr.author;
+  const author = danger.github.pr.user;
   const authorAssociation = danger.github.pr.author_association;
 
   // Only check for non-team members (not OWNER, MEMBER) and skip GitHub Actions bot

@@ -100,7 +100,9 @@ _Prompt: Show me the Button in dark mode_
 
 _Prompt: Run tests for all the stories that contain the Header component_
 
-1. The agent uses the [docs toolset](#docs) to find all stories that use the Header component.
+1. Agent uses grep (or "file system lookup") to determine which components use Header.
+
+1. Agent finds all the stories for those components.
 
 1. The agent uses the [testing toolset](#testing) to run tests on those stories, and returns a summary of the results.
 

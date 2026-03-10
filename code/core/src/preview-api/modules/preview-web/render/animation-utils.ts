@@ -27,7 +27,6 @@ export function pauseAnimations(): CleanupCallback {
     return () => {};
   }
 
-  const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
   const previousStates: {
     animation: Animation;
     playState: AnimationPlayState;
@@ -35,6 +34,7 @@ export function pauseAnimations(): CleanupCallback {
   }[] = [];
 
   const pauseAllAnimations = () => {
+    const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
     const animations = animationRoots.flatMap((el) => el?.getAnimations?.() || []);
     animations.forEach((a) => {
       previousStates.push({

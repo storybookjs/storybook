@@ -23,7 +23,7 @@ export function definePortableStoryTest(directory: string) {
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'medium',
+        class: 'medium+',
       },
       steps: [
         ...workflow.restoreLinux(),
@@ -152,7 +152,9 @@ export function definePortableStoryTestVitest3() {
 export const testStorybooksNoOpJob = defineNoOpJob('test-storybooks', [build_linux]);
 
 export function getTestStorybooks(workflow: Workflow) {
-  const testStorybooks: JobOrNoOpJob[] = ['react', 'vue3'].map(definePortableStoryTest);
+  const testStorybooks: JobOrNoOpJob[] = ['react', 'vue3', 'svelte', 'nextjs'].map(
+    definePortableStoryTest
+  );
 
   if (isWorkflowOrAbove(workflow, 'daily')) {
     testStorybooks.push(definePortableStoryTestPNP());

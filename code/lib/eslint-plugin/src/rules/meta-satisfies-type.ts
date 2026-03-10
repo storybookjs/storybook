@@ -33,7 +33,7 @@ export default createStorybookRule({
 
   create(context) {
     // variables should be defined here
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     //----------------------------------------------------------------------
     // Helpers

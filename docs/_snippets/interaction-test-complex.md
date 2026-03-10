@@ -179,7 +179,7 @@ export const Submits = {
   import { fn, expect } from 'storybook/test';
 
   import { users } from '../mocks/users';
-  import { EventForm } from './EventForm.svelte';
+  import EventForm from './EventForm.svelte';
 
   const { Story } = defineMeta({
     component: EventForm,
@@ -224,7 +224,7 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 import { fn, expect } from 'storybook/test';
 
 import { users } from '../mocks/users';
-import { EventForm } from './EventForm.svelte';
+import EventForm from './EventForm.svelte';
 
 const meta = {
   component: EventForm,
@@ -270,7 +270,7 @@ export const Submits: Story = {
   import { fn, expect } from 'storybook/test';
 
   import { users } from '../mocks/users';
-  import { EventForm } from './EventForm.svelte';
+  import EventForm from './EventForm.svelte';
 
   const { Story } = defineMeta({
     component: EventForm,
@@ -313,7 +313,7 @@ export const Submits: Story = {
 import { fn, expect } from 'storybook/test';
 
 import { users } from '../mocks/users';
-import { EventForm } from './EventForm.svelte';
+import EventForm from './EventForm.svelte';
 
 export default {
   component: EventForm,

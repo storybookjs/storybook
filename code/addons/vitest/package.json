@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.3.0-alpha.0",
+  "version": "10.3.0-alpha.15",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -40,11 +40,18 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "code": "./src/constants.ts",
+      "default": "./dist/constants.js"
     },
     "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
+    "./internal/setup-file-with-project-annotations": "./dist/vitest-plugin/setup-file-with-project-annotations.js",
     "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
@@ -53,6 +60,7 @@
     "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
+      "code": "./src/vitest-plugin/index.ts",
       "default": "./dist/vitest-plugin/index.js"
     }
   },
@@ -72,6 +80,7 @@
     "@storybook/icons": "^2.0.1"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "workspace:*",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",

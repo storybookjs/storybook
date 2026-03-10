@@ -93,7 +93,7 @@ export const favicon = async (
     .reduce((l1, l2) => l1.concat(l2), []);
 
   if (faviconPaths.length > 1) {
-    logger.warn(dedent`
+    logger.debug(dedent`
       Looks like multiple favicons were detected. Using the first one.
 
       ${faviconPaths.join(', ')}

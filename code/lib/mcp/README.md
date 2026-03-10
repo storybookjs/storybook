@@ -27,11 +27,11 @@ import { createStorybookMcpHandler } from '@storybook/mcp';
 const storybookMcpHandler = await createStorybookMcpHandler();
 
 export async function handleRequest(request: Request): Promise<Response> {
-  if (new URL(request.url).pathname === '/mcp') {
-    return storybookMcpHandler(request);
-  }
+	if (new URL(request.url).pathname === '/mcp') {
+		return storybookMcpHandler(request);
+	}
 
-  return new Response('Not found', { status: 404 });
+	return new Response('Not found', { status: 404 });
 }
 ```
 
@@ -41,9 +41,9 @@ Use `manifestProvider` when your manifests are not available from the same origi
 
 ```ts
 const storybookMcpHandler = await createStorybookMcpHandler({
-  manifestProvider: async (_request, path) => {
-    return asyncReadManifestFromSomewhere(path);
-  },
+	manifestProvider: async (_request, path) => {
+		return asyncReadManifestFromSomewhere(path);
+	},
 });
 ```
 
@@ -98,17 +98,17 @@ A fetch-compatible request handler for your `/mcp` endpoint.
 import { createStorybookMcpHandler } from '@storybook/mcp';
 
 const mcp = await createStorybookMcpHandler({
-  manifestProvider: async (_request, path) => {
-    return await fetchManifest(path);
-  },
+	manifestProvider: async (_request, path) => {
+		return await fetchManifest(path);
+	},
 });
 
 export async function handleRequest(request: Request) {
-  if (new URL(request.url).pathname !== '/mcp') {
-    return new Response('Not found', { status: 404 });
-  }
+	if (new URL(request.url).pathname !== '/mcp') {
+		return new Response('Not found', { status: 404 });
+	}
 
-  return mcp(request);
+	return mcp(request);
 }
 ```
 
@@ -123,36 +123,36 @@ Type:
 
 ```ts
 type StorybookContext = {
-  request?: Request;
-  manifestProvider?: (
-    request: Request | undefined,
-    path: string,
-    source?: Source,
-  ) => Promise<string>;
-  sources?: Source[];
-  onListAllDocumentation?: (params: {
-    context: StorybookContext;
-    manifests: AllManifests;
-    resultText: string;
-    sources?: SourceManifests[];
-  }) => void | Promise<void>;
-  onGetDocumentation?: (
-    params:
-      | {
-          context: StorybookContext;
-          input: { id: string; storybookId?: string };
-          foundDocumentation: ComponentManifest | Doc;
-          resultText: string;
-        }
-      | {
-          context: StorybookContext;
-          input: { id: string; storybookId?: string };
-        },
-  ) => void | Promise<void>;
+	request?: Request;
+	manifestProvider?: (
+		request: Request | undefined,
+		path: string,
+		source?: Source,
+	) => Promise<string>;
+	sources?: Source[];
+	onListAllDocumentation?: (params: {
+		context: StorybookContext;
+		manifests: AllManifests;
+		resultText: string;
+		sources?: SourceManifests[];
+	}) => void | Promise<void>;
+	onGetDocumentation?: (
+		params:
+			| {
+					context: StorybookContext;
+					input: { id: string; storybookId?: string };
+					foundDocumentation: ComponentManifest | Doc;
+					resultText: string;
+			  }
+			| {
+					context: StorybookContext;
+					input: { id: string; storybookId?: string };
+			  },
+	) => void | Promise<void>;
 };
 
 type StorybookMcpHandlerOptions = StorybookContext & {
-  onSessionInitialize?: (initializeRequestParams: InitializeRequestParams) => void | Promise<void>;
+	onSessionInitialize?: (initializeRequestParams: InitializeRequestParams) => void | Promise<void>;
 };
 ```
 
@@ -166,11 +166,7 @@ type StorybookMcpHandlerOptions = StorybookContext & {
 Type:
 
 ```ts
-(
-  request: Request | undefined,
-  path: string,
-  source?: Source,
-) => Promise<string>
+(request: Request | undefined, path: string, source?: Source) => Promise<string>;
 ```
 
 Primary extension point for production setups.
@@ -246,9 +242,9 @@ Type:
 
 ```ts
 type Source = {
-  id: string;
-  title: string;
-  url?: string;
+	id: string;
+	title: string;
+	url?: string;
 };
 ```
 
@@ -260,10 +256,10 @@ Type:
 
 ```ts
 type SourceManifests = {
-  source: Source;
-  componentManifest: ComponentManifestMap;
-  docsManifest?: DocsManifestMap;
-  error?: string;
+	source: Source;
+	componentManifest: ComponentManifestMap;
+	docsManifest?: DocsManifestMap;
+	error?: string;
 };
 ```
 
@@ -287,9 +283,9 @@ Minimal composition example:
 ```ts
 import { McpServer } from 'tmcp';
 import {
-  addGetStoryDocumentationTool,
-  addGetDocumentationTool,
-  addListAllDocumentationTool,
+	addGetStoryDocumentationTool,
+	addGetDocumentationTool,
+	addListAllDocumentationTool,
 } from '@storybook/mcp';
 
 const server = new McpServer({ name: 'custom-mcp', version: '1.0.0' });
@@ -307,7 +303,7 @@ Type:
 
 ```ts
 (server: McpServer<any, StorybookContext>, enabled?: () => boolean | Promise<boolean>) =>
-  Promise<void>;
+	Promise<void>;
 ```
 
 Registers the [list tool](https://storybook.js.org/docs/next/ai/mcp/overview/#list-all-documentation) that returns all component/docs IDs from manifests.
@@ -318,9 +314,9 @@ Type:
 
 ```ts
 (
-  server: McpServer<any, StorybookContext>,
-  enabled?: () => boolean | Promise<boolean>,
-  options?: { multiSource?: boolean },
+	server: McpServer<any, StorybookContext>,
+	enabled?: () => boolean | Promise<boolean>,
+	options?: { multiSource?: boolean },
 ) => Promise<void>;
 ```
 
@@ -334,7 +330,7 @@ Type:
 
 ```ts
 (server: McpServer<any, StorybookContext>, enabled?: () => boolean | Promise<boolean>) =>
-  Promise<void>;
+	Promise<void>;
 ```
 
 Registers [detailed documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#get-story-documentation) for a specific story variant by `componentId` and `storyName`.

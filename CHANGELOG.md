@@ -1,3 +1,41 @@
+## 10.2.17
+
+- Next.js: Add support for v16.2 - [#34046](https://github.com/storybookjs/storybook/pull/34046), thanks @valentinpalkovic!
+
+## 10.2.16
+
+- CSF-Factories: Fix ConfigFile parser false warning on `definePreview({...}).type<T>()` export default - [#33885](https://github.com/storybookjs/storybook/pull/33885), thanks @copilot-swe-agent!
+- Core: Add host/origin validation to requests and websocket connections - [#33835](https://github.com/storybookjs/storybook/pull/33835), thanks @ghengeveld!
+- Core: Add vike metadata frameworks - [#33965](https://github.com/storybookjs/storybook/pull/33965), thanks @yannbf!
+- Core: Resolve builder preset path correctly in pnpm strict mode - [#34032](https://github.com/storybookjs/storybook/pull/34032), thanks @braedenfoster!
+- Core: Update default allowed hosts in host validation middleware - [#34045](https://github.com/storybookjs/storybook/pull/34045), thanks @ghengeveld!
+
+## 10.2.15
+
+- Core: Storybook failed to load iframe.html when publishing - [#33896](https://github.com/storybookjs/storybook/pull/33896), thanks @danielalanbates!
+- Manager-API: Update refs sequentially in experimental_setFilter - [#33958](https://github.com/storybookjs/storybook/pull/33958), thanks @ia319!
+- React: Handle render identifier in manifest snippet generation - [#33940](https://github.com/storybookjs/storybook/pull/33940), thanks @kasperpeulen!
+
+## 10.2.14
+
+- CLI: Set STORYBOOK environment variable - [#33938](https://github.com/storybookjs/storybook/pull/33938), thanks @yannbf!
+- UI: Prevent crash when tag filters contain undefined entries - [#33931](https://github.com/storybookjs/storybook/pull/33931), thanks @abhaysinh1000!
+
+## 10.2.13
+
+- Addon Pseudo-states: Process all nested css rules - [#33605](https://github.com/storybookjs/storybook/pull/33605), thanks @hpohlmeyer!
+- Builder-Vite: Prevent config duplication - [#33883](https://github.com/storybookjs/storybook/pull/33883), thanks @copilot-swe-agent!
+- CLI: Fix React native web A11y issues - [#33937](https://github.com/storybookjs/storybook/pull/33937), thanks @jonniebigodes!
+- Core: Avoid hanging when inferring args for recursive calls on DOM elemens - [#33922](https://github.com/storybookjs/storybook/pull/33922), thanks @valentinpalkovic!
+- Eslint: Fix ESLint 10 compatibility in eslint-plugin-storybook rules - [#33884](https://github.com/storybookjs/storybook/pull/33884), thanks @copilot-swe-agent!
+- Viewport: Prioritize story viewport globals and avoid user-global pollution - [#33849](https://github.com/storybookjs/storybook/pull/33849), thanks @ia319!
+
+## 10.2.12
+
+- Core: Sanitize inputs for save from controls - [#33868](https://github.com/storybookjs/storybook/pull/33868), thanks @valentinpalkovic!
+- Telemetry: Add project age - [#33910](https://github.com/storybookjs/storybook/pull/33910), thanks @shilman!
+- Webpack: Improve performance of module-mocking plugins - [#33169](https://github.com/storybookjs/storybook/pull/33169), thanks @valentinpalkovic!
+
 ## 10.2.11
 
 - Addon-Vitest: Fix postinstall a11y installation - [#33888](https://github.com/storybookjs/storybook/pull/33888), thanks @valentinpalkovic!

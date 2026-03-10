@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.3.0-alpha.10",
+  "version": "10.3.0-alpha.15",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -51,6 +51,7 @@
     "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
+    "./internal/setup-file-with-project-annotations": "./dist/vitest-plugin/setup-file-with-project-annotations.js",
     "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",

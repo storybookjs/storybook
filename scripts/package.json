@@ -42,11 +42,6 @@
     "upgrade": "jiti ./task.ts",
     "upload-bench": "jiti ./upload-bench.ts"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "yarn lint-staged"
-    }
-  },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
       "yarn lint:js:cmd --fix"
@@ -63,7 +58,7 @@
     "@octokit/request": "^8.4.1",
     "@polka/parse": "^1.0.0-next.28",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
     "@trivago/prettier-plugin-sort-imports": "^6.0.0",
@@ -130,7 +125,6 @@
     "glob": "^10.5.0",
     "globby": "^14.1.0",
     "http-server": "^14.1.1",
-    "husky": "^4.3.7",
     "jiti": "^2.6.1",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",

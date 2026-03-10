@@ -97,7 +97,7 @@ async function run() {
         })),
       },
     ]).then(({ watch, todo }: { watch: boolean; todo: Array<string> }) => {
-      watchMode = watch;
+      watchMode ??= watch;
       return todo?.map((key) => tasks[key]);
     });
   }

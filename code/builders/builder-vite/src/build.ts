@@ -7,6 +7,7 @@ import type { InlineConfig } from 'vite';
 import { createViteLogger } from './logger';
 import type { WebpackStatsPlugin } from './plugins';
 import { hasVitePlugins } from './utils/has-vite-plugins';
+import { bundlerOptionsKey } from './utils/vite-features';
 import { withoutVitePlugins } from './utils/without-vite-plugins';
 import { commonConfig } from './vite-config';
 
@@ -19,11 +20,13 @@ export async function build(options: Options) {
   const { presets } = options;
 
   const config = await commonConfig(options, 'build');
+
   config.build = mergeConfig(config, {
     build: {
       outDir: options.outputDir,
       emptyOutDir: false, // do not clean before running Vite build - Storybook has already added assets in there!
-      rollupOptions: {
+      // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
+      [bundlerOptionsKey]: {
         external: [/\.\/sb-common-assets\/.*\.woff2/],
       },
       ...(options.test
@@ -46,8 +49,7 @@ export async function build(options: Options) {
   finalConfig.plugins?.push({
     name: 'storybook:enforce-output-dir',
     enforce: 'post',
-    config: (config) => ({
-      ...config,
+    config: () => ({
       build: {
         outDir: options.outputDir,
       },

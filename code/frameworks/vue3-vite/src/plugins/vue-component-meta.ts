@@ -108,8 +108,6 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
           });
 
           // if there is no component meta, return undefined
-
-          // if there is no component meta, return undefined
           if (metaSources.length === 0) {
             return undefined;
           }

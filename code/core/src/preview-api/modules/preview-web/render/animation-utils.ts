@@ -73,10 +73,12 @@ export function pauseAnimations(): CleanupCallback {
 
     while (previousStates.length > 0) {
       const { animation, playState, currentTime } = previousStates.pop()!;
-      animation.currentTime = currentTime;
-      if (playState === 'running') {
-        animation.play();
-      }
+      try {
+        animation.currentTime = currentTime;
+        if (playState === 'running') {
+          animation.play();
+        }
+      } catch {}
     }
   };
 }

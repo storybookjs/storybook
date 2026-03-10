@@ -121,6 +121,7 @@ const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
   }),
   ({ theme, isSkipped }) =>
     isSkipped && {
+      alignSelf: 'flex-start',
       '&:after': {
         content: '""',
         position: 'absolute',
@@ -216,6 +217,10 @@ export const ChecklistWidget = () => {
     timeout: animated ? 300 : 0,
   });
 
+  if (!api.getIsNavShown()) {
+    return null;
+  }
+
   return (
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
       <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">
@@ -242,7 +247,7 @@ export const ChecklistWidget = () => {
                   <CollapseToggle
                     {...toggleProps}
                     id="checklist-module-collapse-toggle"
-                    ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+                    ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding guide`}
                   >
                     <ChevronSmallUpIcon
                       style={{
@@ -254,6 +259,7 @@ export const ChecklistWidget = () => {
                   </CollapseToggle>
                   {loaded && (
                     <PopoverProvider
+                      ariaLabel="Onboarding guide menu"
                       padding={0}
                       popover={({ onHide }) => (
                         <ActionList>

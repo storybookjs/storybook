@@ -6,7 +6,7 @@ import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
-import { ROOT_DIRECTORY } from '../utils/constants';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants';
 
 const logger = console;
 
@@ -21,8 +21,12 @@ const pathExists = async (path: string) => {
 
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
-  dependsOn: ({ template }, { link }) => {
+  dependsOn: ({ template, key }, { link }) => {
     if ('inDevelopment' in template && template.inDevelopment) {
+      if (pathExists(join(SANDBOX_DIRECTORY, key))) {
+        return ['run-registry'];
+      }
+
       return ['run-registry', 'generate'];
     }
 

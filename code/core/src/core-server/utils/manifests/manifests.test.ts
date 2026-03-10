@@ -99,6 +99,30 @@ describe('manifests', () => {
       expect(files['/output/manifests/components.html']).toContain('<!doctype html>');
     });
 
+    it('should write HTML file when docs manifest exists', async () => {
+      mockManifests = {
+        docs: {
+          v: 0,
+          docs: {
+            'intro--docs': {
+              id: 'intro--docs',
+              name: 'docs',
+              path: './Intro.mdx',
+              title: 'Intro',
+              content: '# Introduction',
+            },
+          },
+        },
+      };
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      expect(files['/output/manifests/components.html']).toBeDefined();
+      expect(files['/output/manifests/components.html']).toContain('<!doctype html>');
+      expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
+    });
+
     it('should handle errors when presets.apply fails', async () => {
       const error = new Error('Preset application failed');
       vi.mocked(mockPresets.apply).mockRejectedValue(error);
@@ -360,11 +384,11 @@ describe('manifests', () => {
         expect(res.end).toHaveBeenCalled();
         const html = (res.end as any).mock.calls[0][0];
         expect(html).toContain('<!doctype html>');
-        expect(html).toContain('Components Manifest');
+        expect(html).toContain('Manifest Debugger');
         expect(res.statusCode).toBeUndefined();
       });
 
-      it('should return 404 message when components manifest does not exist', async () => {
+      it('should return 404 message when no components or docs manifest exist', async () => {
         mockManifests = {
           other: { data: 'value' },
         };
@@ -383,7 +407,9 @@ describe('manifests', () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/html; charset=utf-8');
-        expect(res.end).toHaveBeenCalledWith('<pre>No components manifest configured.</pre>');
+        expect(res.end).toHaveBeenCalledWith(
+          '<pre>No components or docs manifest configured.</pre>'
+        );
       });
 
       it('should return 404 when manifests is empty', async () => {
@@ -402,7 +428,9 @@ describe('manifests', () => {
         await handler(req, res);
 
         expect(res.statusCode).toBe(404);
-        expect(res.end).toHaveBeenCalledWith('<pre>No components manifest configured.</pre>');
+        expect(res.end).toHaveBeenCalledWith(
+          '<pre>No components or docs manifest configured.</pre>'
+        );
       });
 
       it('should handle errors with 500 status and return error HTML', async () => {

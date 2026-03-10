@@ -47,6 +47,7 @@ const meta = preview.meta({
 
 ```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import NavigationBasedComponent from './NavigationBasedComponent';
 
 const meta = preview.meta({

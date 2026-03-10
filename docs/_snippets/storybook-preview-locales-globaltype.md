@@ -104,3 +104,132 @@ export default definePreview({
   },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+      toolbar: {
+        icon: 'globe',
+        items: [
+          { value: 'en', right: '🇺🇸', title: 'English' },
+          { value: 'fr', right: '🇫🇷', title: 'Français' },
+          { value: 'es', right: '🇪🇸', title: 'Español' },
+          { value: 'zh', right: '🇨🇳', title: '中文' },
+          { value: 'kr', right: '🇰🇷', title: '한국어' },
+        ],
+      },
+    },
+  },
+  initialGlobals: {
+    locale: 'en',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+      toolbar: {
+        icon: 'globe',
+        items: [
+          { value: 'en', right: '🇺🇸', title: 'English' },
+          { value: 'fr', right: '🇫🇷', title: 'Français' },
+          { value: 'es', right: '🇪🇸', title: 'Español' },
+          { value: 'zh', right: '🇨🇳', title: '中文' },
+          { value: 'kr', right: '🇰🇷', title: '한국어' },
+        ],
+      },
+    },
+  },
+  initialGlobals: {
+    locale: 'en',
+  },
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+export default definePreview({
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+      toolbar: {
+        icon: 'globe',
+        items: [
+          { value: 'en', right: '🇺🇸', title: 'English' },
+          { value: 'fr', right: '🇫🇷', title: 'Français' },
+          { value: 'es', right: '🇪🇸', title: 'Español' },
+          { value: 'zh', right: '🇨🇳', title: '中文' },
+          { value: 'kr', right: '🇰🇷', title: '한국어' },
+        ],
+      },
+    },
+  },
+  initialGlobals: {
+    locale: 'en',
+  },
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+      toolbar: {
+        icon: 'globe',
+        items: [
+          { value: 'en', right: '🇺🇸', title: 'English' },
+          { value: 'fr', right: '🇫🇷', title: 'Français' },
+          { value: 'es', right: '🇪🇸', title: 'Español' },
+          { value: 'zh', right: '🇨🇳', title: '中文' },
+          { value: 'kr', right: '🇰🇷', title: '한국어' },
+        ],
+      },
+    },
+  },
+  initialGlobals: {
+    locale: 'en',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+      toolbar: {
+        icon: 'globe',
+        items: [
+          { value: 'en', right: '🇺🇸', title: 'English' },
+          { value: 'fr', right: '🇫🇷', title: 'Français' },
+          { value: 'es', right: '🇪🇸', title: 'Español' },
+          { value: 'zh', right: '🇨🇳', title: '中文' },
+          { value: 'kr', right: '🇰🇷', title: '한국어' },
+        ],
+      },
+    },
+  },
+  initialGlobals: {
+    locale: 'en',
+  },
+});
+```

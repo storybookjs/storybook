@@ -140,8 +140,8 @@ async function run() {
       ],
       { onCancel: () => process.exit(0) }
     ).then(({ watch, prod, todo }: { watch: boolean; prod: boolean; todo: Array<string> }) => {
-      watchMode = watch;
-      prodMode = prod;
+      watchMode ??= watch;
+      prodMode ??= prod;
       return todo?.map((key) => tasks[key]);
     });
   }
@@ -182,4 +182,7 @@ async function run() {
   });
 }
 
-run();
+run().catch((e) => {
+  process.stderr.write(`${e.toString()}\n`);
+  process.exit(1);
+});

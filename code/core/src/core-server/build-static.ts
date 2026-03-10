@@ -1,11 +1,11 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 
+import { Channel } from 'storybook/internal/channels';
 import {
   loadAllPresets,
   loadMainConfig,
   logConfig,
-  normalizeStories,
   resolveAddonName,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -68,16 +68,25 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     .resolve('storybook/internal/core-server/presets/common-override-preset');
 
   logger.step('Loading presets');
+
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],
     isCritical: true,
+    channel,
     ...options,
   });
 
   const { renderer } = await presets.apply('core', {});
   const build = await presets.apply('build', {});
-  const [previewBuilder, managerBuilder] = await getBuilders({ ...options, presets, build });
+  const [previewBuilder, managerBuilder] = await getBuilders({
+    ...options,
+    presets,
+    build,
+    channel,
+  });
 
   const resolvedRenderer = renderer
     ? resolveAddonName(options.configDir, renderer, options)
@@ -91,8 +100,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       ...corePresets,
     ],
     overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
-    ...options,
     build,
+    channel,
+    ...options,
   });
 
   const [features, core, staticDirs] = await Promise.all([
@@ -110,6 +120,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const fullOptions: Options = {
     ...options,
+    channel,
     presets,
     features,
     build,

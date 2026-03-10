@@ -40,13 +40,12 @@ For more details on why this line is required in the `.eslintignore` file, refer
 If you are using [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new), add this to your configuration file:
 
 ```js title="eslint.config.js"
-export default [
+import { defineConfig, globalIgnores } from 'eslint/config';
+
+export default defineConfig([
+  globalIgnores(['!.storybook'], 'Include Storybook Directory'),
   // ...
-  {
-    // Inside your .eslintignore file
-    ignores: ['!.storybook'],
-  },
-];
+]);
 ```
 
 ## ESLint compatibility
@@ -65,11 +64,11 @@ Depending on the version of ESLint you are using, you may need to install a spec
 
 Use `.eslintrc.*` file to configure rules in ESLint < v9. See also: https://eslint.org/docs/latest/use/configure/.
 
-This plugin will only be applied to files following the `*.stories.*` (we recommend this) or `*.story.*` pattern. This is an automatic configuration, so you don't have to do anything.
+This plugin will only be applied to files following the `*.stories.*` (recommended) or `*.story.*` pattern. This is an automatic configuration, so no action is required.
 
 #### Overriding/disabling rules
 
-Optionally, you can override, add, or disable individual rules. You likely don't want these settings to be applied in every file, so make sure that you add a `overrides` section in your `.eslintrc.*` file that applies the overrides only to your stories files.
+Optionally, you can override, add to, or disable individual rules. You likely don't want these settings to be applied in every file, so make sure that you add a `overrides` section in your `.eslintrc.*` file that applies the overrides only to your story files.
 
 ```js title=".eslintrc"
 {
@@ -90,18 +89,17 @@ Optionally, you can override, add, or disable individual rules. You likely don't
 
 ### Configuration (flat config format)
 
-Use `eslint.config.js` file to configure rules using the [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new). This is the default in ESLint v9, but can be used starting from ESLint v8.57.0. See also: https://eslint.org/docs/latest/use/configure/configuration-files-new.
+Use the `eslint.config.js` file to configure rules using the [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new). This is the default in ESLint v9, but can be used starting from ESLint v8.57.0. See also: https://eslint.org/docs/latest/use/configure/configuration-files-new.
 
 ```js title="eslint.config.js"
 import storybook from 'eslint-plugin-storybook';
+// Replace the eslint/config package with @eslint/config-helpers if you're using an older version of ESLint.
+import { defineConfig } from 'eslint/config';
 
-export default [
-  // Add more generic rulesets here, such as:
-  // js.configs.recommended,
+export default defineConfig([
   ...storybook.configs['flat/recommended'],
-
-  // ...
-];
+  // Add more configuration options and generic rulesets here, such as js.configs.recommended
+]);
 ```
 
 In case you are using utility functions from tools like `tseslint`, you might need to register the plugin a little differently:
@@ -119,14 +117,13 @@ export default tseslint.config(
 
 #### Overriding/disabling rules
 
-Optionally, you can override, add, or disable individual rules. You likely don't want these settings to be applied in every file, so make sure that you add a flat config section in your `eslint.config.js` file that applies the overrides only to your stories files.
+Optionally, you can override, add, or disable individual rules. You likely don't want these settings to be applied to every file, so ensure that you add a flat config section in your `eslint.config.js` file that applies the overrides only to your story files.
 
-```js
+```js title="eslint.config.js"
 import storybook from 'eslint-plugin-storybook';
+import { defineConfig } from 'eslint/config';
 
-export default [
-  // ...
-
+export default defineConfig([
   ...storybook.configs['flat/recommended'],
   {
     // 👇 This should match the `stories` property in .storybook/main.js|ts
@@ -138,9 +135,7 @@ export default [
       'storybook/default-exports': 'off',
     },
   },
-
-  // ...
-];
+]);
 ```
 
 ### MDX Support

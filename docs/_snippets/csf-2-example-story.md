@@ -1,33 +1,33 @@
 ```ts filename="CSF 2 - Button.stories.ts" renderer="angular" language="ts"
 // Other imports and story implementation
-export const Default: Story = (args) => ({
+export const Basic: Story = (args) => ({
   props: args,
 });
 ```
 
 ```js filename="CSF 2 - Button.stories.js|jsx" renderer="react" language="js"
 // Other imports and story implementation
-export const Default = (args) => <Button {...args} />;
+export const Basic = (args) => <Button {...args} />;
 ```
 
 ```ts filename="CSF 2 - Button.stories.ts|tsx" renderer="react" language="ts"
 // Other imports and story implementation
-export const Default: ComponentStory<typeof Button> = (args) => <Button {...args} />;
+export const Basic: ComponentStory<typeof Button> = (args) => <Button {...args} />;
 ```
 
 ```js filename="CSF 2 - Button.stories.js|jsx" renderer="solid" language="js"
 // Other imports and story implementation
-export const Default = (args) => <Button {...args} />;
+export const Basic = (args) => <Button {...args} />;
 ```
 
 ```ts filename="CSF 2 - Button.stories.ts|tsx" renderer="solid" language="ts"
 // Other imports and story implementation
-export const Default: ComponentStory<typeof Button> = (args) => <Button {...args} />;
+export const Basic: ComponentStory<typeof Button> = (args) => <Button {...args} />;
 ```
 
 ```js filename="CSF 2 - Button.stories.js" renderer="svelte" language="js"
 // Other imports and story implementation
-export const Default = (args) => ({
+export const Basic = (args) => ({
   Component: Button,
   props: args,
 });
@@ -35,7 +35,7 @@ export const Default = (args) => ({
 
 ```ts filename="CSF 2 - Button.stories.ts" renderer="svelte" language="ts"
 // Other imports and story implementation
-export const Default: StoryFn<typeof Button> = (args) => ({
+export const Basic: StoryFn<typeof Button> = (args) => ({
   Component: Button,
   props: args,
 });
@@ -43,7 +43,7 @@ export const Default: StoryFn<typeof Button> = (args) => ({
 
 ```js filename="CSF 2 - Button.stories.js" renderer="vue" language="js"
 // Other imports and story implementation
-export const Default = (args) => ({
+export const Basic = (args) => ({
   components: { Button },
   setup() {
     return { args };
@@ -54,7 +54,7 @@ export const Default = (args) => ({
 
 ```ts filename="CSF 2 - Button.stories.ts" renderer="vue" language="ts"
 // Other imports and story implementation
-export const Default: StoryFn<typeof Button> = (args) => ({
+export const Basic: StoryFn<typeof Button> = (args) => ({
   components: { Button },
   setup() {
     return { args };
@@ -66,13 +66,13 @@ export const Default: StoryFn<typeof Button> = (args) => ({
 ```js filename="CSF 2 - Button.stories.js" renderer="web-components" language="js"
 // Other imports and story implementation
 
-export const Default = ({ primary, size, label }) =>
+export const Basic = ({ primary, size, label }) =>
   html`<custom-button ?primary=${primary} size=${size} label=${label}></custom-button>`;
 ```
 
 ```ts filename="CSF 2 - Button.stories.ts" renderer="web-components" language="ts"
 // Other imports and story implementation
 
-export const Default: Story = ({ primary, backgroundColor, size, label }) =>
+export const Basic: Story = ({ primary, backgroundColor, size, label }) =>
   html`<custom-button ?primary=${primary} size=${size} label=${label}></custom-button>`;
 ```

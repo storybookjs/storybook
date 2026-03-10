@@ -41,6 +41,7 @@ const meta = preview.meta({
 
 ```js filename="MyServerComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import MyServerComponent from './MyServerComponent';
 
 const meta = preview.meta({

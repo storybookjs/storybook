@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { YourComponent } from './your.component';
@@ -11,11 +11,28 @@ const meta: Meta<YourComponent> = {
 export default meta;
 type Story = StoryObj<YourComponent>;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
 };
+```
+
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './your.component';
+
+//👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
 ```
 
 ```js filename="YourComponent.stories.js" renderer="html" language="js"
@@ -35,7 +52,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory = {
+export const Basic = {
   render: (args) => createYourComponent(args),
   args: {
     // 👇 The args you need here will depend on your component
@@ -65,7 +82,7 @@ type Story = StoryObj<ComponentProps>;
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory: Story = {
+export const Basic: Story = {
   render: (args) => createYourComponent(args),
   args: {
     // 👇 The args you need here will depend on your component
@@ -89,7 +106,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory = {
+export const Basic = {
   render: (args) => <YourComponent {...args} />,
   args: {
     //👇 The args you need here will depend on your component
@@ -105,7 +122,7 @@ export default {
   component: YourComponent,
 };
 
-export const FirstStory = {
+export const Basic = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -126,7 +143,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -141,7 +158,7 @@ export default {
   component: YourComponent,
 };
 
-export const FirstStory = {
+export const Basic = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -161,7 +178,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -181,14 +198,14 @@ export const FirstStory: Story = {
 </script>
 
 <Story
-  name="FirstStory"
+  name="Basic"
   args={{
     /*👇 The args you need here will depend on your component */
   }}
 />
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import YourComponent from './YourComponent.svelte';
 
 //👇 This default export determines where your story goes in the story list
@@ -196,7 +213,7 @@ export default {
   component: YourComponent,
 };
 
-export const FirstStory = {
+export const Basic = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -216,14 +233,14 @@ export const FirstStory = {
 </script>
 
 <Story
-  name="FirstStory"
+  name="Basic"
   args={{
     /*👇 The args you need here will depend on your component */
   }}
 />
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -237,14 +254,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="vue" language="js"
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import YourComponent from './YourComponent.vue';
 
 //👇 This default export determines where your story goes in the story list
@@ -257,7 +274,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory = {
+export const Basic = {
   render: (args) => ({
     components: { YourComponent },
     setup() {
@@ -271,7 +288,7 @@ export const FirstStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import YourComponent from './YourComponent.vue';
@@ -289,7 +306,7 @@ type Story = StoryObj<typeof meta>;
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Primary: Story = {
+export const Basic: Story = {
   render: (args) => ({
     components: { YourComponent },
     setup() {
@@ -303,20 +320,80 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+//👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: (args) => ({
+    components: { YourComponent },
+    setup() {
+      return { args };
+    },
+    template: '<YourComponent v-bind="args" />',
+  }),
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+//👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: (args) => ({
+    components: { YourComponent },
+    setup() {
+      return { args };
+    },
+    template: '<YourComponent v-bind="args" />',
+  }),
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
+```
+
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // This default export determines where your story goes in the story list
 export default {
   component: 'demo-your-component',
 };
 
-export const FirstStory = {
+export const Basic = {
   args: {
     // 👇 The args you need here will depend on your component
   },
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // This default export determines where your story goes in the story list
@@ -327,11 +404,41 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     // 👇 The args you need here will depend on your component
   },
 };
+```
+
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: 'demo-your-component',
+});
+
+export const Basic = meta.story({
+  args: {
+    // 👇 The args you need here will depend on your component
+  },
+});
+```
+
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: 'demo-your-component',
+});
+
+export const Basic = meta.story({
+  args: {
+    // 👇 The args you need here will depend on your component
+  },
+});
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -344,7 +451,7 @@ const meta = preview.meta({
   component: YourComponent,
 });
 
-export const FirstStory = meta.story({
+export const Basic = meta.story({
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -355,13 +462,14 @@ export const FirstStory = meta.story({
 
 ```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { YourComponent } from './YourComponent';
 
 const meta = preview.meta({
   component: YourComponent,
 });
 
-export const FirstStory = meta.story({
+export const Basic = meta.story({
   args: {
     //👇 The args you need here will depend on your component
   },

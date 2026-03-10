@@ -1,4 +1,5 @@
 import { type JsPackageManager } from 'storybook/internal/common';
+import { versions } from 'storybook/internal/common';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -56,10 +57,6 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     packageManagerName: options.packageManager,
   });
 
-  if (!versionInstalled) {
-    throw new Error('Could not determine Storybook version');
-  }
-
   if (!mainConfigPath) {
     throw new Error('Could not determine main config path');
   }
@@ -67,7 +64,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   const outcome = await automigrate({
     ...options,
     packageManager,
-    storybookVersion: versionInstalled,
+    storybookVersion: versionInstalled || versions.storybook,
     mainConfigPath,
     mainConfig,
     previewConfigPath,
@@ -122,6 +119,7 @@ export const automigrate = async ({
   isLatest,
   storiesPaths,
   hasCsfFactoryPreview,
+  glob,
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
@@ -146,6 +144,8 @@ export const automigrate = async ({
       result: null,
       storybookVersion,
       storiesPaths,
+      yes,
+      glob,
     });
 
     return null;
@@ -380,6 +380,7 @@ export async function runFixes({
               skipInstall,
               storybookVersion,
               storiesPaths,
+              yes,
             });
             logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 

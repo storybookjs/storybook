@@ -14,7 +14,9 @@ addons.register('my-organisation/my-addon', (api) => {
 
   // With args and globals (merged on top of inherited args/globals) as well as a custom query param
   // Note that args and globals should be serialized (see `buildArgsParam` from `storybook/internal/router`)
-  api.getStoryHrefs('button--primary', { queryParams: { args: 'label:Label', globals: 'outline:!true', custom: 'value' } });
+  api.getStoryHrefs('button--primary', {
+    queryParams: { args: 'label:Label', globals: 'outline:!true', custom: 'value' },
+  });
 
   // Link to a story from an external ref
   api.getStoryHrefs('button--primary', { refId: 'external-ref' });

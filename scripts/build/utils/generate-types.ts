@@ -21,7 +21,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
   // ...this way we do not bog down the main process/esbuild and can run them in parallel
   // we limit the number of concurrent processes to 3, because we don't want to overload the host machine
   // by trial and error, 3 seems to be the sweet spot between perf and consistency
-  const limited = limit(10);
+  const limited = limit(5);
   let processes: ReturnType<typeof spawn>[] = [];
 
   await Promise.all(
@@ -83,7 +83,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
           processes.forEach((p) => p.kill());
           processes = [];
           process.exit(dtsProcess.exitCode || 1);
-        } else {
+        } else if (!process.env.CI) {
           console.log('✅ Generated types for', picocolors.cyan(join(DIR_REL, entryPoint)));
         }
       });

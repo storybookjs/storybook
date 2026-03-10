@@ -34,19 +34,18 @@ const PanelSlot = styled.div({
 const PanelContainer = React.memo<PanelContainerProps>(function PanelContainer(props) {
   const { children, bottomPanelHeight, rightPanelWidth, panelMaxSize, panelResizerRef, position } =
     props;
-  const resolvedPosition = position ?? 'bottom';
 
   const shouldHidePanelContent =
-    resolvedPosition === 'bottom' ? bottomPanelHeight === 0 : rightPanelWidth === 0;
+    position === 'bottom' ? bottomPanelHeight === 0 : rightPanelWidth === 0;
 
   return (
-    <Container position={resolvedPosition}>
+    <Container position={position}>
       <Drag
         ref={panelResizerRef}
-        position={resolvedPosition}
-        overlapping={resolvedPosition === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
+        position={position}
+        overlapping={position === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
         aria-label="Addon panel resize handle"
-        aria-valuenow={resolvedPosition === 'bottom' ? bottomPanelHeight : rightPanelWidth}
+        aria-valuenow={position === 'bottom' ? bottomPanelHeight : rightPanelWidth}
         aria-valuemax={panelMaxSize}
       />
       <PanelSlot

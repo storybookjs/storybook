@@ -1,4 +1,4 @@
-import React, { forwardRef, useMemo } from 'react';
+import React, { forwardRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
@@ -48,13 +48,7 @@ export const Drag = forwardRef<HTMLDivElement, DragProps>(function Drag(props, r
   } = props;
 
   const orientation = position === 'left' || position === 'right' ? 'vertical' : 'horizontal';
-
-  const tooltipNote = useMemo(() => {
-    if (orientation === 'vertical') {
-      return '← → to resize';
-    }
-    return '↑ ↓ to resize';
-  }, [orientation]);
+  const tooltipNote = orientation === 'vertical' ? '← → to resize' : '↑ ↓ to resize';
 
   return (
     <TooltipProvider

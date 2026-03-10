@@ -48,7 +48,7 @@ function computeSidebarMaxWidth(
     : panelPosition === 'right'
       ? rightPanelWidth
       : MINIMUM_HORIZONTAL_PANEL_WIDTH_PX;
-  return Math.min(window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - panelWidth, 0);
+  return Math.max(window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - panelWidth, 0);
 }
 
 /**
@@ -63,9 +63,9 @@ function computePanelMaxSize(panelPosition: API_Layout['panelPosition'], navSize
   }
 
   if (panelPosition === 'bottom') {
-    return Math.min(window.innerHeight - TOOLBAR_HEIGHT_PX, 0);
+    return Math.max(window.innerHeight - TOOLBAR_HEIGHT_PX, 0);
   }
-  return Math.min(window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - navSize, 0);
+  return Math.max(window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - navSize, 0);
 }
 
 /**

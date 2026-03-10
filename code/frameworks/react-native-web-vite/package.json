@@ -67,7 +67,7 @@
     "react-native": ">=0.74.5",
     "react-native-web": "^0.19.12 || ^0.20.0 || ^0.21.0",
     "storybook": "workspace:^",
-    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "publishConfig": {
     "access": "public"

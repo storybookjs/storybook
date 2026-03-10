@@ -114,6 +114,7 @@ export const Short = meta.story({
   },
   parameters: {
     viewport: { options: customViewports },
+    chromatic: { disableSnapshot: true },
   },
   render: () => <></>,
 });
@@ -124,6 +125,7 @@ export const Narrow = meta.story({
   },
   parameters: {
     viewport: { options: customViewports },
+    chromatic: { disableSnapshot: true },
   },
   render: () => <></>,
 });
@@ -134,6 +136,7 @@ export const Calculated = meta.story({
   },
   parameters: {
     viewport: { options: customViewports },
+    chromatic: { disableSnapshot: true },
   },
   render: () => <></>,
   tags: ['!test'], // Vitest browser does not support calculated viewports

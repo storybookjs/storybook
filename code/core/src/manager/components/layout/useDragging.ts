@@ -5,16 +5,17 @@ import type { API_Layout } from 'storybook/internal/types';
 
 import {
   MINIMUM_CONTENT_WIDTH_PX,
+  MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX,
   MINIMUM_HORIZONTAL_PANEL_WIDTH_PX,
+  MINIMUM_RIGHT_PANEL_WIDTH_PX,
+  MINIMUM_SIDEBAR_WIDTH_PX,
   TOOLBAR_HEIGHT_PX,
 } from '../../constants';
 import type { LayoutState } from './Layout';
 
 // the distance from the edge of the screen at which the panel/sidebar will snap to the edge
 const SNAP_THRESHOLD_PX = 30;
-const SIDEBAR_MIN_WIDTH_PX = 240;
-const RIGHT_PANEL_MIN_WIDTH_PX = 270;
-const MIN_WIDTH_STIFFNESS = 0.9;
+const STIFFNESS = 0.9;
 const KEYBOARD_STEP_PX = 10;
 const KEYBOARD_SHIFT_MULTIPLIER = 5;
 const RESIZE_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
@@ -83,6 +84,7 @@ function applyResizeKeyboard(
   sizeKey: 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth',
   key: string,
   step: number,
+  minSize: number,
   maxSize: number,
   increaseKey: string,
   decreaseKey: string
@@ -91,9 +93,10 @@ function applyResizeKeyboard(
 
   switch (key) {
     case increaseKey:
-      return { ...state, [sizeKey]: clamp(currentSize + step, 0, maxSize) };
+      return { ...state, [sizeKey]: clamp(currentSize + step, minSize, maxSize) };
     case decreaseKey:
-      return { ...state, [sizeKey]: clamp(currentSize - step, 0, maxSize) };
+      const effectivelyComputed = clamp(currentSize - step, 0, maxSize);
+      return { ...state, [sizeKey]: effectivelyComputed < minSize ? 0 : effectivelyComputed };
     case 'Home':
       return { ...state, [sizeKey]: 0 };
     case 'End':
@@ -157,26 +160,37 @@ export function useDragging({
     const onDragEnd = () => {
       setState((state) => {
         if (draggedElement === sidebarResizer) {
-          if (state.navSize < SIDEBAR_MIN_WIDTH_PX && state.navSize > 0) {
+          if (state.navSize < MINIMUM_SIDEBAR_WIDTH_PX && state.navSize > 0) {
             // snap the sidebar back to its minimum width if it's smaller than the threshold
             return {
               ...state,
               isDragging: false,
-              navSize: SIDEBAR_MIN_WIDTH_PX,
+              navSize: MINIMUM_SIDEBAR_WIDTH_PX,
             };
           }
         }
         if (draggedElement === panelResizer) {
           if (
             state.panelPosition === 'right' &&
-            state.rightPanelWidth < RIGHT_PANEL_MIN_WIDTH_PX &&
+            state.rightPanelWidth < MINIMUM_RIGHT_PANEL_WIDTH_PX &&
             state.rightPanelWidth > 0
           ) {
             // snap the right panel back to its minimum width if it's smaller than the threshold
             return {
               ...state,
               isDragging: false,
-              rightPanelWidth: RIGHT_PANEL_MIN_WIDTH_PX,
+              rightPanelWidth: MINIMUM_RIGHT_PANEL_WIDTH_PX,
+            };
+          } else if (
+            state.panelPosition === 'bottom' &&
+            state.bottomPanelHeight < MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX &&
+            state.bottomPanelHeight > 0
+          ) {
+            // snap the bottom panel back to its minimum height if it's smaller than the threshold
+            return {
+              ...state,
+              isDragging: false,
+              bottomPanelHeight: MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX,
             };
           }
         }
@@ -211,11 +225,11 @@ export function useDragging({
               navSize: 0,
             };
           }
-          if (sidebarDragX <= SIDEBAR_MIN_WIDTH_PX) {
+          if (sidebarDragX <= MINIMUM_SIDEBAR_WIDTH_PX) {
             // set sidebar width to a value in between the actual drag position and the min width, determined by the stiffness
             return {
               ...state,
-              navSize: interpolate(MIN_WIDTH_STIFFNESS, sidebarDragX, SIDEBAR_MIN_WIDTH_PX),
+              navSize: interpolate(STIFFNESS, sidebarDragX, MINIMUM_SIDEBAR_WIDTH_PX),
             };
           }
           return {
@@ -236,6 +250,10 @@ export function useDragging({
                 e.view.innerHeight - e.clientY
               : // @ts-expect-error (non strict)
                 e.view.innerWidth - e.clientX;
+          const minimumSize =
+            state.panelPosition === 'bottom'
+              ? MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX
+              : MINIMUM_RIGHT_PANEL_WIDTH_PX;
 
           if (panelDragSize === state[sizeAxisState]) {
             return state;
@@ -246,15 +264,11 @@ export function useDragging({
               [sizeAxisState]: 0,
             };
           }
-          if (state.panelPosition === 'right' && panelDragSize <= RIGHT_PANEL_MIN_WIDTH_PX) {
-            // set right panel width to a value in between the actual drag position and the min width, determined by the stiffness
+          // set panel width/height to a value in between the actual drag position and the min size, determined by the stiffness
+          if (panelDragSize <= minimumSize) {
             return {
               ...state,
-              [sizeAxisState]: interpolate(
-                MIN_WIDTH_STIFFNESS,
-                panelDragSize,
-                RIGHT_PANEL_MIN_WIDTH_PX
-              ),
+              [sizeAxisState]: interpolate(STIFFNESS, panelDragSize, minimumSize),
             };
           }
 
@@ -283,6 +297,7 @@ export function useDragging({
           'navSize',
           e.key,
           step,
+          MINIMUM_SIDEBAR_WIDTH_PX,
           computeSidebarMaxWidth(state.panelPosition, state.rightPanelWidth, showPanel),
           'ArrowRight',
           'ArrowLeft'
@@ -302,6 +317,9 @@ export function useDragging({
           state.panelPosition === 'bottom' ? 'bottomPanelHeight' : 'rightPanelWidth',
           e.key,
           step,
+          state.panelPosition === 'bottom'
+            ? MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX
+            : MINIMUM_RIGHT_PANEL_WIDTH_PX,
           computePanelMaxSize(state.panelPosition, state.navSize),
           state.panelPosition === 'bottom' ? 'ArrowUp' : 'ArrowLeft',
           state.panelPosition === 'bottom' ? 'ArrowDown' : 'ArrowRight'

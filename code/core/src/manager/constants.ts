@@ -11,6 +11,15 @@ export const MINIMUM_CONTENT_WIDTH_PX = 100;
  */
 export const MINIMUM_HORIZONTAL_PANEL_WIDTH_PX = 360;
 
+/** Minimum height in pixels for the addon panel in the bottom position, beyond which it collapses. */
+export const MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX = 40;
+
+/** Minimum width in pixels for the sidebar, beyond which it collapses entirely. */
+export const MINIMUM_SIDEBAR_WIDTH_PX = 240;
+
+/** Minimum width in pixels for the addon panel in the right position, beyond which it collapses. */
+export const MINIMUM_RIGHT_PANEL_WIDTH_PX = 270;
+
 /**
  * Height in pixels of the toolbar in the main content area. Used to compute the maximum height of
  * the bottom panel so it does not push the toolbar out of view.

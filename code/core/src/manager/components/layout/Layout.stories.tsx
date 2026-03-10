@@ -8,10 +8,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { startCase } from 'es-toolkit/string';
 import { action } from 'storybook/actions';
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { isChromatic } from '../../../../../.storybook/isChromatic';
+import {
+  MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX,
+  MINIMUM_RIGHT_PANEL_WIDTH_PX,
+  MINIMUM_SIDEBAR_WIDTH_PX,
+} from '../../constants';
 import { Layout } from './Layout';
 import { LayoutProvider } from './LayoutProvider';
 
@@ -222,43 +227,76 @@ export const KeyboardSidebarResize: Story = {
     await step('ArrowRight widens the sidebar', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowRight}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeGreaterThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeGreaterThan(before)
+      );
     });
 
     await step('Shift+ArrowRight widens by a larger step', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{Shift>}{ArrowRight}{/Shift}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow')) - before).toBeGreaterThanOrEqual(50);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow')) - before).toBeGreaterThanOrEqual(50)
+      );
     });
 
     await step('ArrowLeft narrows the sidebar', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowLeft}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before)
+      );
     });
 
     await step('Home collapses the sidebar to 0', async () => {
       await userEvent.keyboard('{Home}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(handle).toHaveAttribute('aria-valuenow', '0');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
     });
 
     await step('End expands the sidebar to its maximum', async () => {
       await userEvent.keyboard('{End}');
-      await new Promise((r) => setTimeout(r, 0));
-      const valuenow = Number(handle.getAttribute('aria-valuenow'));
-      const valuemax = Number(handle.getAttribute('aria-valuemax'));
-      expect(valuenow).toBe(valuemax);
+      await waitFor(() => {
+        const valuenow = Number(handle.getAttribute('aria-valuenow'));
+        const valuemax = Number(handle.getAttribute('aria-valuemax'));
+        expect(valuenow).toBe(valuemax);
+      });
     });
 
     await step('ArrowLeft narrows the sidebar again', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowLeft}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before)
+      );
+    });
+  },
+};
+
+export const KeyboardSidebarMinSize: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const handle = canvas.getByRole('separator', { name: 'Sidebar resize handle' });
+
+    await step('Focus the sidebar handle', async () => {
+      handle.focus();
+      expect(handle).toHaveFocus();
+    });
+
+    await step('Home collapses the sidebar to 0', async () => {
+      await userEvent.keyboard('{Home}');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
+    });
+
+    await step('ArrowRight brings the sidebar to its min size', async () => {
+      await userEvent.keyboard('{ArrowRight}');
+      await waitFor(() =>
+        expect(handle).toHaveAttribute('aria-valuenow', `${MINIMUM_SIDEBAR_WIDTH_PX}`)
+      );
+    });
+
+    await step('ArrowLeft collapses it again', async () => {
+      await userEvent.keyboard('{ArrowLeft}');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
     });
   },
 };
@@ -276,43 +314,76 @@ export const KeyboardBottomPanelResize: Story = {
     await step('ArrowUp increases the panel height', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowUp}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeGreaterThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeGreaterThan(before)
+      );
     });
 
     await step('Shift+ArrowUp increases by a larger step', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{Shift>}{ArrowUp}{/Shift}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow')) - before).toBeGreaterThanOrEqual(50);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow')) - before).toBeGreaterThanOrEqual(50)
+      );
     });
 
     await step('ArrowDown decreases the panel height', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowDown}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before)
+      );
     });
 
     await step('Home collapses the panel to 0', async () => {
       await userEvent.keyboard('{Home}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(handle).toHaveAttribute('aria-valuenow', '0');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
     });
 
     await step('End expands the panel to its maximum', async () => {
       await userEvent.keyboard('{End}');
-      await new Promise((r) => setTimeout(r, 0));
-      const valuenow = Number(handle.getAttribute('aria-valuenow'));
-      const valuemax = Number(handle.getAttribute('aria-valuemax'));
-      expect(valuenow).toBe(valuemax);
+      await waitFor(() => {
+        const valuenow = Number(handle.getAttribute('aria-valuenow'));
+        const valuemax = Number(handle.getAttribute('aria-valuemax'));
+        expect(valuenow).toBe(valuemax);
+      });
     });
 
     await step('ArrowDown decreases the panel height again', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowDown}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before)
+      );
+    });
+  },
+};
+
+export const KeyboardBottomPanelMinSize: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const handle = canvas.getByRole('separator', { name: 'Addon panel resize handle' });
+
+    await step('Focus the addon panel handle', async () => {
+      handle.focus();
+      expect(handle).toHaveFocus();
+    });
+
+    await step('Home collapses the addon panel to 0', async () => {
+      await userEvent.keyboard('{Home}');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
+    });
+
+    await step('ArrowUp brings the addon panel to its min size', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      await waitFor(() =>
+        expect(handle).toHaveAttribute('aria-valuenow', `${MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX}`)
+      );
+    });
+
+    await step('ArrowDown collapses it again', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
     });
   },
 };
@@ -333,45 +404,81 @@ export const KeyboardRightPanelResize: Story = {
     await step('ArrowLeft widens the right panel', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowLeft}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeGreaterThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeGreaterThan(before)
+      );
     });
 
     await step('Shift+ArrowLeft widens by a larger step', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{Shift>}{ArrowLeft}{/Shift}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow')) - before).toBeGreaterThanOrEqual(50);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow')) - before).toBeGreaterThanOrEqual(50)
+      );
     });
 
     await step('ArrowRight narrows the right panel', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowRight}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before)
+      );
     });
 
     await step('Home collapses the right panel to 0', async () => {
       await userEvent.keyboard('{Home}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(handle).toHaveAttribute('aria-valuenow', '0');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
     });
 
     await step('End expands the right panel to its maximum', async () => {});
 
     await step('End expands the right panel to its maximum', async () => {
       await userEvent.keyboard('{End}');
-      await new Promise((r) => setTimeout(r, 0));
-      const valuenow = Number(handle.getAttribute('aria-valuenow'));
-      const valuemax = Number(handle.getAttribute('aria-valuemax'));
-      expect(valuenow).toBe(valuemax);
+      await waitFor(() => {
+        const valuenow = Number(handle.getAttribute('aria-valuenow'));
+        const valuemax = Number(handle.getAttribute('aria-valuemax'));
+        expect(valuenow).toBe(valuemax);
+      });
     });
 
     await step('ArrowRight narrows the right panel again', async () => {
       const before = Number(handle.getAttribute('aria-valuenow'));
       await userEvent.keyboard('{ArrowRight}');
-      await new Promise((r) => setTimeout(r, 0));
-      expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before);
+      await waitFor(() =>
+        expect(Number(handle.getAttribute('aria-valuenow'))).toBeLessThan(before)
+      );
+    });
+  },
+};
+
+export const KeyboardRightPanelMinSize: Story = {
+  args: {
+    managerLayoutState: { ...defaultState, panelPosition: 'right' },
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const handle = canvas.getByRole('separator', { name: 'Addon panel resize handle' });
+
+    await step('Focus the addon panel handle', async () => {
+      handle.focus();
+      expect(handle).toHaveFocus();
+    });
+
+    await step('Home collapses the addon panel to 0', async () => {
+      await userEvent.keyboard('{Home}');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
+    });
+
+    await step('ArrowLeft brings the addon panel to its min size', async () => {
+      await userEvent.keyboard('{ArrowLeft}');
+      await waitFor(() =>
+        expect(handle).toHaveAttribute('aria-valuenow', `${MINIMUM_RIGHT_PANEL_WIDTH_PX}`)
+      );
+    });
+
+    await step('ArrowRight collapses it again', async () => {
+      await userEvent.keyboard('{ArrowRight}');
+      await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '0'));
     });
   },
 };

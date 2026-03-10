@@ -333,4 +333,4 @@ Type:
 	Promise<void>;
 ```
 
-Registers [detailed documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#get-story-documentation) for a specific story variant by `componentId` and `storyName`.
+Registers [story-level documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation-for-story) for a specific story variant by `componentId` and `storyName`.

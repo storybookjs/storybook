@@ -55,6 +55,15 @@ function unwrapTSExpression(expr: any): t.Expression | null | undefined {
 export const configureFlatConfig = async (code: string) => {
   const ast = babelParse(code);
 
+  // Bail out if eslint-plugin-storybook is already imported to avoid referencing
+  // an undefined variable or duplicating the config spread.
+  const alreadyHasStorybookImport = ast.program.body.some(
+    (node) => t.isImportDeclaration(node) && node.source.value === 'eslint-plugin-storybook'
+  );
+  if (alreadyHasStorybookImport) {
+    return code;
+  }
+
   let tsEslintLocalName = '';
   let eslintDefineConfigLocalName = '';
   let eslintConfigExpression: any = null;
@@ -267,6 +276,9 @@ export async function configureEslintPlugin({
         logger.debug(`Detected flat config at ${eslintConfigFile}`);
         const code = await readFile(eslintConfigFile, { encoding: 'utf8' });
         const output = await configureFlatConfig(code);
+        if (output === code) {
+          return;
+        }
         await writeFile(eslintConfigFile, output);
       } else {
         const eslint = await readConfig(eslintConfigFile);

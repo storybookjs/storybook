@@ -583,6 +583,28 @@ describe('configureEslintPlugin', () => {
         export default someCustomConfig({}, [{}]);"
       `);
     });
+
+    it('should not modify config if eslint-plugin-storybook is already imported', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import sb from 'eslint-plugin-storybook';
+        export default [
+          ...sb.configs['flat/recommended'],
+        ];
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
+    });
   });
 });
 

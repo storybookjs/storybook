@@ -136,4 +136,5 @@ export const Calculated = meta.story({
     viewport: { options: customViewports },
   },
   render: () => <></>,
+  tags: ['!test'], // Vitest browser does not support calculated viewports
 });

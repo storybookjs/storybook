@@ -38,12 +38,12 @@ test.describe('Svelte', () => {
       await link.click();
 
       await sbPage.viewAddonPanel('Actions');
-      const basicLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      const basicLogItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
         hasText: `/basic-href`,
       });
 
       await expect(basicLogItem).toBeVisible();
-      const complexLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      const complexLogItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
         hasText: `/deep/nested`,
       });
       await expect(complexLogItem).toBeVisible();
@@ -62,7 +62,7 @@ test.describe('Svelte', () => {
       const goto = root.locator('button', { hasText: 'goto' });
       await goto.click();
 
-      const gotoLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      const gotoLogItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
         hasText: `/storybook-goto`,
       });
       await expect(gotoLogItem).toBeVisible();
@@ -70,7 +70,7 @@ test.describe('Svelte', () => {
       const invalidate = root.getByRole('button', { name: 'invalidate', exact: true });
       await invalidate.click();
 
-      const invalidateLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      const invalidateLogItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
         hasText: `/storybook-invalidate`,
       });
       await expect(invalidateLogItem).toBeVisible();
@@ -78,7 +78,7 @@ test.describe('Svelte', () => {
       const invalidateAll = root.getByRole('button', { name: 'invalidateAll' });
       await invalidateAll.click();
 
-      const invalidateAllLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      const invalidateAllLogItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
         hasText: `"invalidateAll"`,
       });
       await expect(invalidateAllLogItem).toBeVisible();
@@ -86,7 +86,7 @@ test.describe('Svelte', () => {
       const replaceState = root.getByRole('button', { name: 'replaceState' });
       await replaceState.click();
 
-      const replaceStateLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      const replaceStateLogItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
         hasText: `/storybook-replace-state`,
       });
       await expect(replaceStateLogItem).toBeVisible();
@@ -94,7 +94,7 @@ test.describe('Svelte', () => {
       const pushState = root.getByRole('button', { name: 'pushState' });
       await pushState.click();
 
-      const pushStateLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      const pushStateLogItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
         hasText: `/storybook-push-state`,
       });
       await expect(pushStateLogItem).toBeVisible();

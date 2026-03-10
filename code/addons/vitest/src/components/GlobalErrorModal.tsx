@@ -1,8 +1,8 @@
 import React, { useContext } from 'react';
 
-import { Button, IconButton, Modal } from 'storybook/internal/components';
+import { Button, Modal } from 'storybook/internal/components';
 
-import { CloseIcon, SyncIcon } from '@storybook/icons';
+import { SyncIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -31,6 +31,7 @@ const ModalTitle = styled(Modal.Title)(({ theme: { typography } }) => ({
 const ModalStackTrace = styled.pre(({ theme }) => ({
   whiteSpace: 'pre-wrap',
   wordWrap: 'break-word',
+  userSelect: 'text',
   overflow: 'auto',
   maxHeight: '60vh',
   margin: 0,
@@ -77,7 +78,6 @@ function ErrorCause({ error }: { error: ErrorLike }) {
 export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps) {
   const api = useStorybookApi();
   const { isModalOpen, setModalOpen } = useContext(GlobalErrorContext);
-  const handleClose = () => setModalOpen?.(false);
 
   const troubleshootURL = api.getDocsUrl({
     subpath: DOCUMENTATION_FATAL_ERROR_LINK,
@@ -148,22 +148,20 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
   ) : null;
 
   return (
-    <Modal onEscapeKeyDown={handleClose} onInteractOutside={handleClose} open={isModalOpen}>
+    <Modal ariaLabel="Storybook Test Error Details" onOpenChange={setModalOpen} open={isModalOpen}>
       <ModalBar>
-        <ModalTitle>Storybook Tests error details</ModalTitle>
+        <ModalTitle>Storybook Test Error Details</ModalTitle>
         <ModalActionBar>
-          <Button onClick={onRerun} variant="ghost">
+          <Button onClick={onRerun} variant="ghost" ariaLabel={false}>
             <SyncIcon />
             Rerun
           </Button>
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" ariaLabel={false} asChild>
             <a target="_blank" href={troubleshootURL} rel="noreferrer">
               Troubleshoot
             </a>
           </Button>
-          <IconButton onClick={handleClose} aria-label="Close modal">
-            <CloseIcon />
-          </IconButton>
+          <Modal.Close />
         </ModalActionBar>
       </ModalBar>
       <ModalStackTrace>

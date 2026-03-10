@@ -5,7 +5,7 @@ import {
   isTooLongForDefaultValueSummary,
 } from 'storybook/internal/docs-tools';
 
-import { isFunction, isPlainObject, isString } from 'es-toolkit/compat';
+import { isFunction, isPlainObject, isString } from 'es-toolkit/predicate';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';
 // @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
 import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';

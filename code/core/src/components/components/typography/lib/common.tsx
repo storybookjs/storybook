@@ -28,15 +28,9 @@ export const codeCommon: FunctionInterpolation = ({ theme }) => ({
   borderRadius: 3,
   fontSize: theme.typography.size.s2 - 1,
 
-  border:
-    theme.base === 'light'
-      ? `1px solid ${theme.color.mediumlight}`
-      : `1px solid ${theme.color.darker}`,
-  color:
-    theme.base === 'light'
-      ? transparentize(0.1, theme.color.defaultText)
-      : transparentize(0.3, theme.color.defaultText),
-  backgroundColor: theme.base === 'light' ? theme.color.lighter : theme.color.border,
+  border: theme.base === 'light' ? '1px solid hsl(0 0 0 / 0.05)' : '1px solid hsl(0 0 100 / 0.05)',
+  color: theme.color.defaultText,
+  backgroundColor: theme.base === 'light' ? 'hsl(0 0 0 / 0.01)' : 'hsl(0 0 100 / 0.02)',
 });
 
 export const withReset: FunctionInterpolation = ({ theme }) => ({

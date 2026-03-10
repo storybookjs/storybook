@@ -1,9 +1,42 @@
 <h1>Migration</h1>
 
+- [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
+  - [API and Component Changes](#api-and-component-changes)
+    - [Button Component API Changes](#button-component-api-changes)
+      - [Added: ariaLabel](#added-arialabel)
+      - [Added: shortcut](#added-shortcut)
+      - [Added: tooltip](#added-tooltip)
+      - [Deprecated: active](#deprecated-active)
+    - [IconButton is deprecated](#iconbutton-is-deprecated)
+    - [Bar Component API Changes](#bar-component-api-changes)
+      - [Added: innerStyle](#added-innerstyle)
+    - [FlexBar is deprecated](#flexbar-is-deprecated)
+    - [Tabs is deprecated](#tabs-is-deprecated)
+    - [TabsState is deprecated](#tabsstate-is-deprecated)
+    - [TabWrapper is deprecated](#tabwrapper-is-deprecated)
+    - [TabButton is deprecated](#tabbutton-is-deprecated)
+    - [TabBar is deprecated](#tabbar-is-deprecated)
+    - [Modal Component API Changes](#modal-component-api-changes)
+      - [Deprecated: onInteractOutside](#deprecated-oninteractoutside)
+      - [Deprecated: onEscapeKeyDown](#deprecated-onescapekeydown)
+      - [Added: `ariaLabel`](#added-arialabel-1)
+      - [Renamed: Modal.Dialog.Close and Modal.CloseButton](#renamed-modaldialogclose-and-modalclosebutton)
+    - [ListItem, TooltipLinkList and TooltipMessage are deprecated](#listitem-tooltiplinklist-and-tooltipmessage-are-deprecated)
+    - [PopoverProvider Component Added](#popoverprovider-component-added)
+    - [WithTooltip Component API Changes](#withtooltip-component-api-changes)
+      - [Removed: trigger](#removed-trigger)
+    - [Added: triggerOnFocusOnly](#added-triggeronfocusonly)
+    - [Renamed: startOpen](#renamed-startopen)
+    - [Removed: svg, strategy, withArrows, mutationObserverOptions](#removed-svg-strategy-witharrows-mutationobserveroptions)
+    - [Removed: hasChrome](#removed-haschrome)
+    - [Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick](#removed-closeontriggerhidden-followcursor-closeonoutsideclick)
+    - [Removed: interactive](#removed-interactive)
+      - [Other changes](#other-changes)
+    - [WithTooltipPure and WithTooltipState are deprecated](#withtooltippure-and-withtooltipstate-are-deprecated)
 - [From version 9.x to 10.0.0](#from-version-9x-to-1000)
   - [Core Changes](#core-changes)
     - [Local addons must be fully resolved](#local-addons-must-be-fully-resolved)
-    - [The `.storybook/main.*`-file must be valid ESM](#the-storybookmain-file-must-be-valid-esm)
+    - [The `.storybook/main.*` file and other presets must be valid ESM](#the-storybookmain-file-and-other-presets-must-be-valid-esm)
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
@@ -26,8 +59,8 @@
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
     - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
-  - [API and Component Changes](#api-and-component-changes)
-    - [Button Component API Changes](#button-component-api-changes)
+  - [API and Component Changes](#api-and-component-changes-1)
+    - [Button Component API Changes](#button-component-api-changes-1)
     - [Icon System Updates](#icon-system-updates)
     - [Sidebar Component Changes](#sidebar-component-changes)
     - [Story Store API Changes](#story-store-api-changes)
@@ -171,17 +204,17 @@
     - [Tab addons cannot manually route, Tool addons can filter their visibility via tabId](#tab-addons-cannot-manually-route-tool-addons-can-filter-their-visibility-via-tabid)
     - [Removed `config` preset](#removed-config-preset-1)
 - [From version 7.5.0 to 7.6.0](#from-version-750-to-760)
-    - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
-    - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
-    - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
-    - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
-    - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
+  - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
+  - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
+  - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
+  - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
+  - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
 - [From version 7.4.0 to 7.5.0](#from-version-740-to-750)
-    - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
-    - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
+  - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
+  - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
 - [From version 7.0.0 to 7.2.0](#from-version-700-to-720)
-    - [Addon API is more type-strict](#addon-api-is-more-type-strict)
-    - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
+  - [Addon API is more type-strict](#addon-api-is-more-type-strict)
+  - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
 - [From version 6.5.x to 7.0.0](#from-version-65x-to-700)
   - [7.0 breaking changes](#70-breaking-changes)
     - [Dropped support for Node 15 and below](#dropped-support-for-node-15-and-below)
@@ -207,7 +240,7 @@
     - [Deploying build artifacts](#deploying-build-artifacts)
       - [Dropped support for file URLs](#dropped-support-for-file-urls)
       - [Serving with nginx](#serving-with-nginx)
-      - [Ignore story files from node\_modules](#ignore-story-files-from-node_modules)
+      - [Ignore story files from node_modules](#ignore-story-files-from-node_modules)
   - [7.0 Core changes](#70-core-changes)
     - [7.0 feature flags removed](#70-feature-flags-removed)
     - [Story context is prepared before for supporting fine grained updates](#story-context-is-prepared-before-for-supporting-fine-grained-updates)
@@ -221,7 +254,7 @@
     - [Addon-interactions: Interactions debugger is now default](#addon-interactions-interactions-debugger-is-now-default)
   - [7.0 Vite changes](#70-vite-changes)
     - [Vite builder uses Vite config automatically](#vite-builder-uses-vite-config-automatically)
-    - [Vite cache moved to node\_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
+    - [Vite cache moved to node_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
   - [7.0 Webpack changes](#70-webpack-changes)
     - [Webpack4 support discontinued](#webpack4-support-discontinued)
     - [Babel mode v7 exclusively](#babel-mode-v7-exclusively)
@@ -272,7 +305,7 @@
     - [Dropped addon-docs manual babel configuration](#dropped-addon-docs-manual-babel-configuration)
     - [Dropped addon-docs manual configuration](#dropped-addon-docs-manual-configuration)
     - [Autoplay in docs](#autoplay-in-docs)
-    - [Removed STORYBOOK\_REACT\_CLASSES global](#removed-storybook_react_classes-global)
+    - [Removed STORYBOOK_REACT_CLASSES global](#removed-storybook_react_classes-global)
   - [7.0 Deprecations and default changes](#70-deprecations-and-default-changes)
     - [storyStoreV7 enabled by default](#storystorev7-enabled-by-default)
     - [`Story` type deprecated](#story-type-deprecated)
@@ -485,6 +518,165 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+## From version 10.0.0 to 10.1.0
+
+### API and Component Changes
+
+#### Button Component API Changes
+
+##### Added: ariaLabel
+
+The Button component now has an `ariaLabel` prop, to ensure that Storybook UI code is accessible to screenreader users. The prop will become mandatory in Storybook 11.
+
+When buttons have text content as children, and when that text content does not rely on visual context to be understood, you may pass `false` to the `ariaLabel` prop to indicate that an ARIA label is not necessary.
+
+In every other case (your Button only contains an icon, has a responsive layout that can hide its text, or relies on visual context to make sense), you must pass a label to `ariaLabel`, which screenreaders will read. The label should be short and start with an action verb.
+
+##### Added: shortcut
+
+An optional `shortcut` prop was added for internal use. When `shortcut` is set, the Button will be appended with a human-readable string for the shortcut, and the `aria-keyshortcuts` prop will be set.
+
+##### Added: tooltip
+
+Button now displays a tooltip whenever `ariaLabel` or `shortcut` is set. The tooltip can be customised by passing a string to the optional `tooltip` prop.
+
+##### Deprecated: active
+
+The `active` prop is deprecated and will be removed in Storybook 11.
+
+The Button component has historically been used to implement Toggle and Select interactions. When you need a Button to have an active state, use ToggleButton if the active state denotes that a state or feature is enabled after pressing the Button. Use Select if the active state denotes that the Button is open while a selection is being made, or that the Button currently has a selected value.
+
+#### IconButton is deprecated
+
+The IconButton component is deprecated, as it overlaps with Button. Instead, use Button with the `'ghost'` variant and `'small'` padding, and add an `ariaLabel` prop for screenreaders to announce.
+
+IconButton will be removed in future versions.
+
+#### Bar Component API Changes
+
+The `Bar` component's internal layout has changed, to fix a height bug in scrollable bars. It now applies flex positioning and applies a default item gap, that can be controlled with the `innerStyle` prop. You may see slight changes in default padding as a result of this change.
+
+##### Added: innerStyle
+
+When `scrollable` is set to `true`, `Bar` now adds an inner container that is used to ensure the scrollbar size does not impact the height of the bar. This inner container displays as 'flex' and has the following default style:
+
+```css
+width: 100%;
+min-height: 40;
+display: flex;
+align-items: center;
+gap: 6px;
+padding-inline: 6px;
+```
+
+The inner container's style can be overridden by passing CSS properties to `innerStyle`.
+
+#### FlexBar is deprecated
+
+The `FlexBar` component is deprecated. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
+
+#### Tabs is deprecated
+
+The `Tabs` component is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabsState is deprecated
+
+The `TabsState` class is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabWrapper is deprecated
+
+The `TabWrapper` component is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabButton is deprecated
+
+The `TabButton` class is deprecated as it was not accessible. It does not have a replacement, as the new `TabList` component handles tab buttons internally.
+
+#### TabBar is deprecated
+
+The `TabBar` component, a styled bar used inside `Tabs` and not intended to be public, is deprecated and will be hidden in Storybook 11. Use `TabsView` instead.
+
+#### Modal Component API Changes
+
+##### Deprecated: onInteractOutside
+
+The `onInteractOutside` prop is deprecated in favor of `dismissOnClickOutside`, because it was only used to close the modal when clicking outside. Use `dismissOnClickOutside` to control whether clicking outside the modal should close it or not.
+
+##### Deprecated: onEscapeKeyDown
+
+The `onEscapeKeyDown` prop is deprecated in favor of `dismissOnEscape`, because it was only used to close the modal when pressing Escape. Use `dismissOnEscape` to control whether pressing Escape should close it or not.
+
+##### Added: `ariaLabel`
+
+Modal elements must have a title to be accessible. Set that title through the `ariaLabel` prop. It will become mandatory in Storybook 11.
+
+##### Renamed: Modal.Dialog.Close and Modal.CloseButton
+
+The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. Those names are deprecated and will be removed in Storybook 11. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
+
+The `Modal.Close` component no longer requires an `onClick` handler to close the modal. It will automatically close the modal when clicked. If you need to perform additional actions when the close button is clicked, you can still provide an `onClick` handler, and it will be called in addition to closing the modal.
+
+#### ListItem, TooltipLinkList and TooltipMessage are deprecated
+
+The ListItem and TooltipLinkList components were used in Storybook to make menus, and TooltipMessage to make message popovers. However, WithTooltip does not support keyboard interactions, so these components were not accessible.
+
+These components are now deprecated and will be removed in future versions. To replace TooltipMessage, replace WithTooltip with PopoverProvider, and use Popover as a base component for your popovers. To replace ListItem and TooltipLinkList, a dedicated menu component will be introduced in a future version, and Popover can be used in the meantime.
+
+#### PopoverProvider Component Added
+
+The PopoverProvider component acts as a counterpoint to WithTooltip. When you want an interactive overlay with buttons or inputs, use PopoverProvider and Popover. When you want a static overlay that shows on focus or hover, use WithTooltip with TooltipNote or Tooltip.
+
+PopoverProvider is based on react-aria. It must have a single child that acts as a trigger. This child must have a pressable role (can be clicked or pressed) and must be able to receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your popover.
+
+##### Added: ariaLabel
+
+The `ariaLabel` prop was added in Storybook 10.3 to provide an accessible label for the popover dialog. This label is announced by screen readers when the popover opens. `ariaLabel` will become mandatory in Storybook 11.
+
+```tsx
+<PopoverProvider ariaLabel="Share options" popover={<ShareMenu />}>
+  <Button ariaLabel="Share">Share</Button>
+</PopoverProvider>
+```
+
+#### WithTooltip Component API Changes
+
+The WithTooltip component has been reimplemented from the ground up, under the new name `TooltipProvider`. The new implementation will replace `WithTooltip` entirely in Storybook 11. Below is a summary of the changes between both APIs, which will take full effect in Storybook 11.
+
+##### Removed: trigger
+
+The `trigger` prop was removed to enforce better accessibility compliance. WithTooltip must not be triggered on click, as it is not reachable by keyboard. Buttons that open a popover, menu or select must use appropriate components instead.
+
+#### Added: triggerOnFocusOnly
+
+The `triggerOnFocusOnly` prop was added. When set, tooltips will only show on focus. Use this to provide keyboard navigation hints to keyboard users. Do not use it for other purposes.
+
+#### Renamed: startOpen
+
+The `startOpen` prop was renamed `defaultVisible` to match naming in other components that expose both controlled and uncontrolled visibility. The `startOpen` prop will be removed in future versions.
+
+#### Removed: svg, strategy, withArrows, mutationObserverOptions
+
+These props were not used inside Storybook and have been removed.
+
+#### Removed: hasChrome
+
+The `hasChrome` prop was removed because it should be handled by the tooltip being shown instead. Popover and Tooltip both have a `hasChrome` prop. TooltipNote never needs this prop and does not have it.
+
+#### Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick
+
+The `closeOnTriggerHidden`, `followCursor` and `closeOnOutsideClick` props have been removed. WithTooltip will now authoritatively decide when and where to show or hide its tooltip. It will always close on clicks outside the tooltip, because tooltips should never be modal.
+
+#### Removed: interactive
+
+The `interactive` prop has been removed as it does not align with our vision for accessible components with a well-defined role. Use PopoverProvider instead of WithTooltip to show interactive overlays.
+
+##### Other changes
+
+The underlying implementation was switched from Popper.js to react-aria. Due to these changes, WithTooltip must now have a single child that has a focusable role and that can receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your tooltip.
+
+#### WithTooltipPure and WithTooltipState are deprecated
+
+Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
+
 ## From version 9.x to 10.0.0
 
 ### Core Changes
@@ -497,7 +689,7 @@ In Storybook 9 it was possible to do reference local addons by a relative path, 
 // main.ts
 
 export default {
-  addons: ["./my-addon.ts"],
+  addons: ['./my-addon.ts'],
 };
 ```
 
@@ -507,28 +699,79 @@ In Storybook 10 this relative path, should be fully resolved, like so:
 // main.ts
 
 export default {
-  addons: [import.meta.resolve("./my-addon.ts")],
+  addons: [import.meta.resolve('./my-addon.ts')],
 };
 ```
 
-#### The `.storybook/main.*`-file must be valid ESM
+When adding managerEntries, ensure you resolve a path, you may need to convert it from a URL:
 
-Storybook will load the `.storybook/main.*` file as an ESM file.
+For example:
+
+```ts
+// main.ts
+export default {
+  managerEntries(entry = []) {
+    return [...entry, require.resolve('./iframe.js')];
+  },
+};
+```
+
+Would become:
+
+```ts
+// main.ts
+import { fileURLToPath } from 'node:url';
+
+export default {
+  managerEntries(entry = []) {
+    return [...entry, fileURLToPath(import.meta.resolve('./iframe.js'))];
+  },
+};
+```
+
+#### The `.storybook/main.*` file and other presets must be valid ESM
+
+Storybook will load the `.storybook/main.*` file and any custom preset files as ESM files.
 Thus CJS constants (`require`, `__dirname`, `__filename`) will not be defined.
 
 You can define these constants yourself, like so:
 
 ```ts
-import { createRequire } from "node:module";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createRequire } from 'node:module';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 ```
 
-A `main.ts` file that's CJS is no longer supported.
+A `main.ts` file that's CJS is no longer supported. The same applies to any custom preset files.
+
+Additionally, **extensionless relative imports are no longer supported** in JavaScript-based configuration files (`.storybook/main.js`) and custom presets. All relative imports must now include explicit file extensions.
+
+**Before (no longer works):**
+
+```js
+// .storybook/main.js
+import myPreset from './my-file';
+```
+
+**After:**
+
+```js
+// .storybook/main.js
+import myPreset from './my-file.js';
+```
+
+This change aligns with Node.js ESM requirements, where relative imports must specify the full file extension. This applies to `.storybook/main.js` and any custom preset files. While TypeScript-based files (`.storybook/main.ts`) will continue to work with extensionless imports for now through automatic resolution, we recommend migrating to explicit extensions for consistency and better compatibility.
+
+**Recommended approach for all files:**
+
+- Use `.js` for JavaScript files
+- Use `.mjs` for ES modules
+- Use `.ts` for TypeScript files
+- Always include the extension in relative imports
 
 #### Node.js 20.19+ or 22.12+ required
 
@@ -567,10 +810,10 @@ When setting the `core.builder` or `core.builder.name` option in the main config
 In a preset:
 
 ```diff
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 
 const getAbsolutePath = (input) =>
-  dirname(require.resolve(join(input, 'package.json')));
+  dirname(require.resolve(`${input}/package.json`));
 
 export const core = {
 -  builder: getAbsolutePath('@storybook/builder-vite'),
@@ -582,8 +825,8 @@ export const core = {
 ```
 
 #### Removed x-only builtin tags
+
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
-During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
 
 ## From version 8.x to 9.0.0
 
@@ -699,7 +942,7 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 - `@sveltejs/vite-plugin-svelte`
 - etc.
 
-For more information on upgrading to Vite 5, see the [Vite Migration Guide](https://vitejs.dev/guide/migration).
+For more information on upgrading to Vite 5, see the [Vite Migration Guide](https://v6.vite.dev/guide/migration).
 
 ##### TypeScript < 4.9
 
@@ -1081,12 +1324,12 @@ export default {
     docs: {
       source: {
         transform: async (source) => {
-          const prettier = await import("prettier/standalone");
-          const prettierPluginBabel = await import("prettier/plugins/babel");
-          const prettierPluginEstree = await import("prettier/plugins/estree");
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = await import('prettier/plugins/estree');
 
           return prettier.format(source, {
-            parser: "babel",
+            parser: 'babel',
             plugins: [prettierPluginBabel, prettierPluginEstree],
           });
         },
@@ -1105,7 +1348,7 @@ export const MyStory = {
   parameters: {
     docs: {
       source: {
-        format: "html",
+        format: 'html',
       },
     },
   },
@@ -1217,7 +1460,7 @@ Key changes:
 
 #### Angular: Introduce `features.angularFilterNonInputControls`
 
-Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular components in Storybook's controls panel.
 
 To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 
@@ -1279,7 +1522,7 @@ For all affected frameworks, update your configuration to use the Vite builder:
 ```tsx
 export default {
   framework: {
-    name: "@storybook/[framework]-vite", // replace [framework] with preact, vue3, or web-components
+    name: '@storybook/[framework]-vite', // replace [framework] with preact, vue3, or web-components
     options: {},
   },
   // ... other configurations
@@ -1378,7 +1621,7 @@ Previously, once you made changes to a component's props, the controls and args 
 const config = {
   // ...
   typescript: {
-    reactDocgen: "react-docgen-typescript",
+    reactDocgen: 'react-docgen-typescript',
     reactDocgenTypescriptOptions: {
       EXPERIMENTAL_useWatchProgram: true,
     },
@@ -1625,8 +1868,8 @@ export default {
 In order to properly mock the `next/router`, `next/header`, `next/navigation` and `next/cache` APIs, the `@storybook/nextjs` framework includes internal Webpack aliases to those modules. If you use portable stories in your Jest tests, you should set the aliases in your Jest config files `moduleNameMapper` property using the `getPackageAliases` helper from `@storybook/nextjs/export-mocks`:
 
 ```js
-const nextJest = require("next/jest.js");
-const { getPackageAliases } = require("@storybook/nextjs/export-mocks");
+const nextJest = require('next/jest.js');
+const { getPackageAliases } = require('@storybook/nextjs/export-mocks');
 const createJestConfig = nextJest();
 const customJestConfig = {
   moduleNameMapper: {
@@ -1655,7 +1898,7 @@ Starting in 8.1, to generate autodocs for every component (`docs.autodocs = true
 ```js
 // .storybook/preview.js
 export default {
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 };
 ```
 
@@ -1665,7 +1908,7 @@ Tags cascade, so setting `'autodocs'` at the project level automatically propaga
 // Button.stories.ts
 export default {
   component: Button,
-  tags: ["!autodocs"],
+  tags: ['!autodocs'],
 };
 ```
 
@@ -1698,12 +1941,8 @@ It still accepts being passed `children`.
 When passing project annotations overrides via `composeStory` such as:
 
 ```tsx
-const projectAnnotationOverrides = { parameters: { foo: "bar" } };
-const Primary = composeStory(
-  stories.Primary,
-  stories,
-  projectAnnotationOverrides
-);
+const projectAnnotationOverrides = { parameters: { foo: 'bar' } };
+const Primary = composeStory(stories.Primary, stories, projectAnnotationOverrides);
 ```
 
 they are now merged with the annotations passed via `setProjectAnnotations` rather than completely overwriting them. This was seen as a bug and it's now fixed. If you have a use case where you really need this, please open an issue to elaborate.
@@ -1769,12 +2008,12 @@ The UI added to the manager via addons is now rendered with React 18.
 Example:
 
 ```tsx
-import { addons, types } from "@storybook/manager-api";
+import { addons, types } from '@storybook/manager-api';
 
-addons.register("my-addon", () => {
-  addons.add("my-addon/panel", {
+addons.register('my-addon', () => {
+  addons.add('my-addon/panel', {
     type: types.PANEL,
-    title: "My Addon",
+    title: 'My Addon',
     // This will be called as a JSX element by react 18
     render: ({ active }) => (active ? <div>Hello World</div> : null),
   });
@@ -1826,8 +2065,8 @@ In Storybook 8 those plugins have to be added explicitly in the user's `vite.con
 #### For React:
 
 ```ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
@@ -1837,8 +2076,8 @@ export default defineConfig({
 #### For Vue:
 
 ```ts
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
+import vue from '@vitejs/plugin-vue';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [vue()],
@@ -1848,8 +2087,8 @@ export default defineConfig({
 #### For Svelte (without Sveltekit):
 
 ```ts
-import { defineConfig } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [svelte()],
@@ -1859,8 +2098,8 @@ export default defineConfig({
 #### For Preact:
 
 ```ts
-import { defineConfig } from "vite";
-import preact from "@preact/preset-vite";
+import preact from '@preact/preset-vite';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [preact()],
@@ -1870,8 +2109,8 @@ export default defineConfig({
 #### For Solid:
 
 ```ts
-import { defineConfig } from "vite";
-import solid from "vite-plugin-solid";
+import { defineConfig } from 'vite';
+import solid from 'vite-plugin-solid';
 
 export default defineConfig({
   plugins: [solid()],
@@ -1881,8 +2120,8 @@ export default defineConfig({
 #### For Qwik:
 
 ```ts
-import { defineConfig } from "vite";
-import qwik from "vite-plugin-qwik";
+import { defineConfig } from 'vite';
+import qwik from 'vite-plugin-qwik';
 
 export default defineConfig({
   plugins: [qwik()],
@@ -1912,7 +2151,7 @@ export default {
 
 export const ButtonClick = {
   play: async ({ args, canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole("button"));
+    await userEvent.click(within(canvasElement).getByRole('button'));
     // args.onClick is a jest spy in 7.0
     await expect(args.onClick).toHaveBeenCalled();
   },
@@ -1922,7 +2161,7 @@ export const ButtonClick = {
 In Storybook 8 this feature is removed, and spies have to added explicitly:
 
 ```ts
-import { fn } from "@storybook/test";
+import { fn } from '@storybook/test';
 
 export default {
   component: Button,
@@ -1933,7 +2172,7 @@ export default {
 
 export const ButtonClick = {
   play: async ({ args, canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole("button"));
+    await userEvent.click(within(canvasElement).getByRole('button'));
     await expect(args.onClick).toHaveBeenCalled();
   },
 };
@@ -1956,13 +2195,21 @@ Storybook now uses MDX3 under the hood. This change contains many improvements a
 
 #### Dropping support for \*.stories.mdx (CSF in MDX) format and MDX1 support
 
-In Storybook 7, we deprecated the ability of using MDX both for documentation and for defining stories in the same .stories.mdx file. It is now removed, and Storybook won't support .stories.mdx files anymore. We provide migration scripts to help you onto the new format.
+In Storybook 7, we deprecated the ability to use MDX for both documentation and story definition in the same .stories.mdx file. It is now removed, and Storybook won't support `.stories.mdx` files anymore. We provide migration scripts to help you onto the new format. To migrate your `.stories.mdx` files to the new format, you can run the following command:
+
+```sh
+# Convert stories in MDX to CSF
+npx storybook@latest migrate mdx-to-csf --glob "src/**/*.stories.mdx"
+```
+
+> To ensure a smooth migration, you'll also need to:
+>
+> - Update your stories glob in your `.storybook/main.js` configuration to include the newly created `.mdx` and `.stories.js|ts` files.
+> - Manually remove the stories from the original `.stories.mdx` files, as by default the codemod won't delete them.
 
 If you were using the [legacy MDX1 format](#legacy-mdx1-support), you will have to remove the `legacyMdx1` main.js feature flag and the `@storybook/mdx1-csf` package.
 
 Alongside with this change, the `jsxOptions` configuration was removed as it is not used anymore.
-
-[More info here](https://storybook.js.org/docs/migration-guide#storiesmdx-to-mdxcsf).
 
 #### Dropping support for id, name and story in Story block
 
@@ -2073,11 +2320,11 @@ In Storybook 7, the file name `path/to/foo.bar.stories.js` would result in the [
 
 ```js
 export default {
-  title: "path/to/foo",
+  title: 'path/to/foo',
 };
 ```
 
-Alternatively, if you need to achieve a different behavior for a large number of files, you can provide a [custom indexer](https://storybook.js.org/docs/7.0/vue/configure/sidebar-and-urls#processing-custom-titles) to generate the titles dynamically.
+Alternatively, if you need to achieve a different behavior for a large number of files, you can provide a [custom indexer](https://storybook.js.org/docs/8/configure/user-interface/sidebar-and-urls#story-index) to generate the titles dynamically.
 
 #### Storyshots has been removed
 
@@ -2102,7 +2349,7 @@ Please check the [migration guide](https://storybook.js.org/docs/writing-tests/s
 
 #### UI layout state has changed shape
 
-In Storybook 7 it was possible to use `addons.setConfig({...});` to configure Storybook UI features and behavior as documented [here (v7)](https://storybook.js.org/docs/7.3/react/configure/features-and-behavior), [(latest)](https://storybook.js.org/docs/react/configure/features-and-behavior). The state and API for the UI layout has changed:
+In Storybook 7 it was possible to use `addons.setConfig({...});` to configure Storybook UI features and behavior as documented [here (v7)](https://github.com/storybookjs/storybook/blob/release-7-3/docs/configure/features-and-behavior.md), [(latest)](https://storybook.js.org/docs/react/configure/features-and-behavior). The state and API for the UI layout has changed:
 
 - `showNav: boolean` is now `navSize: number`, where the number represents the size of the sidebar in pixels.
 - `showPanel: boolean` is now split into `bottomPanelHeight: number` and `rightPanelWidth: number`, where the numbers represents the size of the panel in pixels.
@@ -2169,7 +2416,7 @@ We feel `react-docgen` is the right tradeoff for most React projects. However, i
 ```js
 export default {
   typescript: {
-    reactDocgen: "react-docgen-typescript",
+    reactDocgen: 'react-docgen-typescript',
   },
 };
 ```
@@ -2402,7 +2649,7 @@ import { setProjectAnnotations } from `@storybook/react`.
 The `StorybookViteConfig` type is now removed in favor of `StorybookConfig`:
 
 ```ts
-import type { StorybookConfig } from "@storybook/react-vite";
+import type { StorybookConfig } from '@storybook/react-vite';
 ```
 
 #### props from WithTooltipComponent from @storybook/components
@@ -2416,7 +2663,7 @@ The deprecated properties `tooltipShown`, `closeOnClick`, and `onVisibilityChang
   onVisibilityChange // becomes onVisibleChange
 >
   ...
-</WithTooltip>
+</WithTooltip>;
 ```
 
 #### LinkTo direct import from addon-links
@@ -2425,10 +2672,10 @@ The `LinkTo` (React component) direct import from `@storybook/addon-links` is no
 
 ```ts
 // before
-import LinkTo from "@storybook/addon-links";
+import LinkTo from '@storybook/addon-links';
 
 // after
-import LinkTo from "@storybook/addon-links/react";
+import LinkTo from '@storybook/addon-links/react';
 ```
 
 #### DecoratorFn, Story, ComponentStory, ComponentStoryObj, ComponentStoryFn and ComponentMeta TypeScript types
@@ -2453,7 +2700,7 @@ export const Component = () => {
 
   const someHandler = () => {
     // Old method: api.navigateToSettingsPage('/settings/about');
-    api.changeSettingsTab("about"); // the /settings path is not necessary anymore
+    api.changeSettingsTab('about'); // the /settings path is not necessary anymore
   };
 
   // ...
@@ -2493,11 +2740,8 @@ Additionally, given that CSF in MDX is not supported anymore, the following prop
 The `collapseAll` and `expandAll` APIs (possibly used by addons) are now removed. Please emit events for these actions instead:
 
 ```ts
-import {
-  STORIES_COLLAPSE_ALL,
-  STORIES_EXPAND_ALL,
-} from "@storybook/core-events";
-import { useStorybookApi } from "@storybook/manager-api";
+import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from '@storybook/core-events';
+import { useStorybookApi } from '@storybook/manager-api';
 
 const api = useStorybookApi();
 api.collapseAll(); // becomes api.emit(STORIES_COLLAPSE_ALL)
@@ -2558,12 +2802,12 @@ Instead storybook will automatically show the addon's rendered content when the 
 Example:
 
 ```tsx
-import { addons, types } from "@storybook/manager-api";
+import { addons, types } from '@storybook/manager-api';
 
-addons.register("my-addon", () => {
-  addons.add("my-addon/tab", {
+addons.register('my-addon', () => {
+  addons.add('my-addon/tab', {
     type: types.TAB,
-    title: "My Addon",
+    title: 'My Addon',
     render: () => <div>Hello World</div>,
   });
 });
@@ -2577,13 +2821,13 @@ When the canvas is shown, the `tabId` will be set to `undefined`.
 Example:
 
 ```tsx
-import { addons, types } from "@storybook/manager-api";
+import { addons, types } from '@storybook/manager-api';
 
-addons.register("my-addon", () => {
-  addons.add("my-addon/tool", {
+addons.register('my-addon', () => {
+  addons.add('my-addon/tool', {
     type: types.TOOL,
-    title: "My Addon",
-    match: ({ tabId }) => tabId === "my-addon/tab",
+    title: 'My Addon',
+    match: ({ tabId }) => tabId === 'my-addon/tab',
     render: () => <div>👀</div>,
   });
 });
@@ -2623,7 +2867,7 @@ export default {
 
 export const ButtonClick = {
   play: async ({ args, canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole("button"));
+    await userEvent.click(within(canvasElement).getByRole('button'));
     // args.onClick is a jest spy in 7.0
     await expect(args.onClick).toHaveBeenCalled();
   },
@@ -2633,7 +2877,7 @@ export const ButtonClick = {
 In Storybook 8 this feature will be removed, and spies have to added explicitly:
 
 ```ts
-import { fn } from "@storybook/test";
+import { fn } from '@storybook/test';
 
 export default {
   component: Button,
@@ -2644,7 +2888,7 @@ export default {
 
 export const ButtonClick = {
   play: async ({ args, canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole("button"));
+    await userEvent.click(within(canvasElement).getByRole('button'));
     await expect(args.onClick).toHaveBeenCalled();
   },
 };
@@ -2680,9 +2924,8 @@ As of Storybook 7.6.0 the list of globalized packages can be imported like this:
 
 ```ts
 // tsup.config.ts
-
-import { globalPackages as globalManagerPackages } from "@storybook/manager/globals";
-import { globalPackages as globalPreviewPackages } from "@storybook/preview/globals";
+import { globalPackages as globalManagerPackages } from '@storybook/manager/globals';
+import { globalPackages as globalPreviewPackages } from '@storybook/preview/globals';
 
 const allGlobalPackages = [...globalManagerPackages, ...globalPreviewPackages];
 ```
@@ -2767,12 +3010,12 @@ The `type` property is now a required field, and the `id` property should not be
 Here's a correct example:
 
 ```tsx
-import { addons, types } from "@storybook/manager-api";
+import { addons, types } from '@storybook/manager-api';
 
-addons.register("my-addon", () => {
-  addons.add("my-addon/panel", {
+addons.register('my-addon', () => {
+  addons.add('my-addon/panel', {
     type: types.PANEL,
-    title: "My Addon",
+    title: 'My Addon',
     render: ({ active }) => (active ? <div>Hello World</div> : null),
   });
 });
@@ -2812,7 +3055,7 @@ If your `preview.js` file looks like this:
 
 ```js
 export const parameters = {
-  actions: { argTypesRegex: "^on[A-Z].*" },
+  actions: { argTypesRegex: '^on[A-Z].*' },
 };
 ```
 
@@ -2821,7 +3064,7 @@ Please migrate it to use a default export instead:
 ```js
 const preview = {
   parameters: {
-    actions: { argTypesRegex: "^on[A-Z].*" },
+    actions: { argTypesRegex: '^on[A-Z].*' },
   },
 };
 export default preview;
@@ -2832,11 +3075,11 @@ Additionally, we introduced typings for that default export (Preview), so you ca
 The `Preview` type will come from the Storybook package for the **renderer** you are using. For example, if you are using Angular, you will import it from `@storybook/angular`, or if you're using Vue3, you will import it from `@storybook/vue3`:
 
 ```ts
-import { Preview } from "@storybook/react";
+import { Preview } from '@storybook/react';
 
 const preview: Preview = {
   parameters: {
-    actions: { argTypesRegex: "^on[A-Z].*" },
+    actions: { argTypesRegex: '^on[A-Z].*' },
   },
 };
 export default preview;
@@ -2845,10 +3088,10 @@ export default preview;
 In JavaScript projects using `preview.js`, it's also possible to use the `Preview` type (for autocompletion, not type safety), via the JSDoc @type tag:
 
 ```js
-/** @type { import('@storybook/react').Preview } */
+/** @type {import('@storybook/react').Preview} */
 const preview = {
   parameters: {
-    actions: { argTypesRegex: "^on[A-Z].*" },
+    actions: { argTypesRegex: '^on[A-Z].*' },
   },
 };
 export default preview;
@@ -2862,33 +3105,24 @@ If your main.js file looks like this:
 
 ```js
 module.exports = {
-  stories: [
-    "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
-  ],
-  framework: { name: "@storybook/react-vite" },
+  stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
+  framework: { name: '@storybook/react-vite' },
 };
 ```
 
 Or like this:
 
 ```js
-export const stories = [
-  "../stories/**/*.stories.mdx",
-  "../stories/**/*.stories.@(js|jsx|ts|tsx)",
-];
-export const framework = { name: "@storybook/react-vite" };
+export const stories = ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'];
+export const framework = { name: '@storybook/react-vite' };
 ```
 
 Please migrate it to use a default export instead:
 
 ```js
 const config = {
-  stories: [
-    "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
-  ],
-  framework: { name: "@storybook/react-vite" },
+  stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
+  framework: { name: '@storybook/react-vite' },
 };
 export default config;
 ```
@@ -2898,14 +3132,11 @@ Additionally, we introduced typings for that default export (StorybookConfig), s
 The `StorybookConfig` type will come from the Storybook package for the **framework** you are using, which relates to the package in the "framework" field you have in your main.ts file. For example, if you are using React Vite, you will import it from `@storybook/react-vite`:
 
 ```ts
-import { StorybookConfig } from "@storybook/react-vite";
+import { StorybookConfig } from '@storybook/react-vite';
 
 const config: StorybookConfig = {
-  stories: [
-    "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
-  ],
-  framework: { name: "@storybook/react-vite" },
+  stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
+  framework: { name: '@storybook/react-vite' },
 };
 export default config;
 ```
@@ -2913,13 +3144,10 @@ export default config;
 In JavaScript projects using `main.js`, it's also possible to use the `StorybookConfig` type (for autocompletion, not type safety), via the JSDoc @type tag:
 
 ```ts
-/** @type { import('@storybook/react-vite').StorybookConfig } */
+/** @type {import('@storybook/react-vite').StorybookConfig} */
 const config = {
-  stories: [
-    "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
-  ],
-  framework: { name: "@storybook/react-vite" },
+  stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
+  framework: { name: '@storybook/react-vite' },
 };
 export default config;
 ```
@@ -2945,13 +3173,13 @@ To fix these errors, the addon will have to be re-released with a newer browser-
 module.exports = {
   presets: [
     [
-      "@babel/preset-env",
+      '@babel/preset-env',
       {
         shippedProposals: true,
-        useBuiltIns: "usage",
-        corejs: "3",
+        useBuiltIns: 'usage',
+        corejs: '3',
         modules: false,
-        targets: { chrome: "100" },
+        targets: { chrome: '100' },
       },
     ],
   ],
@@ -3080,7 +3308,7 @@ Here's an example, in case you picked `@storybook/react-vite`:
 export default {
   // ... your configuration
   framework: {
-    name: "@storybook/react-vite",
+    name: '@storybook/react-vite',
     options: {},
   },
 };
@@ -3096,7 +3324,7 @@ For React, what used to be:
 export default {
   reactOptions: { fastRefresh: true },
   framework: {
-    name: "@storybook/react-webpack5",
+    name: '@storybook/react-webpack5',
     options: {},
   },
 };
@@ -3107,7 +3335,7 @@ Becomes:
 ```js
 export default {
   framework: {
-    name: "@storybook/react-webpack5",
+    name: '@storybook/react-webpack5',
     options: { fastRefresh: true },
   },
 };
@@ -3119,7 +3347,7 @@ For Angular, what used to be:
 export default {
   angularOptions: { enableIvy: true },
   framework: {
-    name: "@storybook/angular",
+    name: '@storybook/angular',
     options: {},
   },
 };
@@ -3130,7 +3358,7 @@ Becomes:
 ```js
 export default {
   framework: {
-    name: "@storybook/angular",
+    name: '@storybook/angular',
     options: { enableIvy: true },
   },
 };
@@ -3162,7 +3390,7 @@ Becomes:
 ```js
 export default {
   framework: {
-    name: "@storybook/react-webpack5",
+    name: '@storybook/react-webpack5',
     options: {
       builder: { lazyCompilation: true },
     },
@@ -3180,10 +3408,11 @@ If you are using TypeScript you should import the `StorybookConfig` type from yo
 For example:
 
 ```ts
-import type { StorybookConfig } from "@storybook/react-vite";
+import type { StorybookConfig } from '@storybook/react-vite';
+
 const config: StorybookConfig = {
   framework: {
-    name: "@storybook/react-vite",
+    name: '@storybook/react-vite',
     options: {},
   },
   // ... your configuration
@@ -3239,17 +3468,17 @@ In 7.0 the location of the standalone node API has moved to `@storybook/core-ser
 If you used the React standalone API, for example, you might have written:
 
 ```js
-const buildStandalone = require("@storybook/react/standalone");
+const buildStandalone = require('@storybook/react/standalone');
 const options = {};
-buildStandalone(options).then(() => console.log("done"));
+buildStandalone(options).then(() => console.log('done'));
 ```
 
 In 7.0, you would now use:
 
 ```js
-const { build } = require("@storybook/core-server");
+const { build } = require('@storybook/core-server');
 const options = {};
-build(options).then(() => console.log("done"));
+build(options).then(() => console.log('done'));
 ```
 
 #### Change of root html IDs
@@ -3278,8 +3507,8 @@ In 7.0, this pattern will also match `.mdx` files (the new extension for docs fi
 export default {
   stories: [
     {
-      directory: "../path/to/directory",
-      files: "**/*.stories.@(mdx|tsx|ts|jsx|js)",
+      directory: '../path/to/directory',
+      files: '**/*.stories.@(mdx|tsx|ts|jsx|js)',
     },
   ],
 };
@@ -3355,7 +3584,7 @@ Given the following `main.js`:
 
 ```js
 export default {
-  stories: ["../**/*.stories.*"],
+  stories: ['../**/*.stories.*'],
 };
 ```
 
@@ -3363,7 +3592,7 @@ If you want to restore the previous behavior to include `node_modules`, you can 
 
 ```js
 export default {
-  stories: ["../**/*.stories.*", "../**/node_modules/**/*.stories.*"],
+  stories: ['../**/*.stories.*', '../**/node_modules/**/*.stories.*'],
 };
 ```
 
@@ -3449,7 +3678,7 @@ export default {
     label: 'Click Me!',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 export const Basic = {
@@ -3603,11 +3832,11 @@ export const Default: Story = {
 You can also use the `provide-style` decorator to provide an application-wide service:
 
 ```js
-import { provideAnimations } from "@angular/platform-browser/animations";
-import { moduleMetadata } from "@storybook/angular";
+import { moduleMetadata } from '@storybook/angular';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 export default {
-  title: "Example",
+  title: 'Example',
   decorators: [
     applicationConfig({
       providers: [provideAnimations()],
@@ -3644,7 +3873,7 @@ For existing users, SvelteKit projects need to use the `@storybook/sveltekit` fr
 ```js
 // .storybook/main.js
 export default {
-  framework: "@storybook/sveltekit",
+  framework: '@storybook/sveltekit',
 };
 ```
 
@@ -3657,20 +3886,20 @@ In 6.x `@storybook/vue3` exported a Vue application instance called `app`. In 7.
 Before:
 
 ```js
-import { app } from "@storybook/vue3";
-import Button from "./Button.vue";
+import { app } from '@storybook/vue3';
+import Button from './Button.vue';
 
-app.component("GlobalButton", Button);
+app.component('GlobalButton', Button);
 ```
 
 After:
 
 ```js
-import { setup } from "@storybook/vue3";
-import Button from "./Button.vue";
+import { setup } from '@storybook/vue3';
+import Button from './Button.vue';
 
 setup((app) => {
-  app.component("GlobalButton", Button);
+  app.component('GlobalButton', Button);
 });
 ```
 
@@ -3698,10 +3927,10 @@ These 2 packages replace `@storybook/addons`.
 When adding addons to storybook, you can (for example) add panels:
 
 ```js
-import { addons } from "@storybook/manager-api";
+import { addons } from '@storybook/manager-api';
 
-addons.addPanel("my-panel", {
-  title: "My Panel",
+addons.addPanel('my-panel', {
+  title: 'My Panel',
   render: ({ active, key }) => <div>My Panel</div>,
 });
 ```
@@ -3725,11 +3954,11 @@ Here's an example of using the new API:
 The `@storybook/preview-api` is used here, because the `useEffect` hook is used in a decorator.
 
 ```js
-import { useEffect, makeDecorator } from "@storybook/preview-api";
+import { useEffect, makeDecorator } from '@storybook/preview-api';
 
 export const withMyAddon = makeDecorator({
-  name: "withMyAddon",
-  parameterName: "myAddon",
+  name: 'withMyAddon',
+  parameterName: 'myAddon',
   wrapper: (getStory) => {
     useEffect(() => {
       // do something with the options
@@ -3808,7 +4037,7 @@ If your `.manager.js` config references `register.js` of any of the following ad
 The default export from `@storybook/addons` has been removed. Please use the named exports instead:
 
 ```js
-import { addons } from "@storybook/addons";
+import { addons } from '@storybook/addons';
 ```
 
 The named export has been available since 6.0 or earlier, so your updated code will be backwards-compatible with older versions of Storybook.
@@ -3875,7 +4104,7 @@ You can configure Autodocs in `main.js`:
 module.exports = {
   docs: {
     autodocs: true, // see below for alternatives
-    defaultName: "Docs", // set to change the name of generated docs entries
+    defaultName: 'Docs', // set to change the name of generated docs entries
   },
 };
 ```
@@ -3907,8 +4136,8 @@ Previously `.stories.mdx` files were used to both define and document stories. I
 If you were using `.stories.mdx` files to write stories, we encourage you to move the stories to a CSF file, and _attach_ an `.mdx` file to that CSF file to document them. You can use the `Meta` block to attach a MDX file to a CSF file, and the `Story` block to render the stories:
 
 ```mdx
-import { Meta, Story } from "@storybook/blocks";
-import * as ComponentStories from "./some-component.stories";
+import { Meta, Story } from '@storybook/blocks';
+import * as ComponentStories from './some-component.stories';
 
 <Meta of={ComponentStories} />
 
@@ -3926,7 +4155,7 @@ By default docs entries are listed first for the component. You can sort them us
 In Storybook 6.x, to create a unattached docs MDX file (that is, one not attached to story or a CSF file), you'd have to create a `.stories.mdx` file, and describe its location with the `Meta` doc block:
 
 ```mdx
-import { Meta } from "@storybook/addon-docs";
+import { Meta } from '@storybook/addon-docs';
 
 <Meta title="Introduction" />
 ```
@@ -3975,8 +4204,8 @@ Notice the `?raw` suffix in the markdown import is needed for this to work.
 To reference a story in a MDX file, you should reference it with `of`:
 
 ```mdx
-import { Meta, Story } from "@storybook/blocks";
-import * as ComponentStories from "./some-component.stories";
+import { Meta, Story } from '@storybook/blocks';
+import * as ComponentStories from './some-component.stories';
 
 <Meta of={ComponentStories} />
 
@@ -3986,9 +4215,9 @@ import * as ComponentStories from "./some-component.stories";
 You can also reference a story from a different component:
 
 ```mdx
-import { Meta, Story } from "@storybook/blocks";
-import * as ComponentStories from "./some-component.stories";
-import * as SecondComponentStories from "./second-component.stories";
+import { Meta, Story } from '@storybook/blocks';
+import * as SecondComponentStories from './second-component.stories';
+import * as ComponentStories from './some-component.stories';
 
 <Meta of={ComponentStories} />
 
@@ -4020,8 +4249,8 @@ That also means the Canvas block no longer supports containing multiple stories 
 Here's a full example of the new API:
 
 ```mdx
-import { Meta, Canvas } from "@storybook/blocks";
-import * as ComponentStories from "./some-component.stories";
+import { Meta, Canvas } from '@storybook/blocks';
+import * as ComponentStories from './some-component.stories';
 
 <Meta of={ComponentStories} />
 
@@ -4087,9 +4316,9 @@ To override the theme, you can continue to use the `docs.theme` parameter.
 If you want to override the MDX components supplied to your docs page, use the `MDXProvider` from `@mdx-js/react`:
 
 ```js
-import { MDXProvider } from "@mdx-js/react";
-import { DocsContainer } from "@storybook/blocks";
-import * as DesignSystem from "your-design-system";
+import { DocsContainer } from '@storybook/blocks';
+import { MDXProvider } from '@mdx-js/react';
+import * as DesignSystem from 'your-design-system';
 
 export const MyDocsContainer = (props) => (
   <MDXProvider
@@ -4144,8 +4373,8 @@ Storybook's default styles in docs are now globally applied to any element inste
 To mitigate this you need to wrap any content you don't want styled with the `Unstyled` block like this:
 
 ```mdx
-import { Unstyled } from "@storybook/blocks";
-import { MyComponent } from "./MyComponent";
+import { Unstyled } from '@storybook/blocks';
+import { MyComponent } from './MyComponent';
 
 # This is a header
 
@@ -4193,11 +4422,11 @@ module.exports = {
       test: /\.stories\.[tj]sx?$/,
       use: [
         {
-          loader: require.resolve("@storybook/source-loader"),
+          loader: require.resolve('@storybook/source-loader'),
           options: {} /* your sourceLoaderOptions here */,
         },
       ],
-      enforce: "pre",
+      enforce: 'pre',
     });
     return config;
   },
@@ -4255,7 +4484,7 @@ _Has codemod_
 In 6.x you were able to do this:
 
 ```ts
-import type { Story } from "@storybook/react";
+import type { Story } from '@storybook/react';
 
 export const MyStory: Story = () => <div />;
 ```
@@ -4263,7 +4492,7 @@ export const MyStory: Story = () => <div />;
 However with the introduction of CSF3, the `Story` type has been deprecated in favor of two other types: `StoryFn` for CSF2 and `StoryObj` for CSF3.
 
 ```ts
-import type { StoryFn, StoryObj } from "@storybook/react";
+import type { StoryFn, StoryObj } from '@storybook/react';
 
 export const MyCsf2Story: StoryFn = () => <div />;
 export const MyCsf3Story: StoryObj = {
@@ -4296,24 +4525,24 @@ ComponentMeta -> Meta
 Here are a few examples:
 
 ```ts
-import type { StoryFn, StoryObj } from "@storybook/react";
-import { Button, ButtonProps } from "./Button";
+import type { StoryFn, StoryObj } from '@storybook/react';
+import { Button, ButtonProps } from './Button';
 
 // This works in 7.0, making the ComponentX types redundant.
 const meta: Meta<typeof Button> = { component: Button };
 
-export const CSF3Story: StoryObj<typeof Button> = { args: { label: "Label" } };
+export const CSF3Story: StoryObj<typeof Button> = { args: { label: 'Label' } };
 
 export const CSF2Story: StoryFn<typeof Button> = (args) => <Button {...args} />;
-CSF2Story.args = { label: "Label" };
+CSF2Story.args = { label: 'Label' };
 
 // Passing props directly still works as well.
 const meta: Meta<ButtonProps> = { component: Button };
 
-export const CSF3Story: StoryObj<ButtonProps> = { args: { label: "Label" } };
+export const CSF3Story: StoryObj<ButtonProps> = { args: { label: 'Label' } };
 
 export const CSF2Story: StoryFn<ButtonProps> = (args) => <Button {...args} />;
-CSF2Story.args = { label: "Label" };
+CSF2Story.args = { label: 'Label' };
 ```
 
 We have set up a codemod that attempts to automatically migrate your code for you (update the glob to suit your needs):
@@ -4331,9 +4560,9 @@ The "rendering" function that renderers (ex-frameworks) must export (`renderToDO
 In 6.x you could import XFramework types:
 
 ```ts
-import type { ReactFramework } from "@storybook/react";
-import type { VueFramework } from "@storybook/vue";
-import type { SvelteFramework } from "@storybook/svelte";
+import type { ReactFramework } from '@storybook/react';
+import type { SvelteFramework } from '@storybook/svelte';
+import type { VueFramework } from '@storybook/vue';
 
 // etc.
 ```
@@ -4341,9 +4570,9 @@ import type { SvelteFramework } from "@storybook/svelte";
 Those are deprecated in 7.0 as they are renamed to:
 
 ```ts
-import type { ReactRenderer } from "@storybook/react";
-import type { VueRenderer } from "@storybook/vue";
-import type { SvelteRenderer } from "@storybook/svelte";
+import type { ReactRenderer } from '@storybook/react';
+import type { SvelteRenderer } from '@storybook/svelte';
+import type { VueRenderer } from '@storybook/vue';
 
 // etc.
 ```
@@ -4353,27 +4582,27 @@ import type { SvelteRenderer } from "@storybook/svelte";
 In 6.x you could import the type `DecoratorFn`:
 
 ```ts
-import type { DecoratorFn } from "@storybook/react";
+import type { DecoratorFn } from '@storybook/react';
 ```
 
 This type is deprecated in 7.0, instead you can use the type `Decorator`, which is now available for all renderers:
 
 ```ts
-import type { Decorator } from "@storybook/react";
+import type { Decorator } from '@storybook/react';
 // or
-import type { Decorator } from "@storybook/vue";
+import type { Decorator } from '@storybook/vue';
 // or
-import type { Decorator } from "@storybook/svelte";
+import type { Decorator } from '@storybook/svelte';
 // etc.
 ```
 
 The type `Decorator` accepts a generic parameter `TArgs`. This can be used like this:
 
 ```tsx
-import type { Decorator } from "@storybook/react";
-import { LocaleProvider } from "./locale";
+import type { Decorator } from '@storybook/react';
+import { LocaleProvider } from './locale';
 
-const withLocale: Decorator<{ locale: "en" | "es" }> = (Story, { args }) => (
+const withLocale: Decorator<{ locale: 'en' | 'es' }> = (Story, { args }) => (
   <LocaleProvider lang={args.locale}>
     <Story />
   </LocaleProvider>
@@ -4425,7 +4654,7 @@ Example:
 
 ```js
 // .storybook/manager.js
-import { addons } from "@storybook/addons";
+import { addons } from '@storybook/addons';
 
 addons.setConfig({
   showToolbar: false,
@@ -4495,13 +4724,12 @@ This might be considered a breaking change. However, we feel justified to releas
 If you want to restore the old titles in the UI, you can customize your sidebar with the following code snippet in `.storybook/manager.js`:
 
 ```js
-import { addons } from "@storybook/addons";
-import startCase from "lodash/startCase";
+import { addons } from '@storybook/addons';
+import startCase from 'lodash/startCase';
 
 addons.setConfig({
   sidebar: {
-    renderLabel: ({ name, type }) =>
-      type === "story" ? name : startCase(name),
+    renderLabel: ({ name, type }) => (type === 'story' ? name : startCase(name)),
   },
 });
 ```
@@ -4516,7 +4744,7 @@ Since CSF3 is experimental, we are introducing this technically breaking change 
 
 ```js
 // atoms/Button/Button.stories.js
-export default { title: "Atoms/Button/Button" };
+export default { title: 'Atoms/Button/Button' };
 ```
 
 #### Auto-title always prefixes
@@ -4559,13 +4787,13 @@ In ancient versions of Storybook, addons were registered by referring to `addon-
 Before:
 
 ```js
-module.exports = { addons: ["my-addon/register.js"] };
+module.exports = { addons: ['my-addon/register.js'] };
 ```
 
 After:
 
 ```js
-module.exports = { addons: ["my-addon"] };
+module.exports = { addons: ['my-addon'] };
 ```
 
 ## From version 6.3.x to 6.4.0
@@ -4611,7 +4839,7 @@ Then edit your `.storybook/main.js` config:
 ```js
 module.exports = {
   core: {
-    builder: "webpack5",
+    builder: 'webpack5',
   },
 };
 ```
@@ -4628,13 +4856,14 @@ If you don't specify a component file, it will be inferred from the file's locat
 Consider a project configuration `/path/to/project/.storybook/main.js` containing:
 
 ```js
-module.exports = { stories: ["../src/**/*.stories.*"] };
+module.exports = { stories: ['../src/**/*.stories.*'] };
 ```
 
 And the file `/path/to/project/src/components/Button.stories.tsx` containing the default export:
 
 ```js
-import { Button } from "./Button";
+import { Button } from './Button';
+
 export default { component: Button };
 // named exports...
 ```
@@ -4678,20 +4907,18 @@ If you are migrating to experimental CSF3, the following is compatible with 6.4 
 
 ```ts
 // CSF2 function stories, current API, will break in 7.0
-import type { Story } from "@storybook/<framework>";
-
+import type { Story } from '@storybook/<framework>';
 // CSF3 object stories, will persist in 7.0
-import type { StoryObj } from "@storybook/<framework>";
+import type { StoryObj } from '@storybook/<framework>';
 ```
 
 The following is compatible with 6.4 and also forward-compatible with anticipated 7.0 changes:
 
 ```ts
 // CSF2 function stories, forward-compatible mode
-import type { StoryFn } from "@storybook/<framework>";
-
+import type { StoryFn } from '@storybook/<framework>';
 // CSF3 object stories, using future 7.0 types
-import type { Story } from "@storybook/<framework>/types-7-0";
+import type { Story } from '@storybook/<framework>/types-7-0';
 ```
 
 ### Story Store v7
@@ -4724,7 +4951,7 @@ In 7.0, we're moving towards a model where the user specifies their framework in
 ```js
 module.exports = {
   // ... your existing config
-  framework: "@storybook/react", // OR whatever framework you're using
+  framework: '@storybook/react', // OR whatever framework you're using
 };
 ```
 
@@ -4737,7 +4964,7 @@ To activate the v7 mode set the feature flag in your `.storybook/main.js` config
 ```js
 module.exports = {
   // ... your existing config
-  framework: "@storybook/react", // OR whatever framework you're using
+  framework: '@storybook/react', // OR whatever framework you're using
   features: {
     storyStoreV7: true,
   },
@@ -4800,7 +5027,7 @@ export default {
   parameters: {
     options: {
       storySort: {
-        order: ["Introduction", "*"],
+        order: ['Introduction', '*'],
       },
     },
   },
@@ -4831,7 +5058,7 @@ Storyshots is not currently compatible with the v7 store. However, you can use t
 ```js
 module.exports = {
   features: {
-    storyStoreV7: !global.navigator?.userAgent?.match?.("jsdom"),
+    storyStoreV7: !global.navigator?.userAgent?.match?.('jsdom'),
   },
 };
 ```
@@ -4983,11 +5210,7 @@ After:
 ```js
 // .storybook/main.js
 module.exports = {
-  staticDirs: [
-    "../public",
-    "../static",
-    { from: "../foo/assets", to: "/assets" },
-  ],
+  staticDirs: ['../public', '../static', { from: '../foo/assets', to: '/assets' }],
 };
 ```
 
@@ -5032,7 +5255,7 @@ Then edit your `.storybook/main.js` config:
 ```js
 module.exports = {
   core: {
-    builder: "webpack5",
+    builder: 'webpack5',
   },
 };
 ```
@@ -5098,7 +5321,7 @@ If you were using `argType.defaultValue` or relying on inference to set a defaul
 export default {
   component: MyComponent,
   args: {
-    argName: "default-value",
+    argName: 'default-value',
   },
 };
 ```
@@ -5110,7 +5333,7 @@ export default {
   component: MyComponent,
   argTypes: {
     argName: {
-      table: { defaultValue: { summary: "SomeType<T>" } },
+      table: { defaultValue: { summary: 'SomeType<T>' } },
     },
   },
 };
@@ -5133,10 +5356,10 @@ To update your code, you should be able to global replace `@storybook/addon-docs
 
 ```js
 // before
-import { Meta, Story } from "@storybook/addon-docs/blocks";
+import { Meta, Story } from '@storybook/addon-docs/blocks';
 
 // after
-import { Meta, Story } from "@storybook/addon-docs";
+import { Meta, Story } from '@storybook/addon-docs';
 ```
 
 #### Deprecated layout URL params
@@ -5170,19 +5393,19 @@ Storybook 6.2 for Angular uses `parameters.component` as the preferred way to sp
 Consider the existing story from 6.1 or earlier:
 
 ```ts
-export default { title: "Button" };
+export default { title: 'Button' };
 export const Basic = () => ({
   component: Button,
-  props: { label: "Label" },
+  props: { label: 'Label' },
 });
 ```
 
 From 6.2 this should be rewritten as:
 
 ```ts
-export default { title: "Button", component: Button };
+export default { title: 'Button', component: Button };
 export const Basic = () => ({
-  props: { label: "Label" },
+  props: { label: 'Label' },
 });
 ```
 
@@ -5246,9 +5469,9 @@ If you depend upon these plugins being applied, install them and create a `postc
 ```js
 module.exports = {
   plugins: [
-    require("postcss-flexbugs-fixes"),
-    require("autoprefixer")({
-      flexbox: "no-2009",
+    require('postcss-flexbugs-fixes'),
+    require('autoprefixer')({
+      flexbox: 'no-2009',
     }),
   ],
 };
@@ -5302,10 +5525,10 @@ Storybook HTML components are now exported directly from '@storybook/components'
 
 ```js
 // before
-import { components } from "@storybook/components/html";
+import { components } from '@storybook/components/html';
 
 // after
-import { components } from "@storybook/components";
+import { components } from '@storybook/components';
 ```
 
 ## From version 6.0.x to 6.1.0
@@ -5318,8 +5541,8 @@ The addon uses decorators which are set up automatically by a preset. The requir
 
 ```js
 module.exports = {
-  stories: ["../**/*.stories.js"],
-  addons: ["@storybook/addon-backgrounds/register"],
+  stories: ['../**/*.stories.js'],
+  addons: ['@storybook/addon-backgrounds/register'],
 };
 ```
 
@@ -5327,8 +5550,8 @@ To fix it, just replace `@storybook/addon-backgrounds/register` with `@storybook
 
 ```js
 module.exports = {
-  stories: ["../**/*.stories.js"],
-  addons: ["@storybook/addon-backgrounds"],
+  stories: ['../**/*.stories.js'],
+  addons: ['@storybook/addon-backgrounds'],
 };
 ```
 
@@ -5379,14 +5602,14 @@ Each item in the story store contains a field called `storyFn`, which is a fully
 Before:
 
 ```js
-const { storyFn } = store.fromId("some--id");
+const { storyFn } = store.fromId('some--id');
 console.log(storyFn());
 ```
 
 After:
 
 ```js
-const { unboundStoryFn, applyLoaders } = store.fromId("some--id");
+const { unboundStoryFn, applyLoaders } = store.fromId('some--id');
 const context = await applyLoaders();
 console.log(unboundStoryFn(context));
 ```
@@ -5535,17 +5758,13 @@ This breaking change only affects you if your stories actually use the context, 
 Consider the following story that uses the context:
 
 ```js
-export const Dummy = ({ parameters }) => (
-  <div>{JSON.stringify(parameters)}</div>
-);
+export const Dummy = ({ parameters }) => <div>{JSON.stringify(parameters)}</div>;
 ```
 
 Here's an updated story for 6.0 that ignores the args object:
 
 ```js
-export const Dummy = (_args, { parameters }) => (
-  <div>{JSON.stringify(parameters)}</div>
-);
+export const Dummy = (_args, { parameters }) => <div>{JSON.stringify(parameters)}</div>;
 ```
 
 Alternatively, if you want to opt out of the new behavior, you can add the following to your `.storybook/preview.js` config:
@@ -5609,7 +5828,7 @@ If you need to restore the old JSX handling behavior, you can configure `.storyb
 module.exports = {
   addons: [
     {
-      name: "@storybook/addon-docs",
+      name: '@storybook/addon-docs',
       options: { configureJSX: false },
     },
   ],
@@ -5626,7 +5845,7 @@ To restore the old behavior, or pass any MDX-specific babel options, you can con
 module.exports = {
   addons: [
     {
-      name: "@storybook/addon-docs",
+      name: '@storybook/addon-docs',
       options: { mdxBabelOptions: { babelrc: true, configFile: true } },
     },
   ],
@@ -5669,15 +5888,15 @@ Consider the following `main.js` config for `addon-knobs`:
 
 ```js
 module.exports = {
-  stories: ["../**/*.stories.js"],
-  addons: ["@storybook/addon-knobs"],
+  stories: ['../**/*.stories.js'],
+  addons: ['@storybook/addon-knobs'],
 };
 ```
 
 In earlier versions of Storybook, this would automatically call `@storybook/addon-knobs/register`, which adds the knobs panel to the Storybook UI. As a user you would also add a decorator:
 
 ```js
-import { withKnobs } from "../index";
+import { withKnobs } from '../index';
 
 addDecorator(withKnobs);
 ```
@@ -5688,8 +5907,8 @@ If you wish to disable this new behavior, you can modify your `main.js` to force
 
 ```js
 module.exports = {
-  stories: ["../**/*.stories.js"],
-  addons: ["@storybook/addon-knobs/register"],
+  stories: ['../**/*.stories.js'],
+  addons: ['@storybook/addon-knobs/register'],
 };
 ```
 
@@ -5748,7 +5967,7 @@ The `setStories`/`SET_STORIES` event has changed and now denormalizes global and
 If you want the full denormalized parameters for a story, you can do something like:
 
 ```js
-import { combineParameters } from "@storybook/api";
+import { combineParameters } from '@storybook/api';
 
 const story = data.stories[storyId];
 const parameters = combineParameters(
@@ -5775,7 +5994,7 @@ npx sb@latest migrate upgrade-hierarchy-separators --glob="*/**/*.stories.@(tsx|
 We also now default to showing "roots", which are non-expandable groupings in the sidebar for the top-level groups. If you'd like to disable this, set the `showRoots` option in `.storybook/manager.js`:
 
 ```js
-import { addons } from "@storybook/addons";
+import { addons } from '@storybook/addons';
 
 addons.setConfig({
   showRoots: false,
@@ -5873,7 +6092,7 @@ export const Example = () => <Button />;
 Example.story = {
   parameters: {
     storySource: {
-      source: "custom source",
+      source: 'custom source',
     },
   },
 };
@@ -5881,8 +6100,8 @@ Example.story = {
 
 The MDX analog:
 
-```jsx
-<Story name="Example" parameters={{ storySource: { source: "custom source" } }}>
+```mdx
+<Story name="Example" parameters={{ storySource: { source: 'custom source' } }}>
   <Button />
 </Story>
 ```
@@ -5898,13 +6117,13 @@ In 5.3, `addons` paths were relative to the project root, which was inconsistent
 So, for example, if you had:
 
 ```js
-module.exports = { addons: ["./.storybook/my-local-addon/register"] };
+module.exports = { addons: ['./.storybook/my-local-addon/register'] };
 ```
 
 You'd need to update this to:
 
 ```js
-module.exports = { addons: ["./my-local-addon/register"] };
+module.exports = { addons: ['./my-local-addon/register'] };
 ```
 
 #### Deprecated setAddon
@@ -5940,7 +6159,6 @@ export StoryOne = ...;
 StoryOne.story = {
   decorators: [withActions('mouseover', 'click .btn')],
 }
-
 ```
 
 You should replace it with:
@@ -5965,7 +6183,7 @@ To configure a11y now, you have to specify configuration using story parameters,
 ```js
 export const parameters = {
   a11y: {
-    element: "#storybook-root",
+    element: '#storybook-root',
     config: {},
     options: {},
     manual: true,
@@ -5986,11 +6204,11 @@ Consider the following example of its usage in `Button.stories.js`:
 ```jsx
 // Button.stories.js
 export default {
-  title: "Button",
+  title: 'Button',
   parameters: {
     backgrounds: [
-      { name: "twitter", value: "#00aced", default: true },
-      { name: "facebook", value: "#3b5998" },
+      { name: 'twitter', value: '#00aced', default: true },
+      { name: 'facebook', value: '#3b5998' },
     ],
   },
 };
@@ -6001,13 +6219,13 @@ Here's an updated version of the example, using the new api:
 ```jsx
 // Button.stories.js
 export default {
-  title: "Button",
+  title: 'Button',
   parameters: {
     backgrounds: {
-      default: "twitter",
+      default: 'twitter',
       values: [
-        { name: "twitter", value: "#00aced" },
-        { name: "facebook", value: "#3b5998" },
+        { name: 'twitter', value: '#00aced' },
+        { name: 'facebook', value: '#3b5998' },
       ],
     },
   },
@@ -6044,7 +6262,7 @@ Remove the addon-centered decorator and instead add a `layout` parameter:
 ```js
 export const MyStory = () => <div>my story</div>;
 MyStory.story = {
-  parameters: { layout: "centered" },
+  parameters: { layout: 'centered' },
 };
 ```
 
@@ -6062,7 +6280,7 @@ You should use `addon.setConfig` to set them:
 
 ```js
 // in .storybook/manager.js
-import { addons } from "@storybook/addons";
+import { addons } from '@storybook/addons';
 
 addons.setConfig({
   showRoots: false,
@@ -6088,7 +6306,7 @@ To load stories, use the `stories` field in `main.js`. You can pass a glob or ar
 ```js
 // in .storybook/main.js
 module.exports = {
-  stories: ["../src/**/*.stories.js"],
+  stories: ['../src/**/*.stories.js'],
 };
 ```
 
@@ -6098,9 +6316,9 @@ You can also pass an array of single file names if you want to be careful about 
 // in .storybook/main.js
 module.exports = {
   stories: [
-    "../src/components/Button.stories.js",
-    "../src/components/Table.stories.js",
-    "../src/components/Page.stories.js",
+    '../src/components/Button.stories.js',
+    '../src/components/Table.stories.js',
+    '../src/components/Page.stories.js',
   ],
 };
 ```
@@ -6146,8 +6364,8 @@ These files are now soft-deprecated, (_they still work, but over time we will pr
 
 ```js
 module.exports = {
-  stories: ["../**/*.stories.js"],
-  addons: ["@storybook/addon-knobs"],
+  stories: ['../**/*.stories.js'],
+  addons: ['@storybook/addon-knobs'],
 };
 ```
 
@@ -6159,11 +6377,11 @@ If you had a `presets.js` file before you can add the array of presets to the ma
 
 ```js
 module.exports = {
-  stories: ["../**/*.stories.js"],
+  stories: ['../**/*.stories.js'],
   addons: [
-    "@storybook/preset-create-react-app",
+    '@storybook/preset-create-react-app',
     {
-      name: "@storybook/addon-docs",
+      name: '@storybook/addon-docs',
       options: { configureJSX: true },
     },
   ],
@@ -6187,16 +6405,16 @@ This file can also be used to inject global stylesheets, fonts etc, into the pre
 If you are setting storybook options in `config.js`, especially `theme`, you should migrate it to `manager.js`:
 
 ```js
-import { addons } from "@storybook/addons";
-import { create } from "@storybook/theming/create";
+import { addons } from '@storybook/addons';
+import { create } from '@storybook/theming/create';
 
 const theme = create({
-  base: "light",
-  brandTitle: "My custom title",
+  base: 'light',
+  brandTitle: 'My custom title',
 });
 
 addons.setConfig({
-  panelPosition: "bottom",
+  panelPosition: 'bottom',
   theme,
 });
 ```
@@ -6305,7 +6523,7 @@ The default viewports have been reduced to a smaller set, we think is enough for
 You can get the old default back by adding the following to your `config.js`:
 
 ```js
-import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
 
 addParameters({
   viewport: {
@@ -6335,9 +6553,7 @@ For example, here's how to sort by story ID using `storySort`:
 addParameters({
   options: {
     storySort: (a, b) =>
-      a[1].kind === b[1].kind
-        ? 0
-        : a[1].id.localeCompare(b[1].id, undefined, { numeric: true }),
+      a[1].kind === b[1].kind ? 0 : a[1].id.localeCompare(b[1].id, undefined, { numeric: true }),
   },
 });
 ```
@@ -6383,9 +6599,7 @@ Storybook 5.1 relies on `core-js@^3.0.0` and therefore causes a conflict with An
 {
   "compilerOptions": {
     "paths": {
-      "core-js/es7/reflect": [
-        "node_modules/core-js/proposals/reflect-metadata"
-      ],
+      "core-js/es7/reflect": ["node_modules/core-js/proposals/reflect-metadata"],
       "core-js/es6/*": ["node_modules/core-js/es"]
     }
   }
@@ -6460,7 +6674,7 @@ We're working on providing a better way of sorting stories for now the feature h
 If you're using webpack's `require.context` to load stories, you can sort the execution of requires:
 
 ```js
-var context = require.context("../stories", true, /\.stories\.js$/);
+var context = require.context('../stories', true, /\.stories\.js$/);
 var modules = context.keys();
 
 // sort them
@@ -6530,8 +6744,8 @@ Here's an old configuration:
 ```js
 addDecorator(
   withOptions({
-    name: "Storybook",
-    url: "https://storybook.js.org",
+    name: 'Storybook',
+    url: 'https://storybook.js.org',
     goFullScreen: false,
     addonPanelInRight: true,
   })
@@ -6541,18 +6755,19 @@ addDecorator(
 And here's its new counterpart:
 
 ```js
-import { create } from "@storybook/theming/create";
+import { create } from '@storybook/theming/create';
+
 addParameters({
   options: {
     theme: create({
-      base: "light",
-      brandTitle: "Storybook",
-      brandUrl: "https://storybook.js.org",
+      base: 'light',
+      brandTitle: 'Storybook',
+      brandUrl: 'https://storybook.js.org',
       // To control appearance:
       // brandImage: 'http://url.of/some.svg',
     }),
     isFullscreen: false,
-    panelPosition: "right",
+    panelPosition: 'right',
     isToolshown: true,
   },
 });
@@ -6582,10 +6797,10 @@ The behavior of adding decorators to a kind has changed in SB5 ([#5781](https://
 In SB4 it was possible to add decorators to only a subset of the stories of a kind.
 
 ```js
-storiesOf("Stories", module)
-  .add("noncentered", () => "Hello")
+storiesOf('Stories', module)
+  .add('noncentered', () => 'Hello')
   .addDecorator(centered)
-  .add("centered", () => "Hello");
+  .add('centered', () => 'Hello');
 ```
 
 The semantics has changed in SB5 so that calling `addDecorator` on a kind adds a decorator to all its stories, no matter the order. So in the previous example, both stories would be centered.
@@ -6593,9 +6808,9 @@ The semantics has changed in SB5 so that calling `addDecorator` on a kind adds a
 To allow for a subset of the stories in a kind to be decorated, we've added the ability to add decorators to individual stories using parameters:
 
 ```js
-storiesOf("Stories", module)
-  .add("noncentered", () => "Hello")
-  .add("centered", () => "Hello", { decorators: [centered] });
+storiesOf('Stories', module)
+  .add('noncentered', () => 'Hello')
+  .add('centered', () => 'Hello', { decorators: [centered] });
 ```
 
 ### Addon backgrounds uses parameters
@@ -6612,7 +6827,7 @@ storiesOf('Stories', module)
 You should replace it with:
 
 ```js
-storiesOf("Stories", module).addParameters({ backgrounds: options });
+storiesOf('Stories', module).addParameters({ backgrounds: options });
 ```
 
 You can pass `backgrounds` parameters at the global level (via `addParameters` imported from `@storybook/react` et al.), and the story level (via the third argument to `.add()`).
@@ -6622,8 +6837,8 @@ You can pass `backgrounds` parameters at the global level (via `addParameters` i
 In the options object for `@storybook/addon-cssresources`, the `name` attribute for each resource has been renamed to `id`. If you previously had:
 
 ```js
-import { withCssResources } from "@storybook/addon-cssresources";
-import { addDecorator } from "@storybook/react";
+import { addDecorator } from '@storybook/react';
+import { withCssResources } from '@storybook/addon-cssresources';
 
 addDecorator(
   withCssResources({
@@ -6641,8 +6856,8 @@ addDecorator(
 You should replace it with:
 
 ```js
-import { withCssResources } from "@storybook/addon-cssresources";
-import { addDecorator } from "@storybook/react";
+import { addDecorator } from '@storybook/react';
+import { withCssResources } from '@storybook/addon-cssresources';
 
 addDecorator(
   withCssResources({
@@ -6670,7 +6885,9 @@ configureViewport(options);
 You should replace it with:
 
 ```js
-import { addParameters } from "@storybook/react"; // or others
+import { addParameters } from '@storybook/react';
+
+// or others
 
 addParameters({ viewport: options });
 ```
@@ -6692,7 +6909,9 @@ configureA11y(options);
 You should replace it with:
 
 ```js
-import { addParameters } from "@storybook/react"; // or others
+import { addParameters } from '@storybook/react';
+
+// or others
 
 addParameters({ a11y: options });
 ```
@@ -6708,19 +6927,19 @@ See the [a11y addon README](https://github.com/storybookjs/storybook/blob/master
 If you previously had:
 
 ```js
-import centered from "@storybook/addon-centered";
+import centered from '@storybook/addon-centered';
 ```
 
 You should replace it with the React or Vue version as appropriate
 
 ```js
-import centered from "@storybook/addon-centered/react";
+import centered from '@storybook/addon-centered/react';
 ```
 
 or
 
 ```js
-import centered from "@storybook/addon-centered/vue";
+import centered from '@storybook/addon-centered/vue';
 ```
 
 ### New keyboard shortcuts defaults
@@ -6827,13 +7046,13 @@ at Object../node_modules/@storybook/components/dist/navigation/MenuLink.js (Menu
 4.x introduces generic addon decorators that are not tied to specific view layers [#3555](https://github.com/storybookjs/storybook/pull/3555). So for example:
 
 ```js
-import { number } from "@storybook/addon-knobs/react";
+import { number } from '@storybook/addon-knobs/react';
 ```
 
 Becomes:
 
 ```js
-import { number } from "@storybook/addon-knobs";
+import { number } from '@storybook/addon-knobs';
 ```
 
 ### Knobs select ordering
@@ -7005,7 +7224,7 @@ Knobs users: there was a bug in 3.2.x where using the knobs addon imported all f
 In the case of React or React-Native, import knobs like this:
 
 ```js
-import { withKnobs, text, boolean, number } from "@storybook/addon-knobs/react";
+import { withKnobs, text, boolean, number } from '@storybook/addon-knobs/react';
 ```
 
 In the case of Vue: `import { ... } from '@storybook/addon-knobs/vue';`
@@ -7033,10 +7252,10 @@ We're in the process of upgrading our addons APIs. As a first step, we've upgrad
 Here's an example of using Notes and Info in 3.2 with the new API.
 
 ```js
-storiesOf("composition", module).add(
-  "new addons api",
-  withInfo("see Notes panel for composition info")(
-    withNotes({ text: "Composition: Info(Notes())" })((context) => (
+storiesOf('composition', module).add(
+  'new addons api',
+  withInfo('see Notes panel for composition info')(
+    withNotes({ text: 'Composition: Info(Notes())' })((context) => (
       <MyComponent name={context.story} />
     ))
   )
@@ -7148,17 +7367,17 @@ If you **are** using these addons, it takes two steps to migrate:
   change `addons.js` like so:
 
   ```js
-  import "@storybook/addon-actions/register";
-  import "@storybook/addon-links/register";
+  import '@storybook/addon-actions/register';
+  import '@storybook/addon-links/register';
   ```
 
   change `x.story.js` like so:
 
   ```js
-  import React from "react";
-  import { storiesOf } from "@storybook/react";
-  import { action } from "@storybook/addon-actions";
-  import { linkTo } from "@storybook/addon-links";
+  import React from 'react';
+  import { storiesOf } from '@storybook/react';
+  import { action } from '@storybook/addon-actions';
+  import { linkTo } from '@storybook/addon-links';
   ```
 
   <!-- markdown-link-check-enable -->

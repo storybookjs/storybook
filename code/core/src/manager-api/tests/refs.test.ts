@@ -32,12 +32,12 @@ vi.mock('@storybook/global', () => {
   ];
   // global.location value after all edgecaseLocations are returned
   const lastLocation = { origin: 'https://storybook.js.org', pathname: '/storybook/' };
-  Object.defineProperties(globalMock, {
-    location: {
-      get: edgecaseLocations
-        .reduce((mockFn, location) => mockFn.mockReturnValueOnce(location), vi.fn())
-        .mockReturnValue(lastLocation),
-    },
+  const locationMock = vi.fn();
+  edgecaseLocations.forEach((location) => locationMock.mockReturnValueOnce(location));
+  locationMock.mockReturnValue(lastLocation);
+
+  Object.defineProperty(globalMock, 'location', {
+    get: locationMock,
   });
   return { global: globalMock };
 });
@@ -73,6 +73,7 @@ function createMockStore(initialState: Partial<State> = {}) {
 
 interface ResponseResult {
   ok?: boolean;
+  status?: number;
   err?: Error;
   response?: () => never | object | Promise<object>;
 }
@@ -86,13 +87,14 @@ type ResponseKeys =
   | 'metadata';
 
 function respond(result: ResponseResult): Promise<Response> {
-  const { err, ok, response } = result;
+  const { err, ok, status, response } = result;
   if (err) {
     return Promise.reject(err);
   }
 
   return Promise.resolve({
     ok: ok ?? !!response,
+    status: status ?? (ok ? 200 : 500),
     json: response,
   } as Response);
 }
@@ -784,6 +786,52 @@ describe('Refs API', () => {
       `);
     });
 
+    it('checks refs (auth with 401)', async () => {
+      // given
+      const { api } = initRefs({ provider, store } as any, { runCheck: false });
+
+      setupResponses({
+        indexPrivate: {
+          ok: false,
+          status: 401,
+          response: async () => ({ loginUrl: 'https://example.com/login' }),
+        },
+        storiesPrivate: {
+          ok: false,
+          status: 401,
+          response: async () => ({ loginUrl: 'https://example.com/login' }),
+        },
+        metadata: {
+          ok: false,
+          status: 401,
+          response: async () => ({ loginUrl: 'https://example.com/login' }),
+        },
+      });
+
+      await api.checkRef({
+        id: 'fake',
+        url: 'https://example.com',
+        title: 'Fake',
+      });
+
+      expect(store.setState.mock.calls[0][0]).toMatchInlineSnapshot(`
+        {
+          "refs": {
+            "fake": {
+              "filteredIndex": undefined,
+              "id": "fake",
+              "index": undefined,
+              "internal_index": undefined,
+              "loginUrl": "https://example.com/login",
+              "title": "Fake",
+              "type": "auto-inject",
+              "url": "https://example.com",
+            },
+          },
+        }
+      `);
+    });
+
     it('checks refs (basic-auth)', async () => {
       // given
       const { api } = initRefs({ provider, store } as any, { runCheck: false });
@@ -1227,6 +1275,7 @@ describe('Refs API', () => {
             name: '1',
             importPath: './path/to/a1.ts',
             type: 'story',
+            subtype: 'story',
           },
           'a--2': {
             id: 'a--2',
@@ -1234,6 +1283,7 @@ describe('Refs API', () => {
             name: '2',
             importPath: './path/to/a2.ts',
             type: 'story',
+            subtype: 'story',
           },
         },
       };

@@ -1,11 +1,12 @@
 import type { ComponentProps, FC } from 'react';
 import React, { Component } from 'react';
 
-import { Button, Form } from 'storybook/internal/components';
+import { Button, Form, Tooltip, TooltipProvider } from 'storybook/internal/components';
 
 import { CheckIcon } from '@storybook/icons';
 
 import {
+  type API_KeyCollection,
   eventToShortcut,
   shortcutMatchesShortcut,
   shortcutToHumanString,
@@ -118,7 +119,7 @@ const shortcutLabels = {
   togglePanel: 'Toggle addons',
   panelPosition: 'Toggle addons orientation',
   toggleNav: 'Toggle sidebar',
-  toolbar: 'Toggle canvas toolbar',
+  toolbar: 'Toggle toolbar',
   search: 'Focus search',
   focusNav: 'Focus sidebar',
   focusIframe: 'Focus canvas',
@@ -131,21 +132,38 @@ const shortcutLabels = {
   aboutPage: 'Go to about page',
   collapseAll: 'Collapse all items on sidebar',
   expandAll: 'Expand all items on sidebar',
-  remount: 'Remount component',
+  remount: 'Reload story',
+  openInEditor: 'Open story in editor',
+  openInIsolation: 'Open story in isolation',
+  copyStoryLink: 'Copy story link to clipboard',
+  goToPreviousLandmark: 'Go to previous landmark',
+  goToNextLandmark: 'Go to next landmark',
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: 'Copy story name to clipboard',
 };
 
 export type Feature = keyof typeof shortcutLabels;
 
+type ConfiguredShortcut = { shortcut: API_KeyCollection; error: boolean; hardcoded?: boolean };
+
 // Shortcuts that cannot be configured
 const fixedShortcuts = ['escape'];
 
-function toShortcutState(shortcutKeys: ShortcutsScreenProps['shortcutKeys']) {
-  return Object.entries(shortcutKeys).reduce(
-    // @ts-expect-error (non strict)
-    (acc, [feature, shortcut]: [Feature, string]) =>
-      fixedShortcuts.includes(feature) ? acc : { ...acc, [feature]: { shortcut, error: false } },
-    {} as Record<Feature, any>
-  );
+// Shortcuts that cannot be changed by the user (imposed by third-party libraries).
+const hardcodedShortcuts = ['goToPreviousLandmark', 'goToNextLandmark'];
+function toShortcutState(
+  shortcutKeys: ShortcutsScreenProps['shortcutKeys']
+): Record<Feature, ConfiguredShortcut> {
+  const state: Record<string, ConfiguredShortcut> = {};
+  for (const key of Object.keys(shortcutKeys).filter((k) => !fixedShortcuts.includes(k))) {
+    state[key] = {
+      shortcut: shortcutKeys[key as Feature],
+      error: false,
+      hardcoded: hardcodedShortcuts.includes(key),
+    };
+  }
+
+  return state;
 }
 
 export interface ShortcutsScreenState {
@@ -174,7 +192,6 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       // The initial shortcutKeys that come from props are the defaults/what was saved
       // As the user interacts with the page, the state stores the temporary, unsaved shortcuts
       // This object also includes the error attached to each shortcut
-      // @ts-expect-error (non strict)
       shortcutKeys: toShortcutState(props.shortcutKeys),
       addonsShortcutLabels: props.addonsShortcutLabels,
     };
@@ -194,16 +211,21 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       return false;
     }
 
+    // Normalize special characters produced by Option/Alt on macOS (e.g. ['Ø','O'] -> 'O')
+    const normalizedShortcut = shortcut.map((key) =>
+      Array.isArray(key) ? key.at(-1) : key
+    ) as string[];
+
     // Check we don't match any other shortcuts
     const error = !!Object.entries(shortcutKeys).find(
       ([feature, { shortcut: existingShortcut }]) =>
         feature !== activeFeature &&
         existingShortcut &&
-        shortcutMatchesShortcut(shortcut, existingShortcut)
+        shortcutMatchesShortcut(normalizedShortcut, existingShortcut)
     );
 
     return this.setState({
-      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut, error } },
+      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut: normalizedShortcut, error } },
     });
   };
 
@@ -244,7 +266,6 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     const { restoreAllDefaultShortcuts } = this.props;
 
     const defaultShortcuts = await restoreAllDefaultShortcuts();
-    // @ts-expect-error (non strict)
     return this.setState({ shortcutKeys: toShortcutState(defaultShortcuts) });
   };
 
@@ -278,29 +299,53 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
   renderKeyInput = () => {
     const { shortcutKeys, addonsShortcutLabels } = this.state;
-    // @ts-expect-error (non strict)
-    const arr = Object.entries(shortcutKeys).map(([feature, { shortcut }]: [Feature, any]) => (
-      <Row key={feature}>
-        {/* @ts-expect-error (non strict) */}
-        <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>
+    // Filter out keyboard shortcuts from localStorage that no longer exist in code
+    const availableShortcuts = (Object.entries(shortcutKeys) as [Feature, any][]).filter(
+      ([feature]: [Feature, any]) =>
+        shortcutLabels[feature] !== undefined ||
+        (addonsShortcutLabels && addonsShortcutLabels[feature])
+    );
 
-        <TextInput
-          spellCheck="false"
-          valid={this.displayError(feature)}
-          className="modalInput"
-          onBlur={this.onBlur}
-          onFocus={this.onFocus(feature)}
-          // @ts-expect-error (Converted from ts-ignore)
-          onKeyDown={this.onKeyDown}
-          value={shortcut ? shortcutToHumanString(shortcut) : ''}
-          placeholder="Type keys"
-          readOnly
-        />
+    const arr = availableShortcuts.map(
+      ([feature, { shortcut, hardcoded }]: [Feature, ConfiguredShortcut]) => (
+        <Row key={feature}>
+          {/* @ts-expect-error (non strict) */}
+          <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>
 
-        {/* @ts-expect-error (non strict) */}
-        <SuccessIcon valid={this.displaySuccessMessage(feature)} />
-      </Row>
-    ));
+          {hardcoded ? (
+            <>
+              <TooltipProvider
+                tooltip={<Tooltip hasChrome>This shortcut cannot be changed.</Tooltip>}
+                placement="right"
+              >
+                <TextInput
+                  aria-disabled
+                  readOnly
+                  valid={undefined}
+                  value={shortcut ? shortcutToHumanString(shortcut) : ''}
+                />
+              </TooltipProvider>
+            </>
+          ) : (
+            <TextInput
+              spellCheck="false"
+              valid={this.displayError(feature)}
+              className="modalInput"
+              onBlur={this.onBlur}
+              onFocus={this.onFocus(feature)}
+              // @ts-expect-error (Converted from ts-ignore)
+              onKeyDown={this.onKeyDown}
+              value={shortcut ? shortcutToHumanString(shortcut) : ''}
+              placeholder="Type keys"
+              readOnly
+            />
+          )}
+
+          {/* @ts-expect-error (non strict) */}
+          <SuccessIcon valid={this.displaySuccessMessage(feature)} />
+        </Row>
+      )
+    );
 
     return arr;
   };
@@ -323,6 +368,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
         {layout}
         <Button
+          ariaLabel={false}
           variant="outline"
           size="small"
           id="restoreDefaultsHotkeys"
@@ -330,7 +376,6 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
         >
           Restore defaults
         </Button>
-
         <SettingsFooter />
       </Container>
     );

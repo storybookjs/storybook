@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { IconButton, Separator } from 'storybook/internal/components';
+import { Button, Separator } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { MenuIcon } from '@storybook/icons';
@@ -11,6 +11,7 @@ import type { Combo } from 'storybook/manager-api';
 const menuMapper = ({ api, state }: Combo) => ({
   isVisible: api.getIsNavShown(),
   singleStory: state.singleStory,
+  viewMode: state.viewMode,
   toggle: () => api.toggleNav(),
 });
 
@@ -22,14 +23,20 @@ export const menuTool: Addon_BaseType = {
   match: ({ viewMode }) => ['story', 'docs'].includes(viewMode),
   render: () => (
     <Consumer filter={menuMapper}>
-      {({ isVisible, toggle, singleStory }) =>
+      {({ isVisible, toggle, singleStory, viewMode }) =>
         !singleStory &&
         !isVisible && (
           <>
-            <IconButton aria-label="Show sidebar" key="menu" onClick={toggle} title="Show sidebar">
+            <Button
+              padding="small"
+              variant="ghost"
+              ariaLabel="Show sidebar"
+              key="menu"
+              onClick={toggle}
+            >
               <MenuIcon />
-            </IconButton>
-            <Separator />
+            </Button>
+            {viewMode === 'story' && <Separator />}
           </>
         )
       }

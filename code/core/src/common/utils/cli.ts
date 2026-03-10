@@ -10,7 +10,6 @@ import uniqueString from 'unique-string';
 import type { JsPackageManager } from '../js-package-manager';
 import satelliteAddons from '../satellite-addons';
 import storybookPackagesVersions from '../versions';
-import { rendererPackages } from './get-storybook-info';
 
 const tempDir = () => realpath(os.tmpdir());
 
@@ -67,25 +66,6 @@ export function parseList(str: string): string[] {
     .filter((item) => item.length > 0);
 }
 
-/**
- * Given a package manager, returns the coerced version of Storybook. It tries to find renderer
- * packages in the project and returns the coerced version of the first one found. Example: If
- *
- * @storybook/react version 8.0.0-alpha.14 is installed, it returns the coerced version 8.0.0
- */
-export async function getCoercedStorybookVersion(packageManager: JsPackageManager) {
-  const packages = (
-    await Promise.all(
-      Object.keys(rendererPackages).map(async (pkg) => ({
-        name: pkg,
-        version: (await packageManager.getModulePackageJSON(pkg))?.version ?? null,
-      }))
-    )
-  ).filter(({ version }) => !!version);
-
-  return packages[0]?.version || storybookPackagesVersions.storybook;
-}
-
 export function getEnvConfig(program: Record<string, any>, configEnv: Record<string, any>): void {
   Object.keys(configEnv).forEach((fieldName) => {
     const envVarName = configEnv[fieldName];
@@ -115,7 +95,7 @@ export function getEnvConfig(program: Record<string, any>, configEnv: Record<str
  * // SCENARIO 2:
  * // or you can pass it to stdio and capture the output of that command
  * try {
- *   await this.executeCommand({
+ *   await executeCommand({
  *     command: 'pnpm',
  *     args: ['info', packageName, ...args],
  *     // do not output to the user, and send stdio and stderr to log file

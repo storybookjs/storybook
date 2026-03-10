@@ -1,70 +1,50 @@
 ---
-title: Storybook for Vue & Vite
+title: Storybook for Vue with Vite
 hideRendererSelector: true
 sidebar:
-  order: 9
-  title: Vue & Vite
+  order: 10
+  title: Vue (Vite)
 ---
 
-Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Vue](https://vuejs.org/) applications built with [Vite](https://vitejs.dev/). It includes:
+Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Vue](https://vuejs.org/) applications built with [Vite](https://vitejs.dev/).
 
-* 🏎️ Pre-bundled for performance
-* 🪄 Zero config
-* 🧠 Comprehensive docgen
-* 💫 and more!
+## Install
 
-## Requirements
+To install Storybook in an existing Vue project, run this command in your project's root directory:
 
-* Vue ≥ 3
-* Vite ≥ 5.0
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-## Getting started
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
-### In a project without Storybook
+### Requirements
 
-Follow the prompts after running this command in your Vue project's root directory:
+<GetStartedVersions versions={[{
+  name: 'Vue',
+  range: '≥ 3',
+  icon: '/images/logos/renderers/logo-vue.svg'
+}, {
+  name: 'Vite',
+  range: '≥ 5',
+  icon: '/images/logos/builders/vite.svg'
+}]} />
 
-{/* prettier-ignore-start */}
+## Run Storybook
 
-<CodeSnippets path="create-command.md" />
+To run Storybook for a particular project, run the following:
 
-{/* prettier-ignore-end */}
+<CodeSnippets path="storybook-run-dev.md" />
 
-[More on getting started with Storybook.](../install.mdx)
+To build Storybook, run:
 
-### In a project with Storybook
+<CodeSnippets path="build-storybook-production-mode.md" />
 
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+You will find the output in the configured `outputDir` (default is `storybook-static`).
 
-{/* prettier-ignore-start */}
+## Configure
 
-<CodeSnippets path="storybook-upgrade.md" />
+Storybook for Vue 3 with Vite is designed to work out of the box with minimal configuration. This section covers configuration options for the framework.
 
-{/* prettier-ignore-end */}
-
-#### Automatic migration
-
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/vue3-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
-
-#### Manual migration
-
-First, install the framework:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="vue3-vite-install.md" />
-
-{/* prettier-ignore-end */}
-
-Then, update your `.storybook/main.js|ts` to change the framework property:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="vue3-vite-add-framework.md" />
-
-{/* prettier-ignore-end */}
-
-## Extending the Vue application
+### Extending the Vue application
 
 Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js|ts` file.
 
@@ -82,7 +62,7 @@ setup((app) => {
 });
 ```
 
-## Using `vue-component-meta`
+### Using `vue-component-meta`
 
 <Callout variant="info">
   `vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook.
@@ -109,13 +89,13 @@ export default config;
 
 `vue-component-meta` comes with many benefits and enables more documentation features, such as:
 
-### Support for multiple component types
+#### Support for multiple component types
 
 `vue-component-meta` supports all types of Vue components (including SFC, functional, composition/options API components) from `.vue`, `.ts`, `.tsx`, `.js`, and `.jsx` files.
 
 It also supports both default and named component exports.
 
-### Prop description and JSDoc tag annotations
+#### Prop description and JSDoc tag annotations
 
 To describe a prop, including tags, you can use JSDoc comments in your component's props definition:
 
@@ -142,7 +122,7 @@ The props definition above will generate the following controls:
 
 ![Controls generated from props](../../_assets/get-started/vue-component-meta-prop-types-controls.png)
 
-### Events types extraction
+#### Events types extraction
 
 To provide a type for an emitted event, you can use TypeScript types (including JSDoc comments) in your component's `defineEmits` call:
 
@@ -167,7 +147,7 @@ Which will generate the following controls:
 
 ![Controls generated from events](../../_assets/get-started/vue-component-meta-event-types-controls.png)
 
-### Slots types extraction
+#### Slots types extraction
 
 The slot types are automatically extracted from your component definition and displayed in the controls panel.
 
@@ -204,7 +184,7 @@ The definition above will generate the following controls:
 
 ![Controls generated from slots](../../_assets/get-started/vue-component-meta-slot-types-controls.png)
 
-### Exposed properties and methods
+#### Exposed properties and methods
 
 The properties and methods exposed by your component are automatically extracted and displayed in the [Controls](../../essentials/controls.mdx) panel.
 
@@ -228,7 +208,7 @@ The definition above will generate the following controls:
 
 ![Controls generated from exposed properties and methods](../../_assets/get-started/vue-component-meta-exposed-types-controls.png)
 
-### Override the default configuration
+#### Override the default configuration
 
 If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g., `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [`.storybook/main.js|ts`](../../configure/index.mdx) configuration file and add the following:
 
@@ -256,7 +236,25 @@ export default config;
 
 Otherwise, you might face missing component types/descriptions or unresolvable import aliases like `@/some/import`.
 
-## Troubleshooting
+## FAQ
+
+### How do I manually install the Vue framework?
+
+First, install the framework:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="vue3-vite-install.md" />
+
+{/* prettier-ignore-end */}
+
+Then, update your `.storybook/main.js|ts` to change the framework property:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="vue3-vite-add-framework.md" />
+
+{/* prettier-ignore-end */}
 
 ### Storybook doesn't work with my Vue 2 project
 

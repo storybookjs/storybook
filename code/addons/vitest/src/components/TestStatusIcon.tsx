@@ -40,7 +40,7 @@ export const TestStatusIcon = styled.div<{
     },
   ({ status, theme }) =>
     status === 'unknown' && {
-      '--status-color': theme.color.mediumdark,
-      '--status-background': `${theme.color.mediumdark}66`,
+      '--status-color': theme.textMutedColor,
+      '--status-background': `${theme.textMutedColor}66`,
     }
 );

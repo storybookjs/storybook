@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -56,16 +56,14 @@ export function logMigrationSummary({
   const messages = [];
   messages.push(getGlossaryMessages(fixSummary, fixResults).join(messageDivider));
 
-  messages.push(dedent`If you'd like to run the migrations again, you can do so by running '${picocolors.cyan(
-    'npx storybook automigrate'
-  )}'
+  messages.push(dedent`If you'd like to run the migrations again, you can do so by running 
+    ${picocolors.cyan('npx storybook automigrate')}
     
     The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
     
-    Please check the changelog and migration guide for manual migrations and more information: ${picocolors.yellow(
-      'https://storybook.js.org/docs/releases/migration-guide?ref=upgrade'
-    )}
-    And reach out on Discord if you need help: ${picocolors.yellow('https://discord.gg/storybook')}
+    Please check the changelog and migration guide for manual migrations and more information: 
+    https://storybook.js.org/docs/releases/migration-guide?ref=upgrade
+    And reach out on Discord if you need help: https://discord.gg/storybook
   `);
 
   const hasNoFixes = Object.values(fixResults).every((r) => r === FixStatus.UNNECESSARY);
@@ -73,14 +71,13 @@ export function logMigrationSummary({
     (r) => r === FixStatus.FAILED || r === FixStatus.CHECK_FAILED
   );
 
-  const title = hasNoFixes
-    ? 'No migrations were applicable to your project'
-    : hasFailures
-      ? 'Migration check ran with failures'
-      : 'Migration check ran successfully';
+  if (hasNoFixes) {
+    logger.warn('No migrations were applicable to your project');
+  } else if (hasFailures) {
+    logger.error('Migration check ran with failures');
+  } else {
+    logger.step(CLI_COLORS.success('Migration check ran successfully'));
+  }
 
-  return logger.logBox(messages.filter(Boolean).join(segmentDivider), {
-    title,
-    borderColor: hasFailures ? 'red' : 'green',
-  });
+  logger.log(messages.filter(Boolean).join(segmentDivider));
 }

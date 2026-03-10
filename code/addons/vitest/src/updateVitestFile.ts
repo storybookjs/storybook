@@ -1,26 +1,42 @@
-import * as fs from 'node:fs/promises';
+import type { BabelFile, types as t } from 'storybook/internal/babel';
 
-import type { BabelFile } from 'storybook/internal/babel';
+import { normalize } from 'pathe';
 
-import type { ObjectExpression } from '@babel/types';
-import { join } from 'pathe';
-
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+/**
+ * Each template is imported separately to allow the build system to process the template as raw
+ * text. A mix of globs and the "?raw" string query is not supported in esbuild
+ */
+async function getTemplatePath(name: string) {
+  switch (name) {
+    case 'vitest.config.template':
+      return import('../templates/vitest.config.template?raw');
+    case 'vitest.config.4.template':
+      return import('../templates/vitest.config.4.template?raw');
+    case 'vitest.config.3.2.template':
+      return import('../templates/vitest.config.3.2.template?raw');
+    case 'vitest.workspace.template':
+      return import('../templates/vitest.workspace.template?raw');
+    default:
+      throw new Error(`Unknown template: ${name}`);
+  }
+}
 
 export const loadTemplate = async (name: string, replacements: Record<string, string>) => {
-  let template = await fs.readFile(
-    join(resolvePackageDir('@storybook/addon-vitest'), 'templates', name),
-    'utf8'
+  // Dynamically import the template file as plain text
+  const templateModule = await getTemplatePath(name);
+  let template = templateModule.default;
+  // Normalize Windows paths (backslashes) to forward slashes for JavaScript string compatibility
+  Object.entries(replacements).forEach(
+    ([key, value]) => (template = template.replace(key, normalize(value)))
   );
-  Object.entries(replacements).forEach(([key, value]) => (template = template.replace(key, value)));
   return template;
 };
 
 // Recursively merge object properties from source into target
 // Handles nested objects and shallowly merging of arrays
 const mergeProperties = (
-  source: ObjectExpression['properties'],
-  target: ObjectExpression['properties']
+  source: t.ObjectExpression['properties'],
+  target: t.ObjectExpression['properties']
 ) => {
   for (const sourceProp of source) {
     if (sourceProp.type === 'ObjectProperty') {
@@ -53,6 +69,60 @@ const mergeProperties = (
 };
 
 /**
+ * Resolves the target's default export to the actual config object expression we can merge into.
+ * Handles: export default defineConfig({}), export default {}, and export default config (where
+ * config is a variable holding defineConfig({}) or {}).
+ */
+const getTargetConfigObject = (
+  target: BabelFile['ast'],
+  exportDefault: t.ExportDefaultDeclaration
+): t.ObjectExpression | null => {
+  const decl = exportDefault.declaration;
+  if (decl.type === 'ObjectExpression') {
+    return decl;
+  }
+  if (
+    decl.type === 'CallExpression' &&
+    decl.callee.type === 'Identifier' &&
+    decl.callee.name === 'defineConfig' &&
+    decl.arguments[0]?.type === 'ObjectExpression'
+  ) {
+    return decl.arguments[0] as t.ObjectExpression;
+  }
+  if (decl.type === 'Identifier') {
+    const varName = decl.name;
+    const varDecl = target.program.body.find(
+      (n): n is t.VariableDeclaration =>
+        n.type === 'VariableDeclaration' &&
+        n.declarations.some((d) => d.id.type === 'Identifier' && d.id.name === varName)
+    );
+    if (!varDecl) {
+      return null;
+    }
+    const declarator = varDecl.declarations.find(
+      (d) => d.id.type === 'Identifier' && d.id.name === varName
+    );
+    if (!declarator?.init) {
+      return null;
+    }
+    const init = declarator.init;
+    if (
+      init.type === 'CallExpression' &&
+      init.callee.type === 'Identifier' &&
+      init.callee.name === 'defineConfig' &&
+      init.arguments[0]?.type === 'ObjectExpression'
+    ) {
+      return init.arguments[0] as t.ObjectExpression;
+    }
+    if (init.type === 'ObjectExpression') {
+      return init;
+    }
+    return null;
+  }
+  return null;
+};
+
+/**
  * Merges a source Vitest configuration AST into a target configuration AST.
  *
  * This function intelligently combines configuration elements from a source file (typically a
@@ -79,6 +149,74 @@ const mergeProperties = (
  */
 export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['ast']) => {
   let updated = false;
+
+  // First, check if we can actually modify the configuration
+  const sourceExportDefault = source.program.body.find(
+    (n) => n.type === 'ExportDefaultDeclaration'
+  );
+  if (!sourceExportDefault || sourceExportDefault.declaration.type !== 'CallExpression') {
+    return false;
+  }
+
+  const targetExportDefault = target.program.body.find(
+    (n) => n.type === 'ExportDefaultDeclaration'
+  );
+  if (!targetExportDefault) {
+    return false;
+  }
+
+  // Check if this is a function notation that we don't support
+  const rejectFunctionNotation = (decl: t.ExportDefaultDeclaration['declaration']) => {
+    if (
+      decl.type === 'CallExpression' &&
+      decl.callee.type === 'Identifier' &&
+      decl.callee.name === 'defineConfig' &&
+      decl.arguments.length > 0 &&
+      decl.arguments[0].type === 'ArrowFunctionExpression'
+    ) {
+      return true;
+    }
+    return false;
+  };
+  if (
+    targetExportDefault.declaration.type === 'CallExpression' &&
+    rejectFunctionNotation(targetExportDefault.declaration)
+  ) {
+    return false;
+  }
+  if (targetExportDefault.declaration.type === 'Identifier') {
+    const varName = targetExportDefault.declaration.name;
+    const varDecl = target.program.body.find(
+      (n): n is t.VariableDeclaration =>
+        n.type === 'VariableDeclaration' &&
+        n.declarations.some((d) => d.id.type === 'Identifier' && d.id.name === varName)
+    );
+    const declarator = varDecl?.declarations.find(
+      (d) => d.id.type === 'Identifier' && d.id.name === varName
+    );
+    if (declarator?.init?.type === 'CallExpression' && rejectFunctionNotation(declarator.init)) {
+      return false;
+    }
+  }
+
+  // Check if we can handle mergeConfig patterns (including export default config where config = defineConfig({}))
+  let canHandleConfig = false;
+  if (getTargetConfigObject(target, targetExportDefault) !== null) {
+    canHandleConfig = true;
+  } else if (
+    targetExportDefault.declaration.type === 'CallExpression' &&
+    targetExportDefault.declaration.callee.type === 'Identifier' &&
+    targetExportDefault.declaration.callee.name === 'mergeConfig' &&
+    targetExportDefault.declaration.arguments.length >= 2
+  ) {
+    canHandleConfig = true;
+  }
+
+  if (!canHandleConfig) {
+    return false;
+  }
+
+  // If we get here, we can modify the configuration, so add imports and variables first
   for (const sourceNode of source.program.body) {
     if (sourceNode.type === 'ImportDeclaration') {
       // Insert imports that don't already exist (according to their local specifier name)
@@ -118,16 +256,197 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
         sourceNode.declaration.arguments[0].type === 'ObjectExpression'
       ) {
         const { properties } = sourceNode.declaration.arguments[0];
-        if (exportDefault.declaration.type === 'ObjectExpression') {
-          mergeProperties(properties, exportDefault.declaration.properties);
+        const targetConfigObject = getTargetConfigObject(target, exportDefault);
+        if (targetConfigObject !== null) {
+          mergeProperties(properties, targetConfigObject.properties);
           updated = true;
         } else if (
           exportDefault.declaration.type === 'CallExpression' &&
           exportDefault.declaration.callee.type === 'Identifier' &&
-          exportDefault.declaration.callee.name === 'defineConfig' &&
-          exportDefault.declaration.arguments[0]?.type === 'ObjectExpression'
+          exportDefault.declaration.callee.name === 'mergeConfig' &&
+          exportDefault.declaration.arguments.length >= 2
         ) {
-          mergeProperties(properties, exportDefault.declaration.arguments[0].properties);
+          // We first collect all the potential config object nodes from mergeConfig, these can be:
+          // - defineConfig({ ... }) calls
+          // - plain object expressions { ... } without a defineConfig helper
+          const configObjectNodes: t.ObjectExpression[] = [];
+
+          for (const arg of exportDefault.declaration.arguments) {
+            if (
+              arg?.type === 'CallExpression' &&
+              arg.callee.type === 'Identifier' &&
+              arg.callee.name === 'defineConfig' &&
+              arg.arguments[0]?.type === 'ObjectExpression'
+            ) {
+              configObjectNodes.push(arg.arguments[0] as t.ObjectExpression);
+            } else if (arg?.type === 'ObjectExpression') {
+              configObjectNodes.push(arg);
+            }
+          }
+
+          // Prefer a config object that already contains a `test` property
+          const configObjectWithTest = configObjectNodes.find((obj) =>
+            obj.properties.some(
+              (p) =>
+                p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'test'
+            )
+          );
+
+          const targetConfigObject = configObjectWithTest || configObjectNodes[0];
+
+          if (!targetConfigObject) {
+            return false;
+          }
+
+          // Check if there's already a test property in the target config
+          const existingTestProp = targetConfigObject.properties.find(
+            (p) =>
+              p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'test'
+          ) as t.ObjectProperty | undefined;
+
+          if (existingTestProp && existingTestProp.value.type === 'ObjectExpression') {
+            // Find the test property from the template (either workspace or projects)
+            const templateTestProp = properties.find(
+              (p) =>
+                p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'test'
+            ) as t.ObjectProperty | undefined;
+
+            const hasProjectsProp = (
+              p: t.ObjectMethod | t.ObjectProperty | t.SpreadElement
+            ): p is t.ObjectProperty =>
+              p.type === 'ObjectProperty' &&
+              p.key.type === 'Identifier' &&
+              p.key.name === 'projects' &&
+              p.value.type === 'ArrayExpression';
+
+            // Check if the existing config already uses a projects array (multi-project setup).
+            // If so, we must append the storybook project to that array instead of wrapping
+            // the entire test config as a single project (which would cause double nesting).
+            const existingProjectsProp = existingTestProp.value.properties.find(hasProjectsProp);
+
+            if (existingProjectsProp) {
+              // Existing config already has test.projects: append storybook project(s) to it
+              if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
+                const templateProjectsProp =
+                  templateTestProp.value.properties.find(hasProjectsProp);
+                if (templateProjectsProp && templateProjectsProp.value.type === 'ArrayExpression') {
+                  const templateElements = (templateProjectsProp.value as t.ArrayExpression)
+                    .elements;
+                  (existingProjectsProp.value as t.ArrayExpression).elements.push(
+                    ...templateElements
+                  );
+                }
+                // Merge other test-level options from template (e.g. coverage) into existing test
+                for (const templateProp of templateTestProp.value.properties) {
+                  if (
+                    templateProp.type === 'ObjectProperty' &&
+                    templateProp.key.type === 'Identifier' &&
+                    (templateProp.key as t.Identifier).name !== 'projects'
+                  ) {
+                    const existingProp = existingTestProp.value.properties.find(
+                      (p) =>
+                        p.type === 'ObjectProperty' &&
+                        p.key.type === 'Identifier' &&
+                        (p.key as t.Identifier).name === (templateProp.key as t.Identifier).name
+                    );
+                    if (!existingProp && templateProp.type === 'ObjectProperty') {
+                      existingTestProp.value.properties.push(templateProp);
+                    }
+                  }
+                }
+              }
+              // Merge only non-test properties from template to avoid re-adding storybook project
+              const otherTemplateProps = properties.filter(
+                (p) =>
+                  !(
+                    p.type === 'ObjectProperty' &&
+                    p.key.type === 'Identifier' &&
+                    p.key.name === 'test'
+                  )
+              );
+              if (otherTemplateProps.length > 0) {
+                mergeProperties(otherTemplateProps, targetConfigObject.properties);
+              }
+            } else if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
+              // Existing test has no projects array: wrap entire test config as one project
+              const workspaceOrProjectsProp = templateTestProp.value.properties.find(
+                (p) =>
+                  p.type === 'ObjectProperty' &&
+                  p.key.type === 'Identifier' &&
+                  (p.key.name === 'workspace' || p.key.name === 'projects')
+              ) as t.ObjectProperty | undefined;
+
+              if (
+                workspaceOrProjectsProp &&
+                workspaceOrProjectsProp.value.type === 'ArrayExpression'
+              ) {
+                // Extract coverage config before creating the test project
+                const coverageProp = existingTestProp.value.properties.find(
+                  (p) =>
+                    p.type === 'ObjectProperty' &&
+                    p.key.type === 'Identifier' &&
+                    p.key.name === 'coverage'
+                ) as t.ObjectProperty | undefined;
+
+                // Create a new test config without the coverage property
+                const testPropsWithoutCoverage = existingTestProp.value.properties.filter(
+                  (p) => p !== coverageProp
+                );
+
+                const testConfigForProject: t.ObjectExpression = {
+                  type: 'ObjectExpression',
+                  properties: testPropsWithoutCoverage,
+                };
+
+                // Create the existing test project
+                const existingTestProject: t.ObjectExpression = {
+                  type: 'ObjectExpression',
+                  properties: [
+                    {
+                      type: 'ObjectProperty',
+                      key: { type: 'Identifier', name: 'extends' },
+                      value: { type: 'BooleanLiteral', value: true },
+                      computed: false,
+                      shorthand: false,
+                    },
+                    {
+                      type: 'ObjectProperty',
+                      key: { type: 'Identifier', name: 'test' },
+                      value: testConfigForProject,
+                      computed: false,
+                      shorthand: false,
+                    },
+                  ],
+                };
+
+                // Add the existing test project to the template's array
+                workspaceOrProjectsProp.value.elements.unshift(existingTestProject);
+
+                // Remove the existing test property from the target config since we're moving it to the array
+                targetConfigObject.properties = targetConfigObject.properties.filter(
+                  (p) => p !== existingTestProp
+                );
+
+                // If there was a coverage config, add it to the template's test config (at the top level of the test object)
+                // Insert it at the beginning so it appears before workspace/projects
+                if (coverageProp && templateTestProp.value.type === 'ObjectExpression') {
+                  templateTestProp.value.properties.unshift(coverageProp);
+                }
+
+                // Merge the template properties (which now include our existing test project in the array)
+                mergeProperties(properties, targetConfigObject.properties);
+              } else {
+                // Fallback to original behavior if template structure is unexpected
+                mergeProperties(properties, targetConfigObject.properties);
+              }
+            } else {
+              // Fallback to original behavior if template doesn't have expected structure
+              mergeProperties(properties, targetConfigObject.properties);
+            }
+          } else {
+            // No existing test config, just merge normally
+            mergeProperties(properties, targetConfigObject.properties);
+          }
           updated = true;
         }
       }

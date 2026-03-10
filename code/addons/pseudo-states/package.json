@@ -1,6 +1,6 @@
 {
   "name": "storybook-addon-pseudo-states",
-  "version": "10.0.0-beta.2",
+  "version": "10.3.0-alpha.15",
   "description": "Storybook Pseudo-states addon: Manipulate CSS pseudo states",
   "keywords": [
     "storybook",
@@ -35,12 +35,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./preview": {
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
       "default": "./dist/preview.js"
     }
   },
@@ -50,15 +52,11 @@
     "dist/**/*",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "devDependencies": {
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^2.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

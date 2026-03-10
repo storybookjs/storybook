@@ -155,6 +155,25 @@ This method allows you to get the application URL state, including any overridde
 
 {/* prettier-ignore-end */}
 
+### api.getStoryHrefs(storyId, options?)
+
+Get the manager and preview URLs for a story. URLs are relative to the current Storybook, unless `base` is set, or in case of previewHref with `refId` set.
+
+- `storyId` (required): The ID of the story to get the URLs for
+- `options` (optional):
+  - `base`: Return an absolute href based on the current origin or network address.
+  - `inheritArgs`: Inherit args from the current URL. If `storyId` matches current story, `inheritArgs` defaults to true.
+  - `inheritGlobals`: Inherit globals from the current URL. Defaults to true.
+  - `queryParams`: Additional query params to append to the URL (`args` and `globals` are merged when inheriting).
+  - `refId`: ID of the ref to get the URL for (for composed Storybooks)
+  - `viewMode`: The view mode to use, defaults to 'story'.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-getstoryhrefs.md" />
+
+{/* prettier-ignore-end */}
+
 ### api.on(eventName, fn)
 
 This method allows you to register a handler function called whenever the user navigates between stories.
@@ -162,6 +181,62 @@ This method allows you to register a handler function called whenever the user n
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="storybook-addons-api-on.md" />
+
+{/* prettier-ignore-end */}
+
+### api.openInEditor(payload)
+
+Opens a file in the configured code editor. Useful for "Edit in IDE" functionality in addons.
+
+- `payload.file`: The file path to open (required)
+- `payload.line`: Optional line number to jump to
+- `payload.column`: Optional column number to jump to
+
+Returns a Promise that resolves with information about whether the operation was successful.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-openineditor.md" />
+
+{/* prettier-ignore-end */}
+
+### api.getCurrentStoryData()
+
+Returns the current story's data, including its ID, kind, name, and parameters.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-getcurrentstorydata.md" />
+
+{/* prettier-ignore-end */}
+
+### api.toggleFullscreen(toggled?)
+
+Toggles the fullscreen mode of the Storybook UI. Pass `true` to enable fullscreen, `false` to disable, or omit to toggle the current state.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-togglefullscreen.md" />
+
+{/* prettier-ignore-end */}
+
+### api.togglePanel(toggled?)
+
+Toggles the visibility of the addon panel. Pass `true` to show the panel, `false` to hide, or omit to toggle the current state.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-togglepanel.md" />
+
+{/* prettier-ignore-end */}
+
+### api.addNotification(notification)
+
+Displays a notification in the Storybook UI. The notification object should contain `id`, `content`, and optionally `duration` and `icon`.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-addnotification.md" />
 
 {/* prettier-ignore-end */}
 

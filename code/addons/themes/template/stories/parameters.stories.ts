@@ -45,7 +45,7 @@ export default {
     sb_theme: 'light',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     themes: { disable: false },
   },
   decorators: [addStyleSheetDecorator],

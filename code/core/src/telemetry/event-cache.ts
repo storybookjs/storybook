@@ -1,6 +1,6 @@
 import { cache } from 'storybook/internal/common';
 
-import type { EventType } from './types';
+import type { EventType, TelemetryEvent } from './types';
 
 interface UpgradeSummary {
   timestamp: number;
@@ -9,26 +9,42 @@ interface UpgradeSummary {
   sessionId?: string;
 }
 
-let operation: Promise<any> = Promise.resolve();
+export interface CacheEntry {
+  timestamp: number;
+  body: TelemetryEvent;
+}
 
-const setHelper = async (eventType: EventType, body: any) => {
+let processingPromise: Promise<void> = Promise.resolve();
+
+const setHelper = async (eventType: EventType, body: TelemetryEvent) => {
   const lastEvents = (await cache.get('lastEvents')) || {};
   lastEvents[eventType] = { body, timestamp: Date.now() };
   await cache.set('lastEvents', lastEvents);
 };
 
-export const set = async (eventType: EventType, body: any) => {
-  await operation;
-  operation = setHelper(eventType, body);
-  return operation;
+export const set = (eventType: EventType, body: TelemetryEvent): Promise<void> => {
+  const run = processingPromise.then(async () => {
+    await setHelper(eventType, body);
+  });
+
+  // Keep the chain alive even if this operation rejects, so later callers still queue
+  processingPromise = run.catch(() => {});
+
+  return run;
 };
 
-export const get = async (eventType: EventType) => {
-  const lastEvents = await cache.get('lastEvents');
-  return lastEvents?.[eventType];
+export const get = async (eventType: EventType): Promise<CacheEntry | undefined> => {
+  const lastEvents = await getLastEvents();
+  return lastEvents[eventType];
 };
 
-const upgradeFields = (event: any): UpgradeSummary => {
+export const getLastEvents = async (): Promise<Record<EventType, CacheEntry>> => {
+  // Wait for any pending set operations to complete before reading
+  await processingPromise;
+  return (await cache.get('lastEvents')) || {};
+};
+
+const upgradeFields = (event: CacheEntry): UpgradeSummary => {
   const { body, timestamp } = event;
   return {
     timestamp,
@@ -41,16 +57,19 @@ const upgradeFields = (event: any): UpgradeSummary => {
 const UPGRADE_EVENTS: EventType[] = ['init', 'upgrade'];
 const RUN_EVENTS: EventType[] = ['build', 'dev', 'error'];
 
-const lastEvent = (lastEvents: Record<EventType, any>, eventTypes: EventType[]) => {
+const lastEvent = (lastEvents: Partial<Record<EventType, CacheEntry>>, eventTypes: EventType[]) => {
   const descendingEvents = eventTypes
     .map((eventType) => lastEvents?.[eventType])
-    .filter(Boolean)
+    .filter((event): event is CacheEntry => Boolean(event))
     .sort((a, b) => b.timestamp - a.timestamp);
   return descendingEvents.length > 0 ? descendingEvents[0] : undefined;
 };
 
-export const getPrecedingUpgrade = async (events: any = undefined) => {
-  const lastEvents = events || (await cache.get('lastEvents')) || {};
+export const getPrecedingUpgrade = async (
+  events: Partial<Record<EventType, CacheEntry>> | undefined = undefined
+) => {
+  const lastEvents =
+    events || ((await cache.get('lastEvents')) as Partial<Record<EventType, CacheEntry>>) || {};
   const lastUpgradeEvent = lastEvent(lastEvents, UPGRADE_EVENTS);
   const lastRunEvent = lastEvent(lastEvents, RUN_EVENTS);
 

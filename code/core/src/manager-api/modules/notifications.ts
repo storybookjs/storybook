@@ -55,5 +55,8 @@ export const init: ModuleFn = ({ store }) => {
 
   const state: SubState = { notifications: [] };
 
-  return { api, state };
+  return {
+    api,
+    state,
+  };
 };

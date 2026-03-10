@@ -450,7 +450,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
           // Ignore props from svelte/elements.d.ts (HTMLAttributes, AriaAttributes and DOMAttributes).
           // Some libraries use these for {...$$restProps}
           if (
-            prop.valueDeclaration
+            (prop.valueDeclaration ?? (prop as any)?.links?.syntheticOrigin?.valueDeclaration)
               ?.getSourceFile()
               .fileName.includes('node_modules/svelte/elements.d.ts')
           ) {

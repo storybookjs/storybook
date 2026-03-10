@@ -101,6 +101,7 @@ const PlayFnNotice = styled.div(
     padding: '3px 8px',
     fontSize: '10px',
     fontWeight: 'bold',
+    zIndex: 99,
     '> *': {
       display: 'block',
     },
@@ -216,7 +217,7 @@ const decorators = [
    * This decorator renders the stories side-by-side, stacked or default based on the theme switcher
    * in the toolbar
    */
-  (StoryFn, { globals, playFunction, args, storyGlobals, parameters }) => {
+  (StoryFn, { globals, playFunction, testFunction, args, storyGlobals, parameters }) => {
     let theme = globals.sb_theme;
     let showPlayFnNotice = false;
 
@@ -224,10 +225,13 @@ const decorators = [
     // but this is acceptable, I guess
     // we need to ensure only a single rendering in chromatic
     // a more 'correct' approach would be to set a specific theme global on every story that has a playFunction
-    if (playFunction && args.autoplay !== false && !(theme === 'light' || theme === 'dark')) {
+    if (
+      (testFunction || (playFunction && args.autoplay !== false)) &&
+      !(theme === 'light' || theme === 'dark')
+    ) {
       theme = 'light';
       showPlayFnNotice = true;
-    } else if (isChromatic() && !storyGlobals.sb_theme && !playFunction) {
+    } else if (isChromatic() && !storyGlobals.sb_theme && !playFunction && !testFunction) {
       theme = 'stacked';
     }
 
@@ -282,8 +286,8 @@ const decorators = [
               <>
                 <PlayFnNotice>
                   <span>
-                    Detected play function in Chromatic. Rendering only light theme to avoid
-                    multiple play functions in the same story.
+                    Detected play/test function in Chromatic. Rendering only light theme to avoid
+                    multiple play/test functions in the same story.
                   </span>
                 </PlayFnNotice>
                 <div style={{ marginBottom: 20 }} />
@@ -345,7 +349,6 @@ const parameters = {
             plugins: [prettierPluginBabel, prettierPluginEstree],
           });
         } catch (error) {
-          console.error(error);
           return source;
         }
       },
@@ -384,8 +387,8 @@ const parameters = {
   },
   backgrounds: {
     options: {
-      light: { name: 'light', value: '#edecec' },
-      dark: { name: 'dark', value: '#262424' },
+      light: { name: 'light', value: '#F6F9FC' },
+      dark: { name: 'dark', value: '#1B1C1D' },
       blue: { name: 'blue', value: '#1b1a2c' },
     },
     grid: {

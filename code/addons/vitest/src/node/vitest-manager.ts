@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import type {
   CoverageOptions,
@@ -6,17 +6,19 @@ import type {
   TestProject,
   TestSpecification,
   Vitest,
-  WorkspaceProject,
 } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
-import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
+import { Tag } from 'storybook/internal/core-server';
+import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
-import { findUp } from 'find-up';
-import path, { dirname, join, normalize } from 'pathe';
+import * as find from 'empathic/find';
+import * as walk from 'empathic/walk';
+import { escapeRegExp } from 'es-toolkit/string';
+import path, { dirname, join, normalize, resolve } from 'pathe';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
 import type { TriggerRunEvent } from '../types';
@@ -29,6 +31,17 @@ const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
 
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
+
+/**
+ * The Storybook vitest plugin adds double space characters so that it's possible to do a regex for
+ * all test run use cases. Otherwise, if there were two unrelated stories like "Primary Button" and
+ * "Primary Button Mobile", once you run tests for "Primary Button" and its children it would also
+ * match "Primary Button Mobile". As it turns out, this limitation is also present in the Vitest
+ * VSCode extension and the issue would occur with normal vitest tests as well, but because we use
+ * double spaces, we circumvent the issue.
+ */
+export const DOUBLE_SPACES = '  ';
+const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
 export class VitestManager {
   vitest: Vitest | null = null;
@@ -64,19 +77,53 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    const vitestWorkspaceConfig = await findUp(
-      [
-        ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
-        ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
-      ],
-      { stopAt: getProjectRoot() }
-    );
+    // In monorepos, the Storybook configDir (e.g. packages/web-app/.storybook) identifies
+    // the sub-package. We start the Vitest config search from its parent (the package root)
+    // and traverse upward to the project root, so configs in both sub-packages and the
+    // monorepo root are found. Without this, find.any defaults to process.cwd() which may
+    // be the monorepo root and would miss sub-package configs entirely.
+    const configDir = this.testManager.storybookOptions.configDir;
+    const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
+
+    const configFiles = [
+      ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
+      ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [
+        `vitest.config.${ext}`,
+        `vite.config.${ext}`,
+      ]),
+    ];
+
+    const potentialConfigFileLocations = walk.up(packageRoot || process.cwd(), {
+      last: getProjectRoot(),
+    });
+
+    let vitestWorkspaceConfig: string | undefined;
+    let firstVitestConfig: string | undefined;
+
+    for (const location of potentialConfigFileLocations) {
+      for (const file of configFiles) {
+        const maybe = find.any([file], { cwd: location, last: getProjectRoot() });
+        if (maybe && existsSync(maybe)) {
+          firstVitestConfig ??= dirname(maybe);
+          const content = readFileSync(maybe, 'utf8');
+          if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
+            vitestWorkspaceConfig = dirname(maybe);
+            break;
+          }
+        }
+      }
+      if (vitestWorkspaceConfig) {
+        break;
+      }
+    }
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
 
+    const vitestConfigFallbackLocation = firstVitestConfig || packageRoot || process.cwd();
+
     try {
       this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
+        root: vitestWorkspaceConfig ?? vitestConfigFallbackLocation,
         watch: true,
         passWithNoTests: false,
         project: [projectName],
@@ -155,11 +202,15 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    const projects = this.vitest!.getModuleProjects(filepath);
-    projects.forEach(({ server, browser }) => {
+    // @ts-expect-error `server` only exists in Vitest 3
+    this.vitest!.projects.forEach(({ browser, vite, server }) => {
       if (server) {
         const serverMods = server.moduleGraph.getModulesByFile(filepath);
-        serverMods?.forEach((mod) => server.moduleGraph.invalidateModule(mod));
+        serverMods?.forEach((mod: any) => server.moduleGraph.invalidateModule(mod));
+      }
+      if (vite) {
+        const serverMods = vite.moduleGraph.getModulesByFile(filepath);
+        serverMods?.forEach((mod) => vite.moduleGraph.invalidateModule(mod));
       }
       if (browser) {
         const browserMods = browser.vite.moduleGraph.getModulesByFile(filepath);
@@ -168,24 +219,91 @@ export class VitestManager {
     });
   }
 
-  private async fetchStories(requestStoryIds?: string[]) {
-    const indexUrl = this.testManager.store.getState().indexUrl;
-    if (!indexUrl) {
-      throw new Error(
-        'Tried to fetch stories to test, but the index URL was not set in the store yet.'
-      );
+  private getStories(requestStoryIds?: string[]): StoryIndexEntry[] {
+    const index = this.testManager.store.getState().index;
+    if (requestStoryIds) {
+      const stories: StoryIndexEntry[] = [];
+      for (const id of requestStoryIds) {
+        const entry = index.entries[id];
+        if (entry?.type === 'story') {
+          stories.push(entry);
+        }
+      }
+      return stories;
     }
-    try {
-      const index = (await Promise.race([
-        fetch(indexUrl).then((res) => res.json()),
-        new Promise((_, reject) => setTimeout(reject, 3000, new Error('Request took too long'))),
-      ])) as StoryIndex;
-      const storyIds = requestStoryIds || Object.keys(index.entries);
-      return storyIds.map((id) => index.entries[id]).filter((story) => story.type === 'story');
-    } catch (e: any) {
-      log('Failed to fetch story index: ' + e.message);
-      return [];
+    return Object.values(index.entries).filter((entry) => entry.type === 'story');
+  }
+
+  /**
+   * Builds the exact Vitest name-pattern fragment for one selected Storybook entry.
+   *
+   * The pattern differs by entry type:
+   *
+   * - Component entry (has child stories/tests): match the whole describe block prefix
+   * - Story-test entry (has parent): match "parent describe + test name" exactly
+   * - Regular story entry: match the story name exactly
+   */
+  private buildStoryTestNamePattern(
+    story: StoryIndexEntry,
+    allStories: StoryIndexEntry[],
+    storiesById: Record<StoryId, StoryIndexEntry>
+  ) {
+    const isParentStory = allStories.some((candidate) => story.id === candidate.parent);
+
+    if (isParentStory) {
+      return `^${escapeRegExp(getTestName(story.name))}`;
     }
+
+    if (story.parent) {
+      const parentStory = storiesById[story.parent];
+      if (!parentStory) {
+        throw new Error(`Parent story not found for story ${story.id}`);
+      }
+
+      return `^${escapeRegExp(getTestName(parentStory.name))} ${escapeRegExp(story.name)}$`;
+    }
+
+    return `^${escapeRegExp(story.name)}$`;
+  }
+
+  /**
+   * Combines multiple per-story patterns into one global regex so Vitest can run an exact subset of
+   * tests across one or more files in a single invocation.
+   */
+  private buildTestNamePatternForStories(
+    selectedStories: StoryIndexEntry[],
+    allStories: StoryIndexEntry[]
+  ) {
+    const storiesById = Object.fromEntries(allStories.map((story) => [story.id, story])) as Record<
+      StoryId,
+      StoryIndexEntry
+    >;
+
+    const storyPatterns = [
+      ...new Set(
+        selectedStories.map((story) =>
+          this.buildStoryTestNamePattern(story, allStories, storiesById)
+        )
+      ),
+    ];
+
+    if (!storyPatterns.length) {
+      return undefined;
+    }
+
+    if (storyPatterns.length === 1) {
+      return new RegExp(storyPatterns[0]);
+    }
+
+    // Build one "OR" expression across all selected stories.
+    // Example when storyPatterns are "^One$" and "^Parent  Child$":
+    //   /(?:(?:^One$)|(?:^Parent  Child$))/
+    //
+    // Why wrap each pattern with (?:...)?
+    // - Keeps each full, already-anchored pattern isolated as one alternative.
+    // - Prevents precedence issues when joining with `|`.
+    // - Uses non-capturing groups to avoid unnecessary capture groups.
+    return new RegExp(`(?:${storyPatterns.map((pattern) => `(?:${pattern})`).join('|')})`);
   }
 
   private filterTestSpecifications(
@@ -207,7 +325,7 @@ export class VitestManager {
 
     for (const testSpecification of testSpecifications) {
       const { env = {} } = testSpecification.project.config;
-      const include = env.__VITEST_INCLUDE_TAGS__?.split(',').filter(Boolean) ?? ['test'];
+      const include = env.__VITEST_INCLUDE_TAGS__?.split(',').filter(Boolean) ?? [Tag.TEST];
       const exclude = env.__VITEST_EXCLUDE_TAGS__?.split(',').filter(Boolean) ?? [];
       const skip = env.__VITEST_SKIP_TAGS__?.split(',').filter(Boolean) ?? [];
 
@@ -264,18 +382,22 @@ export class VitestManager {
     await this.cancelCurrentRun();
 
     const testSpecifications = await this.getStorybookTestSpecifications();
-    const stories = await this.fetchStories(runPayload?.storyIds);
+    const allStories = this.getStories();
 
-    const isSingleStoryRun = runPayload.storyIds?.length === 1;
-    if (isSingleStoryRun) {
-      const storyName = stories[0].name;
-      const regex = new RegExp(`^${storyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
-      this.vitest!.setGlobalTestNamePattern(regex);
+    const filteredStories = runPayload.storyIds
+      ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
+      : allStories;
+
+    if (runPayload.storyIds?.length) {
+      const regex = this.buildTestNamePatternForStories(filteredStories, allStories);
+      if (regex) {
+        this.vitest!.setGlobalTestNamePattern(regex);
+      }
     }
 
     const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
       testSpecifications,
-      stories
+      filteredStories
     );
 
     this.testManager.store.setState((s) => ({
@@ -347,7 +469,7 @@ export class VitestManager {
       previewAnnotationSpecifications.concat(setupFilesSpecifications);
 
     const testSpecifications = await this.getStorybookTestSpecifications();
-    const allStories = await this.fetchStories();
+    const allStories = this.getStories();
 
     let affectsGlobalFiles = false;
 
@@ -465,7 +587,7 @@ export class VitestManager {
     this.registerVitestConfigListener();
   }
 
-  isStorybookProject(project: TestProject | WorkspaceProject) {
+  isStorybookProject(project: TestProject) {
     return !!project.config.env?.__STORYBOOK_URL__;
   }
 }

@@ -1,12 +1,5 @@
 import type { PreparedStory } from 'storybook/internal/types';
 
-import * as tocbot from 'tocbot';
-
-if (!globalThis.__STORYBOOK_UNSAFE_TOCBOT__) {
-  // Users that load dynamic content need to have a way to refresh the TOC, so we expose the tocbot instance
-  globalThis.__STORYBOOK_UNSAFE_TOCBOT__ = tocbot.default ?? tocbot;
-}
-
 const excludeTags = Object.entries(globalThis.TAGS_OPTIONS ?? {}).reduce(
   (acc, entry) => {
     const [tag, option] = entry;

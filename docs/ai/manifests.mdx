@@ -1,24 +1,16 @@
 ---
 title: Manifests
-hideRendererSelector: true
 sidebar:
   order: 3
 ---
 
-<If notRenderer={['react']}>
-  
-<Callout variant="info">
+<Callout variant="info" icon="🧪">
   While they are in [preview](../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the manifests and [MCP server](./mcp/overview.mdx)) are currently only supported for [React](?renderer=react) projects.
-</Callout>
 
-</If>
-{/* End non-supported renderers */}
+  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+</Callout>
 
 <If renderer={['react']}>
-
-<Callout variant="warning" icon="🧪">
-  This is a [**preview**](../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
-</Callout>
 
 Your Storybook holds a wealth of information about your components: their names, descriptions, API, usage examples, and more. Manifests are JSON objects that describe the contents of your Storybook in a concise, structured way that is easy for AI agents to understand and use. The manifests are generated automatically from your Storybook's CSF and MDX files, and they are designed to be comprehensive and up-to-date representations of your Storybook's contents.
 

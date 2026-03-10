@@ -1,52 +1,50 @@
 ---
 title: Using Storybook with AI
-hideRendererSelector: true
 sidebar:
   order: 5
   title: AI
 ---
-
-<If notRenderer={['react']}>
   
-<Callout variant="info">
+<Callout variant="info" icon="🧪">
   While they are in [preview](../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](./manifests.mdx) and [MCP server](./mcp/overview.mdx)) are currently only supported for [React](?renderer=react) projects.
-</Callout>
 
-</If>
-{/* End non-supported renderers */}
+  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+</Callout>
 
 <If renderer={['react']}>
-
-<Callout variant="warning" icon="🧪">
-  This is a [**preview**](../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
-</Callout>
 
 With Storybook's AI capabilities, you can leverage the power of AI agents to speed up your development workflow. By connecting your Storybook to an AI agent via the [Storybook MCP server](./mcp/overview.mdx), you can enable your agent to understand your components and documentation, generate stories, run tests, and more.
 
 ## Get started
 
-First, run this command to install and register the Storybook MCP addon:
+### 1. Install the addon
+
+Run this command to install and register the Storybook MCP addon:
 
 <CodeSnippets path="addon-mcp-add.md" />
 
-After restarting your Storybook, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available and a link to the [manifest debugger](./manifests.mdx#debugging).
+Now, when running Storybook's dev server, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available and a link to the [manifest debugger](./manifests.mdx#debugging).
 
 ![The MCP server page in the browser](../_assets/ai/addon-mcp-splash.png)
 
-Second, configure your agent to use the MCP server:
+### 2. Add the MCP server to your agent
+
+Then run this command to configure your agent to use the MCP server:
 
 <CodeSnippets path="mcp-add.md" />
 
-You may need to update the port number in the URL. You will be prompted for a name for your MCP server toolset (e.g. "my-project-sb-mcp"). This is the name you'll use when calling the tools from your agent, so choose something descriptive and unique to avoid confusion with other tools.
+You may need to update the port number in the URL. You will be prompted for a name for your MCP server (e.g. "my-project-sb-mcp"). This is the name you'll use when calling the tools from your agent, so choose something descriptive and unique to avoid confusion with other tools.
 
-[`mcp-add`](https://github.com/paoloricciuti/mcp-add) is a CLI tool built to simplify the process of adding MCP servers to various agents.
+[`mcp-add`](https://github.com/paoloricciuti/mcp-add) is a CLI tool designed to simplify adding MCP servers to various agents.
 
 You can also follow your agent's documentation to add the MCP server as a tool provider manually, e.g. [Claude Code](https://code.claude.com/docs/en/mcp#option-1-add-a-remote-http-server), [Google Gemini CLI](https://geminicli.com/docs/tools/mcp-server/#adding-an-http-server), [OpenAI Codex](https://developers.openai.com/codex/mcp/), [VS Code Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file), etc.
 
-Next, to guide your agent to use your MCP server, adjust your [`AGENTS.md`](https://agents.md/) (or [`CLAUDE.md`](https://code.claude.com/docs/en/memory#claude-md-files), if you're using Claude). The specifics will depend on your project and how you use agents in your development process, but something like this is a good starting point. Just make sure to replace `your-project-sb-mcp` with the name you chose for your MCP server toolset in the previous step.
+### 3. Adjust your agent instructions
+
+To guide your agent to use your MCP server, you should adjust your [`AGENTS.md`](https://agents.md/) (or [`CLAUDE.md`](https://code.claude.com/docs/en/memory#claude-md-files), if you're using Claude). The specifics will depend on your project and how you use agents in your development process, but something like this is a good starting point. Just make sure to replace `your-project-sb-mcp` with the name you chose for your MCP server toolset in the previous step.
 
 <details>
-<summary>AGENTS.md</summary>
+<summary>Example instructions for AGENTS.md</summary>
 
 ```md title="AGENTS.md"
 When working on UI components, always use the `your-project-sb-mcp` MCP tools to access Storybook's component and documentation knowledge before answering or taking any action.
@@ -64,7 +62,7 @@ Remember: A story name might not reflect the property name correctly, so always 
 
 </details>
 
-Finally, test your agent's access to the MCP server by running a prompt like "List all documented components". You should see a call to the `list-all-documentation` tool with a response listing components from your Storybook.
+Finally, test your agent's access to the MCP server. First, make sure your Storybook is running, then run a prompt like "List all documented components". You should see a call to the [`list-all-documentation`](./mcp/overview.mdx#list-all-documentation) tool with a response listing components from your Storybook.
 
 ## Key concepts
 

@@ -1,25 +1,17 @@
 ---
 title: Sharing your MCP server
-hideRendererSelector: true
 sidebar:
   order: 3
   title: Sharing
 ---
 
-<If notRenderer={['react']}>
-  
-<Callout variant="info">
+<Callout variant="info" icon="🧪">
   While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](../manifests.mdx) and [MCP server](./overview.mdx)) are currently only supported for [React](?renderer=react) projects.
-</Callout>
 
-</If>
-{/* End non-supported renderers */}
+  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+</Callout>
 
 <If renderer={['react']}>
-
-<Callout variant="warning" icon="🧪">
-  This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
-</Callout>
 
 Just as [publishing your Storybook](../../sharing/publish-storybook.mdx) can help your team work more effectively, sharing your MCP server can enable your team to share the benefits of AI-assisted development.
 

@@ -1,25 +1,17 @@
 ---
 title: MCP server
-hideRendererSelector: true
 sidebar:
   order: 1
   title: Overview
 ---
 
-<If notRenderer={['react']}>
-  
-<Callout variant="info">
+<Callout variant="info" icon="🧪">
   While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](../manifests.mdx) and MCP server) are currently only supported for [React](?renderer=react) projects.
-</Callout>
 
-</If>
-{/* End non-supported renderers */}
+  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+</Callout>
 
 <If renderer={['react']}>
-
-<Callout variant="warning" icon="🧪">
-  This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We welcome feedback and contributions to help improve this feature.
-</Callout>
 
 Storybook's MCP server connects your Storybook to AI agents, allowing them to understand your components and documentation, generate stories, run tests, and more. Agents will be equipped to reuse your existing components and follow your documented usage guidelines when generating UI, helping ensure the generated UI is consistent with your existing design system. Then they can write stories so you can preview the generated UI and automatically run interaction tests (and accessibility checks) on those stories to validate their work. If any issues are found, the agent can fix them and re-run the tests to confirm they are resolved, creating a self-healing loop that helps ensure the quality of the generated UI without requiring you to intervene.
 
@@ -31,7 +23,7 @@ Run this command to install and register the Storybook MCP addon:
 
 <CodeSnippets path="addon-mcp-add.md" />
 
-After restarting your Storybook, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available and a link to the [manifest debugger](../manifests.mdx#debugging).
+Now, when running Storybook's dev server, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available and a link to the [manifest debugger](../manifests.mdx#debugging).
 
 ![The MCP server page in the browser](../../_assets/ai/addon-mcp-splash.png)
 
@@ -41,7 +33,7 @@ Then run this command to configure your agent to use the MCP server:
 
 <CodeSnippets path="mcp-add.md" />
 
-You may need to update the port number in the URL. You will be prompted for a name for your MCP server toolset (e.g. "my-project-sb-mcp"). This is the name you'll use when calling the tools from your agent, so choose something descriptive and unique to avoid confusion with other tools.
+You may need to update the port number in the URL. You will be prompted for a name for your MCP server (e.g. "my-project-sb-mcp"). This is the name you'll use when calling the tools from your agent, so choose something descriptive and unique to avoid confusion with other tools.
 
 [`mcp-add`](https://github.com/paoloricciuti/mcp-add) is a CLI tool designed to simplify adding MCP servers to various agents.
 
@@ -65,7 +57,7 @@ When working on UI components, always use the `your-project-sb-mcp` MCP tools to
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
 ```
 
-Finally, test your agent's access to the MCP server by running a prompt like "List all documented components". You should see a call to the `list-all-documentation` tool with a response listing components from your Storybook.
+Finally, test your agent's access to the MCP server. First, make sure your Storybook is running, then run a prompt like "List all documented components". You should see a call to the [`list-all-documentation`](#list-all-documentation) tool with a response listing components from your Storybook.
 
 ## Usage
 

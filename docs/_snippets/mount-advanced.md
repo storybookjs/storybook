@@ -11,7 +11,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -26,7 +26,7 @@ export const Default: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -39,7 +39,7 @@ import { Page } from './Page';
 
 export default { component: Page };
 
-export const Default = {
+export const Basic = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -54,10 +54,75 @@ export const Default = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
+```
+
+```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/angular';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import { Page } from './page.component';
+
+const meta = { component: Page } satisfies Meta<typeof Page>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Basic: Story = {
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      Page,
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      { props: { ...args, params: { id: String(note.id) } } },
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  },
+};
+```
+
+```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import { Page } from './page.component';
+
+const meta = preview.meta({ component: Page });
+
+export const Basic = meta.story({
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      Page,
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      { props: { ...args, params: { id: String(note.id) } } },
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  },
+});
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts"
@@ -66,14 +131,14 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.svelte';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -89,7 +154,7 @@ export const Default: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -98,11 +163,11 @@ export const Default: Story = {
 ```js filename="Page.stories.js" renderer="svelte" language="js"
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.svelte';
 
 export default { component: Page };
 
-export const Default = {
+export const Basic = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -118,25 +183,25 @@ export const Default = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue3" language="ts"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.vue';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -152,20 +217,20 @@ export const Default: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
 ```
 
-```js filename="Page.stories.js" renderer="vue3" language="js"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.vue';
 
 export default { component: Page };
 
-export const Default = {
+export const Basic = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -181,7 +246,7 @@ export const Default = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -196,7 +261,7 @@ import { Page } from './Page';
 
 const meta = preview.meta({ component: Page });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -211,7 +276,7 @@ export const Default = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -229,7 +294,7 @@ const meta = preview.meta({
   component: Page,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -244,7 +309,71 @@ export const Default = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import Page from './Page.vue';
+
+const meta = preview.meta({ component: Page });
+
+export const Basic = meta.story({
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      Page,
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      { props: { ...args, params: { id: String(note.id) } } },
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import Page from './Page.vue';
+
+const meta = preview.meta({ component: Page });
+
+export const Basic = meta.story({
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      Page,
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      { props: { ...args, params: { id: String(note.id) } } },
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });

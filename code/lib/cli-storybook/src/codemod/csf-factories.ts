@@ -19,15 +19,22 @@ async function runStoriesCodemod(options: {
   packageManager: JsPackageManager;
   useSubPathImports: boolean;
   previewConfigPath: string;
+  yes: boolean | undefined;
+  glob: string | undefined;
 }) {
-  const { dryRun, packageManager, ...codemodOptions } = options;
+  const { dryRun, packageManager, yes, glob, ...codemodOptions } = options;
   try {
-    let globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
-    if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
+    const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
+    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}';
+
+    if (!glob && inSandbox) {
+      // Sandbox uses limited glob for faster testing (unless glob explicitly provided)
+      globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
+    } else if (!glob && !yes) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
-        initialValue: '**/*.stories.*',
+        initialValue: globString,
       });
     }
 
@@ -52,10 +59,21 @@ async function runStoriesCodemod(options: {
 export const csfFactories: CommandFix = {
   id: 'csf-factories',
   promptType: 'command',
-  async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager, configDir }) {
-    let useSubPathImports = true;
+  async run({
+    dryRun,
+    mainConfig,
+    mainConfigPath,
+    previewConfigPath,
+    packageManager,
+    configDir,
+    yes,
+    glob,
+  }) {
+    const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
+    // Defaults to false for users and true in sandbox
+    let useSubPathImports = inSandbox;
 
-    if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
+    if (!yes && !inSandbox) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
         The CSF Factories format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
@@ -96,6 +114,8 @@ export const csfFactories: CommandFix = {
       packageManager,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
+      yes,
+      glob,
     });
 
     logger.step('Applying codemod on your main config...');

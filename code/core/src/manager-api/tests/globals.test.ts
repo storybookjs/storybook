@@ -61,17 +61,17 @@ describe('globals API', () => {
 
     channel.emit(SET_GLOBALS, {
       globals: { a: 'b' },
-      globalTypes: { a: { type: { name: 'string' } } },
+      globalTypes: { a: {} },
     } satisfies SetGlobalsPayload);
     expect(store.getState()).toEqual({
       userGlobals: { a: 'b' },
       storyGlobals: {},
       globals: { a: 'b' },
-      globalTypes: { a: { type: { name: 'string' } } },
+      globalTypes: { a: {} },
     });
   });
 
-  it('emits UPDATE_GLOBALS if retains a globals value different to what recieves on SET_GLOBALS', () => {
+  it('emits UPDATE_GLOBALS if retains a globals value different to what receives on SET_GLOBALS', () => {
     const channel = new EventEmitter();
     const listener = vi.fn();
     channel.on(UPDATE_GLOBALS, listener);
@@ -88,13 +88,13 @@ describe('globals API', () => {
 
     channel.emit(SET_GLOBALS, {
       globals: { a: 'b' },
-      globalTypes: { a: { type: { name: 'string' } } },
+      globalTypes: { a: {} },
     } satisfies SetGlobalsPayload);
     expect(store.getState()).toEqual({
       userGlobals: { a: 'b' },
       storyGlobals: {},
       globals: { a: 'b' },
-      globalTypes: { a: { type: { name: 'string' } } },
+      globalTypes: { a: {} },
     });
 
     expect(listener).toHaveBeenCalledWith({
@@ -138,7 +138,7 @@ describe('globals API', () => {
     getEventMetadata.mockReturnValueOnce({ sourceType: 'external', ref: { id: 'ref' } } as any);
     channel.emit(SET_GLOBALS, {
       globals: { a: 'b' },
-      globalTypes: { a: { type: { name: 'string' } } },
+      globalTypes: { a: {} },
     } satisfies SetGlobalsPayload);
     expect(store.getState()).toEqual({
       userGlobals: {},

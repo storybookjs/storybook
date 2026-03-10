@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "10.2.0-alpha.18",
+  "version": "10.3.0-alpha.15",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -43,11 +43,6 @@
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "if [ -z \"$SKIP_STORYBOOK_GIT_HOOKS\" ]; then yarn lint-staged; fi"
-    }
-  },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
       "yarn lint:js:cmd --fix"
@@ -74,7 +69,7 @@
     "node >= 20"
   ],
   "dependencies": {
-    "@chromatic-com/storybook": "^4.1.3",
+    "@chromatic-com/storybook": "^5.0.0",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.3",
@@ -110,7 +105,7 @@
     "@storybook/web-components": "workspace:*",
     "@storybook/web-components-vite": "workspace:*",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
     "@types/lodash-es": "^4.17.12",
@@ -134,7 +129,6 @@
     "eslint": "^8.57.1",
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
-    "husky": "^4.3.7",
     "knip": "^5.70.2",
     "lint-staged": "^16.2.7",
     "mock-require": "^3.0.3",

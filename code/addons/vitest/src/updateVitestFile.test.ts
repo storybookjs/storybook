@@ -22,7 +22,7 @@ vi.mock('../../../core/src/shared/utils/module', () => ({
 describe('updateConfigFile', () => {
   it('updates vite config file', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -90,8 +90,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -102,7 +101,7 @@ describe('updateConfigFile', () => {
 
   it('supports object notation without defineConfig', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -170,8 +169,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -182,7 +180,7 @@ describe('updateConfigFile', () => {
 
   it('does not support function notation', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -214,7 +212,7 @@ describe('updateConfigFile', () => {
 
   it('adds projects property to test config', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -281,8 +279,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -291,9 +288,93 @@ describe('updateConfigFile', () => {
     `);
   });
 
+  it('updates config which is not exported immediately', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.3.2.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vite'
+      import viteReact from '@vitejs/plugin-react'
+      import { fileURLToPath, URL } from 'url'
+
+      const config = defineConfig({
+        resolve: {
+          preserveSymlinks: true,
+          alias: {
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
+          },
+        },
+        plugins: [
+          viteReact(),
+        ],
+      })
+
+      export default config
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+  "  import { defineConfig } from 'vite';
+    import viteReact from '@vitejs/plugin-react';
+    import { fileURLToPath, URL } from 'url';
+    
+  + import path from 'node:path';
+  + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+  + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+  + 
+  + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+  + 
+    const config = defineConfig({
+      resolve: {
+        preserveSymlinks: true,
+        alias: {
+          '@': fileURLToPath(new URL('./src', import.meta.url))
+        }
+      },
+    
+  -   plugins: [viteReact()]
+  - 
+  +   plugins: [viteReact()],
+  +   test: {
+  +     projects: [{
+  +       extends: true,
+  +       plugins: [
+  +       // The plugin will run tests for the stories defined in your Storybook config
+  +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+  +       storybookTest({
+  +         configDir: path.join(dirname, '.storybook')
+  +       })],
+  +       test: {
+  +         name: 'storybook',
+  +         browser: {
+  +           enabled: true,
+  +           headless: true,
+  +           provider: 'playwright',
+  +           instances: [{
+  +             browser: 'chromium'
+  +           }]
+  +         }
+  +       }
+  +     }]
+  +   }
+  + 
+    });
+    export default config;"
+`);
+  });
+
   it('edits projects property of test config', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -361,8 +442,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       + 
             }]
@@ -373,7 +453,7 @@ describe('updateConfigFile', () => {
 
   it('adds workspace property to test config', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -440,8 +520,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -452,7 +531,7 @@ describe('updateConfigFile', () => {
 
   it('adds test property to vite config', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -515,8 +594,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       +   }
@@ -527,7 +605,7 @@ describe('updateConfigFile', () => {
 
   it('supports mergeConfig with multiple defineConfig calls, finding the one with test', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -602,8 +680,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -613,7 +690,7 @@ describe('updateConfigFile', () => {
   });
   it('supports mergeConfig without defineConfig calls', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -684,8 +761,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -696,7 +772,7 @@ describe('updateConfigFile', () => {
 
   it('supports mergeConfig without config containing test property', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -760,8 +836,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       +   }
@@ -772,7 +847,7 @@ describe('updateConfigFile', () => {
 
   it('supports mergeConfig with defineConfig pattern using projects (Vitest 3.2+)', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -844,8 +919,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -854,9 +928,97 @@ describe('updateConfigFile', () => {
     `);
   });
 
+  it('appends storybook project to existing test.projects array (no double nesting)', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.3.2.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { mergeConfig, defineConfig } from 'vitest/config'
+      import viteConfig from './vite.config'
+
+      export default mergeConfig(
+        viteConfig,
+        defineConfig({
+          test: {
+            expect: { requireAssertions: true },
+            projects: [
+              {
+                extends: "./vite.config.ts",
+                test: { name: "client" },
+              },
+              {
+                extends: "./vite.config.ts",
+                test: { name: "server" },
+              },
+            ],
+          },
+        })
+      )
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly (storybook project appended to existing projects, no double nesting)
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { mergeConfig, defineConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        export default mergeConfig(viteConfig, defineConfig({
+          test: {
+            expect: {
+              requireAssertions: true
+      ...
+              test: {
+                name: "server"
+              }
+        
+      +     }, {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      + 
+            }]
+          }
+        }));"
+    `);
+  });
+
   it('extracts coverage config and keeps it at top level when using workspace', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.template.ts', {
+      await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -943,8 +1105,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -955,7 +1116,7 @@ describe('updateConfigFile', () => {
 
   it('extracts coverage config and keeps it at top level when using projects', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.config.3.2.template.ts', {
+      await loadTemplate('vitest.config.3.2.template', {
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
         SETUP_FILE: '../.storybook/vitest.setup.ts',
@@ -1042,8 +1203,7 @@ describe('updateConfigFile', () => {
       +           instances: [{
       +             browser: 'chromium'
       +           }]
-      +         },
-      +         setupFiles: ['../.storybook/vitest.setup.ts']
+      +         }
       +       }
       +     }]
       + 
@@ -1056,7 +1216,7 @@ describe('updateConfigFile', () => {
 describe('updateWorkspaceFile', () => {
   it('updates vitest workspace file using array syntax', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.workspace.template.ts', {
+      await loadTemplate('vitest.workspace.template', {
         EXTENDS_WORKSPACE: '',
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
@@ -1087,7 +1247,7 @@ describe('updateWorkspaceFile', () => {
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
       + export default ['packages/*', 'ROOT_CONFIG', {
-      +   extends: '',
+      +   extends: '.',
       +   plugins: [
       +   // The plugin will run tests for the stories defined in your Storybook config
       +   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1103,8 +1263,7 @@ describe('updateWorkspaceFile', () => {
       +       instances: [{
       +         browser: 'chromium'
       +       }]
-      +     },
-      +     setupFiles: ['../.storybook/vitest.setup.ts']
+      +     }
       +   }
       + }];"
     `);
@@ -1112,7 +1271,7 @@ describe('updateWorkspaceFile', () => {
 
   it('updates vitest workspace file using defineWorkspace syntax', async () => {
     const source = babel.babelParse(
-      await loadTemplate('vitest.workspace.template.ts', {
+      await loadTemplate('vitest.workspace.template', {
         EXTENDS_WORKSPACE: '',
         CONFIG_DIR: '.storybook',
         BROWSER_CONFIG: "{ provider: 'playwright' }",
@@ -1146,7 +1305,7 @@ describe('updateWorkspaceFile', () => {
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
       + export default defineWorkspace(['packages/*', 'ROOT_CONFIG', {
-      +   extends: '',
+      +   extends: '.',
       +   plugins: [
       +   // The plugin will run tests for the stories defined in your Storybook config
       +   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1162,10 +1321,38 @@ describe('updateWorkspaceFile', () => {
       +       instances: [{
       +         browser: 'chromium'
       +       }]
-      +     },
-      +     setupFiles: ['../.storybook/vitest.setup.ts']
+      +     }
       +   }
       + }]);"
     `);
+  });
+});
+
+describe('loadTemplate', () => {
+  it('normalizes Windows paths to forward slashes', async () => {
+    // Windows-style path with backslashes (need to escape them in JS strings)
+    const windowsPath = '.\\apps\\frontend-storybook\\.storybook';
+
+    const result = await loadTemplate('vitest.config.template', {
+      CONFIG_DIR: windowsPath,
+      SETUP_FILE: '.\\apps\\frontend-storybook\\.storybook\\vitest.setup.ts',
+    });
+
+    // Should contain forward slashes, not backslashes
+    expect(result).toContain('apps/frontend-storybook/.storybook');
+    expect(result).not.toContain('\\apps\\');
+  });
+
+  it('preserves forward slashes in paths', async () => {
+    // Unix-style path with forward slashes
+    const unixPath = './apps/frontend-storybook/.storybook';
+
+    const result = await loadTemplate('vitest.config.template', {
+      CONFIG_DIR: unixPath,
+      SETUP_FILE: './apps/frontend-storybook/.storybook/vitest.setup.ts',
+    });
+
+    // Should still contain forward slashes
+    expect(result).toContain('apps/frontend-storybook/.storybook');
   });
 });

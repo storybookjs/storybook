@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { SBType } from '../../types';
 import {
   generateDummyArgsFromArgTypes,
   generateDummyValueFromSBType,
@@ -19,10 +20,10 @@ describe('new-story-docgen', () => {
     it('generates primitives', () => {
       expect(generateDummyValueFromSBType({ name: 'boolean' })).toBe(true);
       expect(generateDummyValueFromSBType({ name: 'number' })).toBe(0);
-      expect(generateDummyValueFromSBType({ name: 'other', value: 'null' })).toBeNull();
       expect(generateDummyValueFromSBType({ name: 'other', value: 'void' })).toBeUndefined();
-      expect(generateDummyValueFromSBType({ name: 'other', value: 'any' })).toBe('any');
-      expect(generateDummyValueFromSBType({ name: 'other', value: 'unknown' })).toBe('unknown');
+      expect(generateDummyValueFromSBType({ name: 'other', value: 'null' })).toBeNull();
+      expect(generateDummyValueFromSBType({ name: 'other', value: 'any' })).toBeNull();
+      expect(generateDummyValueFromSBType({ name: 'other', value: 'unknown' })).toBeNull();
     });
 
     it('generates date', () => {
@@ -99,11 +100,17 @@ describe('new-story-docgen', () => {
 
     it('generates array values', () => {
       expect(
-        generateDummyValueFromSBType({ name: 'array', value: { name: 'other', value: 'X' } })
+        generateDummyValueFromSBType({
+          name: 'array',
+          value: [{ name: 'other', value: 'X' }] as unknown as SBType,
+        })
       ).toEqual([]);
-      expect(generateDummyValueFromSBType({ name: 'array', value: { name: 'number' } })).toEqual([
-        0,
-      ]);
+      expect(
+        generateDummyValueFromSBType({
+          name: 'array',
+          value: [{ name: 'number' }] as unknown as SBType,
+        })
+      ).toEqual([0]);
     });
 
     it('generates tuple values', () => {
@@ -119,7 +126,7 @@ describe('new-story-docgen', () => {
       expect(generateDummyValueFromSBType({ name: 'other', value: 'ReactMouseEvent' })).toBe(
         '[[STORYBOOK_FN_PLACEHOLDER]]'
       );
-      expect(generateDummyValueFromSBType({ name: 'other', value: 'Foo' })).toBe('Foo');
+      expect(generateDummyValueFromSBType({ name: 'other', value: 'Foo' })).toBeNull();
       expect(generateDummyValueFromSBType({ name: 'other', value: 'null' })).toBeNull();
     });
   });

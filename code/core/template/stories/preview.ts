@@ -1,4 +1,4 @@
-import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import type { GlobalTypes, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 declare global {
   interface Window {
@@ -105,4 +105,4 @@ export const globalTypes = {
       ],
     },
   },
-};
+} satisfies GlobalTypes;

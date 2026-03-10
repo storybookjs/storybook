@@ -83,7 +83,7 @@ export const Overlay = styled.div<{
   inset: 0,
   width: '100%',
   height: '100%',
-  zIndex: 90,
+  zIndex: 100000,
   '@media (prefers-reduced-motion: no-preference)': {
     animation:
       $status === 'exiting' || $status === 'preExit'
@@ -106,7 +106,7 @@ export const Container = styled.div<{
     boxShadow: '0px 4px 67px 0px #00000040',
     position: 'absolute',
     overflow: 'auto',
-    zIndex: 100,
+    zIndex: 100000,
 
     '&:focus-visible': {
       outline: 'none',

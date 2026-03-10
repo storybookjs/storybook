@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import React, { Component, createContext, memo, useCallback, useEffect, useRef } from 'react';
 
-import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
+import { ActionList, PopoverProvider, ToggleButton } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { UndoIcon, ZoomIcon } from '@storybook/icons';
@@ -12,12 +12,18 @@ import { styled } from 'storybook/theming';
 import { Shortcut } from '../../Shortcut';
 import { NumericInput } from '../NumericInput';
 
-const ZOOM_LEVELS = [0.25, 0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4] as const;
+const ZOOM_LEVELS = [0.25, 0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4, 8] as const;
 const INITIAL_ZOOM_LEVEL = 1;
 
-const ZoomButton = styled(Button)({
+const ZoomButton = styled(ToggleButton)({
   minWidth: 48,
 });
+
+const ZoomResetButton = styled(ActionList.Button)<{ $isInitialValue: boolean }>(
+  ({ $isInitialValue }) => ({
+    visibility: $isInitialValue ? 'hidden' : undefined,
+  })
+);
 
 const Context = createContext({ value: INITIAL_ZOOM_LEVEL, set: (v: number) => {} });
 
@@ -56,7 +62,8 @@ export const Zoom = memo<{
   zoomIn: () => void;
   zoomOut: () => void;
   zoomTo: (value: number) => void;
-}>(function Zoom({ value, zoomIn, zoomOut, zoomTo }) {
+  zoomBy: (delta: number) => void;
+}>(function Zoom({ value, zoomIn, zoomOut, zoomTo, zoomBy }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -81,19 +88,20 @@ export const Zoom = memo<{
                   </ActionList.Button>
                 }
                 after={
-                  <ActionList.Button
+                  <ZoomResetButton
                     size="small"
                     padding="small"
-                    disabled={value === INITIAL_ZOOM_LEVEL}
+                    $isInitialValue={value === INITIAL_ZOOM_LEVEL}
                     onClick={() => zoomTo(INITIAL_ZOOM_LEVEL)}
                     ariaLabel="Reset zoom"
+                    aria-hidden={value === INITIAL_ZOOM_LEVEL}
                   >
                     <UndoIcon />
-                  </ActionList.Button>
+                  </ZoomResetButton>
                 }
                 value={`${Math.round(value * 100)}%`}
                 minValue={1}
-                maxValue={1000}
+                maxValue={800}
                 setValue={(value: string) => {
                   const zoomLevel = parseInt(value, 10) / 100;
                   if (!Number.isNaN(zoomLevel)) {
@@ -148,7 +156,36 @@ export const Zoom = memo<{
         padding="small"
         variant="ghost"
         ariaLabel="Change zoom level"
-        active={value !== INITIAL_ZOOM_LEVEL}
+        pressed={value !== INITIAL_ZOOM_LEVEL}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown') {
+            zoomBy(-0.01);
+            e.preventDefault();
+          } else if (e.key === 'ArrowUp') {
+            zoomBy(0.01);
+            e.preventDefault();
+          } else if (e.key === 'PageDown') {
+            zoomOut();
+            e.preventDefault();
+          } else if (e.key === 'PageUp') {
+            zoomIn();
+            e.preventDefault();
+          } else if (e.key === 'Home') {
+            zoomTo(ZOOM_LEVELS[ZOOM_LEVELS.length - 1]);
+            e.preventDefault();
+          } else if (e.key === 'End') {
+            zoomTo(ZOOM_LEVELS[0]);
+            e.preventDefault();
+          }
+        }}
+        onWheel={(e) => {
+          if (e.deltaY < 0) {
+            zoomIn();
+          } else if (e.deltaY > 0) {
+            zoomOut();
+          }
+          e.preventDefault();
+        }}
       >
         {Math.round(value * 100)}%
       </ZoomButton>
@@ -176,6 +213,15 @@ const ZoomWrapper = memo<{
     }
   }, [set, value]);
 
+  const zoomBy = useCallback(
+    (delta: number) => {
+      const min = ZOOM_LEVELS[0];
+      const max = ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
+      set(Math.max(min, Math.min(max, value + delta)));
+    },
+    [set, value]
+  );
+
   const zoomTo = useCallback(
     (value: number) => {
       set(value);
@@ -197,6 +243,12 @@ const ZoomWrapper = memo<{
       action: zoomIn,
     });
     api.setAddonShortcut('zoom', {
+      label: 'Zoom in',
+      defaultShortcut: ['alt', '+'],
+      actionName: 'zoomPlus',
+      action: zoomIn,
+    });
+    api.setAddonShortcut('zoom', {
       label: 'Zoom out',
       defaultShortcut: ['alt', '-'],
       actionName: 'zoomOut',
@@ -204,7 +256,7 @@ const ZoomWrapper = memo<{
     });
   }, [api, zoomIn, zoomOut, zoomTo]);
 
-  return <Zoom key="zoom" {...{ value, zoomIn, zoomOut, zoomTo }} />;
+  return <Zoom key="zoom" {...{ value, zoomIn, zoomOut, zoomTo, zoomBy }} />;
 });
 
 export const zoomTool: Addon_BaseType = {

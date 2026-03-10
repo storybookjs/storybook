@@ -98,7 +98,6 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     addons: extraAddons,
     configDir,
-    dependencyInstallationResult,
     options,
   });
 
@@ -176,45 +175,46 @@ async function runStorybookDev(result: {
   try {
     const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
 
-    const flags = [];
+    const parts = storybookCommand.split(' ');
 
-    if (packageManager.type === 'npm') {
-      flags.push('--silent');
+    // Angular CLI throws "Unknown argument: silent"
+    if (packageManager.type === 'npm' && projectType !== ProjectType.ANGULAR) {
+      parts.push('--silent');
     }
 
-    // npm needs extra -- to pass flags to the command
-    // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
-    const doesNeedExtraDash =
-      packageManager.type === PackageManagerName.NPM ||
-      packageManager.type === PackageManagerName.BUN;
+    // in the case of Angular, we are calling `ng run` which doesn't allow passing flags to the command
+    const supportSbFlags = projectType !== ProjectType.ANGULAR;
 
-    if (doesNeedExtraDash && projectType !== ProjectType.ANGULAR) {
-      flags.push('--');
+    if (supportSbFlags) {
+      // npm needs extra -- to pass flags to the command
+      const doesNeedExtraDash =
+        packageManager.type === PackageManagerName.NPM ||
+        packageManager.type === PackageManagerName.BUN;
+
+      if (doesNeedExtraDash) {
+        parts.push('--');
+      }
+
+      const defaultPort = 6006;
+      const availablePort = await getServerPort(defaultPort);
+      const useAlternativePort = availablePort !== defaultPort;
+
+      if (useAlternativePort) {
+        parts.push(`-p`, `${availablePort}`);
+      }
+
+      if (supportsOnboarding && shouldOnboard) {
+        parts.push('--initial-path=/onboarding');
+      }
+
+      parts.push('--quiet');
     }
-
-    if (supportsOnboarding && shouldOnboard) {
-      flags.push('--initial-path=/onboarding');
-    }
-
-    // Check if default port 6006 is available
-    const defaultPort = 6006;
-    const availablePort = await getServerPort(defaultPort);
-    const useAlternativePort = availablePort !== defaultPort;
-
-    const portFlag = flags.findIndex((flag) => flag.startsWith('-p '));
-
-    if (useAlternativePort && portFlag === -1) {
-      flags.push(`-p ${availablePort}`);
-    } else if (useAlternativePort && portFlag !== -1) {
-      flags[portFlag] = `-p ${availablePort}`;
-    }
-
-    flags.push('--quiet');
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
-    const [command, ...args] = [...storybookCommand.split(' '), ...flags];
+    const [command, ...args] = [...parts];
+
     await executeCommand({
       command: command,
       args,

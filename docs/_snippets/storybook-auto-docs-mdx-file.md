@@ -77,7 +77,7 @@ List items are used to group related content in a list. They must be nested with
 ```
 
 <!-- prettier-ignore -->
-```mdx filename="Page.mdx" renderer="svelte" language="mdx" tabTitle="CSF"
+```mdx filename="Page.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
 import { Canvas, Meta, Story } from '@storybook/addon-docs/blocks';
 
 import * as ListStories from './List.stories';

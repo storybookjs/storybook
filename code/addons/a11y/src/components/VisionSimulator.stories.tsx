@@ -31,7 +31,7 @@ const meta = preview.meta({
 export default meta;
 
 const openMenu: PlayFunction = async ({ canvas, userEvent }) => {
-  await userEvent.click(canvas.getByRole('button', { name: 'Vision simulator' }));
+  await userEvent.click(canvas.getByRole('button', { name: 'Vision filter' }));
 };
 
 export const Default = meta.story({
@@ -51,7 +51,7 @@ export const Selection = meta.story({
     await context.userEvent.click(await screen.findByText('Blurred vision'));
     await expect(managerContext.api.updateGlobals).toHaveBeenCalledWith({ vision: 'blurred' });
     await expect(
-      context.canvas.getByRole('button', { name: 'Vision simulator Blurred vision' })
+      context.canvas.getByRole('button', { name: 'Vision filter Blurred vision' })
     ).toBeVisible();
   },
 });

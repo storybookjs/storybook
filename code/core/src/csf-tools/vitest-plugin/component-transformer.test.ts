@@ -99,6 +99,139 @@ describe('component transformer', () => {
     `);
   });
 
+  it('generates tests for wrapped exports', async () => {
+    const code = `
+      import { someWrapper } from '../lib/util';
+      function Component() {}
+
+      export default someWrapper(Component);
+
+      export function withErrorBoundary<P extends object, R>(
+        Component: ComponentType<P>,
+      ) {
+        return forwardRef<R, P>(function WithErrorBoundary(props, ref) {
+          return (
+            <ErrorBoundary>
+              <Component {...props} ref={ref} />
+            </ErrorBoundary>
+          )
+        })
+      }
+      
+      export const FancyButton = React.forwardRef((props, ref) => (
+        <button ref={ref}>
+          {props.children}
+        </button>
+      ));
+
+      export const Label = memo(() => <div />);
+      
+      export {
+        Label,
+      };
+    `;
+
+    const result = await transform({ code, fileName: 'src/components/Spinner.tsx' });
+
+    expect(result.code).toContain('const _Spinner = someWrapper(Component);');
+    expect(result.code).toContain('export default _Spinner;');
+    expect(result.code).toContain('_test("Spinner", _testStory({');
+
+    expect(result.code).toMatchInlineSnapshot(`
+      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+      import { test as _test, expect as _expect } from "vitest";
+      import { someWrapper } from '../lib/util';
+      function Component() {}
+      const _Spinner = someWrapper(Component);
+      export default _Spinner;
+      export function withErrorBoundary<P extends object, R>(Component: ComponentType<P>) {
+        return forwardRef<R, P>(function WithErrorBoundary(props, ref) {
+          return <ErrorBoundary>
+                    <Component {...props} ref={ref} />
+                  </ErrorBoundary>;
+        });
+      }
+      export const FancyButton = React.forwardRef((props, ref) => <button ref={ref}>
+                {props.children}
+              </button>);
+      export const Label = memo(() => <div />);
+      export { Label };
+      const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+      if (_isRunningFromThisFile) {
+        _test("Spinner", _testStory({
+          exportName: "Spinner",
+          story: {
+            args: {}
+          },
+          meta: {
+            title: "generated/tests/Spinner",
+            component: _Spinner
+          },
+          skipTags: [],
+          storyId: "generated-Spinner",
+          componentPath: "src/components/Spinner.tsx",
+          componentName: "_Spinner"
+        }));
+        _test("withErrorBoundary", _testStory({
+          exportName: "withErrorBoundary",
+          story: {
+            args: {}
+          },
+          meta: {
+            title: "generated/tests/withErrorBoundary",
+            component: withErrorBoundary
+          },
+          skipTags: [],
+          storyId: "generated-withErrorBoundary",
+          componentPath: "src/components/Spinner.tsx",
+          componentName: "withErrorBoundary"
+        }));
+        _test("FancyButton", _testStory({
+          exportName: "FancyButton",
+          story: {
+            args: {}
+          },
+          meta: {
+            title: "generated/tests/FancyButton",
+            component: FancyButton
+          },
+          skipTags: [],
+          storyId: "generated-FancyButton",
+          componentPath: "src/components/Spinner.tsx",
+          componentName: "FancyButton"
+        }));
+        _test("Label", _testStory({
+          exportName: "Label",
+          story: {
+            args: {}
+          },
+          meta: {
+            title: "generated/tests/Label",
+            component: Label
+          },
+          skipTags: [],
+          storyId: "generated-Label",
+          componentPath: "src/components/Spinner.tsx",
+          componentName: "Label"
+        }));
+        _test("Label", _testStory({
+          exportName: "Label",
+          story: {
+            args: {}
+          },
+          meta: {
+            title: "generated/tests/Label",
+            component: Label
+          },
+          skipTags: [],
+          storyId: "generated-Label",
+          componentPath: "src/components/Spinner.tsx",
+          componentName: "Label"
+        }));
+      }"
+    `);
+  });
+
   it('generates tests for every exported component', async () => {
     const code = `
       export const Label = () => <div />;

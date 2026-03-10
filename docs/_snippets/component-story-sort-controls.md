@@ -1,7 +1,7 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts"
-import type { Meta } from  from '@storybook/angular';
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { Meta } from '@storybook/angular';
 
-import { YourComponent } from './YourComponent.component';
+import { YourComponent } from './your-component.component';
 
 const meta: Meta<YourComponent> = {
   component: YourComponent,
@@ -9,6 +9,17 @@ const meta: Meta<YourComponent> = {
 };
 
 export default meta;
+```
+
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './your-component.component';
+
+const meta = preview.meta({
+  component: YourComponent,
+  parameters: { controls: { sort: 'requiredFirst' } },
+});
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -24,7 +35,7 @@ export default meta;
 </script>
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import YourComponent from './YourComponent.svelte';
 
 export default {
@@ -55,7 +66,7 @@ export default {
 </script>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -83,14 +94,14 @@ const meta = {
 export default meta;
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js"
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'your-component',
   parameters: { controls: { sort: 'requiredFirst' } },
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -99,6 +110,24 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'your-component',
+  parameters: { controls: { sort: 'requiredFirst' } },
+});
+```
+
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'your-component',
+  parameters: { controls: { sort: 'requiredFirst' } },
+});
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -116,7 +145,32 @@ const meta = preview.meta({
 
 ```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  parameters: { controls: { sort: 'requiredFirst' } },
+});
+```
+
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+const meta = preview.meta({
+  component: YourComponent,
+  parameters: { controls: { sort: 'requiredFirst' } },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
 
 const meta = preview.meta({
   component: YourComponent,

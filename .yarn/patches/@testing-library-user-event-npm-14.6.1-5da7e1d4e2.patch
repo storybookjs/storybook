@@ -1,3 +1,25 @@
+diff --git a/dist/cjs/event/createEvent.js b/dist/cjs/event/createEvent.js
+index b63c0093f492f5072ce2eabb74ca290144353548..5e68db5bb9f62aa43f1c849b185912b0b34021c8 100644
+--- a/dist/cjs/event/createEvent.js
++++ b/dist/cjs/event/createEvent.js
+@@ -38,7 +38,16 @@ function createEvent(type, target, init) {
+     const window = getWindow.getWindow(target);
+     const { EventType, defaultInit } = eventMap.eventMap[type];
+     const event = new (getEventConstructors(window))[EventType](type, defaultInit);
+-    eventInitializer[EventType].forEach((f)=>f(event, init !== null && init !== undefined ? init : {}));
++    var eventInit = {};
++    for (var key in init) {
++        if (Object.prototype.hasOwnProperty.call(init, key)) {
++            eventInit[key] = init[key];
++        }
++    }
++    eventInit.view = window;
++    eventInitializer[EventType].forEach(function(f) {
++        f(event, eventInit);
++    });
+     return event;
+ }
+ /* istanbul ignore next */ function getEventConstructors(window) {
 diff --git a/dist/cjs/utils/dataTransfer/Clipboard.js b/dist/cjs/utils/dataTransfer/Clipboard.js
 index 434be791b156984a8b76287bc0cc6c8955df4203..e28a15e85e2dccff058a18b4b80b099b7016d688 100644
 --- a/dist/cjs/utils/dataTransfer/Clipboard.js
@@ -23,6 +45,28 @@ index 434be791b156984a8b76287bc0cc6c8955df4203..e28a15e85e2dccff058a18b4b80b099b
  }
  
  exports.attachClipboardStubToView = attachClipboardStubToView;
+diff --git a/dist/esm/event/createEvent.js b/dist/esm/event/createEvent.js
+index 1c741ba446f40917727236e9e4ad29a20357d03a..9a4b63935923a9a271bfc9fd161fe7c477303256 100644
+--- a/dist/esm/event/createEvent.js
++++ b/dist/esm/event/createEvent.js
+@@ -36,7 +36,16 @@ function createEvent(type, target, init) {
+     const window = getWindow(target);
+     const { EventType, defaultInit } = eventMap[type];
+     const event = new (getEventConstructors(window))[EventType](type, defaultInit);
+-    eventInitializer[EventType].forEach((f)=>f(event, init !== null && init !== undefined ? init : {}));
++    var eventInit = {};
++    for (var key in init) {
++        if (Object.prototype.hasOwnProperty.call(init, key)) {
++            eventInit[key] = init[key];
++        }
++    }
++    eventInit.view = window;
++    eventInitializer[EventType].forEach(function(f) {
++        f(event, eventInit);
++    });
+     return event;
+ }
+ /* istanbul ignore next */ function getEventConstructors(window) {
 diff --git a/dist/esm/utils/dataTransfer/Clipboard.js b/dist/esm/utils/dataTransfer/Clipboard.js
 index 2ed2676b52adaee045d2594b051c08a4b133e7df..337e644ed268ad4ad0ce9a601d6d0aec73264d5e 100644
 --- a/dist/esm/utils/dataTransfer/Clipboard.js

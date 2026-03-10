@@ -38,6 +38,7 @@ import {
   addWorkaroundResolutions,
   configureYarn2ForVerdaccio,
   installYarn2,
+  isViteSandbox,
 } from '../utils/yarn';
 
 async function ensureSymlink(src: string, dest: string): Promise<void> {
@@ -146,21 +147,9 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
     await addPackageResolutions({ cwd, dryRun, debug });
     await configureYarn2ForVerdaccio({ cwd, dryRun, debug, key });
 
-    // Add vite plugin workarounds for frameworks that need it
-    // (to support vite 5 without peer dep errors)
-    const sandboxesNeedingWorkarounds: TemplateKey[] = [
-      'bench/react-vite-default-ts',
-      'bench/react-vite-default-ts-nodocs',
-      'bench/react-vite-default-ts-test-build',
-      'react-vite/default-js',
-      'react-vite/default-ts',
-      'svelte-vite/default-js',
-      'svelte-vite/default-ts',
-      'vue3-vite/default-js',
-      'vue3-vite/default-ts',
-    ];
-    if (sandboxesNeedingWorkarounds.includes(key) || key.includes('vite')) {
-      await addWorkaroundResolutions({ cwd, dryRun, debug });
+    // Add workaround resolutions for vite-based sandboxes
+    if (isViteSandbox(key)) {
+      await addWorkaroundResolutions({ cwd, dryRun, debug, key });
     }
 
     await exec(

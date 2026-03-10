@@ -1,8 +1,8 @@
-import React, { Fragment, memo, useCallback, useState } from 'react';
+import React, { Fragment, memo, useCallback } from 'react';
 
-import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { Select, ToggleButton } from 'storybook/internal/components';
 
-import { CircleIcon, GridIcon, PhotoIcon, RefreshIcon } from '@storybook/icons';
+import { CircleIcon, GridIcon, PhotoIcon } from '@storybook/icons';
 
 import { useGlobals, useParameter } from 'storybook/manager-api';
 
@@ -10,12 +10,9 @@ import { PARAM_KEY as KEY } from '../constants';
 import { DEFAULT_BACKGROUNDS } from '../defaults';
 import type { Background, BackgroundMap, BackgroundsParameters, GlobalStateUpdate } from '../types';
 
-type Link = Parameters<typeof TooltipLinkList>['0']['links'][0];
-
 export const BackgroundTool = memo(function BackgroundSelector() {
   const config = useParameter<BackgroundsParameters['backgrounds']>(KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
   const { options = DEFAULT_BACKGROUNDS, disable = true } = config || {};
   if (disable) {
@@ -38,10 +35,8 @@ export const BackgroundTool = memo(function BackgroundSelector() {
         item,
         updateGlobals,
         backgroundName,
-        setIsTooltipVisible,
         isLocked,
         isGridActive,
-        isTooltipVisible,
       }}
     />
   );
@@ -53,23 +48,18 @@ interface PureProps {
   item: Background | undefined;
   updateGlobals: ReturnType<typeof useGlobals>['1'];
   backgroundName: string | undefined;
-  setIsTooltipVisible: React.Dispatch<React.SetStateAction<boolean>>;
   isLocked: boolean;
   isGridActive: boolean;
-  isTooltipVisible: boolean;
 }
 
 const Pure = memo(function PureTool(props: PureProps) {
   const {
-    item,
     length,
     updateGlobals,
-    setIsTooltipVisible,
     backgroundMap,
     backgroundName,
     isLocked,
     isGridActive: isGrid,
-    isTooltipVisible,
   } = props;
 
   const update = useCallback(
@@ -81,65 +71,40 @@ const Pure = memo(function PureTool(props: PureProps) {
     [updateGlobals]
   );
 
+  const options = Object.entries(backgroundMap).map(([k, value]) => ({
+    value: k,
+    title: value.name,
+    icon: <CircleIcon color={value?.value || 'grey'} />,
+  }));
+
   return (
     <Fragment>
-      <IconButton
+      <ToggleButton
+        padding="small"
+        variant="ghost"
         key="grid"
-        active={isGrid}
+        pressed={isGrid}
         disabled={isLocked}
-        title="Apply a grid to the preview"
+        ariaLabel={isLocked ? 'Grid set by story parameters' : 'Grid visibility'}
+        tooltip={isLocked ? 'Grid set by story parameters' : 'Toggle grid visibility'}
         onClick={() => update({ value: backgroundName, grid: !isGrid })}
       >
         <GridIcon />
-      </IconButton>
+      </ToggleButton>
 
       {length > 0 ? (
-        <WithTooltip
+        <Select
+          resetLabel="Reset background"
+          onReset={() => update(undefined)}
+          disabled={isLocked}
           key="background"
-          placement="top"
-          closeOnOutsideClick
-          tooltip={({ onHide }) => {
-            return (
-              <TooltipLinkList
-                links={[
-                  ...(item
-                    ? [
-                        {
-                          id: 'reset',
-                          title: 'Reset background',
-                          icon: <RefreshIcon />,
-                          onClick: () => {
-                            update(undefined);
-                            onHide();
-                          },
-                        },
-                      ]
-                    : []),
-                  ...Object.entries(backgroundMap).map<Link>(([k, value]) => ({
-                    id: k,
-                    title: value.name,
-                    icon: <CircleIcon color={value?.value || 'grey'} />,
-                    active: k === backgroundName,
-                    onClick: () => {
-                      update({ value: k, grid: isGrid });
-                      onHide();
-                    },
-                  })),
-                ].flat()}
-              />
-            );
-          }}
-          onVisibleChange={setIsTooltipVisible}
-        >
-          <IconButton
-            disabled={isLocked}
-            key="background"
-            title="Change the background of the preview"
-            active={!!item || isTooltipVisible}
-          >
-            <PhotoIcon />
-          </IconButton>
-        </WithTooltip>
+          icon={<PhotoIcon />}
+          ariaLabel={isLocked ? 'Background set by story parameters' : 'Preview background'}
+          tooltip={isLocked ? 'Background set by story parameters' : 'Change background'}
+          defaultOptions={backgroundName}
+          options={options}
+          onSelect={(selected) => update({ value: selected as string, grid: isGrid })}
+        />
       ) : null}
     </Fragment>
   );

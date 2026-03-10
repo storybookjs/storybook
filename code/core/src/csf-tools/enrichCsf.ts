@@ -1,10 +1,12 @@
 import { generate, types as t } from 'storybook/internal/babel';
+import { type CsfEnricher } from 'storybook/internal/types';
 
 import type { CsfFile } from './CsfFile';
 
 export interface EnrichCsfOptions {
   disableSource?: boolean;
   disableDescription?: boolean;
+  enrichCsf?: CsfEnricher;
 }
 
 export const enrichCsfStory = (
@@ -139,8 +141,9 @@ export const enrichCsfMeta = (csf: CsfFile, csfSource: CsfFile, options?: Enrich
   }
 };
 
-export const enrichCsf = (csf: CsfFile, csfSource: CsfFile, options?: EnrichCsfOptions) => {
+export const enrichCsf = async (csf: CsfFile, csfSource: CsfFile, options?: EnrichCsfOptions) => {
   enrichCsfMeta(csf, csfSource, options);
+  await options?.enrichCsf?.(csf, csfSource);
   Object.keys(csf._storyExports).forEach((key) => {
     enrichCsfStory(csf, csfSource, key, options);
   });

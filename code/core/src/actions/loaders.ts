@@ -17,7 +17,16 @@ const logActionsWhenMockCalled: LoaderFunction = (context) => {
     onMockCall((mock, args) => {
       const name = mock.getMockName();
 
+      // Default name provided by vi.fn(), which we don't want to log.
+      // TODO: Can be removed as soon as we drop Vitest 3 support
+      // https://main.vitest.dev/guide/migration.html#changes-to-mocking
       if (name === 'spy') {
+        return;
+      }
+
+      // Escape hatch allowing users to disable logging for specific spies.
+      // This is what Vitest sets when you pass `mockName('')` to a spy.
+      if (name === 'vi.fn()') {
         return;
       }
 

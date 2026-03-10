@@ -24,14 +24,14 @@ Add your addon to the catalog by publishing a npm package that follows these req
 
 ### Addon metadata
 
-We rely on metadata to organize your addon in the catalog. You must add the <code>storybook-addons</code> as the first keyword, followed by your addon's category. Additional keywords will be used in search and as tags.
+We rely on metadata to organize your addon in the catalog. You must add the <code>storybook-addon</code> as the first keyword, followed by your addon's category. Additional keywords will be used in search and as tags.
 
 | Property      | Description                            | Example                                                                   |
 | ------------- | -------------------------------------- | ------------------------------------------------------------------------- |
 | `name`        | Addon package name                     | storybook-addon-example                                                   |
 | `description` | Addon description                      | Outline all elements with CSS to help with layout placement and alignment |
 | `author`      | Name of the author                     | winkerVSbecks                                                             |
-| `keywords`    | List of keywords to describe the addon | `["storybook-addons","style","debug"]`                                    |
+| `keywords`    | List of keywords to describe the addon | `["storybook-addon","style","debug"]`                                    |
 | `repository`  | Addon repository                       | `{"type": "git","url": "https://github.com/someone/my-addon" }`           |
 
 Customize your addon's appearance by adding the `storybook` property with the following fields.
@@ -69,7 +69,7 @@ Use the list below as a reference when filling in the values for both the `suppo
     "url": "https://github.com/chromaui/storybook-addon-example"
   },
   "author": "winkerVSbecks",
-  "keywords": ["storybook-addons", "style", "debug", "layout", "css"],
+  "keywords": ["storybook-addon", "style", "debug", "layout", "css"],
   "storybook": {
     "displayName": "Outline",
     "unsupportedFrameworks": ["vue"],

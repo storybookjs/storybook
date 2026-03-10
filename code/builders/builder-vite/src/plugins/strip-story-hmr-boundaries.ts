@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
  * boundaries, but vite has a bug which causes them to be treated as boundaries
  * (https://github.com/vitejs/vite/issues/9869).
  */
-export async function stripStoryHMRBoundary(): Promise<Plugin> {
+export async function stripStoryHMRBoundary() {
   const { createFilter } = await import('vite');
 
   const filter = createFilter(/\.stories\.(tsx?|jsx?|svelte|vue)$/);
@@ -26,5 +26,5 @@ export async function stripStoryHMRBoundary(): Promise<Plugin> {
         map: s.generateMap({ hires: true, source: id }),
       };
     },
-  };
+  } satisfies Plugin;
 }

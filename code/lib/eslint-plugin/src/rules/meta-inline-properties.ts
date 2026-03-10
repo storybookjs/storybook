@@ -16,7 +16,7 @@ type TDynamicProperty = (TSESTree.MethodDefinition | TSESTree.Property) & {
 // Rule Definition
 //------------------------------------------------------------------------------
 
-export = createStorybookRule({
+export default createStorybookRule({
   name: 'meta-inline-properties',
   defaultOptions: [{ csfVersion: 3 }],
   meta: {

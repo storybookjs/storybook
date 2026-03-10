@@ -29,12 +29,12 @@ describe('checkPackageCompatibility', () => {
   beforeEach(() => {
     vi.mocked(packageManagerMock.getAllDependencies).mockReturnValue({});
     vi.mocked(packageManagerMock.latestVersion).mockResolvedValue('9.0.0');
-    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValue({ version: '9.0.0' });
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValue({ version: '9.0.0' });
   });
 
   it('returns that a package is incompatible', async () => {
     const packageName = 'my-storybook-package';
-    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValueOnce({
       name: packageName,
       version: '1.0.0',
       dependencies: {
@@ -56,7 +56,7 @@ describe('checkPackageCompatibility', () => {
 
   it('returns that a package is compatible', async () => {
     const packageName = 'my-storybook-package';
-    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValueOnce({
       name: packageName,
       version: '1.0.0',
       dependencies: {
@@ -79,7 +79,7 @@ describe('checkPackageCompatibility', () => {
   it('returns that a package is incompatible and because it is core, can be upgraded', async () => {
     const packageName = '@storybook/addon-docs';
 
-    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValueOnce({
       name: packageName,
       version: '8.0.0',
       dependencies: {
@@ -105,7 +105,7 @@ describe('checkPackageCompatibility', () => {
   it('returns that an addon is incompatible because it uses legacy consolidated packages', async () => {
     const packageName = '@storybook/addon-designs';
 
-    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValueOnce({
       name: packageName,
       version: '8.0.0',
       dependencies: {
@@ -132,7 +132,7 @@ describe('getIncompatibleStorybookPackages', () => {
   beforeEach(() => {
     vi.mocked(packageManagerMock.getAllDependencies).mockReturnValue({});
     vi.mocked(packageManagerMock.latestVersion).mockResolvedValue('9.0.0');
-    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValue({ version: '9.0.0' });
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValue({ version: '9.0.0' });
   });
 
   it('succeeds if only core storybook packages used', async () => {
@@ -154,7 +154,7 @@ describe('getIncompatibleStorybookPackages', () => {
       'react-storybook-addon': '1.0.0',
     });
 
-    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValueOnce({
       name: 'react-storybook-addon',
       version: '1.0.0',
       dependencies: {
@@ -204,8 +204,8 @@ describe('getIncompatiblePackagesSummary', () => {
       
       Please consider updating your packages or contacting the maintainers for compatibility details.
 
-      For more on Storybook 9 compatibility, see the linked GitHub issue:
-      https://github.com/storybookjs/storybook/issues/30944"
+      For more details on compatibility guidance, see:
+      https://github.com/storybookjs/storybook/issues/32836"
     `);
   });
 });

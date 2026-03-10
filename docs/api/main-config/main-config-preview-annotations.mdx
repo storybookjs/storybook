@@ -22,6 +22,6 @@ import type { StorybookConfig } from './types';
 
 export const previewAnnotations: StorybookConfig['previewAnnotations'] = (entry = []) => [
   ...entry,
-  require.resolve('@storybook/nextjs/preview.js'),
+  import.meta.resolve('@storybook/nextjs/preview'),
 ];
 ```

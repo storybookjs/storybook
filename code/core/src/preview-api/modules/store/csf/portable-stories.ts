@@ -32,7 +32,7 @@ import {
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
-import { getValuesFromArgTypes } from './getValuesFromArgTypes';
+import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
 import { normalizeStory } from './normalizeStory';
@@ -131,7 +131,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizedProjectAnnotations
   );
 
-  const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+  const globalsFromGlobalTypes = getValuesFromGlobalTypes(normalizedProjectAnnotations.globalTypes);
 
   const globals = {
     ...globalsFromGlobalTypes,
@@ -169,7 +169,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         // TODO: Consolidate this renderContext with Context in SB 10.0
         // Change renderToCanvas function to only use the context object
         // and to make the renderContext an internal implementation detail
-        // wasnt'possible so far because showError and showException are not part of the story context (yet)
+        // wasn't possible so far because showError and showException are not part of the story context (yet)
         const unmount = await story.renderToCanvas?.(
           {
             componentId: story.componentId,
@@ -339,7 +339,7 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
               do:
               await mount(<MyComponent foo="bar"/>)
 
-              More info: https://storybook.js.org/docs/api/portable-stories-playwright
+              More info: https://storybook.js.org/docs/api/portable-stories/portable-stories-playwright?ref=error
             `);
         }
 

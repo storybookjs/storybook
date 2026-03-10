@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     lineHeight: 1,
   },
   primary: {
-    backgroundColor: '#1ea7fd',
+    backgroundColor: '#555ab9',
   },
   primaryText: {
     color: 'white',
@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: 'transparent',
     borderColor: 'rgba(0, 0, 0, 0.15)',
+    color: '#333',
     borderWidth: 1,
   },
   secondaryText: {

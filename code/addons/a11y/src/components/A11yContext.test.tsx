@@ -13,7 +13,8 @@ import {
 import type { AxeResults } from 'axe-core';
 import * as api from 'storybook/manager-api';
 
-import { EVENTS } from '../constants';
+import { EVENTS, UI_STATE_ID } from '../constants';
+import { RuleType } from '../types';
 import { A11yContextProvider, useA11yContext } from './A11yContext';
 
 vi.mock('storybook/manager-api');

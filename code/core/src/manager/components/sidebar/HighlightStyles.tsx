@@ -17,7 +17,7 @@ export const HighlightStyles: FC<Highlight> = ({ refId, itemId }) => (
             background,
             '&:hover, &:focus': { background },
           },
-          [`&[data-nodetype="story"], &[data-nodetype="document"]`]: {
+          [`&[data-nodetype="story"], &[data-nodetype="document"], &[data-nodetype="test"]`]: {
             color: color.defaultText,
             background,
             '&:hover, &:focus': { background },

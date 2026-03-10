@@ -1,11 +1,10 @@
 /* eslint-disable playwright/no-conditional-expect */
-
 /* eslint-disable playwright/no-conditional-in-test */
 import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';
 
-import { SbPage } from './util';
+import { SbPage, isReactSandbox } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -30,9 +29,8 @@ test.describe('addon-docs', () => {
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
 
-    const basicStories = root.locator('#anchor--addons-docs-docspage-basic--basic');
-    const secondBasicStory = (await basicStories.all())[1];
-    await expect(secondBasicStory).toContainText('A basic button');
+    const basicStory = root.locator('#anchor--addons-docs-docspage-basic--basic');
+    await expect(basicStory).toContainText('A basic button');
 
     const anotherStory = root.locator('#anchor--addons-docs-docspage-basic--another');
     await expect(anotherStory).toContainText('Another button, just to show multiple stories');
@@ -279,5 +277,15 @@ test.describe('addon-docs', () => {
       'H 1 Content',
       'H 2 Content',
     ]);
+  });
+
+  // We want to avoid the docs page crashing when JSX elements are part of args table
+  test('should show JSX elements in docs page', async ({ page }) => {
+    test.skip(!isReactSandbox(templateName), 'This is a React only feature');
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory('/stories/renderers/react/jsx-docgen', 'docs');
+    const root = sbPage.previewRoot();
+    await expect(root.getByText('children').first()).toBeVisible();
   });
 });

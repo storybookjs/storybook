@@ -15,18 +15,18 @@ cd my-ember-app
 npx storybook@latest init
 ```
 
-For more information visit: [storybook.js.org](https://storybook.js.org)
+For more information visit: [storybook.js.org](https://storybook.js.org?ref=readme)
 
 ---
 
-Storybook also comes with a lot of [addons](https://storybook.js.org/addons) and a great API to customize as you wish.
-You can also build a [static version](https://storybook.js.org/docs/sharing/publish-storybook?renderer=ember) of your Storybook and deploy it anywhere you want.
+Storybook also comes with a lot of [addons](https://storybook.js.org/addons?ref=readme) and a great API to customize as you wish.
+You can also build a [static version](https://storybook.js.org/docs/sharing/publish-storybook?renderer=ember&ref=readme) of your Storybook and deploy it anywhere you want.
 
 ## Docs
 
-- [Basics](https://storybook.js.org/docs/get-started/install?renderer=ember)
-- [Configurations](https://storybook.js.org/docs/configure?renderer=ember)
-- [Addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons?renderer=ember)
+- [Basics](https://storybook.js.org/docs/get-started/install?renderer=ember&ref=readme)
+- [Configurations](https://storybook.js.org/docs/configure?renderer=ember&ref=readme)
+- [Addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons?renderer=ember&ref=readme)
 
 ## Working with polyfills
 
@@ -51,3 +51,5 @@ export default {
   [...]
 };
 ```
+
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

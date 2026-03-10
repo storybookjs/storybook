@@ -1,15 +1,20 @@
-import { dirname } from 'node:path';
+import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 
 import {
   getStorybookConfiguration,
   getStorybookInfo,
+  isCI,
   loadMainConfig,
   versions,
 } from 'storybook/internal/common';
+import { getInterpretedFile } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
-import { findPackage, findPackagePath } from 'fd-package-json';
+import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings';
@@ -17,6 +22,7 @@ import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
 import { getFrameworkInfo } from './get-framework-info';
 import { getHasRouterPackage } from './get-has-router-package';
+import { analyzeEcosystemPackages } from './get-known-packages';
 import { getMonorepoType } from './get-monorepo-type';
 import { getPackageManagerInfo } from './get-package-manager-info';
 import { getPortableStoriesFileCount } from './get-portable-stories-usage';
@@ -32,15 +38,66 @@ export const metaFrameworks = {
   '@nrwl/storybook': 'nx',
   '@vue/cli-service': 'vue-cli',
   '@sveltejs/kit': 'sveltekit',
+  '@tanstack/react-router': 'tanstack-react',
+  '@react-router/dev': 'react-router',
+  '@remix-run/dev': 'remix',
+  expo: 'expo',
+  'vike-react': 'vike-react',
+  'vike-vue': 'vike-vue',
+  'vike-solid': 'vike-solid',
 } as Record<string, string>;
 
 export const sanitizeAddonName = (name: string) => {
-  return cleanPaths(name)
+  const normalized = name.replace(/\\/g, '/');
+
+  let candidate: string = normalized;
+
+  if (normalized.includes('/node_modules/')) {
+    // common case for package manager cache/pnp mode so we take the segment after node_modules
+    candidate = normalized.split('/node_modules/').pop() ?? normalized;
+  }
+
+  const cleaned = cleanPaths(candidate)
+    .replace(/^file:\/\//i, '')
+    .replace(/\/+$/, '')
     .replace(/\/dist\/.*/, '')
     .replace(/\.[mc]?[tj]?s[x]?$/, '')
-    .replace(/\/register$/, '')
-    .replace(/\/manager$/, '')
-    .replace(/\/preset$/, '');
+    .replace(/\/(register|manager|preset|index)$/, '')
+    .replace(/\$SNIP?/g, '');
+
+  let prefix = '';
+  if (
+    cleaned.startsWith('file') ||
+    cleaned.startsWith('.') ||
+    cleaned.startsWith('/') ||
+    cleaned.includes(':')
+  ) {
+    prefix = 'CUSTOM:';
+  }
+
+  const scopedMatches = cleaned.match(/@[^/]+\/[^/]+/g);
+  if (scopedMatches?.length) {
+    return scopedMatches.at(-1) as string;
+  }
+
+  const parts = cleaned.split('/').filter(Boolean);
+  const addonLike = [...parts]
+    .reverse()
+    .find((part) => part.includes('addon-') || part.includes('-addon'));
+
+  if (addonLike) {
+    return `${prefix}${addonLike}`;
+  }
+
+  if (parts.length >= 2 && parts[parts.length - 2].startsWith('@')) {
+    return `${prefix}${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
+  }
+
+  if (parts.length) {
+    return `${prefix}${parts[parts.length - 1]}`;
+  }
+
+  return `${prefix}${candidate}`;
 };
 
 // Analyze a combination of information from main.js and package.json
@@ -56,10 +113,10 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = await globalSettings();
+  const settings = isCI() ? undefined : await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
-    userSince: settings.value.userSince,
+    userSince: settings?.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
     hasStaticDirs: false,
@@ -83,35 +140,7 @@ export const computeStorybookMetadata = async ({
     };
   }
 
-  const testPackages = [
-    'playwright',
-    'vitest',
-    'jest',
-    'cypress',
-    'nightwatch',
-    'webdriver',
-    '@web/test-runner',
-    'puppeteer',
-    'karma',
-    'jasmine',
-    'chai',
-    'testing-library',
-    '@ngneat/spectator',
-    'wdio',
-    'msw',
-    'miragejs',
-    'sinon',
-    'chromatic',
-  ];
-  const testPackageDeps = Object.keys(allDependencies).filter((dep) =>
-    testPackages.find((pkg) => dep.includes(pkg))
-  );
-  metadata.testPackages = Object.fromEntries(
-    await Promise.all(
-      testPackageDeps.map(async (dep) => [dep, (await getActualPackageVersion(dep))?.version])
-    )
-  );
-
+  metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
 
   const monorepoType = getMonorepoType();
@@ -138,7 +167,7 @@ export const computeStorybookMetadata = async ({
     metadata.typescriptOptions = mainConfig.typescript;
   }
 
-  const frameworkInfo = await getFrameworkInfo(mainConfig);
+  const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
 
   if (typeof mainConfig.refs === 'object') {
     metadata.refCount = Object.keys(mainConfig.refs).length;
@@ -212,7 +241,7 @@ export const computeStorybookMetadata = async ({
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = getStorybookInfo(configDir);
+  const storybookInfo = await getStorybookInfo(configDir);
 
   try {
     const { previewConfigPath: previewConfig } = storybookInfo;
@@ -236,20 +265,21 @@ export const computeStorybookMetadata = async ({
     portableStoriesFileCount,
     applicationFileCount,
     storybookVersion: version,
-    storybookVersionSpecifier: storybookInfo.version,
+    storybookVersionSpecifier: storybookInfo.versionSpecifier ?? '',
     language,
     storybookPackages,
     addons,
     hasStorybookEslint,
+    packageJsonType: packageJson.type ?? 'unknown',
   };
 };
 
 async function getPackageJsonDetails() {
-  const packageJsonPath = await findPackagePath(process.cwd());
+  const packageJsonPath = pkg.up();
   if (packageJsonPath) {
     return {
       packageJsonPath,
-      packageJson: (await findPackage(packageJsonPath)) || {},
+      packageJson: JSON.parse(await readFile(packageJsonPath, 'utf8')),
     };
   }
 
@@ -260,12 +290,26 @@ async function getPackageJsonDetails() {
   };
 }
 
-let cachedMetadata: StorybookMetadata;
-export const getStorybookMetadata = async (_configDir?: string) => {
-  if (cachedMetadata) {
-    return cachedMetadata;
-  }
+// Cache metadata keyed by a hash of the main config file to avoid caching
+// empty/incorrect values during init flows when the configDir is created/updated.
+const metadataCache = new Map<string, StorybookMetadata>();
 
+async function hashMainConfig(configDir: string): Promise<string> {
+  try {
+    const mainPath = getInterpretedFile(resolve(configDir, 'main')) as string | null;
+
+    if (!mainPath || !existsSync(mainPath)) {
+      return 'missing';
+    }
+    const content = await readFile(mainPath);
+    const hash = createHash('sha256').update(new Uint8Array(content)).digest('hex');
+    return hash;
+  } catch {
+    return 'unknown';
+  }
+}
+
+export const getStorybookMetadata = async (_configDir?: string) => {
   const { packageJson, packageJsonPath } = await getPackageJsonDetails();
   // TODO: improve the way configDir is extracted, as a "storybook" script might not be present
   // Scenarios:
@@ -279,12 +323,21 @@ export const getStorybookMetadata = async (_configDir?: string) => {
         '--config-dir'
       ) as string)) ??
     '.storybook';
+  const contentHash = await hashMainConfig(configDir);
+  const cacheKey = `${configDir}::${contentHash}`;
+  const cached = metadataCache.get(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
   const mainConfig = await loadMainConfig({ configDir }).catch(() => undefined);
-  cachedMetadata = await computeStorybookMetadata({
+  const computed = await computeStorybookMetadata({
     mainConfig,
     packageJson,
     packageJsonPath,
     configDir,
   });
-  return cachedMetadata;
+  metadataCache.set(cacheKey, computed);
+  return computed;
 };

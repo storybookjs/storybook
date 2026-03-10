@@ -1,16 +1,18 @@
-import { CoreBuilder } from '../../../../../core/src/cli/project_types';
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-const generator: Generator = async (packageManager, npmOptions, options) => {
-  await baseGenerator(
-    packageManager,
-    npmOptions,
-    { ...options, builder: CoreBuilder.Webpack5 },
-    'ember',
-    { staticDir: 'dist' },
-    'ember'
-  );
-};
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-export default generator;
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.EMBER,
+    renderer: SupportedRenderer.EMBER,
+    framework: SupportedFramework.EMBER,
+    builderOverride: SupportedBuilder.WEBPACK5,
+  },
+  configure: async () => {
+    return {
+      staticDir: 'dist',
+    };
+  },
+});

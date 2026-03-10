@@ -56,7 +56,7 @@ export function initializeWhatsNew(
         throw response;
       })) as WhatsNewResponse;
 
-      const main = await loadMainConfig({ configDir: options.configDir, noCache: true });
+      const main = await loadMainConfig({ configDir: options.configDir });
       const disableWhatsNewNotifications =
         (main.core as CoreConfig)?.disableWhatsNewNotifications === true;
 
@@ -101,7 +101,11 @@ export function initializeWhatsNew(
         if (isTelemetryEnabled) {
           await sendTelemetryError(error, 'core-config', {
             cliOptions: options,
-            presetOptions: { ...options, corePresets: [], overridePresets: [] },
+            presetOptions: {
+              ...options,
+              corePresets: [],
+              overridePresets: [],
+            },
             skipPrompt: true,
           });
         }
@@ -115,7 +119,11 @@ export function initializeWhatsNew(
     if (isTelemetryEnabled) {
       await sendTelemetryError(error, 'browser', {
         cliOptions: options,
-        presetOptions: { ...options, corePresets: [], overridePresets: [] },
+        presetOptions: {
+          ...options,
+          corePresets: [],
+          overridePresets: [],
+        },
         skipPrompt: true,
       });
     }

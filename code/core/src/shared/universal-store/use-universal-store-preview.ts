@@ -1,4 +1,4 @@
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 import { useEffect, useState } from 'storybook/preview-api';
 
 import type { UniversalStore } from './index';

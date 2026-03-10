@@ -18,7 +18,8 @@ export const Img = styled.img({
 });
 
 export const LogoLink = styled.a(({ theme }) => ({
-  display: 'inline-block',
+  display: 'inline-flex',
+  alignItems: 'center',
   height: '100%',
   margin: '-3px -4px',
   padding: '2px 3px',
@@ -26,9 +27,9 @@ export const LogoLink = styled.a(({ theme }) => ({
   borderRadius: 3,
   color: 'inherit',
   textDecoration: 'none',
-  '&:focus': {
-    outline: 0,
-    borderColor: theme.color.secondary,
+  '&:focus-visible': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
   },
 }));
 

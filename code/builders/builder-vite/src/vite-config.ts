@@ -1,12 +1,6 @@
 import { resolve } from 'node:path';
 
-import {
-  getBuilderOptions,
-  getFrameworkName,
-  isPreservingSymlinks,
-  resolvePathInStorybookCache,
-} from 'storybook/internal/common';
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import { getBuilderOptions, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
 import type {
@@ -18,13 +12,12 @@ import type {
 } from 'vite';
 
 import {
-  codeGeneratorPlugin,
   csfPlugin,
-  externalGlobalsPlugin,
-  injectExportOrderPlugin,
   pluginWebpackStats,
-  stripStoryHMRBoundary,
+  storybookEntryPlugin,
+  storybookExternalGlobalsPlugin,
 } from './plugins';
+import { viteCorePlugins as corePlugins } from './preset';
 import type { BuilderOptions } from './types';
 
 export type PluginConfigType = 'build' | 'development';
@@ -47,7 +40,7 @@ export async function commonConfig(
   _type: PluginConfigType
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
-  const { loadConfigFromFile, mergeConfig, defaultClientConditions = [] } = await import('vite');
+  const { loadConfigFromFile, mergeConfig } = await import('vite');
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
@@ -59,20 +52,20 @@ export async function commonConfig(
   const { config: { build: buildProperty = undefined, ...userConfig } = {} } =
     (await loadConfigFromFile(configEnv, viteConfigPath, projectRoot)) ?? {};
 
+  // Storybook's Vite config is assembled from self-contained plugins.
+  // The config plugin handles base settings (root, cacheDir, resolve conditions, etc.),
+  // while other plugins handle entry points, docgen, and runtime globals.
+  // Shared vite plugins for mocking are defined in `./preset.ts` so that they can be
+  // shared between @storybook/builder-vite and @storybook/addon-vitest.
   const sbConfig: InlineConfig = {
     configFile: false,
-    cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey),
-    root: projectRoot,
-    // Allow storybook deployed as subfolder.  See https://github.com/storybookjs/builder-vite/issues/238
-    base: './',
     plugins: await pluginConfig(options),
-    resolve: {
-      conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
-      preserveSymlinks: isPreservingSymlinks(),
-    },
-    // If an envPrefix is specified in the vite config, add STORYBOOK_ to it,
-    // otherwise, add VITE_ and STORYBOOK_ so that vite doesn't lose its default.
-    envPrefix: userConfig.envPrefix ? ['STORYBOOK_'] : ['VITE_', 'STORYBOOK_'],
+    root: projectRoot,
+    // Allow storybook deployed as subfolder. See https://github.com/storybookjs/builder-vite/issues/238
+    base: './',
+    ...(options.cacheKey
+      ? { cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey) }
+      : {}),
     // Pass build.target option from user's vite config
     build: {
       target: buildProperty?.target,
@@ -85,33 +78,14 @@ export async function commonConfig(
 }
 
 export async function pluginConfig(options: Options) {
-  const build = await options.presets.apply('build');
-
-  const externals: Record<string, string> = globalsNameReferenceMap;
-
-  if (build?.test?.disableBlocks) {
-    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
-  }
-
   const plugins = [
-    codeGeneratorPlugin(options),
+    // Shared core plugins (resolve conditions, envPrefix, fs.allow, externals, env vars, etc.)
+    ...(await corePlugins([], options)),
+    await storybookExternalGlobalsPlugin(options),
     await csfPlugin(options),
-    await injectExportOrderPlugin(),
-    await stripStoryHMRBoundary(),
-    {
-      name: 'storybook:allow-storybook-dir',
-      enforce: 'post',
-      config(config) {
-        // if there is NO allow list then Vite allows anything in the root directory
-        // if there is an allow list then Vite only allows anything in the listed directories
-        // add storybook specific directories only if there's an allow list so that we don't end up
-        // disallowing the root unless root is already disallowed
-        if (config?.server?.fs?.allow) {
-          config.server.fs.allow.push('.storybook');
-        }
-      },
-    },
-    await externalGlobalsPlugin(externals),
+    // Entry plugin: virtual modules for stories, addon setup, and main app entry
+    ...(await storybookEntryPlugin(options)),
+    // Builder-specific: webpack-compatible stats for turbosnap/chromatic
     pluginWebpackStats({ workingDir: process.cwd() }),
   ] as PluginOption[];
 

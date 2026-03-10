@@ -15,6 +15,7 @@ permissions:
 jobs:
   triage:
     name: Nissuer
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
       - uses: balazsorban44/nissuer@1.10.0

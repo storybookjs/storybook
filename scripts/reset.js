@@ -1,8 +1,9 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { spawn } from 'node:child_process';
 import { appendFile, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { remove } from 'fs-extra';
 import trash from 'trash';
 
 const logger = console;
@@ -33,7 +34,7 @@ cleaningProcess.stdout.on('data', (data) => {
             uri.match(/\.cache/) ||
             uri.match(/dll/)
           ) {
-            remove(uri).then(() => {
+            rm(uri, { force: true, recursive: true }).then(() => {
               logger.log(`deleted ${uri}`);
             });
           } else {
@@ -43,7 +44,9 @@ cleaningProcess.stdout.on('data', (data) => {
               })
               .catch((e) => {
                 logger.log('failed to trash, will try permanent delete');
-                remove(uri);
+                rm(uri, { force: true, recursive: true }).then(() => {
+                  logger.log(`deleted ${uri}`);
+                });
               });
           }
         }

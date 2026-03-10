@@ -61,6 +61,7 @@ const baseCheckOptions: CheckOptions = {
   storybookVersion: '7.0.0',
   configDir: '.storybook',
   storiesPaths: [],
+  hasCsfFactoryPreview: false,
 };
 
 interface AddonMdxGfmOptions {

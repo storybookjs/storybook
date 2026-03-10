@@ -6,7 +6,7 @@ export default {
     content: '',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

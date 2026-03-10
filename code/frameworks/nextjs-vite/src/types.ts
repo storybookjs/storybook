@@ -11,6 +11,10 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 export type FrameworkOptions = {
   /** The path to the Next.js configuration file. */
   nextConfigPath?: string;
+  image?: {
+    includeFiles?: string[];
+    excludeFiles?: string[];
+  };
   builder?: BuilderOptions;
 };
 
@@ -39,7 +43,7 @@ export interface NextJsParameters {
   /**
    * Next.js framework configuration
    *
-   * @see https://storybook.js.org/docs/get-started/frameworks/nextjs
+   * @see https://storybook.js.org/docs/get-started/frameworks/nextjs-vite
    */
   nextjs?: {
     /**

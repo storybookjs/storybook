@@ -1,5 +1,9 @@
 import type { StoryId } from 'storybook/internal/types';
 
+import type { RenderPhase } from '../preview-api/modules/preview-web/render/StoryRender';
+
+export type { RenderPhase };
+
 export interface Call {
   id: string;
   cursor: number;
@@ -66,14 +70,7 @@ export interface SyncPayload {
 }
 
 export interface State {
-  renderPhase?:
-    | 'loading'
-    | 'rendering'
-    | 'playing'
-    | 'played'
-    | 'completed'
-    | 'aborted'
-    | 'errored';
+  renderPhase: RenderPhase;
   isDebugging: boolean;
   isPlaying: boolean;
   isLocked: boolean;

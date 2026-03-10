@@ -1,6 +1,7 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -14,9 +15,10 @@ import nextBabelPreset from './babel/preset';
 import { configureConfig } from './config/webpack';
 import TransformFontImports from './font/babel';
 import type { FrameworkOptions, StorybookConfig } from './types';
+import { isNextVersionGte } from './utils';
 
 export const addons: PresetProperty<'addons'> = [
-  dirname(require.resolve(join('@storybook/preset-react-webpack', 'package.json'))),
+  fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
@@ -37,21 +39,26 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: dirname(
-        require.resolve(join('@storybook/builder-webpack5', 'package.json'))
-      ) as '@storybook/builder-webpack5',
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const nextDir = dirname(require.resolve('@storybook/nextjs/package.json'));
-  const result = [...entry, join(nextDir, 'dist/preview.mjs')];
-  return result;
+  const annotations = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs/preview'))];
+
+  const isNext16orNewer = isNextVersionGte('16.0.0');
+
+  // TODO: Remove this once we only support Next.js v16 and above
+  if (!isNext16orNewer) {
+    annotations.push(fileURLToPath(import.meta.resolve('@storybook/nextjs/config/preview')));
+  }
+
+  return annotations;
 };
 
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
@@ -78,7 +85,8 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
       (preset) =>
         !(
           (isPresetConfigItem(preset) &&
-            (preset as ConfigItem).file?.request === require.resolve('@babel/preset-react')) ||
+            (preset as ConfigItem).file?.request ===
+              fileURLToPath(import.meta.resolve('@babel/preset-react'))) ||
           isNextBabelConfig(preset)
         )
     ) ?? [];
@@ -183,10 +191,10 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   }
 
   if (useSWC) {
-    logger.info('=> Using SWC as compiler');
+    logger.info('Using SWC as compiler');
     await configureSWCLoader(baseConfig, options, nextConfig);
   } else {
-    logger.info('=> Using Babel as compiler');
+    logger.info('Using Babel as compiler');
     await configureBabelLoader(baseConfig, options, nextConfig);
   }
 

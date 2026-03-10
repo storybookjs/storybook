@@ -85,7 +85,7 @@ type CanvasBlockParameters = {
   /** Specifies which story is rendered */
   of: ModuleExport;
   /** Show story source code */
-  sourceState?: 'hidden' | 'shown';
+  sourceState?: 'hidden' | 'shown' | 'none';
   /**
    * Story configuration
    *
@@ -115,8 +115,6 @@ type SourceBlockParameters = {
   /**
    * The formatting used on source code. Both true and 'dedent' have the same effect of removing any
    * extraneous indentation. Supports all valid prettier parser names.
-   *
-   * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-source#format
    */
   format?: boolean | 'dedent' | string;
   // TODO: We could try to extract types from 'SupportedLanguages' in SyntaxHighlihter, but for now we inline them

@@ -1,7 +1,7 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 import someData from './data.json';
 
@@ -31,7 +31,36 @@ export const ComplexStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 import someData from './data.json';
@@ -58,7 +87,7 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -91,6 +120,64 @@ export const ComplexStory: Story = {
 };
 ```
 
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
 ```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
 import { MyComponent } from './MyComponent';
 
@@ -119,7 +206,7 @@ export const ComplexStory = {
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { MyComponent } from './MyComponent';
 
@@ -174,7 +261,7 @@ export const ComplexStory: Story = {
 <Story name="ComplexStory" args={{ data: complexData }} />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.svelte';
 
 import someData from './data.json';
@@ -225,7 +312,7 @@ export const ComplexStory = {
 <Story name="ComplexStory" args={{ data: complexData }} />
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -258,7 +345,7 @@ export const ComplexStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.vue';
 
 import someData from './data.json';
@@ -285,7 +372,7 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
@@ -317,7 +404,65 @@ export const ComplexStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'],
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'],
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
   includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
@@ -340,7 +485,7 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -366,4 +511,54 @@ export const ComplexStory: Story = {
     data: complexData,
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
 ```

@@ -1,59 +1,81 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import type { SupportedFrameworks } from 'storybook/internal/types';
-import type { CoreCommon_StorybookInfo, PackageJson } from 'storybook/internal/types';
+import { CoreWebpackCompiler, SupportedFramework } from 'storybook/internal/types';
+import type {
+  CoreCommon_StorybookInfo,
+  PackageJson,
+  StorybookConfigRaw,
+} from 'storybook/internal/types';
+import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+
+import invariant from 'tiny-invariant';
 
 import { JsPackageManager } from '../js-package-manager/JsPackageManager';
+import { frameworkToBuilder } from './framework';
+import { getAddonNames } from './get-addon-names';
+import { extractFrameworkPackageName } from './get-framework-name';
+import { extractRenderer } from './get-renderer-name';
 import { getStorybookConfiguration } from './get-storybook-configuration';
+import { loadMainConfig } from './load-main-config';
 
-export const rendererPackages: Record<string, string> = {
-  '@storybook/react': 'react',
-  '@storybook/vue3': 'vue3',
-  '@storybook/angular': 'angular',
-  '@storybook/html': 'html',
-  '@storybook/web-components': 'web-components',
-  '@storybook/polymer': 'polymer',
-  '@storybook/ember': 'ember',
-  '@storybook/svelte': 'svelte',
-  '@storybook/preact': 'preact',
-  '@storybook/server': 'server',
+export const rendererPackages: Record<string, SupportedRenderer> = {
+  '@storybook/react': SupportedRenderer.REACT,
+  '@storybook/vue3': SupportedRenderer.VUE3,
+  '@storybook/angular': SupportedRenderer.ANGULAR,
+  '@storybook/html': SupportedRenderer.HTML,
+  '@storybook/web-components': SupportedRenderer.WEB_COMPONENTS,
+  '@storybook/ember': SupportedRenderer.EMBER,
+  '@storybook/svelte': SupportedRenderer.SVELTE,
+  '@storybook/preact': SupportedRenderer.PREACT,
+  '@storybook/server': SupportedRenderer.SERVER,
+  '@storybook/react-native': SupportedRenderer.REACT_NATIVE,
 
   // community (outside of monorepo)
-  'storybook-framework-qwik': 'qwik',
-  'storybook-solidjs': 'solid',
-
-  /** @deprecated This is deprecated. */
-  '@storybook/vue': 'vue',
+  'storybook-framework-qwik': SupportedRenderer.QWIK,
+  'storybook-solidjs-vite': SupportedRenderer.SOLID,
 };
 
-export const frameworkPackages: Record<string, SupportedFrameworks> = {
-  '@storybook/angular': 'angular',
-  '@storybook/ember': 'ember',
-  '@storybook/html-vite': 'html-vite',
-  '@storybook/nextjs': 'nextjs',
-  '@storybook/preact-vite': 'preact-vite',
-  '@storybook/react-vite': 'react-vite',
-  '@storybook/react-webpack5': 'react-webpack5',
-  '@storybook/server-webpack5': 'server-webpack5',
-  '@storybook/svelte-vite': 'svelte-vite',
-  '@storybook/sveltekit': 'sveltekit',
-  '@storybook/vue3-vite': 'vue3-vite',
-  '@storybook/nextjs-vite': 'nextjs-vite',
-  '@storybook/react-native-web-vite': 'react-native-web-vite',
-  '@storybook/web-components-vite': 'web-components-vite',
+export const frameworkPackages: Record<string, SupportedFramework> = {
+  '@storybook/angular': SupportedFramework.ANGULAR,
+  '@storybook/ember': SupportedFramework.EMBER,
+  '@storybook/html-vite': SupportedFramework.HTML_VITE,
+  '@storybook/nextjs': SupportedFramework.NEXTJS,
+  '@storybook/preact-vite': SupportedFramework.PREACT_VITE,
+  '@storybook/react-vite': SupportedFramework.REACT_VITE,
+  '@storybook/react-webpack5': SupportedFramework.REACT_WEBPACK5,
+  '@storybook/server-webpack5': SupportedFramework.SERVER_WEBPACK5,
+  '@storybook/svelte-vite': SupportedFramework.SVELTE_VITE,
+  '@storybook/sveltekit': SupportedFramework.SVELTEKIT,
+  '@storybook/vue3-vite': SupportedFramework.VUE3_VITE,
+  '@storybook/nextjs-vite': SupportedFramework.NEXTJS_VITE,
+  '@storybook/react-native-web-vite': SupportedFramework.REACT_NATIVE_WEB_VITE,
+  '@storybook/web-components-vite': SupportedFramework.WEB_COMPONENTS_VITE,
   // community (outside of monorepo)
-  'storybook-framework-qwik': 'qwik',
-  'storybook-solidjs-vite': 'solid',
-  'storybook-react-rsbuild': 'react-rsbuild',
-  'storybook-vue3-rsbuild': 'vue3-rsbuild',
+  'storybook-framework-qwik': SupportedFramework.QWIK,
+  'storybook-solidjs-vite': SupportedFramework.SOLID,
+  'storybook-react-rsbuild': SupportedFramework.REACT_RSBUILD,
+  'storybook-vue3-rsbuild': SupportedFramework.VUE3_RSBUILD,
+  'storybook-web-components-rsbuild': SupportedFramework.WEB_COMPONENTS_RSBUILD,
+  'storybook-html-rsbuild': SupportedFramework.HTML_RSBUILD,
+  '@storybook-vue/nuxt': SupportedFramework.NUXT,
 };
 
-export const builderPackages = ['@storybook/builder-webpack5', '@storybook/builder-vite'];
+export const builderPackages: Record<string, SupportedBuilder> = {
+  '@storybook/builder-webpack5': SupportedBuilder.WEBPACK5,
+  '@storybook/builder-vite': SupportedBuilder.VITE,
+  // community (outside of monorepo)
+  'storybook-builder-rsbuild': SupportedBuilder.RSBUILD,
+};
+
+export const compilerPackages: Record<string, CoreWebpackCompiler> = {
+  '@storybook/addon-webpack5-compiler-babel': CoreWebpackCompiler.Babel,
+  '@storybook/addon-webpack5-compiler-swc': CoreWebpackCompiler.SWC,
+};
 
 const findDependency = (
   { dependencies, devDependencies, peerDependencies }: PackageJson,
-  predicate: (entry: [string, string | undefined]) => string
+  predicate: (entry: [string, string | undefined]) => boolean
 ) =>
   [
     Object.entries(dependencies || {}).find(predicate),
@@ -61,27 +83,21 @@ const findDependency = (
     Object.entries(peerDependencies || {}).find(predicate),
   ] as const;
 
-const getRendererInfo = (configDir: string) => {
+const getStorybookVersionSpecifier = (configDir: string) => {
   const packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(dirname(configDir));
 
   for (const packageJsonPath of packageJsonPaths) {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     // Pull the viewlayer from dependencies in package.json
-    const [dep, devDep, peerDep] = findDependency(packageJson, ([key]) => rendererPackages[key]);
+    const [dep, devDep, peerDep] = findDependency(packageJson, ([key]) => key === 'storybook');
     const [pkg, version] = dep || devDep || peerDep || [];
 
     if (pkg && version) {
-      return {
-        version,
-        frameworkPackage: pkg,
-      };
+      return version;
     }
   }
 
-  return {
-    version: undefined,
-    frameworkPackage: undefined,
-  };
+  return undefined;
 };
 
 const validConfigExtensions = ['ts', 'js', 'tsx', 'jsx', 'mjs', 'cjs'];
@@ -120,12 +136,62 @@ export const getConfigInfo = (configDir?: string) => {
   };
 };
 
-export const getStorybookInfo = (configDir = '.storybook') => {
-  const rendererInfo = getRendererInfo(configDir);
+export const getStorybookInfo = async (
+  configDir = '.storybook',
+  cwd?: string
+): Promise<CoreCommon_StorybookInfo> => {
   const configInfo = getConfigInfo(configDir);
+  const mainConfig = (await loadMainConfig({
+    configDir: configInfo.configDir,
+    cwd,
+  })) as StorybookConfigRaw;
+
+  invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);
+
+  const frameworkValue = mainConfig.framework;
+  const frameworkField = typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name;
+  const addons = getAddonNames(mainConfig);
+  const versionSpecifier = getStorybookVersionSpecifier(configDir);
+
+  if (!frameworkField) {
+    return {
+      ...configInfo,
+      versionSpecifier,
+      addons,
+      mainConfig,
+      mainConfigPath: configInfo.mainConfigPath ?? undefined,
+      previewConfigPath: configInfo.previewConfigPath ?? undefined,
+      managerConfigPath: configInfo.managerConfigPath ?? undefined,
+    };
+  }
+
+  const frameworkPackage = extractFrameworkPackageName(frameworkField);
+
+  const framework = frameworkPackages[frameworkPackage];
+  const renderer = await extractRenderer(frameworkPackage);
+  const builder = frameworkToBuilder[framework];
+
+  const rendererPackage = Object.entries(rendererPackages).find(
+    ([, value]) => value === renderer
+  )?.[0];
+
+  const builderPackage = Object.entries(builderPackages).find(
+    ([, value]) => value === builder
+  )?.[0];
 
   return {
-    ...rendererInfo,
     ...configInfo,
-  } as CoreCommon_StorybookInfo;
+    addons,
+    mainConfig,
+    framework,
+    versionSpecifier,
+    renderer: renderer ?? undefined,
+    builder: builder ?? undefined,
+    frameworkPackage,
+    rendererPackage,
+    builderPackage,
+    mainConfigPath: configInfo.mainConfigPath ?? undefined,
+    previewConfigPath: configInfo.previewConfigPath ?? undefined,
+    managerConfigPath: configInfo.managerConfigPath ?? undefined,
+  };
 };

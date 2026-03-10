@@ -1,6 +1,8 @@
 import { join, relative, resolve, sep } from 'node:path';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
+import * as walk from 'empathic/walk';
+import { globSync } from 'tinyglobby';
 
 import { LOCK_FILES } from '../js-package-manager/constants';
 
@@ -11,71 +13,61 @@ export const getProjectRoot = () => {
     return projectRoot;
   }
 
-  let result;
   // Allow manual override in cases where auto-detect doesn't work
   if (process.env.STORYBOOK_PROJECT_ROOT) {
     return process.env.STORYBOOK_PROJECT_ROOT;
   }
 
   try {
-    const found = findUpSync('.git', { type: 'directory' });
+    const found = find.up('.git') || find.up('.svn') || find.up('.hg');
     if (found) {
-      result = join(found, '..');
+      projectRoot = join(found, '..');
+      return projectRoot;
     }
   } catch (e) {
-    //
+    process.stdout.write(`\nerror searching for repository root: ${e}\n`);
   }
 
   try {
-    const found = findUpSync('.svn', { type: 'directory' });
+    const found = find.any(LOCK_FILES);
     if (found) {
-      result = result || join(found, '..');
+      projectRoot = join(found, '..');
+      return projectRoot;
     }
   } catch (e) {
-    //
+    process.stdout.write(`\nerror searching for lock file: ${e}\n`);
   }
 
   try {
-    const found = findUpSync('.hg', { type: 'directory' });
-    if (found) {
-      result = result || join(found, '..');
+    const [basePath, rest] = __dirname.split(`${sep}node_modules${sep}`, 2);
+    if (
+      rest &&
+      !basePath.includes(`${sep}npm-cache${sep}`) &&
+      !relative(basePath, process.cwd()).startsWith('..')
+    ) {
+      projectRoot = basePath;
+      return projectRoot;
     }
   } catch (e) {
-    //
+    process.stdout.write(`\nerror searching for splitDirname: ${e}\n`);
   }
 
-  try {
-    const splitDirname = __dirname.split('node_modules');
-    const isSplitDirnameReachable = !relative(splitDirname[0], process.cwd()).startsWith('..');
-    result =
-      result ||
-      (isSplitDirnameReachable
-        ? splitDirname.length >= 2
-          ? splitDirname[0]
-          : undefined
-        : undefined);
-  } catch (e) {
-    //
-  }
-
-  try {
-    const found = findUpSync(LOCK_FILES, {
-      type: 'file',
-    });
-    if (found) {
-      result = result || join(found, '..');
-    }
-  } catch (e) {
-    //
-  }
-
-  projectRoot = result || process.cwd();
-
+  projectRoot = process.cwd();
   return projectRoot;
 };
 
 export const invalidateProjectRootCache = () => {
   projectRoot = undefined;
+};
+
+/** Finds files in the directory tree up to the project root */
+export const findFilesUp = (matchers: string[], baseDir = process.cwd()) => {
+  const matchingFiles: string[] = [];
+  for (const directory of walk.up(baseDir, { last: getProjectRoot() })) {
+    matchingFiles.push(...globSync(matchers, { cwd: directory, absolute: true }));
+  }
+
+  return matchingFiles;
 };
 
 export const nodePathsToArray = (nodePath: string) =>

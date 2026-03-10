@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode, SyntheticEvent } from 'react';
 import React, { Fragment, useCallback } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
+
 import { styled } from 'storybook/theming';
 
 import type { LinkWrapperType, ListItemProps } from './ListItem';
@@ -66,12 +68,16 @@ export interface TooltipLinkListProps extends ComponentProps<typeof List> {
 }
 
 export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkListProps) => {
+  deprecate(
+    '`TooltipLinkList` is deprecated and will be removed in Storybook 11, use `ActionList` or `MenuItem` and `WithMenu` instead.'
+  );
+
   const groups = Array.isArray(links[0]) ? (links as Link[][]) : [links as Link[]];
   const isIndented = groups.some((group) =>
     group.some((link) => ('icon' in link && link.icon) || ('input' in link && link.input))
   );
   return (
-    <List {...props}>
+    <List data-deprecated="TooltipLinkList" {...props} className="sb-list">
       {groups
         .filter((group) => group.length)
         .map((group, index) => {

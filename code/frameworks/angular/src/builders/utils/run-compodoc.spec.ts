@@ -1,18 +1,24 @@
 import type { BuilderContext } from '@angular-devkit/architect';
 // @ts-expect-error (TODO)
 import type { LoggerApi } from '@angular-devkit/core/src/logger';
-import { take } from 'rxjs/operators';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { runCompodoc } from './run-compodoc';
 
-const mockRunScript = vi.fn();
+const mockRunScript = vi.fn().mockResolvedValue({ stdout: '' });
 
 vi.mock('storybook/internal/common', () => ({
   JsPackageManagerFactory: {
     getPackageManager: () => ({
-      runPackageCommandSync: mockRunScript,
+      runPackageCommand: mockRunScript,
     }),
+  },
+}));
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    executeTaskWithSpinner: async (fn: any) => {
+      await fn();
+    },
   },
 }));
 
@@ -37,97 +43,77 @@ describe('runCompodoc', () => {
   } as BuilderContext;
 
   it('should run compodoc with tsconfig from context', async () => {
-    runCompodoc(
+    await runCompodoc(
       {
         compodocArgs: [],
         tsconfig: 'path/to/tsconfig.json',
       },
       builderContextMock
-    )
-      .pipe(take(1))
-      .subscribe();
-
-    expect(mockRunScript).toHaveBeenCalledWith(
-      'compodoc',
-      ['-p', 'path/to/tsconfig.json', '-d', 'path/to/project'],
-      'path/to/project',
-      'inherit'
     );
+
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-p', 'path/to/tsconfig.json', '-d', 'path/to/project'],
+      cwd: 'path/to/project',
+    });
   });
 
   it('should run compodoc with tsconfig from compodocArgs', async () => {
-    runCompodoc(
+    await runCompodoc(
       {
         compodocArgs: ['-p', 'path/to/tsconfig.stories.json'],
         tsconfig: 'path/to/tsconfig.json',
       },
       builderContextMock
-    )
-      .pipe(take(1))
-      .subscribe();
-
-    expect(mockRunScript).toHaveBeenCalledWith(
-      'compodoc',
-      ['-d', 'path/to/project', '-p', 'path/to/tsconfig.stories.json'],
-      'path/to/project',
-      'inherit'
     );
+
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-d', 'path/to/project', '-p', 'path/to/tsconfig.stories.json'],
+      cwd: 'path/to/project',
+    });
   });
 
   it('should run compodoc with default output folder.', async () => {
-    runCompodoc(
+    await runCompodoc(
       {
         compodocArgs: [],
         tsconfig: 'path/to/tsconfig.json',
       },
       builderContextMock
-    )
-      .pipe(take(1))
-      .subscribe();
-
-    expect(mockRunScript).toHaveBeenCalledWith(
-      'compodoc',
-      ['-p', 'path/to/tsconfig.json', '-d', 'path/to/project'],
-      'path/to/project',
-      'inherit'
     );
+
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-p', 'path/to/tsconfig.json', '-d', 'path/to/project'],
+      cwd: 'path/to/project',
+    });
   });
 
   it('should run with custom output folder specified with --output compodocArgs', async () => {
-    runCompodoc(
+    await runCompodoc(
       {
         compodocArgs: ['--output', 'path/to/customFolder'],
         tsconfig: 'path/to/tsconfig.json',
       },
       builderContextMock
-    )
-      .pipe(take(1))
-      .subscribe();
-
-    expect(mockRunScript).toHaveBeenCalledWith(
-      'compodoc',
-      ['-p', 'path/to/tsconfig.json', '--output', 'path/to/customFolder'],
-      'path/to/project',
-      'inherit'
     );
+
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-p', 'path/to/tsconfig.json', '--output', 'path/to/customFolder'],
+      cwd: 'path/to/project',
+    });
   });
 
   it('should run with custom output folder specified with -d compodocArgs', async () => {
-    runCompodoc(
+    await runCompodoc(
       {
         compodocArgs: ['-d', 'path/to/customFolder'],
         tsconfig: 'path/to/tsconfig.json',
       },
       builderContextMock
-    )
-      .pipe(take(1))
-      .subscribe();
-
-    expect(mockRunScript).toHaveBeenCalledWith(
-      'compodoc',
-      ['-p', 'path/to/tsconfig.json', '-d', 'path/to/customFolder'],
-      'path/to/project',
-      'inherit'
     );
+
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-p', 'path/to/tsconfig.json', '-d', 'path/to/customFolder'],
+      cwd: 'path/to/project',
+    });
   });
 });

@@ -8,7 +8,8 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
+import { pick, toMerged } from 'es-toolkit/object';
+import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import type { ThemeVars } from 'storybook/theming';
 import { create } from 'storybook/theming/create';
 
@@ -92,10 +93,30 @@ export interface SubAPI {
    */
   getShowToolbarWithCustomisations: (showToolbar: boolean) => boolean;
   /**
+   * GetShowPanelWithCustomisations - Returns the current visibility of the addon panel, taking into
+   * account customisations requested by the end user via a layoutCustomisations function.
+   */
+  getShowPanelWithCustomisations: (showPanel: boolean) => boolean;
+  /**
    * GetNavSizeWithCustomisations - Returns the size to apply to the sidebar/nav, taking into
    * account customisations requested by the end user via a layoutCustomisations function.
    */
   getNavSizeWithCustomisations: (navSize: number) => number;
+  /**
+   * Attempts to focus an element identified by its ID.
+   *
+   * @param elementId - The id of the element to focus.
+   * @param options - Options for focusing the element.
+   * @param options.forceFocus - Whether to make the element focusable even though it wasn't.
+   * @param options.select - Whether to call select() on the element after focusing it.
+   * @param options.poll - Whether to poll for the element if it is not immediately available.
+   *   Defaults to true. When true, polls every 50ms for up to 500ms.
+   * @returns Whether the element was successfully focused. Returns a Promise when polling.
+   */
+  focusOnUIElement: (
+    elementId?: string,
+    options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+  ) => boolean | Promise<boolean>;
 }
 
 type PartialSubState = Partial<SubState>;
@@ -127,9 +148,11 @@ export const defaultLayoutState: SubState = {
 };
 
 export const focusableUIElements = {
+  addonPanel: 'storybook-panel-region',
   storySearchField: 'storybook-explorer-searchfield',
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',
+  showAddonPanel: 'storybook-show-addon-panel',
 };
 
 const getIsNavShown = (state: State) => {
@@ -321,17 +344,90 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       );
     },
 
-    focusOnUIElement(elementId?: string, select?: boolean) {
+    /**
+     * Attempts to focus (and select) an element identified by its ID. It is the responsibility of
+     * the callee to ensure that the element is present in the DOM and that no focus trap is
+     * available. When polling is enabled, this API polls and attempts to perform the focus for a
+     * set duration (max 500ms), so that race conditions can be avoided with the current API
+     * design.
+     *
+     * @param elementId The id of the element to focus.
+     * @param options When a boolean, treated as the `select` option for backwards compatibility.
+     *   When an object, may contain `select` and `poll` options.
+     * @returns Whether the element was successfully focused. Returns a Promise when polling.
+     */
+    focusOnUIElement(
+      elementId?: string,
+      options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+    ): boolean | Promise<boolean> {
+      // See RFC https://github.com/storybookjs/storybook/discussions/32983 for
+      // ways to make this API more robust to focus-trap race conditions.
+
+      const {
+        forceFocus = false,
+        select = false,
+        poll = true,
+      } = typeof options === 'boolean' ? { select: options } : (options ?? {});
+
       if (!elementId) {
-        return;
+        return false;
       }
-      const element = document.getElementById(elementId);
-      if (element) {
-        element.focus();
-        if (select) {
-          (element as any).select();
+
+      const attemptFocus = () => {
+        const element = document.getElementById(elementId);
+        if (!element) {
+          return false;
         }
+
+        element.focus();
+        if (
+          element !== document.activeElement &&
+          forceFocus &&
+          element.getAttribute('tabindex') === null
+        ) {
+          element.setAttribute('tabindex', '-1');
+          element.focus();
+        }
+
+        if (element !== document.activeElement && element.id !== document.activeElement?.id) {
+          return false;
+        }
+
+        if (select) {
+          (element as any).select?.();
+        }
+        return true;
+      };
+
+      if (attemptFocus()) {
+        return true;
       }
+
+      if (!poll) {
+        return false;
+      }
+
+      // Poll every 50ms for up to 500ms to account for race conditions.
+      return new Promise<boolean>((resolve) => {
+        const startTime = Date.now();
+        const maxDuration = 500;
+        const pollInterval = 50;
+
+        const intervalId = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+
+          if (attemptFocus()) {
+            clearInterval(intervalId);
+            resolve(true);
+            return;
+          }
+
+          if (elapsed >= maxDuration) {
+            clearInterval(intervalId);
+            resolve(false);
+          }
+        }, pollInterval);
+      });
     },
 
     getInitialOptions() {
@@ -374,6 +470,16 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       }
 
       return showToolbar;
+    },
+
+    getShowPanelWithCustomisations(showPanel: boolean) {
+      const state = store.getState();
+
+      if (isFunction(state.layoutCustomisations.showPanel)) {
+        return state.layoutCustomisations.showPanel(state, showPanel) ?? showPanel;
+      }
+
+      return showPanel;
     },
 
     getNavSizeWithCustomisations(navSize: number) {

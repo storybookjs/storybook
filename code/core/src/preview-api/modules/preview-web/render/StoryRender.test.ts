@@ -16,6 +16,7 @@ import { StoryRender, serializeError } from './StoryRender';
 
 const entry = {
   type: 'story',
+  subtype: 'story',
   id: 'component--a',
   name: 'A',
   title: 'component',

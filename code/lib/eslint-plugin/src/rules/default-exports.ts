@@ -13,7 +13,7 @@ import { createStorybookRule } from '../utils/create-storybook-rule';
 // Rule Definition
 //------------------------------------------------------------------------------
 
-export = createStorybookRule({
+export default createStorybookRule({
   name: 'default-exports',
   defaultOptions: [],
   meta: {
@@ -99,7 +99,7 @@ export = createStorybookRule({
       },
       'Program:exit': function (program: TSESTree.Program) {
         if (!isCsf4Style && !hasDefaultExport && !hasStoriesOfImport) {
-          const componentName = getComponentName(program, context.getFilename());
+          const componentName = getComponentName(program, context.filename);
           const firstNonImportStatement = program.body.find((n) => !isImportDeclaration(n));
           const node = firstNonImportStatement || program.body[0] || program;
 

@@ -13,6 +13,7 @@ import {
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from 'storybook/internal/core-events';
 
+import { SupportedRenderer } from '../../types';
 import { searchFiles } from '../utils/search-files';
 import { initFileSearchChannel } from './file-search-channel';
 
@@ -25,7 +26,7 @@ vi.mock('storybook/internal/common');
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.mocked(common.getFrameworkName).mockResolvedValue('@storybook/react');
-  vi.mocked(common.extractProperRendererNameFromFramework).mockResolvedValue('react');
+  vi.mocked(common.extractRenderer).mockResolvedValue(SupportedRenderer.REACT);
   vi.spyOn(common, 'getProjectRoot').mockReturnValue(
     require('path').join(__dirname, '..', 'utils', '__search-files-tests__')
   );

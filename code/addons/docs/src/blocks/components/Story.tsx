@@ -15,6 +15,7 @@ interface CommonProps {
   story: PreparedStory;
   inline: boolean;
   primary: boolean;
+  resetKey?: number;
 }
 
 interface InlineStoryProps extends CommonProps {
@@ -40,7 +41,7 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   const [showLoader, setShowLoader] = useState(true);
   const [error, setError] = useState<Error>();
 
-  const { story, height, autoplay, forceInitialArgs, renderStoryToElement } = props;
+  const { story, height, autoplay, forceInitialArgs, renderStoryToElement, resetKey } = props;
 
   useEffect(() => {
     if (!(story && storyRef.current)) {
@@ -64,7 +65,7 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
       //   https://github.com/facebook/react/issues/25675#issuecomment-1363957941
       Promise.resolve().then(() => cleanup());
     };
-  }, [autoplay, renderStoryToElement, story]);
+  }, [autoplay, renderStoryToElement, story, resetKey]);
 
   if (error) {
     return (

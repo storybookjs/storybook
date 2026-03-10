@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/client-logger';
 import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
 
-import { CopyIcon, MarkupIcon } from '@storybook/icons';
+import { CopyIcon, MarkupIcon, UndoIcon } from '@storybook/icons';
 
 import { useId } from '@react-aria/utils';
 import { darken } from 'polished';
@@ -31,6 +31,7 @@ export type PreviewProps = PropsWithChildren<{
   withToolbar?: boolean;
   className?: string;
   additionalActions?: ActionItem[];
+  onResetStory?: () => void;
 }>;
 
 export type Layout = 'padded' | 'fullscreen' | 'centered';
@@ -150,6 +151,7 @@ export const Preview: FC<PreviewProps> = ({
   className,
   layout = 'padded',
   inline = false,
+  onResetStory,
   ...props
 }) => {
   const [expanded, setExpanded] = useState(isExpanded);
@@ -225,7 +227,7 @@ export const Preview: FC<PreviewProps> = ({
           </div>
         )}
       </PreviewContainer>
-      {(withSource || additionalActionItems.length > 0) && (
+      {(withSource || onResetStory || additionalActionItems.length > 0) && (
         <ActionBar className="sbdocs sbdocs-preview-actions" innerStyle={{ paddingInline: 0 }}>
           {hasSourceError && (
             <Button
@@ -254,6 +256,16 @@ export const Preview: FC<PreviewProps> = ({
                 <CopyIcon /> {copied ?? 'Copy code'}
               </Button>
             </>
+          )}
+          {onResetStory && (
+            <Button
+              ariaLabel={false}
+              variant="ghost"
+              onClick={onResetStory}
+              className="docblock-reset-story"
+            >
+              <UndoIcon /> Reset story
+            </Button>
           )}
           {additionalActionItems.map(({ title, className, onClick, disabled }, index: number) => (
             <Button

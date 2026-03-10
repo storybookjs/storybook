@@ -119,9 +119,9 @@ const useLayoutSyncingState = ({
 
   const { panelResizerRef, sidebarResizerRef, sidebarMaxWidth, panelMaxSize } = useDragging({
     setState: setInternalDraggingSizeState,
-    isPanelShown,
     isDesktop,
     navSize: customisedNavSize,
+    showPanel: customisedShowPanel,
     rightPanelWidth,
     panelPosition: managerLayoutState.panelPosition,
   });

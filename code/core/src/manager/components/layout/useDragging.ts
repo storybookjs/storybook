@@ -37,13 +37,13 @@ function interpolate(relativeValue: number, min: number, max: number): number {
 function computeSidebarMaxWidth(
   panelPosition: API_Layout['panelPosition'],
   rightPanelWidth: number,
-  isPanelShown: boolean
+  showPanel: boolean
 ): number {
   if (typeof window === 'undefined') {
     return 0;
   }
 
-  const panelWidth = !isPanelShown
+  const panelWidth = !showPanel
     ? 0
     : panelPosition === 'right'
       ? rightPanelWidth
@@ -105,14 +105,14 @@ function applyResizeKeyboard(
 
 export function useDragging({
   setState,
-  isPanelShown,
+  showPanel,
   isDesktop,
   navSize,
   rightPanelWidth,
   panelPosition,
 }: {
   setState: Dispatch<SetStateAction<LayoutState>>;
-  isPanelShown: boolean;
+  showPanel: boolean;
   isDesktop: boolean;
   navSize: number;
   rightPanelWidth: number;
@@ -123,7 +123,7 @@ export function useDragging({
 
   // Compute current max sizes so callers can use them for aria attributes without duplicating logic.
   // Evaluated at render time (from the same values the containers receive), so they stay in sync.
-  const sidebarMaxWidth = computeSidebarMaxWidth(panelPosition, rightPanelWidth, isPanelShown);
+  const sidebarMaxWidth = computeSidebarMaxWidth(panelPosition, rightPanelWidth, showPanel);
   const panelMaxSize = computePanelMaxSize(panelPosition, navSize);
 
   useEffect(() => {
@@ -223,7 +223,7 @@ export function useDragging({
             navSize: clamp(
               sidebarDragX,
               0,
-              computeSidebarMaxWidth(state.panelPosition, state.rightPanelWidth, isPanelShown)
+              computeSidebarMaxWidth(state.panelPosition, state.rightPanelWidth, showPanel)
             ),
           };
         }
@@ -283,7 +283,7 @@ export function useDragging({
           'navSize',
           e.key,
           step,
-          computeSidebarMaxWidth(state.panelPosition, state.rightPanelWidth, isPanelShown),
+          computeSidebarMaxWidth(state.panelPosition, state.rightPanelWidth, showPanel),
           'ArrowRight',
           'ArrowLeft'
         )
@@ -324,7 +324,7 @@ export function useDragging({
     };
   }, [
     // we need to rerun this effect when the panel is shown/hidden or when changing between mobile/desktop to re-attach the event listeners
-    isPanelShown,
+    showPanel,
     isDesktop,
     setState,
   ]);

@@ -605,6 +605,31 @@ describe('configureEslintPlugin', () => {
       });
       expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
     });
+
+    it('should not modify config if eslint-plugin-storybook is already dynamically imported', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import { includeIgnoreFile } from '@eslint/compat';
+        import { FlatCompat } from '@eslint/eslintrc';
+        import { composer } from 'eslint-flat-config-utils';
+
+        export default composer(
+          import('eslint-plugin-storybook').then((m) => m.default.configs['flat/recommended']),
+        );
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
+    });
   });
 });
 

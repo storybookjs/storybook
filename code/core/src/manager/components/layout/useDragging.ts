@@ -39,12 +39,16 @@ function computeSidebarMaxWidth(
   rightPanelWidth: number,
   isPanelShown: boolean
 ): number {
+  if (typeof window === 'undefined') {
+    return 0;
+  }
+
   const panelWidth = !isPanelShown
     ? 0
     : panelPosition === 'right'
       ? rightPanelWidth
       : MINIMUM_HORIZONTAL_PANEL_WIDTH_PX;
-  return window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - panelWidth;
+  return Math.min(window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - panelWidth, 0);
 }
 
 /**
@@ -54,10 +58,14 @@ function computeSidebarMaxWidth(
  * - Right panel: `innerWidth` minus the content minimum and the sidebar.
  */
 function computePanelMaxSize(panelPosition: API_Layout['panelPosition'], navSize: number): number {
-  if (panelPosition === 'bottom') {
-    return window.innerHeight - TOOLBAR_HEIGHT_PX;
+  if (typeof window === 'undefined') {
+    return 0;
   }
-  return window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - navSize;
+
+  if (panelPosition === 'bottom') {
+    return Math.min(window.innerHeight - TOOLBAR_HEIGHT_PX, 0);
+  }
+  return Math.min(window.innerWidth - MINIMUM_CONTENT_WIDTH_PX - navSize, 0);
 }
 
 /**
@@ -115,12 +123,8 @@ export function useDragging({
 
   // Compute current max sizes so callers can use them for aria attributes without duplicating logic.
   // Evaluated at render time (from the same values the containers receive), so they stay in sync.
-  const sidebarMaxWidth =
-    typeof window !== 'undefined'
-      ? computeSidebarMaxWidth(panelPosition, rightPanelWidth, isPanelShown)
-      : undefined;
-  const panelMaxSize =
-    typeof window !== 'undefined' ? computePanelMaxSize(panelPosition, navSize) : undefined;
+  const sidebarMaxWidth = computeSidebarMaxWidth(panelPosition, rightPanelWidth, isPanelShown);
+  const panelMaxSize = computePanelMaxSize(panelPosition, navSize);
 
   useEffect(() => {
     const panelResizer = panelResizerRef.current;

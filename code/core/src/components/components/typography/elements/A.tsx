@@ -22,4 +22,19 @@ export const A = styled(Link)(withReset, ({ theme }) => ({
     left: 0,
     bottom: 0,
   },
+  '& code': {
+    color: 'inherit',
+    textDecoration: 'underline',
+    textDecorationThickness: '1px',
+    paddingLeft: 0,
+    paddingRight: 0,
+    '&::before': {
+      content: '"\\00a0"',
+      fontSize: '0.5em',
+    },
+    '&::after': {
+      content: '"\\00a0"',
+      fontSize: '0.5em',
+    },
+  },
 }));

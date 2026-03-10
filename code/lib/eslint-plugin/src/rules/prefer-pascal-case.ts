@@ -91,7 +91,7 @@ export default createStorybookRule({
             {
               messageId: 'convertToPascalCase',
               *fix(fixer) {
-                const fullText = context.getSourceCode().text;
+                const fullText = context.sourceCode.text;
                 const fullName = fullText.slice(id.range[0], id.range[1]);
                 const suffix = fullName.substring(name.length);
                 const pascal = toPascalCase(name);

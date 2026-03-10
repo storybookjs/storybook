@@ -54,16 +54,16 @@ export interface SubAPI {
 export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI, provider }) => {
   const api: SubAPI = {
     getGlobals() {
-      return store.getState().globals as Globals;
+      return store.getState().globals!;
     },
     getUserGlobals() {
-      return store.getState().userGlobals as Globals;
+      return store.getState().userGlobals!;
     },
     getStoryGlobals() {
-      return store.getState().storyGlobals as Globals;
+      return store.getState().storyGlobals!;
     },
     getGlobalTypes() {
-      return store.getState().globalTypes as GlobalTypes;
+      return store.getState().globalTypes!;
     },
     updateGlobals(newGlobals) {
       // Only emit the message to the local ref

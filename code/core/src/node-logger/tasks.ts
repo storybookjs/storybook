@@ -1,11 +1,11 @@
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import { CLI_COLORS, log } from './logger';
 import { logTracker } from './logger/log-tracker';
 import { spinner } from './prompts/prompt-functions';
 
-type ChildProcessFactory = (signal?: AbortSignal) => ExecaChildProcess;
+type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
 
 interface SetupAbortControllerResult {
   abortController: AbortController;
@@ -61,7 +61,7 @@ export const executeTask = async (
     success,
     abortable = false,
   }: { intro: string; error: string; success: string; abortable?: boolean }
-) => {
+): Promise<'aborted' | void> => {
   logTracker.addLog('info', intro);
   log(intro);
 
@@ -99,7 +99,7 @@ export const executeTask = async (
     if (isAborted) {
       logTracker.addLog('info', `${intro} aborted`);
       log(CLI_COLORS.error(`${intro} aborted`));
-      return;
+      return 'aborted';
     }
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
     logTracker.addLog('error', error, { error: errorMessage });
@@ -108,6 +108,7 @@ export const executeTask = async (
   } finally {
     cleanup?.();
   }
+  return undefined;
 };
 
 export const executeTaskWithSpinner = async (
@@ -119,7 +120,7 @@ export const executeTaskWithSpinner = async (
     success,
     abortable = false,
   }: { id: string; intro: string; error: string; success: string; abortable?: boolean }
-) => {
+): Promise<'aborted' | void> => {
   logTracker.addLog('info', intro);
 
   let abortController: AbortController | undefined;
@@ -159,7 +160,7 @@ export const executeTaskWithSpinner = async (
     if (isAborted) {
       logTracker.addLog('info', `${intro} aborted`);
       task.cancel(CLI_COLORS.warning(`${intro} aborted`));
-      return;
+      return 'aborted';
     }
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
     logTracker.addLog('error', error, { error: errorMessage });
@@ -168,4 +169,5 @@ export const executeTaskWithSpinner = async (
   } finally {
     cleanup?.();
   }
+  return undefined;
 };

@@ -2,12 +2,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
@@ -59,7 +59,7 @@ export class PNPMProxy extends JsPackageManager {
       command: 'pnpm',
       args: ['--version'],
     });
-    return result.stdout ?? null;
+    return typeof result.stdout === 'string' ? result.stdout : '';
   }
 
   getInstallArgs(): string[] {
@@ -79,11 +79,15 @@ export class PNPMProxy extends JsPackageManager {
 
   public runPackageCommand({
     args,
+    useRemotePkg = false,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     return executeCommand({
       command: 'pnpm',
-      args: ['exec', ...args],
+      args: [useRemotePkg ? 'dlx' : 'exec', ...args],
       ...options,
     });
   }
@@ -103,29 +107,37 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
+    // pnpm 10.7.1+ falls back to npm for certain config keys (including registry)
+    // https://github.com/pnpm/pnpm/pull/9346
+    // "npm config" commands are not allowed in workspaces per default
+    // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
     const childProcess = await executeCommand({
-      command: 'pnpm',
-      args: ['config', 'get', 'registry'],
+      command: 'npm',
+      cwd: this.cwd,
+      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
     });
-    const url = (childProcess.stdout ?? '').trim();
+    const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     try {
+      const args = ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`];
       const childProcess = await executeCommand({
         command: 'pnpm',
-        args: ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`],
+        shell: true,
+        args,
         env: {
           FORCE_COLOR: 'false',
         },
         cwd: this.instanceDir,
       });
-      const commandResult = childProcess.stdout ?? '';
+      const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
     } catch (e) {
+      logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
       return undefined;
     }
   }
@@ -221,7 +233,7 @@ export class PNPMProxy extends JsPackageManager {
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 

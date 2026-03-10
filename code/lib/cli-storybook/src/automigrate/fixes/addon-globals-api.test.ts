@@ -38,6 +38,7 @@ const check = async (previewContents: string) => {
     storybookVersion: '9.0.0', // Assume v9 for testing migrations
     previewConfigPath,
     storiesPaths: [],
+    hasCsfFactoryPreview: false,
   });
 };
 

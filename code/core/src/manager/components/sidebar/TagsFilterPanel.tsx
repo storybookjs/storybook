@@ -18,9 +18,9 @@ import { styled } from 'storybook/theming';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 
 export const groupByType = (filters: Filter[]) =>
-  filters.reduce(
+  filters.filter(Boolean).reduce(
     (acc, filter) => {
-      acc[filter.type] = acc[filter.type] || [];
+      acc[filter.type] ??= [];
       acc[filter.type].push(filter);
       return acc;
     },
@@ -105,7 +105,7 @@ export const TagsFilterPanel = ({
       id: `filter-${type}-${id}`,
       content: (
         <ActionList.HoverItem targetId={`filter-${type}-${id}`}>
-          <ActionList.Action as="label" tabIndex={-1} tooltip={toggleTooltip}>
+          <ActionList.Action as="label" ariaLabel={false} tabIndex={-1} tooltip={toggleTooltip}>
             <ActionList.Icon>
               {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
               <Form.Checkbox
@@ -201,6 +201,7 @@ export const TagsFilterPanel = ({
         <ActionList as="div">
           <ActionList.Item as="div">
             <ActionList.Link
+              ariaLabel={false}
               href={api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' })}
               target="_blank"
             >

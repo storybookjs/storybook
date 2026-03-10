@@ -155,6 +155,7 @@ export const RefIndicator = React.memo(
       return (
         <IndicatorPlacement ref={forwardedRef}>
           <PopoverProvider
+            ariaLabel="Composed Storybook status"
             placement={isMobile ? 'bottom' : 'bottom-start'}
             padding={0}
             popover={() => (

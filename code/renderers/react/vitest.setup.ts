@@ -1,5 +1,3 @@
-import { register } from 'node:module';
-
 import { beforeEach, vi } from 'vitest';
 
 import { type JsPackageManager, JsPackageManagerFactory } from 'storybook/internal/common';
@@ -17,8 +15,6 @@ vi.mock('node:fs', async () => {
   const fs = (await import('memfs')).fs;
   return { default: fs, ...fs };
 });
-
-vi.mock('node:module', { spy: true });
 
 vi.mock(import('./src/componentManifest/utils'), { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -52,5 +48,4 @@ beforeEach(() => {
     }
     throw new Error(`Unable to resolve ${id}`);
   });
-  vi.mocked(register).mockImplementation(() => {});
 });

@@ -20,7 +20,7 @@ export const warn = async ({ hasTSDependency }: Options) => {
       );
       logger.warn('Storybook will continue as though this is a JavaScript project.');
       logger.info(
-        'For more information, see: https://storybook.js.org/docs/configurations/typescript-config/'
+        'For more information, see: https://storybook.js.org/docs/configure/integration/typescript'
       );
     }
   }

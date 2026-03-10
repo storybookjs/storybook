@@ -3,7 +3,7 @@ export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs', '!test', '!vitest'],
   args: { label: 'Click Me!' },
-  parameters: { chromatic: { disable: true } },
+  parameters: { chromatic: { disableSnapshot: true } },
 };
 
 /** A story that throws */

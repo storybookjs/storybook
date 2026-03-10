@@ -1,7 +1,7 @@
-```ts filename="Example.stories.ts" renderer="angular" language="ts"
+```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
-import { Example } from './Example';
+import { Example } from './example.component';
 
 const meta: Meta<Example> = {
   component: Example,
@@ -16,6 +16,24 @@ const meta: Meta<Example> = {
 };
 
 export default meta;
+```
+
+```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Example } from './example.component';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: {
+      table: {
+        defaultValue: { summary: 0 },
+        type: { summary: 'number' },
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -38,7 +56,7 @@ export default meta;
 </script>
 ```
 
-```js filename="Example.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Example.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Example from './Example.svelte';
 
 export default {
@@ -90,11 +108,11 @@ export default {
 </script>
 ```
 
-```ts filename="Example.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Example.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
-import { Example } from './Example';
+import Example from './Example.svelte';
 
 const meta = {
   component: Example,
@@ -132,7 +150,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js"
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-example',
   argTypes: {
@@ -146,7 +164,7 @@ export default {
 };
 ```
 
-```ts filename="Example.stories.ts" renderer="web-components" language="ts"
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -162,6 +180,38 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-example',
+  argTypes: {
+    value: {
+      table: {
+        defaultValue: { summary: 0 },
+        type: { summary: 'number' },
+      },
+    },
+  },
+});
+```
+
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-example',
+  argTypes: {
+    value: {
+      table: {
+        defaultValue: { summary: 0 },
+        type: { summary: 'number' },
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -186,7 +236,46 @@ const meta = preview.meta({
 
 ```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: {
+      table: {
+        defaultValue: { summary: 0 },
+        type: { summary: 'number' },
+      },
+    },
+  },
+});
+```
+
+```ts filename="Example.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Example from './Example.vue';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: {
+      table: {
+        defaultValue: { summary: 0 },
+        type: { summary: 'number' },
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Example.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Example from './Example.vue';
 
 const meta = preview.meta({
   component: Example,

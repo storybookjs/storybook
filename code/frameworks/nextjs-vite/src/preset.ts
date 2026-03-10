@@ -56,6 +56,7 @@ export const optimizeViteDeps = [
   '@storybook/nextjs-vite/router.mock',
   '@storybook/nextjs-vite > styled-jsx',
   '@storybook/nextjs-vite > styled-jsx/style',
+  '@opentelemetry/api',
 ];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {

@@ -14,5 +14,5 @@
       }
     }
   },
-  "tags": ["ci:normal"]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

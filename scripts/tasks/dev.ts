@@ -1,8 +1,7 @@
-import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { now, saveBench } from '../bench/utils';
-import type { TemplateKey } from '../get-template';
 import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
@@ -11,7 +10,7 @@ export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
   : 6006;
 
-function getDevPort(key: TemplateKey) {
+function getDevPort(key: AllTemplatesKey) {
   return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'dev', key }) : PORT;
 }
 
@@ -21,7 +20,12 @@ export const dev: Task = {
   dependsOn: ['sandbox'],
   async ready({ key }) {
     const port = getDevPort(key);
-    return (await detectFreePort(port)) !== port;
+    try {
+      await fetch(`http://localhost:${port}/iframe.html`, { signal: AbortSignal.timeout(1000) });
+      return true;
+    } catch {
+      return false;
+    }
   },
   async run({ sandboxDir, key, selectedTask }, { dryRun, debug }) {
     const controller = new AbortController();

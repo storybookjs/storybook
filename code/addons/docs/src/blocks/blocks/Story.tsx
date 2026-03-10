@@ -54,8 +54,6 @@ type StoryParameters = {
   __forceInitialArgs?: boolean;
   /** Internal prop if this story is the primary story */
   __primary?: boolean;
-  /** Key to trigger story remount when changed */
-  resetKey?: number;
 };
 
 export type StoryProps = StoryRefProps & StoryParameters;
@@ -102,7 +100,6 @@ export const getStoryProps = <TFramework extends Renderer>(
       forceInitialArgs: !!props.__forceInitialArgs,
       primary: !!props.__primary,
       renderStoryToElement: context.renderStoryToElement as any,
-      resetKey: props.resetKey,
     };
   }
 

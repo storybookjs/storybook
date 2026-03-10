@@ -1,5 +1,5 @@
 /* eslint-disable react/destructuring-assignment */
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext } from 'react';
 import type { FC } from 'react';
 
 import { RESET_STORY_ARGS } from 'storybook/internal/core-events';
@@ -82,10 +82,10 @@ export const Canvas: FC<CanvasProps> = (props) => {
   // By default, stories will be iframed, but most frameworks support inline rendering and override that in a docs entry file
   const inline = props.story?.inline ?? story.parameters?.docs?.story?.inline ?? false;
 
-  const [resetKey, setResetKey] = useState(0);
+  const resetButton = story.parameters.docs?.canvas?.resetButton ?? false;
+
   const handleResetStory = useCallback(() => {
     docsContext.channel.emit(RESET_STORY_ARGS, { storyId: story.id });
-    setResetKey((prev) => prev + 1);
   }, [docsContext.channel, story.id]);
 
   return (
@@ -97,9 +97,9 @@ export const Canvas: FC<CanvasProps> = (props) => {
       className={className}
       layout={layout}
       inline={inline}
-      onResetStory={inline ? handleResetStory : undefined}
+      onResetStory={inline && resetButton ? handleResetStory : undefined}
     >
-      <Story of={of || story.moduleExport} meta={props.meta} {...props.story} resetKey={resetKey} />
+      <Story of={of || story.moduleExport} meta={props.meta} {...props.story} />
     </PurePreview>
   );
 };

@@ -68,6 +68,18 @@ By default, the Vite builder in Storybook searches for the Vite configuration fi
   If you do not want Storybook to load the Vite configuration file automatically, you can use the `viteConfigPath` option to point to a non-existent file.
 </Callout>
 
+### Set configLoader for vite config
+
+You can pass the `configLoader` argument to `vite` by setting it in builder options. This is equivalent to the `--configLoader` command line argument.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-builder-configLoader.md" />
+
+{/* prettier-ignore-end */}
+
+Check `vite`'s [CLI documentation](https://vite.dev/guide/cli) for valid `configLoader` options.
+
 ### TypeScript
 
 If you need, you can also configure Storybook's Vite builder using TypeScript. Rename your `.storybook/main.js` to `.storybook/main.ts` and adjust it as follows:

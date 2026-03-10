@@ -1,21 +1,19 @@
 import { exec } from 'node:child_process';
-import { mkdir, rm } from 'node:fs/promises';
+import { access, mkdir, readFile, rm } from 'node:fs/promises';
 import http from 'node:http';
 import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
-import { execa } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, readJSON, remove } from 'fs-extra';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
 
+import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
-import { PACKS_DIRECTORY } from './utils/constants';
-import { getWorkspaces } from './utils/workspace';
+import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
+import { killPort } from './utils/port';
+import { getCodeWorkspaces } from './utils/workspace';
 
 program
   .option('-O, --open', 'keep process open')
@@ -29,7 +27,21 @@ const root = resolvePath(__dirname, '..');
 
 const opts = program.opts();
 
+const pathExists = async (p: string) => {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+type Servers = { close: () => Promise<void> };
 const startVerdaccio = async () => {
+  // Kill Verdaccio related processes if they are already running
+  await killPort(6001);
+  await killPort(6002);
+
   const ready = {
     proxy: false,
     verdaccio: false,
@@ -64,10 +76,24 @@ const startVerdaccio = async () => {
 
       let verdaccioApp: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
 
+      const servers = {
+        close: async () => {
+          console.log('🛬 Closing servers running on port 6001 and 6002');
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              verdaccioApp?.close(() => resolve());
+            }),
+            new Promise<void>((resolve) => {
+              proxy?.close(() => resolve());
+            }),
+          ]);
+        },
+      };
+
       proxy.listen(6001, () => {
         ready.proxy = true;
         if (ready.verdaccio) {
-          resolve(verdaccioApp);
+          resolve(servers);
         }
       });
       const cache = join(__dirname, '..', '.verdaccio-cache');
@@ -83,7 +109,7 @@ const startVerdaccio = async () => {
         app.listen(6002, () => {
           ready.verdaccio = true;
           if (ready.proxy) {
-            resolve(verdaccioApp);
+            resolve(servers);
           }
         });
       });
@@ -95,11 +121,12 @@ const startVerdaccio = async () => {
         }
       }, 10000);
     }),
-  ]) as Promise<Server>;
+  ]) as Promise<Servers>;
 };
 
 const currentVersion = async () => {
-  const { version } = await readJSON(join(__dirname, '..', 'code', 'package.json'));
+  const content = await readFile(join(__dirname, '..', 'code', 'package.json'), 'utf-8');
+  const { version } = JSON.parse(content);
   return version;
 };
 
@@ -129,23 +156,21 @@ const publish = async (packages: { name: string; location: string }[], url: stri
     packages.map(({ name, location }) =>
       limit(
         () =>
-          new Promise((res, rej) => {
-            logger.log(
-              `🛫 publishing ${name} (${location.replace(resolvePath(join(__dirname, '..')), '.')})`
-            );
+          new Promise((resolve, reject) => {
+            const loggedLocation = location.replace(resolvePath(join(__dirname, '..')), '.');
+            const resolvedLocation = resolvePath('../code', location);
+
+            logger.log(`🛫 publishing ${name} (${loggedLocation})`);
 
             const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
-            const command = `cd ${resolvePath(
-              '../code',
-              location
-            )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --tag="xyz" --ignore-scripts`;
+            const command = `cd "${resolvedLocation}" && yarn pack --out="${PACKS_DIRECTORY}/${tarballFilename}" && cd "${PACKS_DIRECTORY}" && npm publish "./${tarballFilename}" --registry ${url} --force --tag="xyz" --ignore-scripts`;
             exec(command, (e) => {
               if (e) {
-                rej(e);
+                reject(e);
               } else {
                 i += 1;
                 logger.log(`${i}/${packages.length} 🛬 successful publish of ${name}!`);
-                res(undefined);
+                resolve(undefined);
               }
             });
           })
@@ -154,70 +179,68 @@ const publish = async (packages: { name: string; location: string }[], url: stri
   );
 };
 
+let servers: Servers | undefined;
+
 const run = async () => {
   const verdaccioUrl = `http://localhost:6001`;
 
   logger.log(`📐 reading version of storybook`);
   logger.log(`🚛 listing storybook packages`);
 
-  if (!process.env.CI) {
+  if (opts.publish) {
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
-    const verdaccioCache = resolvePath(__dirname, '..', '.verdaccio-cache');
+    const verdaccioCache = join(ROOT_DIRECTORY, '.verdaccio-cache');
     if (await pathExists(verdaccioCache)) {
       logger.log(`🗑 cleaning up cache`);
-      await remove(verdaccioCache);
+      await rm(verdaccioCache, { force: true, recursive: true });
     }
   }
 
   logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
 
-  const [verdaccioServer, packages, version] = await Promise.all([
+  const [_servers, packages, version] = await Promise.all([
     startVerdaccio(),
-    getWorkspaces(false),
+    getCodeWorkspaces(false),
     currentVersion(),
   ]);
+  servers = _servers;
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
 
   logger.log(`👤 add temp user to verdaccio`);
-  await execa(
-    'npx',
-    // creates a .npmrc file in the root directory of the project
-    [
-      'npm-auth-to-token',
-      '-u',
-      'foo',
-      '-p',
-      's3cret',
-      '-e',
-      'test@test.com',
-      '-r',
-      'http://localhost:6002',
-    ],
-    {
-      cwd: root,
-    }
-  );
+  // Use npmAuth helper to authenticate to the local Verdaccio registry
+  // This will create a .npmrc file in the root directory
+  await npmAuth({
+    username: 'foo',
+    password: 's3cret',
+    email: 'test@test.com',
+    registry: 'http://localhost:6002',
+    outputDir: root,
+  });
 
   logger.log(
     `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
   );
 
   if (opts.publish) {
-    await publish(packages, 'http://localhost:6002');
+    try {
+      await publish(packages, 'http://localhost:6002');
+    } finally {
+      await rm(join(root, '.npmrc'), { force: true });
+    }
   }
 
-  await rm(join(root, '.npmrc'), { force: true });
-
   if (!opts.open) {
-    verdaccioServer.close();
+    await servers?.close();
     process.exit(0);
   }
 };
 
-run().catch((e) => {
-  logger.error(e);
-  rm(join(root, '.npmrc'), { force: true }).then(() => {
-    process.exit(1);
-  });
+run().catch(async (e) => {
+  try {
+    await servers?.close();
+  } finally {
+    await rm(join(root, '.npmrc'), { force: true });
+    throw e;
+  }
 });

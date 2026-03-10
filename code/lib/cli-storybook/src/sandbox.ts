@@ -1,12 +1,18 @@
 import { existsSync } from 'node:fs';
-import { readdir, rm } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
+import { mkdir, readdir, rm } from 'node:fs/promises';
+import { isAbsolute } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  isCI,
+  optionalEnvToBoolean,
+  versions,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
-import { downloadTemplate } from 'giget';
+import { sync as spawnSync } from 'cross-spawn';
+import { join } from 'pathe';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';
@@ -46,7 +52,6 @@ export const sandbox = async ({
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
-  const borderColor = isOutdated ? '#FC521F' : '#F1618C';
 
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
   const branch = isPrerelease ? 'next' : 'main';
@@ -72,7 +77,9 @@ export const sandbox = async ({
       .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
       .concat(isPrerelease ? [messages.prerelease] : [])
       .join('\n'),
-    { borderStyle: 'round', padding: 1, borderColor }
+    {
+      rounded: true,
+    }
   );
 
   if (!selectedConfig) {
@@ -166,7 +173,7 @@ export const sandbox = async ({
         message: 'Enter the output directory',
         initialValue: outputDirectoryName ?? undefined,
         validate: (directoryName) =>
-          existsSync(directoryName)
+          directoryName && existsSync(directoryName)
             ? `${directoryName} already exists. Please choose another name.`
             : undefined,
       },
@@ -191,10 +198,11 @@ export const sandbox = async ({
     logger.log(`📦 Downloading sandbox template (${picocolors.bold(downloadType)})...`);
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
-      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
-      await downloadTemplate(gitPath, {
-        force: true,
-        dir: templateDestination,
+      const gitPath = `storybookjs/sandboxes/tree/${branch}/${templateId}/${downloadType}`;
+      // create `templateDestination` first
+      await mkdir(templateDestination, { recursive: true });
+      spawnSync('npx', ['gitpick@4.12.4', gitPath, templateDestination, '-o'], {
+        stdio: 'inherit',
       });
       // throw an error if templateDestination is an empty directory
       if ((await readdir(templateDestination)).length === 0) {
@@ -218,8 +226,9 @@ export const sandbox = async ({
         // @ts-ignore-error (no types for this)
         const { initiate } = await import('create-storybook');
         await initiate({
-          dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true',
+          dev: isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX),
           ...options,
+          ...(selectedConfig.initOptions || {}),
           features: ['docs', 'test'],
         });
         process.chdir(before);
@@ -251,7 +260,7 @@ export const sandbox = async ({
 
         Having a clean repro helps us solve your issue faster! 🙏
       `.trim(),
-      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' }
+      { rounded: true }
     );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');

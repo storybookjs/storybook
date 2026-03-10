@@ -1,19 +1,26 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, remove } from 'fs-extra';
+import { access } from 'node:fs/promises';
+
 import { join } from 'path';
 
 import type { Task } from '../task';
 import { checkDependencies } from '../utils/cli-utils';
+import { ROOT_DIRECTORY } from '../utils/constants';
+
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const install: Task = {
   description: 'Install the dependencies of the monorepo',
-  async ready({ codeDir }) {
-    return pathExists(join(codeDir, 'node_modules'));
+  async ready() {
+    return pathExists(join(ROOT_DIRECTORY, 'node_modules'));
   },
-  async run({ codeDir }) {
+  async run() {
     await checkDependencies();
-
-    // these are webpack4 types, we we should never use
-    await remove(join(codeDir, 'node_modules', '@types', 'webpack'));
   },
 };

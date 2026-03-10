@@ -3,8 +3,8 @@
   "compilerOptions": {
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
-    "module": "ES2022",
+    "module": "esnext",
     "stripInternal": true
   },
-  "include": ["src/**/*", "scripts/**/*", "*.d.ts"]
+  "include": ["src/**/*", "scripts/**/*", "*.d.ts", "templates/runtime-build-code.template"]
 }

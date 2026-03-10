@@ -22,9 +22,9 @@ const rendererToFrameworks: Record<RendererPackage, string[]> = {
   '@storybook/react': [
     '@storybook/nextjs',
     '@storybook/react-vite',
+    '@storybook/nextjs-vite',
     '@storybook/react-webpack5',
     '@storybook/react-native-web-vite',
-    '@storybook/experimental-nextjs-vite',
   ],
   '@storybook/server': ['@storybook/server-webpack5'],
   '@storybook/svelte': [
@@ -46,7 +46,7 @@ const rendererToFrameworks: Record<RendererPackage, string[]> = {
 type MessageIds = 'noRendererPackages';
 type Options = readonly [];
 
-export = createStorybookRule<Options, MessageIds>({
+export default createStorybookRule<Options, MessageIds>({
   name: 'no-renderer-packages',
   defaultOptions: [] as const,
   meta: {

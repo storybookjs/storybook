@@ -8,7 +8,7 @@ export interface IProps {
   color?: string;
 }
 
-const iconButton: FC<IProps> = function IconButton(props) {
+const iconButton: FC<IProps> = function IconButton() {
   return <div className="icon-button">icon-button</div>;
 };
 
@@ -17,6 +17,8 @@ iconButton.propTypes = {
   color: PropTypes.string,
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we can't expect error as it isn't an error in 18 (development) but it is in 19 (sandbox)
+// @ts-ignore not present on react 19
 iconButton.defaultProps = {
   color: 'primary',
 };

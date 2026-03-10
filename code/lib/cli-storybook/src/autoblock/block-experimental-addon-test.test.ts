@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import semver from 'semver';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { blocker } from './block-experimental-addon-test';
 

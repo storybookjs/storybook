@@ -5,6 +5,7 @@ import { EmptyExample } from './EmptyExample';
 const meta = {
   title: 'examples/Stories for the Stories and Primary Block',
   component: EmptyExample,
+  tags: ['autodocs'],
 } satisfies Meta<typeof EmptyExample>;
 export default meta;
 

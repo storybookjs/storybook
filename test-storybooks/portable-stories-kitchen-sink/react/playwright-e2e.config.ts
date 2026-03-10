@@ -24,7 +24,7 @@ export default defineConfig({
       "junit",
       {
         embedAnnotationsAsProperties: true,
-        outputFile: path.join(__dirname, "..", "..", "..", "test-results"),
+        outputFile: path.join(__dirname, "..", "..", "..", "test-results", "react-e2e-ui.xml"),
       },
     ],
   ],
@@ -56,7 +56,5 @@ export default defineConfig({
     command: "yarn storybook",
     url: "http://127.0.0.1:6006",
     reuseExistingServer: true,
-    stdout: "pipe",
-    stderr: "pipe",
   },
 });

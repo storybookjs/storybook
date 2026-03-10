@@ -1,47 +1,14 @@
-import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import React from 'react';
 
-import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { Select } from 'storybook/internal/components';
 
 import { AccessibilityIcon } from '@storybook/icons';
 
-import { Global, styled } from 'storybook/theming';
+import { useGlobals } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
-import { Filters } from './ColorFilters';
-
-const iframeId = 'storybook-preview-iframe';
-
-interface Option {
-  name: string;
-  percentage?: number;
-}
-
-export const baseList = [
-  { name: 'blurred vision', percentage: 22.9 },
-  { name: 'deuteranomaly', percentage: 2.7 },
-  { name: 'deuteranopia', percentage: 0.56 },
-  { name: 'protanomaly', percentage: 0.66 },
-  { name: 'protanopia', percentage: 0.59 },
-  { name: 'tritanomaly', percentage: 0.01 },
-  { name: 'tritanopia', percentage: 0.016 },
-  { name: 'achromatopsia', percentage: 0.0001 },
-  { name: 'grayscale' },
-] as Option[];
-
-type Filter = Option | null;
-
-const getFilter = (filterName: string) => {
-  if (!filterName) {
-    return 'none';
-  }
-  if (filterName === 'blurred vision') {
-    return 'blur(2px)';
-  }
-  if (filterName === 'grayscale') {
-    return 'grayscale(100%)';
-  }
-  return `url('#${filterName}')`;
-};
+import { VISION_GLOBAL_KEY } from '../constants';
+import { filterDefs, filters } from '../visionSimulatorFilters';
 
 const Hidden = styled.div({
   '&, & svg': {
@@ -51,109 +18,50 @@ const Hidden = styled.div({
   },
 });
 
-const ColorIcon = styled.span<{ filter: string }>(
+const ColorIcon = styled.span<{ $filter: string }>(
   {
     background: 'linear-gradient(to right, #F44336, #FF9800, #FFEB3B, #8BC34A, #2196F3, #9C27B0)',
-    borderRadius: '1rem',
+    borderRadius: 14,
     display: 'block',
-    height: '1rem',
-    width: '1rem',
+    flexShrink: 0,
+    height: 14,
+    width: 14,
   },
-  ({ filter }) => ({
-    filter: getFilter(filter),
+  ({ $filter }) => ({
+    filter: filters[$filter as keyof typeof filters].filter || 'none',
   }),
   ({ theme }) => ({
     boxShadow: `${theme.appBorderColor} 0 0 0 1px inset`,
   })
 );
 
-export interface Link {
-  id: string;
-  title: ReactNode;
-  right?: ReactNode;
-  active: boolean;
-  onClick: () => void;
-}
-
-const Column = styled.span({
-  display: 'flex',
-  flexDirection: 'column',
-});
-
-const Title = styled.span({
-  textTransform: 'capitalize',
-});
-
-const Description = styled.span(({ theme }) => ({
-  fontSize: 11,
-  color: theme.textMutedColor,
-}));
-
-const getColorList = (active: Filter, set: (i: Filter) => void): Link[] => [
-  ...(active !== null
-    ? [
-        {
-          id: 'reset',
-          title: 'Reset color filter',
-          onClick: () => {
-            set(null);
-          },
-          right: undefined,
-          active: false,
-        },
-      ]
-    : []),
-  ...baseList.map((i) => {
-    const description = i.percentage !== undefined ? `${i.percentage}% of users` : undefined;
-    return {
-      id: i.name,
-      title: (
-        <Column>
-          <Title>{i.name}</Title>
-          {description && <Description>{description}</Description>}
-        </Column>
-      ),
-      onClick: () => {
-        set(i);
-      },
-      right: <ColorIcon filter={i.name} />,
-      active: active === i,
-    };
-  }),
-];
-
 export const VisionSimulator = () => {
-  const [filter, setFilter] = useState<Filter>(null);
+  const [globals, updateGlobals, storyGlobals] = useGlobals();
+  const value = globals[VISION_GLOBAL_KEY];
+  const isLocked = storyGlobals[VISION_GLOBAL_KEY] !== undefined;
+
+  const options = Object.entries(filters).map(([key, { label, percentage }]) => ({
+    title: label,
+    description: percentage ? `${percentage}% of users` : undefined,
+    icon: <ColorIcon $filter={key} />,
+    value: key,
+  }));
+
   return (
     <>
-      {filter && (
-        <Global
-          styles={{
-            [`#${iframeId}`]: {
-              filter: getFilter(filter.name),
-            },
-          }}
-        />
-      )}
-      <WithTooltip
-        placement="top"
-        tooltip={({ onHide }) => {
-          const colorList = getColorList(filter, (i) => {
-            setFilter(i);
-            onHide();
-          });
-          return <TooltipLinkList links={colorList} />;
-        }}
-        closeOnOutsideClick
-        onDoubleClick={() => setFilter(null)}
-      >
-        <IconButton key="filter" active={!!filter} title="Vision simulator">
-          <AccessibilityIcon />
-        </IconButton>
-      </WithTooltip>
-      <Hidden>
-        <Filters />
-      </Hidden>
+      <Select
+        resetLabel="Reset color filter"
+        onReset={() => updateGlobals({ [VISION_GLOBAL_KEY]: undefined })}
+        icon={<AccessibilityIcon />}
+        disabled={isLocked}
+        ariaLabel={isLocked ? 'Vision filter set by story globals' : 'Vision filter'}
+        ariaDescription="Select a vision filter among predefined options, or reset to remove the filter."
+        tooltip={isLocked ? 'Vision filter set by story globals' : 'Change vision filter'}
+        defaultOptions={value}
+        options={options}
+        onSelect={(selected) => updateGlobals({ [VISION_GLOBAL_KEY]: selected })}
+      />
+      <Hidden dangerouslySetInnerHTML={{ __html: filterDefs }} />
     </>
   );
 };

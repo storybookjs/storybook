@@ -44,18 +44,21 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
       return;
     }
-    if (event.code === 'Enter' || event.key === 'Enter') {
-      event.preventDefault();
-
-      this.onSubmit();
-
+    const { inputRefKey, inputRefValue } = this.state;
+    const { addButtonElement, handleCancel } = this.props;
+    const isFormFocused = [inputRefKey, inputRefValue, addButtonElement].some(
+      (elm) => elm === event.target
+    );
+    if (!isFormFocused) {
       return;
     }
-
+    if (event.code === 'Enter' || event.key === 'Enter') {
+      event.preventDefault();
+      this.onSubmit();
+    }
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
-
-      this.props.handleCancel();
+      handleCancel();
     }
   }
 
@@ -249,9 +252,10 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     };
   }
 
-  handleAddValueAdd({ key, newValue }: any) {
+  handleAddValueAdd({ newValue }: any) {
     const { data, keyPath = [], nextDeep: deep } = this.state;
     const { beforeAddAction, logger } = this.props;
+    const key = data.length;
 
     (beforeAddAction || Promise.resolve.bind(Promise))(key, keyPath, deep, newValue)
       .then(() => {
@@ -321,8 +325,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
 
   renderCollapsed() {
     const { name, data, keyPath, deep } = this.state;
-    const { handleRemove, readOnly, getStyle, dataType, minusMenuElement } = this.props;
-    const { minus, collapsed } = getStyle(name, data, keyPath, deep, dataType);
+    const { handleRemove, readOnly, dataType, minusMenuElement } = this.props;
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
@@ -331,13 +334,12 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
-        style: minus,
-        'aria-label': `remove the array '${name}'`,
+        'aria-label': `remove the array '${String(name)}'`,
       });
 
     return (
       <>
-        <span style={collapsed}>
+        <span className="rejt-collapsed-value">
           [...] {data.length} {data.length === 1 ? 'item' : 'items'}
         </span>
         {!isReadOnly && removeItemButton}
@@ -352,7 +354,6 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       handleRemove,
       onDeltaUpdate,
       readOnly,
-      getStyle,
       dataType,
       addButtonElement,
       cancelButtonElement,
@@ -366,7 +367,6 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       logger,
       onSubmitValueParser,
     } = this.props;
-    const { minus, plus, delimiter, ul, addForm } = getStyle(name, data, keyPath, deep, dataType);
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
@@ -375,16 +375,14 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       cloneElement(plusMenuElement, {
         onClick: this.handleAddMode,
         className: 'rejt-plus-menu',
-        style: plus,
-        'aria-label': `add a new item to the '${name}' array`,
+        'aria-label': `add a new item to the '${String(name)}' array`,
       });
     const removeItemButton =
       minusMenuElement &&
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
-        style: minus,
-        'aria-label': `remove the array '${name}'`,
+        'aria-label': `remove the array '${String(name)}'`,
       });
 
     const onlyValue = true;
@@ -392,11 +390,9 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     const endObject = ']';
     return (
       <>
-        <span className="rejt-not-collapsed-delimiter" style={delimiter}>
-          {startObject}
-        </span>
+        <span className="rejt-not-collapsed-delimiter">{startObject}</span>
         {!addFormVisible && addItemButton}
-        <ul className="rejt-not-collapsed-list" style={ul}>
+        <ul className="rejt-not-collapsed-list">
           {data.map((item, index) => (
             <JsonNode
               key={index}
@@ -410,7 +406,6 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
               onUpdate={this.onChildUpdate}
               onDeltaUpdate={onDeltaUpdate}
               readOnly={readOnly}
-              getStyle={getStyle}
               addButtonElement={addButtonElement}
               cancelButtonElement={cancelButtonElement}
               inputElementGenerator={inputElementGenerator}
@@ -426,7 +421,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
           ))}
         </ul>
         {!isReadOnly && addFormVisible && (
-          <div className="rejt-add-form" style={addForm}>
+          <div className="rejt-add-form">
             <JsonAddValue
               handleAdd={this.handleAddValueAdd}
               handleCancel={this.handleAddValueCancel}
@@ -440,9 +435,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
             />
           </div>
         )}
-        <span className="rejt-not-collapsed-delimiter" style={delimiter}>
-          {endObject}
-        </span>
+        <span className="rejt-not-collapsed-delimiter">{endObject}</span>
         {!isReadOnly && removeItemButton}
       </>
     );
@@ -477,7 +470,6 @@ interface JsonArrayProps {
   onDeltaUpdate: (...args: any) => any;
   readOnly: (...args: any) => any;
   dataType?: string;
-  getStyle: (...args: any) => any;
   addButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
   inputElementGenerator: (...args: any) => any;
@@ -544,20 +536,23 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+    const { inputRef } = this.state;
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      inputRef !== event.target
+    ) {
       return;
     }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
-
       this.handleEdit();
-
-      return;
     }
-
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
-
       this.handleCancelEdit();
     }
   }
@@ -612,13 +607,11 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
       originalValue,
       readOnly,
       dataType,
-      getStyle,
       textareaElementGenerator,
       minusMenuElement,
       keyPath: comeFromKeyPath = [],
     } = this.props;
 
-    const style = getStyle(name, originalValue, keyPath, deep, dataType);
     let result = null;
     let minusElement = null;
     const resultOnlyResult = readOnly(name, originalValue, keyPath, deep, dataType);
@@ -639,19 +632,11 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
         onKeyDown: this.onKeydown,
       });
 
-      result = (
-        <span className="rejt-edit-form" style={style.editForm}>
-          {textareaElementLayout}
-        </span>
-      );
+      result = <span className="rejt-edit-form">{textareaElementLayout}</span>;
       minusElement = null;
     } else {
       result = (
-        <span
-          className="rejt-value"
-          style={style.value}
-          onClick={resultOnlyResult ? undefined : this.handleEditMode}
-        >
+        <span className="rejt-value" onClick={resultOnlyResult ? undefined : this.handleEditMode}>
           {value}
         </span>
       );
@@ -663,19 +648,16 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
         cloneElement(minusMenuElement, {
           onClick: handleRemove,
           className: 'rejt-minus-menu',
-          style: style.minus,
-          'aria-label': `remove the function '${name}'${
-            parentPropertyName ? ` from '${parentPropertyName}'` : ''
+          'aria-label': `remove the function '${String(name)}'${
+            String(parentPropertyName) ? ` from '${String(parentPropertyName)}'` : ''
           }`,
         });
       minusElement = resultOnlyResult ? null : minusMenuLayout;
     }
 
     return (
-      <li className="rejt-value-node" style={style.li}>
-        <span className="rejt-name" style={style.name}>
-          {name} :{' '}
-        </span>
+      <li className="rejt-value-node">
+        <span className="rejt-name">{name} : </span>
         {result}
         {minusElement}
       </li>
@@ -693,7 +675,6 @@ interface JsonFunctionValueProps {
   handleUpdateValue?: (...args: any) => any;
   readOnly: (...args: any) => any;
   dataType?: string;
-  getStyle: (...args: any) => any;
   cancelButtonElement?: ReactElement;
   textareaElementGenerator: (...args: any) => any;
   minusMenuElement?: ReactElement;
@@ -741,7 +722,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
       onUpdate,
       onDeltaUpdate,
       readOnly,
-      getStyle,
       addButtonElement,
       cancelButtonElement,
       inputElementGenerator,
@@ -771,7 +751,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             onDeltaUpdate={onDeltaUpdate}
             readOnly={readOnlyTrue}
             dataType={dataType}
-            getStyle={getStyle}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
@@ -798,7 +777,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             onDeltaUpdate={onDeltaUpdate}
             readOnly={readOnly}
             dataType={dataType}
-            getStyle={getStyle}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
@@ -825,7 +803,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             onDeltaUpdate={onDeltaUpdate}
             readOnly={readOnly}
             dataType={dataType}
-            getStyle={getStyle}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
@@ -851,7 +828,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             handleUpdateValue={handleUpdateValue}
             readOnly={readOnly}
             dataType={dataType}
-            getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -871,7 +847,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             handleUpdateValue={handleUpdateValue}
             readOnly={readOnly}
             dataType={dataType}
-            getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -891,7 +866,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             handleUpdateValue={handleUpdateValue}
             readOnly={readOnly}
             dataType={dataType}
-            getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -911,7 +885,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             handleUpdateValue={handleUpdateValue}
             readOnly={readOnlyTrue}
             dataType={dataType}
-            getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -931,7 +904,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             handleUpdateValue={handleUpdateValue}
             readOnly={readOnly}
             dataType={dataType}
-            getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -951,7 +923,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             handleUpdateValue={handleUpdateValue}
             readOnly={readOnly}
             dataType={dataType}
-            getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -971,7 +942,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             handleUpdateValue={handleUpdateValue}
             readOnly={readOnly}
             dataType={dataType}
-            getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
             textareaElementGenerator={textareaElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -991,7 +961,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             handleUpdateValue={handleUpdateValue}
             readOnly={readOnlyTrue}
             dataType={dataType}
-            getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -1016,7 +985,6 @@ interface JsonNodeProps {
   onUpdate: (...args: any) => any;
   onDeltaUpdate: (...args: any) => any;
   readOnly: (...args: any) => any;
-  getStyle: (...args: any) => any;
   addButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
   inputElementGenerator: (...args: any) => any;
@@ -1203,9 +1171,8 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
 
   renderCollapsed() {
     const { name, keyPath, deep, data } = this.state;
-    const { handleRemove, readOnly, dataType, getStyle, minusMenuElement } = this.props;
+    const { handleRemove, readOnly, dataType, minusMenuElement } = this.props;
 
-    const { minus, collapsed } = getStyle(name, data, keyPath, deep, dataType);
     const keyList = Object.getOwnPropertyNames(data);
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
@@ -1215,13 +1182,12 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
-        style: minus,
-        'aria-label': `remove the object '${name}'`,
+        'aria-label': `remove the object '${String(name)}'`,
       });
 
     return (
       <>
-        <span style={collapsed}>
+        <span className="rejt-collapsed-value">
           {'{...}'} {keyList.length} {keyList.length === 1 ? 'key' : 'keys'}
         </span>
         {!isReadOnly && removeItemButton}
@@ -1236,7 +1202,6 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
       handleRemove,
       onDeltaUpdate,
       readOnly,
-      getStyle,
       dataType,
       addButtonElement,
       cancelButtonElement,
@@ -1251,7 +1216,6 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
       onSubmitValueParser,
     } = this.props;
 
-    const { minus, plus, addForm, ul, delimiter } = getStyle(name, data, keyPath, deep, dataType);
     const keyList = Object.getOwnPropertyNames(data);
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
@@ -1261,16 +1225,14 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
       cloneElement(plusMenuElement, {
         onClick: this.handleAddMode,
         className: 'rejt-plus-menu',
-        style: plus,
-        'aria-label': `add a new property to the object '${name}'`,
+        'aria-label': `add a new property to the object '${String(name)}'`,
       });
     const removeItemButton =
       minusMenuElement &&
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
-        style: minus,
-        'aria-label': `remove the object '${name}'`,
+        'aria-label': `remove the object '${String(name)}'`,
       });
 
     const list = keyList.map((key) => (
@@ -1286,7 +1248,6 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         onUpdate={this.onChildUpdate}
         onDeltaUpdate={onDeltaUpdate}
         readOnly={readOnly}
-        getStyle={getStyle}
         addButtonElement={addButtonElement}
         cancelButtonElement={cancelButtonElement}
         inputElementGenerator={inputElementGenerator}
@@ -1306,15 +1267,11 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
 
     return (
       <>
-        <span className="rejt-not-collapsed-delimiter" style={delimiter}>
-          {startObject}
-        </span>
+        <span className="rejt-not-collapsed-delimiter">{startObject}</span>
         {!isReadOnly && addItemButton}
-        <ul className="rejt-not-collapsed-list" style={ul}>
-          {list}
-        </ul>
+        <ul className="rejt-not-collapsed-list">{list}</ul>
         {!isReadOnly && addFormVisible && (
-          <div className="rejt-add-form" style={addForm}>
+          <div className="rejt-add-form">
             <JsonAddValue
               handleAdd={this.handleAddValueAdd}
               handleCancel={this.handleAddValueCancel}
@@ -1327,9 +1284,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
             />
           </div>
         )}
-        <span className="rejt-not-collapsed-delimiter" style={delimiter}>
-          {endObject}
-        </span>
+        <span className="rejt-not-collapsed-delimiter">{endObject}</span>
         {!isReadOnly && removeItemButton}
       </>
     );
@@ -1364,7 +1319,6 @@ interface JsonObjectProps {
   onDeltaUpdate: (...args: any) => any;
   readOnly: (...args: any) => any;
   dataType?: string;
-  getStyle: (...args: any) => any;
   addButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
   inputElementGenerator: (...args: any) => any;
@@ -1431,18 +1385,23 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+    const { inputRef } = this.state;
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      inputRef !== event.target
+    ) {
       return;
     }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
-
       this.handleEdit();
     }
-
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
-
       this.handleCancelEdit();
     }
   }
@@ -1497,13 +1456,11 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
       originalValue,
       readOnly,
       dataType,
-      getStyle,
       inputElementGenerator,
       minusMenuElement,
       keyPath: comeFromKeyPath,
     } = this.props;
 
-    const style = getStyle(name, originalValue, keyPath, deep, dataType);
     const isReadOnly = readOnly(name, originalValue, keyPath, deep, dataType);
     const isEditing = editEnabled && !isReadOnly;
     const inputElement = inputElementGenerator(
@@ -1528,28 +1485,21 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
-        style: style.minus,
-        'aria-label': `remove the property '${name}' with value '${originalValue}'${
-          parentPropertyName ? ` from '${parentPropertyName}'` : ''
+        'aria-label': `remove the property '${String(name)}' with value '${String(originalValue)}'${
+          String(parentPropertyName) ? ` from '${String(parentPropertyName)}'` : ''
         }`,
       });
 
     return (
-      <li className="rejt-value-node" style={style.li}>
-        <span className="rejt-name" style={style.name}>
+      <li className="rejt-value-node">
+        <span className="rejt-name">
           {name}
           {' : '}
         </span>
         {isEditing ? (
-          <span className="rejt-edit-form" style={style.editForm}>
-            {inputElementLayout}
-          </span>
+          <span className="rejt-edit-form">{inputElementLayout}</span>
         ) : (
-          <span
-            className="rejt-value"
-            style={style.value}
-            onClick={isReadOnly ? undefined : this.handleEditMode}
-          >
+          <span className="rejt-value" onClick={isReadOnly ? undefined : this.handleEditMode}>
             {String(value)}
           </span>
         )}
@@ -1569,7 +1519,6 @@ interface JsonValueProps {
   handleUpdateValue?: (...args: any) => any;
   readOnly: (...args: any) => any;
   dataType?: string;
-  getStyle: (...args: any) => any;
   cancelButtonElement?: ReactElement;
   inputElementGenerator: (...args: any) => any;
   minusMenuElement?: ReactElement;

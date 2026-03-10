@@ -1,14 +1,17 @@
+import storybookPlugin from '../../index';
+
 /*
  * IMPORTANT!
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-export = [
+export default [
   {
     name: 'storybook:csf:setup',
     plugins: {
       get storybook() {
-        return require('../../index');
+        // this getter could just be a direct import, but we need to use a getter to avoid circular references in the types
+        return storybookPlugin;
       },
     },
   },
@@ -17,7 +20,7 @@ export = [
     files: ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)', '**/*.story.@(ts|tsx|js|jsx|mjs|cjs)'],
     rules: {
       'react-hooks/rules-of-hooks': 'off',
-      'import/no-anonymous-default-export': 'off',
+      'import-x/no-anonymous-default-export': 'off',
       'storybook/csf-component': 'warn',
       'storybook/default-exports': 'error',
       'storybook/hierarchy-separator': 'warn',

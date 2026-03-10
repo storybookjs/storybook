@@ -10,6 +10,7 @@ export interface CheckOptions {
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
 }
 
 export interface RunOptions<ResultType> {
@@ -23,6 +24,10 @@ export interface RunOptions<ResultType> {
   skipInstall?: boolean;
   storybookVersion: string;
   storiesPaths: string[];
+  /** Skip prompts and use defaults (from --yes flag) */
+  yes?: boolean;
+  /** Glob pattern for story files (for csf-factories codemod) */
+  glob?: string;
 }
 
 /**
@@ -40,7 +45,8 @@ type BaseFix<ResultType = any> = {
   check: (options: CheckOptions) => Promise<ResultType | null>;
   /** Keep the prompt message short and concise. */
   prompt: () => string;
-  promptDefaultValue?: boolean;
+  /** Whether the automigration is selected by default when the user is prompted. */
+  defaultSelected?: boolean;
   link?: string;
 };
 
@@ -76,13 +82,12 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   mainConfigPath: string;
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
-  /** The version of Storybook before the migration. */
-  beforeVersion: string;
   storybookVersion: string;
   /** Whether the migration is part of an upgrade. */
   isUpgrade: boolean;
   isLatest: boolean;
   storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
 }
 export interface AutofixOptionsFromCLI {
   fixId?: FixId;
@@ -96,6 +101,8 @@ export interface AutofixOptionsFromCLI {
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;
   skipDoctor?: boolean;
+  /** Glob pattern for story files (for csf-factories codemod) */
+  glob?: string;
 }
 
 export enum FixStatus {

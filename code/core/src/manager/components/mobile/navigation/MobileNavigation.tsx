@@ -1,14 +1,16 @@
+import React, { useRef } from 'react';
 import type { ComponentProps, FC } from 'react';
-import React from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
 
+import { useId } from '@react-aria/utils';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useLandmark } from '../../../hooks/useLandmark';
 import { useLayout } from '../../layout/LayoutProvider';
 import { MobileAddonsDrawer } from './MobileAddonsDrawer';
 import { MobileMenuDrawer } from './MobileMenuDrawer';
@@ -74,30 +76,70 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
     useLayout();
   const fullStoryName = useFullStoryName();
+  const headingId = useId();
+
+  const sectionRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': headingId, role: 'banner' },
+    sectionRef
+  );
 
   return (
     <Container {...props}>
-      <MobileMenuDrawer>{menu}</MobileMenuDrawer>
-      {isMobilePanelOpen ? (
-        <MobileAddonsDrawer>{panel}</MobileAddonsDrawer>
-      ) : (
-        <Nav className="sb-bar">
-          <Button onClick={() => setMobileMenuOpen(!isMobileMenuOpen)} title="Open navigation menu">
+      <MobileMenuDrawer
+        id="storybook-mobile-menu"
+        isOpen={isMobileMenuOpen}
+        onOpenChange={setMobileMenuOpen}
+      >
+        {menu}
+      </MobileMenuDrawer>
+
+      <MobileAddonsDrawer
+        id="storybook-mobile-addon-panel"
+        isOpen={isMobilePanelOpen}
+        onOpenChange={setMobilePanelOpen}
+      >
+        {panel}
+      </MobileAddonsDrawer>
+
+      {!isMobilePanelOpen && (
+        <MobileBottomBar className="sb-bar" {...landmarkProps} ref={sectionRef}>
+          <h2 id={headingId} className="sb-sr-only">
+            Navigation controls
+          </h2>
+          <BottomBarButton
+            padding="small"
+            variant="ghost"
+            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+            ariaLabel="Open navigation menu"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="storybook-mobile-menu"
+          >
             <MenuIcon />
             <Text>{fullStoryName}</Text>
-          </Button>
+          </BottomBarButton>
+          <span className="sb-sr-only" aria-current="page">
+            {fullStoryName}
+          </span>
           {showPanel && (
-            <IconButton onClick={() => setMobilePanelOpen(true)} title="Open addon panel">
+            <BottomBarButton
+              padding="small"
+              variant="ghost"
+              onClick={() => setMobilePanelOpen(true)}
+              ariaLabel="Open addon panel"
+              aria-expanded={isMobilePanelOpen}
+              aria-controls="storybook-mobile-addon-panel"
+            >
               <BottomBarToggleIcon />
-            </IconButton>
+            </BottomBarButton>
           )}
-        </Nav>
+        </MobileBottomBar>
       )}
     </Container>
   );
 };
 
-const Container = styled.div(({ theme }) => ({
+const Container = styled.section(({ theme }) => ({
   bottom: 0,
   left: 0,
   width: '100%',
@@ -106,32 +148,35 @@ const Container = styled.div(({ theme }) => ({
   borderTop: `1px solid ${theme.appBorderColor}`,
 }));
 
-const Nav = styled.div({
+const MobileBottomBar = styled.header({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   width: '100%',
   height: 40,
   padding: '0 6px',
+
+  /* Because Popper.js's tooltip is creating extra div layers, we have to
+   * punch through them to configure the button to ellipsize. */
+  '& > *:first-child': {
+    /* 6px padding * 2 + 28px for the orientation button */
+    maxWidth: 'calc(100% - 40px)',
+    '& > button': {
+      maxWidth: '100%',
+    },
+    '& > button p': {
+      textOverflow: 'ellipsis',
+    },
+  },
 });
 
-const Button = styled.button(({ theme }) => ({
-  all: 'unset',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  color: theme.barTextColor,
-  fontSize: `${theme.typography.size.s2 - 1}px`,
-  padding: '0 7px',
-  fontWeight: theme.typography.weight.bold,
+const BottomBarButton = styled(Button)({
   WebkitLineClamp: 1,
-
-  '> svg': {
-    width: 14,
-    height: 14,
-    flexShrink: 0,
+  flexShrink: 1,
+  p: {
+    textOverflow: 'ellipsis',
   },
-}));
+});
 
 const Text = styled.p({
   display: '-webkit-box',

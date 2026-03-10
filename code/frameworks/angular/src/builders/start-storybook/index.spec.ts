@@ -12,7 +12,7 @@ const buildMock = {
   withTelemetry: (_: string, __: any, fn: any) => fn(),
 };
 vi.doMock('storybook/internal/core-server', () => buildMock);
-vi.doMock('find-up', () => ({ sync: () => './storybook/tsconfig.ts' }));
+vi.doMock('empathic/find', () => ({ up: () => './storybook/tsconfig.ts' }));
 
 const mockRunScript = vi.fn();
 

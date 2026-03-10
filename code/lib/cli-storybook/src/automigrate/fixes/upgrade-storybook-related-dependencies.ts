@@ -67,7 +67,7 @@ function isValidVersionType(packageName: string, specifier: string) {
 export const upgradeStorybookRelatedDependencies = {
   id: 'upgrade-storybook-related-dependencies',
   promptType: 'auto',
-  promptDefaultValue: false,
+  defaultSelected: false,
 
   async check({ packageManager, storybookVersion }) {
     logger.debug('Checking for incompatible storybook packages...');

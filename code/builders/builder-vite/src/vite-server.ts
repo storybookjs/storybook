@@ -3,8 +3,7 @@ import type { Options } from 'storybook/internal/types';
 import type { Server } from 'http';
 import type { InlineConfig, ServerOptions } from 'vite';
 
-import { sanitizeEnvVars } from './envs';
-import { getOptimizeDeps } from './optimizeDeps';
+import { createViteLogger } from './logger';
 import { commonConfig } from './vite-config';
 
 export async function createViteServer(options: Options, devServer: Server) {
@@ -12,10 +11,12 @@ export async function createViteServer(options: Options, devServer: Server) {
 
   const commonCfg = await commonConfig(options, 'development');
 
+  const { allowedHosts } = await presets.apply('core', {});
+
   const config: InlineConfig & { server: ServerOptions } = {
     ...commonCfg,
-    // Set up dev server
     server: {
+      allowedHosts,
       middlewareMode: true,
       hmr: {
         port: options.port,
@@ -26,21 +27,20 @@ export async function createViteServer(options: Options, devServer: Server) {
       },
     },
     appType: 'custom' as const,
-    optimizeDeps: await getOptimizeDeps(commonCfg, options),
   };
 
-  const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$|^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$/;
-
+  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments
   if (
-    !(config.server.allowedHosts as string[])?.length &&
-    options.host &&
-    !ipRegex.test(options.host)
+    options.host === '0.0.0.0' &&
+    (!allowedHosts || (Array.isArray(allowedHosts) && allowedHosts.length === 0))
   ) {
-    config.server.allowedHosts = [options.host.toLowerCase()];
+    config.server.allowedHosts = true;
   }
 
   const finalConfig = await presets.apply('viteFinal', config, options);
 
   const { createServer } = await import('vite');
-  return createServer(await sanitizeEnvVars(options, finalConfig));
+
+  finalConfig.customLogger ??= await createViteLogger();
+  return createServer(finalConfig);
 }

@@ -1,5 +1,5 @@
 import { cp } from 'node:fs/promises';
-import { dirname, join, parse } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
@@ -12,15 +12,18 @@ import type { Builder, Options } from 'storybook/internal/types';
 
 import { checkWebpackVersion } from '@storybook/core-webpack';
 
+import { dirname, join, parse } from 'pathe';
 import prettyTime from 'pretty-hrtime';
 import sirv from 'sirv';
 import type { Configuration, Stats, StatsOptions } from 'webpack';
-import webpackDep, { DefinePlugin, IgnorePlugin, ProgressPlugin } from 'webpack';
+import webpackModule from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 
 export * from './types';
 export * from './preview/virtual-module-mapping';
+
+const { DefinePlugin, IgnorePlugin, ProgressPlugin } = webpackModule;
 
 export const WebpackDefinePlugin = DefinePlugin;
 export const WebpackIgnorePlugin = IgnorePlugin;
@@ -31,7 +34,7 @@ export const printDuration = (startTime: [number, number]) =>
     .replace(' s', ' seconds')
     .replace(' min', ' minutes');
 
-const corePath = dirname(require.resolve('storybook/internal/package.json'));
+const corePath = dirname(fileURLToPath(import.meta.resolve('storybook/package.json')));
 
 let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
 let reject: (reason?: any) => void;
@@ -55,8 +58,8 @@ export const executor = {
   get: async (options: Options) => {
     const version = ((await options.presets.apply('webpackVersion')) || '5') as string;
     const webpackInstance =
-      (await options.presets.apply<{ default: typeof webpackDep }>('webpackInstance'))?.default ||
-      webpackDep;
+      (await options.presets.apply<{ default: typeof webpackModule }>('webpackInstance'))
+        ?.default || webpackModule;
     checkWebpackVersion({ version }, '5', 'builder-webpack5');
     return webpackInstance;
   },
@@ -192,6 +195,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
       immutable: true,
     })
   );
+
   router.use(compilation);
   router.use(webpackHotMiddleware(compiler, { log: false }));
 
@@ -336,5 +340,9 @@ export const build = async (options: BuilderStartOptions) => {
   return result.value;
 };
 
-export const corePresets = [join(__dirname, 'presets/preview-preset.js')];
-export const overridePresets = [join(__dirname, './presets/custom-webpack-preset.js')];
+export const corePresets = [
+  import.meta.resolve('@storybook/builder-webpack5/presets/preview-preset'),
+];
+export const overridePresets = [
+  import.meta.resolve('@storybook/builder-webpack5/presets/custom-webpack-preset'),
+];

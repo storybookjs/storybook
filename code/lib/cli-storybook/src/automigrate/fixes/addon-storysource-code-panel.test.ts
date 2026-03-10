@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { add } from '../../add';
 import type { CheckOptions, RunOptions } from '../types';
@@ -71,6 +71,7 @@ const baseCheckOptions: CheckOptions = {
   storybookVersion: '8.0.0',
   configDir: '.storybook',
   storiesPaths: [],
+  hasCsfFactoryPreview: false,
 };
 
 describe('addon-storysource-remove', () => {

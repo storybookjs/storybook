@@ -36,8 +36,9 @@ concurrency:
 jobs:
   prepare-non-patch-pull-request:
     name: Prepare non-patch pull request
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
-    environment: release
+    environment: Release
     defaults:
       run:
         working-directory: scripts
@@ -51,26 +52,8 @@ jobs:
           fetch-depth: 10000
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.yarn/berry/cache
-          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-          restore-keys: |
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
-            yarn-v1
-
-      - name: Install Dependencies
-        working-directory: .
-        run: |
-          yarn task --task=install
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
 
       - name: Check if pull request is frozen
         if: github.event_name != 'workflow_dispatch'
@@ -160,6 +143,6 @@ jobs:
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-        uses: Ilshidur/action-discord@master
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
         with:
           args: "The GitHub Action for preparing the release pull request bumping from v${{ steps.bump-version.outputs.current-version }} to v${{ steps.bump-version.outputs.next-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

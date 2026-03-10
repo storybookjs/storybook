@@ -54,7 +54,7 @@ Primary.args = { primary: true };
 ```
 
 ```tsx filename="CSF 2 - Button.stories.ts|tsx" renderer="solid" language="ts"
-import { ComponentStory, ComponentMeta } from 'storybook-solidjs';
+import { ComponentStory, ComponentMeta } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 

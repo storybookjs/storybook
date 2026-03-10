@@ -1,5 +1,5 @@
 import type { animation, easing } from './animation';
-import type { background, color, typography } from './base';
+import type { background, color, tokens, typography } from './base';
 
 export interface ThemeVars extends ThemeVarsBase, ThemeVarsColors {}
 
@@ -16,6 +16,7 @@ export interface ThemeVarsColors {
   // UI
   appBg: string;
   appContentBg: string;
+  appHoverBg: string;
   appPreviewBg: string;
   appBorderColor: string;
   appBorderRadius: number;
@@ -69,6 +70,11 @@ export interface Brand {
 
 export interface StorybookTheme {
   color: Color;
+
+  fgColor: typeof tokens.light.fgColor;
+  bgColor: typeof tokens.light.bgColor;
+  borderColor: typeof tokens.light.borderColor;
+
   background: Background;
   typography: Typography;
   animation: Animation;

@@ -32,6 +32,7 @@ export type {
   LoaderFunction,
   Parameters,
   PartialStoryFn,
+  TestFunction,
   PlayFunction,
   PlayFunctionContext,
   ProjectAnnotations as BaseProjectAnnotations,
@@ -61,7 +62,6 @@ export type {
   StoryName,
   StrictArgs,
   StrictArgTypes,
-  StrictGlobalTypes,
   StrictInputType,
   Tag,
 } from 'storybook/internal/csf';

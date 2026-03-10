@@ -11,7 +11,7 @@ export type StorybookCoverageReporterOptions = {
   coverageOptions: ResolvedCoverageOptions<'v8'> | undefined;
 };
 
-export default class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {
+class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {
   #testManager: StorybookCoverageReporterOptions['testManager'];
 
   #coverageOptions: StorybookCoverageReporterOptions['coverageOptions'];
@@ -46,3 +46,11 @@ export default class StorybookCoverageReporter extends ReportBase implements Par
     this.#testManager.onCoverageCollected(coverageSummary);
   }
 }
+
+/**
+ * This is exported weirdly because the coverage tool loading this uses `Cont = require(name)`. So
+ * it doesn't support a default export, it has to be the "root" export as CJS
+ *
+ * @see https://nodejs.org/docs/latest-v20.x/api/modules.html#loading-ecmascript-modules-using-require
+ */
+export { StorybookCoverageReporter as 'module.exports' };

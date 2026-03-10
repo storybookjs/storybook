@@ -63,7 +63,7 @@ test.describe('Next.js', () => {
         await button.click();
 
         await sbPage.viewAddonPanel('Actions');
-        const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
+        const logItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
           hasText: `useRouter().${action}`,
         });
         await expect(logItem).toBeVisible();
@@ -95,7 +95,7 @@ test.describe('Next.js', () => {
         await button.click();
 
         await sbPage.viewAddonPanel('Actions');
-        const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
+        const logItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
           hasText: `useRouter().${action}`,
         });
         await expect(logItem).toBeVisible();

@@ -13,7 +13,7 @@ import { createStorybookRule } from '../utils/create-storybook-rule';
 // Rule Definition
 //------------------------------------------------------------------------------
 
-export = createStorybookRule({
+export default createStorybookRule({
   name: 'no-title-property-in-meta',
   defaultOptions: [],
   meta: {
@@ -51,7 +51,7 @@ export = createStorybookRule({
               {
                 messageId: 'removeTitleInMeta',
                 fix(fixer) {
-                  const fullText = context.getSourceCode().text;
+                  const fullText = context.sourceCode.text;
                   const propertyTextWithExtraCharacter = fullText.slice(
                     titleNode.range[0],
                     titleNode.range[1] + 1

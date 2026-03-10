@@ -1,12 +1,15 @@
+import { createRequire } from 'node:module';
+
+import StorybookNormalizeAngularEntryPlugin from './plugins/storybook-normalize-angular-entry-plugin';
+import { filterOutStylingRules } from './utils/filter-out-styling-rules';
+
+const require = createRequire(import.meta.url);
+
 // Private angular devkit stuff
 const {
   generateI18nBrowserWebpackConfigFromContext,
 } = require('@angular-devkit/build-angular/src/utils/webpack-browser-config');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
-const { filterOutStylingRules } = require('./utils/filter-out-styling-rules');
-const {
-  default: StorybookNormalizeAngularEntryPlugin,
-} = require('./plugins/storybook-normalize-angular-entry-plugin');
 
 const {
   getCommonConfig,
@@ -23,7 +26,7 @@ const {
  * @param {any} baseConfig Previous webpack config from storybook
  * @param {any} options { builderOptions, builderContext }
  */
-exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }) => {
+export const getWebpackConfig = async (baseConfig, { builderOptions, builderContext }) => {
   /** Get angular-cli Webpack config */
 
   /**
@@ -47,8 +50,8 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
      */
     const isTailwind4 = () => {
       try {
-        require.resolve('@tailwindcss/postcss', { paths: [root] });
-        return true;
+        const output = import.meta.resolve('@tailwindcss/postcss', root);
+        return isAbsolute(output);
       } catch {
         return false;
       }
@@ -88,8 +91,11 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
        * Angular's automatic Tailwind detection, we need to manually add the correct Tailwind 4
        * plugin to all PostCSS loader configurations.
        */
-      const tailwindPackagePath = require.resolve('@tailwindcss/postcss', { paths: [root] });
-      const extraPostcssPlugins = [require(tailwindPackagePath)()];
+      const tailwindPackagePath = import.meta.resolve('@tailwindcss/postcss', root);
+      const tailwindPackage = await import(tailwindPackagePath);
+      const extraPostcssPlugins = [
+        typeof tailwindPackage === 'function' ? tailwindPackage() : tailwindPackage.default(),
+      ];
 
       /**
        * Navigate through webpack's complex rule structure to find all postcss-loader instances and
@@ -158,6 +164,7 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
   );
 
   if (!builderOptions.experimentalZoneless && !cliConfig.entry.polyfills?.includes('zone.js')) {
+    cliConfig.entry.polyfills ??= [];
     cliConfig.entry.polyfills.push('zone.js');
   }
 

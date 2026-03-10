@@ -1,5 +1,4 @@
 import { readFileSync, writeFileSync } from 'fs';
-import picocolors from 'picocolors';
 
 import { findFilesUp } from '../../util';
 import type { Fix } from '../types';

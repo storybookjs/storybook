@@ -24,7 +24,7 @@ export default {
     b: 'b',
     c: 'c',
   },
-  parameters: { chromatic: { disable: true } },
+  parameters: { chromatic: { disableSnapshot: true } },
 };
 
 export const None = { parameters: { controls: { sort: 'none' } } };

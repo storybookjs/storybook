@@ -4,13 +4,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { toId } from 'storybook/internal/csf';
-import { getStorySortParameter, readCsf } from 'storybook/internal/csf-tools';
+import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
 
+import { Tag } from '../../shared/constants/tags';
 import { csfIndexer } from '../presets/common-preset';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
+
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: './favicon.svg',
+  };
+});
 
 vi.mock('storybook/internal/csf', async (importOriginal) => {
   const csf = await importOriginal<typeof import('storybook/internal/csf')>();
@@ -26,13 +34,13 @@ vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   const csfTools = await importOriginal<typeof import('storybook/internal/csf-tools')>();
   return {
     ...csfTools,
-    readCsf: vi.fn(csfTools.readCsf),
+    loadCsf: vi.fn(csfTools.loadCsf),
     getStorySortParameter: vi.fn(csfTools.getStorySortParameter),
   };
 });
 
 const toIdMock = vi.mocked(toId);
-const readCsfMock = vi.mocked(readCsf);
+const loadCsfMock = vi.mocked(loadCsf);
 const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
@@ -47,7 +55,7 @@ describe('StoryIndexGenerator', () => {
     vi.mocked(logger.warn).mockClear();
     vi.mocked(once.warn).mockClear();
     toIdMock.mockClear();
-    readCsfMock.mockClear();
+    loadCsfMock.mockClear();
     getStorySortParameterMock.mockClear();
     StoryIndexGenerator.clearFindMatchingFilesCache();
   });
@@ -77,12 +85,15 @@ describe('StoryIndexGenerator', () => {
             "entries": {
               "a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "a--story-one",
                 "importPath": "./src/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -132,6 +143,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "F",
@@ -139,12 +151,15 @@ describe('StoryIndexGenerator', () => {
               },
               "f--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "f--story-one",
                 "importPath": "./src/F.story.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "F",
@@ -178,6 +193,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "stories",
@@ -185,18 +201,40 @@ describe('StoryIndexGenerator', () => {
               },
               "stories--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "stories--story-one",
                 "importPath": "./src/stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "stories",
                 "type": "story",
               },
             },
+            "v": 5,
+          }
+        `);
+      });
+    });
+    describe('empty or whitespace-only files', () => {
+      it('ignores story files that only contain whitespace (e.g. just a newline)', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/Empty.stories.ts',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
+          {
+            "entries": {},
             "v": 5,
           }
         `);
@@ -218,48 +256,60 @@ describe('StoryIndexGenerator', () => {
             "entries": {
               "componentpath-extension--story-one": {
                 "componentPath": "./src/componentPath/component.js",
+                "exportName": "StoryOne",
                 "id": "componentpath-extension--story-one",
                 "importPath": "./src/componentPath/extension.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/extension",
                 "type": "story",
               },
               "componentpath-noextension--story-one": {
                 "componentPath": "./src/componentPath/component.js",
+                "exportName": "StoryOne",
                 "id": "componentpath-noextension--story-one",
                 "importPath": "./src/componentPath/noExtension.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/noExtension",
                 "type": "story",
               },
               "componentpath-package--story-one": {
                 "componentPath": "component-package",
+                "exportName": "StoryOne",
                 "id": "componentpath-package--story-one",
                 "importPath": "./src/componentPath/package.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/package",
                 "type": "story",
               },
               "nested-button--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "nested-button--story-one",
                 "importPath": "./src/nested/Button.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                 ],
                 "title": "nested/Button",
@@ -267,12 +317,15 @@ describe('StoryIndexGenerator', () => {
               },
               "second-nested-g--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "second-nested-g--story-one",
                 "importPath": "./src/second-nested/G.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "second-nested/G",
                 "type": "story",
@@ -299,12 +352,15 @@ describe('StoryIndexGenerator', () => {
             "entries": {
               "a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "a--story-one",
                 "importPath": "./src/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -319,6 +375,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -326,12 +383,15 @@ describe('StoryIndexGenerator', () => {
               },
               "b--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "b--story-one",
                 "importPath": "./src/B.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -339,36 +399,45 @@ describe('StoryIndexGenerator', () => {
               },
               "componentpath-extension--story-one": {
                 "componentPath": "./src/componentPath/component.js",
+                "exportName": "StoryOne",
                 "id": "componentpath-extension--story-one",
                 "importPath": "./src/componentPath/extension.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/extension",
                 "type": "story",
               },
               "componentpath-noextension--story-one": {
                 "componentPath": "./src/componentPath/component.js",
+                "exportName": "StoryOne",
                 "id": "componentpath-noextension--story-one",
                 "importPath": "./src/componentPath/noExtension.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/noExtension",
                 "type": "story",
               },
               "componentpath-package--story-one": {
                 "componentPath": "component-package",
+                "exportName": "StoryOne",
                 "id": "componentpath-package--story-one",
                 "importPath": "./src/componentPath/package.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/package",
                 "type": "story",
@@ -381,6 +450,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "D",
@@ -388,12 +458,15 @@ describe('StoryIndexGenerator', () => {
               },
               "d--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "d--story-one",
                 "importPath": "./src/D.stories.jsx",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "D",
@@ -401,12 +474,15 @@ describe('StoryIndexGenerator', () => {
               },
               "example-button--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "example-button--story-one",
                 "importPath": "./src/Button.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "foobar",
                 ],
                 "title": "Example/Button",
@@ -414,36 +490,45 @@ describe('StoryIndexGenerator', () => {
               },
               "first-nested-deeply-f--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "first-nested-deeply-f--story-one",
                 "importPath": "./src/first-nested/deeply/F.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/F",
                 "type": "story",
               },
               "first-nested-deeply-features--with-csf-1": {
                 "componentPath": undefined,
+                "exportName": "WithCSF1",
                 "id": "first-nested-deeply-features--with-csf-1",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With CSF 1",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
               },
               "first-nested-deeply-features--with-play": {
                 "componentPath": undefined,
+                "exportName": "WithPlay",
                 "id": "first-nested-deeply-features--with-play",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With Play",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "play-fn",
                 ],
                 "title": "first-nested/deeply/Features",
@@ -451,36 +536,45 @@ describe('StoryIndexGenerator', () => {
               },
               "first-nested-deeply-features--with-render": {
                 "componentPath": undefined,
+                "exportName": "WithRender",
                 "id": "first-nested-deeply-features--with-render",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With Render",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
               },
               "first-nested-deeply-features--with-story-fn": {
                 "componentPath": undefined,
+                "exportName": "WithStoryFn",
                 "id": "first-nested-deeply-features--with-story-fn",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With Story Fn",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
               },
               "first-nested-deeply-features--with-test": {
                 "componentPath": undefined,
+                "exportName": "WithTest",
                 "id": "first-nested-deeply-features--with-test",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With Test",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "play-fn",
                 ],
                 "title": "first-nested/deeply/Features",
@@ -494,6 +588,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "H",
@@ -501,12 +596,15 @@ describe('StoryIndexGenerator', () => {
               },
               "h--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "h--story-one",
                 "importPath": "./src/H.stories.mjs",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "H",
@@ -514,12 +612,15 @@ describe('StoryIndexGenerator', () => {
               },
               "nested-button--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "nested-button--story-one",
                 "importPath": "./src/nested/Button.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                 ],
                 "title": "nested/Button",
@@ -527,12 +628,15 @@ describe('StoryIndexGenerator', () => {
               },
               "second-nested-g--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "second-nested-g--story-one",
                 "importPath": "./src/second-nested/G.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "second-nested/G",
                 "type": "story",
@@ -579,12 +683,15 @@ describe('StoryIndexGenerator', () => {
             "entries": {
               "a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "a--story-one",
                 "importPath": "./src/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -599,6 +706,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -606,12 +714,15 @@ describe('StoryIndexGenerator', () => {
               },
               "b--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "b--story-one",
                 "importPath": "./src/B.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -619,36 +730,45 @@ describe('StoryIndexGenerator', () => {
               },
               "componentpath-extension--story-one": {
                 "componentPath": "./src/componentPath/component.js",
+                "exportName": "StoryOne",
                 "id": "componentpath-extension--story-one",
                 "importPath": "./src/componentPath/extension.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/extension",
                 "type": "story",
               },
               "componentpath-noextension--story-one": {
                 "componentPath": "./src/componentPath/component.js",
+                "exportName": "StoryOne",
                 "id": "componentpath-noextension--story-one",
                 "importPath": "./src/componentPath/noExtension.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/noExtension",
                 "type": "story",
               },
               "componentpath-package--story-one": {
                 "componentPath": "component-package",
+                "exportName": "StoryOne",
                 "id": "componentpath-package--story-one",
                 "importPath": "./src/componentPath/package.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/package",
                 "type": "story",
@@ -661,6 +781,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "D",
@@ -668,12 +789,15 @@ describe('StoryIndexGenerator', () => {
               },
               "d--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "d--story-one",
                 "importPath": "./src/D.stories.jsx",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "D",
@@ -681,12 +805,15 @@ describe('StoryIndexGenerator', () => {
               },
               "example-button--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "example-button--story-one",
                 "importPath": "./src/Button.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "foobar",
                 ],
                 "title": "Example/Button",
@@ -694,36 +821,45 @@ describe('StoryIndexGenerator', () => {
               },
               "first-nested-deeply-f--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "first-nested-deeply-f--story-one",
                 "importPath": "./src/first-nested/deeply/F.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/F",
                 "type": "story",
               },
               "first-nested-deeply-features--with-csf-1": {
                 "componentPath": undefined,
+                "exportName": "WithCSF1",
                 "id": "first-nested-deeply-features--with-csf-1",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With CSF 1",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
               },
               "first-nested-deeply-features--with-play": {
                 "componentPath": undefined,
+                "exportName": "WithPlay",
                 "id": "first-nested-deeply-features--with-play",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With Play",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "play-fn",
                 ],
                 "title": "first-nested/deeply/Features",
@@ -731,36 +867,45 @@ describe('StoryIndexGenerator', () => {
               },
               "first-nested-deeply-features--with-render": {
                 "componentPath": undefined,
+                "exportName": "WithRender",
                 "id": "first-nested-deeply-features--with-render",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With Render",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
               },
               "first-nested-deeply-features--with-story-fn": {
                 "componentPath": undefined,
+                "exportName": "WithStoryFn",
                 "id": "first-nested-deeply-features--with-story-fn",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With Story Fn",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
               },
               "first-nested-deeply-features--with-test": {
                 "componentPath": undefined,
+                "exportName": "WithTest",
                 "id": "first-nested-deeply-features--with-test",
                 "importPath": "./src/first-nested/deeply/Features.stories.jsx",
                 "name": "With Test",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "play-fn",
                 ],
                 "title": "first-nested/deeply/Features",
@@ -774,6 +919,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "H",
@@ -781,12 +927,15 @@ describe('StoryIndexGenerator', () => {
               },
               "h--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "h--story-one",
                 "importPath": "./src/H.stories.mjs",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "H",
@@ -794,12 +943,15 @@ describe('StoryIndexGenerator', () => {
               },
               "nested-button--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "nested-button--story-one",
                 "importPath": "./src/nested/Button.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                 ],
                 "title": "nested/Button",
@@ -807,12 +959,15 @@ describe('StoryIndexGenerator', () => {
               },
               "second-nested-g--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "second-nested-g--story-one",
                 "importPath": "./src/second-nested/G.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "second-nested/G",
                 "type": "story",
@@ -886,7 +1041,7 @@ describe('StoryIndexGenerator', () => {
         );
 
         const generator = new StoryIndexGenerator([specifier], autodocsOptions);
-        generator.getProjectTags = () => ['dev', 'test', 'autodocs'];
+        generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.AUTODOCS];
         await generator.initialize();
 
         expect(Object.keys((await generator.getIndex()).entries)).toMatchInlineSnapshot(`
@@ -930,12 +1085,12 @@ describe('StoryIndexGenerator', () => {
         );
 
         const generator = new StoryIndexGenerator([specifier], autodocsOptions);
-        generator.getProjectTags = () => ['dev', 'test', 'autodocs'];
+        generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.AUTODOCS];
         await generator.initialize();
 
         const index = await generator.getIndex();
         expect(index.entries['first-nested-deeply-f--docs'].tags).toEqual(
-          expect.arrayContaining(['autodocs'])
+          expect.arrayContaining([Tag.AUTODOCS])
         );
       });
 
@@ -1003,6 +1158,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1018,6 +1174,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                   "attached-mdx",
                 ],
@@ -1026,12 +1183,15 @@ describe('StoryIndexGenerator', () => {
               },
               "b--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "b--story-one",
                 "importPath": "./src/B.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1068,6 +1228,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1083,6 +1244,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                   "attached-mdx",
                 ],
@@ -1091,12 +1253,15 @@ describe('StoryIndexGenerator', () => {
               },
               "b--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "b--story-one",
                 "importPath": "./src/B.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1139,6 +1304,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1148,12 +1314,15 @@ describe('StoryIndexGenerator', () => {
               },
               "a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "a--story-one",
                 "importPath": "./src/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -1178,7 +1347,7 @@ describe('StoryIndexGenerator', () => {
         );
 
         const generator = new StoryIndexGenerator([csfSpecifier, docsSpecifier], autodocsOptions);
-        generator.getProjectTags = () => ['dev', 'test', 'autodocs'];
+        generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.AUTODOCS];
         await generator.initialize();
 
         const { storyIndex } = await generator.getIndexAndStats();
@@ -1205,9 +1374,11 @@ describe('StoryIndexGenerator', () => {
               },
               "a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "a--story-one",
                 "importPath": "./src/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
@@ -1247,6 +1418,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "duplicate/A",
@@ -1254,12 +1426,15 @@ describe('StoryIndexGenerator', () => {
               },
               "duplicate-a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "duplicate-a--story-one",
                 "importPath": "./duplicate/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "duplicate/A",
@@ -1267,12 +1442,15 @@ describe('StoryIndexGenerator', () => {
               },
               "duplicate-a--story-two": {
                 "componentPath": undefined,
+                "exportName": "StoryTwo",
                 "id": "duplicate-a--story-two",
                 "importPath": "./duplicate/SecondA.stories.js",
                 "name": "Story Two",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "duplicate/A",
@@ -1324,6 +1502,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "A",
@@ -1331,12 +1510,15 @@ describe('StoryIndexGenerator', () => {
               },
               "my-component-a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "my-component-a--story-one",
                 "importPath": "./docs-id-generation/A.stories.jsx",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "A",
@@ -1368,6 +1550,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1385,6 +1568,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1394,12 +1578,15 @@ describe('StoryIndexGenerator', () => {
               },
               "a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "a--story-one",
                 "importPath": "./src/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -1414,6 +1601,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "ComponentReference",
@@ -1427,6 +1615,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "docs2/Yabbadabbadooo",
@@ -1440,9 +1629,26 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "NoTitle",
+                "type": "docs",
+              },
+              "tags--docs": {
+                "id": "tags--docs",
+                "importPath": "./src/docs2/Tags.mdx",
+                "name": "docs",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "manifest",
+                  "foo",
+                  "bar",
+                  "unattached-mdx",
+                ],
+                "title": "Tags",
                 "type": "docs",
               },
             },
@@ -1474,6 +1680,7 @@ describe('StoryIndexGenerator', () => {
               "A",
               "titlePrefix/NoTitle",
               "A",
+              "titlePrefix/Tags",
               "titlePrefix/docs2/Yabbadabbadooo",
             ]
           `);
@@ -1503,6 +1710,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1520,6 +1728,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1529,12 +1738,15 @@ describe('StoryIndexGenerator', () => {
               },
               "a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "a--story-one",
                 "importPath": "./src/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -1549,6 +1761,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "ComponentReference",
@@ -1562,6 +1775,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "docs2/Yabbadabbadooo",
@@ -1575,9 +1789,26 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "NoTitle",
+                "type": "docs",
+              },
+              "tags--info": {
+                "id": "tags--info",
+                "importPath": "./src/docs2/Tags.mdx",
+                "name": "Info",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "manifest",
+                  "foo",
+                  "bar",
+                  "unattached-mdx",
+                ],
+                "title": "Tags",
                 "type": "docs",
               },
             },
@@ -1602,12 +1833,15 @@ describe('StoryIndexGenerator', () => {
             "entries": {
               "a--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "a--story-one",
                 "importPath": "./src/A.stories.js",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -1622,6 +1856,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1629,12 +1864,15 @@ describe('StoryIndexGenerator', () => {
               },
               "b--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "b--story-one",
                 "importPath": "./src/B.stories.ts",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1651,6 +1889,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                   "attached-mdx",
                 ],
@@ -1691,6 +1930,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "attached-mdx",
                 ],
                 "title": "B",
@@ -1698,12 +1938,15 @@ describe('StoryIndexGenerator', () => {
               },
               "my-component-b--story-one": {
                 "componentPath": undefined,
+                "exportName": "StoryOne",
                 "id": "my-component-b--story-one",
                 "importPath": "./docs-id-generation/B.stories.jsx",
                 "name": "Story One",
+                "subtype": "story",
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "B",
                 "type": "story",
@@ -1808,6 +2051,7 @@ describe('StoryIndexGenerator', () => {
           title: 'ComponentTitle',
           importPath: 'Path',
           type: 'story',
+          subtype: 'story',
         };
         expect(() => {
           generator.chooseDuplicate(mockEntry, { ...mockEntry, importPath: 'DifferentPath' }, []);
@@ -1828,6 +2072,7 @@ describe('StoryIndexGenerator', () => {
             "a--metaof",
             "notitle--docs",
             "a--second-docs",
+            "tags--docs",
             "docs2-yabbadabbadooo--docs",
           ]
         `);
@@ -1870,33 +2115,34 @@ describe('StoryIndexGenerator', () => {
       });
 
       expect(Object.keys((await generator.getIndex()).entries)).toMatchInlineSnapshot(`
-  [
-    "docs2-yabbadabbadooo--docs",
-    "d--docs",
-    "d--story-one",
-    "b--docs",
-    "b--story-one",
-    "nested-button--story-one",
-    "a--metaof",
-    "a--second-docs",
-    "a--story-one",
-    "second-nested-g--story-one",
-    "componentreference--docs",
-    "notitle--docs",
-    "example-button--story-one",
-    "h--docs",
-    "h--story-one",
-    "componentpath-extension--story-one",
-    "componentpath-noextension--story-one",
-    "componentpath-package--story-one",
-    "first-nested-deeply-f--story-one",
-    "first-nested-deeply-features--with-play",
-    "first-nested-deeply-features--with-story-fn",
-    "first-nested-deeply-features--with-render",
-    "first-nested-deeply-features--with-test",
-    "first-nested-deeply-features--with-csf-1",
-  ]
-`);
+        [
+          "docs2-yabbadabbadooo--docs",
+          "d--docs",
+          "d--story-one",
+          "b--docs",
+          "b--story-one",
+          "nested-button--story-one",
+          "a--metaof",
+          "a--second-docs",
+          "a--story-one",
+          "second-nested-g--story-one",
+          "componentreference--docs",
+          "notitle--docs",
+          "tags--docs",
+          "example-button--story-one",
+          "h--docs",
+          "h--story-one",
+          "componentpath-extension--story-one",
+          "componentpath-noextension--story-one",
+          "componentpath-package--story-one",
+          "first-nested-deeply-f--story-one",
+          "first-nested-deeply-features--with-play",
+          "first-nested-deeply-features--with-story-fn",
+          "first-nested-deeply-features--with-render",
+          "first-nested-deeply-features--with-test",
+          "first-nested-deeply-features--with-csf-1",
+        ]
+      `);
     });
   });
 
@@ -1908,16 +2154,16 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
-        expect(readCsfMock).toHaveBeenCalledTimes(0);
+        loadCsfMock.mockClear();
+        expect(loadCsfMock).toHaveBeenCalledTimes(0);
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).not.toHaveBeenCalled();
+        expect(loadCsfMock).not.toHaveBeenCalled();
       });
 
       it('does not extract docs files a second time', async () => {
@@ -1929,12 +2175,12 @@ describe('StoryIndexGenerator', () => {
           './src/docs2/*.mdx',
           options
         );
-        readCsfMock.mockClear();
-        expect(readCsfMock).toHaveBeenCalledTimes(0);
+        loadCsfMock.mockClear();
+        expect(loadCsfMock).toHaveBeenCalledTimes(0);
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -1967,17 +2213,17 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', false);
+        generator.invalidate('./src/B.stories.ts', false);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(1);
+        expect(loadCsfMock).toHaveBeenCalledTimes(1);
       });
 
       it('calls extract docs file for just the one file', async () => {
@@ -1993,9 +2239,9 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
-        generator.invalidate(docsSpecifier, './src/docs2/Title.mdx', false);
+        generator.invalidate('./src/docs2/Title.mdx', false);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -2015,9 +2261,9 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
-        generator.invalidate(storiesSpecifier, './src/A.stories.js', false);
+        generator.invalidate('./src/A.stories.js', false);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -2037,7 +2283,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
 
-        generator.invalidate(specifier, './src/B.stories.ts', false);
+        generator.invalidate('./src/B.stories.ts', false);
 
         sortFn.mockClear();
         await generator.getIndex();
@@ -2052,17 +2298,17 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).not.toHaveBeenCalled();
+        expect(loadCsfMock).not.toHaveBeenCalled();
       });
 
       it('does call the sort function a second time', async () => {
@@ -2078,7 +2324,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
         sortFn.mockClear();
         await generator.getIndex();
@@ -2091,13 +2337,13 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('b--story-one');
       });
@@ -2115,11 +2361,11 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('notitle--docs');
 
-        generator.invalidate(docsSpecifier, './src/docs2/NoTitle.mdx', true);
+        generator.invalidate('./src/docs2/NoTitle.mdx', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('notitle--docs');
       });
@@ -2137,16 +2383,16 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('a--metaof');
 
-        generator.invalidate(docsSpecifier, './src/docs2/MetaOf.mdx', true);
+        generator.invalidate('./src/docs2/MetaOf.mdx', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('a--metaof');
 
         // this will throw if MetaOf is not removed from A's dependents
-        generator.invalidate(storiesSpecifier, './src/A.stories.js', false);
+        generator.invalidate('./src/A.stories.js', false);
       });
     });
   });

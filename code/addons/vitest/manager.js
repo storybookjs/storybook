@@ -1,1 +1,1 @@
-require('./dist/manager');
+export * from './dist/manager.js';

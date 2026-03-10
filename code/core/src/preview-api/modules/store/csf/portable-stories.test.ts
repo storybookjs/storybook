@@ -8,6 +8,7 @@ import type {
   StoryAnnotationsOrFn as Story,
 } from 'storybook/internal/types';
 
+import { Tag } from '../../../../shared/constants/tags';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile';
 import { composeStories, composeStory, setProjectAnnotations } from './portable-stories';
@@ -47,7 +48,7 @@ describe('composeStory', () => {
   it('should return composed project annotations via setProjectAnnotations', () => {
     const firstAnnotations = {
       parameters: { foo: 'bar' },
-      tags: ['autodocs'],
+      tags: [Tag.AUTODOCS],
     };
 
     const secondAnnotations = {
@@ -60,7 +61,7 @@ describe('composeStory', () => {
       expect.objectContaining({
         parameters: expect.objectContaining({ foo: 'bar' }),
         args: { foo: 'bar' },
-        tags: ['autodocs'],
+        tags: [Tag.AUTODOCS],
       })
     );
   });
@@ -125,7 +126,7 @@ describe('composeStory', () => {
     expect(composedStory.parameters).toEqual(
       expect.objectContaining({ ...Story.parameters, ...meta.parameters })
     );
-    expect(composedStory.tags).toEqual(['dev', 'test', 'projectTag', 'metaTag', 'storyTag']);
+    expect(composedStory.tags).toEqual([Tag.DEV, Tag.TEST, 'projectTag', 'metaTag', 'storyTag']);
 
     composedStory();
 

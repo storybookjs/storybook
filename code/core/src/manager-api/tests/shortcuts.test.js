@@ -6,8 +6,10 @@ function createMockStore() {
   let state = {};
   return {
     getState: vi.fn().mockImplementation(() => state),
-    setState: vi.fn().mockImplementation((s) => {
+    setState: vi.fn().mockImplementation((update) => {
+      const s = typeof update === 'function' ? update(state) : update;
       state = { ...state, ...s };
+      return state;
     }),
   };
 }

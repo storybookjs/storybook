@@ -85,16 +85,22 @@ describe('Settings', () => {
       );
     });
 
-    it('throws error if write fails', async () => {
+    it('logs warning if write fails', async () => {
       vi.mocked(fs.writeFile).mockRejectedValue(new Error('Write error'));
 
-      await expect(settings.save()).rejects.toThrow('Unable to save global settings');
+      await expect(settings.save()).resolves.toBeUndefined();
+      expect(console.warn).toHaveBeenCalledWith(
+        'Unable to save global settings file to /test/settings.json\nReason: Write error'
+      );
     });
 
-    it('throws error if directory creation fails', async () => {
+    it('logs warning if directory creation fails', async () => {
       vi.mocked(fs.mkdir).mockRejectedValue(new Error('Directory creation error'));
 
-      await expect(settings.save()).rejects.toThrow('Unable to save global settings');
+      await expect(settings.save()).resolves.toBeUndefined();
+      expect(console.warn).toHaveBeenCalledWith(
+        'Unable to save global settings file to /test/settings.json\nReason: Directory creation error'
+      );
     });
   });
 });

@@ -11,7 +11,6 @@ import React, {
 } from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
-import { deprecate } from 'storybook/internal/client-logger';
 import {
   DOCS_PREPARED,
   SET_STORIES,
@@ -35,14 +34,16 @@ import type {
   API_RootEntry,
   API_StateMerger,
   API_StoryEntry,
+  API_TestEntry,
   ArgTypes,
   Args,
+  GlobalTypes,
   Globals,
   Parameters,
   StoryId,
 } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';
@@ -54,6 +55,7 @@ import * as channel from './modules/channel';
 import * as globals from './modules/globals';
 import * as layout from './modules/layout';
 import * as notifications from './modules/notifications';
+import * as openInEditor from './modules/open-in-editor';
 import * as provider from './modules/provider';
 import * as refs from './modules/refs';
 import * as settings from './modules/settings';
@@ -66,6 +68,7 @@ import type { Options } from './store';
 import Store from './store';
 
 export * from './lib/request-response';
+export * from './lib/platform';
 export * from './lib/shortcut';
 
 const { ActiveTabs } = layout;
@@ -103,6 +106,7 @@ export type API = addons.SubAPI &
   version.SubAPI &
   url.SubAPI &
   whatsnew.SubAPI &
+  openInEditor.SubAPI &
   Other;
 
 interface Other {
@@ -177,6 +181,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
       url,
       version,
       whatsnew,
+      openInEditor,
     ].map((m) =>
       m.init({ ...routeData, ...optionsData, ...apiData, state: this.state, fullAPI: this.api })
     );
@@ -483,11 +488,11 @@ export function useGlobals(): [
   return [api.getGlobals(), api.updateGlobals, api.getStoryGlobals(), api.getUserGlobals()];
 }
 
-export function useGlobalTypes(): ArgTypes {
+export function useGlobalTypes(): GlobalTypes {
   return useStorybookApi().getGlobalTypes();
 }
 
-function useCurrentStory(): API_StoryEntry | API_DocsEntry {
+function useCurrentStory(): API_StoryEntry | API_TestEntry | API_DocsEntry {
   const { getCurrentStoryData } = useStorybookApi();
 
   return getCurrentStoryData();

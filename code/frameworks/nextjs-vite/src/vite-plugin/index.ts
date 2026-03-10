@@ -1,3 +1,7 @@
-import vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
+import { createRequire } from 'node:module';
 
-export const storybookNextJsPlugin = vitePluginStorybookNextJs;
+const require = createRequire(import.meta.url);
+
+const vitePluginStorybookNextjs = require('vite-plugin-storybook-nextjs');
+
+export const storybookNextJsPlugin = vitePluginStorybookNextjs;

@@ -11,7 +11,7 @@ import { createStorybookRule } from '../utils/create-storybook-rule';
 //------------------------------------------------------------------------------
 // Rule Definition
 //------------------------------------------------------------------------------
-export = createStorybookRule({
+export default createStorybookRule({
   name: 'use-storybook-testing-library',
   defaultOptions: [],
   meta: {
@@ -68,7 +68,7 @@ export = createStorybookRule({
       //
       // import foo, { bar } from 'baz';
       //        ^        ^ end
-      const fullText = context.getSourceCode().text;
+      const fullText = context.sourceCode.text;
       const importEnd = node.range[1];
       const closingBrace = fullText.indexOf('}', end - 1);
       if (closingBrace > -1 && closingBrace <= importEnd) {

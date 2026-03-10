@@ -1,28 +1,23 @@
-import { dirname, join } from 'node:path';
-
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options';
-
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
+import { fileURLToPath } from 'node:url';
 
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('./server/framework-preset-angular-cli'),
-  require.resolve('./server/framework-preset-angular-ivy'),
+  fileURLToPath(import.meta.resolve('@storybook/angular/server/framework-preset-angular-cli')),
+  fileURLToPath(import.meta.resolve('@storybook/angular/server/framework-preset-angular-ivy')),
 ];
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
   options
 ) => {
-  const config = join(getAbsolutePath('@storybook/angular'), 'dist/client/config.mjs');
+  const config = fileURLToPath(import.meta.resolve('@storybook/angular/client/config'));
   const annotations = [...entries, config];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
-    const previewProdPath = join(
-      getAbsolutePath('@storybook/angular'),
-      'dist/client/preview-prod.mjs'
+    const previewProdPath = fileURLToPath(
+      import.meta.resolve('@storybook/angular/client/preview-prod')
     );
     annotations.unshift(previewProdPath);
   }
@@ -30,9 +25,8 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   const docsConfig = await options.presets.apply('docs', {}, options);
   const docsEnabled = Object.keys(docsConfig).length > 0;
   if (docsEnabled) {
-    const docsConfigPath = join(
-      getAbsolutePath('@storybook/angular'),
-      'dist/client/docs/config.mjs'
+    const docsConfigPath = fileURLToPath(
+      import.meta.resolve('@storybook/angular/client/docs/config')
     );
     annotations.push(docsConfigPath);
   }
@@ -45,7 +39,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: getAbsolutePath('@storybook/builder-webpack5'),
+      name: import.meta.resolve('@storybook/builder-webpack5'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
   };

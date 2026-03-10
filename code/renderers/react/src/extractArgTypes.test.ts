@@ -1,7 +1,6 @@
-import { readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { normalizeNewlines } from 'storybook/internal/docs-tools';
 import type { Renderer } from 'storybook/internal/types';
@@ -60,13 +59,16 @@ const skippedTests = [
   'js-proptypes',
 ];
 
-describe('react component properties', () => {
+const fs = await vi.importActual<typeof import('node:fs')>('node:fs');
+
+describe('react component properties', async () => {
   // Fixture files are in template/stories
   const fixturesDir = resolve(__dirname, '../template/stories/docgen-components');
-  readdirSync(fixturesDir, { withFileTypes: true }).forEach((testEntry) => {
+
+  fs.readdirSync(fixturesDir, { withFileTypes: true }).forEach((testEntry) => {
     if (testEntry.isDirectory()) {
       const testDir = join(fixturesDir, testEntry.name);
-      const testFile = readdirSync(testDir).find((fileName) => inputRegExp.test(fileName));
+      const testFile = fs.readdirSync(testDir).find((fileName) => inputRegExp.test(fileName));
       if (testFile) {
         if (skippedTests.includes(testEntry.name)) {
           it.skip(`${testEntry.name}`, () => {});

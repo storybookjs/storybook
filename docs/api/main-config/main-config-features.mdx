@@ -9,6 +9,29 @@ Parent: [main.js|ts configuration](./main-config.mdx)
 
 Type:
 
+<If renderer="react">
+
+```ts
+{
+  actions?: boolean;
+  argTypeTargetsV7?: boolean;
+  backgrounds?: boolean;
+  controls?: boolean;
+  developmentModeForBuild?: boolean;
+  experimentalTestSyntax?: boolean;
+  highlight?: boolean;
+  interactions?: boolean;
+  legacyDecoratorFileOrder?: boolean;
+  measure?: boolean;
+  outline?: boolean;
+  toolbars?: boolean;
+  viewport?: boolean;
+}
+```
+</If>
+
+<If renderer="angular">
+
 ```ts
 {
   actions?: boolean;
@@ -26,6 +49,28 @@ Type:
   viewport?: boolean;
 }
 ```
+</If>
+
+<If notRenderer={['react','angular']}>
+
+```ts
+{
+  actions?: boolean;
+  argTypeTargetsV7?: boolean;
+  backgrounds?: boolean;
+  controls?: boolean;
+  developmentModeForBuild?: boolean;
+  highlight?: boolean;
+  interactions?: boolean;
+  legacyDecoratorFileOrder?: boolean;
+  measure?: boolean;
+  outline?: boolean;
+  toolbars?: boolean;
+  viewport?: boolean;
+}
+```
+</If>
+
 
 Enables Storybook's additional features.
 
@@ -35,11 +80,15 @@ Type: `boolean`
 
 Enable the [Actions](../../essentials/actions.mdx) feature.
 
+<If renderer="angular">
+
 ## `angularFilterNonInputControls`
 
 Type: `boolean`
 
 Filter non-input controls in Angular.
+
+</If>
 
 ## `argTypeTargetsV7`
 
@@ -78,6 +127,24 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 <CodeSnippets path="main-config-features-development-mode-for-build.md" />
 
 {/* prettier-ignore-end */}
+
+<If renderer="react">
+
+## `experimentalTestSyntax`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Enable the [experimental `.test` method with the CSF Next format](../csf/csf-next#storytest).
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-experimental-test-syntax.md" />
+
+{/* prettier-ignore-end */}
+
+</If>
 
 ## `highlight`
 

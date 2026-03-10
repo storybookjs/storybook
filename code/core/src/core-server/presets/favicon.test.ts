@@ -1,14 +1,31 @@
 import * as fs from 'node:fs';
-import { dirname, join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
+import { type Presets } from 'storybook/internal/types';
+
+import { dirname, join, normalize } from 'pathe';
 
 import * as m from './common-preset';
 
+// mock src/core-server/utils/constants.ts:8:27
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: join(
+      dirname(require.resolve('storybook/package.json')),
+      '/assets/browser/favicon.svg'
+    ),
+  };
+});
+
+vi.mock('../../shared/utils/module', () => ({
+  resolvePackageDir: vi.fn().mockReturnValue('mocked-path'),
+}));
+
 const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
+  dirname(require.resolve('storybook/package.json')),
   '/assets/browser/favicon.svg'
 );
 
@@ -26,13 +43,13 @@ const createOptions = (locations: string[]): Parameters<typeof m.favicon>[1] => 
         }
       }
     },
-  },
+  } as Presets,
 });
 
 vi.mock('storybook/internal/node-logger', () => {
   return {
     logger: {
-      warn: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     },
   };
 });
@@ -42,8 +59,14 @@ vi.mock('node:fs', async (importOriginal) => ({
   existsSync: vi.fn((p: string) => {
     return false;
   }),
+  statSync: vi.fn((p: string) => {
+    return {
+      isFile: () => false,
+    };
+  }),
 }));
 const existsSyncMock = vi.mocked(fs.existsSync);
+const statSyncMock = vi.mocked(fs.statSync);
 
 it('with no staticDirs favicon should return default', async () => {
   const options = createOptions([]);
@@ -51,80 +74,103 @@ it('with no staticDirs favicon should return default', async () => {
   expect(await m.favicon(undefined, options)).toBe(defaultFavicon);
 });
 
+it('with staticDirs referencing a favicon.ico directly should return the found favicon', async () => {
+  const location = 'favicon.ico';
+  existsSyncMock.mockImplementation((p) => {
+    return normalize(String(p)) === normalize(createPath(location));
+  });
+  statSyncMock.mockImplementation((p) => {
+    return {
+      isFile: () => normalize(String(p)) === normalize(createPath('favicon.ico')),
+    } as any;
+  });
+  const options = createOptions([location]);
+
+  expect(normalize(await m.favicon(undefined, options))).toBe(normalize(createPath('favicon.ico')));
+});
+
 it('with staticDirs containing a single favicon.ico should return the found favicon', async () => {
   const location = 'static';
   existsSyncMock.mockImplementation((p) => {
-    if (p === createPath(location)) {
+    if (normalize(String(p)) === normalize(createPath(location))) {
       return true;
     }
-    if (p === createPath(location, 'favicon.ico')) {
+    if (normalize(String(p)) === normalize(createPath(location, 'favicon.ico'))) {
       return true;
     }
     return false;
   });
   const options = createOptions([location]);
 
-  expect(await m.favicon(undefined, options)).toBe(createPath(location, 'favicon.ico'));
+  expect(normalize(await m.favicon(undefined, options))).toBe(
+    normalize(createPath(location, 'favicon.ico'))
+  );
 });
 
 it('with staticDirs containing a single favicon.svg should return the found favicon', async () => {
   const location = 'static';
   existsSyncMock.mockImplementation((p) => {
-    if (p === createPath(location)) {
+    if (normalize(String(p)) === normalize(createPath(location))) {
       return true;
     }
-    if (p === createPath(location, 'favicon.svg')) {
+    if (normalize(String(p)) === normalize(createPath(location, 'favicon.svg'))) {
       return true;
     }
     return false;
   });
   const options = createOptions([location]);
 
-  expect(await m.favicon(undefined, options)).toBe(createPath(location, 'favicon.svg'));
+  expect(normalize(await m.favicon(undefined, options))).toBe(
+    normalize(createPath(location, 'favicon.svg'))
+  );
 });
 
-it('with staticDirs containing a multiple favicons should return the first favicon and warn', async () => {
+it('with staticDirs containing a multiple favicons should return the first favicon and show a debug message', async () => {
   const location = 'static';
   existsSyncMock.mockImplementation((p) => {
-    if (p === createPath(location)) {
+    if (normalize(String(p)) === normalize(createPath(location))) {
       return true;
     }
-    if (p === createPath(location, 'favicon.ico')) {
+    if (normalize(String(p)) === normalize(createPath(location, 'favicon.ico'))) {
       return true;
     }
-    if (p === createPath(location, 'favicon.svg')) {
+    if (normalize(String(p)) === normalize(createPath(location, 'favicon.svg'))) {
       return true;
     }
     return false;
   });
   const options = createOptions([location]);
 
-  expect(await m.favicon(undefined, options)).toBe(createPath(location, 'favicon.svg'));
+  expect(normalize(await m.favicon(undefined, options))).toBe(
+    normalize(createPath(location, 'favicon.svg'))
+  );
 
-  expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('multiple favicons'));
+  expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('multiple favicons'));
 });
 
-it('with multiple staticDirs containing a multiple favicons should return the first favicon and warn', async () => {
+it('with multiple staticDirs containing a multiple favicons should return the first favicon and show a debug message', async () => {
   const locationA = 'static-a';
   const locationB = 'static-b';
   existsSyncMock.mockImplementation((p) => {
-    if (p === createPath(locationA)) {
+    if (normalize(String(p)) === normalize(createPath(locationA))) {
       return true;
     }
-    if (p === createPath(locationB)) {
+    if (normalize(String(p)) === normalize(createPath(locationB))) {
       return true;
     }
-    if (p === createPath(locationA, 'favicon.ico')) {
+    if (normalize(String(p)) === normalize(createPath(locationA, 'favicon.ico'))) {
       return true;
     }
-    if (p === createPath(locationB, 'favicon.svg')) {
+    if (normalize(String(p)) === normalize(createPath(locationB, 'favicon.svg'))) {
       return true;
     }
     return false;
   });
   const options = createOptions([locationA, locationB]);
 
-  expect(await m.favicon(undefined, options)).toBe(createPath(locationA, 'favicon.ico'));
+  expect(normalize(await m.favicon(undefined, options))).toBe(
+    normalize(createPath(locationA, 'favicon.ico'))
+  );
 
-  expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('multiple favicons'));
+  expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('multiple favicons'));
 });

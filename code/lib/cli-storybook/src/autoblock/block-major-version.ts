@@ -76,10 +76,9 @@ export const blocker = createBlocker<MajorVersionData>({
       return {
         title: 'Downgrade Not Supported',
         message: dedent`
-          Your Storybook version (v${data.currentVersion}) is newer than the target release (v${versions.storybook}).Downgrading is not supported.
-          Please follow the 8.0 migration guide to upgrade to v8.0 first.
+          Your Storybook version (v${data.currentVersion}) is newer than the target release (v${versions.storybook}). Downgrading is not supported.
           `,
-        link: 'https://storybook.js.org/docs/8/migration-guide',
+        link: 'https://storybook.js.org/docs/releases/migration-guide?ref=upgrade',
       };
     }
 
@@ -94,7 +93,7 @@ export const blocker = createBlocker<MajorVersionData>({
           You can upgrade to version ${nextMajor} by running:
           ${CLI_COLORS.info(`npx storybook@${nextMajor} upgrade`)}
         `,
-        link: `https://storybook.js.org/docs/${nextMajor}/migration-guide`,
+        link: `https://storybook.js.org/docs/${nextMajor}/migration-guide?ref=upgrade`,
       };
     }
 

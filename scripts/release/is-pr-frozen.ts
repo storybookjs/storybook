@@ -1,9 +1,8 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
-import { readJson } from 'fs-extra';
 import picocolors from 'picocolors';
 
 import { esMain } from '../utils/esmain';
@@ -23,7 +22,8 @@ const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const getCurrentVersion = async () => {
   console.log(`📐 Reading current version of Storybook...`);
-  const { version } = await readJson(CODE_PACKAGE_JSON_PATH);
+  const content = await readFile(CODE_PACKAGE_JSON_PATH, 'utf-8');
+  const { version } = JSON.parse(content);
   return version;
 };
 

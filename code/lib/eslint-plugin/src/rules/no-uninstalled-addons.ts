@@ -25,7 +25,7 @@ import { createStorybookRule } from '../utils/create-storybook-rule';
 // Rule Definition
 //------------------------------------------------------------------------------
 
-export = createStorybookRule({
+export default createStorybookRule({
   name: 'no-uninstalled-addons',
   defaultOptions: [
     {
@@ -163,7 +163,7 @@ export = createStorybookRule({
       addonsExpression: TSESTree.ArrayExpression | undefined
     ) => {
       if (addonsExpression?.elements) {
-        // extract all nodes taht are a string inside the addons array
+        // extract all nodes that are a string inside the addons array
         const nodesWithAddons = addonsExpression.elements
           .map((elem) => (isLiteral(elem) ? { value: elem.value, node: elem } : undefined))
           .filter(excludeNullable);

@@ -3,7 +3,7 @@ import React from 'react';
 export default {
   component: {},
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

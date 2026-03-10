@@ -6,7 +6,7 @@ import type { Options } from 'storybook/internal/types';
 import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
-import loadJsConfig from 'next/dist/build/load-jsconfig';
+import nextJSLoadConfigModule from 'next/dist/build/load-jsconfig.js';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { getNodeModulesExcludeRegex } from '../utils';
@@ -20,6 +20,7 @@ export const configureSWCLoader = async (
 
   const { virtualModules } = await getVirtualModules(options);
   const projectRoot = getProjectRoot();
+  const loadJsConfig = (nextJSLoadConfigModule as any).default ?? nextJSLoadConfigModule;
 
   const { jsConfig } = await loadJsConfig(projectRoot, nextConfig as any);
 
@@ -40,7 +41,7 @@ export const configureSWCLoader = async (
     use: {
       // we use our own patch because we need to remove tracing from the original code
       // which is not possible otherwise
-      loader: require.resolve('./swc/next-swc-loader-patch.js'),
+      loader: '@storybook/nextjs/next-swc-loader-patch',
       options: {
         isServer: false,
         rootDir: projectRoot,
@@ -49,13 +50,26 @@ export const configureSWCLoader = async (
         hasReactRefresh: isDevelopment,
         jsConfig,
         nextConfig,
-        supportedBrowsers: require('next/dist/build/utils').getSupportedBrowsers(
-          projectRoot,
-          isDevelopment
-        ),
+        supportedBrowsers: await getSupportedBrowsers(projectRoot, isDevelopment),
         swcCacheDir: join(projectRoot, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
         bundleTarget: 'default',
       },
     },
   });
 };
+
+async function getSupportedBrowsers(projectRoot: string, isDevelopment: boolean) {
+  try {
+    // @ts-expect-error - Correct import since Next.js v16.2
+    return (await import('next/dist/build/get-supported-browsers.js')).getSupportedBrowsers(
+      projectRoot,
+      isDevelopment
+    );
+  } catch (e) {
+    // TODO: Remove as soon as we don't have to support Next.js < 16.2 anymore
+    return (await import('next/dist/build/utils.js')).getSupportedBrowsers(
+      projectRoot,
+      isDevelopment
+    );
+  }
+}

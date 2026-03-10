@@ -1,14 +1,13 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { readJson } from 'fs-extra';
 import pRetry from 'p-retry';
 import picocolors from 'picocolors';
 import semver from 'semver';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
 import { esMain } from '../utils/esmain';
@@ -52,7 +51,8 @@ const getCurrentVersion = async (verbose?: boolean) => {
   if (verbose) {
     console.log(`📐 Reading current version of Storybook...`);
   }
-  const { version } = await readJson(CODE_PACKAGE_JSON_PATH);
+  const content = await readFile(CODE_PACKAGE_JSON_PATH, 'utf-8');
+  const { version } = JSON.parse(content);
   console.log(`📐 Current version of Storybook is ${picocolors.green(version)}`);
   return version;
 };

@@ -1,11 +1,17 @@
 /// <reference types="node" />
+import { readFileSync } from 'node:fs';
 import * as os from 'node:os';
+import { join } from 'node:path';
+
+import { isCI } from 'storybook/internal/common';
 
 import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
-import { getAnonymousProjectId } from './anonymous-id';
+import { resolvePackageDir } from '../shared/utils/module';
+import { getAnonymousProjectId, getProjectSince } from './anonymous-id';
+import { detectAgent } from './detect-agent';
 import { set as saveToCache } from './event-cache';
 import { fetch } from './fetch';
 import { getSessionId } from './session-id';
@@ -44,12 +50,15 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
 // context info sent with all events, provided
 // by the app. currently:
 // - cliVersion
+const inCI = isCI();
+const agentDetection = detectAgent({ stdoutIsTTY: process.stdout.isTTY, env: process.env });
 const globalContext = {
-  inCI: Boolean(process.env.CI),
+  inCI,
   isTTY: process.stdout.isTTY,
+  agent: agentDetection,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,
-  storybookVersion: version,
+  storybookVersion: getVersionNumber(),
 } as Record<string, any>;
 
 const prepareRequest = async (data: TelemetryData, context: Record<string, any>, options: any) => {
@@ -72,6 +81,15 @@ const prepareRequest = async (data: TelemetryData, context: Record<string, any>,
   });
 };
 
+function getVersionNumber() {
+  try {
+    return JSON.parse(readFileSync(join(resolvePackageDir('storybook'), 'package.json'), 'utf8'))
+      .version;
+  } catch (e) {
+    return version;
+  }
+}
+
 export async function sendTelemetry(
   data: TelemetryData,
   options: Partial<Options> = { retryDelay: 1000, immediate: false }
@@ -89,23 +107,20 @@ export async function sendTelemetry(
     : {
         ...globalContext,
         anonymousId: getAnonymousProjectId(),
+        projectSince: getProjectSince()?.getTime(),
       };
 
   let request: any;
   try {
     request = prepareRequest(data, context, options);
     tasks.push(request);
-    if (options.immediate) {
-      await Promise.all(tasks);
-    } else {
-      await request;
-    }
 
     const sessionId = await getSessionId();
     const eventId = nanoid();
     const body = { ...rest, eventType, eventId, sessionId, metadata, payload, context };
 
-    await saveToCache(eventType, body);
+    const waitFor = options.immediate ? tasks : [request];
+    await Promise.all([...waitFor, saveToCache(eventType, body)]);
   } catch (err) {
     //
   } finally {

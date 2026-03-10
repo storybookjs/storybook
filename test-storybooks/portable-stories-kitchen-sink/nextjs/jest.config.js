@@ -12,6 +12,18 @@ const customJestConfig = {
   testEnvironment: '@happy-dom/jest-environment',
   // Add more setup options before each test is run
   setupFilesAfterEnv: ['./jest.setup.ts'],
+  transform: {
+    '^.+\\.(t|j)sx?$': [
+      '@swc/jest',
+      {
+        module: {
+          type: 'commonjs',
+        },
+      },
+    ],
+  },
+  transformIgnorePatterns: [],
+
   moduleNameMapper: {
     ...getPackageAliases()
   },

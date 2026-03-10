@@ -1,70 +1,45 @@
-import React, { type ComponentProps, useCallback } from 'react';
+import React from 'react';
 
-import { Checkbox, IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { color, styled } from 'storybook/internal/theming';
+import { Select } from 'storybook/internal/components';
 
-import { ButtonIcon, RefreshIcon } from '@storybook/icons';
+import { ButtonIcon } from '@storybook/icons';
 
 import { useGlobals } from 'storybook/manager-api';
 
 import { PARAM_KEY, PSEUDO_STATES } from '../constants';
 
-const LinkTitle = styled.span<{ active?: boolean }>(({ active }) => ({
-  color: active ? color.secondary : 'inherit',
-}));
-
-const options = Object.keys(PSEUDO_STATES).sort() as (keyof typeof PSEUDO_STATES)[];
+const pseudoStates = Object.keys(PSEUDO_STATES).sort() as (keyof typeof PSEUDO_STATES)[];
 
 export const PseudoStateTool = () => {
   const [globals, updateGlobals] = useGlobals();
-  const pseudo = globals[PARAM_KEY];
 
-  const isActive = useCallback(
-    (option: keyof typeof PSEUDO_STATES) => {
-      if (!pseudo) {
-        return false;
-      }
-      return pseudo[option] === true;
-    },
-    [pseudo]
+  const defaultOptions = Object.keys(globals[PARAM_KEY] || {}).filter((key) =>
+    pseudoStates.includes(key as keyof typeof PSEUDO_STATES)
   );
 
-  const hasActive = options.some(isActive);
-  const reset = {
-    id: 'reset',
-    title: 'Reset pseudo states',
-    icon: <RefreshIcon style={{ opacity: hasActive ? 1 : 0.7 }} />,
-    disabled: !hasActive,
-    onClick: () => updateGlobals({ [PARAM_KEY]: {} }),
-  };
-
-  const toggleOption = useCallback(
-    (option: keyof typeof PSEUDO_STATES) => () => {
-      const { [option]: value, ...rest } = pseudo;
-      updateGlobals({ [PARAM_KEY]: value === true ? rest : { ...rest, [option]: true } });
-    },
-    [pseudo, updateGlobals]
-  );
-  const links: ComponentProps<typeof TooltipLinkList>['links'] = options.map((option) => {
-    const active = isActive(option);
+  const options = pseudoStates.map((option) => {
     return {
-      id: option,
-      title: <LinkTitle active={active}>:{PSEUDO_STATES[option]}</LinkTitle>,
-      input: <Checkbox checked={active} onChange={toggleOption(option)} />,
-      active,
+      title: `:${PSEUDO_STATES[option]}`,
+      value: option,
     };
   });
 
   return (
-    <WithTooltip
-      placement="top"
-      trigger="click"
-      closeOnOutsideClick
-      tooltip={<TooltipLinkList links={[[reset], links]} />}
-    >
-      <IconButton key="pseudo-states" title="Select CSS pseudo states" active={hasActive}>
-        <ButtonIcon />
-      </IconButton>
-    </WithTooltip>
+    <Select
+      resetLabel="Reset pseudo states"
+      onReset={() => updateGlobals({ [PARAM_KEY]: {} })}
+      icon={<ButtonIcon />}
+      ariaLabel="CSS pseudo states"
+      tooltip="Apply CSS pseudo states"
+      defaultOptions={defaultOptions}
+      options={options}
+      multiSelect
+      onChange={(selected) => {
+        updateGlobals({
+          // We know curr is a string because we are using string values in options
+          [PARAM_KEY]: selected.reduce((acc, curr) => ({ ...acc, [curr as string]: true }), {}),
+        });
+      }}
+    />
   );
 };

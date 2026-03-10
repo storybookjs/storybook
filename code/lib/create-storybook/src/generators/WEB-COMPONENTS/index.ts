@@ -1,12 +1,17 @@
-import { CoreBuilder } from '../../../../../core/src/cli/project_types';
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
-const generator: Generator = async (packageManager, npmOptions, options) => {
-  return baseGenerator(packageManager, npmOptions, options, 'web-components', {
-    extraPackages: ['lit'],
-    webpackCompiler: ({ builder }) => (builder === CoreBuilder.Webpack5 ? 'swc' : undefined),
-  });
-};
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-export default generator;
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.WEB_COMPONENTS,
+    renderer: SupportedRenderer.WEB_COMPONENTS,
+  },
+  configure: async () => {
+    return {
+      extraPackages: ['lit'],
+      webpackCompiler: ({ builder }) => (builder === SupportedBuilder.WEBPACK5 ? 'swc' : undefined),
+    };
+  },
+});

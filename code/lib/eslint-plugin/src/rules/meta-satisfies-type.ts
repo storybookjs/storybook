@@ -13,7 +13,7 @@ import { createStorybookRule } from '../utils/create-storybook-rule';
 // Rule Definition
 //------------------------------------------------------------------------------
 
-export = createStorybookRule({
+export default createStorybookRule({
   name: 'meta-satisfies-type',
   defaultOptions: [],
   meta: {
@@ -33,7 +33,7 @@ export = createStorybookRule({
 
   create(context) {
     // variables should be defined here
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     //----------------------------------------------------------------------
     // Helpers

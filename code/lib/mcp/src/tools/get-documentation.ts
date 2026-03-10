@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { ComponentManifest, Doc, StorybookContext } from '../types.ts';
+import { StorybookIdField } from '../types.ts';
 import { getManifests, errorToMCPContent } from '../utils/get-manifest.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 import {
@@ -14,15 +15,6 @@ export const GET_TOOL_NAME = 'get-documentation';
 
 const BaseInput = {
 	id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
-};
-
-const StorybookIdField = {
-	storybookId: v.pipe(
-		v.string(),
-		v.description(
-			'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.',
-		),
-	),
 };
 
 export async function addGetDocumentationTool(
@@ -40,7 +32,7 @@ export async function addGetDocumentationTool(
 			title: 'Get Documentation',
 			description: `Get documentation for a UI component or docs entry.
 
-Returns the first ${MAX_STORIES_TO_SHOW} stories with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${GET_STORY_TOOL_NAME} tool to fetch the story documentation for the specific story variant you need.
+Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${GET_STORY_TOOL_NAME} tool to fetch the story documentation for the specific story variant you need.
 
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`,
 			schema,

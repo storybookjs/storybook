@@ -104,6 +104,43 @@ describe('previewStoriesTool', () => {
 		expect(fetchStoryIndexSpy).toHaveBeenCalledWith('http://localhost:6006');
 	});
 
+	it('should return story URL when input uses storyId', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [{ storyId: 'button--primary' }],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result).toEqual({
+			content: [
+				{
+					type: 'text',
+					text: 'http://localhost:6006/?path=/story/button--primary',
+				},
+			],
+			structuredContent: {
+				stories: [
+					{
+						title: 'Button',
+						name: 'Primary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+			},
+		});
+	});
+
 	it('should return story URLs for multiple stories', async () => {
 		const request = {
 			jsonrpc: '2.0' as const,
@@ -170,6 +207,52 @@ describe('previewStoriesTool', () => {
 				],
 			},
 		});
+	});
+
+	it('should preserve output order for mixed found and not-found inputs', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{ storyId: 'button--does-not-exist' },
+						{ storyId: 'button--primary' },
+						{
+							exportName: 'Missing',
+							absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+						},
+						{ storyId: 'input--default' },
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.content).toEqual([
+			{
+				type: 'text',
+				text: 'No story found for story ID "button--does-not-exist"',
+			},
+			{
+				type: 'text',
+				text: 'http://localhost:6006/?path=/story/button--primary',
+			},
+			{
+				type: 'text',
+				text: `No story found for export name "Missing" with absolute file path "${process.cwd()}/src/Button.stories.tsx" (did you forget to pass the explicit story name?)`,
+			},
+			{
+				type: 'text',
+				text: 'http://localhost:6006/?path=/story/input--default',
+			},
+		]);
 	});
 
 	it('should return error message for story not found', async () => {
@@ -439,6 +522,73 @@ describe('previewStoriesTool', () => {
 						{
 							exportName: 'Primary',
 							absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+							globals: {
+								theme: 'dark',
+								locale: 'fr',
+							},
+						},
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.structuredContent?.stories[0]).toEqual({
+			title: 'Button',
+			name: 'Primary',
+			previewUrl: 'http://localhost:6006/?path=/story/button--primary&globals=theme:dark;locale:fr',
+		});
+	});
+
+	it('should include props as args query param in URL when using storyId', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{
+							storyId: 'button--primary',
+							props: {
+								label: 'Custom Label',
+								disabled: true,
+							},
+						},
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.structuredContent?.stories[0]).toEqual({
+			title: 'Button',
+			name: 'Primary',
+			previewUrl:
+				'http://localhost:6006/?path=/story/button--primary&args=label:Custom+Label;disabled:!true',
+		});
+	});
+
+	it('should include globals query param in URL when using storyId', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{
+							storyId: 'button--primary',
 							globals: {
 								theme: 'dark',
 								locale: 'fr',

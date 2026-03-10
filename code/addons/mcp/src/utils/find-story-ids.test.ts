@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { findStoryIds } from './find-story-ids.ts';
 import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryInput } from '../types.ts';
 
 vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,
@@ -56,10 +57,11 @@ describe('findStoryIds', () => {
 
 		const result = findStoryIds(mockStoryIndex, stories);
 
-		expect(result.found).toHaveLength(1);
-		expect(result.found[0]!.id).toBe('button--primary');
-		expect(result.found[0]!.input).toEqual(stories[0]);
-		expect(result.notFound).toHaveLength(0);
+		expect(result).toHaveLength(1);
+		expect(result[0]).toEqual({
+			id: 'button--primary',
+			input: stories[0],
+		});
 	});
 
 	it('should find multiple stories', () => {
@@ -80,13 +82,12 @@ describe('findStoryIds', () => {
 
 		const result = findStoryIds(mockStoryIndex, stories);
 
-		expect(result.found).toHaveLength(3);
-		expect(result.found.map((f) => f.id)).toEqual([
+		expect(result).toHaveLength(3);
+		expect(result.map((entry) => (entry as { id: string }).id)).toEqual([
 			'button--primary',
 			'button--secondary',
 			'input--default',
 		]);
-		expect(result.notFound).toHaveLength(0);
 	});
 
 	it('should return not found for non-existent stories', () => {
@@ -99,11 +100,10 @@ describe('findStoryIds', () => {
 
 		const result = findStoryIds(mockStoryIndex, stories);
 
-		expect(result.found).toHaveLength(0);
-		expect(result.notFound).toHaveLength(1);
-		expect(result.notFound[0]!.errorMessage).toContain('No story found');
-		expect(result.notFound[0]!.errorMessage).toContain('NonExistent');
-		expect(result.notFound[0]!.errorMessage).toContain(
+		expect(result).toHaveLength(1);
+		expect((result[0] as { errorMessage: string }).errorMessage).toContain('No story found');
+		expect((result[0] as { errorMessage: string }).errorMessage).toContain('NonExistent');
+		expect((result[0] as { errorMessage: string }).errorMessage).toContain(
 			'did you forget to pass the explicit story name?',
 		);
 	});
@@ -119,8 +119,8 @@ describe('findStoryIds', () => {
 
 		const result = findStoryIds(mockStoryIndex, stories);
 
-		expect(result.notFound).toHaveLength(1);
-		expect(result.notFound[0]!.errorMessage).not.toContain(
+		expect(result).toHaveLength(1);
+		expect((result[0] as { errorMessage: string }).errorMessage).not.toContain(
 			'did you forget to pass the explicit story name?',
 		);
 	});
@@ -136,8 +136,8 @@ describe('findStoryIds', () => {
 
 		const result = findStoryIds(mockStoryIndex, stories);
 
-		expect(result.found).toHaveLength(1);
-		expect(result.found[0]!.id).toBe('button--primary');
+		expect(result).toHaveLength(1);
+		expect((result[0] as { id: string }).id).toBe('button--primary');
 	});
 
 	it('should handle mix of found and not found stories', () => {
@@ -158,17 +158,19 @@ describe('findStoryIds', () => {
 
 		const result = findStoryIds(mockStoryIndex, stories);
 
-		expect(result.found).toHaveLength(2);
-		expect(result.found.map((f) => f.id)).toEqual(['button--primary', 'input--default']);
-		expect(result.notFound).toHaveLength(1);
-		expect(result.notFound[0]!.input.exportName).toBe('NonExistent');
+		expect(result).toHaveLength(3);
+		expect((result[0] as { id: string }).id).toBe('button--primary');
+		expect((result[1] as { errorMessage: string }).errorMessage).toContain('NonExistent');
+		expect((result[2] as { id: string }).id).toBe('input--default');
+		expect((result[1]!.input as StoryInput & { exportName: string }).exportName).toBe(
+			'NonExistent',
+		);
 	});
 
 	it('should return empty results for empty input', () => {
 		const result = findStoryIds(mockStoryIndex, []);
 
-		expect(result.found).toHaveLength(0);
-		expect(result.notFound).toHaveLength(0);
+		expect(result).toHaveLength(0);
 	});
 
 	it('should not find story with wrong file path', () => {
@@ -181,8 +183,36 @@ describe('findStoryIds', () => {
 
 		const result = findStoryIds(mockStoryIndex, stories);
 
-		expect(result.found).toHaveLength(0);
-		expect(result.notFound).toHaveLength(1);
+		expect(result).toHaveLength(1);
+		expect((result[0] as { errorMessage: string }).errorMessage).toContain('WrongFile.stories.tsx');
+	});
+
+	it('should find story by storyId input', () => {
+		const stories: StoryInput[] = [
+			{
+				storyId: 'button--primary',
+			},
+		];
+
+		const result = findStoryIds(mockStoryIndex, stories);
+
+		expect(result).toHaveLength(1);
+		expect((result[0] as { id: string }).id).toBe('button--primary');
+	});
+
+	it('should return not found for non-existent storyId input', () => {
+		const stories: StoryInput[] = [
+			{
+				storyId: 'button--does-not-exist',
+			},
+		];
+
+		const result = findStoryIds(mockStoryIndex, stories);
+
+		expect(result).toHaveLength(1);
+		expect((result[0] as { errorMessage: string }).errorMessage).toContain(
+			'button--does-not-exist',
+		);
 	});
 
 	it('should match stories when cwd and absolute path use Windows separators', () => {
@@ -197,10 +227,28 @@ describe('findStoryIds', () => {
 
 		const result = findStoryIds(mockStoryIndex, stories);
 
-		expect(result.found).toHaveLength(1);
-		expect(result.found[0]!.id).toBe('button--primary');
-		expect(result.notFound).toHaveLength(0);
+		expect(result).toHaveLength(1);
+		expect((result[0] as { id: string }).id).toBe('button--primary');
 
 		cwdSpy.mockRestore();
+	});
+
+	it('should preserve output order for mixed found and not found inputs', () => {
+		const stories: StoryInput[] = [
+			{ storyId: 'button--does-not-exist' },
+			{ exportName: 'Primary', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+			{ storyId: 'input--default' },
+			{ exportName: 'Missing', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+		];
+
+		const result = findStoryIds(mockStoryIndex, stories);
+
+		expect(result).toHaveLength(4);
+		expect((result[0] as { errorMessage: string }).errorMessage).toContain(
+			'button--does-not-exist',
+		);
+		expect((result[1] as { id: string }).id).toBe('button--primary');
+		expect((result[2] as { id: string }).id).toBe('input--default');
+		expect((result[3] as { errorMessage: string }).errorMessage).toContain('Missing');
 	});
 });

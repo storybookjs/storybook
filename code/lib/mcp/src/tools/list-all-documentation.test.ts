@@ -82,6 +82,29 @@ describe('listAllDocumentationTool', () => {
 		`);
 	});
 
+	it('should include nested story IDs when withStoryIds is true', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 2,
+			method: 'tools/call',
+			params: {
+				name: LIST_TOOL_NAME,
+				arguments: {
+					withStoryIds: true,
+				},
+			},
+		};
+
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		const response = await server.receive(request, {
+			custom: { request: mockHttpRequest },
+		});
+
+		const text = (response.result as any).content[0].text;
+		expect(text).toContain('Button (button): A simple button component');
+		expect(text).toContain('  - Primary (button--primary)');
+	});
+
 	describe('multi-source mode', () => {
 		const sources = [
 			{ id: 'local', title: 'Local' },

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { normalizeStoryPath } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
@@ -15,9 +16,18 @@ export interface NotFoundStory {
 	errorMessage: string;
 }
 
-export interface FindStoryIdsResult {
-	found: FoundStory[];
-	notFound: NotFoundStory[];
+export type FindStoryIdsResult = FoundStory | NotFoundStory;
+
+function isStoryIdInput(input: StoryInput): input is StoryInput & { storyId: string } {
+	return 'storyId' in input;
+}
+
+// Keep normalization consistent with Storybook core importPath handling:
+// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L403
+// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L434-L441
+function normalizeImportPath(importPath: string): string {
+	const normalized = path.posix.normalize(slash(importPath));
+	return slash(normalizeStoryPath(normalized));
 }
 
 /**
@@ -25,20 +35,39 @@ export interface FindStoryIdsResult {
  *
  * @param index - The Storybook story index
  * @param stories - Array of story inputs to search for
- * @returns Object containing found stories with their IDs and not-found stories with error messages
+ * @returns Array of per-input lookup results in the exact same order as the input stories
  */
-export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStoryIdsResult {
+export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStoryIdsResult[] {
 	const entriesList = Object.values(index.entries);
-	const result: FindStoryIdsResult = {
-		found: [],
-		notFound: [],
-	};
+	const result: FindStoryIdsResult[] = [];
 
 	for (const storyInput of stories) {
+		if (isStoryIdInput(storyInput)) {
+			const foundEntry = index.entries[storyInput.storyId];
+
+			if (foundEntry) {
+				logger.debug(`Found story ID: ${foundEntry.id}`);
+				result.push({
+					id: foundEntry.id,
+					input: storyInput,
+				});
+			} else {
+				logger.debug('No story found');
+				result.push({
+					input: storyInput,
+					errorMessage: `No story found for story ID "${storyInput.storyId}"`,
+				});
+			}
+
+			continue;
+		}
+
 		const { exportName, explicitStoryName, absoluteStoryPath } = storyInput;
 		const normalizedCwd = slash(process.cwd());
 		const normalizedAbsolutePath = slash(absoluteStoryPath);
-		const relativePath = `./${path.posix.relative(normalizedCwd, normalizedAbsolutePath)}`;
+		const relativePath = normalizeImportPath(
+			path.posix.relative(normalizedCwd, normalizedAbsolutePath),
+		);
 
 		logger.debug('Searching for:');
 		logger.debug({
@@ -50,13 +79,13 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 
 		const foundEntry = entriesList.find(
 			(entry) =>
-				entry.importPath === relativePath &&
+				normalizeImportPath(entry.importPath) === relativePath &&
 				[explicitStoryName, storyNameFromExport(exportName)].includes(entry.name),
 		);
 
 		if (foundEntry) {
 			logger.debug(`Found story ID: ${foundEntry.id}`);
-			result.found.push({
+			result.push({
 				id: foundEntry.id,
 				input: storyInput,
 			});
@@ -66,7 +95,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 			if (!explicitStoryName) {
 				errorMessage += ` (did you forget to pass the explicit story name?)`;
 			}
-			result.notFound.push({
+			result.push({
 				input: storyInput,
 				errorMessage,
 			});

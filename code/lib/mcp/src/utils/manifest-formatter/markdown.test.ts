@@ -67,6 +67,25 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 	});
 
 	describe('stories section', () => {
+		it('should include story ID in detailed story output', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				path: 'src/components/Button.tsx',
+				stories: [
+					{
+						id: 'button--default',
+						name: 'Default',
+						snippet: '<Button>Click me</Button>',
+					},
+				],
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toContain('Story ID: button--default');
+		});
+
 		it('should format a single story', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
@@ -283,8 +302,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				### Other Stories
 
-				- Disabled: Button in disabled state
-				- WithIcon: Button with an icon
+				- Disabled (button--disabled): Button in disabled state
+				- WithIcon (button--with-icon): Button with an icon
 
 				## Props
 
@@ -889,6 +908,35 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				- Card (card)
 				- Input (input)"
 			`);
+		});
+
+		it('should include story sub-bullets when withStoryIds is true', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							stories: [
+								{ id: 'button--primary', name: 'Primary' },
+								{ id: 'button--secondary', name: 'Secondary' },
+							],
+						},
+					},
+				},
+			};
+
+			const result = formatManifestsToLists(manifests, { withStoryIds: true });
+
+			expect(result).toMatchInlineSnapshot(`
+					"# Components
+
+					- Button (button)
+					  - Primary (button--primary)
+					  - Secondary (button--secondary)"
+				`);
 		});
 	});
 

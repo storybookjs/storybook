@@ -4,7 +4,12 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addPreviewStoriesTool } from './tools/preview-stories.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-storybook-story-instructions.ts';
-import { addListAllDocumentationTool, addGetDocumentationTool, type Source } from '@storybook/mcp';
+import {
+	addListAllDocumentationTool,
+	addGetDocumentationTool,
+	addGetStoryDocumentationTool,
+	type Source,
+} from '@storybook/mcp';
 import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
@@ -64,6 +69,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
 		await addListAllDocumentationTool(server, contextAwareEnabled);
 		await addGetDocumentationTool(server, contextAwareEnabled, { multiSource });
+		await addGetStoryDocumentationTool(server, contextAwareEnabled, { multiSource });
 	}
 
 	transport = new HttpTransport(server, { path: null });

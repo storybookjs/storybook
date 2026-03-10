@@ -80,6 +80,8 @@ describe('getDocumentationTool', () => {
 
 			### Primary
 
+			Story ID: button--primary
+
 			The primary button variant.
 
 			\`\`\`

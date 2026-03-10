@@ -329,7 +329,7 @@ describe('mcpServerHandler', () => {
 				return { disableTelemetry: false };
 			}
 			if (key === 'features') {
-				return { experimentalComponentsManifest: true };
+				return { componentsManifest: true };
 			}
 			if (key === 'experimental_manifests') {
 				return vi.fn();
@@ -393,6 +393,7 @@ describe('mcpServerHandler', () => {
 		const toolNames = parsedResponse.result.tools.map((t: any) => t.name);
 		expect(toolNames).toContain('list-all-documentation');
 		expect(toolNames).toContain('get-documentation');
+		expect(toolNames).toContain('get-documentation-for-story');
 	});
 });
 

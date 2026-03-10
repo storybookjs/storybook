@@ -147,11 +147,9 @@ function isDocumentAnimation(anim: Animation) {
 }
 
 function isFiniteAnimation(anim: Animation) {
-  if (anim instanceof CSSAnimation && anim.effect instanceof KeyframeEffect && anim.effect.target) {
-    const style = getComputedStyle(anim.effect.target, anim.effect.pseudoElement);
-    const index = style.animationName?.split(', ').indexOf(anim.animationName);
-    const iterations = style.animationIterationCount.split(', ')[index];
-    return iterations !== 'infinite';
-  }
-  return true;
+  return !(
+    anim instanceof CSSAnimation &&
+    anim.effect instanceof KeyframeEffect &&
+    anim.effect.getTiming().iterations === Infinity
+  );
 }

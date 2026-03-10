@@ -384,10 +384,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         case 'toggleNav': {
           const wasNavShown = fullAPI.getIsNavShown();
           const sidebarElement = document.getElementById(focusableUIElements.sidebarRegion);
-          const wasFocusInSidebar =
-            sidebarElement &&
-            document.activeElement &&
-            sidebarElement.contains(document.activeElement);
+          const wasFocusInSidebar = sidebarElement?.contains(document?.activeElement);
 
           fullAPI.toggleNav();
 

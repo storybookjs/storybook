@@ -172,9 +172,15 @@ export const DesktopCollapsedPanel: Story = {
     managerLayoutState: { ...defaultState, bottomPanelHeight: 0 },
   },
   play: async ({ canvas, step }) => {
-    await step('Verify panel is not rendered', async () => {
+    await step('Verify panel is aria-hidden and not interactive', async () => {
       const panel = canvas.queryByTestId('panel');
-      expect(panel).not.toBeInTheDocument();
+
+      const ariaHiddenNode = panel?.closest('[aria-hidden="true"]');
+      expect(ariaHiddenNode).toBeInTheDocument();
+      expect(ariaHiddenNode).toHaveAttribute('aria-hidden', 'true');
+
+      panel?.focus();
+      expect(panel).not.toHaveFocus();
     });
   },
 };

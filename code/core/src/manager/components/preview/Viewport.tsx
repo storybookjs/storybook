@@ -285,8 +285,8 @@ export const Viewport = ({
         height: `${ny || height}${uy === 'px' ? '' : uy}`,
       },
       locked: {
-        width: !nx,
-        height: !ny,
+        width: !nx || !ny,
+        height: !nx || !ny,
       },
     };
   }, [width, height, scale]);

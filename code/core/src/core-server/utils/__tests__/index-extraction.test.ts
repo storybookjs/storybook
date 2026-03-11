@@ -5,8 +5,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
+import { Tag } from '../../../shared/constants/tags';
 import type { StoryIndexGeneratorOptions } from '../StoryIndexGenerator';
-import { AUTODOCS_TAG, StoryIndexGenerator } from '../StoryIndexGenerator';
+import { StoryIndexGenerator } from '../StoryIndexGenerator';
 
 vi.mock('storybook/internal/node-logger');
 
@@ -419,7 +420,7 @@ describe('story extraction', () => {
   });
 });
 describe('docs entries from story extraction', () => {
-  it(`adds docs entry when autodocs is "tag" and an entry has the "${AUTODOCS_TAG}" tag`, async () => {
+  it(`adds docs entry when autodocs is "tag" and an entry has the "${Tag.AUTODOCS}" tag`, async () => {
     const relativePath = './src/A.stories.js';
     const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
@@ -436,7 +437,7 @@ describe('docs entries from story extraction', () => {
               __id: 'a--story-one',
               name: 'Story One',
               title: 'A',
-              tags: [AUTODOCS_TAG, 'story-tag-from-indexer'],
+              tags: [Tag.AUTODOCS, 'story-tag-from-indexer'],
               importPath: fileName,
               type: 'story',
               subtype: 'story',

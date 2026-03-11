@@ -24,7 +24,7 @@ const nextImageLoaderStub: RawLoaderDefinition<LoaderOptions> = async function N
     return `const src = '${outputPath}'; export default src;`;
   }
 
-  const { width, height } = imageSize(content);
+  const { width, height } = imageSize(content as Uint8Array);
 
   return `export default ${JSON.stringify({
     src: outputPath,

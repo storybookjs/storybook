@@ -1,7 +1,6 @@
-import type { FC } from 'react';
 import React, { useCallback, useMemo } from 'react';
 
-import { Listbox, ProgressSpinner } from 'storybook/internal/components';
+import { ActionList, ProgressSpinner } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
@@ -15,51 +14,20 @@ import {
 } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList';
+import { Shortcut } from '../components/Shortcut';
 import { useChecklist } from '../components/sidebar/useChecklist';
 
 export type MenuItem = NormalLink & {
   closeOnClick?: boolean;
+  internal?: boolean;
 };
-
-const Key = styled.span(({ theme }) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: 16,
-  fontSize: '11px',
-  fontWeight: theme.typography.weight.regular,
-  background: theme.base === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
-  color: theme.base === 'light' ? theme.color.dark : theme.textMutedColor,
-  borderRadius: 2,
-  userSelect: 'none',
-  pointerEvents: 'none',
-  padding: '0 4px',
-}));
-
-const KeyChild = styled.code(({ theme }) => ({
-  padding: 0,
-  fontFamily: theme.typography.fonts.base,
-  verticalAlign: 'middle',
-  '& + &': {
-    marginLeft: 6,
-  },
-}));
 
 const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
   color: theme.color.secondary,
 }));
-
-export const Shortcut: FC<{ keys: string[] }> = ({ keys }) => (
-  <Key>
-    {keys.map((key) => (
-      <KeyChild key={key}>{shortcutToHumanString([key])}</KeyChild>
-    ))}
-  </Key>
-);
 
 export const useMenu = ({
   api,
@@ -82,6 +50,8 @@ export const useMenu = ({
       id: 'about',
       title: 'About your Storybook',
       onClick: () => api.changeSettingsTab('about'),
+      href: './?path=/settings/about',
+      internal: true,
       closeOnClick: true,
       icon: <InfoIcon />,
     }),
@@ -93,13 +63,15 @@ export const useMenu = ({
       id: 'guide',
       title: 'Onboarding guide',
       onClick: () => api.changeSettingsTab('guide'),
+      href: './?path=/settings/guide',
+      internal: true,
       closeOnClick: true,
       icon: <ListUnorderedIcon />,
       right: progress < 100 && (
-        <Listbox.Button as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
+        <ActionList.Button as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
           <ProgressCircle percentage={progress} running={false} size={16} width={1.5} />
           {progress}%
-        </Listbox.Button>
+        </ActionList.Button>
       ),
     }),
     [api, progress]
@@ -110,6 +82,8 @@ export const useMenu = ({
       id: 'shortcuts',
       title: 'Keyboard shortcuts',
       onClick: () => api.changeSettingsTab('shortcuts'),
+      href: './?path=/settings/shortcuts',
+      internal: true,
       closeOnClick: true,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.shortcutsPage} /> : null,
       icon: <CommandIcon />,
@@ -218,9 +192,9 @@ export const useMenu = ({
       closeOnClick: true,
       href: docsUrl,
       right: (
-        <Listbox.Icon>
+        <ActionList.Icon>
           <ShareAltIcon />
-        </Listbox.Icon>
+        </ActionList.Icon>
       ),
       icon: <DocumentIcon />,
     };

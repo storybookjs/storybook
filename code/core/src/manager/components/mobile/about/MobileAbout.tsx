@@ -61,7 +61,7 @@ export const MobileAbout: FC = () => {
               <ShareAltIcon width={12} />
             </LinkLine>
             <LinkLine
-              href="https://storybook.js.org/docs/react/get-started/install/?ref=ui"
+              href="https://storybook.js.org/docs/get-started/install?ref=ui"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -119,6 +119,7 @@ const Container = styled.div<{ $status: string; $transitionDuration: number }>(
     position: 'absolute',
     width: '100%',
     height: '100%',
+    borderRadius: '10px 10px 0 0',
     top: 0,
     left: 0,
     zIndex: 11,

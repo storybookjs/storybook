@@ -22,7 +22,7 @@ export const Default: Story = {};
 export const DisableRSC: Story = {
   tags: ['!test'],
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     nextjs: { rsc: false },
   },
 };
@@ -30,7 +30,7 @@ export const DisableRSC: Story = {
 export const Errored: Story = {
   tags: ['!test', '!vitest'],
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
   render: () => {
     throw new Error('RSC Error');

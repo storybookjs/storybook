@@ -37,7 +37,7 @@ export default {
 
 ## DocsPage
 
-When you [install docs](#installation) you should get basic [DocsPage](../docs/docspage.md) documentation automagically for all your stories, available in the `Docs` tab of the Storybook UI.
+When you [install docs](#installation) you should get basic [DocsPage](../docs/docspage.md) documentation automatically for all your stories, available in the `Docs` tab of the Storybook UI.
 
 ## Props tables
 

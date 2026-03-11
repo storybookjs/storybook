@@ -14,13 +14,17 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { isPropValid, styled } from 'storybook/theming';
 
-interface ButtonProps
-  extends DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {
+interface ButtonProps extends DetailedHTMLProps<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  HTMLButtonElement
+> {
   href?: never;
   target?: never;
 }
-interface LinkProps
-  extends DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement> {
+interface LinkProps extends DetailedHTMLProps<
+  AnchorHTMLAttributes<HTMLAnchorElement>,
+  HTMLAnchorElement
+> {
   disabled?: void;
   href: string;
 }
@@ -134,6 +138,6 @@ const StyledTabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })
 
 export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
   deprecate('The `TabButton` component is deprecated. Use `TabList` instead.');
-  return <StyledTabButton ref={ref} {...props} />;
+  return <StyledTabButton data-deprecated="TabButton" ref={ref} {...props} />;
 });
 TabButton.displayName = 'TabButton';

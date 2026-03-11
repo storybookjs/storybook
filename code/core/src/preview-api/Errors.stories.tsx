@@ -3,9 +3,23 @@ import React from 'react';
 import AnsiToHtml from 'ansi-to-html';
 import { dedent } from 'ts-dedent';
 
+import type { DecoratorFunction } from '../csf';
+
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,
 });
+
+const StyleDecorator: DecoratorFunction = (Story) => (
+  <>
+    <style>{`
+          * {
+            background-color: green;
+            color: green;
+          }
+        `}</style>
+    <Story />
+  </>
+);
 
 const Component = ({ id, header, detail }: any) => {
   const element = document.querySelector('.' + id);
@@ -68,8 +82,18 @@ export const MyError = {
   },
 };
 
+export const MyErrorWithCustomCSS = {
+  ...MyError,
+  decorators: [StyleDecorator],
+};
+
 export const Missing = {
   args: {
     id: 'sb-nopreview',
   },
+};
+
+export const MissingWithCustomCSS = {
+  ...Missing,
+  decorators: [StyleDecorator],
 };

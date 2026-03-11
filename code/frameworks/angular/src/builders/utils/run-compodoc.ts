@@ -3,7 +3,7 @@ import { isAbsolute, relative } from 'node:path';
 import { JsPackageManagerFactory } from 'storybook/internal/common';
 
 import type { BuilderContext } from '@angular-devkit/architect';
-import { Observable } from 'rxjs';
+import { prompt } from 'storybook/internal/node-logger';
 
 const hasTsConfigArg = (args: string[]) => args.indexOf('-p') !== -1;
 const hasOutputArg = (args: string[]) =>
@@ -15,35 +15,31 @@ const toRelativePath = (pathToTsConfig: string) => {
   return isAbsolute(pathToTsConfig) ? relative('.', pathToTsConfig) : pathToTsConfig;
 };
 
-export const runCompodoc = (
+export const runCompodoc = async (
   { compodocArgs, tsconfig }: { compodocArgs: string[]; tsconfig: string },
   context: BuilderContext
-): Observable<void> => {
-  return new Observable<void>((observer) => {
-    const tsConfigPath = toRelativePath(tsconfig);
-    const finalCompodocArgs = [
-      'compodoc',
-      ...(hasTsConfigArg(compodocArgs) ? [] : ['-p', tsConfigPath]),
-      ...(hasOutputArg(compodocArgs) ? [] : ['-d', `${context.workspaceRoot || '.'}`]),
-      ...compodocArgs,
-    ];
+): Promise<void> => {
+  const tsConfigPath = toRelativePath(tsconfig);
+  const finalCompodocArgs = [
+    'compodoc',
+    ...(hasTsConfigArg(compodocArgs) ? [] : ['-p', tsConfigPath]),
+    ...(hasOutputArg(compodocArgs) ? [] : ['-d', `${context.workspaceRoot || '.'}`]),
+    ...compodocArgs,
+  ];
 
-    const packageManager = JsPackageManagerFactory.getPackageManager();
+  const packageManager = JsPackageManagerFactory.getPackageManager();
 
-    try {
-      packageManager
-        .runPackageCommand({
-          args: finalCompodocArgs,
-          cwd: context.workspaceRoot,
-        })
-        .then((result) => {
-          context.logger.info(result.stdout);
-          observer.next();
-          observer.complete();
-        });
-    } catch (e) {
-      context.logger.error(e);
-      observer.error();
+  await prompt.executeTaskWithSpinner(
+    () =>
+      packageManager.runPackageCommand({
+        args: finalCompodocArgs,
+        cwd: context.workspaceRoot,
+      }),
+    {
+      id: 'compodoc',
+      intro: 'Generating documentation with Compodoc',
+      success: 'Compodoc finished successfully',
+      error: 'Compodoc failed',
     }
-  });
+  );
 };

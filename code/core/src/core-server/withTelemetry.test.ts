@@ -16,6 +16,7 @@ describe('withTelemetry', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
+    vi.mocked(telemetry).mockResolvedValue(undefined);
   });
   it('works in happy path', async () => {
     const run = vi.fn();

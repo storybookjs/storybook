@@ -1,4 +1,4 @@
-/* eslint import/prefer-default-export: "off" */
+/* eslint import-x/prefer-default-export: "off" */
 import { readdirSync } from 'node:fs';
 import { rename as renameAsync } from 'node:fs/promises';
 import { extname, join } from 'node:path';
@@ -6,6 +6,7 @@ import { extname, join } from 'node:path';
 import { resolvePackageDir } from 'storybook/internal/common';
 
 import { sync as spawnSync } from 'cross-spawn';
+import { normalize } from 'pathe';
 import { glob as tinyglobby } from 'tinyglobby';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
@@ -60,7 +61,8 @@ export async function runCodemod(
     }
   }
 
-  const files = await tinyglobby([glob, '!**/node_modules', '!**/dist']);
+  // Normalize the glob pattern to use forward slashes (required for glob patterns on Windows)
+  const files = await tinyglobby([normalize(glob), '!**/node_modules', '!**/dist']);
   const extensions = new Set(files.map((file) => extname(file).slice(1)));
   const commaSeparatedExtensions = Array.from(extensions).join(',');
 
@@ -86,7 +88,7 @@ export async function runCodemod(
         '-t',
         `${TRANSFORM_DIR}/${codemod}.js`,
         ...parserArgs,
-        ...files.map((file) => `"${file}"`),
+        ...files,
       ],
       {
         stdio: 'inherit',

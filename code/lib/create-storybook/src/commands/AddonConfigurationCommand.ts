@@ -5,18 +5,19 @@ import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import { dedent } from 'ts-dedent';
 
+import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall';
+import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall';
 import type { CommandOptions } from '../generators/types';
+import { TelemetryService } from '../services';
 
 const ADDON_INSTALLATION_INSTRUCTIONS = {
   '@storybook/addon-vitest':
-    'https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup',
+    'https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced',
 } as { [key: string]: string };
 
 type ExecuteAddonConfigurationParams = {
   addons: string[];
-  options: CommandOptions;
   configDir?: string;
-  dependencyInstallationResult: { status: 'success' | 'failed' };
 };
 
 export type ExecuteAddonConfigurationResult = {
@@ -35,35 +36,37 @@ export type ExecuteAddonConfigurationResult = {
 export class AddonConfigurationCommand {
   constructor(
     readonly packageManager: JsPackageManager,
-    private readonly addonVitestService = new AddonVitestService(packageManager)
+    private readonly commandOptions: CommandOptions,
+    private readonly addonVitestService = new AddonVitestService(packageManager),
+    private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
   ) {}
 
   /** Execute addon configuration */
   async execute({
-    options,
     addons,
     configDir,
-    dependencyInstallationResult,
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
-    const areDependenciesInstalled =
-      dependencyInstallationResult.status === 'success' && !options.skipInstall;
-
-    if (!areDependenciesInstalled && this.getAddonsWithInstructions(addons).length > 0) {
-      this.logManualAddonInstructions(addons);
-      return { status: 'failed' };
-    }
-
     if (!configDir || addons.length === 0) {
       return { status: 'success' };
     }
 
     try {
-      const { hasFailures, addonResults } = await this.configureAddons(configDir, addons, options);
+      const { hasFailures, addonResults } = await this.configureAddons(configDir, addons);
 
       if (addonResults.has('@storybook/addon-vitest')) {
-        await this.addonVitestService.installPlaywright({
-          yes: options.yes,
+        const { result } = await this.addonVitestService.installPlaywright({
+          yes: this.commandOptions.yes,
+          useRemotePkg: !!this.commandOptions.skipInstall,
         });
+        // Map outcome to telemetry decision
+        await this.telemetryService.trackPlaywrightPromptDecision(result);
+      }
+
+      // some addons failed
+      if (hasFailures) {
+        this.logManualAddonInstructions(
+          addons.filter((addon) => addonResults.get(addon)?.result === 'failed')
+        );
       }
 
       return { status: hasFailures ? 'failed' : 'success' };
@@ -103,7 +106,7 @@ export class AddonConfigurationCommand {
   }
 
   /** Configure test addons (a11y and vitest) */
-  private async configureAddons(configDir: string, addons: string[], options: CommandOptions) {
+  private async configureAddons(configDir: string, addons: string[]) {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
 
@@ -120,19 +123,28 @@ export class AddonConfigurationCommand {
       try {
         task.message(`Configuring ${addon}...`);
 
-        await postinstallAddon(addon, {
+        const options = {
           packageManager: this.packageManager.type,
           configDir,
-          yes: options.yes,
+          yes: this.commandOptions.yes,
           skipInstall: true,
           skipDependencyManagement: true,
           logger,
           prompt,
-        });
+        };
+
+        if (addon === '@storybook/addon-vitest') {
+          await addonVitestPostinstall(options);
+        } else if (addon === '@storybook/addon-a11y') {
+          await addonA11yPostinstall(options);
+        } else {
+          await postinstallAddon(addon, options);
+        }
 
         task.message(`${addon} configured\n`);
         addonResults.set(addon, null);
       } catch (e) {
+        logger.debug(e);
         ErrorCollector.addError(e);
         addonResults.set(addon, e);
       }
@@ -161,7 +173,11 @@ export class AddonConfigurationCommand {
 
 export const executeAddonConfiguration = ({
   packageManager,
-  ...options
-}: ExecuteAddonConfigurationParams & { packageManager: JsPackageManager }) => {
-  return new AddonConfigurationCommand(packageManager).execute(options);
+  options,
+  ...rest
+}: ExecuteAddonConfigurationParams & {
+  packageManager: JsPackageManager;
+  options: CommandOptions;
+}) => {
+  return new AddonConfigurationCommand(packageManager, options).execute(rest);
 };

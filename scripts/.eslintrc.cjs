@@ -4,7 +4,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:depend/recommended',
     'plugin:eslint-comments/recommended',
-    'plugin:import/react-native',
+    'plugin:import-x/react-native',
     'plugin:prettier/recommended',
     'plugin:react-hooks/recommended',
     'plugin:react/recommended',
@@ -29,9 +29,9 @@ module.exports = {
       version: 'detect',
     },
     'html/html-extensions': ['.html'],
-    'import/core-modules': ['enzyme'],
-    'import/ignore': ['node_modules\\/(?!@storybook)'],
-    'import/resolver': {
+    'import-x/core-modules': ['enzyme'],
+    'import-x/ignore': ['node_modules\\/(?!@storybook)'],
+    'import-x/resolver': {
       node: {
         extensions: ['.js', '.ts', '.tsx', '.mjs', '.d.ts'],
         paths: ['node_modules/', 'node_modules/@types/'],
@@ -43,7 +43,7 @@ module.exports = {
     'compat',
     'file-progress',
     '@typescript-eslint',
-    'import',
+    'import-x',
     'json',
     'html',
     'prettier',
@@ -82,7 +82,7 @@ module.exports = {
     {
       files: ['*.mjs'],
       rules: {
-        'import/extensions': ['error', 'always'],
+        'import-x/extensions': ['error', 'always'],
       },
     },
     {

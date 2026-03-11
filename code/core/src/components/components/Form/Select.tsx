@@ -62,7 +62,7 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
   },
   '&::picker(select)': {
     appearance: 'base-select' as CSSProperties['appearance'],
-    border: '1px solid #e4e4e7',
+    border: `1px solid ${theme.input.border}`,
     padding: 4,
     marginTop: 4,
     background: theme.base === 'light' ? lighten(theme.background.app) : theme.background.app,

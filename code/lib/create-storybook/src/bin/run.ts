@@ -104,7 +104,9 @@ const createStorybookProgram = program
   })
   .hook('postAction', async (command) => {
     if (logTracker.shouldWriteLogsToFile) {
-      await logTracker.writeToFile(command.getOptionValue('logfile'));
+      try {
+        await logTracker.writeToFile(command.getOptionValue('logfile'));
+      } catch {}
     }
   });
 

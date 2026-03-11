@@ -5,7 +5,13 @@ export interface ControlsParameters {
    * @see https://storybook.js.org/docs/essentials/controls#parameters-1
    */
   controls?: {
-    /** Remove the addon panel and disable the addon's behavior */
+    /**
+     * Removes the addon panel and turns off the feature's behavior. If you wish to turn off this
+     * feature for the entire Storybook, you can set the option in your `main.js|ts` configuration
+     * file.
+     *
+     * @see https://storybook.js.org/docs/essentials/controls#disable
+     */
     disable?: boolean;
 
     /** Disable the ability to create or edit stories from the Controls panel */

@@ -3,10 +3,24 @@ import { dirname } from 'node:path';
 import { type NodePath, babelParse, recast, types as t } from 'storybook/internal/babel';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
+import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
+
+import type { ParserOptions } from 'react-docgen-typescript';
 
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
+import {
+  type ComponentDocWithExportName,
+  matchComponentDoc,
+  parseWithReactDocgenTypescript,
+} from './reactDocgenTypescript';
 import { cachedResolveImport } from './utils';
-import { stripSubpath, validPackageName } from './valid-package-name';
+
+export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript';
+
+export interface TypescriptOptions extends TypescriptOptionsBase {
+  reactDocgen: ReactDocgenConfig;
+  reactDocgenTypescriptOptions: ParserOptions;
+}
 
 // Public component metadata type used across passes
 export type ComponentRef = {
@@ -17,7 +31,10 @@ export type ComponentRef = {
   importName?: string;
   namespace?: string;
   path?: string;
+  isPackage: boolean;
   reactDocgen?: ReturnType<typeof getReactDocgen>;
+  reactDocgenTypescript?: ComponentDocWithExportName;
+  reactDocgenTypescriptError?: { name: string; message: string };
 };
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
@@ -51,20 +68,19 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
  *
  * - Member expressions like Foo.Bar are supported; namespace imports are represented accordingly.
  * - If react-docgen determines a package import override, it is stored in `importOverride`.
- *
- * @param csf The parsed CSF file instance whose AST will be inspected.
- * @param storyFilePath Optional absolute path of the story file to resolve relative imports
- *   against.
- * @returns An array of component references sorted by componentName.
- * @public
  */
 export const getComponents = ({
   csf,
   storyFilePath,
+  typescriptOptions,
 }: {
   csf: CsfFile;
   storyFilePath?: string;
+  typescriptOptions: Partial<TypescriptOptions>;
 }): ComponentRef[] => {
+  const { reactDocgen = 'react-docgen', reactDocgenTypescriptOptions } = typescriptOptions;
+  // For the manifest, false (docgen disabled) defaults to react-docgen
+  const reactDocgenConfig = reactDocgen || 'react-docgen';
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
@@ -146,8 +162,8 @@ export const getComponents = ({
     } // missing binding -> keep (will become null import) // missing binding -> keep (will become null import)
     const isImportBinding = Boolean(
       binding.path.isImportSpecifier?.() ||
-        binding.path.isImportDefaultSpecifier?.() ||
-        binding.path.isImportNamespaceSpecifier?.()
+      binding.path.isImportDefaultSpecifier?.() ||
+      binding.path.isImportNamespaceSpecifier?.()
     );
     return !isImportBinding;
   };
@@ -192,6 +208,7 @@ export const getComponents = ({
     })
     .map((component) => {
       let path;
+      let isPackage = false;
       try {
         if (component.importId && storyFilePath) {
           path = cachedResolveImport(matchPath(component.importId, dirname(storyFilePath)), {
@@ -201,17 +218,61 @@ export const getComponents = ({
       } catch (e) {
         logger.debug(e);
       }
+
+      try {
+        if (component.importId && !component.importId.startsWith('.') && storyFilePath) {
+          // throws when it can not be resolved
+          cachedResolveImport(component.importId, { basedir: dirname(storyFilePath) });
+          isPackage = true;
+        }
+      } catch {}
+
+      const componentWithPackage = { ...component, isPackage };
+
       if (path) {
-        const reactDocgen = getReactDocgen(path, component);
-        return {
-          ...component,
-          path,
-          reactDocgen,
-          importOverride:
-            reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
-        };
+        if (reactDocgenConfig === 'react-docgen-typescript') {
+          let reactDocgenTypescript: ComponentDocWithExportName | undefined;
+          let reactDocgenTypescriptError: { name: string; message: string } | undefined;
+          try {
+            reactDocgenTypescript = matchComponentDoc(
+              parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
+              component
+            );
+          } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
+            reactDocgenTypescriptError = {
+              name: 'react-docgen-typescript parse error',
+              message: `File: ${path}\n${message}`,
+            };
+          }
+
+          // Extract importOverride from RDT's description (same JSDoc parsing as react-docgen)
+          const importOverride = reactDocgenTypescript
+            ? getImportTag(reactDocgenTypescript)
+            : undefined;
+
+          return {
+            ...componentWithPackage,
+            path,
+            ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+            ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
+            importOverride,
+          };
+        }
+
+        if (reactDocgenConfig === 'react-docgen') {
+          const reactDocgen = getReactDocgen(path, componentWithPackage);
+          return {
+            ...componentWithPackage,
+            path,
+            reactDocgen,
+            importOverride:
+              reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
+          };
+        }
       }
-      return component;
+      return componentWithPackage;
     })
     .sort((a, b) => a.componentName.localeCompare(b.componentName));
 
@@ -280,7 +341,9 @@ export const getImports = ({
       const rewritten =
         overrideSource !== undefined
           ? overrideSource
-          : packageName && !validPackageName(stripSubpath(importId))
+          : // only rewrite to the package name it the import id is not already a valid package
+            // tsconfig paths such as ~/components/Button and components/Button are not seen as packages
+            packageName && !c.isPackage
             ? packageName
             : importId;
       return { c, src: t.stringLiteral(rewritten), key: rewritten, ord: idx };
@@ -513,15 +576,17 @@ export function getComponentData({
   csf,
   packageName,
   storyFilePath,
+  typescriptOptions = {},
 }: {
   csf: CsfFile;
   packageName?: string;
   storyFilePath?: string;
+  typescriptOptions?: Partial<TypescriptOptions>;
 }): {
   components: ComponentRef[];
   imports: string[];
 } {
-  const components = getComponents({ csf, storyFilePath });
+  const components = getComponents({ csf, storyFilePath, typescriptOptions });
   const imports = getImports({ components, packageName });
   return { components, imports };
 }

@@ -116,6 +116,7 @@ const hasFrameworkTemplates = (framework?: string) => {
     SupportedFramework.REACT_VITE,
     SupportedFramework.REACT_WEBPACK5,
     SupportedFramework.SERVER_WEBPACK5,
+    SupportedFramework.SOLID,
     SupportedFramework.SVELTE_VITE,
     SupportedFramework.SVELTEKIT,
     SupportedFramework.VUE3_VITE,
@@ -251,7 +252,7 @@ export async function baseGenerator(
           * This function is used to resolve the absolute path of a package.
           * It is needed in projects that use Yarn PnP or are set up within a monorepo.
           */
-          function getAbsolutePath(value: string): any {
+          function getAbsolutePath(value: string) {
             return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))
           }`,
       ]

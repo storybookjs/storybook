@@ -2,7 +2,7 @@
 import React, { useCallback, useContext } from 'react';
 import type { FC } from 'react';
 
-import { RESET_STORY_ARGS } from 'storybook/internal/core-events';
+import { FORCE_REMOUNT } from 'storybook/internal/core-events';
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
@@ -82,10 +82,8 @@ export const Canvas: FC<CanvasProps> = (props) => {
   // By default, stories will be iframed, but most frameworks support inline rendering and override that in a docs entry file
   const inline = props.story?.inline ?? story.parameters?.docs?.story?.inline ?? false;
 
-  const resetButton = story.parameters.docs?.canvas?.resetButton ?? false;
-
-  const handleResetStory = useCallback(() => {
-    docsContext.channel.emit(RESET_STORY_ARGS, { storyId: story.id });
+  const handleReloadStory = useCallback(() => {
+    docsContext.channel.emit(FORCE_REMOUNT, { storyId: story.id });
   }, [docsContext.channel, story.id]);
 
   return (
@@ -97,7 +95,7 @@ export const Canvas: FC<CanvasProps> = (props) => {
       className={className}
       layout={layout}
       inline={inline}
-      onResetStory={inline && resetButton ? handleResetStory : undefined}
+      onReloadStory={inline ? handleReloadStory : undefined}
     >
       <Story of={of || story.moduleExport} meta={props.meta} {...props.story} />
     </PurePreview>

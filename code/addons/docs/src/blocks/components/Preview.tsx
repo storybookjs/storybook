@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/client-logger';
 import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
 
-import { CopyIcon, MarkupIcon, UndoIcon } from '@storybook/icons';
+import { CopyIcon, MarkupIcon, SyncIcon } from '@storybook/icons';
 
 import { useId } from '@react-aria/utils';
 import { darken } from 'polished';
@@ -31,7 +31,7 @@ export type PreviewProps = PropsWithChildren<{
   withToolbar?: boolean;
   className?: string;
   additionalActions?: ActionItem[];
-  onResetStory?: () => void;
+  onReloadStory?: () => void;
 }>;
 
 export type Layout = 'padded' | 'fullscreen' | 'centered';
@@ -151,7 +151,7 @@ export const Preview: FC<PreviewProps> = ({
   className,
   layout = 'padded',
   inline = false,
-  onResetStory,
+  onReloadStory,
   ...props
 }) => {
   const [expanded, setExpanded] = useState(isExpanded);
@@ -227,7 +227,7 @@ export const Preview: FC<PreviewProps> = ({
           </div>
         )}
       </PreviewContainer>
-      {(withSource || onResetStory || additionalActionItems.length > 0) && (
+      {(withSource || onReloadStory || additionalActionItems.length > 0) && (
         <ActionBar className="sbdocs sbdocs-preview-actions" innerStyle={{ paddingInline: 0 }}>
           {hasSourceError && (
             <Button
@@ -257,14 +257,14 @@ export const Preview: FC<PreviewProps> = ({
               </Button>
             </>
           )}
-          {onResetStory && (
+          {onReloadStory && (
             <Button
               ariaLabel={false}
               variant="ghost"
-              onClick={onResetStory}
-              className="docblock-reset-story"
+              onClick={onReloadStory}
+              className="docblock-reload-story"
             >
-              <UndoIcon /> Reset story
+              <SyncIcon /> Reload story
             </Button>
           )}
           {additionalActionItems.map(({ title, className, onClick, disabled }, index: number) => (

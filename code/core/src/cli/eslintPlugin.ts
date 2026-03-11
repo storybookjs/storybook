@@ -189,25 +189,20 @@ export const configureFlatConfig = async (code: string) => {
     },
 
     Program(path) {
-      const alreadyImported = path.node.body.some(
-        (node) => t.isImportDeclaration(node) && node.source.value === 'eslint-plugin-storybook'
+      // The early-exit above guarantees no existing eslint-plugin-storybook import
+      // (static or dynamic) at this point, so we can safely add it unconditionally.
+      const importDecl = t.importDeclaration(
+        [t.importDefaultSpecifier(t.identifier('storybook'))],
+        t.stringLiteral('eslint-plugin-storybook')
       );
-
-      if (!alreadyImported) {
-        // Add import: import storybook from 'eslint-plugin-storybook'
-        const importDecl = t.importDeclaration(
-          [t.importDefaultSpecifier(t.identifier('storybook'))],
-          t.stringLiteral('eslint-plugin-storybook')
-        );
-        (importDecl as any).comments = [
-          {
-            type: 'CommentLine',
-            value:
-              ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
-          },
-        ];
-        path.node.body.unshift(importDecl);
-      }
+      (importDecl as any).comments = [
+        {
+          type: 'CommentLine',
+          value:
+            ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
+        },
+      ];
+      path.node.body.unshift(importDecl);
     },
   });
 

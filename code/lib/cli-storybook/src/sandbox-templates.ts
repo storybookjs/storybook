@@ -380,7 +380,6 @@ export const baseTemplates = {
         features: {
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
-          experimentalComponentsManifest: true,
         },
       },
     },

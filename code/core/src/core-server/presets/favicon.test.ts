@@ -49,7 +49,7 @@ const createOptions = (locations: string[]): Parameters<typeof m.favicon>[1] => 
 vi.mock('storybook/internal/node-logger', () => {
   return {
     logger: {
-      warn: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     },
   };
 });
@@ -125,7 +125,7 @@ it('with staticDirs containing a single favicon.svg should return the found favi
   );
 });
 
-it('with staticDirs containing a multiple favicons should return the first favicon and warn', async () => {
+it('with staticDirs containing a multiple favicons should return the first favicon and show a debug message', async () => {
   const location = 'static';
   existsSyncMock.mockImplementation((p) => {
     if (normalize(String(p)) === normalize(createPath(location))) {
@@ -145,10 +145,10 @@ it('with staticDirs containing a multiple favicons should return the first favic
     normalize(createPath(location, 'favicon.svg'))
   );
 
-  expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('multiple favicons'));
+  expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('multiple favicons'));
 });
 
-it('with multiple staticDirs containing a multiple favicons should return the first favicon and warn', async () => {
+it('with multiple staticDirs containing a multiple favicons should return the first favicon and show a debug message', async () => {
   const locationA = 'static-a';
   const locationB = 'static-b';
   existsSyncMock.mockImplementation((p) => {
@@ -172,5 +172,5 @@ it('with multiple staticDirs containing a multiple favicons should return the fi
     normalize(createPath(locationA, 'favicon.ico'))
   );
 
-  expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('multiple favicons'));
+  expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('multiple favicons'));
 });

@@ -77,7 +77,9 @@ const unwrapTSExpression = (expr: t.Expression | t.Declaration): t.Expression =>
     expr.type === 'TSSatisfiesExpression' ||
     expr.type === 'TSTypeAssertion'
   ) {
-    return unwrapTSExpression((expr as t.TSAsExpression).expression);
+    return unwrapTSExpression(
+      (expr as t.TSAsExpression | t.TSSatisfiesExpression | t.TSTypeAssertion).expression
+    );
   }
   return expr as t.Expression;
 };
@@ -115,6 +117,21 @@ const resolveExpression = (
 const isDefineConfigLike = (node: t.CallExpression): boolean =>
   node.callee.type === 'Identifier' &&
   (node.callee.name === 'defineConfig' || node.callee.name === 'defineProject');
+
+/**
+ * Resolves the value of a `test` ObjectProperty to an ObjectExpression.
+ * Handles both inline objects and shorthand identifier references, e.g.:
+ *   `{ test: { ... } }` → returns the inline ObjectExpression
+ *   `const test = {...}; { test }` → resolves the identifier to its initializer
+ */
+const resolveTestPropValue = (
+  testProp: t.ObjectProperty,
+  ast: BabelFile['ast']
+): t.ObjectExpression | null => {
+  if (testProp.value.type === 'ObjectExpression') return testProp.value;
+  const resolved = resolveExpression(testProp.value as t.Expression, ast);
+  return resolved?.type === 'ObjectExpression' ? resolved : null;
+};
 
 /**
  * Extracts the effective mergeConfig call from a declaration, handling wrappers:
@@ -331,16 +348,8 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
 
             // Resolve the test value – it may be a shorthand reference to a variable
             // e.g. `const test = {...}; export default mergeConfig(viteConfig, { test })`
-            const resolvedTestValue: t.ObjectExpression | null = existingTestProp
-              ? existingTestProp.value.type === 'ObjectExpression'
-                ? existingTestProp.value
-                : (() => {
-                    const r = resolveExpression(
-                      existingTestProp.value as t.Expression,
-                      target
-                    );
-                    return r?.type === 'ObjectExpression' ? r : null;
-                  })()
+            const resolvedTestValue = existingTestProp
+              ? resolveTestPropValue(existingTestProp, target)
               : null;
 
             if (existingTestProp && resolvedTestValue !== null) {

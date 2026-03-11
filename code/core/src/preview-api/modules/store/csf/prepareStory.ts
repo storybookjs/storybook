@@ -21,6 +21,7 @@ import type {
 import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 
+import { Tag } from '../../../../shared/constants/tags';
 import { applyHooks } from '../../addons';
 import { mountDestructured } from '../../preview-web/render/mount-utils';
 import { UNTARGETED, groupArgsByTarget } from '../args';
@@ -187,15 +188,15 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   // anything at render time. The assumption is that as we don't load all the stories at once, this
   // will have a limited cost. If this proves misguided, we can refactor it.
 
-  const defaultTags = ['dev', 'test'];
-  const extraTags = globalThis.DOCS_OPTIONS?.autodocs === true ? ['autodocs'] : [];
+  const defaultTags = [Tag.DEV, Tag.TEST];
+  const extraTags = globalThis.DOCS_OPTIONS?.autodocs === true ? [Tag.AUTODOCS] : [];
   /**
    * DISCLAIMER: This feels like a hack but seems like it's the only way to override the autodocs
    * tag for test-fn stories. That's because the Story index does not include negated tags e.g.
    * !autodocs so the negation does not get passed through, and therefore we need to do it here.
    * Therefore, unfortunately we have to duplicate the logic here.
    */
-  const overrideTags = storyAnnotations?.tags?.includes('test-fn') ? ['!autodocs'] : [];
+  const overrideTags = storyAnnotations?.tags?.includes(Tag.TEST_FN) ? [`!${Tag.AUTODOCS}`] : [];
 
   const tags = combineTags(
     ...defaultTags,

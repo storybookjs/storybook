@@ -1,9 +1,9 @@
 import React, { type ComponentProps, type FC } from 'react';
 
 import {
+  ActionList,
   Button,
   Form,
-  ListItem,
   ProgressSpinner,
   ToggleButton,
 } from 'storybook/internal/components';
@@ -27,10 +27,11 @@ import type { StatusValueToStoryIds } from '../use-test-provider-state';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
 
-const Container = styled.div({
+const Container = styled.div<{ inContextMenu?: boolean }>(({ inContextMenu }) => ({
   display: 'flex',
   flexDirection: 'column',
-});
+  paddingBottom: inContextMenu ? 0 : 1,
+}));
 
 const Heading = styled.div({
   display: 'flex',
@@ -57,8 +58,8 @@ const Actions = styled.div({
   gap: 4,
 });
 
-const Extras = styled.div({
-  marginBottom: 2,
+const StyledActionList = styled(ActionList)({
+  padding: 0,
 });
 
 const Muted = styled.span(({ theme }) => ({
@@ -67,11 +68,6 @@ const Muted = styled.span(({ theme }) => ({
 
 const Progress = styled(ProgressSpinner)({
   margin: 4,
-});
-
-const Row = styled.div({
-  display: 'flex',
-  gap: 4,
 });
 
 const StopIcon = styled(StopAltIcon)({
@@ -147,7 +143,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             : ['unknown', 'Run tests to see accessibility results'];
 
   return (
-    <Container {...props}>
+    <Container {...props} inContextMenu={!!entry}>
       <Heading>
         <Info>
           {entry ? (
@@ -257,15 +253,20 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           )}
         </Actions>
       </Heading>
-      <Extras>
-        <Row>
-          <ListItem
-            as="label"
-            // FIXME: why interactions? why not components?
-            title="Interactions"
-            icon={entry ? null : <Form.Checkbox checked disabled />}
-          />
-          <Button
+
+      <StyledActionList>
+        <ActionList.Item>
+          {entry ? (
+            <ActionList.Text>Interactions</ActionList.Text>
+          ) : (
+            <ActionList.Action as="label" readOnly>
+              <ActionList.Icon>
+                <Form.Checkbox name="Interactions" checked disabled />
+              </ActionList.Icon>
+              <ActionList.Text>Interactions</ActionList.Text>
+            </ActionList.Action>
+          )}
+          <ActionList.Button
             ariaLabel={`${componentTestStatusLabel}${
               componentTestStatusValueToStoryIds['status-value:error'].length +
                 componentTestStatusValueToStoryIds['status-value:warning'].length >
@@ -277,9 +278,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 : ''
             }`}
             tooltip={componentTestStatusLabel}
-            padding="small"
-            size="medium"
-            variant="ghost"
             disabled={
               componentTestStatusValueToStoryIds['status-value:error'].length === 0 &&
               componentTestStatusValueToStoryIds['status-value:warning'].length === 0 &&
@@ -297,19 +295,18 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               });
             }}
           >
-            <TestStatusIcon status={componentTestStatusIcon} isRunning={isRunning} />
             {componentTestStatusValueToStoryIds['status-value:error'].length +
               componentTestStatusValueToStoryIds['status-value:warning'].length || null}
-          </Button>
-        </Row>
+            <TestStatusIcon status={componentTestStatusIcon} isRunning={isRunning} />
+          </ActionList.Button>
+        </ActionList.Item>
 
         {!entry && (
-          <Row>
-            <ListItem
-              as="label"
-              title={watching ? <Muted>Coverage (unavailable)</Muted> : 'Coverage'}
-              icon={
+          <ActionList.Item>
+            <ActionList.Action as="label" readOnly={isRunning} ariaLabel={false}>
+              <ActionList.Icon>
                 <Form.Checkbox
+                  name="Coverage"
                   checked={config.coverage}
                   disabled={isRunning}
                   onChange={() =>
@@ -319,53 +316,43 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     }))
                   }
                 />
-              }
-            />
-
-            {/* FIXME: aria labels were not 100% consistent with the tooltip logic. Double check this logic during review please! */}
+              </ActionList.Icon>
+              <ActionList.Text>
+                {watching ? <Muted>Coverage (unavailable)</Muted> : 'Coverage'}
+              </ActionList.Text>
+            </ActionList.Action>
             {watching ||
             (currentRun.triggeredBy && !FULL_RUN_TRIGGERS.includes(currentRun.triggeredBy)) ? (
-              <Button
-                padding="small"
-                size="medium"
-                variant="ghost"
+              <ActionList.Button
                 disabled
                 ariaLabel={
                   watching
                     ? `Coverage unavailable in watch mode`
-                    : `Coverage unavailable when running focused tests`
+                    : `Coverage only available after running all tests`
                 }
               >
                 <InfoIcon />
-              </Button>
+              </ActionList.Button>
             ) : currentRun.coverageSummary ? (
-              <Button
+              <ActionList.Button
                 asChild
-                padding="small"
-                size="medium"
-                variant="ghost"
                 ariaLabel={
-                  // FIXME: I can't deduce from the original tooltip logic whether this use case
-                  // is logically possible or not. It is a reachable conditional branch in the original code.
                   isRunning
                     ? 'Open coverage report (testing still in progress)'
                     : `Open coverage report (${currentRun.coverageSummary.percentage}% coverage)`
                 }
               >
                 <a href="/coverage/index.html" target="_blank">
+                  {currentRun.coverageSummary.percentage}%
                   <TestStatusIcon
                     isRunning={isRunning}
                     percentage={currentRun.coverageSummary.percentage}
                     status={currentRun.coverageSummary.status}
                   />
-                  {currentRun.coverageSummary.percentage}%
                 </a>
-              </Button>
+              </ActionList.Button>
             ) : (
-              <Button
-                padding="small"
-                size="medium"
-                variant="ghost"
+              <ActionList.Button
                 disabled
                 ariaLabel={
                   isRunning
@@ -379,19 +366,20 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   isRunning={isRunning}
                   status={fatalError ? 'critical' : 'unknown'}
                 />
-              </Button>
+              </ActionList.Button>
             )}
-          </Row>
+          </ActionList.Item>
         )}
 
         {hasA11yAddon && (
-          <Row>
-            <ListItem
-              as="label"
-              title="Accessibility"
-              icon={
-                entry ? null : (
+          <ActionList.Item>
+            {entry ? (
+              <ActionList.Text>Accessibility</ActionList.Text>
+            ) : (
+              <ActionList.Action as="label" readOnly={isRunning} ariaLabel={false}>
+                <ActionList.Icon>
                   <Form.Checkbox
+                    name="Accessibility"
                     checked={config.a11y}
                     disabled={isRunning}
                     onChange={() =>
@@ -401,14 +389,12 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                       }))
                     }
                   />
-                )
-              }
-            />
-            <Button
+                </ActionList.Icon>
+                <ActionList.Text>Accessibility</ActionList.Text>
+              </ActionList.Action>
+            )}
+            <ActionList.Button
               ariaLabel={a11yStatusLabel}
-              padding="small"
-              size="medium"
-              variant="ghost"
               disabled={
                 a11yStatusValueToStoryIds['status-value:error'].length === 0 &&
                 a11yStatusValueToStoryIds['status-value:warning'].length === 0 &&
@@ -426,13 +412,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 });
               }}
             >
-              <TestStatusIcon status={a11yStatusIcon} isRunning={isRunning} />
               {a11yStatusValueToStoryIds['status-value:error'].length +
                 a11yStatusValueToStoryIds['status-value:warning'].length || null}
-            </Button>
-          </Row>
+              <TestStatusIcon status={a11yStatusIcon} isRunning={isRunning} />
+            </ActionList.Button>
+          </ActionList.Item>
         )}
-      </Extras>
+      </StyledActionList>
     </Container>
   );
 };

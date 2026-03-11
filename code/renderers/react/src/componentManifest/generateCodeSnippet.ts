@@ -48,7 +48,7 @@ export function getCodeSnippet(
         (t.isStringLiteral(prop.node) && prop.node.value === 'bind');
 
       if (obj.isIdentifier() && isBind) {
-        const resolved = resolveBindIdentifierInit(storyDeclaration, obj);
+        const resolved = resolveIdentifierInit(storyDeclaration, obj);
 
         if (resolved) {
           normalizedPath = resolved;
@@ -118,28 +118,61 @@ export function getCodeSnippet(
     ? metaPath.get('properties').filter((p) => p.isObjectProperty())
     : [];
 
-  const getRenderPath = (object: NodePath<t.ObjectProperty>[]) => {
+  // Tri-state render resolution: distinguishes "no render property" from
+  // "render exists but couldn't be resolved" so that an unresolvable story-level
+  // render (e.g. `render: ImportedTemplate`) doesn't incorrectly fall back to meta's render.
+  type RenderResolution =
+    | { kind: 'missing' }
+    | {
+        kind: 'resolved';
+        path: NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>;
+      }
+    | { kind: 'unresolved' };
+
+  const getRenderPath = (object: NodePath<t.ObjectProperty>[]): RenderResolution => {
     const renderPath = object.find((p) => keyOf(p.node) === 'render')?.get('value');
 
-    if (renderPath?.isIdentifier()) {
-      componentName = renderPath.node.name;
+    if (!renderPath) {
+      return { kind: 'missing' };
     }
-    if (
-      renderPath &&
-      !(renderPath.isArrowFunctionExpression() || renderPath.isFunctionExpression())
-    ) {
+
+    // If render is an identifier (e.g. `render: Template`), try to resolve it
+    if (renderPath.isIdentifier()) {
+      const resolved = resolveIdentifierInit(storyDeclaration, renderPath);
+      if (
+        resolved &&
+        (resolved.isArrowFunctionExpression() ||
+          resolved.isFunctionExpression() ||
+          resolved.isFunctionDeclaration())
+      ) {
+        return { kind: 'resolved', path: resolved };
+      }
+      // Render property exists but couldn't be resolved — don't fall back to meta's render
+      return { kind: 'unresolved' };
+    }
+
+    if (!(renderPath.isArrowFunctionExpression() || renderPath.isFunctionExpression())) {
       throw renderPath.buildCodeFrameError(
         'Expected render to be an arrow function or function expression'
       );
     }
 
-    return renderPath;
+    return { kind: 'resolved', path: renderPath };
   };
 
-  const metaRenderPath = getRenderPath(metaProps);
-  const renderPath = getRenderPath(storyProps);
+  const metaRender = getRenderPath(metaProps);
+  const storyRender = getRenderPath(storyProps);
 
-  storyFn ??= renderPath ?? metaRenderPath;
+  // Story render takes precedence. Only fall back to meta render when the story
+  // has no render property at all — NOT when it has one that couldn't be resolved.
+  if (!storyFn) {
+    storyFn =
+      storyRender.kind === 'resolved'
+        ? storyRender.path
+        : storyRender.kind === 'missing' && metaRender.kind === 'resolved'
+          ? metaRender.path
+          : undefined;
+  }
 
   // Collect args
   const metaArgs = metaArgsRecord(metaObj ?? null);
@@ -201,7 +234,13 @@ export function getCodeSnippet(
 
       if (changed) {
         return t.isFunctionDeclaration(fn)
-          ? t.functionDeclaration(fn.id, [], t.blockStatement(newBody), fn.generator, fn.async)
+          ? t.functionDeclaration(
+              t.identifier(storyName),
+              [],
+              t.blockStatement(newBody),
+              fn.generator,
+              fn.async
+            )
           : t.variableDeclaration('const', [
               t.variableDeclarator(
                 t.identifier(storyName),
@@ -212,7 +251,7 @@ export function getCodeSnippet(
     }
 
     return t.isFunctionDeclaration(fn)
-      ? fn
+      ? t.functionDeclaration(t.identifier(storyName), fn.params, fn.body, fn.generator, fn.async)
       : t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), fn)]);
   }
 
@@ -222,13 +261,15 @@ export function getCodeSnippet(
   const name = t.jsxIdentifier(componentName);
   const openingElAttrs = invalidSpread ? [...injectedAttrs, invalidSpread] : injectedAttrs;
 
+  const children = toJsxChildren(merged.children);
+  const selfClosing = children.length === 0;
   const arrow = t.arrowFunctionExpression(
     [],
     t.jsxElement(
-      t.jsxOpeningElement(name, openingElAttrs, false),
-      t.jsxClosingElement(name),
-      toJsxChildren(merged.children),
-      false
+      t.jsxOpeningElement(name, openingElAttrs, selfClosing),
+      selfClosing ? null : t.jsxClosingElement(name),
+      children,
+      selfClosing
     )
   );
 
@@ -539,17 +580,28 @@ function transformArgsSpreadsInJsx(
   return { node: t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren), changed };
 }
 
-/** Resolve the initializer for an identifier used as `Template.bind(...)`. */
-function resolveBindIdentifierInit(
-  storyPath: NodePath<t.Node>,
-  identifier: NodePath<t.Identifier>
-) {
+/** Resolve the initializer for an identifier (e.g. `Template.bind({})` or `render: Template`). */
+function resolveIdentifierInit(storyPath: NodePath<t.Node>, identifier: NodePath<t.Identifier>) {
   const programPath = storyPath.findParent((p) => p.isProgram()) as NodePath<t.Program> | null;
 
   if (!programPath) {
     return null;
   }
 
+  // Check for function declarations: `function Template(args) { ... }` or `export function Template(args) { ... }`
+  for (const stmt of programPath.get('body')) {
+    if (stmt.isFunctionDeclaration() && stmt.node.id?.name === identifier.node.name) {
+      return stmt;
+    }
+    if (stmt.isExportNamedDeclaration()) {
+      const decl = stmt.get('declaration');
+      if (decl.isFunctionDeclaration() && decl.node.id?.name === identifier.node.name) {
+        return decl;
+      }
+    }
+  }
+
+  // Check for variable declarations: `const Template = (args) => ...`
   const declarators = programPath.get('body').flatMap((stmt) => {
     if (stmt.isVariableDeclaration()) {
       return stmt.get('declarations');

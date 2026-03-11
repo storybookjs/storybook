@@ -12,7 +12,7 @@ export default defineGeneratorModule({
   },
   configure: async () => {
     return {
-      addComponents: false,
+      addComponents: true,
     };
   },
 });

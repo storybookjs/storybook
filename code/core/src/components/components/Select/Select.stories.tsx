@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Button, Toolbar } from 'storybook/internal/components';
 
 import { LinuxIcon } from '@storybook/icons';
 
@@ -199,6 +199,113 @@ export const WithSiblings = meta.story({
       <Button ariaLabel={false}>After</Button>
     </Row>
   ),
+  play: async ({ canvas, step }) => {
+    const user = userEvent.setup();
+
+    await step('Open select and select an option', async () => {
+      const select = canvas.getByRole('button', { name: /Animal/i });
+      await user.click(select);
+
+      const listbox = await screen.findByRole('listbox');
+      expect(listbox).toBeInTheDocument();
+
+      const option = within(listbox).getByRole('option', { name: 'Frog' });
+      await user.click(option);
+    });
+
+    await step('Tab should land on sibling after select', async () => {
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+
+      await user.tab();
+
+      const afterButton = canvas.getByRole('button', { name: 'After' });
+      expect(afterButton).toHaveFocus();
+    });
+
+    await step('Navigate back and reopen select', async () => {
+      await user.tab({ shift: true });
+
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+
+      await user.keyboard('{Enter}');
+
+      const listbox = await screen.findByRole('listbox');
+      expect(listbox).toBeInTheDocument();
+    });
+
+    await step('Escape should return to select trigger', async () => {
+      await user.keyboard('{Escape}');
+
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+    });
+  },
+});
+
+export const WithSiblingsInToolbar = meta.story({
+  name: 'With Siblings in Toolbar',
+  render: (args) => (
+    <Toolbar aria-label="Test toolbar">
+      <Button ariaLabel="Before button">Before</Button>
+      <Select {...args} />
+      <Button ariaLabel="After button">After</Button>
+    </Toolbar>
+  ),
+  play: async ({ canvas, step }) => {
+    const user = userEvent.setup();
+
+    await step('Navigate to select with ArrowRight', async () => {
+      const beforeButton = canvas.getByRole('button', { name: 'Before button' });
+      beforeButton.focus();
+      expect(beforeButton).toHaveFocus();
+
+      await user.keyboard('{ArrowRight}');
+
+      const select = canvas.getByRole('button', { name: /Animal/i });
+      expect(select).toHaveFocus();
+    });
+
+    await step('Open select and select an option', async () => {
+      await user.keyboard('{Enter}');
+
+      const listbox = await screen.findByRole('listbox');
+      expect(listbox).toBeInTheDocument();
+
+      const option = within(listbox).getByRole('option', { name: 'Frog' });
+      await user.click(option);
+    });
+
+    await step('ArrowRight should land on sibling after select', async () => {
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+
+      await user.keyboard('{ArrowRight}');
+
+      const afterButton = canvas.getByRole('button', { name: 'After button' });
+      expect(afterButton).toHaveFocus();
+    });
+
+    await step('Navigate back with ArrowLeft and reopen select', async () => {
+      await user.keyboard('{ArrowLeft}');
+
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+
+      await user.keyboard('{Enter}');
+
+      const listbox = await screen.findByRole('listbox');
+      expect(listbox).toBeInTheDocument();
+    });
+
+    await step('Escape should return to select trigger', async () => {
+      await user.keyboard('{Escape}');
+
+      const select = canvas.getByRole('button', { name: /Frog/i });
+      expect(select).toHaveFocus();
+    });
+  },
 });
 
 export const DefaultOption = meta.story({
@@ -427,6 +534,47 @@ export const KeyboardSelectionMultiSS = meta.story({
   name: 'KB Selection (multi, Space, Space)',
   args: { multiSelect: true },
   play: kbMultiSelectionTest(' ', ' '),
+});
+
+export const FullArrowNavigation = meta.story({
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
+    await step('Open select', async () => {
+      selectButton.focus();
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+
+    await step('Navigate to option 2 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Pollywog');
+    });
+
+    await step('Navigate to option 3 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Frog');
+    });
+
+    await step('Loop back to option 1 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+
+    await step('Navigate backwards with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Frog');
+    });
+
+    await step('Navigate backwards with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Pollywog');
+    });
+
+    await step('Navigate back to option 1 with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+  },
 });
 
 export const MouseOpenNoAutoselect = meta.story({
@@ -1053,5 +1201,339 @@ export const WithoutReset = meta.story({
     }
 
     expect(options.length).toBe(3);
+  },
+});
+
+const nonStringOptions = [
+  { title: 'Number (42)', value: 42 },
+  { title: 'Number (0)', value: 0 },
+  { title: 'Boolean (true)', value: true },
+  { title: 'Boolean (false)', value: false },
+  { title: 'Null', value: null },
+  { title: 'Undefined', value: undefined },
+  { title: 'String', value: 'string' },
+];
+
+export const NonStringValuesSingleSelect = meta.story({
+  name: 'Non-String Values (single)',
+  args: {
+    options: nonStringOptions,
+    onSelect: fn(),
+    onChange: fn(),
+  },
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
+
+    await step('Select number value (42)', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Number (42)' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(42);
+      expect(args.onChange).toHaveBeenLastCalledWith([42]);
+    });
+
+    await step('Select boolean value (true)', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Boolean (true)' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(true);
+      expect(args.onChange).toHaveBeenLastCalledWith([true]);
+    });
+
+    await step('Select boolean value (false)', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Boolean (false)' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(false);
+      expect(args.onChange).toHaveBeenLastCalledWith([false]);
+    });
+
+    await step('Select null value', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Null' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(null);
+      expect(args.onChange).toHaveBeenLastCalledWith([null]);
+    });
+
+    await step('Select undefined value', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Undefined' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(undefined);
+      expect(args.onChange).toHaveBeenLastCalledWith([undefined]);
+    });
+
+    await step('Select number value (0 - falsy)', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Number (0)' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(0);
+      expect(args.onChange).toHaveBeenLastCalledWith([0]);
+    });
+  },
+});
+
+export const NonStringValuesMultiSelect = meta.story({
+  name: 'Non-String Values (multi)',
+  args: {
+    options: nonStringOptions,
+    multiSelect: true,
+    onSelect: fn(),
+    onDeselect: fn(),
+    onChange: fn(),
+  },
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
+
+    await step('Select number (42)', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Number (42)' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(42);
+      expect(args.onChange).toHaveBeenLastCalledWith([42]);
+    });
+
+    await step('Add boolean (true)', async () => {
+      await userEvent.click(await screen.findByRole('option', { name: 'Boolean (true)' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(true);
+      expect(args.onChange).toHaveBeenLastCalledWith([42, true]);
+    });
+
+    await step('Add null', async () => {
+      await userEvent.click(await screen.findByRole('option', { name: 'Null' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(null);
+      expect(args.onChange).toHaveBeenLastCalledWith([42, true, null]);
+    });
+
+    await step('Add undefined', async () => {
+      await userEvent.click(await screen.findByRole('option', { name: 'Undefined' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(undefined);
+      expect(args.onChange).toHaveBeenLastCalledWith([42, true, null, undefined]);
+    });
+
+    await step('Deselect number (42)', async () => {
+      await userEvent.click(await screen.findByRole('option', { name: 'Number (42)' }));
+      expect(args.onDeselect).toHaveBeenLastCalledWith(42);
+      expect(args.onChange).toHaveBeenLastCalledWith([true, null, undefined]);
+    });
+
+    await step('Deselect undefined', async () => {
+      await userEvent.click(await screen.findByRole('option', { name: 'Undefined' }));
+      expect(args.onDeselect).toHaveBeenLastCalledWith(undefined);
+      expect(args.onChange).toHaveBeenLastCalledWith([true, null]);
+    });
+  },
+});
+
+export const DefaultOptionNumber = meta.story({
+  name: 'Default Option - Number',
+  args: {
+    options: nonStringOptions,
+    defaultOptions: 42,
+  },
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
+    await expect(selectButton).toHaveTextContent('Number (42)');
+  },
+});
+
+export const DefaultOptionZero = meta.story({
+  name: 'Default Option - Zero',
+  args: {
+    options: nonStringOptions,
+    defaultOptions: 0,
+  },
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
+    await expect(selectButton).toHaveTextContent('Number (0)');
+  },
+});
+
+export const DefaultOptionBooleanTrue = meta.story({
+  name: 'Default Option - Boolean True',
+  args: {
+    options: nonStringOptions,
+    defaultOptions: true,
+  },
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
+    await expect(selectButton).toHaveTextContent('Boolean (true)');
+  },
+});
+
+export const DefaultOptionBooleanFalse = meta.story({
+  name: 'Default Option - Boolean False',
+  args: {
+    options: nonStringOptions,
+    defaultOptions: false,
+  },
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
+    await expect(selectButton).toHaveTextContent('Boolean (false)');
+  },
+});
+
+export const DefaultOptionNull = meta.story({
+  name: 'Default Option - Null',
+  args: {
+    options: nonStringOptions,
+    defaultOptions: null,
+  },
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
+    await expect(selectButton).toHaveTextContent('Null');
+  },
+});
+
+export const DefaultOptionUndefinedDoesNotWork = meta.story({
+  name: 'Default Option - Bare undefined does NOT select',
+  args: {
+    options: nonStringOptions,
+    defaultOptions: undefined,
+    children: 'Nothing selected',
+  },
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
+    await expect(selectButton).toHaveTextContent('Nothing selected');
+    await expect(selectButton).not.toHaveTextContent('Undefined');
+  },
+});
+
+export const DefaultOptionUndefinedInArrayWorks = meta.story({
+  name: 'Default Option - [undefined] selects undefined option',
+  args: {
+    options: nonStringOptions,
+    defaultOptions: [undefined],
+  },
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
+    await expect(selectButton).toHaveTextContent('Undefined');
+  },
+});
+
+export const DefaultOptionsMultipleNonStringValues = meta.story({
+  name: 'Default Options - Multiple Non-String Values',
+  args: {
+    options: nonStringOptions,
+    defaultOptions: [42, false, null],
+    multiSelect: true,
+  },
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
+    await expect(selectButton).toHaveTextContent('3');
+
+    await userEvent.click(selectButton);
+    const option42 = await screen.findByRole('option', { name: 'Number (42)' });
+    const optionFalse = await screen.findByRole('option', { name: 'Boolean (false)' });
+    const optionNull = await screen.findByRole('option', { name: 'Null' });
+
+    expect(option42).toHaveAttribute('aria-selected', 'true');
+    expect(optionFalse).toHaveAttribute('aria-selected', 'true');
+    expect(optionNull).toHaveAttribute('aria-selected', 'true');
+  },
+});
+
+const optionsWithUndefinedForReset = [
+  { title: 'Apple', value: 'apple' },
+  { title: 'Undefined Value', value: undefined },
+  { title: 'Banana', value: 'banana' },
+];
+
+export const ResetWithUndefinedOption = meta.story({
+  name: 'Reset vs Undefined Option',
+  args: {
+    options: optionsWithUndefinedForReset,
+    children: 'Select fruit',
+    onReset: fn(),
+    onChange: fn(),
+    onSelect: fn(),
+  },
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
+
+    await step('Select a regular option first', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Apple' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith('apple');
+      expect(args.onChange).toHaveBeenLastCalledWith(['apple']);
+      await expect(selectButton).toHaveTextContent('Apple');
+    });
+
+    await step('Select the undefined value option - it should work', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Undefined Value' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(undefined);
+      expect(args.onChange).toHaveBeenLastCalledWith([undefined]);
+      await expect(selectButton).toHaveTextContent('Undefined Value');
+    });
+
+    await step('Click Reset - should clear, not select undefined option', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Reset selection' }));
+      expect(args.onReset).toHaveBeenCalledTimes(1);
+      expect(args.onChange).toHaveBeenLastCalledWith([]);
+      await expect(selectButton).toHaveTextContent('Select fruit');
+      await expect(selectButton).not.toHaveTextContent('Undefined Value');
+    });
+
+    await step('Can still select undefined value after reset', async () => {
+      await userEvent.click(selectButton);
+      await userEvent.click(await screen.findByRole('option', { name: 'Undefined Value' }));
+      expect(args.onSelect).toHaveBeenLastCalledWith(undefined);
+      expect(args.onChange).toHaveBeenLastCalledWith([undefined]);
+      await expect(selectButton).toHaveTextContent('Undefined Value');
+    });
+  },
+});
+
+export const ShowSelectedOptionTitleTrue = meta.story({
+  name: 'Show Selected Option Title (prop=true)',
+  args: {
+    showSelectedOptionTitle: true,
+    defaultOptions: 'frog',
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify selected option title is shown', async () => {
+      const selectButton = await canvas.findByRole('button');
+      expect(selectButton).toHaveTextContent('Frog');
+    });
+  },
+});
+
+export const ShowSelectedOptionTitleFalse = meta.story({
+  name: 'Show Selected Option Title (prop=false)',
+  args: {
+    showSelectedOptionTitle: false,
+    defaultOptions: 'frog',
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify default title is shown instead of selected option', async () => {
+      const selectButton = await canvas.findByRole('button');
+      expect(selectButton).toHaveTextContent('Animal');
+    });
+  },
+});
+
+export const ShowSelectedOptionTitleFalseMulti = meta.story({
+  name: 'Show Selected Option Title (prop=false, multi)',
+  args: {
+    showSelectedOptionTitle: false,
+    multiSelect: true,
+    defaultOptions: ['frog', 'tadpole'],
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify default title is shown for multi-select', async () => {
+      const selectButton = await canvas.findByRole('button');
+      expect(selectButton).toHaveTextContent('Animal');
+    });
+  },
+});
+
+export const ShowSelectedOptionTitleTrueMulti = meta.story({
+  name: 'Show Selected Option Title (prop=true, multi)',
+  args: {
+    showSelectedOptionTitle: true,
+    multiSelect: true,
+    defaultOptions: ['frog'],
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify option count is shown for multi-select', async () => {
+      const selectButton = await canvas.findByRole('button');
+      expect(selectButton).toHaveTextContent('1');
+    });
   },
 });

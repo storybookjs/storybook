@@ -107,9 +107,9 @@ export const Colors: Story = {
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 
@@ -162,8 +162,9 @@ export const Colors = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 

@@ -1,5 +1,3 @@
-import { register } from 'node:module';
-
 import { beforeEach, vi } from 'vitest';
 
 import { type JsPackageManager, JsPackageManagerFactory } from 'storybook/internal/common';
@@ -17,8 +15,6 @@ vi.mock('node:fs', async () => {
   const fs = (await import('memfs')).fs;
   return { default: fs, ...fs };
 });
-
-vi.mock('node:module', { spy: true });
 
 vi.mock(import('./src/componentManifest/utils'), { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -39,10 +35,17 @@ beforeEach(() => {
       }) as unknown as JsPackageManager
   );
   vi.mocked(cachedResolveImport).mockImplementation((id) => {
-    return {
+    const pkg = {
+      '@design-system/button': './src/stories/Button.tsx',
+      '@ds/button': './src/stories/Button.tsx',
+      '@ds/header': './src/stories/Header.tsx',
       './Button': './src/stories/Button.tsx',
       './Header': './src/stories/Header.tsx',
-    }[id]!;
+    }[id];
+
+    if (pkg) {
+      return pkg;
+    }
+    throw new Error(`Unable to resolve ${id}`);
   });
-  vi.mocked(register).mockImplementation(() => {});
 });

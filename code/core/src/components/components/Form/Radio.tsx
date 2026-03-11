@@ -4,28 +4,31 @@ import { color, styled } from 'storybook/theming';
 
 const Input = styled.input(({ theme }) => ({
   appearance: 'none',
-  display: 'grid',
-  placeContent: 'center',
-  width: 16,
-  height: 16,
-  flexShrink: 0,
-  margin: -1,
-  border: `1px solid ${theme.input.border}`,
-  borderRadius: 8,
   backgroundColor: theme.input.background,
+  border: `1px solid ${theme.base === 'dark' ? 'hsl(0 0 100 / 0.4)' : 'hsl(0 0 0 / 0.44)'}`,
+  borderRadius: 8,
+  display: 'grid',
+  flexShrink: 0,
+  height: 16,
+  margin: -1,
+  placeContent: 'center',
   transition: 'background-color 0.1s',
+  width: 16,
 
   '&:enabled': {
     cursor: 'pointer',
   },
   '&:disabled': {
-    backgroundColor: theme.base === 'light' ? color.light : 'transparent',
+    backgroundColor: 'transparent',
+    borderColor: theme.input.border,
   },
   '&:disabled:checked': {
-    backgroundColor: theme.base === 'light' ? color.light : theme.color.mediumdark,
+    backgroundColor: theme.base === 'dark' ? color.dark : theme.color.mediumdark,
+    borderColor: theme.base === 'dark' ? color.dark : theme.color.mediumdark,
   },
   '&:checked': {
     backgroundColor: color.secondary,
+    borderColor: color.secondary,
     boxShadow: `inset 0 0 0 2px ${theme.input.background}`,
   },
   '&:enabled:focus-visible': {

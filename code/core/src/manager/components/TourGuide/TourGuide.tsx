@@ -172,7 +172,7 @@ export const TourGuide = ({
 
 let root: ReturnType<typeof createRoot> | null = null;
 
-TourGuide.render = (props: ComponentProps<typeof TourGuide>) => {
+TourGuide.render = (props: ComponentProps<typeof TourGuide> | null) => {
   let container = document.getElementById('storybook-tour');
   if (!container) {
     container = document.createElement('div');
@@ -181,20 +181,22 @@ TourGuide.render = (props: ComponentProps<typeof TourGuide>) => {
   }
   root = root ?? createRoot(container);
   root.render(
-    <ThemeProvider theme={convert(themes.light)}>
-      <TourGuide
-        {...props}
-        onComplete={() => {
-          props.onComplete?.();
-          root?.render(null);
-          root = null;
-        }}
-        onDismiss={() => {
-          props.onDismiss?.();
-          root?.render(null);
-          root = null;
-        }}
-      />
-    </ThemeProvider>
+    props ? (
+      <ThemeProvider theme={convert(themes.light)}>
+        <TourGuide
+          {...props}
+          onComplete={() => {
+            props.onComplete?.();
+            root?.render(null);
+            root = null;
+          }}
+          onDismiss={() => {
+            props.onDismiss?.();
+            root?.render(null);
+            root = null;
+          }}
+        />
+      </ThemeProvider>
+    ) : null
   );
 };

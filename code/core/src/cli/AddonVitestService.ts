@@ -12,7 +12,8 @@ import * as find from 'empathic/find';
 import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { SupportedBuilder, SupportedFramework } from '../types';
+import { SupportedBuilder, type SupportedFramework } from '../types';
+import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants';
 
 type Result = {
   compatible: boolean;
@@ -38,17 +39,6 @@ export interface AddonVitestCompatibilityOptions {
 export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
-  readonly supportedFrameworks: SupportedFramework[] = [
-    SupportedFramework.HTML_VITE,
-    SupportedFramework.NEXTJS_VITE,
-    SupportedFramework.PREACT_VITE,
-    SupportedFramework.REACT_NATIVE_WEB_VITE,
-    SupportedFramework.REACT_VITE,
-    SupportedFramework.SVELTE_VITE,
-    SupportedFramework.SVELTEKIT,
-    SupportedFramework.VUE3_VITE,
-    SupportedFramework.WEB_COMPONENTS_VITE,
-  ];
   /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
@@ -124,10 +114,24 @@ export class AddonVitestService {
    * @param options - Installation options
    * @returns Array of error messages if installation fails
    */
-  async installPlaywright(options: { yes?: boolean } = {}): Promise<{ errors: string[] }> {
+  async installPlaywright(
+    options: {
+      yes?: boolean;
+      /** Is set to true if Storybook didn't install the dependencies yet */
+      useRemotePkg?: boolean;
+    } = {}
+  ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
     const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
+    const playwrightCommandString = this.packageManager.getPackageCommand(playwrightCommand);
+
+    let result: 'installed' | 'skipped' | 'aborted' | 'failed';
+
+    if (process.env.STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION) {
+      result = 'skipped';
+      return { errors, result };
+    }
 
     try {
       const shouldBeInstalled = options.yes
@@ -135,7 +139,7 @@ export class AddonVitestService {
         : await (async () => {
             logger.log(dedent`
             Playwright browser binaries are necessary for @storybook/addon-vitest. The download can take some time. If you don't want to wait, you can skip the installation and run the following command manually later:
-            ${CLI_COLORS.cta(`npx ${playwrightCommand.join(' ')}`)}
+            ${CLI_COLORS.cta(playwrightCommandString)}
             `);
             return prompt.confirm({
               message: 'Do you want to install Playwright with Chromium now?',
@@ -144,25 +148,33 @@ export class AddonVitestService {
           })();
 
       if (shouldBeInstalled) {
-        await prompt.executeTaskWithSpinner(
+        const processAborted = await prompt.executeTaskWithSpinner(
           (signal) =>
             this.packageManager.runPackageCommand({
               args: playwrightCommand,
+              useRemotePkg: options.useRemotePkg,
               stdio: ['inherit', 'pipe', 'pipe'],
               signal,
             }),
           {
             id: 'playwright-installation',
-            intro: 'Installing Playwright browser binaries (Press "c" to abort)',
-            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: npx ${playwrightCommand.join(' ')}`,
+            intro: 'Installing Playwright browser binaries (press "c" to abort)',
+            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommandString}`,
             success: 'Playwright browser binaries installed successfully',
             abortable: true,
           }
         );
+        if (processAborted) {
+          result = 'aborted';
+        } else {
+          result = 'installed';
+        }
       } else {
         logger.warn('Playwright installation skipped');
+        result = 'skipped';
       }
     } catch (e) {
+      result = 'failed';
       ErrorCollector.addError(e);
       if (e instanceof Error) {
         errors.push(e.stack ?? e.message);
@@ -171,7 +183,7 @@ export class AddonVitestService {
       }
     }
 
-    return { errors };
+    return { errors, result };
   }
 
   /**
@@ -196,7 +208,7 @@ export class AddonVitestService {
     }
 
     // Check renderer/framework support
-    const isFrameworkSupported = this.supportedFrameworks.some(
+    const isFrameworkSupported = SUPPORTED_FRAMEWORKS.some(
       (framework) => options.framework === framework
     );
 
@@ -231,8 +243,9 @@ export class AddonVitestService {
     // Check Vitest version (>=3.0.0 - stricter requirement from postinstall)
     const vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
     const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
+    const isCanary = coercedVitestVersion?.version.startsWith('0.0.0') ?? false;
 
-    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0')) {
+    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0') && !isCanary) {
       reasons.push(
         `The addon requires Vitest 3.0.0 or higher. You are currently using ${vitestVersionSpecifier}.`
       );
@@ -319,9 +332,7 @@ export class AddonVitestService {
     babel.traverse(parsedConfig, {
       ExportDefaultDeclaration: (path: any) => {
         if (this.isDefineConfigExpression(path.node.declaration)) {
-          isValidVitestConfig = this.isSafeToExtendWorkspace(
-            path.node.declaration as CallExpression
-          );
+          isValidVitestConfig = this.isSafeToExtendWorkspace(path.node.declaration);
         } else if (this.isMergeConfigExpression(path.node.declaration)) {
           // the config could be anywhere in the mergeConfig call, so we need to check each argument
           const mergeCall = path.node.declaration as CallExpression;
@@ -365,20 +376,34 @@ export class AddonVitestService {
     return babel.types.isCallExpression(path) && (path.callee as any)?.name === 'mergeConfig';
   }
 
-  private isSafeToExtendWorkspace(node: CallExpression): boolean {
-    return (
-      babel.types.isCallExpression(node) &&
-      node.arguments.length > 0 &&
-      babel.types.isObjectExpression(node.arguments?.[0]) &&
-      node.arguments[0]?.properties.every(
-        (p: any) =>
-          p.key?.name !== 'test' ||
-          (babel.types.isObjectExpression(p.value) &&
-            p.value.properties.every(
-              ({ key, value }: any) =>
-                key?.name !== 'workspace' || babel.types.isArrayExpression(value)
-            ))
-      )
+  private isSafeToExtendWorkspace(node: babel.types.Node): boolean {
+    // Extract the object expression to validate
+    let objectToValidate: babel.types.ObjectExpression | null = null;
+
+    if (babel.types.isCallExpression(node)) {
+      // Handle function calls like defineConfig({...})
+      if (node.arguments.length > 0 && babel.types.isObjectExpression(node.arguments[0])) {
+        objectToValidate = node.arguments[0];
+      }
+    } else if (babel.types.isObjectExpression(node)) {
+      // Handle plain object literals like {...}
+      objectToValidate = node;
+    }
+
+    // If we couldn't extract a valid object, it's not safe
+    if (!objectToValidate) {
+      return false;
+    }
+
+    // Check that the object doesn't have problematic test.workspace properties
+    return objectToValidate.properties.every(
+      (p: any) =>
+        p.key?.name !== 'test' ||
+        (babel.types.isObjectExpression(p.value) &&
+          p.value.properties.every(
+            ({ key, value }: any) =>
+              key?.name !== 'workspace' || babel.types.isArrayExpression(value)
+          ))
     );
   }
 }

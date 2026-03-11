@@ -8,23 +8,30 @@ const defaultItemValues: ToolbarItem = {
 export const normalizeArgType = (
   key: string,
   argType: ToolbarArgType
-): NormalizedToolbarArgType => ({
-  ...argType,
-  name: argType.name || key,
-  description: argType.description || key,
-  toolbar: {
-    ...argType.toolbar,
-    items: argType.toolbar.items.map((_item) => {
-      const item = typeof _item === 'string' ? { value: _item, title: _item } : _item;
+): NormalizedToolbarArgType | null => {
+  const toolbar = argType.toolbar;
+  if (!toolbar) {
+    return null;
+  }
+  return {
+    ...argType,
+    name: argType.name || key,
+    description: argType.description || key,
+    toolbar: {
+      ...argType.toolbar,
+      items: toolbar.items.map((_item) => {
+        const item = typeof _item === 'string' ? { value: _item, title: _item } : _item;
 
-      // Cater for the special type "reset" which will reset value and also icon
-      // of toolbar button if any icon was present on toolbar to begin with
-      if (item.type === 'reset' && argType.toolbar.icon) {
-        item.icon = argType.toolbar.icon;
-        item.hideIcon = true;
-      }
+        // Cater for the special type "reset" which will reset value and also icon
+        // of toolbar button if any icon was present on toolbar to begin with
+        if (item.type === 'reset' && toolbar.icon) {
+          item.icon = toolbar.icon;
+          item.hideIcon = true;
+          item.value = undefined;
+        }
 
-      return { ...defaultItemValues, ...item };
-    }),
-  },
-});
+        return { ...defaultItemValues, ...item };
+      }),
+    },
+  };
+};

@@ -81,7 +81,7 @@ export const FatalError: Story = {
     const canvas = within(canvasElement.parentElement!);
     const button = canvas.getByText('Open modal');
     await userEvent.click(button);
-    await expect(canvas.findByText('Storybook Tests error details')).resolves.toBeInTheDocument();
+    await expect(canvas.findByText('Storybook Test Error Details')).resolves.toBeInTheDocument();
   },
 };
 

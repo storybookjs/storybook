@@ -1,7 +1,9 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
+import type { ChannelLike } from 'storybook/internal/channels';
 import type { FileSystemCache } from 'storybook/internal/common';
 import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 import { type CsfFile } from 'storybook/internal/csf-tools';
+import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
@@ -18,10 +20,6 @@ import type { SupportedRenderer } from './renderers';
 export type BuilderName = 'webpack5' | '@storybook/builder-webpack5' | string;
 export type RendererName = string;
 
-interface ServerChannel {
-  emit(type: string, args?: any): void;
-}
-
 export interface CoreConfig {
   builder?:
     | BuilderName
@@ -31,7 +29,7 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<TelejsonOptions>;
+  channelOptions?: Partial<TelejsonOptions> & { wsToken?: string };
   /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**
@@ -49,6 +47,11 @@ export interface CoreConfig {
    * @see https://storybook.js.org/telemetry
    */
   enableCrashReports?: boolean;
+  /**
+   * Enable hostname validation, currently only for WebSocket connections. Set to `[]` to disallow
+   * all hosts except known local/network address, or `true` to allow all hosts.
+   */
+  allowedHosts?: string[] | true;
   /**
    * Enable CORS headings to run document in a "secure context" see:
    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
@@ -173,7 +176,8 @@ export interface CLIBaseOptions {
   disableTelemetry?: boolean;
   enableCrashReports?: boolean;
   configDir?: string;
-  loglevel?: string;
+  loglevel?: LogLevel;
+  logfile?: string | boolean;
   quiet?: boolean;
 }
 
@@ -213,12 +217,14 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  localAddress?: string;
   networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {
   presets: Presets;
   presetsList?: LoadedPreset[];
+  channel: ChannelLike;
 }
 
 export type Options = LoadOptions &
@@ -257,7 +263,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
     startTime: ReturnType<typeof process.hrtime>;
     router: ServerApp;
     server: HttpServer;
-    channel: ServerChannel;
+    channel: ChannelLike;
   }) => Promise<void | {
     stats?: BuilderStats;
     totalTime: ReturnType<typeof process.hrtime>;
@@ -341,7 +347,7 @@ type Tag = string;
 
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
-  defaultFilterSelection?: 'include' | 'exclude';
+  defaultFilterSelection?: 'include' | 'exclude' | undefined;
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }
@@ -352,14 +358,14 @@ export interface ComponentManifest {
   id: string;
   path: string;
   name: string;
-  description?: string;
-  import?: string;
-  summary?: string;
+  description?: string | undefined;
+  import?: string | undefined;
+  summary?: string | undefined;
   stories: {
     name: string;
-    snippet?: string;
-    description?: string;
-    summary?: string;
+    snippet?: string | undefined;
+    description?: string | undefined;
+    summary?: string | undefined;
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
@@ -369,11 +375,15 @@ export interface ComponentManifest {
 export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
+  meta?: {
+    docgen: 'react-docgen' | 'react-docgen-typescript';
+    durationMs: number;
+  };
 }
 
-export type ComponentManifestGenerator = (
-  storyIndexGenerator: StoryIndexGenerator
-) => Promise<ComponentsManifest>;
+type ManifestName = string;
+
+export type Manifests = { components?: ComponentsManifest } & Record<ManifestName, unknown>;
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
 
@@ -390,7 +400,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
-  experimental_componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
@@ -450,6 +460,13 @@ export interface StorybookConfigRaw {
      * @default true
      */
     actions?: boolean;
+
+    /**
+     * Enable the onboarding checklist sidebar widget
+     *
+     * @default true
+     */
+    sidebarOnboardingChecklist?: boolean;
 
     /**
      * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
@@ -529,6 +546,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  storyIndexGenerator?: StoryIndexGenerator;
 
   experimental_devServer?: ServerApp;
 
@@ -684,7 +703,7 @@ export type CoreCommon_AddonInfo = { name: string; inEssentials: boolean };
 
 export interface CoreCommon_StorybookInfo {
   addons: string[];
-  version?: string;
+  versionSpecifier?: string;
   framework?: SupportedFramework;
   renderer?: SupportedRenderer;
   builder?: SupportedBuilder;

@@ -18,21 +18,31 @@ test-results
 /.npmrc
 tsconfig.vitest-temp.json
 
-# Yarn stuff
+.env.local
+
+# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# For sandboxes
+/**/.pnp.*
 /**/.yarn/*
-!/**/.yarn/releases
+!/**/.yarn/patches
 !/**/.yarn/plugins
+!/**/.yarn/releases
 !/**/.yarn/sdks
 !/**/.yarn/versions
-!/**/.yarn/patches
-/**/.pnp.*
-!/node_modules
 
 # test-storybooks
 test-storybooks/ember-cli/ember-output
 test-storybooks/angular-cli/addon-jest.testresults.json
 
-
+.circleci/*.generated.yml
 npm-shrinkwrap.json
 .tern-port
 .parcel-cache
@@ -55,15 +65,14 @@ code/playwright/.cache/
 code/bench-results/
 
 /packs
-code/.nx/cache
-code/.nx/workspace-data
 .vite-inspect
 .nx/cache
 .nx/workspace-data
 !**/fixtures/**/yarn.lock
 code/core/report
-node_modules/.svelte2tsx-language-server-files
 
 *storybook.log
 
 .junie
+CLAUDE.local.md
+.claude

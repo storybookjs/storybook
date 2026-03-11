@@ -2,7 +2,7 @@
 import { dedent } from 'ts-dedent';
 
 export default function outlineCSS(selector: string) {
-  return dedent/* css */ `
+  return dedent /* css */ `
     ${selector} body {
       outline: 1px solid #2980b9 !important;
     }

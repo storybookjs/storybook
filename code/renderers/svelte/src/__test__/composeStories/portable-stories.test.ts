@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-/// <reference types="@testing-library/jest-dom" />;
+/// <reference types="@testing-library/jest-dom" />
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 

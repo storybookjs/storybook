@@ -1,4 +1,5 @@
 import { type JsPackageManager } from 'storybook/internal/common';
+import { versions } from 'storybook/internal/common';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -46,18 +47,15 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     mainConfig,
     mainConfigPath,
     previewConfigPath,
-    storybookVersion,
+    versionInstalled,
     configDir,
     packageManager,
     storiesPaths,
+    hasCsfFactoryPreview,
   } = await getStorybookData({
     configDir: options.configDir,
     packageManagerName: options.packageManager,
   });
-
-  if (!storybookVersion) {
-    throw new Error('Could not determine Storybook version');
-  }
 
   if (!mainConfigPath) {
     throw new Error('Could not determine main config path');
@@ -66,8 +64,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   const outcome = await automigrate({
     ...options,
     packageManager,
-    storybookVersion,
-    beforeVersion: storybookVersion,
+    storybookVersion: versionInstalled || versions.storybook,
     mainConfigPath,
     mainConfig,
     previewConfigPath,
@@ -75,6 +72,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     isUpgrade: false,
     isLatest: false,
     storiesPaths,
+    hasCsfFactoryPreview,
   });
 
   // only install dependencies if the outcome contains any fixes that were not failed or skipped
@@ -83,7 +81,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   );
 
   if (hasAppliedFixes && !options.skipInstall) {
-    packageManager.installDependencies();
+    await packageManager.installDependencies();
   }
 
   if (outcome && !options.skipDoctor) {
@@ -114,13 +112,14 @@ export const automigrate = async ({
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  beforeVersion,
   renderer: rendererPackage,
   skipInstall,
   hideMigrationSummary = false,
   isUpgrade,
   isLatest,
   storiesPaths,
+  hasCsfFactoryPreview,
+  glob,
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
@@ -145,6 +144,8 @@ export const automigrate = async ({
       result: null,
       storybookVersion,
       storiesPaths,
+      yes,
+      glob,
     });
 
     return null;
@@ -184,11 +185,11 @@ export const automigrate = async ({
     mainConfig,
     mainConfigPath,
     storybookVersion,
-    beforeVersion,
     isUpgrade: !!isUpgrade,
     dryRun,
     yes,
     storiesPaths,
+    hasCsfFactoryPreview,
   });
 
   // if migration failed, display a log file in the users cwd
@@ -219,8 +220,8 @@ type RunFixesOptions = {
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
-  beforeVersion: string;
   isUpgrade?: boolean;
+  hasCsfFactoryPreview: boolean;
 };
 
 export async function runFixes({
@@ -236,6 +237,7 @@ export async function runFixes({
   previewConfigPath,
   storybookVersion,
   storiesPaths,
+  hasCsfFactoryPreview,
 }: RunFixesOptions): Promise<{
   preCheckFailure?: PreCheckFailure;
   fixResults: Record<FixId, FixStatus>;
@@ -259,6 +261,7 @@ export async function runFixes({
         previewConfigPath,
         mainConfigPath,
         storiesPaths,
+        hasCsfFactoryPreview,
       });
       logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
     } catch (error) {
@@ -377,6 +380,7 @@ export async function runFixes({
               skipInstall,
               storybookVersion,
               storiesPaths,
+              yes,
             });
             logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 

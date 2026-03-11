@@ -131,6 +131,7 @@ export const FlexBar = ({ children, backgroundColor, className = '', ...rest }: 
   const [left, right] = Children.toArray(children);
   return (
     <BarWithoutPadding
+      data-deprecated="FlexBar"
       backgroundColor={backgroundColor}
       className={`sb-bar ${className}`}
       {...rest}

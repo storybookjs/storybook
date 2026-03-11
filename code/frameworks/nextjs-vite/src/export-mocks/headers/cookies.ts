@@ -5,7 +5,7 @@
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
 import { headers } from '@storybook/nextjs-vite/headers.mock';
 
-import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies';
+import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies/index.js';
 import { fn } from 'storybook/test';
 
 class RequestCookiesMock extends RequestCookies {

@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { Channel } from 'storybook/internal/channels';
 import type { Options, Presets } from 'storybook/internal/types';
 
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { loadConfigFromFile } from 'vite';
 
+import { storybookConfigPlugin } from './plugins/storybook-config-plugin';
 import { commonConfig } from './vite-config';
 
 vi.mock('vite', async (importOriginal) => ({
@@ -18,6 +19,7 @@ const dummyOptions: Options = {
   configType: 'DEVELOPMENT',
   configDir: '',
   packageJson: {},
+  channel: new Channel({}),
   presets: {
     apply: async (key: string) =>
       ({
@@ -35,7 +37,7 @@ const dummyOptions: Options = {
 };
 
 describe('commonConfig', () => {
-  it('should preserve default envPrefix', async () => {
+  it('should set configFile to false and include plugins', async () => {
     loadConfigFromFileMock.mockReturnValueOnce(
       Promise.resolve({
         config: {},
@@ -44,30 +46,45 @@ describe('commonConfig', () => {
       })
     );
     const config = await commonConfig(dummyOptions, 'development');
-    expect(config.envPrefix).toStrictEqual(['VITE_', 'STORYBOOK_']);
+    expect(config.configFile).toBe(false);
+    expect(config.plugins).toBeDefined();
+  });
+});
+
+describe('storybookConfigPlugin', () => {
+  it('should set default envPrefix when no user envPrefix is set', async () => {
+    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook' });
+    const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
+
+    // The config hook receives the current Vite config and returns partial config to merge
+    const result = await (configPlugin.config as Function)({}, {});
+    expect(result.envPrefix).toStrictEqual(['VITE_', 'STORYBOOK_']);
   });
 
-  it('should preserve custom envPrefix string', async () => {
-    loadConfigFromFileMock.mockReturnValueOnce(
-      Promise.resolve({
-        config: { envPrefix: 'SECRET_' },
-        path: '',
-        dependencies: [],
-      })
-    );
-    const config = await commonConfig(dummyOptions, 'development');
-    expect(config.envPrefix).toStrictEqual(['SECRET_', 'STORYBOOK_']);
+  it('should include storybook resolve conditions', async () => {
+    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook' });
+    const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
+
+    const result = await (configPlugin.config as Function)({}, {});
+    expect(result.resolve.conditions).toContain('storybook');
+    expect(result.resolve.conditions).toContain('stories');
+    expect(result.resolve.conditions).toContain('test');
   });
 
-  it('should preserve custom envPrefix array', async () => {
-    loadConfigFromFileMock.mockReturnValueOnce(
-      Promise.resolve({
-        config: { envPrefix: ['SECRET_', 'VUE_'] },
-        path: '',
-        dependencies: [],
-      })
-    );
-    const config = await commonConfig(dummyOptions, 'development');
-    expect(config.envPrefix).toStrictEqual(['SECRET_', 'VUE_', 'STORYBOOK_']);
+  it('should not set base when not provided', async () => {
+    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook' });
+    const configPlugin = plugins.find((p) => p.name === 'storybook:config-plugin')!;
+
+    const result = await (configPlugin.config as Function)({}, {});
+    expect(result.base).toBeUndefined();
+  });
+
+  it('should allow storybook dir when server fs allow list exists', () => {
+    const plugins = storybookConfigPlugin({ configDir: '/test/.storybook' });
+    const allowPlugin = plugins.find((p) => p.name === 'storybook:allow-storybook-dir')!;
+
+    const config = { server: { fs: { allow: ['/some/path'] } } };
+    (allowPlugin.config as Function)(config);
+    expect(config.server.fs.allow).toContain('/test/.storybook');
   });
 });

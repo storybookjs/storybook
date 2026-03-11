@@ -618,13 +618,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     ): Promise<void> => {
       if (!ref) {
         const { index, filteredIndex } = store.getState();
-        if (index) {
+        if (index && index[storyId]) {
           index[storyId] = {
             ...index[storyId],
             ...update,
           } as API_StoryEntry;
         }
-        if (filteredIndex) {
+        if (filteredIndex && filteredIndex[storyId]) {
           filteredIndex[storyId] = {
             ...filteredIndex[storyId],
             ...update,
@@ -635,14 +635,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
       } else {
         const { id: refId, index, filteredIndex }: any = ref;
-        index[storyId] = {
-          ...index[storyId],
-          ...update,
-        } as API_StoryEntry;
-        filteredIndex[storyId] = {
-          ...filteredIndex[storyId],
-          ...update,
-        } as API_StoryEntry;
+        if (index && index[storyId]) {
+          index[storyId] = {
+            ...index[storyId],
+            ...update,
+          } as API_StoryEntry;
+        }
+        if (filteredIndex && filteredIndex[storyId]) {
+          filteredIndex[storyId] = {
+            ...filteredIndex[storyId],
+            ...update,
+          } as API_StoryEntry;
+        }
         await fullAPI.updateRef(refId, { index, filteredIndex });
       }
     },
@@ -701,9 +705,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       await api.setIndex(index);
 
       const refs = await fullAPI.getRefs();
-      Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
-        fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
-      });
+      for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
+        await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+      }
 
       provider.channel?.emit(SET_FILTER, { id });
     },

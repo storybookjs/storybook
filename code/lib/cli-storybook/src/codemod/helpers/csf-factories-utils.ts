@@ -119,3 +119,29 @@ export function getConfigProperties(
   // error TS4058: Return type of exported function has or is using name 'ObjectProperty' from external module "/tmp/storybook/code/core/dist/babel/index" but cannot be named.
   return properties as any;
 }
+
+/**
+ * Adds an import declaration to the beginning of the program while preserving any leading comments
+ * (like license headers or @ts-check directives).
+ *
+ * When using `programNode.body.unshift()`, the import would be placed before any leading comments
+ * attached to the first node. This function transfers those comments to the new import so they
+ * remain at the top of the file.
+ *
+ * Note: We use the `comments` property (used by recast for printing) rather than `leadingComments`
+ * (used by babel internally) to ensure proper output formatting.
+ */
+export function addImportToTop(programNode: t.Program, importDecl: t.ImportDeclaration): void {
+  const firstNode = programNode.body[0] as t.Node & { comments?: t.Comment[] };
+
+  if (firstNode && firstNode.leadingComments && firstNode.leadingComments.length > 0) {
+    // Transfer leading comments from the first node to the import using 'comments' property
+    // which is what recast uses for printing (not 'leadingComments')
+    (importDecl as t.Node & { comments?: t.Comment[] }).comments = firstNode.leadingComments;
+    // Clear comments from the original first node to avoid duplication
+    firstNode.leadingComments = [];
+    firstNode.comments = [];
+  }
+
+  programNode.body.unshift(importDecl);
+}

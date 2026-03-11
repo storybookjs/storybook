@@ -1,8 +1,11 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { type JsPackageManager, executeCommand } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import {
+  type JsPackageManager,
+  PackageManagerName,
+  executeCommand,
+} from 'storybook/internal/common';
+import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
-import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import {
   executeAddonConfiguration,
@@ -95,7 +98,6 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     addons: extraAddons,
     configDir,
-    dependencyInstallationResult,
     options,
   });
 
@@ -113,7 +115,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       !!options.dev &&
       !options.skipInstall &&
       shouldRunDev !== false &&
-      ErrorCollector.getErrors().length === 0,
+      dependencyInstallationResult.status === 'success',
     shouldOnboard: newUser,
     projectType,
     packageManager,
@@ -173,29 +175,47 @@ async function runStorybookDev(result: {
   try {
     const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
 
-    const flags = [];
+    const parts = storybookCommand.split(' ');
 
-    if (packageManager.type === 'npm') {
-      flags.push('--silent');
-    }
-
-    // npm needs extra -- to pass flags to the command
-    // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
+    // Angular CLI throws "Unknown argument: silent"
     if (packageManager.type === 'npm' && projectType !== ProjectType.ANGULAR) {
-      flags.push('--');
+      parts.push('--silent');
     }
 
-    if (supportsOnboarding && shouldOnboard) {
-      flags.push('--initial-path=/onboarding');
-    }
+    // in the case of Angular, we are calling `ng run` which doesn't allow passing flags to the command
+    const supportSbFlags = projectType !== ProjectType.ANGULAR;
 
-    flags.push('--quiet');
+    if (supportSbFlags) {
+      // npm needs extra -- to pass flags to the command
+      const doesNeedExtraDash =
+        packageManager.type === PackageManagerName.NPM ||
+        packageManager.type === PackageManagerName.BUN;
+
+      if (doesNeedExtraDash) {
+        parts.push('--');
+      }
+
+      const defaultPort = 6006;
+      const availablePort = await getServerPort(defaultPort);
+      const useAlternativePort = availablePort !== defaultPort;
+
+      if (useAlternativePort) {
+        parts.push(`-p`, `${availablePort}`);
+      }
+
+      if (supportsOnboarding && shouldOnboard) {
+        parts.push('--initial-path=/onboarding');
+      }
+
+      parts.push('--quiet');
+    }
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
-    const [command, ...args] = [...storybookCommand.split(' '), ...flags];
-    executeCommand({
+    const [command, ...args] = [...parts];
+
+    await executeCommand({
       command: command,
       args,
       stdio: 'inherit',

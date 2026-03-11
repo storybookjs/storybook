@@ -15,7 +15,6 @@
     "@storybook/builder-vite": "file:../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "file:../../code/builders/builder-webpack5",
     "@storybook/codemod": "file:../../code/lib/codemod",
-    "storybook": "file:../../../code/core",
     "@storybook/core-webpack": "file:../../code/lib/core-webpack",
     "@storybook/csf-plugin": "file:../../code/lib/csf-plugin",
     "@storybook/ember": "file:../../code/frameworks/ember",
@@ -38,7 +37,8 @@
     "@storybook/vue3": "file:../../code/renderers/vue3",
     "@storybook/vue3-vite": "file:../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../code/renderers/web-components",
-    "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite"
+    "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite",
+    "storybook": "file:../../../code/core"
   },
   "devDependencies": {
     "@storybook/addon-docs": "*",

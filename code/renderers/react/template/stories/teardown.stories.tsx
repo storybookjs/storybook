@@ -15,7 +15,7 @@ export default {
   component: LoggingComponent,
   tags: ['autodocs'],
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

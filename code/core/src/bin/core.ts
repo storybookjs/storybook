@@ -2,7 +2,7 @@ import { getEnvConfig, optionalEnvToBoolean, parseList } from 'storybook/interna
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
-import { program } from 'commander';
+import { Option, program } from 'commander';
 import leven from 'leven';
 import picocolors from 'picocolors';
 
@@ -13,6 +13,7 @@ import { dev } from '../cli/dev';
 import { globalSettings } from '../cli/globalSettings';
 
 addToGlobalContext('cliVersion', version);
+process.env.STORYBOOK = 'true';
 
 /**
  * Core CLI for Storybook.
@@ -27,8 +28,10 @@ addToGlobalContext('cliVersion', version);
  */
 
 const handleCommandFailure = async (logFilePath: string | boolean): Promise<never> => {
-  const logFile = await logTracker.writeToFile(logFilePath);
-  logger.log(`Debug logs are written to: ${logFile}`);
+  try {
+    const logFile = await logTracker.writeToFile(logFilePath);
+    logger.log(`Debug logs are written to: ${logFile}`);
+  } catch {}
   logger.outro('Storybook exited with an error');
   process.exit(1);
 };
@@ -43,7 +46,11 @@ const command = (name: string) =>
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
-    .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
+    .addOption(
+      new Option('--loglevel <level>', 'Define log level')
+        .choices(['trace', 'debug', 'info', 'warn', 'error', 'silent'])
+        .default('info')
+    )
     .option(
       '--logfile [path]',
       'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
@@ -51,9 +58,8 @@ const command = (name: string) =>
     .hook('preAction', async (self) => {
       try {
         const options = self.opts();
-        if (options.loglevel) {
-          logger.setLogLevel(options.loglevel);
-        }
+        const loglevel = options.debug ? 'debug' : options.loglevel;
+        logger.setLogLevel(loglevel);
 
         if (options.logfile) {
           logTracker.enableLogWriting();
@@ -66,8 +72,10 @@ const command = (name: string) =>
     })
     .hook('postAction', async (command) => {
       if (logTracker.shouldWriteLogsToFile) {
-        const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
-        logger.outro(`Debug logs are written to: ${logFile}`);
+        try {
+          const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
+          logger.outro(`Debug logs are written to: ${logFile}`);
+        } catch {}
       }
     });
 

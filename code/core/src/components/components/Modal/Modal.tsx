@@ -4,7 +4,12 @@ import { deprecate } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
 import { FocusScope } from '@react-aria/focus';
-import { Overlay, UNSAFE_PortalProvider, useModalOverlay } from '@react-aria/overlays';
+import {
+  Overlay,
+  UNSAFE_PortalProvider,
+  ariaHideOutside,
+  useModalOverlay,
+} from '@react-aria/overlays';
 import { mergeProps } from '@react-aria/utils';
 import { useOverlayTriggerState } from '@react-stately/overlays';
 import type { KeyboardEvent as RAKeyboardEvent } from '@react-types/shared';
@@ -84,7 +89,9 @@ function BaseModal({
   variant = 'dialog',
   ...props
 }: ModalProps) {
+  let deprecated = undefined;
   if (ariaLabel === undefined || ariaLabel === '') {
+    deprecated = 'ariaLabel';
     deprecate('The `ariaLabel` prop on `Modal` will become mandatory in Storybook 11.');
     // TODO in Storybook 11
     // throw new Error(
@@ -93,12 +100,14 @@ function BaseModal({
   }
 
   if (onEscapeKeyDown !== undefined) {
+    deprecated = 'onEscapeKeyDown';
     deprecate(
       'The `onEscapeKeyDown` prop is deprecated and will be removed in Storybook 11. Use `dismissOnEscape` instead.'
     );
   }
 
   if (onInteractOutside !== undefined) {
+    deprecated = 'onInteractOutside';
     deprecate(
       'The `onInteractOutside` prop is deprecated and will be removed in Storybook 11. Use `dismissOnInteractOutside` instead.'
     );
@@ -165,6 +174,12 @@ function BaseModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted]);
 
+  useEffect(() => {
+    if (isMounted && (open || defaultOpen) && overlayRef.current) {
+      return ariaHideOutside([overlayRef.current], { shouldUseInert: true });
+    }
+  }, [isMounted, open, defaultOpen, overlayRef]);
+
   if (!isMounted || status === 'exited' || status === 'unmounted') {
     return null;
   }
@@ -201,18 +216,22 @@ function BaseModal({
         />
         <div role="dialog" aria-label={ariaLabel} ref={overlayRef} {...finalModalProps}>
           <ModalContext.Provider value={{ close }}>
-            {/* We need to set the FocusScope ourselves somehow, Overlay won't set it. */}
-            <Components.Container
-              $variant={variant}
-              $status={status}
-              $transitionDuration={transitionDuration}
-              className={className}
-              width={width}
-              height={height}
-              {...props}
-            >
-              {children}
-            </Components.Container>
+            {/* This div exists to help the FocusScope, see https://github.com/adobe/react-spectrum/issues/1604. */}
+            <div tabIndex={-1}>
+              {/* We need to set the FocusScope ourselves somehow, Overlay won't set it. */}
+              <Components.Container
+                data-deprecated={deprecated}
+                $variant={variant}
+                $status={status}
+                $transitionDuration={transitionDuration}
+                className={className}
+                width={width}
+                height={height}
+                {...props}
+              >
+                {children}
+              </Components.Container>
+            </div>
           </ModalContext.Provider>
         </div>
       </FocusScope>

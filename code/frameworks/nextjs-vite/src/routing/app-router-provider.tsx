@@ -12,13 +12,13 @@ import {
   AppRouterContext,
   GlobalLayoutRouterContext,
   LayoutRouterContext,
-} from 'next/dist/shared/lib/app-router-context.shared-runtime';
+} from 'next/dist/shared/lib/app-router-context.shared-runtime.js';
 import {
   PathParamsContext,
   PathnameContext,
   SearchParamsContext,
-} from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
-import { PAGE_SEGMENT_KEY } from 'next/dist/shared/lib/segment';
+} from 'next/dist/shared/lib/hooks-client-context.shared-runtime.js';
+import { PAGE_SEGMENT_KEY } from 'next/dist/shared/lib/segment.js';
 
 import type { RouteParams } from './types';
 

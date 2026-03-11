@@ -43,16 +43,26 @@ export class VersionService {
   }
 
   /**
-   * Extract CLI integration from process ancestry Detects if Storybook was invoked via sv create or
-   * sv add commands
+   * Extract CLI integration from process ancestry Detects if Storybook was invoked via sv create,
+   * sv add, create-rsbuild, or @tanstack/start commands
    */
   getCliIntegrationFromAncestry(
     ancestry: ReturnType<typeof getProcessAncestry>
   ): string | undefined {
     for (const ancestor of ancestry.toReversed()) {
-      const match = ancestor.command?.match(/(?:^|\s)(sv(?:@[^ ]+)? (?:create|add))/i);
-      if (match) {
-        return match[1].toLowerCase().includes('add') ? 'sv add' : 'sv create';
+      // Check for sv create/add
+      const svMatch = ancestor.command?.match(/(?:^|\s)(sv(?:@[^ ]+)? (?:create|add))/i);
+      if (svMatch) {
+        return svMatch[1].toLowerCase().includes('add') ? 'sv add' : 'sv create';
+      }
+      // Check for create-rsbuild or create rsbuild
+      const rsbuildMatch = ancestor.command?.match(/(?:^|\s)create[\s\-]rsbuild/i);
+      if (rsbuildMatch) {
+        return 'create-rsbuild';
+      }
+      // Check for @tanstack/start
+      if (ancestor.command?.includes('@tanstack/start')) {
+        return '@tanstack/start';
       }
     }
     return undefined;

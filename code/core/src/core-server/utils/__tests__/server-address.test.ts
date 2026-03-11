@@ -1,28 +1,38 @@
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { getServerAddresses } from '../server-address';
 
-vi.mock('node:os');
+const mockedNetworkAddress: NetworkInterfaceInfoIPv4 = {
+  address: '192.168.0.5',
+  netmask: '255.255.255.0',
+  family: 'IPv4',
+  mac: '01:02:03:0a:0b:0c',
+  internal: false,
+  cidr: '192.168.0.5/24',
+};
+
+vi.mock(
+  'node:os',
+  async (importOriginal): Promise<typeof os & { default: typeof os }> => ({
+    ...(await importOriginal()),
+    // We have to mock both the default export and named exports here for whatever reason
+    ['default' as never]: {
+      networkInterfaces: vi.fn(() => ({
+        eth0: [mockedNetworkAddress],
+      })),
+      release: vi.fn(() => '10.0.26100'),
+    },
+    networkInterfaces: vi.fn(() => ({
+      eth0: [mockedNetworkAddress],
+    })),
+    release: vi.fn(() => '10.0.26100'),
+  })
+);
 const mockedOs = vi.mocked(os);
 
 describe('getServerAddresses', () => {
-  const mockedNetworkAddress: NetworkInterfaceInfoIPv4 = {
-    address: '192.168.0.5',
-    netmask: '255.255.255.0',
-    family: 'IPv4',
-    mac: '01:02:03:0a:0b:0c',
-    internal: false,
-    cidr: '192.168.0.5/24',
-  };
-
-  beforeEach(() => {
-    mockedOs.networkInterfaces.mockReturnValue({
-      eth0: [mockedNetworkAddress],
-    });
-  });
-
   it('builds addresses with a specified host', () => {
     const { address, networkAddress } = getServerAddresses(9009, '192.168.89.89', 'http');
     expect(address).toEqual('http://localhost:9009/');

@@ -42,6 +42,7 @@ const mockRunOptions = {
   mainConfigPath: 'main.ts',
   packageJson: mockPackageJson,
   storiesPaths: [],
+  hasCsfFactoryPreview: false,
 };
 
 const setupGlobby = async (files: string[]) => {

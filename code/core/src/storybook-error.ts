@@ -23,6 +23,8 @@ export function appendErrorRef(url: string): string {
 }
 
 export abstract class StorybookError extends Error {
+  private _name: string | undefined;
+
   /** Category of the error. Used to classify the type of error, e.g., 'PREVIEW_API'. */
   public readonly category: string;
 
@@ -48,27 +50,67 @@ export abstract class StorybookError extends Error {
   /** Flag used to easily determine if the error originates from Storybook. */
   readonly fromStorybook: true = true as const;
 
+  /**
+   * Flag used to determine if the error is handled by us and should therefore not be shown to the
+   * user.
+   */
+  public isHandledError = false;
+
   get fullErrorCode() {
     return parseErrorCode({ code: this.code, category: this.category });
   }
 
   /** Overrides the default `Error.name` property in the format: SB_<CATEGORY>_<CODE>. */
   get name() {
-    const errorName = this.constructor.name;
+    const errorName = this._name || this.constructor.name;
 
     return `${this.fullErrorCode} (${errorName})`;
   }
+
+  set name(name: string) {
+    this._name = name;
+  }
+
+  /**
+   * A collection of sub errors which relate to a parent error.
+   *
+   * Sub-errors are used to represent multiple related errors that occurred together. When a
+   * StorybookError with sub-errors is sent to telemetry, both the parent error and each sub-error
+   * are sent as separate telemetry events. This allows for better error tracking and debugging.
+   *
+   * @example
+   *
+   * ```ts
+   * const error1 = new SomeError();
+   * const error2 = new AnotherError();
+   * const parentError = new ParentError({
+   *   // ... other props
+   *   subErrors: [error1, error2],
+   * });
+   * ```
+   */
+  subErrors: StorybookError[] = [];
 
   constructor(props: {
     category: string;
     code: number;
     message: string;
     documentation?: boolean | string | string[];
+    isHandledError?: boolean;
+    name: string;
+    /**
+     * Optional array of sub-errors that are related to this error. When this error is sent to
+     * telemetry, each sub-error will be sent as a separate event.
+     */
+    subErrors?: StorybookError[];
   }) {
     super(StorybookError.getFullMessage(props));
     this.category = props.category;
     this.documentation = props.documentation ?? false;
     this.code = props.code;
+    this.isHandledError = props.isHandledError ?? false;
+    this.name = props.name;
+    this.subErrors = props.subErrors ?? [];
   }
 
   /** Generates the error message along with additional documentation link (if applicable). */

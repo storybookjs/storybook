@@ -60,6 +60,8 @@ export class StorybookReporter implements Reporter {
     this.ctx.state.pathsSet.clear();
     this.ctx.state.idMap.clear();
     this.ctx.state.errorsSet.clear();
-    this.ctx.state.processTimeoutCauses.clear();
+    // TODO: Remove this once we don't support Vitest < 4
+    // @ts-expect-error processTimeoutCauses does not exist in Vitest 4
+    this.ctx.state.processTimeoutCauses?.clear();
   }
 }

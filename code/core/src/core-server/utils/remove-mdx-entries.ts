@@ -5,6 +5,7 @@ import type { Options, StoriesEntry } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 export async function removeMDXEntries(

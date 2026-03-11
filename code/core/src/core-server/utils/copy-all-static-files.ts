@@ -20,7 +20,7 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
           if (!staticDir.includes('node_modules')) {
             const from = picocolors.cyan(print(staticDir));
             const to = picocolors.cyan(print(targetDir));
-            logger.info(`=> Copying static files: ${from} => ${to}`);
+            logger.info(`Copying static files: ${from} => ${to}`);
           }
 
           // Storybook's own files should not be overwritten, so we skip such files if we find them
@@ -65,7 +65,7 @@ export async function copyAllStaticFilesRelativeToMain(
     const skipPaths = ['index.html', 'iframe.html'].map((f) => join(outputDir, f));
     if (!from.includes('node_modules')) {
       logger.info(
-        `=> Copying static files: ${picocolors.cyan(print(from))} at ${picocolors.cyan(print(targetPath))}`
+        `Copying static files: ${picocolors.cyan(print(from))} at ${picocolors.cyan(print(targetPath))}`
       );
     }
     await cp(from, targetPath, {

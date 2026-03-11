@@ -1,10 +1,9 @@
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, within } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import { Heading } from '../blocks/Heading';
 import { TableOfContents } from './TableOfContents';

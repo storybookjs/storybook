@@ -6,7 +6,6 @@ import { Link } from 'storybook/internal/components';
 import {
   BooleanControl,
   ColorControl,
-  type ControlProps,
   DateControl,
   FilesControl,
   NumberControl,

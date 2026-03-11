@@ -1,7 +1,5 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { moduleMetadata } from '@storybook/angular';
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
@@ -40,6 +38,47 @@ export const ManyItems: Story = {
     `,
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { List } from './list.component';
+import { ListItem } from './list-item.component';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+  decorators: [
+    moduleMetadata({
+      declarations: [List, ListItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+export const ManyItems = meta.story({
+  args: {
+    Selected: Selected.input.args.isSelected,
+    Unselected: Unselected.input.args.isSelected,
+  },
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-list>
+        <app-list-item [isSelected]="Selected"></app-list-item>
+        <app-list-item [isSelected]="Unselected"></app-list-item>
+        <app-list-item [isSelected]="Unselected"></app-list-item>
+      </app-list>
+    `,
+  }),
+});
 ```
 
 ```js filename="List.stories.js" renderer="html" language="js"
@@ -91,8 +130,8 @@ export const ManyItems: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
-import React from 'react';
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+import * as React from 'react';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -115,7 +154,9 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+import * as React from 'react';
+
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -143,7 +184,7 @@ export const ManyItems: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -244,7 +285,7 @@ export const ManyItems: Story = {
 </Story>
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';
 
@@ -275,7 +316,7 @@ export const ManyItems = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './ListComponent.vue';
@@ -311,47 +352,124 @@ export const ManyItems: Story = {
 };
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
-// 👇 We're importing the necessary stories from ListItem
+import List from './ListComponent.vue';
+import ListItem from './ListItem.vue';
+
+//👇 We're importing the necessary stories from ListItem
 import { Selected, Unselected } from './ListItem.stories';
 
-export default {
-  component: 'demo-list',
-};
+const meta = preview.meta({
+  component: List,
+});
 
-export const ManyItems = {
-  render: (args) => html`
-    <demo-list>
-      ${Selected({ ...args, ...Selected.args })} ${Unselected({ ...args, ...Unselected.args })}
-      ${Unselected({ ...args, ...Unselected.args })}
-    </demo-list>
-  `,
-};
+export const ManyItems = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <list-item :isSelected="Selected"/>
+        <list-item :isSelected="Unselected"/>
+        <list-item :isSelected="Unselected"/>
+      </List>`,
+  }),
+  args: {
+    Selected: Selected.input.args.isSelected,
+    Unselected: Unselected.input.args.isSelected,
+  },
+});
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-import { html } from 'lit';
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
-// 👇 We're importing the necessary stories from ListItem
+import List from './ListComponent.vue';
+import ListItem from './ListItem.vue';
+
+//👇 We're importing the necessary stories from ListItem
 import { Selected, Unselected } from './ListItem.stories';
 
-const meta: Meta = {
-  component: 'demo-list',
-};
+const meta = preview.meta({
+  component: List,
+});
 
-export default meta;
-type Story = StoryObj;
+export const ManyItems = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <list-item :isSelected="Selected"/>
+        <list-item :isSelected="Unselected"/>
+        <list-item :isSelected="Unselected"/>
+      </List>`,
+  }),
+  args: {
+    Selected: Selected.input.args.isSelected,
+    Unselected: Unselected.input.args.isSelected,
+  },
+});
+```
 
-export const ManyItems: Story = {
-  render: (args) => html`
-    <demo-list>
-      ${Selected({ ...args, ...Selected.args })} ${Unselected({ ...args, ...Unselected.args })}
-      ${Unselected({ ...args, ...Unselected.args })}
-    </demo-list>
-  `,
-};
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Unselected.input.args} />
+    </List>
+  ),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Unselected.input.args} />
+    </List>
+  ),
+});
 ```

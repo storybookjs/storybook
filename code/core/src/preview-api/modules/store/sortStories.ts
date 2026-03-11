@@ -46,7 +46,7 @@ export const sortStoriesV7 = (
     Error sorting stories with sort parameter ${storySortParameter}:
 
     > ${(err as Error).message}
-    
+
     Are you using a V6-style sort function in V7 mode?
 
     More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#v7-style-story-sort
@@ -55,8 +55,8 @@ export const sortStoriesV7 = (
 };
 
 const toIndexEntry = (story: any): StoryIndexEntry => {
-  const { id, title, name, parameters, type } = story;
-  return { id, title, name, importPath: parameters.fileName, type };
+  const { id, title, name, parameters, type, subtype, parent } = story;
+  return { id, title, name, importPath: parameters.fileName, type, subtype, parent };
 };
 
 export const sortStoriesV6 = <TRenderer extends Renderer>(

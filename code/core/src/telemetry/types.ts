@@ -2,10 +2,13 @@ import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/type
 
 import type { DetectResult } from 'package-manager-detector';
 
+import type { AgentInfo } from './detect-agent';
+import type { KnownPackagesList } from './get-known-packages';
 import type { MonorepoType } from './get-monorepo-type';
 
 export type EventType =
   | 'boot'
+  | 'add'
   | 'dev'
   | 'build'
   | 'index'
@@ -16,6 +19,7 @@ export type EventType =
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
+  | 'exit'
   | 'error'
   | 'error-metadata'
   | 'version-update'
@@ -24,6 +28,7 @@ export type EventType =
   | 'save-story'
   | 'create-new-story-file'
   | 'create-new-story-file-search'
+  | 'open-in-editor'
   | 'testing-module-watch-mode'
   | 'testing-module-completed-report'
   | 'testing-module-crash-report'
@@ -31,8 +36,15 @@ export type EventType =
   | 'test-run'
   | 'addon-onboarding'
   | 'onboarding-survey'
-  | 'mocking';
-
+  | 'onboarding-checklist-muted'
+  | 'onboarding-checklist-status'
+  | 'mocking'
+  | 'automigrate'
+  | 'migrate'
+  | 'preview-first-load'
+  | 'doctor'
+  | 'share'
+  | 'ghost-stories';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -47,9 +59,11 @@ export type StorybookMetadata = {
   storybookVersionSpecifier: string;
   generatedAt?: number;
   userSince?: number;
+  /** If we can identify the agent, report it; otherwise `unknown` when detected heuristically. */
+  agent?: AgentInfo;
   language: 'typescript' | 'javascript';
   framework?: {
-    name: string;
+    name?: string;
     options?: any;
   };
   builder?: string;
@@ -69,7 +83,8 @@ export type StorybookMetadata = {
     packageName: string;
     version: string;
   };
-  testPackages?: Record<string, string | undefined>;
+  packageJsonType?: 'unknown' | 'module' | 'commonjs';
+  knownPackages?: KnownPackagesList;
   hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;
   hasStaticDirs?: boolean;
@@ -88,6 +103,10 @@ export interface Payload {
   [key: string]: any;
 }
 
+export interface Context {
+  [key: string]: any;
+}
+
 export interface Options {
   retryDelay: number;
   immediate: boolean;
@@ -101,4 +120,18 @@ export interface TelemetryData {
   eventType: EventType;
   payload: Payload;
   metadata?: StorybookMetadata;
+}
+
+export interface TelemetryEvent extends TelemetryData {
+  eventId: string;
+  sessionId: string;
+  context: Context;
+}
+
+export interface InitPayload {
+  projectType: string;
+  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  newUser: boolean;
+  versionSpecifier: string | undefined;
+  cliIntegration: string | undefined;
 }

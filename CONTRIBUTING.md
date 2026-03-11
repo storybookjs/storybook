@@ -1,4 +1,6 @@
 # Contributors Guide
+> Tip: If you want to make a fast contribution, check the “good first issue” label in the Issues tab for small frontend and docs tasks that are easy to fix directly on GitHub.
+
 
 We welcome contributions of any type and skill level. As an open-source project, we believe in the power of community and welcome any contributions that help us improve Storybook. Whether you are a developer, designer, writer, or someone who wants to help, we'd love to have you on board. If you are interested in contributing, please read the following guidelines.
 
@@ -91,8 +93,7 @@ Here's a highlight of notable directories and files:
 │   ├── vitest-setup.ts
 │   ├── vitest.config.ts
 │   ├── vitest.helpers.ts
-│   ├── vitest.workspace.ts
-│   └── yarn.lock
+│   └── vitest.workspace.ts
 ├── codecov.yml
 ├── dependabot.yml
 ├── docs                         # Documentation
@@ -115,7 +116,7 @@ Here's a highlight of notable directories and files:
 │   ├── writing-stories
 │   └── writing-tests
 ├── node_modules
-├── package.json                      # Root package.json for Storybook
+├── package.json                      # Root of the yarn monorepo
 ├── prettier.config.mjs
 ├── scripts                           # Build and Helper Scripts
 ├── test-storybooks
@@ -129,7 +130,9 @@ Here's a highlight of notable directories and files:
 
 ### Fork the repository 
 
-If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the main repository when you're ready to contribute your changes. Once you've forked the repository, you should [disable Github Actions for your forked repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) as most of them (e.g., pushing to sandbox) will fail without proper authorization. In your forked repository, go to Settings > Actions > General > set the Actions Permissions to **Disable actions**. Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
+If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the main repository when you're ready to contribute your changes.
+
+Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
 
 ```shell
 git remote add upstream https://github.com/storybookjs/storybook.git
@@ -145,11 +148,11 @@ If you're interested in contributing to Storybook's codebase, you can run it loc
 # Navigate to the root directory of the Storybook repository 
 cd path/to/your/storybook/fork 
 
-# Install the required dependencies and start the development environment 
+# Install the required dependencies
+yarn
+# start the development environment 
 yarn start
 ```
-
-You don't need to install the dependencies manually to get the project running. The `yarn start` command will install the required dependencies for you.
 
 ### Making code changes 
 
@@ -157,7 +160,7 @@ If you want to make code changes to Storybook packages while running a sandbox, 
 
 1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory.
 
-For example, if you want to build the `@storybook/react`, `@storybook/core-server`, `@storybook/api`, and `@storybook/addon-docs` packages, you would run: 
+For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
 
 ```shell 
 # Navigate to the code directory 
@@ -168,10 +171,11 @@ yarn build --watch react core-server api addon-docs
 
 Most package names can be found after `@storybook/` in the published package.
 
-For instance, to build the `@storybook/react @storybook/core-server @storybook/api @storybook/addon-docs` packages at the same time in watch mode:
+For instance, to build the `@storybook/react storybook @storybook/builder-vite @storybook/addon-docs` packages at the same time in watch mode:
 
 ```shell 
-cd code yarn build --watch react core-server api addon-docs 
+cd code
+yarn build --watch react storybook builder-vite addon-docs 
 ```
 
 2. If you are running the sandbox in ["linked"](https://yarnpkg.com/cli/link) mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages) 
@@ -195,12 +199,23 @@ yarn task --prod
 
 ```shell
 # Builds the specified packages in production mode
-yarn build --prod --watch angular core addon-docs
+yarn build --prod --watch angular storybook addon-docs
 ```
 
 ### Running against different sandbox templates 
 
 You can pick a specific template to use as your sandbox by running `yarn task`, which will prompt you to make further choices about which template you want and which task you want to run.
+
+### Focussing on fixing a sandbox in CI
+
+Our CI runs many sandboxes, especially when selecting the `ci:daily` workflow.
+
+When a particular sandbox is failing, it's preferred to debug locally, but if this is somehow not possible, you can force the Ci to focus on a selection of sandboxes instead of running all. Here's the process of how:
+
+Inside of here you can edit the filter-function:
+https://github.com/storybookjs/storybook/blob/3d49093954243d4d520774243866de840f298bf4/scripts/ci/main.ts#L70-L88
+
+In fact you can filter on any job you wish, only running `test-runner`, `e2e`, `vite`-sandboxes, etc.
 
 ## Troubleshooting 
 

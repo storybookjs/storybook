@@ -53,7 +53,7 @@ Storybook will prioritize the `id` over the title for ID generation if provided 
 
 ## CSF 3.0 auto-titles
 
-Storybook 6.4 introduced [CSF 3.0](https://storybook.js.org/blog/component-story-format-3-0/) as an experimental feature, allowing you to write stories more compactly. Suppose you're already using this format to write your stories. In that case, you can omit the `title` element from the default export and allow Storybook automatically infer it based on the file's physical location. For example, given the following configuration and story:
+Storybook 6.4 introduced [CSF 3.0](https://storybook.js.org/blog/component-story-format-3-0/) as an experimental feature, allowing you to write stories more compactly. Suppose you're already using this format to write your stories. In that case, you can omit the `title` element from the meta (or default export) and allow Storybook automatically infer it based on the file's physical location. For example, given the following configuration and story:
 
 {/* prettier-ignore-start */}
 
@@ -88,7 +88,7 @@ If you need, you can revert to the previous pattern by adding the following conf
 
 In addition to improvements to the story file name casing, a new heuristic was introduced, removing redundant names in case the filename has the same name as the directory name, or if it's called `index.stories.js|ts`. For example, before `components/MyComponent/MyComponent.stories.js` was defined as `Components/MyComponent/MyComponent` in the sidebar. Now it will be defined as `Components/MyComponent`.
 
-If you need to preserve the naming scheme, you can add the `title` element to the default export. For example:
+If you need to preserve the naming scheme, you can add the `title` element to the meta (or default export). For example:
 
 {/* prettier-ignore-start */}
 

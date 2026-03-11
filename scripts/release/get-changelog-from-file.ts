@@ -1,9 +1,8 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
-import { readFile } from 'fs-extra';
 import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';

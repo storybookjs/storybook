@@ -18,6 +18,9 @@ const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
   } else if (parameters?.test?.clearMocks === true) {
     clearAllMocks();
   } else if (parameters?.test?.restoreMocks !== false) {
+    // Note: restoreAllMocks() now only affects manual spies (vi.spyOn) in Vitest,
+    // automocks are no longer affected since Vitest 4. This could lead to test pollution if
+    // automock state persists between stories.
     restoreAllMocks();
   }
 };
@@ -90,43 +93,63 @@ const enhanceContext: LoaderFunction = async (context) => {
     context.canvas = within(context.canvasElement);
   }
 
-  // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
-  // which will throw an error in react native for example.
-  const clipboard = globalThis.window?.navigator?.clipboard;
-  if (clipboard) {
-    context.userEvent = instrument(
-      { userEvent: uninstrumentedUserEvent.setup() },
-      { intercept: true }
-    ).userEvent;
+  try {
+    // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
+    // which will throw an error in react native for example.
+    const clipboard = globalThis.window?.navigator?.clipboard;
+    if (clipboard) {
+      context.userEvent = instrument(
+        { userEvent: uninstrumentedUserEvent.setup() },
+        {
+          intercept: true,
+          getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
+        }
+      ).userEvent;
 
-    // Restore original clipboard, which was replaced with a stub by userEvent.setup()
-    Object.defineProperty(globalThis.window.navigator, 'clipboard', {
-      get: () => clipboard,
-      configurable: true,
-    });
-
-    let currentFocus = HTMLElement.prototype.focus;
-
-    if (!patchedFocus) {
-      // We need to patch the focus method of HTMLElement.prototype to make it settable.
-      // Testing library "setup" defines a custom focus method on HTMLElement.prototype that is not settable.
-      // Libraries like chakra-ui also wants to define a custom focus method on HTMLElement.prototype
-      // which is not settable if we don't do this.
-      // Related issue: https://github.com/storybookjs/storybook/issues/31243
-      Object.defineProperties(HTMLElement.prototype, {
-        focus: {
-          configurable: true,
-          set: (newFocus: () => void) => {
-            currentFocus = newFocus;
-            patchedFocus = true;
-          },
-          get: () => {
-            return currentFocus;
-          },
-        },
+      // Restore original clipboard, which was replaced with a stub by userEvent.setup()
+      Object.defineProperty(globalThis.window.navigator, 'clipboard', {
+        get: () => clipboard,
+        configurable: true,
       });
+
+      if (!patchedFocus) {
+        // Must save a real, original `focus` method outside of the patch beforehand
+        const originalFocus = HTMLElement.prototype.focus;
+        let currentFocus = HTMLElement.prototype.focus;
+
+        // Use a Set to track elements that are currently undergoing a focus operation
+        const focusingElements = new Set<HTMLElement>();
+
+        Object.defineProperties(HTMLElement.prototype, {
+          focus: {
+            configurable: true,
+            set: (newFocus: () => void) => {
+              currentFocus = newFocus;
+            },
+            get() {
+              // 'this' here refers to the DOM element being operated on
+              if (focusingElements.has(this)) {
+                // Recursive call detected; to break the loop, return the original focus method.
+                return originalFocus;
+              }
+
+              // Add protection marker
+              focusingElements.add(this);
+
+              // Use setTimeout(..., 0) to defer the "remove marker" operation to the next event loop.
+              // This ensures the marker persists for the entire synchronous call chain (including all recursive calls).
+              setTimeout(() => focusingElements.delete(this), 0);
+
+              // Return the focus method that should currently be used
+              return currentFocus;
+            },
+          },
+        });
+
+        patchedFocus = true;
+      }
     }
-  }
+  } catch {}
 };
 
 interface TestParameters {

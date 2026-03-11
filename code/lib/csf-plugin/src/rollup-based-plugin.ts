@@ -23,7 +23,7 @@ export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlug
         const csfSource = loadCsf(sourceCode, {
           makeTitle,
         }).parse();
-        enrichCsf(csf, csfSource, options);
+        await enrichCsf(csf, csfSource, options);
         const inputSourceMap = this.getCombinedSourcemap();
         return formatCsf(csf, { sourceMaps: true, inputSourceMap }, code);
       } catch (err: any) {

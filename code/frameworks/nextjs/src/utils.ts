@@ -9,6 +9,7 @@ import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 import nextJsLoadConfigModule from 'next/dist/server/config.js';
+import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
@@ -24,6 +25,12 @@ export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfi
 export const getNextjsVersion = (): string =>
   JSON.parse(readFileSync(join(resolvePackageDir('next'), 'package.json'), 'utf8')).version;
 
+export const isNextVersionGte = (version: string): boolean => {
+  const currentVersion = getNextjsVersion();
+  const coercedVersion = semver.coerce(currentVersion);
+  return coercedVersion ? semver.gte(coercedVersion, version) : false;
+};
+
 export const resolveNextConfig = async ({
   nextConfigPath,
 }: {
@@ -31,7 +38,24 @@ export const resolveNextConfig = async ({
 }): Promise<NextConfig> => {
   const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
   const loadConfig = (nextJsLoadConfigModule as any).default ?? nextJsLoadConfigModule;
-  return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
+
+  // This hack is necessary to prevent Next.js override Node.js' module resolution
+  // Next.js attempts to set aliases for webpack imports on the module resolution level
+  // which leads to two webpack versions used at the same time. It seems that Next.js doesn't
+  // forward/alias all possible webpack imports.
+  const nextPrivateRenderWorker = process.env.__NEXT_PRIVATE_RENDER_WORKER;
+
+  process.env.__NEXT_PRIVATE_RENDER_WORKER = 'defined';
+
+  const config = loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
+
+  if (typeof nextPrivateRenderWorker === 'undefined') {
+    delete process.env.__NEXT_PRIVATE_RENDER_WORKER;
+  } else {
+    process.env.__NEXT_PRIVATE_RENDER_WORKER = nextPrivateRenderWorker;
+  }
+
+  return config;
 };
 
 export function setAlias(baseConfig: WebpackConfig, name: string, alias: string) {

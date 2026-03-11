@@ -41,6 +41,8 @@ async function webpack(
 
   const { csfPluginOptions = {}, mdxPluginOptions = {} } = options;
 
+  const enrichCsf = await options.presets.apply('experimental_enrichCsf');
+
   const rehypeSlug = (await import('rehype-slug')).default;
   const rehypeExternalLinks = (await import('rehype-external-links')).default;
 
@@ -100,7 +102,12 @@ async function webpack(
       ...(webpackConfig.plugins || []),
 
       ...(csfPluginOptions
-        ? [(await import('@storybook/csf-plugin')).webpack(csfPluginOptions)]
+        ? [
+            (await import('@storybook/csf-plugin')).webpack({
+              ...csfPluginOptions,
+              enrichCsf,
+            }),
+          ]
         : []),
     ],
     resolve: {
@@ -204,6 +211,14 @@ export const resolvedReact = async (existing: any) => ({
   mdx: existing?.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
 });
 
-const optimizeViteDeps = ['@mdx-js/react', '@storybook/addon-docs', 'markdown-to-jsx'];
+const optimizeViteDeps = [
+  '@storybook/addon-docs',
+  '@storybook/addon-docs/blocks',
+  '@storybook/addon-docs > @mdx-js/react',
+  '@storybook/addon-docs > @storybook/react-dom-shim',
+  'react-dom/client',
+  'react/jsx-runtime',
+];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };
+export { manifests as experimental_manifests } from './manifest';

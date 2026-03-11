@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize, relative } from 'node:path';
 
 import type { OutputFile } from 'esbuild';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import type { Compilation } from '../types';

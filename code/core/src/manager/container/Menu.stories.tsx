@@ -1,12 +1,14 @@
 import React from 'react';
 
-import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 
-import { Shortcut } from './Menu';
+import { initialState } from '../../shared/checklist-store/checklistData.state';
+import { Shortcut } from '../components/Shortcut';
+import { internal_universalChecklistStore as mockStore } from '../manager-stores.mock';
 
 const onLinkClick = action('onLinkClick');
 
@@ -19,12 +21,30 @@ export default {
           height: '300px',
         }}
       >
-        <WithTooltip placement="top" startOpen tooltip={storyFn()}>
-          <div>Tooltip</div>
-        </WithTooltip>
+        <PopoverProvider
+          ariaLabel="Menu"
+          placement="top"
+          defaultVisible
+          padding={0}
+          popover={storyFn()}
+        >
+          <Button ariaLabel={false}>Click me</Button>
+        </PopoverProvider>
       </div>
     ),
   ],
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
+    });
+  },
   excludeStories: ['links'],
 } satisfies Meta<typeof TooltipLinkList>;
 

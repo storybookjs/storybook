@@ -1,20 +1,32 @@
-import path from 'node:path';
-import { join } from 'node:path';
+import { access, cp, rm } from 'node:fs/promises';
+import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, remove } from 'fs-extra';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants';
 
 const logger = console;
 
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
-  dependsOn: ({ template }, { link }) => {
+  dependsOn: ({ template, key }, { link }) => {
     if ('inDevelopment' in template && template.inDevelopment) {
+      if (pathExists(join(SANDBOX_DIRECTORY, key))) {
+        return ['run-registry'];
+      }
+
       return ['run-registry', 'generate'];
     }
 
@@ -39,6 +51,7 @@ export const sandbox: Task = {
       'serve',
       'chromatic',
       'bench',
+      'check-sandbox',
     ];
     const isSelectedTaskAfterSandboxCreation = tasksAfterSandbox.includes(selectedTask);
     return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
@@ -54,7 +67,7 @@ export const sandbox: Task = {
 
     if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
-      await remove(details.sandboxDir);
+      await rm(details.sandboxDir, { force: true, recursive: true });
     }
 
     const {
@@ -77,18 +90,18 @@ export const sandbox: Task = {
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
       'lodash-es',
+      '@types/lodash-es',
+      '@types/aria-query',
       'uuid',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
-    options.addon.push('@storybook/addon-a11y');
-
     if (shouldAddVitestIntegration) {
-      extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
+      extraDeps.push('happy-dom');
 
       if (details.template.expected.framework.includes('nextjs')) {
-        extraDeps.push('@storybook/nextjs-vite', 'jsdom');
+        extraDeps.push('jsdom');
       }
 
       // if (details.template.expected.renderer === '@storybook/svelte') {
@@ -98,8 +111,6 @@ export const sandbox: Task = {
       // if (details.template.expected.framework === '@storybook/angular') {
       //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
       // }
-
-      options.addon.push('@storybook/addon-vitest');
     }
 
     let startTime = now();
@@ -136,7 +147,7 @@ export const sandbox: Task = {
     }
 
     // not if sandbox is bench
-    if (!details.template.name.includes('Bench')) {
+    if (!details.template.modifications?.skipMocking) {
       await addGlobalMocks(details, options);
     }
 
@@ -155,18 +166,48 @@ export const sandbox: Task = {
 
     await setImportMap(details.sandboxDir);
 
-    const { JsPackageManagerFactory } = await import(
-      '../../code/core/src/common/js-package-manager/JsPackageManagerFactory'
-    );
+    const { JsPackageManagerFactory } =
+      await import('../../code/core/src/common/js-package-manager/JsPackageManagerFactory');
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
-    await remove(path.join(details.sandboxDir, 'node_modules'));
+    await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
     await packageManager.installDependencies();
 
     await runMigrations(details, options);
 
     await extendPreview(details, options);
+
+    logger.info('✅ Moving sandbox to cache directory');
+    const sandboxDir = join(details.sandboxDir);
+    const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
+
+    // For NX we move the sandbox to a directory that can be cached.
+    // We remove node_modules to keep the remote cache small and fast
+    // node_modules are already cached in the global yarn cache
+    if (process.env.NX_CLI_SET === 'true') {
+      if (sandboxDir !== cacheDir) {
+        logger.info(`✅ Removing cache directory ${cacheDir}`);
+        await rm(cacheDir, { recursive: true, force: true });
+
+        logger.info(`✅ Copy ${sandboxDir} to cache directory`);
+        await cp(sandboxDir, cacheDir, {
+          recursive: true,
+          force: true,
+          filter: (src) => {
+            const name = path.basename(src);
+            return (
+              name !== 'node_modules' &&
+              !(name === 'cache' && path.basename(path.dirname(src)) === '.yarn')
+            );
+          },
+        });
+      } else {
+        logger.info(`✅ Removing node_modules from cache directory ${cacheDir}`);
+        await rm(path.join(cacheDir, 'node_modules'), { force: true, recursive: true });
+        await rm(path.join(cacheDir, '.yarn', 'cache'), { force: true, recursive: true });
+      }
+    }
 
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);
   },

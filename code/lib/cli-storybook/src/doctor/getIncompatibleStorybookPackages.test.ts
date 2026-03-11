@@ -204,8 +204,8 @@ describe('getIncompatiblePackagesSummary', () => {
       
       Please consider updating your packages or contacting the maintainers for compatibility details.
 
-      For more on Storybook 9 compatibility, see the linked GitHub issue:
-      https://github.com/storybookjs/storybook/issues/30944"
+      For more details on compatibility guidance, see:
+      https://github.com/storybookjs/storybook/issues/32836"
     `);
   });
 });

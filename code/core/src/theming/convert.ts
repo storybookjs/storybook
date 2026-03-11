@@ -1,7 +1,7 @@
 import { opacify } from 'polished';
 
 import { animation, easing } from './animation';
-import { background, color, typography } from './base';
+import { background, color, tokens, typography } from './base';
 import { themes } from './create';
 import { chromeDark, chromeLight, create as createSyntax } from './modules/syntax';
 import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types';
@@ -12,16 +12,16 @@ const lightSyntaxColors = {
   red1: '#A31515',
   red2: '#9a050f',
   red3: '#800000',
-  red4: '#ff0000',
+  red4: '#eb0000',
   gray1: '#393A34',
-  cyan1: '#36acaa',
-  cyan2: '#2B91AF',
+  cyan1: '#008380',
+  cyan2: '#007ca0',
   blue1: '#0000ff',
   blue2: '#00009f',
 };
 
 const darkSyntaxColors = {
-  green1: '#7C7C7C',
+  green1: '#95999D',
   red1: '#92C379',
   red2: '#9a050f',
   red3: '#A8FF60',
@@ -82,6 +82,7 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     colorSecondary,
     appBg,
     appContentBg,
+    appHoverBg,
     appPreviewBg,
     appBorderColor,
     appBorderRadius,
@@ -113,6 +114,9 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     ...rest,
 
     base,
+
+    ...(base === 'dark' ? tokens.dark : tokens.light),
+
     color: createColors(inherit),
     background: {
       app: appBg,
@@ -120,12 +124,13 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
       content: appContentBg,
       preview: appPreviewBg,
       gridCellSize: gridCellSize || background.gridCellSize,
-      hoverable: background.hoverable,
+      hoverable: appHoverBg,
       positive: background.positive,
       negative: background.negative,
       warning: background.warning,
       critical: background.critical,
     },
+
     typography: {
       fonts: {
         base: fontBase,
@@ -174,14 +179,14 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     },
 
     code: createSyntax({
-      colors: base === 'light' ? lightSyntaxColors : darkSyntaxColors,
+      colors: base === 'dark' ? darkSyntaxColors : lightSyntaxColors,
       mono: fontCode,
     }),
 
     // Addon actions theme
     // API example https://github.com/storybookjs/react-inspector/blob/master/src/styles/themes/chromeLight.tsx
     addonActionsTheme: {
-      ...(base === 'light' ? chromeLight : chromeDark),
+      ...(base === 'dark' ? chromeDark : chromeLight),
 
       BASE_FONT_FAMILY: fontCode,
       BASE_FONT_SIZE: typography.size.s2 - 1,

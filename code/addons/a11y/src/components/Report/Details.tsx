@@ -123,7 +123,7 @@ const CopyButton = ({ onClick }: { onClick: () => void }) => {
   }, [onClick]);
 
   return (
-    <Button onClick={handleClick}>
+    <Button ariaLabel={false} onClick={handleClick}>
       {copied ? <CheckIcon /> : <CopyIcon />} {copied ? 'Copied' : 'Copy link'}
     </Button>
   );
@@ -163,7 +163,7 @@ export const Details = ({ id, item, type, selection, handleSelectionChange }: De
             return (
               <Fragment key={key}>
                 <Tabs.Trigger value={key} asChild>
-                  <Item variant="ghost" size="medium" id={key}>
+                  <Item ariaLabel={false} variant="ghost" size="medium" id={key}>
                     {index + 1}. {node.html}
                   </Item>
                 </Tabs.Trigger>
@@ -203,7 +203,7 @@ function getContent(node: EnhancedNodeResult) {
       </Messages>
 
       <Actions>
-        <Button onClick={() => handleJumpToElement(node.target.toString())}>
+        <Button ariaLabel={false} onClick={() => handleJumpToElement(node.target.toString())}>
           <LocationIcon /> Jump to element
         </Button>
         <CopyButton onClick={() => handleCopyLink(node.linkPath)} />

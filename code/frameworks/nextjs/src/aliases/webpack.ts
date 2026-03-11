@@ -14,6 +14,10 @@ export const configureAliases = (baseConfig: WebpackConfig): void => {
       ...(baseConfig.resolve?.alias ?? {}),
       '@opentelemetry/api': 'next/dist/compiled/@opentelemetry/api',
       next: resolvePackageDir('next'),
+      'next/dist/shared/lib/app-router-context.shared-runtime':
+        'next/dist/shared/lib/app-router-context.shared-runtime',
+      'next/dist/shared/lib/app-router-context':
+        'next/dist/shared/lib/app-router-context.shared-runtime',
     },
   };
 

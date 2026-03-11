@@ -80,6 +80,40 @@ describe('attachCSFFile', () => {
   });
 });
 
+describe('referenceMeta', () => {
+  it('works with different module namespace object but same default export (Rolldown compatibility)', () => {
+    // This test simulates what happens with Rolldown bundler:
+    // The module namespace object from MDX import differs from the one stored in CSFFile,
+    // but the .default property (meta export) is the same object reference
+    const { story, csfFile, metaExport, storyExport } = csfFileParts();
+    const store = {
+      componentStoriesFromCSFFile: () => [story],
+    } as unknown as StoryStore<Renderer>;
+    const context = new DocsContext(channel, store, renderStoryToElement, [csfFile]);
+
+    // Create a different namespace object with the same default export
+    // This simulates Rolldown's behavior where namespace objects are not singletons
+    const differentModuleExports = { default: metaExport, story: storyExport };
+
+    // This should NOT throw, as we can resolve via the .default property
+    expect(() => context.referenceMeta(differentModuleExports, true)).not.toThrow();
+    expect(context.storyById()).toEqual(story);
+  });
+
+  it('throws for non-module objects (components)', () => {
+    const { story, csfFile, component } = csfFileParts();
+    const store = {
+      componentStoriesFromCSFFile: () => [story],
+    } as unknown as StoryStore<Renderer>;
+    const context = new DocsContext(channel, store, renderStoryToElement, [csfFile]);
+
+    // Passing a component directly should throw
+    expect(() => context.referenceMeta(component, true)).toThrow(
+      '<Meta of={} /> must reference a CSF file module export or meta export. Did you mistakenly reference your component instead of your CSF file?'
+    );
+  });
+});
+
 describe('resolveOf', () => {
   const { story, csfFile, storyExport, metaExport, moduleExports, component } = csfFileParts();
 
@@ -107,6 +141,16 @@ describe('resolveOf', () => {
 
     it('works for full module exports', () => {
       expect(context.resolveOf(moduleExports)).toEqual({
+        type: 'meta',
+        csfFile,
+        preparedMeta: expect.any(Object),
+      });
+    });
+
+    it('works for module exports with different object identity but same default (Rolldown compatibility)', () => {
+      // Simulate what happens in Rolldown: different namespace object but same default export
+      const differentModuleExports = { default: metaExport, story: storyExport };
+      expect(context.resolveOf(differentModuleExports)).toEqual({
         type: 'meta',
         csfFile,
         preparedMeta: expect.any(Object),

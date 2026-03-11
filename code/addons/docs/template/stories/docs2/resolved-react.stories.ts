@@ -49,7 +49,7 @@ export default {
       name: 'ResolvedReact',
     },
     // the version string changes with every release of React/Next.js/Preact, not worth snapshotting
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

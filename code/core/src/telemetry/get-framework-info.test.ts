@@ -1,58 +1,47 @@
-import { sep } from 'node:path';
-
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { getFrameworkInfo } from './get-framework-info';
-import { getActualPackageJson } from './package-json';
 
-vi.mock('./package-json', () => ({
-  getActualPackageJson: vi.fn(),
+vi.mock('storybook/internal/common', () => ({
+  getStorybookInfo: vi.fn(),
 }));
 
 describe('getFrameworkInfo', () => {
-  it('should return an empty object if mainConfig.framework is undefined', async () => {
-    const result = await getFrameworkInfo({} as StorybookConfig);
-    expect(result).toEqual({});
+  const defaultInfo = {
+    frameworkPackage: '@storybook/react',
+    rendererPackage: '@storybook/react',
+    builderPackage: '@storybook/builder-vite',
+  };
+
+  beforeEach(async () => {
+    const { getStorybookInfo } = await import('storybook/internal/common');
+    vi.mocked(getStorybookInfo).mockResolvedValue(defaultInfo as any);
   });
 
-  it('should return an empty object if mainConfig.framework name is undefined', async () => {
-    const result = await getFrameworkInfo({ framework: {} } as StorybookConfig);
-    expect(result).toEqual({});
-  });
-
-  it('should call getActualPackageJson with the correct package name', async () => {
-    const packageName = '@storybook/react';
-    const framework = { name: packageName };
-    await getFrameworkInfo({ framework } as StorybookConfig);
-    expect(getActualPackageJson).toHaveBeenCalledWith(packageName);
-  });
-
-  it('should resolve the framework package json correctly and strip project paths in the metadata', async () => {
-    const packageName = `${process.cwd()}/@storybook/react`.split('/').join(sep);
-    const framework = { name: packageName };
-    const frameworkPackageJson = {
-      name: packageName,
-      dependencies: {
-        '@storybook/react': '7.0.0',
-        '@storybook/builder-vite': '7.0.0',
-      },
-    };
-
-    vi.mocked(getActualPackageJson).mockResolvedValueOnce(frameworkPackageJson);
-
-    const result = await getFrameworkInfo({ framework } as StorybookConfig);
-
-    expect(getActualPackageJson).toHaveBeenCalledWith(packageName);
-
+  it('returns framework/builder/renderer with empty options when no framework provided', async () => {
+    const result = await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
     expect(result).toEqual({
-      framework: {
-        name: '$SNIP/@storybook/react'.split('/').join(sep),
-        options: undefined,
-      },
-      builder: '@storybook/builder-vite',
-      renderer: '@storybook/react',
+      framework: { name: defaultInfo.frameworkPackage, options: {} },
+      builder: defaultInfo.builderPackage,
+      renderer: defaultInfo.rendererPackage,
     });
+  });
+
+  it('passes configDir to getStorybookInfo', async () => {
+    const configDir = '/my/project/.storybook';
+    const { getStorybookInfo } = await import('storybook/internal/common');
+    await getFrameworkInfo({} as StorybookConfig, configDir);
+    expect(getStorybookInfo).toHaveBeenCalledWith(configDir);
+  });
+
+  it('returns provided framework options when object is passed', async () => {
+    const options = { foo: 'bar' } as any;
+    const result = await getFrameworkInfo(
+      { framework: { name: '@storybook/react', options } } as any,
+      '/tmp/.storybook'
+    );
+    expect(result.framework.options).toEqual(options);
   });
 });

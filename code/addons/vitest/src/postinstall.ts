@@ -190,10 +190,16 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   }
 
-  const getTemplateName = () => {
+  const getTemplateName = (configContent?: string) => {
     if (isVitest4OrNewer) {
       return 'vitest.config.4.template';
     } else if (isVitest3_2To4) {
+      // In Vitest 3.2, `workspace` was deprecated in favor of `projects` but still works.
+      // If the user's existing config already uses `workspace`, use the old template that
+      // also uses `workspace` so that the merge doesn't introduce both keys.
+      if (configContent && configUsesWorkspace(configContent)) {
+        return 'vitest.config.template';
+      }
       return 'vitest.config.3.2.template';
     }
     return 'vitest.config.template';
@@ -255,7 +261,7 @@ export default async function postInstall(options: PostinstallOptions) {
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
 
-    const templateName = getTemplateName();
+    const templateName = getTemplateName(configFile);
 
     const alreadyConfigured = isConfigAlreadySetup(rootConfig, configFile);
 
@@ -436,4 +442,43 @@ export function isConfigAlreadySetup(_configPath: string, configContent: string)
   });
 
   return pluginReferenced;
+}
+
+/**
+ * Checks whether an existing config file uses `test.workspace` (Vitest 3.0-3.1 style) rather than
+ * `test.projects` (Vitest 3.2+ style).
+ */
+function configUsesWorkspace(configContent: string): boolean {
+  let ast: ReturnType<typeof babelParse>;
+  try {
+    ast = babelParse(configContent);
+  } catch {
+    return false;
+  }
+
+  let found = false;
+
+  traverse(ast, {
+    ObjectProperty(path) {
+      if (found) {
+        path.stop();
+        return;
+      }
+      const key = path.node.key;
+      if (key.type === 'Identifier' && key.name === 'workspace') {
+        // Check that this is inside a `test` property to avoid false positives
+        const parent = path.parentPath?.parentPath;
+        if (
+          parent?.isObjectProperty() &&
+          parent.node.key.type === 'Identifier' &&
+          parent.node.key.name === 'test'
+        ) {
+          found = true;
+          path.stop();
+        }
+      }
+    },
+  });
+
+  return found;
 }

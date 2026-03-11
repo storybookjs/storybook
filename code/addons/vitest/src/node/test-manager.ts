@@ -8,6 +8,8 @@ import type {
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
+import type { BuilderOptions } from '@storybook/builder-vite';
+
 import type { A11yReport } from '@storybook/addon-a11y';
 
 import { throttle } from 'es-toolkit/function';
@@ -27,6 +29,7 @@ import { VitestManager } from './vitest-manager';
 
 export type TestManagerOptions = {
   storybookOptions: Options;
+  configLoader?: BuilderOptions['configLoader'];
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
@@ -58,6 +61,8 @@ export class TestManager {
 
   public storybookOptions: Options;
 
+  private configLoader?: TestManagerOptions['configLoader'];
+
   private batchedTestCaseResults: {
     storyId: string;
     testResult: TestResult;
@@ -71,6 +76,7 @@ export class TestManager {
     this.testProviderStore = options.testProviderStore;
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
+    this.configLoader = options.configLoader;
 
     this.vitestManager = new VitestManager(this);
 

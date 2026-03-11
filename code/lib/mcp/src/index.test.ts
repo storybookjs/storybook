@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { createStorybookMcpHandler } from './index.ts';
+import type { StorybookContext } from './types.ts';
 import smallManifestFixture from '../fixtures/small-manifest.fixture.json' with { type: 'json' };
 import smallDocsManifestFixture from '../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
 
@@ -42,12 +43,15 @@ describe('createStorybookMcpHandler', () => {
 	/**
 	 * Helper to setup client with a mock fetch that routes to our handler
 	 */
-	async function setupClient(handler: Awaited<ReturnType<typeof createStorybookMcpHandler>>) {
+	async function setupClient(
+		handler: Awaited<ReturnType<typeof createStorybookMcpHandler>>,
+		context?: StorybookContext,
+	) {
 		// Mock global fetch to route to our handler
 		fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
 			const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 			const request = new Request(url, init);
-			return await handler(request);
+			return await handler(request, context);
 		});
 		(global as any).fetch = fetchMock;
 
@@ -166,6 +170,85 @@ describe('createStorybookMcpHandler', () => {
 			type: 'text',
 			text: expect.stringContaining('# Components'),
 		});
+	});
+
+	it('should forward handler-level sources into the transport context', async () => {
+		const manifestProvider = createManifestProviderMockWithDocs();
+		const sources = [
+			{ id: 'local', title: 'Local' },
+			{ id: 'remote', title: 'Remote', url: 'https://example.com/storybook' },
+		];
+
+		const handler = await createStorybookMcpHandler({
+			manifestProvider,
+			sources,
+		});
+		await setupClient(handler);
+
+		await client.callTool({
+			name: 'list-all-documentation',
+			arguments: {},
+		});
+
+		expect(manifestProvider).toHaveBeenCalledWith(
+			expect.any(Request),
+			'./manifests/components.json',
+			sources[0],
+		);
+		expect(manifestProvider).toHaveBeenCalledWith(
+			expect.any(Request),
+			'./manifests/docs.json',
+			sources[0],
+		);
+		expect(manifestProvider).toHaveBeenCalledWith(
+			expect.any(Request),
+			'./manifests/components.json',
+			sources[1],
+		);
+		expect(manifestProvider).toHaveBeenCalledWith(
+			expect.any(Request),
+			'./manifests/docs.json',
+			sources[1],
+		);
+	});
+
+	it('should allow per-request sources to override handler-level sources', async () => {
+		const manifestProvider = createManifestProviderMockWithDocs();
+		const handlerSources = [
+			{ id: 'handler', title: 'Handler', url: 'https://handler.example.com' },
+		];
+		const requestSources = [
+			{ id: 'request', title: 'Request', url: 'https://request.example.com' },
+		];
+
+		const handler = await createStorybookMcpHandler({
+			manifestProvider,
+			sources: handlerSources,
+		});
+		await setupClient(handler, {
+			sources: requestSources,
+		});
+
+		await client.callTool({
+			name: 'list-all-documentation',
+			arguments: {},
+		});
+
+		expect(manifestProvider).toHaveBeenCalledWith(
+			expect.any(Request),
+			'./manifests/components.json',
+			requestSources[0],
+		);
+		expect(manifestProvider).toHaveBeenCalledWith(
+			expect.any(Request),
+			'./manifests/docs.json',
+			requestSources[0],
+		);
+		expect(manifestProvider).not.toHaveBeenCalledWith(
+			expect.any(Request),
+			expect.any(String),
+			handlerSources[0],
+		);
 	});
 
 	it('should call onListAllDocumentation handler when tool is invoked', async () => {

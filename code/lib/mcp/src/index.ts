@@ -76,6 +76,7 @@ type Handler = (req: Request, context?: StorybookContext) => Promise<Response>;
 export const createStorybookMcpHandler = async (
 	options: StorybookMcpHandlerOptions = {},
 ): Promise<Handler> => {
+	const { onSessionInitialize, ...defaultContext } = options;
 	const adapter = new ValibotJsonSchemaAdapter();
 	const server = new McpServer(
 		{
@@ -92,8 +93,8 @@ export const createStorybookMcpHandler = async (
 		},
 	).withContext<StorybookContext>();
 
-	if (options.onSessionInitialize) {
-		server.on('initialize', options.onSessionInitialize);
+	if (onSessionInitialize) {
+		server.on('initialize', onSessionInitialize);
 	}
 
 	await addListAllDocumentationTool(server);
@@ -104,10 +105,9 @@ export const createStorybookMcpHandler = async (
 
 	return (async (req, context) => {
 		return await transport.respond(req, {
+			...defaultContext,
+			...context,
 			request: req,
-			manifestProvider: context?.manifestProvider ?? options.manifestProvider,
-			onListAllDocumentation: context?.onListAllDocumentation ?? options.onListAllDocumentation,
-			onGetDocumentation: context?.onGetDocumentation ?? options.onGetDocumentation,
 		});
 	}) as Handler;
 };

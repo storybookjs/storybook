@@ -30,6 +30,7 @@ interface InspectorProps {
   showNonenumerable: boolean;
   name: any;
   data: any;
+  expandLevel?: number;
 }
 
 const ThemedInspector = withTheme(({ theme, ...props }: InspectorProps) => (
@@ -38,10 +39,11 @@ const ThemedInspector = withTheme(({ theme, ...props }: InspectorProps) => (
 
 interface ActionLoggerProps {
   actions: ActionDisplay[];
+  expandLevel?: number;
   onClear: () => void;
 }
 
-export const ActionLogger = ({ actions, onClear }: ActionLoggerProps) => {
+export const ActionLogger = ({ actions, expandLevel, onClear }: ActionLoggerProps) => {
   const wrapperRef = useRef<ElementRef<typeof Wrapper>>(null);
   const wrapper = wrapperRef.current;
   const wasAtBottom = wrapper && wrapper.scrollHeight - wrapper.scrollTop === wrapper.clientHeight;
@@ -67,6 +69,7 @@ export const ActionLogger = ({ actions, onClear }: ActionLoggerProps) => {
                 showNonenumerable={false}
                 name={action.data.name}
                 data={action.data.args ?? action.data}
+                expandLevel={expandLevel}
               />
             </InspectorContainer>
           </Action>

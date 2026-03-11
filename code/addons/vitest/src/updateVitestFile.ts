@@ -68,9 +68,7 @@ const mergeProperties = (
   }
 };
 
-/**
- * Recursively unwraps TypeScript type annotation expressions (as X, satisfies X, <X>expr).
- */
+/** Recursively unwraps TypeScript type annotation expressions (as X, satisfies X, <X>expr). */
 const unwrapTSExpression = (expr: t.Expression | t.Declaration): t.Expression => {
   if (
     expr.type === 'TSAsExpression' ||
@@ -85,16 +83,20 @@ const unwrapTSExpression = (expr: t.Expression | t.Declaration): t.Expression =>
 };
 
 /**
- * Resolves an expression through variable references and TypeScript type annotations.
- * Handles: Identifier (variable lookup), TSAsExpression, TSSatisfiesExpression, TSTypeAssertion.
+ * Resolves an expression through variable references and TypeScript type annotations. Handles:
+ * Identifier (variable lookup), TSAsExpression, TSSatisfiesExpression, TSTypeAssertion.
  */
 const resolveExpression = (
   expr: t.Expression | t.Declaration | null | undefined,
   ast: BabelFile['ast']
 ): t.Expression | null => {
-  if (!expr) return null;
+  if (!expr) {
+    return null;
+  }
   const unwrapped = unwrapTSExpression(expr as t.Expression | t.Declaration);
-  if (unwrapped.type !== 'Identifier') return unwrapped;
+  if (unwrapped.type !== 'Identifier') {
+    return unwrapped;
+  }
   const varName = (unwrapped as t.Identifier).name;
   const varDecl = ast.program.body.find(
     (n): n is t.VariableDeclaration =>
@@ -103,48 +105,54 @@ const resolveExpression = (
         (d) => d.id.type === 'Identifier' && (d.id as t.Identifier).name === varName
       )
   );
-  if (!varDecl) return unwrapped;
+  if (!varDecl) {
+    return unwrapped;
+  }
   const declarator = varDecl.declarations.find(
     (d) => d.id.type === 'Identifier' && (d.id as t.Identifier).name === varName
   );
-  if (!declarator?.init) return unwrapped;
+  if (!declarator?.init) {
+    return unwrapped;
+  }
   return resolveExpression(declarator.init, ast);
 };
 
-/**
- * Returns true if the call expression is a defineConfig or defineProject call.
- */
+/** Returns true if the call expression is a defineConfig or defineProject call. */
 const isDefineConfigLike = (node: t.CallExpression): boolean =>
   node.callee.type === 'Identifier' &&
   (node.callee.name === 'defineConfig' || node.callee.name === 'defineProject');
 
 /**
- * Resolves the value of a `test` ObjectProperty to an ObjectExpression.
- * Handles both inline objects and shorthand identifier references, e.g.:
- *   `{ test: { ... } }` → returns the inline ObjectExpression
- *   `const test = {...}; { test }` → resolves the identifier to its initializer
+ * Resolves the value of a `test` ObjectProperty to an ObjectExpression. Handles both inline objects
+ * and shorthand identifier references, e.g.: `{ test: { ... } }` → returns the inline
+ * ObjectExpression `const test = {...}; { test }` → resolves the identifier to its initializer
  */
 const resolveTestPropValue = (
   testProp: t.ObjectProperty,
   ast: BabelFile['ast']
 ): t.ObjectExpression | null => {
-  if (testProp.value.type === 'ObjectExpression') return testProp.value;
+  if (testProp.value.type === 'ObjectExpression') {
+    return testProp.value;
+  }
   const resolved = resolveExpression(testProp.value as t.Expression, ast);
   return resolved?.type === 'ObjectExpression' ? resolved : null;
 };
 
 /**
  * Extracts the effective mergeConfig call from a declaration, handling wrappers:
+ *
  * - TypeScript type annotations (as X, satisfies X)
- * - defineConfig(mergeConfig(...)) outer wrapper
- * - variable references (export default config where config = mergeConfig(...))
+ * - DefineConfig(mergeConfig(...)) outer wrapper
+ * - Variable references (export default config where config = mergeConfig(...))
  */
 const getEffectiveMergeConfigCall = (
   decl: t.Expression | t.Declaration,
   ast: BabelFile['ast']
 ): t.CallExpression | null => {
   const resolved = resolveExpression(decl, ast);
-  if (!resolved || resolved.type !== 'CallExpression') return null;
+  if (!resolved || resolved.type !== 'CallExpression') {
+    return null;
+  }
 
   // Handle defineConfig(mergeConfig(...)) – arg may itself be wrapped in a TS type expression
   if (isDefineConfigLike(resolved) && resolved.arguments.length > 0) {
@@ -168,16 +176,18 @@ const getEffectiveMergeConfigCall = (
 
 /**
  * Resolves the target's default export to the actual config object expression we can merge into.
- * Handles: export default defineConfig({}), export default defineProject({}),
- * export default {}, and export default config (where config is a variable holding one of those),
- * as well as TypeScript type annotations on the declaration.
+ * Handles: export default defineConfig({}), export default defineProject({}), export default {},
+ * and export default config (where config is a variable holding one of those), as well as
+ * TypeScript type annotations on the declaration.
  */
 const getTargetConfigObject = (
   target: BabelFile['ast'],
   exportDefault: t.ExportDefaultDeclaration
 ): t.ObjectExpression | null => {
   const resolved = resolveExpression(exportDefault.declaration, target);
-  if (!resolved) return null;
+  if (!resolved) {
+    return null;
+  }
   if (resolved.type === 'ObjectExpression') {
     return resolved;
   }
@@ -379,7 +389,10 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
                 if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
                   const templateProjectsProp =
                     templateTestProp.value.properties.find(hasProjectsProp);
-                  if (templateProjectsProp && templateProjectsProp.value.type === 'ArrayExpression') {
+                  if (
+                    templateProjectsProp &&
+                    templateProjectsProp.value.type === 'ArrayExpression'
+                  ) {
                     const templateElements = (templateProjectsProp.value as t.ArrayExpression)
                       .elements;
                     (existingProjectsProp.value as t.ArrayExpression).elements.push(
@@ -397,8 +410,7 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
                         (p) =>
                           p.type === 'ObjectProperty' &&
                           p.key.type === 'Identifier' &&
-                          (p.key as t.Identifier).name ===
-                            (templateProp.key as t.Identifier).name
+                          (p.key as t.Identifier).name === (templateProp.key as t.Identifier).name
                       );
                       if (!existingProp && templateProp.type === 'ObjectProperty') {
                         resolvedTestValue.properties.push(templateProp);

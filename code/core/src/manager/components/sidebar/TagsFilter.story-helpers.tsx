@@ -8,8 +8,8 @@ import type { API, State } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
 import type { ModuleArgs, ModuleFn } from '../../../manager-api/lib/types';
-import { init as initLayout } from '../../../manager-api/modules/layout';
-import { createTestingStore } from '../../../manager-api/store';
+import { init as initStories } from '../../../manager-api/modules/stories';
+import { createTestingStore } from '../../../manager-api/test-utils/store';
 
 /** Mock API wrapper that forces component updates when store state changes. */
 export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
@@ -19,7 +19,7 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
   initOptions?: Partial<ModuleArgs>;
   initialStoryState?: Partial<State>;
 }> {
-  api: ReturnType<typeof initLayout>['api'];
+  api: ReturnType<typeof initStories>['api'];
   store: ReturnType<typeof createTestingStore>;
   channel: API_Provider<API>['channel'];
   mounted: boolean;
@@ -52,6 +52,10 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
     // Mock other submodules we depend on.
     const fullAPI = {
       experimental_setFilter: fn().mockName('API::experimental_setFilter'),
+      getRefs: fn().mockName('API::getRefs').mockReturnValue({}),
+      setRef: fn().mockName('API::setRef'),
+      updateRef: fn().mockName('API::updateRef'),
+      setOptions: fn().mockName('API::setOptions'),
     } as unknown as API;
 
     const { api, init, state } = props.initFn({
@@ -117,7 +121,7 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
 export const MockAPIDecorator: DecoratorFunction = (Story, { args, parameters }) => (
   <MockAPIWrapper
     args={args}
-    initFn={initLayout}
+    initFn={initStories}
     initialStoryState={parameters?.initialStoryState}
     initOptions={{ singleStory: false }}
   >

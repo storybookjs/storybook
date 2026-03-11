@@ -51,9 +51,7 @@ export const ClosedWithDefaultTags: Story = {
 export const ClosedWithSelection: Story = {
   parameters: {
     initialStoryState: {
-      layout: {
-        includedTagFilters: ['A', 'B'],
-      },
+      includedTagFilters: ['A', 'B'],
     },
   },
 };
@@ -76,9 +74,7 @@ export const ResetToDefaults: Story = {
   ...ClosedWithDefaultTags,
   parameters: {
     initialStoryState: {
-      layout: {
-        excludedTagFilters: ['A', 'B', 'C'],
-      },
+      excludedTagFilters: ['A', 'B', 'C'],
     },
   },
   play: async ({ canvas }) => {
@@ -118,9 +114,7 @@ export const WithSelectionInverted = {
   ...Clear,
   parameters: {
     initialStoryState: {
-      layout: {
-        excludedTagFilters: ['A', 'B'],
-      },
+      excludedTagFilters: ['A', 'B'],
     },
   },
 } satisfies Story;
@@ -129,10 +123,8 @@ export const WithSelectionMixed = {
   ...Clear,
   parameters: {
     initialStoryState: {
-      layout: {
-        includedTagFilters: ['A'],
-        excludedTagFilters: ['B'],
-      },
+      includedTagFilters: ['A'],
+      excludedTagFilters: ['B'],
     },
   },
 } satisfies Story;

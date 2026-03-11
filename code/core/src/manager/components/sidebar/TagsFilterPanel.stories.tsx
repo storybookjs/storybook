@@ -129,9 +129,7 @@ export const BuiltInOnlyProduction: Story = {
 export const Included: Story = {
   parameters: {
     initialStoryState: {
-      layout: {
-        includedTagFilters: ['tag1'],
-      },
+      includedTagFilters: ['tag1'],
     },
   },
 };
@@ -139,9 +137,7 @@ export const Included: Story = {
 export const Excluded: Story = {
   parameters: {
     initialStoryState: {
-      layout: {
-        excludedTagFilters: ['tag1'],
-      },
+      excludedTagFilters: ['tag1'],
     },
   },
 };
@@ -149,10 +145,8 @@ export const Excluded: Story = {
 export const Mixed: Story = {
   parameters: {
     initialStoryState: {
-      layout: {
-        includedTagFilters: ['tag1'],
-        excludedTagFilters: ['tag2'],
-      },
+      includedTagFilters: ['tag1'],
+      excludedTagFilters: ['tag2'],
     },
   },
 };
@@ -185,9 +179,7 @@ export const DefaultSelectionModified: Story = {
   },
   parameters: {
     initialStoryState: {
-      layout: {
-        includedTagFilters: ['tag1', 'tag2'],
-      },
+      includedTagFilters: ['tag1', 'tag2'],
     },
   },
 };

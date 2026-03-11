@@ -77,7 +77,7 @@ describe('experimental_devServer', () => {
 						return Promise.resolve({ experimentalComponentsManifest: true });
 					}
 					if (key === 'experimental_manifests') {
-						return Promise.resolve({});
+						return Promise.resolve({ components: { v: 1, components: {} } });
 					}
 					return Promise.resolve(undefined);
 				}),

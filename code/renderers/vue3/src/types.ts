@@ -33,3 +33,5 @@ export interface VueRenderer extends WebRenderer {
     options?: { props?: Record<string, any>; slots?: Record<string, any> }
   ) => Promise<Canvas>;
 }
+
+export interface VueTypes extends VueRenderer {}

@@ -18,8 +18,9 @@ const highlight = keyframes({
 
 const Container = styled.div({
   containerType: 'size',
-  position: 'sticky',
+  position: 'absolute',
   bottom: 0,
+  width: '100%',
   height: 41,
   overflow: 'hidden',
   zIndex: 1,
@@ -43,6 +44,7 @@ const Info = styled.div({
   display: 'flex',
   flex: '99 0 auto',
   alignItems: 'center',
+  marginInlineStart: 7,
   marginInlineEnd: 10,
   gap: 6,
 });

@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type { API_IndexHash } from 'storybook/internal/types';
+import { PREVIEW_INITIALIZED } from 'storybook/internal/core-events';
+import { type API_IndexHash } from 'storybook/internal/types';
 
 import {
   internal_checklistStore as checklistStore,
   internal_universalChecklistStore as universalChecklistStore,
 } from '#manager-stores';
-import { throttle } from 'es-toolkit/function';
+import { debounce, throttle } from 'es-toolkit/function';
 import {
   type API,
+  experimental_UniversalStore,
   experimental_useUniversalStore,
   useStorybookApi,
   useStorybookState,
@@ -111,6 +113,12 @@ export const useChecklist = () => {
   const index = useStoryIndex();
   const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
   const { loaded, items, widget } = checklistState;
+  const { status } = universalChecklistStore;
+
+  const [initialized, setInitialized] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  const debounceReady = useMemo(() => debounce(() => setReady(true), 500), []);
 
   const itemsById = useMemo<Record<string, RawItemWithSection>>(() => {
     return Object.fromEntries(
@@ -185,7 +193,7 @@ export const useChecklist = () => {
   }, [allItems]);
 
   useEffect(() => {
-    if (!loaded) {
+    if (!loaded || status !== experimental_UniversalStore.Status.READY) {
       return;
     }
 
@@ -214,9 +222,26 @@ export const useChecklist = () => {
         }
       }
     }
-  }, [api, loaded, allItems]);
+  }, [api, loaded, status, allItems]);
+
+  useEffect(() => {
+    const initialize = () => setInitialized(true);
+    const timeout = setTimeout(initialize, 1000);
+    api.once(PREVIEW_INITIALIZED, initialize);
+    return () => {
+      clearTimeout(timeout);
+      api.off(PREVIEW_INITIALIZED, initialize);
+    };
+  }, [api]);
+
+  useEffect(() => {
+    if (initialized && items && status === experimental_UniversalStore.Status.READY) {
+      debounceReady();
+    }
+  }, [initialized, items, status, debounceReady]);
 
   return {
+    ready,
     allItems,
     ...itemCollections,
     ...checklistStore,

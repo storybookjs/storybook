@@ -293,6 +293,23 @@ describe('ConfigFile', () => {
           )
         ).toEqual(['test', 'vitest', '!a11ytest']);
       });
+      it('parses correctly with .type<T>() chaining on export default', () => {
+        const source = dedent`
+          import { definePreview } from '@storybook/react-vite';
+
+          export default definePreview({
+            parameters: {
+              foo: 'bar',
+            },
+          }).type<{
+            parameters: {
+              customParam?: string;
+            };
+          }>();
+        `;
+        const config = loadConfig(source).parse();
+        expect(config.getFieldValue(['parameters', 'foo'])).toEqual('bar');
+      });
     });
   });
 

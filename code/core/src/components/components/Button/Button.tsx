@@ -74,7 +74,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Comp = asChild ? Slot : as;
 
-    if (ariaLabel === undefined || ariaLabel === '') {
+    let deprecated = undefined;
+    if (!readOnly && (ariaLabel === undefined || ariaLabel === '')) {
+      deprecated = 'ariaLabel';
       deprecate(
         `The 'ariaLabel' prop on 'Button' will become mandatory in Storybook 11. Buttons with text content should set 'ariaLabel={false}' to indicate that they are accessible as-is. Buttons without text content must provide a meaningful 'ariaLabel' for accessibility. The button content is: ${props.children}.`
       );
@@ -86,6 +88,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     if (active !== undefined) {
+      deprecated = 'active';
       deprecate(
         'The `active` prop on `Button` is deprecated and will be removed in Storybook 11. Use specialized components like `ToggleButton` or `Select` instead.'
       );
@@ -129,6 +132,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           tooltip={finalTooltip}
         >
           <StyledButton
+            data-deprecated={deprecated}
             as={Comp}
             ref={ref}
             variant={variant}
@@ -324,6 +328,6 @@ export const IconButton = forwardRef<HTMLButtonElement, ButtonProps>((props, ref
     '`IconButton` is deprecated and will be removed in Storybook 11, use `Button` instead.'
   );
 
-  return <Button ref={ref} {...props} />;
+  return <Button ref={ref} {...props} data-deprecated="IconButton" />;
 });
 IconButton.displayName = 'IconButton';

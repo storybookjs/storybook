@@ -2,7 +2,7 @@ import { Link } from 'storybook/internal/router';
 
 import { styled } from 'storybook/theming';
 
-export const PreviewContainer = styled.main({
+export const PreviewContainer = styled.div({
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
@@ -10,7 +10,7 @@ export const PreviewContainer = styled.main({
   overflow: 'hidden',
 });
 
-export const FrameWrap = styled.section({
+export const FrameWrap = styled.main({
   overflow: 'auto',
   width: '100%',
   zIndex: 3,
@@ -27,8 +27,8 @@ export const CanvasWrap = styled.div<{ show: boolean }>(
     gridTemplateColumns: '100%',
     gridTemplateRows: '100%',
     position: 'relative',
-    width: '100%',
-    height: '100%',
+    minWidth: '100%',
+    minHeight: '100%',
   },
   ({ show }) => ({ display: show ? 'grid' : 'none' })
 );

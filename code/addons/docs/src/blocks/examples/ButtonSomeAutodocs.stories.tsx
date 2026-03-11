@@ -9,7 +9,7 @@ const meta = {
     backgroundColor: { control: 'color' },
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 } satisfies Meta<typeof Button>;
 
@@ -27,6 +27,11 @@ export const Secondary: Story = {
   tags: ['autodocs'],
   args: {
     label: 'Button',
+  },
+  globals: {
+    backgrounds: {
+      grid: true,
+    },
   },
 };
 

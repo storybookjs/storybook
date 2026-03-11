@@ -37,7 +37,7 @@ export const TableWrapper = styled.table<{
     // End Resets
 
     fontSize: theme.typography.size.s2 - 1,
-    lineHeight: '20px',
+    lineHeight: '19px',
     textAlign: 'left',
     width: '100%',
 
@@ -106,6 +106,7 @@ export const TableWrapper = styled.table<{
 
     // Makes border alignment consistent w/other DocBlocks
     marginInline: inAddonPanel || inTabPanel ? 0 : 1,
+    paddingInline: inTabPanel ? 3 : 0,
 
     tbody: {
       // Safari doesn't love shadows on tbody so we need to use a shadow filter. In order to do this,

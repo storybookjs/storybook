@@ -42,3 +42,57 @@ export default definePreview({
   parameters: {},
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+import '../src/styles/global.css';
+
+export default definePreview({
+  parameters: {},
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+import '../src/styles/global.css';
+
+export default definePreview({
+  parameters: {},
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+import '../src/styles/global.css';
+
+export default definePreview({
+  parameters: {},
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+import '../src/styles/global.css';
+
+export default definePreview({
+  parameters: {},
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+import '../src/styles/global.css';
+
+export default definePreview({
+  parameters: {},
+});
+```

@@ -20,8 +20,15 @@ const meta = {
       }),
       applyQueryParams: fn().mockName('api::applyQueryParams'),
     } as any,
-    isDevelopment: true,
     tagPresets: {},
+    indexJson: {
+      v: 6,
+      entries: {
+        'c1-s1': { tags: ['A', 'B', 'C', 'dev', 'play-fn'], type: 'story' } as any,
+        'c1-test': { tags: ['test-fn'], type: 'story', subtype: 'test' } as any,
+        'c1-doc': { tags: [], type: 'docs' } as any,
+      },
+    },
   },
 } satisfies Meta<typeof TagsFilter>;
 
@@ -29,16 +36,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Closed: Story = {
-  args: {
-    indexJson: {
-      v: 6,
-      entries: {
-        'c1-s1': { tags: ['A', 'B', 'C', 'dev'] } as any,
-      },
-    },
-  },
-};
+export const Closed: Story = {};
 
 export const ClosedWithSelection: Story = {
   args: {
@@ -55,6 +53,21 @@ export const Clear = {
   play: async ({ canvasElement }) => {
     const button = await findByRole(canvasElement, 'button', {}, { timeout: 3000 });
     button.click();
+  },
+} satisfies Story;
+
+export const NoUserTags = {
+  ...Clear,
+  args: {
+    ...Clear.args,
+    indexJson: {
+      v: 6,
+      entries: {
+        'c1-s1': { tags: ['dev', 'play-fn'], type: 'story' } as any,
+        'c1-test': { tags: ['test-fn'], type: 'story', subtype: 'test' } as any,
+        'c1-doc': { tags: [], type: 'docs' } as any,
+      },
+    },
   },
 } satisfies Story;
 
@@ -95,10 +108,10 @@ export const Empty: Story = {
   play: Clear.play,
 };
 
+/** Production is equal to development now */
 export const EmptyProduction: Story = {
   args: {
     ...Empty.args,
-    isDevelopment: false,
   },
   play: Clear.play,
 };

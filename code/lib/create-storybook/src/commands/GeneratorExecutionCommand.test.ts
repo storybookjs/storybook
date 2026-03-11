@@ -43,9 +43,9 @@ describe('GeneratorExecutionCommand', () => {
     mockAddonService = {
       getAddonsForFeatures: vi.fn().mockReturnValue([]),
     };
-    vi.mocked(AddonService).mockImplementation(
-      () => mockAddonService as unknown as InstanceType<typeof AddonService>
-    );
+    vi.mocked(AddonService).mockImplementation(function () {
+      return mockAddonService;
+    });
     mockPackageManager = {
       getRunCommand: vi.fn().mockReturnValue('npm run storybook'),
     } as unknown as JsPackageManager;
@@ -71,7 +71,7 @@ describe('GeneratorExecutionCommand', () => {
       }),
     };
 
-    vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
+    vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator as any);
     vi.mocked(logger.warn).mockImplementation(() => {});
     vi.mocked(baseGenerator).mockResolvedValue({
       configDir: '.storybook',

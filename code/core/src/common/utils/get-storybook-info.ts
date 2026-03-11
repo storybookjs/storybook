@@ -29,6 +29,7 @@ export const rendererPackages: Record<string, SupportedRenderer> = {
   '@storybook/svelte': SupportedRenderer.SVELTE,
   '@storybook/preact': SupportedRenderer.PREACT,
   '@storybook/server': SupportedRenderer.SERVER,
+  '@storybook/react-native': SupportedRenderer.REACT_NATIVE,
 
   // community (outside of monorepo)
   'storybook-framework-qwik': SupportedRenderer.QWIK,
@@ -150,12 +151,12 @@ export const getStorybookInfo = async (
   const frameworkValue = mainConfig.framework;
   const frameworkField = typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name;
   const addons = getAddonNames(mainConfig);
-  const version = getStorybookVersionSpecifier(configDir);
+  const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
   if (!frameworkField) {
     return {
       ...configInfo,
-      version,
+      versionSpecifier,
       addons,
       mainConfig,
       mainConfigPath: configInfo.mainConfigPath ?? undefined,
@@ -183,7 +184,7 @@ export const getStorybookInfo = async (
     addons,
     mainConfig,
     framework,
-    version,
+    versionSpecifier,
     renderer: renderer ?? undefined,
     builder: builder ?? undefined,
     frameworkPackage,

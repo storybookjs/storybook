@@ -1,5 +1,6 @@
 import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
+import type { ToolbarArgType } from '../toolbar';
 import type { SBScalarType, SBType } from './SBType';
 import type { CoreTypes } from './core-annotations';
 
@@ -126,13 +127,13 @@ export interface InputType {
     /** @see https://storybook.js.org/docs/api/arg-types#tablecategory */
     category?: string;
     /** @see https://storybook.js.org/docs/api/arg-types#tabledefaultvalue */
-    defaultValue?: { summary?: string; detail?: string };
+    defaultValue?: { summary?: string | undefined; detail?: string | undefined };
     /** @see https://storybook.js.org/docs/api/arg-types#tabledisable */
     disable?: boolean;
     /** @see https://storybook.js.org/docs/api/arg-types#tablesubcategory */
     subcategory?: string;
     /** @see https://storybook.js.org/docs/api/arg-types#tabletype */
-    type?: { summary?: string; detail?: string };
+    type?: { summary?: string | undefined; detail?: string | undefined };
   };
   /** @see https://storybook.js.org/docs/api/arg-types#type */
   type?: SBType | SBScalarType['name'];
@@ -165,13 +166,26 @@ export interface Globals {
   [name: string]: any;
 }
 export interface GlobalTypes {
-  [name: string]: InputType;
-}
-export interface StrictGlobalTypes {
-  [name: string]: StrictInputType;
+  [name: string]: ToolbarArgType;
 }
 
+/**
+ * AddonTypes allows addons to extend the type system with additional args, parameters, and globals.
+ *
+ * Addons can use `definePreviewAddon<AddonTypes>()` to declare additional types that will be merged
+ * into the story context. For example, an addon that provides a `theme` arg could declare:
+ *
+ * ```ts
+ * const themeAddon = definePreviewAddon<{ args: { theme: 'light' | 'dark' } }>({
+ *   decorators: [(Story, { args }) => <ThemeProvider theme={args.theme}><Story /></ThemeProvider>]
+ * });
+ * ```
+ *
+ * When users include this addon in their preview config, the `theme` arg becomes available and
+ * type-checked across all stories.
+ */
 export interface AddonTypes {
+  args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;
 }
@@ -202,8 +216,10 @@ export interface Renderer extends AddonTypes {
 /** @deprecated - Use `Renderer` */
 export type AnyFramework = Renderer;
 
-export interface StoryContextForEnhancers<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryIdentifier {
+export interface StoryContextForEnhancers<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends StoryIdentifier {
   component?: (TRenderer & { T: any })['component'];
   subcomponents?: Record<string, (TRenderer & { T: any })['component']>;
   parameters: Parameters;
@@ -250,8 +266,7 @@ export type AfterEach<TRenderer extends Renderer = Renderer, TArgs = Args> = (
 export interface Canvas {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryContextForEnhancers<TRenderer, TArgs>,
-    Required<StoryContextUpdate<TArgs>> {
+  extends StoryContextForEnhancers<TRenderer, TArgs>, Required<StoryContextUpdate<TArgs>> {
   loaded: Record<string, any>;
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
@@ -266,12 +281,16 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
 }
 
 /** @deprecated Use {@link StoryContext} instead. */
-export interface StoryContextForLoaders<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryContext<TRenderer, TArgs> {}
+export interface StoryContextForLoaders<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends StoryContext<TRenderer, TArgs> {}
 
 /** @deprecated Use {@link StoryContext} instead. */
-export interface PlayFunctionContext<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryContext<TRenderer, TArgs> {}
+export interface PlayFunctionContext<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends StoryContext<TRenderer, TArgs> {}
 
 export type StepLabel = string;
 
@@ -399,8 +418,10 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   mount?: (context: StoryContext<TRenderer, TArgs>) => TRenderer['mount'];
 }
 
-export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends BaseAnnotations<TRenderer, TArgs> {
+export interface ProjectAnnotations<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends BaseAnnotations<TRenderer, TArgs> {
   argsEnhancers?: ArgsEnhancer<TRenderer, Args>[];
   argTypesEnhancers?: ArgTypesEnhancer<TRenderer, Args>[];
 
@@ -428,8 +449,10 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
 }
 
 type StoryDescriptor = string[] | RegExp;
-export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends BaseAnnotations<TRenderer, TArgs> {
+export interface ComponentAnnotations<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends BaseAnnotations<TRenderer, TArgs> {
   /**
    * Title of the component which will be presented in the navigation. **Should be unique.**
    *

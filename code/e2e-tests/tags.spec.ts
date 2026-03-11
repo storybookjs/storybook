@@ -82,6 +82,7 @@ test.describe('tags', () => {
 
       // When selecting type docs, there should be no stories in the sidebar
       await sbPage.toggleStoryTypeFilter('Documentation');
+      await sbPage.closeAnyPendingModal();
       await sbPage.expandAllSidebarNodes();
       await expect(
         page.locator('#storybook-explorer-menu .sidebar-item[data-nodetype="story"]')
@@ -91,6 +92,7 @@ test.describe('tags', () => {
 
       // When excluding type docs, there should be no stories in the sidebar
       await sbPage.toggleStoryTypeFilter('Documentation', true);
+      await sbPage.closeAnyPendingModal();
       await expect(
         page.locator('#storybook-explorer-menu .sidebar-item[data-nodetype="document"]')
       ).toHaveCount(0);
@@ -100,6 +102,7 @@ test.describe('tags', () => {
 
       // When selecting type play, there should be no docs in the sidebar
       await sbPage.toggleStoryTypeFilter('Play');
+      await sbPage.closeAnyPendingModal();
       await sbPage.expandAllSidebarNodes();
       await expect(
         page.locator('#storybook-explorer-menu .sidebar-item[data-nodetype="document"]')
@@ -109,6 +112,7 @@ test.describe('tags', () => {
 
       // When selecting type test, there should be tests visible in the sidebar
       await sbPage.toggleStoryTypeFilter('Testing');
+      await sbPage.closeAnyPendingModal();
       await sbPage.expandAllSidebarNodes();
       const testItems = page.locator(
         '#storybook-explorer-menu .sidebar-item[data-nodetype="test"]'
@@ -119,6 +123,7 @@ test.describe('tags', () => {
 
       // When excluding type test, there should be no tests visible in the sidebar
       await sbPage.toggleStoryTypeFilter('Testing', true);
+      await sbPage.closeAnyPendingModal();
       await expect(
         page.locator('#storybook-explorer-menu .sidebar-item[data-nodetype="test"]')
       ).toHaveCount(0);

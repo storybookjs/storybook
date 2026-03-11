@@ -21,7 +21,7 @@ import type * as typefest from 'type-fest';
 import typescript from 'typescript';
 import ts from 'typescript';
 
-import { CODE_DIRECTORY } from './constants';
+import { ROOT_DIRECTORY } from './constants';
 
 export { globalExternals };
 
@@ -132,19 +132,19 @@ type PackageJson = typefest.PackageJson &
   Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
 
 export const getWorkspace = async (): Promise<PackageJson[]> => {
-  const content = await readFile(join(CODE_DIRECTORY, 'package.json'), 'utf-8');
+  const content = await readFile(join(ROOT_DIRECTORY, 'package.json'), 'utf-8');
   const codePackage = JSON.parse(content);
   const {
     workspaces: { packages: patterns },
   } = codePackage;
 
   const workspaces = await Promise.all(
-    (patterns as string[]).map(async (pattern: string) => glob(pattern, { cwd: CODE_DIRECTORY }))
+    (patterns as string[]).map(async (pattern: string) => glob(pattern, { cwd: ROOT_DIRECTORY }))
   );
 
   return Promise.all(
     workspaces
-      .flatMap((p) => p.map((i) => join(CODE_DIRECTORY, i)))
+      .flatMap((p) => p.map((i) => join(ROOT_DIRECTORY, i)))
       .map(async (packagePath) => {
         const packageJsonPath = join(packagePath, 'package.json');
         if (!(await pathExists(packageJsonPath))) {

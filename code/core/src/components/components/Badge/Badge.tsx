@@ -31,45 +31,37 @@ const BadgeWrapper = styled.div<BadgeProps>(
     switch (status) {
       case 'critical': {
         return {
-          color: theme.color.critical,
-          background: theme.background.critical,
+          color: theme.fgColor.critical,
+          background: theme.bgColor.critical,
+          boxShadow: `inset 0 0 0 1px ${theme.borderColor.critical}`,
         };
       }
       case 'negative': {
         return {
-          color: theme.color.negativeText,
-          background: theme.background.negative,
-          boxShadow:
-            theme.base === 'light'
-              ? `inset 0 0 0 1px ${transparentize(0.9, theme.color.negativeText)}`
-              : 'none',
+          color: theme.fgColor.negative,
+          background: theme.bgColor.negative,
+          boxShadow: `inset 0 0 0 1px ${theme.borderColor.negative}`,
         };
       }
       case 'warning': {
         return {
-          color: theme.color.warningText,
-          background: theme.background.warning,
-          boxShadow:
-            theme.base === 'light'
-              ? `inset 0 0 0 1px ${transparentize(0.9, theme.color.warningText)}`
-              : 'none',
+          color: theme.fgColor.warning,
+          background: theme.bgColor.warning,
+          boxShadow: `inset 0 0 0 1px ${theme.borderColor.warning}`,
         };
       }
       case 'neutral': {
         return {
-          color: theme.textMutedColor,
-          background: theme.base === 'light' ? theme.background.app : theme.barBg,
+          color: theme.fgColor.muted,
+          background: theme.base === 'dark' ? theme.barBg : theme.background.app,
           boxShadow: `inset 0 0 0 1px ${transparentize(0.8, theme.textMutedColor)}`,
         };
       }
       case 'positive': {
         return {
-          color: theme.color.positiveText,
-          background: theme.background.positive,
-          boxShadow:
-            theme.base === 'light'
-              ? `inset 0 0 0 1px ${transparentize(0.9, theme.color.positiveText)}`
-              : 'none',
+          color: theme.fgColor.positive,
+          background: theme.bgColor.positive,
+          boxShadow: `inset 0 0 0 1px ${theme.borderColor.positive}`,
         };
       }
       case 'active': {

@@ -36,7 +36,8 @@ export const PseudoStateTool = () => {
       multiSelect
       onChange={(selected) => {
         updateGlobals({
-          [PARAM_KEY]: selected.reduce((acc, curr) => ({ ...acc, [curr]: true }), {}),
+          // We know curr is a string because we are using string values in options
+          [PARAM_KEY]: selected.reduce((acc, curr) => ({ ...acc, [curr as string]: true }), {}),
         });
       }}
     />

@@ -24,7 +24,7 @@ export default defineConfig({
       "junit",
       {
         embedAnnotationsAsProperties: true,
-        outputFile: path.join(__dirname, "..", "..", "..", "test-results"),
+        outputFile: path.join(__dirname, "..", "..", "..", "test-results", "react-vitest3-e2e-ui.xml"),
       },
     ],
   ],

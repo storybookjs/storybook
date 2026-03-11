@@ -68,6 +68,7 @@ const StyledButton = styled(Button)<{
     '&:focus': {
       color: theme.color.secondary,
       borderColor: theme.color.secondary,
+      outlineOffset: -2,
 
       '&:not(:focus-visible)': {
         borderColor: 'transparent',

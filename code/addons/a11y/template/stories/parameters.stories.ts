@@ -6,7 +6,7 @@ export default {
     content: '<button>Click Me!</button>',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     a11y: {
       test: 'error',
     },

@@ -135,6 +135,13 @@ export const scaffoldNewProject = async (
   }
 
   if (projectStrategy === 'other') {
+    if (!disableTelemetry) {
+      await telemetry(
+        'exit',
+        { eventType: 'init', reason: 'scaffold-other' },
+        { stripMetadata: true, immediate: true }
+      );
+    }
     logger.warn(
       'To install Storybook on another framework, first generate a project with that framework and then rerun this command.'
     );
@@ -179,7 +186,7 @@ export const scaffoldNewProject = async (
       cwd: targetDir,
     });
   } catch (e) {
-    spinner.stop(
+    spinner.error(
       `Failed to create a new "${projectDisplayName}" project with ${packageManagerName}`
     );
     throw new GenerateNewProjectOnInitError({

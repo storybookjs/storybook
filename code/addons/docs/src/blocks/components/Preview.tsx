@@ -259,12 +259,13 @@ export const Preview: FC<PreviewProps> = ({
           )}
           {onReloadStory && (
             <Button
-              ariaLabel={false}
+              ariaLabel="Reload story"
               variant="ghost"
+              size="small"
+              padding="small"
               onClick={onReloadStory}
-              className="docblock-reload-story"
             >
-              <SyncIcon /> Reload story
+              <SyncIcon />
             </Button>
           )}
           {additionalActionItems.map(({ title, className, onClick, disabled }, index: number) => (

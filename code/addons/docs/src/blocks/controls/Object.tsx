@@ -217,6 +217,12 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     return JSON.stringify(data ?? '', null, 2);
   }, [data]);
 
+  useEffect(() => {
+    if (showRaw) {
+      setParseError(null);
+    }
+  }, [jsonString, showRaw]);
+
   if (!hasData) {
     return (
       <Button

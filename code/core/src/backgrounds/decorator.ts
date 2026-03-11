@@ -34,8 +34,14 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const showGrid = typeof data === 'string' ? false : data.grid || false;
   const shownBackground = !!item && !disable;
 
-  const backgroundSelector = viewMode === 'docs' ? `#anchor--${id} .docs-story` : '.sb-show-main';
-  const gridSelector = viewMode === 'docs' ? `#anchor--${id} .docs-story` : '.sb-show-main';
+  const backgroundSelector =
+    viewMode === 'docs'
+      ? `#anchor--${id} .docs-story, #anchor--primary--${id} .docs-story`
+      : '.sb-show-main';
+  const gridSelector =
+    viewMode === 'docs'
+      ? `#anchor--${id} .docs-story, #anchor--primary--${id} .docs-story`
+      : '.sb-show-main';
 
   const isLayoutPadded = parameters.layout === undefined || parameters.layout === 'padded';
   const defaultOffset = viewMode === 'docs' ? 20 : isLayoutPadded ? 16 : 0;

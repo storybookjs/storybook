@@ -135,14 +135,16 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
             s.append('\nexport default _sfc_main;');
           }
 
-          s.append(`\n;${name}.__docgenInfo = ${JSON.stringify(meta)}`);
+          s.append(`\n;${name}.__docgenInfo = Object.assign({
+            displayName: ${name}.name ?? ${name}.__name
+          }, ${JSON.stringify(meta)})`);
         });
 
         return {
           code: s.toString(),
           map: s.generateMap({ hires: true, source: id }),
         };
-      } catch (e) {
+      } catch {
         return undefined;
       }
     },

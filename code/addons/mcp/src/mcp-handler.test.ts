@@ -298,7 +298,7 @@ describe('mcpServerHandler', () => {
 				return { experimentalComponentsManifest: true };
 			}
 			if (key === 'experimental_manifests') {
-				return vi.fn();
+				return { components: { v: 1, components: {} } };
 			}
 			return defaultValue;
 		});

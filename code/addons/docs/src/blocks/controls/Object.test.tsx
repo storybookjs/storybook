@@ -55,4 +55,27 @@ describe('ObjectControl accessibility', () => {
     expect(rawInput.getAttribute('aria-describedby')).toBeNull();
     expect(onChange).toHaveBeenCalledWith({ label: 'updated' });
   });
+
+  it('clears parse errors after closing and reopening the raw JSON editor', () => {
+    renderObjectControl();
+
+    const editAsJsonButton = screen.getByRole('button', { name: 'Edit object as JSON' });
+
+    fireEvent.click(editAsJsonButton);
+
+    let rawInput = screen.getByLabelText('Edit object as JSON');
+    fireEvent.change(rawInput, { target: { value: '{"label":' } });
+    fireEvent.blur(rawInput);
+
+    expect(screen.getByRole('status').textContent).toContain('Invalid JSON');
+    expect(rawInput.getAttribute('aria-invalid')).toBe('true');
+
+    fireEvent.click(editAsJsonButton);
+    fireEvent.click(editAsJsonButton);
+
+    rawInput = screen.getByLabelText('Edit object as JSON');
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(rawInput.getAttribute('aria-invalid')).toBe('false');
+    expect(rawInput.getAttribute('aria-describedby')).toBeNull();
+  });
 });

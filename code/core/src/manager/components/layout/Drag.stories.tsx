@@ -21,7 +21,15 @@ const meta = {
   decorators: [
     (storyFn) => (
       // Drag uses `position: absolute` so it needs a positioned parent.
-      <div style={{ position: 'relative', width: 200, height: 200, border: '1px dashed #aaa' }}>
+      <div
+        style={{
+          position: 'relative',
+          width: 200,
+          height: 200,
+          border: '2px dashed #aaa',
+          background: 'thistle',
+        }}
+      >
         {storyFn()}
       </div>
     ),
@@ -40,6 +48,20 @@ export const PositionLeft: Story = {
     'aria-valuenow': 200,
     'aria-valuemax': 500,
   },
+  play: async ({ canvas, step }) => {
+    const handle = canvas.getByRole('separator');
+
+    await step('Has aria-orientation="vertical" for left position', async () => {
+      expect(handle).toHaveAttribute('aria-orientation', 'vertical');
+    });
+
+    await step('Shows on the right of the parent element', async () => {
+      handle.focus();
+      const parentRect = handle.parentElement?.getBoundingClientRect();
+      const handleRect = handle.getBoundingClientRect();
+      expect(handleRect.left).toBeGreaterThan(parentRect?.left ?? 0);
+    });
+  },
 };
 
 export const PositionRight: Story = {
@@ -49,6 +71,20 @@ export const PositionRight: Story = {
     'aria-label': 'Addon panel resize handle',
     'aria-valuenow': 300,
     'aria-valuemax': 600,
+  },
+  play: async ({ canvas, step }) => {
+    const handle = canvas.getByRole('separator');
+
+    await step('Has aria-orientation="vertical" for right position', async () => {
+      expect(handle).toHaveAttribute('aria-orientation', 'vertical');
+    });
+
+    await step('Shows on the left of the parent element', async () => {
+      handle.focus();
+      const parentRect = handle.parentElement?.getBoundingClientRect();
+      const handleRect = handle.getBoundingClientRect();
+      expect(handleRect.left).toBeLessThan(parentRect?.left ?? 0);
+    });
   },
 };
 
@@ -60,6 +96,20 @@ export const PositionBottom: Story = {
     'aria-valuenow': 150,
     'aria-valuemax': 400,
   },
+  play: async ({ canvas, step }) => {
+    const handle = canvas.getByRole('separator');
+
+    await step('Has aria-orientation="horizontal" for bottom position', async () => {
+      expect(handle).toHaveAttribute('aria-orientation', 'horizontal');
+    });
+
+    await step('Shows on the top of the parent element', async () => {
+      handle.focus();
+      const parentRect = handle.parentElement?.getBoundingClientRect();
+      const handleRect = handle.getBoundingClientRect();
+      expect(handleRect.top).toBeLessThan(parentRect?.top ?? 0);
+    });
+  },
 };
 
 export const PositionTop: Story = {
@@ -70,79 +120,19 @@ export const PositionTop: Story = {
     'aria-valuenow': 150,
     'aria-valuemax': 400,
   },
-};
+  play: async ({ canvas, step }) => {
+    const handle = canvas.getByRole('separator');
 
-export const OverlappingLeft: Story = {
-  name: 'Overlapping: left',
-  args: {
-    position: 'left',
-    overlapping: true,
-    'aria-label': 'Sidebar resize handle',
-    'aria-valuenow': 200,
-    'aria-valuemax': 500,
-  },
-};
+    await step('Has aria-orientation="horizontal" for top position', async () => {
+      expect(handle).toHaveAttribute('aria-orientation', 'horizontal');
+    });
 
-export const NonOverlappingLeft: Story = {
-  name: 'Non-overlapping: left',
-  args: {
-    position: 'left',
-    overlapping: false,
-    'aria-label': 'Sidebar resize handle',
-    'aria-valuenow': 200,
-    'aria-valuemax': 500,
-  },
-};
-
-export const OverlappingBottom: Story = {
-  name: 'Overlapping: bottom',
-  args: {
-    position: 'bottom',
-    overlapping: true,
-    'aria-label': 'Bottom panel resize handle',
-    'aria-valuenow': 150,
-    'aria-valuemax': 400,
-  },
-};
-
-export const NonOverlappingBottom: Story = {
-  name: 'Non-overlapping: bottom',
-  args: {
-    position: 'bottom',
-    overlapping: false,
-    'aria-label': 'Bottom panel resize handle',
-    'aria-valuenow': 150,
-    'aria-valuemax': 400,
-  },
-};
-
-export const ValueAtMinimum: Story = {
-  name: 'Value: at minimum (collapsed)',
-  args: {
-    position: 'left',
-    'aria-label': 'Sidebar resize handle',
-    'aria-valuenow': 0,
-    'aria-valuemax': 500,
-  },
-};
-
-export const ValueAtMidpoint: Story = {
-  name: 'Value: at midpoint',
-  args: {
-    position: 'left',
-    'aria-label': 'Sidebar resize handle',
-    'aria-valuenow': 250,
-    'aria-valuemax': 500,
-  },
-};
-
-export const ValueAtMaximum: Story = {
-  name: 'Value: at maximum',
-  args: {
-    position: 'left',
-    'aria-label': 'Sidebar resize handle',
-    'aria-valuenow': 500,
-    'aria-valuemax': 500,
+    await step('Shows on the bottom of the parent element', async () => {
+      handle.focus();
+      const parentRect = handle.parentElement?.getBoundingClientRect();
+      const handleRect = handle.getBoundingClientRect();
+      expect(handleRect.top).toBeGreaterThan(parentRect?.top ?? 0);
+    });
   },
 };
 
@@ -154,11 +144,9 @@ export const AriaRole: Story = {
     'aria-valuenow': 240,
     'aria-valuemax': 480,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-    const handle = canvas.getByRole('separator');
-
+  play: async ({ canvas, step }) => {
     await step('Has role="separator"', async () => {
+      const handle = canvas.getByRole('separator');
       expect(handle).toBeInTheDocument();
     });
   },
@@ -172,11 +160,9 @@ export const AriaOrientationVertical: Story = {
     'aria-valuenow': 240,
     'aria-valuemax': 480,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-    const handle = canvas.getByRole('separator');
-
+  play: async ({ canvas, step }) => {
     await step('Has aria-orientation="vertical" for left position', async () => {
+      const handle = canvas.getByRole('separator');
       expect(handle).toHaveAttribute('aria-orientation', 'vertical');
     });
   },
@@ -190,11 +176,9 @@ export const AriaOrientationHorizontal: Story = {
     'aria-valuenow': 150,
     'aria-valuemax': 400,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-    const handle = canvas.getByRole('separator');
-
+  play: async ({ canvas, step }) => {
     await step('Has aria-orientation="horizontal" for bottom position', async () => {
+      const handle = canvas.getByRole('separator');
       expect(handle).toHaveAttribute('aria-orientation', 'horizontal');
     });
   },
@@ -208,11 +192,9 @@ export const AriaLabel: Story = {
     'aria-valuenow': 150,
     'aria-valuemax': 400,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-    const handle = canvas.getByRole('separator');
-
+  play: async ({ canvas, step }) => {
     await step('Has correct aria-label', async () => {
+      const handle = canvas.getByRole('separator');
       expect(handle).toHaveAttribute('aria-label', 'Specific resize handle label');
     });
   },
@@ -226,11 +208,9 @@ export const AriaValue: Story = {
     'aria-valuenow': 150,
     'aria-valuemax': 400,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-    const handle = canvas.getByRole('separator');
-
+  play: async ({ canvas, step }) => {
     await step('Has correct aria-value* attributes', async () => {
+      const handle = canvas.getByRole('separator');
       expect(handle).toHaveAttribute('aria-valuemin', '0');
       expect(handle).toHaveAttribute('aria-valuenow', '150');
       expect(handle).toHaveAttribute('aria-valuemax', '400');
@@ -246,8 +226,7 @@ export const FocusTooltipVertical: Story = {
     'aria-valuenow': 200,
     'aria-valuemax': 500,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas, step }) => {
     const handle = canvas.getByRole('separator');
 
     await step('Tab onto the handle', async () => {
@@ -256,7 +235,7 @@ export const FocusTooltipVertical: Story = {
     });
 
     await step('Tooltip with ← → hint is visible', async () => {
-      // The tooltip is rendered in a portal outside canvasElement.
+      // The tooltip is rendered in a portal outside canvas.
       const tooltip = await within(document.body).findByText('← → to resize');
       expect(tooltip).toBeInTheDocument();
     });
@@ -279,8 +258,7 @@ export const FocusTooltipHorizontal: Story = {
     'aria-valuenow': 150,
     'aria-valuemax': 400,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas, step }) => {
     const handle = canvas.getByRole('separator');
 
     await step('Tab onto the handle', async () => {

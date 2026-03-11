@@ -3,7 +3,7 @@ import { global as globalThis } from '@storybook/global';
 
 import { clearAllMocks, expect, waitFor } from 'storybook/test';
 
-import { fetchData } from './ClearModuleMocks.api';
+import { fetchData } from './ClearModuleMocksMocking.api';
 
 /**
  * The purpose of this story is to verify that the `clearAllMocks` function properly clears mocks

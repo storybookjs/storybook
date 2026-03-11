@@ -160,7 +160,8 @@ const appendToExistingProjects = (
 
 /**
  * Wraps the existing test config as one project entry inside the template's workspace/projects
- * array, extracting coverage to the top-level test object.
+ * array, hoisting shared properties (coverage, env, pool, maxWorkers) to the top-level test
+ * object.
  */
 const wrapTestConfigAsProject = (
   resolvedTestValue: t.ObjectExpression,
@@ -184,11 +185,43 @@ const wrapTestConfigAsProject = (
     return;
   }
 
-  // Extract coverage config before creating the test project
-  const coverageProp = findNamedProp(resolvedTestValue.properties, 'coverage');
-  const testPropsWithoutCoverage = resolvedTestValue.properties.filter((p) => p !== coverageProp);
+  // Properties that should stay at the top-level test object (shared across all projects)
+  const TOP_LEVEL_TEST_PROPERTIES = [
+    'shard',
+    'watch',
+    'run',
+    'cache',
+    'update',
+    'reporters',
+    'outputFile',
+    'teardownTimeout',
+    'silent',
+    'forceRerunTriggers',
+    'testNamePattern',
+    'ui',
+    'open',
+    'uiBase',
+    'snapshotFormat',
+    'resolveSnapshotPath',
+    'passWithNoTests',
+    'onConsoleLog',
+    'onStackTrace',
+    'dangerouslyIgnoreUnhandledErrors',
+    'slowTestThreshold',
+    'inspect',
+    'inspectBrk',
+    'coverage',
+    'watchTriggerPatterns',
+  ];
 
-  // Create the existing test project: { extends: true, test: { ...existingTestProps } }
+  const topLevelProps = TOP_LEVEL_TEST_PROPERTIES.map((name) =>
+    findNamedProp(resolvedTestValue.properties, name)
+  ).filter(Boolean);
+
+  const topLevelPropSet = new Set(topLevelProps);
+  const projectTestProps = resolvedTestValue.properties.filter((p) => !topLevelPropSet.has(p));
+
+  // Create the existing test project: { extends: true, test: { ...projectTestProps } }
   const existingTestProject: t.ObjectExpression = {
     type: 'ObjectExpression',
     properties: [
@@ -204,7 +237,7 @@ const wrapTestConfigAsProject = (
         key: { type: 'Identifier', name: 'test' } as t.Identifier,
         value: {
           type: 'ObjectExpression',
-          properties: testPropsWithoutCoverage,
+          properties: projectTestProps,
         } as t.ObjectExpression,
         computed: false,
         shorthand: false,
@@ -220,9 +253,9 @@ const wrapTestConfigAsProject = (
     (p) => p !== existingTestProp
   );
 
-  // Hoist coverage to the top-level test object so it applies to all projects
-  if (coverageProp && templateTestProp.value.type === 'ObjectExpression') {
-    templateTestProp.value.properties.unshift(coverageProp);
+  // Hoist top-level properties to the test object so they apply to all projects
+  if (topLevelProps.length > 0 && templateTestProp.value.type === 'ObjectExpression') {
+    templateTestProp.value.properties.unshift(...topLevelProps);
   }
 
   mergeProperties(properties, targetConfigObject.properties);

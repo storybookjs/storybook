@@ -1,9 +1,8 @@
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import { global as globalThis } from '@storybook/global';
 
 import { clearAllMocks, expect, waitFor } from 'storybook/test';
 
-import { ClearModuleMocks } from './ClearModuleMocks';
 import { fetchData } from './ClearModuleMocks.api';
 
 /**
@@ -15,27 +14,36 @@ import { fetchData } from './ClearModuleMocks.api';
  * https://github.com/storybookjs/storybook/issues/34075
  */
 const meta = {
-  component: ClearModuleMocks,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
+  args: {
+    label: 'Fetch Data',
+    onClick: () => {
+      fetchData();
+    },
+  },
   beforeEach: async () => {
     clearAllMocks();
   },
-} satisfies Meta<typeof ClearModuleMocks>;
+};
 
 export default meta;
-type Story = StoryObj<typeof meta>;
 
-export const First: Story = {
+export const First = {
   args: {},
-  play: async () => {
+  play: async ({ canvas }: any) => {
+    const button = await canvas.getByRole('button');
+    await button.click();
     await waitFor(() => {
       expect(fetchData).toHaveBeenCalledTimes(1);
     });
   },
 };
 
-export const Second: Story = {
+export const Second = {
   args: {},
-  play: async () => {
+  play: async ({ canvas }: any) => {
+    const button = await canvas.getByRole('button');
+    await button.click();
     await waitFor(() => {
       expect(fetchData).toHaveBeenCalledTimes(1);
     });

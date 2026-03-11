@@ -17,10 +17,11 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
-import { addRunStoryTestsTool } from './tools/run-story-tests.ts';
+import { addRunStoryTestsTool, getAddonVitestConstants } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import type { CompositionAuth } from './auth/index.ts';
+import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -33,19 +34,35 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const core = await options.presets.apply('core', {});
 	disableTelemetry = core?.disableTelemetry ?? false;
 
-	const server = new McpServer(
+	// Determine tool availability before creating server so instructions can be tailored
+	const addonVitestConstants = await getAddonVitestConstants();
+	const manifestStatus = await getManifestStatus(options);
+	a11yEnabled = await isAddonA11yEnabled(options);
+
+	let server: McpServer<any, AddonContext>;
+
+	const serverOptions = {
+		adapter: new ValibotJsonSchemaAdapter(),
+		get instructions() {
+			return buildServerInstructions({
+				devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
+				testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && !!addonVitestConstants,
+				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && manifestStatus.available,
+			});
+		},
+		capabilities: {
+			tools: { listChanged: true },
+			resources: { listChanged: true },
+		},
+	};
+
+	server = new McpServer(
 		{
 			name: pkgJson.name,
 			version: pkgJson.version,
 			description: pkgJson.description,
 		},
-		{
-			adapter: new ValibotJsonSchemaAdapter(),
-			capabilities: {
-				tools: { listChanged: true },
-				resources: { listChanged: true },
-			},
-		},
+		serverOptions,
 	).withContext<AddonContext>();
 
 	if (!disableTelemetry) {
@@ -59,11 +76,9 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	await addGetUIBuildingInstructionsTool(server);
 
 	// Register test addon tools
-	a11yEnabled = await isAddonA11yEnabled(options);
 	await addRunStoryTestsTool(server, { a11yEnabled });
 
 	// Only register the additional tools if the component manifest feature is enabled
-	const manifestStatus = await getManifestStatus(options);
 	if (manifestStatus.available) {
 		logger.info('Experimental components manifest feature detected - registering component tools');
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;

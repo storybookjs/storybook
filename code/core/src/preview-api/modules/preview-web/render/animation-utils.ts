@@ -37,24 +37,21 @@ export function pauseAnimations(): CleanupCallback {
     const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
     const animations = animationRoots.flatMap((el) => el?.getAnimations?.() || []);
     animations.forEach((a) => {
+      if (!isDocumentAnimation(a)) {
+        return;
+      }
       previousStates.push({
         animation: a,
         playState: a.playState,
         currentTime: a.currentTime,
       });
-      if (isDocumentAnimation(a)) {
-        // Normal animations and transitions instantly run to their end state (finish),
-        // while infinite animations pause and rewind to their starting state.
-        if (isFiniteAnimation(a)) {
-          a.finish();
-        } else {
-          a.pause();
-          a.currentTime = 0;
-        }
+      // Normal animations and transitions instantly run to their end state (finish),
+      // while infinite animations pause and rewind to their starting state.
+      if (isFiniteAnimation(a)) {
+        a.finish();
       } else {
-        // Scroll/view-driven animations are paused as-is, so that play functions may affect them.
-        // The play function should account for the animation duration to get consistent results.
         a.pause();
+        a.currentTime = 0;
       }
     });
 

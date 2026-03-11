@@ -282,13 +282,24 @@ Minimal composition example:
 
 ```ts
 import { McpServer } from 'tmcp';
+import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
 	addGetStoryDocumentationTool,
 	addGetDocumentationTool,
 	addListAllDocumentationTool,
+	type StorybookContext,
 } from '@storybook/mcp';
 
-const server = new McpServer({ name: 'custom-mcp', version: '1.0.0' });
+const adapter = new ValibotJsonSchemaAdapter();
+const server = new McpServer(
+	{ name: 'custom-mcp', version: '1.0.0' },
+	{
+		adapter,
+		capabilities: {
+			tools: { listChanged: true },
+		},
+	},
+).withContext<StorybookContext>();
 
 await addListAllDocumentationTool(server);
 await addGetDocumentationTool(server);

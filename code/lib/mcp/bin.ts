@@ -22,7 +22,14 @@ import { addGetDocumentationTool } from './src/tools/get-documentation.ts';
 import type { StorybookContext } from './src/types.ts';
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs/promises';
-import { basename } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { basename, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const serverInstructions = readFileSync(
+	resolve(dirname(fileURLToPath(import.meta.url)), './src/instructions.md'),
+	'utf-8',
+);
 
 const adapter = new ValibotJsonSchemaAdapter();
 const server = new McpServer(
@@ -33,6 +40,7 @@ const server = new McpServer(
 	},
 	{
 		adapter,
+		instructions: serverInstructions,
 		capabilities: {
 			tools: { listChanged: true },
 		},

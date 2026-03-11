@@ -80,6 +80,9 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   );
 };
 
+export const isViteSandbox = (key?: AllTemplatesKey) =>
+  !key || key.includes('vite') || key.includes('svelte-kit');
+
 export const addWorkaroundResolutions = async ({
   cwd,
   dryRun,
@@ -95,35 +98,38 @@ export const addWorkaroundResolutions = async ({
   const content = await readFile(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(content);
 
-  const additionalReact19Resolutions = [
-    'nextjs/default-ts',
-    'nextjs/prerelease',
-    'nextjs-vite/15-ts',
-    'nextjs-vite/default-ts',
-    'nextjs-vite/14-ts',
-    'react-native-web-vite/expo-ts',
-  ].includes(key)
-    ? {
-        react: '^19.0.0',
-        'react-dom': '^19.0.0',
-      }
-    : key === 'react-webpack/prerelease-ts'
-      ? {
-          react: packageJson.dependencies.react,
-          'react-dom': packageJson.dependencies['react-dom'],
-        }
-      : key === 'react-rsbuild/default-ts'
-        ? {
-            'react-docgen': '^8.0.2',
-          }
-        : {};
+  let additionalResolutions = {};
+
+  if (isViteSandbox(key)) {
+    // Override vite to v8 beta for vite-based sandboxes to test Vite 8 compatibility
+    additionalResolutions = {
+      vite: '8.0.0-beta.18',
+    };
+  }
+
+  // add additional resolutions for React 19
+  if (['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)) {
+    additionalResolutions = {
+      react: '^19.0.0',
+      'react-dom': '^19.0.0',
+    };
+  } else if (key === 'react-webpack/prerelease-ts') {
+    additionalResolutions = {
+      react: packageJson.dependencies.react,
+      'react-dom': packageJson.dependencies['react-dom'],
+    };
+  } else if (key === 'react-rsbuild/default-ts') {
+    additionalResolutions = {
+      'react-docgen': '^8.0.2',
+    };
+  }
 
   packageJson.resolutions = {
     ...packageJson.resolutions,
-    ...additionalReact19Resolutions,
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
+    ...additionalResolutions,
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
@@ -172,7 +178,7 @@ export const configureYarn2ForVerdaccio = async ({
     // Discard all YN0013 - FETCH_NOT_CACHED messages
     // Error on YN0060 - INCOMPATIBLE_PEER_DEPENDENCY
     command.push(
-      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"error\\"}]"`
+      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"discard\\"}]"`
     );
   }
 

@@ -84,8 +84,7 @@ For some project setups, the `add` command may be unable to automate the addon a
 1. Make sure Vite and Vitest are configured in your project.
 1. Configure Vitest to use [browser mode](https://vitest.dev/guide/browser/).
 1. Install the addon, `@storybook/addon-vitest`, in your project and [register it in your Storybook configuration](../../../addons/install-addons.mdx#manual-installation).
-1. Create a test setup file, `.storybook/vitest.setup.ts`. You can use the [example setup file](#example-vitest-setup) as a guide.
-1. Adjust your Vitest configuration to include the plugin and reference the setup file. You can use the [example configuration files](#example-configuration-files) as a guide.
+1. Adjust your Vitest configuration to include the plugin. You can use the [example configuration files](#example-configuration-files) as a guide.
    - For projects with existing Vitest tests, we recommend using a separate [test project](https://vitest.dev/guide/projects) if you're using Vitest ≥ 4.0 and a [workspace file](https://v3.vitest.dev/config/#workspace) if you're using Vitest 3.x to define separate configurations for your Storybook tests and other tests. You can run them in isolation or together, depending on your needs.
 
 </details>
@@ -93,18 +92,6 @@ For some project setups, the `add` command may be unable to automate the addon a
 ### Example configuration files
 
 When the addon is set up automatically, it will create or adjust your Vitest configuration files for you. If you're setting up manually, you can use the following examples as a reference when configuring your project.
-
-<details id="example-vitest-setup">
-  <summary>Example Vitest setup file</summary>
-
- Storybook stories contain configuration defined in `.storybook/preview.js|ts`. To ensure that configuration is available to your tests, you can apply it in a Vitest setup file. Here's an example of how to do that:
-
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="addon-vitest-set-project-annotations-simple.md" />
-
-  {/* prettier-ignore-end */}
-</details>
 
 <details id="example-vitest-config">
   <summary>Example Vitest config file</summary>
@@ -378,6 +365,44 @@ If you encounter this error, it's often not a Vitest issue but rather related to
 The most common fix is to pre-optimize your dependencies. You can do this by adding the dependencies to your Vite config's [`optimizeDeps.include`](https://vitejs.dev/config/dep-optimization-options.html#optimizedeps-include) array.
 
 This prevents mid-test dependency optimization, which can interfere with Vitest's test suite management.
+
+### Why do my tests fail in CI with "Failed to fetch dynamically imported module" or "Cannot connect to the iframe"?
+
+These errors typically occur in CI environments when running a large number of tests simultaneously, which can overwhelm the available resources. They do not usually appear locally because local machines tend to have more available resources or fewer tests run in parallel.
+
+There are two recommended approaches to fix this:
+
+**1. Disable isolation mode**
+
+By default, Vitest isolates each test file in its own environment. Disabling this can reduce resource consumption and prevent the errors:
+
+```ts title="vitest.config.ts"
+export default defineConfig({
+  test: {
+    // ...
+    isolate: false,
+  },
+});
+```
+
+See [Vitest's `isolate` configuration](https://vitest.dev/config/isolate.html#isolate) for more details.
+
+**2. Use sharding to split tests across multiple CI jobs**
+
+Sharding distributes your test files across several parallel CI jobs, reducing the load on each individual runner:
+
+```bash
+# Run shard 1 of 3
+vitest run --shard=1/3
+
+# Run shard 2 of 3
+vitest run --shard=2/3
+
+# Run shard 3 of 3
+vitest run --shard=3/3
+```
+
+See [Vitest's sharding guide](https://vitest.dev/guide/improving-performance.html#sharding) for more details on how to integrate this into your CI pipeline.
 
 ## API
 

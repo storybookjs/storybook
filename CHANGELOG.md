@@ -1,3 +1,15 @@
+## 10.2.17
+
+- Next.js: Add support for v16.2 - [#34046](https://github.com/storybookjs/storybook/pull/34046), thanks @valentinpalkovic!
+
+## 10.2.16
+
+- CSF-Factories: Fix ConfigFile parser false warning on `definePreview({...}).type<T>()` export default - [#33885](https://github.com/storybookjs/storybook/pull/33885), thanks @copilot-swe-agent!
+- Core: Add host/origin validation to requests and websocket connections - [#33835](https://github.com/storybookjs/storybook/pull/33835), thanks @ghengeveld!
+- Core: Add vike metadata frameworks - [#33965](https://github.com/storybookjs/storybook/pull/33965), thanks @yannbf!
+- Core: Resolve builder preset path correctly in pnpm strict mode - [#34032](https://github.com/storybookjs/storybook/pull/34032), thanks @braedenfoster!
+- Core: Update default allowed hosts in host validation middleware - [#34045](https://github.com/storybookjs/storybook/pull/34045), thanks @ghengeveld!
+
 ## 10.2.15
 
 - Core: Storybook failed to load iframe.html when publishing - [#33896](https://github.com/storybookjs/storybook/pull/33896), thanks @danielalanbates!

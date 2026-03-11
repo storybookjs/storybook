@@ -1,3 +1,4 @@
+import { resolveExpression } from 'storybook/internal/babel';
 import type { BabelFile, types as t } from 'storybook/internal/babel';
 
 import { normalize } from 'pathe';
@@ -68,55 +69,6 @@ const mergeProperties = (
   }
 };
 
-/** Recursively unwraps TypeScript type annotation expressions (as X, satisfies X, <X>expr). */
-const unwrapTSExpression = (expr: t.Expression | t.Declaration): t.Expression => {
-  if (
-    expr.type === 'TSAsExpression' ||
-    expr.type === 'TSSatisfiesExpression' ||
-    expr.type === 'TSTypeAssertion'
-  ) {
-    return unwrapTSExpression(
-      (expr as t.TSAsExpression | t.TSSatisfiesExpression | t.TSTypeAssertion).expression
-    );
-  }
-  return expr as t.Expression;
-};
-
-/**
- * Resolves an expression through variable references and TypeScript type annotations. Handles:
- * Identifier (variable lookup), TSAsExpression, TSSatisfiesExpression, TSTypeAssertion.
- */
-const resolveExpression = (
-  expr: t.Expression | t.Declaration | null | undefined,
-  ast: BabelFile['ast']
-): t.Expression | null => {
-  if (!expr) {
-    return null;
-  }
-  const unwrapped = unwrapTSExpression(expr as t.Expression | t.Declaration);
-  if (unwrapped.type !== 'Identifier') {
-    return unwrapped;
-  }
-  const varName = (unwrapped as t.Identifier).name;
-  const varDecl = ast.program.body.find(
-    (n): n is t.VariableDeclaration =>
-      n.type === 'VariableDeclaration' &&
-      n.declarations.some(
-        (d) => d.id.type === 'Identifier' && (d.id as t.Identifier).name === varName
-      )
-  );
-  if (!varDecl) {
-    return unwrapped;
-  }
-  const declarator = varDecl.declarations.find(
-    (d) => d.id.type === 'Identifier' && (d.id as t.Identifier).name === varName
-  );
-  if (!declarator?.init) {
-    return unwrapped;
-  }
-  return resolveExpression(declarator.init, ast);
-};
-
 /** Returns true if the call expression is a defineConfig or defineProject call. */
 const isDefineConfigLike = (node: t.CallExpression): boolean =>
   node.callee.type === 'Identifier' &&
@@ -136,6 +88,144 @@ const resolveTestPropValue = (
   }
   const resolved = resolveExpression(testProp.value as t.Expression, ast);
   return resolved?.type === 'ObjectExpression' ? resolved : null;
+};
+
+/** Finds a named ObjectProperty in an object expression's properties. */
+const findNamedProp = (
+  properties: t.ObjectExpression['properties'],
+  name: string
+): t.ObjectProperty | undefined =>
+  properties.find(
+    (p): p is t.ObjectProperty =>
+      p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === name
+  );
+
+/** Type guard for a property that is a `projects` key with an ArrayExpression value. */
+const isProjectsArrayProp = (
+  p: t.ObjectMethod | t.ObjectProperty | t.SpreadElement
+): p is t.ObjectProperty =>
+  p.type === 'ObjectProperty' &&
+  p.key.type === 'Identifier' &&
+  p.key.name === 'projects' &&
+  p.value.type === 'ArrayExpression';
+
+/**
+ * Appends storybook project(s) from template into an existing `test.projects` array, then merges
+ * any additional test-level options (e.g. coverage) that don't already exist.
+ */
+const appendToExistingProjects = (
+  existingProjectsProp: t.ObjectProperty,
+  resolvedTestValue: t.ObjectExpression,
+  templateTestProp: t.ObjectProperty | undefined,
+  properties: t.ObjectExpression['properties'],
+  targetConfigObject: t.ObjectExpression
+) => {
+  if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
+    // Append template projects to existing projects array
+    const templateProjectsProp = templateTestProp.value.properties.find(isProjectsArrayProp);
+    if (templateProjectsProp && templateProjectsProp.value.type === 'ArrayExpression') {
+      (existingProjectsProp.value as t.ArrayExpression).elements.push(
+        ...(templateProjectsProp.value as t.ArrayExpression).elements
+      );
+    }
+
+    // Merge other test-level options from template (e.g. coverage) that don't already exist
+    const existingTestPropNames = new Set(
+      resolvedTestValue.properties
+        .filter(
+          (p): p is t.ObjectProperty => p.type === 'ObjectProperty' && p.key.type === 'Identifier'
+        )
+        .map((p) => (p.key as t.Identifier).name)
+    );
+    for (const templateProp of templateTestProp.value.properties) {
+      if (
+        templateProp.type === 'ObjectProperty' &&
+        templateProp.key.type === 'Identifier' &&
+        (templateProp.key as t.Identifier).name !== 'projects' &&
+        !existingTestPropNames.has((templateProp.key as t.Identifier).name)
+      ) {
+        resolvedTestValue.properties.push(templateProp);
+      }
+    }
+  }
+
+  // Merge only non-test properties from template
+  const otherTemplateProps = properties.filter(
+    (p) => !(p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'test')
+  );
+  if (otherTemplateProps.length > 0) {
+    mergeProperties(otherTemplateProps, targetConfigObject.properties);
+  }
+};
+
+/**
+ * Wraps the existing test config as one project entry inside the template's workspace/projects
+ * array, extracting coverage to the top-level test object.
+ */
+const wrapTestConfigAsProject = (
+  resolvedTestValue: t.ObjectExpression,
+  existingTestProp: t.ObjectProperty,
+  templateTestProp: t.ObjectProperty,
+  properties: t.ObjectExpression['properties'],
+  targetConfigObject: t.ObjectExpression
+) => {
+  const workspaceOrProjectsProp =
+    templateTestProp.value.type === 'ObjectExpression'
+      ? (templateTestProp.value.properties.find(
+          (p) =>
+            p.type === 'ObjectProperty' &&
+            p.key.type === 'Identifier' &&
+            (p.key.name === 'workspace' || p.key.name === 'projects')
+        ) as t.ObjectProperty | undefined)
+      : undefined;
+
+  if (!workspaceOrProjectsProp || workspaceOrProjectsProp.value.type !== 'ArrayExpression') {
+    mergeProperties(properties, targetConfigObject.properties);
+    return;
+  }
+
+  // Extract coverage config before creating the test project
+  const coverageProp = findNamedProp(resolvedTestValue.properties, 'coverage');
+  const testPropsWithoutCoverage = resolvedTestValue.properties.filter((p) => p !== coverageProp);
+
+  // Create the existing test project: { extends: true, test: { ...existingTestProps } }
+  const existingTestProject: t.ObjectExpression = {
+    type: 'ObjectExpression',
+    properties: [
+      {
+        type: 'ObjectProperty',
+        key: { type: 'Identifier', name: 'extends' } as t.Identifier,
+        value: { type: 'BooleanLiteral', value: true } as t.BooleanLiteral,
+        computed: false,
+        shorthand: false,
+      } as t.ObjectProperty,
+      {
+        type: 'ObjectProperty',
+        key: { type: 'Identifier', name: 'test' } as t.Identifier,
+        value: {
+          type: 'ObjectExpression',
+          properties: testPropsWithoutCoverage,
+        } as t.ObjectExpression,
+        computed: false,
+        shorthand: false,
+      } as t.ObjectProperty,
+    ],
+  };
+
+  // Add the existing test project to the template's array
+  workspaceOrProjectsProp.value.elements.unshift(existingTestProject);
+
+  // Remove the existing test property from the target config (it's now in the array)
+  targetConfigObject.properties = targetConfigObject.properties.filter(
+    (p) => p !== existingTestProp
+  );
+
+  // Hoist coverage to the top-level test object so it applies to all projects
+  if (coverageProp && templateTestProp.value.type === 'ObjectExpression') {
+    templateTestProp.value.properties.unshift(coverageProp);
+  }
+
+  mergeProperties(properties, targetConfigObject.properties);
 };
 
 /**
@@ -350,164 +440,35 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
               return false;
             }
 
-            // Check if there's already a test property in the target config
-            const existingTestProp = targetConfigObject.properties.find(
-              (p) =>
-                p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'test'
-            ) as t.ObjectProperty | undefined;
-
-            // Resolve the test value – it may be a shorthand reference to a variable
-            // e.g. `const test = {...}; export default mergeConfig(viteConfig, { test })`
+            const existingTestProp = findNamedProp(targetConfigObject.properties, 'test');
             const resolvedTestValue = existingTestProp
               ? resolveTestPropValue(existingTestProp, target)
               : null;
+            const templateTestProp = findNamedProp(properties, 'test');
 
             if (existingTestProp && resolvedTestValue !== null) {
-              // Find the test property from the template (either workspace or projects)
-              const templateTestProp = properties.find(
-                (p) =>
-                  p.type === 'ObjectProperty' &&
-                  p.key.type === 'Identifier' &&
-                  p.key.name === 'test'
-              ) as t.ObjectProperty | undefined;
-
-              const hasProjectsProp = (
-                p: t.ObjectMethod | t.ObjectProperty | t.SpreadElement
-              ): p is t.ObjectProperty =>
-                p.type === 'ObjectProperty' &&
-                p.key.type === 'Identifier' &&
-                p.key.name === 'projects' &&
-                p.value.type === 'ArrayExpression';
-
-              // Check if the existing config already uses a projects array (multi-project setup).
-              // If so, we must append the storybook project to that array instead of wrapping
-              // the entire test config as a single project (which would cause double nesting).
-              const existingProjectsProp = resolvedTestValue.properties.find(hasProjectsProp);
+              const existingProjectsProp = resolvedTestValue.properties.find(isProjectsArrayProp);
 
               if (existingProjectsProp) {
-                // Existing config already has test.projects: append storybook project(s) to it
-                if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
-                  const templateProjectsProp =
-                    templateTestProp.value.properties.find(hasProjectsProp);
-                  if (
-                    templateProjectsProp &&
-                    templateProjectsProp.value.type === 'ArrayExpression'
-                  ) {
-                    const templateElements = (templateProjectsProp.value as t.ArrayExpression)
-                      .elements;
-                    (existingProjectsProp.value as t.ArrayExpression).elements.push(
-                      ...templateElements
-                    );
-                  }
-                  // Merge other test-level options from template (e.g. coverage) into existing test
-                  for (const templateProp of templateTestProp.value.properties) {
-                    if (
-                      templateProp.type === 'ObjectProperty' &&
-                      templateProp.key.type === 'Identifier' &&
-                      (templateProp.key as t.Identifier).name !== 'projects'
-                    ) {
-                      const existingProp = resolvedTestValue.properties.find(
-                        (p) =>
-                          p.type === 'ObjectProperty' &&
-                          p.key.type === 'Identifier' &&
-                          (p.key as t.Identifier).name === (templateProp.key as t.Identifier).name
-                      );
-                      if (!existingProp && templateProp.type === 'ObjectProperty') {
-                        resolvedTestValue.properties.push(templateProp);
-                      }
-                    }
-                  }
-                }
-                // Merge only non-test properties from template to avoid re-adding storybook project
-                const otherTemplateProps = properties.filter(
-                  (p) =>
-                    !(
-                      p.type === 'ObjectProperty' &&
-                      p.key.type === 'Identifier' &&
-                      p.key.name === 'test'
-                    )
+                appendToExistingProjects(
+                  existingProjectsProp,
+                  resolvedTestValue,
+                  templateTestProp,
+                  properties,
+                  targetConfigObject
                 );
-                if (otherTemplateProps.length > 0) {
-                  mergeProperties(otherTemplateProps, targetConfigObject.properties);
-                }
               } else if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
-                // Existing test has no projects array: wrap entire test config as one project
-                const workspaceOrProjectsProp = templateTestProp.value.properties.find(
-                  (p) =>
-                    p.type === 'ObjectProperty' &&
-                    p.key.type === 'Identifier' &&
-                    (p.key.name === 'workspace' || p.key.name === 'projects')
-                ) as t.ObjectProperty | undefined;
-
-                if (
-                  workspaceOrProjectsProp &&
-                  workspaceOrProjectsProp.value.type === 'ArrayExpression'
-                ) {
-                  // Extract coverage config before creating the test project
-                  const coverageProp = resolvedTestValue.properties.find(
-                    (p) =>
-                      p.type === 'ObjectProperty' &&
-                      p.key.type === 'Identifier' &&
-                      p.key.name === 'coverage'
-                  ) as t.ObjectProperty | undefined;
-
-                  // Create a new test config without the coverage property
-                  const testPropsWithoutCoverage = resolvedTestValue.properties.filter(
-                    (p) => p !== coverageProp
-                  );
-
-                  const testConfigForProject: t.ObjectExpression = {
-                    type: 'ObjectExpression',
-                    properties: testPropsWithoutCoverage,
-                  };
-
-                  // Create the existing test project
-                  const existingTestProject: t.ObjectExpression = {
-                    type: 'ObjectExpression',
-                    properties: [
-                      {
-                        type: 'ObjectProperty',
-                        key: { type: 'Identifier', name: 'extends' },
-                        value: { type: 'BooleanLiteral', value: true },
-                        computed: false,
-                        shorthand: false,
-                      },
-                      {
-                        type: 'ObjectProperty',
-                        key: { type: 'Identifier', name: 'test' },
-                        value: testConfigForProject,
-                        computed: false,
-                        shorthand: false,
-                      },
-                    ],
-                  };
-
-                  // Add the existing test project to the template's array
-                  workspaceOrProjectsProp.value.elements.unshift(existingTestProject);
-
-                  // Remove the existing test property from the target config since we're moving it to the array
-                  targetConfigObject.properties = targetConfigObject.properties.filter(
-                    (p) => p !== existingTestProp
-                  );
-
-                  // If there was a coverage config, add it to the template's test config (at the top level of the test object)
-                  // Insert it at the beginning so it appears before workspace/projects
-                  if (coverageProp && templateTestProp.value.type === 'ObjectExpression') {
-                    templateTestProp.value.properties.unshift(coverageProp);
-                  }
-
-                  // Merge the template properties (which now include our existing test project in the array)
-                  mergeProperties(properties, targetConfigObject.properties);
-                } else {
-                  // Fallback to original behavior if template structure is unexpected
-                  mergeProperties(properties, targetConfigObject.properties);
-                }
+                wrapTestConfigAsProject(
+                  resolvedTestValue,
+                  existingTestProp,
+                  templateTestProp,
+                  properties,
+                  targetConfigObject
+                );
               } else {
-                // Fallback to original behavior if template doesn't have expected structure
                 mergeProperties(properties, targetConfigObject.properties);
               }
             } else {
-              // No existing test config, just merge normally
               mergeProperties(properties, targetConfigObject.properties);
             }
             updated = true;

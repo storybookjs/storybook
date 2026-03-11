@@ -7,6 +7,7 @@ import { logging } from '@angular-devkit/core';
 
 import { getBuilderOptions } from './framework-preset-angular-cli';
 import type { PresetOptions } from './preset-options';
+import { Channel } from 'storybook/internal/channels';
 
 // Mock all dependencies
 vi.mock('storybook/internal/node-logger', () => ({
@@ -89,13 +90,14 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build:development',
+        channel: new Channel({}),
       };
 
       await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedTargetFromTargetString).toHaveBeenCalledWith('test-project:build:development');
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build:development"'
+        'Using angular browser target options from "test-project:build:development"'
       );
       expect(mockBuilderContext.getTargetOptions).toHaveBeenCalledWith(mockTarget);
     });
@@ -119,6 +121,7 @@ describe('framework-preset-angular-cli', () => {
         } as any,
         angularBrowserTarget: 'test-project:build',
         angularBuilderOptions: storybookOptions,
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -139,13 +142,14 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         tsConfig: '/custom/tsconfig.json',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(result.tsConfig).toBe('/custom/tsconfig.json');
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular project with "tsConfig:/custom/tsconfig.json"'
+        'Using angular project with "tsConfig:../../custom/tsconfig.json"'
       );
     });
 
@@ -156,6 +160,7 @@ describe('framework-preset-angular-cli', () => {
         presets: {
           apply: vi.fn(),
         } as any,
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -182,6 +187,7 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -196,6 +202,7 @@ describe('framework-preset-angular-cli', () => {
         presets: {
           apply: vi.fn(),
         } as any,
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -218,12 +225,13 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build"'
+        'Using angular browser target options from "test-project:build"'
       );
     });
 
@@ -238,12 +246,13 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build:production',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build:production"'
+        'Using angular browser target options from "test-project:build:production"'
       );
     });
 
@@ -262,6 +271,7 @@ describe('framework-preset-angular-cli', () => {
         } as any,
         angularBrowserTarget: 'test-project:build',
         angularBuilderOptions: {},
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);
@@ -287,6 +297,7 @@ describe('framework-preset-angular-cli', () => {
           apply: vi.fn(),
         } as any,
         angularBrowserTarget: 'test-project:build',
+        channel: new Channel({}),
       };
 
       const result = await getBuilderOptions(options, mockBuilderContext);

@@ -77,7 +77,7 @@ test.describe("save-from-controls", () => {
     await sbPage.page
       .getByPlaceholder("Story export name")
       .fill("ClonedStory" + id);
-    await sbPage.page.getByRole("button", { name: "Create" }).click();
+    await sbPage.page.getByRole("button", { exact: true, name: "Create" }).click();
 
     // Assert the file is saved
     const notification2 = sbPage.page.getByTitle("Story created");

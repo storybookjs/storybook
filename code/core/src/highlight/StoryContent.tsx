@@ -28,7 +28,13 @@ export const StoryContent = ({
           </div>
         </>
       )}
-      <input id="input" type="text" style={{ margin: 20 }} defaultValue="input" />
+      <input
+        aria-label="Sample input"
+        id="input"
+        type="text"
+        style={{ margin: 20 }}
+        defaultValue="input"
+      />
       <div id="zeroheight" />
       <div id="zerowidth" style={{ width: 0, margin: 20 }} />
       <div

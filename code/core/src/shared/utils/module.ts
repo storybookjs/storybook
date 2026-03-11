@@ -29,7 +29,18 @@ export const resolvePackageDir = (
   pkg: Parameters<ImportMeta['resolve']>[0],
   parent?: Parameters<ImportMeta['resolve']>[0]
 ) => {
-  return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'), parent)));
+  try {
+    return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'), parent)));
+  } catch {
+    try {
+      // Necessary fallback for Bun runtime
+      return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'))));
+    } catch {
+      // Fallback using require.resolve for strict pnpm environments where import.meta.resolve may fail
+      const req = createRequire(parent ?? import.meta.url);
+      return dirname(req.resolve(join(pkg, 'package.json')));
+    }
+  }
 };
 
 let isTypescriptLoaderRegistered = false;

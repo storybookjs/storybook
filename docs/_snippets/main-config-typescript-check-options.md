@@ -1,5 +1,5 @@
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
@@ -17,11 +17,26 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-webpack5, nextjs, nextjs-webpack5)
 import { defineMain } from '@storybook/your-framework/node';
 
 export default defineMain({
   framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  typescript: {
+    check: true,
+    checkOptions: {
+      eslint: true,
+    },
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   typescript: {
     check: true,

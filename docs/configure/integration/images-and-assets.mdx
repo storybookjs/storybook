@@ -55,6 +55,10 @@ Or even use a configuration object to define the directories:
 
 {/* prettier-ignore-end */}
 
+<Callout variant="info">
+When using Vite-based frameworks, additional directories may be copied to your build directory because of Vite's own [static asset handling](https://vite.dev/guide/assets#the-public-directory). You can set Vite's `publicDir` option to `false` to disable this behavior.
+</Callout>
+
 ## Reference assets from a CDN
 
 Upload your files to an online CDN and reference them. In this example, we’re using a placeholder image service.

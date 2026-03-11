@@ -185,7 +185,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
     }
     .sb-navigator-story-link.active {
       font-weight: bold;
-      color: rgb(2, 156, 253);
+      color: hsl(212 100 46);
     }
   `;
   document.head.appendChild(style);

@@ -45,6 +45,28 @@ describe('stories codemod', () => {
       `);
     });
 
+    it('should preserve leading comments when adding import', async () => {
+      await expect(
+        transform(dedent`
+            // @ts-check
+            /**
+             * @license MIT
+             * Copyright 2024
+             */
+            const meta = { title: 'Component' };
+            export default meta;
+            export const A = {};
+          `)
+      ).resolves.toMatchInlineSnapshot(`
+        // @ts-check
+        /** @license MIT Copyright 2024 */
+        import preview from '#.storybook/preview';
+
+        const meta = preview.meta({ title: 'Component' });
+        export const A = meta.story();
+      `);
+    });
+
     it('should transform and wrap inline default exported meta', async () => {
       await expect(
         transform(dedent`
@@ -270,6 +292,62 @@ describe('stories codemod', () => {
             return JSON.stringify({
               ...myMeta.input.argTypes,
             });
+          },
+        });
+      `);
+    });
+
+    it('migrate cross-file story imports from `ImportedStories.Story.xyz` to `ImportedStories.Story.input.xyz`', async () => {
+      await expect(
+        transform(dedent`
+            import * as BaseStories from './Button.stories';
+            import { Primary as ImportedPrimary } from './Card.stories';
+
+            export default { title: 'Component' };
+
+            export const A = {
+              args: BaseStories.Primary.args,
+            };
+
+            export const B = {
+              ...BaseStories.Secondary,
+              args: {
+                ...BaseStories.Secondary.args,
+                label: 'Custom',
+              },
+            };
+
+            export const C = {
+              args: {
+                ...ImportedPrimary.args,
+              },
+            };
+          `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+
+        import * as BaseStories from './Button.stories';
+        import { Primary as ImportedPrimary } from './Card.stories';
+
+        const meta = preview.meta({
+          title: 'Component',
+        });
+
+        export const A = meta.story({
+          args: BaseStories.Primary.input.args,
+        });
+
+        export const B = meta.story({
+          ...BaseStories.Secondary.input,
+          args: {
+            ...BaseStories.Secondary.input.args,
+            label: 'Custom',
+          },
+        });
+
+        export const C = meta.story({
+          args: {
+            ...ImportedPrimary.input.args,
           },
         });
       `);
@@ -618,6 +696,84 @@ describe('stories codemod', () => {
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({});
+
+        export const A = meta.story();
+      `);
+    });
+
+    it('should preserve user-defined generic types', async () => {
+      const result = await transform(dedent`
+        import { Meta, StoryObj } from '@storybook/react';
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        type Data = Record<string, any>;
+        interface UnusedButShouldNotBeRemoved { name: string };
+        type UnusedAndShouldBeRemoved = Meta;
+
+        export default { title: 'Table' };
+
+        export const A = {
+          render: () => {
+            const data: Data[] = [];
+            return <Table data={data} />;
+          }
+        };
+      `);
+
+      expect(result).toContain('UnusedButShouldNotBeRemoved');
+      expect(result).not.toContain('UnusedAndShouldBeRemoved');
+
+      expect(result).toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        type Data = Record<string, any>;
+        interface UnusedButShouldNotBeRemoved {
+          name: string;
+        }
+
+        const meta = preview.meta({
+          title: 'Table',
+        });
+
+        export const A = meta.story({
+          render: () => {
+            const data: Data[] = [];
+            return <Table data={data} />;
+          },
+        });
+      `);
+    });
+
+    it('should remove Storybook-specific type aliases but leave the ones that are actually used', async () => {
+      await expect(
+        transform(dedent`
+          import { Meta, StoryObj, ComponentStory, ComponentMeta } from '@storybook/react';
+          import { Button } from './Button';
+
+          type CustomMeta = Meta<typeof Button>;
+          type CustomStory = StoryObj<typeof Button>;
+          type LegacyStory = ComponentStory<typeof Button>;
+          type LegacyMeta = ComponentMeta<typeof Button>;
+          type ThisShouldNotBeRemoved = Meta<typeof Button>;
+          const something: ThisShouldNotBeRemoved = {};
+
+          export default { title: 'Button' };
+          export const A = {};
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import { Meta } from '@storybook/react';
+
+        import preview from '#.storybook/preview';
+
+        import { Button } from './Button';
+
+        type ThisShouldNotBeRemoved = Meta<typeof Button>;
+        const something: ThisShouldNotBeRemoved = {};
+
+        const meta = preview.meta({
+          title: 'Button',
+        });
 
         export const A = meta.story();
       `);

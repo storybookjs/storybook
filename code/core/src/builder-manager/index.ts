@@ -4,8 +4,6 @@ import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
-// TODO: Remove in SB11
-import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import { resolveModulePath } from 'exsolve';
 import { join, parse } from 'pathe';
 import sirv from 'sirv';
@@ -104,7 +102,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     tsconfig: tsconfigPath,
 
     legalComments: 'external',
-    plugins: [globalExternals(globalsModuleInfoMap), pnpPlugin()],
+    plugins: [globalExternals(globalsModuleInfoMap)],
 
     banner: {
       js: 'try{',
@@ -141,7 +139,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   router,
 }) {
   if (!options.quiet) {
-    logger.info('=> Starting manager..');
+    logger.info('Starting...');
   }
 
   const {
@@ -258,7 +256,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   if (!options.outputDir) {
     throw new Error('outputDir is required');
   }
-  logger.info('=> Building manager..');
+  logger.step('Building manager..');
   const {
     config,
     customHead,
@@ -320,7 +318,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
 
   await Promise.all([writeFile(join(options.outputDir, 'index.html'), html), managerFiles]);
 
-  logger.trace({ message: '=> Manager built', time: process.hrtime(startTime) });
+  logger.trace({ message: 'Manager built', time: process.hrtime(startTime) });
 
   return {
     toJson: () => ({}),

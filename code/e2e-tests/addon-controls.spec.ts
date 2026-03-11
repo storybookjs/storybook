@@ -57,7 +57,7 @@ test.describe('addon-controls', () => {
     // cy.getStoryElement().find('button').should('have.css', 'font-size', '16px');
 
     // Reset controls: assert that the component is back to original state
-    const reset = sbPage.panelContent().locator('button[title="Reset controls"]');
+    const reset = sbPage.panelContent().locator('[aria-label="Reset controls"]');
     await reset.click();
     const button = sbPage.previewRoot().locator('button');
     await expect(button).toHaveCSS('font-size', '14px');
@@ -82,6 +82,8 @@ test.describe('addon-controls', () => {
 
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
+    await sbPage.closeAnyPendingModal();
+
     await sbPage.viewAddonPanel('Controls');
     await sbPage.panelContent().locator('#control-select').selectOption('double  space');
 
@@ -94,6 +96,7 @@ test.describe('addon-controls', () => {
 
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
+    await sbPage.closeAnyPendingModal();
     await sbPage.viewAddonPanel('Controls');
     await sbPage.panelContent().locator('#control-multiSelect').selectOption('double  space');
 

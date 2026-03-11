@@ -1,14 +1,15 @@
 import { builtinModules } from 'node:module';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import * as esbuild from 'esbuild';
-import { pathToFileURL } from 'node:url';
 
 export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
 
 export type BuildEntry = {
   exportEntries?: ('.' | `./${string}`)[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
-  entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
+  entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts",
+  external?: string[]; // the list of external dependencies to exclude from the bundle
   dts?: false; // default to generating d.ts files for all entries, except if set to false
 };
 export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
@@ -57,6 +58,7 @@ export const getExternal = async (cwd: string) => {
 
   const runtimeExternalInclude: string[] = [
     'react',
+    'use-sync-external-store',
     'react-dom',
     'react-dom/client',
     '@storybook/icons',
@@ -77,6 +79,7 @@ export const getExternal = async (cwd: string) => {
     '@testing-library/user-event',
     'chai',
     '@vitest/expect',
+    '@vitest/mocker',
     '@vitest/spy',
     '@vitest/utils',
   ];

@@ -7,6 +7,7 @@ import picocolors from 'picocolors';
 
 import type { FileInfo } from '../../automigrate/codemod';
 import {
+  addImportToTop,
   cleanupTypeImports,
   getConfigProperties,
   removeExportDeclarations,
@@ -119,8 +120,11 @@ export async function configToCsfFactory(
 
     programNode.body.forEach((node) => {
       // Detect Syntax 1
-      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(node.declaration)) {
-        const declarationName = node.declaration.name;
+      const declaration =
+        t.isExportDefaultDeclaration(node) && config._unwrap(node.declaration as t.Node);
+
+      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(declaration)) {
+        const declarationName = declaration.name;
 
         declarationNodeIndex = findDeclarationNodeIndex(declarationName);
 
@@ -162,6 +166,21 @@ export async function configToCsfFactory(
 
     // Add the new export default declaration
     programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
+  } else if (configType === 'preview') {
+    /**
+     * Scenario 4: No exports (empty file or only side-effect imports)
+     *
+     * ```
+     * import './preview.scss';
+     * ```
+     *
+     * Transform into: `import './preview.scss'; export default definePreview({})`
+     *
+     * This is needed because story files using CSF factories import from preview, so the preview
+     * file must have a default export.
+     */
+    const defineConfigCall = t.callExpression(t.identifier(methodName), [t.objectExpression([])]);
+    programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
   }
 
   const configImport = t.importDeclaration(
@@ -194,7 +213,7 @@ export async function configToCsfFactory(
     }
   } else {
     // if not, add import { defineMain } from '@storybook/framework'
-    programNode.body.unshift(configImport);
+    addImportToTop(programNode, configImport);
   }
 
   // Remove type imports – now inferred – from @storybook/* packages

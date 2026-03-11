@@ -12,7 +12,7 @@ import {
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
-import { deprecate, logger } from 'storybook/internal/node-logger';
+import { deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
@@ -20,18 +20,22 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
-import prompts from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import Channel from '../channels';
 import { detectPnp } from '../cli/detect';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
+import { getWsToken } from './presets/wsToken';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
+import { getServerChannel } from './utils/get-server-channel';
 import { outputStartupInformation } from './utils/output-startup-information';
 import { outputStats } from './utils/output-stats';
-import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address';
+import { getServer } from './utils/server-init';
+import { stripCommentsAndStrings } from './utils/strip-comments-and-strings';
 import { updateCheck } from './utils/update-check';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
@@ -68,11 +72,12 @@ export async function buildDevStandalone(
   ]);
 
   if (!options.ci && !options.smokeTest && options.port != null && port !== options.port) {
-    const { shouldChangePort } = await prompts({
-      type: 'confirm',
-      initial: true,
-      name: 'shouldChangePort',
-      message: `Port ${options.port} is not available. Would you like to run Storybook on port ${port} instead?`,
+    const shouldChangePort = await prompt.confirm({
+      message: dedent`
+        Port ${options.port} is not available. 
+        Would you like to run Storybook on port ${port} instead?
+      `,
+      initialValue: true,
     });
     if (!shouldChangePort) {
       process.exit(1);
@@ -87,6 +92,14 @@ export async function buildDevStandalone(
     outputDir = cacheOutputDir;
   }
 
+  invariant(port, 'expected options to have a port');
+  const { address: localAddress, networkAddress } = getServerAddresses(
+    port,
+    options.host,
+    options.https ? 'https' : 'http',
+    options.initialPath
+  );
+
   options.port = port;
   options.versionCheck = versionCheck;
   options.configType = 'DEVELOPMENT';
@@ -94,6 +107,8 @@ export async function buildDevStandalone(
   options.cacheKey = cacheKey;
   options.outputDir = outputDir;
   options.serverChannelUrl = getServerChannelUrl(port, options);
+  options.localAddress = localAddress;
+  options.networkAddress = networkAddress;
 
   // TODO: Remove in SB11
   options.pnp = await detectPnp();
@@ -107,7 +122,7 @@ export async function buildDevStandalone(
   }
 
   const config = await loadMainConfig(options);
-  const { framework } = config;
+  const { core, framework } = config;
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
@@ -141,6 +156,8 @@ export async function buildDevStandalone(
     await warnWhenUsingArgTypesRegex(previewConfigPath, config);
   } catch (e) {}
 
+  const server = await getServer(options);
+
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
@@ -151,9 +168,30 @@ export async function buildDevStandalone(
     ],
     ...options,
     isCritical: true,
+    channel: new Channel({
+      transports: [
+        {
+          setHandler: () => () => console.error('CHANNEL IS NOT READY YET'),
+          send: () => () => console.error('CHANNEL IS NOT READY YET'),
+        },
+      ],
+    }),
   });
 
-  const { renderer, builder, disableTelemetry } = await presets.apply('core', {});
+  const { allowedHosts, renderer, builder, disableTelemetry } = await presets.apply('core', {});
+
+  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
+  // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
+  if (
+    options.host === '0.0.0.0' &&
+    (!allowedHosts || (allowedHosts !== true && allowedHosts.length === 0))
+  ) {
+    logger.warn(dedent`
+      --host is set to 0.0.0.0 but no allowedHosts are defined. Allowing all hosts.
+      To restrict allowed hosts, set core.allowedHosts in your main Storybook config.
+      See: https://storybook.js.org/docs/api/main-config/main-config-core
+    `);
+  }
 
   if (!builder) {
     throw new MissingBuilderError();
@@ -186,12 +224,21 @@ export async function buildDevStandalone(
     // Regex that matches any CommonJS-specific syntax, stolen from Vite: https://github.com/vitejs/vite/blob/91a18c2f7da796ff8217417a4bf189ddda719895/packages/vite/src/node/ssr/ssrExternal.ts#L87
     const CJS_CONTENT_REGEX =
       /\bmodule\.exports\b|\bexports[.[]|\brequire\s*\(|\bObject\.(?:defineProperty|defineProperties|assign)\s*\(\s*exports\b/;
-    if (CJS_CONTENT_REGEX.test(mainJsContent)) {
+    const strippedContent = stripCommentsAndStrings(mainJsContent);
+    if (CJS_CONTENT_REGEX.test(strippedContent)) {
       deprecate(deprecationMessage);
     }
   }
 
   const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
+
+  const channel = getServerChannel(server, {
+    token: getWsToken(),
+    host: options.host,
+    allowedHosts,
+    localAddress,
+    networkAddress,
+  });
 
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
@@ -207,19 +254,22 @@ export async function buildDevStandalone(
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
+    channel,
   });
 
   const features = await presets.apply('features');
   global.FEATURES = features;
+  await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {
     ...options,
     presets,
     features,
+    channel,
   };
 
-  const { address, networkAddress, managerResult, previewResult } = await buildOrThrow(async () =>
-    storybookDevServer(fullOptions)
+  const { managerResult, previewResult } = await buildOrThrow(async () =>
+    storybookDevServer(fullOptions, server)
   );
 
   const previewTotalTime = previewResult?.totalTime;
@@ -268,12 +318,13 @@ export async function buildDevStandalone(
         updateInfo: versionCheck,
         version: storybookVersion,
         name,
-        address,
+        address: localAddress,
         networkAddress,
+        allowedHosts,
         managerTotalTime,
         previewTotalTime,
       });
     }
   }
-  return { port, address, networkAddress };
+  return { port, address: localAddress, networkAddress };
 }

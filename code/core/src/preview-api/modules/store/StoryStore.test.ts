@@ -46,7 +46,7 @@ const importFn = vi.fn(async (path) => {
 const projectAnnotations: ProjectAnnotations<any> = composeConfigs([
   {
     initialGlobals: { a: 'b' },
-    globalTypes: { a: { type: 'string' } },
+    globalTypes: { a: { name: 'a' } },
     argTypes: { a: { type: 'string' } },
     render: vi.fn(),
   },
@@ -88,7 +88,7 @@ describe('StoryStore', () => {
       const store = new StoryStore(storyIndex, importFn, projectAnnotations);
 
       expect(store.projectAnnotations!.globalTypes).toEqual({
-        a: { name: 'a', type: { name: 'string' } },
+        a: { name: 'a' },
       });
       expect(store.projectAnnotations!.argTypes).toEqual({
         a: { name: 'a', type: { name: 'string' } },
@@ -100,7 +100,7 @@ describe('StoryStore', () => {
 
       store.setProjectAnnotations(projectAnnotations);
       expect(store.projectAnnotations!.globalTypes).toEqual({
-        a: { name: 'a', type: { name: 'string' } },
+        a: { name: 'a' },
       });
       expect(store.projectAnnotations!.argTypes).toEqual({
         a: { name: 'a', type: { name: 'string' } },

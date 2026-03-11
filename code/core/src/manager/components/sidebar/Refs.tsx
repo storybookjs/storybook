@@ -1,7 +1,6 @@
 import type { FC, MutableRefObject } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { transparentize } from 'polished';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -45,8 +44,7 @@ const RefHead = styled.div(({ theme }) => ({
   paddingBottom: 12,
   borderTop: `1px solid ${theme.appBorderColor}`,
 
-  color:
-    theme.base === 'light' ? theme.color.defaultText : transparentize(0.2, theme.color.defaultText),
+  color: theme.color.defaultText,
 }));
 
 const RefTitle = styled.div({
@@ -96,7 +94,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   } = props;
 
   const length = useMemo(() => (index ? Object.keys(index).length : 0), [index]);
-  const indicatorRef = useRef<HTMLElement>(null);
+  const indicatorRef = useRef(null);
 
   const isMain = refId === DEFAULT_REF_ID;
   const isLoadingInjected =

@@ -19,4 +19,5 @@ ember-output
 !.storybook
 core/assets
 core/src/core-server/utils/__search-files-tests__
+core/src/core-server/utils/__mockdata__/src/Empty.stories.ts
 core/report

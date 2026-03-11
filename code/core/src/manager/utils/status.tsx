@@ -6,7 +6,8 @@ import { type API_HashEntry, type StatusesByStoryIdAndTypeId } from 'storybook/i
 
 import { CircleIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import memoizerific from 'memoizerific';
+import { type Theme, styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols';
 import { getDescendantIds } from './tree';
@@ -19,10 +20,9 @@ const SmallIcons = styled(CircleIcon)({
   },
 });
 
-const LoadingIcons = styled(SmallIcons)(({ theme: { animation, color, base } }) => ({
+const LoadingIcons = styled(SmallIcons)(({ theme: { animation } }) => ({
   // specificity hack
   animation: `${animation.glow} 1.5s ease-in-out infinite`,
-  color: base === 'light' ? color.mediumdark : color.darker,
 }));
 
 export const statusPriority: StatusValue[] = [
@@ -32,28 +32,35 @@ export const statusPriority: StatusValue[] = [
   'status-value:warning',
   'status-value:error',
 ];
-export const statusMapping: Record<StatusValue, [ReactElement | null, string | null]> = {
-  ['status-value:unknown']: [null, null],
-  ['status-value:pending']: [<LoadingIcons key="icon" />, 'currentColor'],
-  ['status-value:success']: [
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="success" />
-    </svg>,
-    'currentColor',
-  ],
-  ['status-value:warning']: [
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="warning" />
-    </svg>,
-    '#A15C20',
-  ],
-  ['status-value:error']: [
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="error" />
-    </svg>,
-    '#D43900',
-  ],
-};
+
+// We might not want to make this a hook because it is used in the Tree after multiple returns.
+// There could be scenarios where creating a story changes the type of an item (e.g. story now
+// has children because it has a test child), so we could end up with rule of hooks violations.
+export const getStatus = memoizerific(5)((theme: Theme, status: StatusValue) => {
+  const statusMapping: Record<StatusValue, [ReactElement | null, string | null]> = {
+    ['status-value:unknown']: [null, null],
+    ['status-value:pending']: [<LoadingIcons key="icon" />, 'currentColor'],
+    ['status-value:success']: [
+      <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <UseSymbol type="success" />
+      </svg>,
+      'currentColor',
+    ],
+    ['status-value:warning']: [
+      <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <UseSymbol type="warning" />
+      </svg>,
+      theme.fgColor.warning,
+    ],
+    ['status-value:error']: [
+      <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <UseSymbol type="error" />
+      </svg>,
+      theme.fgColor.negative,
+    ],
+  };
+  return statusMapping[status];
+});
 
 export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusValue => {
   return statusPriority.reduce(

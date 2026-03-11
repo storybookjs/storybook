@@ -1,6 +1,4 @@
-import { register } from 'node:module';
-
-import { beforeEach, expect, test, vi } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { generate } from 'storybook/internal/babel';
 import { type InterPresetOptions, getPresets } from 'storybook/internal/common';
@@ -10,14 +8,9 @@ import { dedent } from 'ts-dedent';
 
 import { enrichCsf } from './enrichCsf';
 
-vi.mock('node:module', { spy: true });
 vi.mock('my-preset', () => ({
   default: { experimental_enrichCsf: enrichCsf, features: { experimentalCodeExamples: true } },
 }));
-
-beforeEach(() => {
-  vi.mocked(register).mockImplementation(() => {});
-});
 
 test('should enrich csf with code parameters', async () => {
   const presets = await getPresets(['my-preset'], { isCritical: true } as InterPresetOptions);
@@ -57,7 +50,7 @@ test('should enrich csf with code parameters', async () => {
       docs: {
         ...Primary.input.parameters?.docs,
         source: {
-          code: "const Primary = () => <Button primary label=\\"Button\\"></Button>;\\n",
+          code: "const Primary = () => <Button primary label=\\"Button\\" />;\\n",
           ...Primary.input.parameters?.docs?.source
         }
       }
@@ -67,7 +60,7 @@ test('should enrich csf with code parameters', async () => {
       docs: {
         ...Secondary.input.parameters?.docs,
         source: {
-          code: "const Secondary = () => <Button label=\\"Button\\"></Button>;\\n",
+          code: "const Secondary = () => <Button label=\\"Button\\" />;\\n",
           ...Secondary.input.parameters?.docs?.source
         }
       }

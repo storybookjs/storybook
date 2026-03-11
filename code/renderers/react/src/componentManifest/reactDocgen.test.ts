@@ -6,7 +6,7 @@ import { parseWithReactDocgen } from './reactDocgen';
 
 async function parse(code: string, name = 'Component.tsx') {
   const filename = `/virtual/${name}`;
-  return parseWithReactDocgen({ code, filename });
+  return parseWithReactDocgen(code, filename);
 }
 
 describe('parseWithReactDocgen exportName coverage', () => {

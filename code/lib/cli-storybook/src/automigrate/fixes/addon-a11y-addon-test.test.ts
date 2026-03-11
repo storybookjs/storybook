@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAddonNames } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
@@ -45,8 +44,6 @@ vi.mock('picocolors', async (importOriginal) => {
     },
   };
 });
-
-const loggerMock = vi.mocked(logger);
 
 describe('addonA11yAddonTest', () => {
   const configDir = '/path/to/config';
@@ -150,6 +147,7 @@ describe('addonA11yAddonTest', () => {
           framework: '@storybook/react-vite',
         },
         configDir,
+        hasCsfFactoryPreview: false,
       } as any);
       expect(result).toEqual({
         setupFile: path.join(configDir, 'vitest.setup.js'),
@@ -222,6 +220,7 @@ describe('addonA11yAddonTest', () => {
           framework: '@storybook/sveltekit',
         },
         configDir,
+        hasCsfFactoryPreview: false,
       } as any);
       expect(result).toEqual({
         setupFile: path.join(configDir, 'vitest.setup.js'),
@@ -258,6 +257,7 @@ describe('addonA11yAddonTest', () => {
           framework: '@storybook/sveltekit',
         },
         configDir,
+        hasCsfFactoryPreview: false,
       } as any);
       expect(result).toEqual({
         setupFile: null,
@@ -341,6 +341,43 @@ describe('addonA11yAddonTest', () => {
           framework: '@storybook/sveltekit',
         },
         configDir,
+      } as any);
+      expect(result).toEqual({
+        setupFile: path.join(configDir, 'vitest.setup.js'),
+        previewFile: path.join(configDir, 'preview.js'),
+        transformedPreviewCode: expect.any(String),
+        transformedSetupCode: null,
+        skipPreviewTransformation: false,
+        skipVitestSetupTransformation: true,
+      });
+    });
+
+    it('should return skipVitestSetupTransformation=true if hasCsfFactoryPreview is true', async () => {
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
+      vi.mocked(existsSync).mockImplementation((p) => {
+        if (p.toString().includes('vitest.setup') || p.toString().includes('preview.js')) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+      vi.mocked(readFileSync).mockImplementation((p) => {
+        if (p.toString().includes('vitest.setup')) {
+          return 'const annotations = setProjectAnnotations([]);';
+        } else {
+          return '';
+        }
+      });
+
+      const result = await addonA11yAddonTest.check({
+        mainConfig: {
+          framework: '@storybook/react-vite',
+        },
+        configDir,
+        hasCsfFactoryPreview: true,
       } as any);
       expect(result).toEqual({
         setupFile: path.join(configDir, 'vitest.setup.js'),

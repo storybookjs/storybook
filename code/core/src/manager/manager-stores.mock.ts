@@ -5,6 +5,12 @@ import {
 import * as testUtils from 'storybook/test';
 
 import {
+  type StoreEvent,
+  type StoreState,
+  UNIVERSAL_CHECKLIST_STORE_OPTIONS,
+  createChecklistStore,
+} from '../shared/checklist-store';
+import {
   type StatusStoreEvent,
   type StatusesByStoryIdAndTypeId,
   createStatusStore,
@@ -42,3 +48,16 @@ export const {
   ) as unknown as UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>,
   useUniversalStore: experimental_useUniversalStore,
 });
+
+export const internal_universalChecklistStore = new experimental_MockUniversalStore<
+  StoreState,
+  StoreEvent
+>(
+  {
+    ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
+    leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
+  },
+  testUtils
+) as unknown as UniversalStore<StoreState, StoreEvent>;
+
+export const internal_checklistStore = createChecklistStore(internal_universalChecklistStore);

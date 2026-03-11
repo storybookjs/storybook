@@ -1,12 +1,12 @@
-import type { ComponentProps, FC, FocusEvent, SyntheticEvent } from 'react';
+import type { FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Form, IconButton } from 'storybook/internal/components';
+import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
-import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
+import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { type Theme, styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -14,17 +14,14 @@ import type { ControlProps, ObjectConfig, ObjectValue } from './types';
 
 const { window: globalWindow } = globalThis;
 
-type JsonTreeProps = ComponentProps<typeof JsonTree>;
-
 const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
-
-  '&[aria-readonly="true"]': {
-    opacity: 0.5,
-  },
+  isolation: 'isolate',
+  gap: 8,
 
   '.rejt-tree': {
+    flex: 1,
     marginLeft: '1rem',
     fontSize: '13px',
     listStyleType: 'none',
@@ -42,7 +39,13 @@ const Wrapper = styled.div(({ theme }) => ({
     alignItems: 'center',
   },
   '.rejt-name': {
+    color: theme.color.secondary,
     lineHeight: '22px',
+  },
+  '.rejt-not-collapsed-list': {
+    listStyle: 'none',
+    margin: '0 0 0 1rem',
+    padding: 0,
   },
   '.rejt-not-collapsed-delimiter': {
     lineHeight: '22px',
@@ -57,8 +60,11 @@ const Wrapper = styled.div(({ theme }) => ({
     color: theme.color.defaultText,
   },
   '.rejt-value-node:hover > .rejt-value': {
-    background: theme.color.lighter,
+    background: theme.base === 'light' ? theme.color.lighter : 'hsl(0 0 100 / 0.02)',
     borderColor: theme.appBorderColor,
+  },
+  '.rejt-collapsed-value': {
+    color: theme.color.defaultText,
   },
 }));
 
@@ -120,25 +126,11 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  zIndex: 2,
-  top: 2,
-  right: 2,
-  height: 21,
-  padding: '0 3px',
-  background: theme.background.bar,
-  border: `1px solid ${theme.appBorderColor}`,
-  borderRadius: 3,
-  color: theme.textMutedColor,
-  fontSize: '9px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  span: {
-    marginLeft: 3,
-    marginTop: 1,
-  },
-}));
+const RawButton = styled(ToggleButton)({
+  alignSelf: 'flex-start',
+  order: 2,
+  marginRight: -10,
+});
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
   flex: 1,
@@ -171,23 +163,6 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
 
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
-const getCustomStyleFunction: (theme: Theme) => JsonTreeProps['getStyle'] = (theme) => () => ({
-  name: {
-    color: theme.color.secondary,
-  },
-  collapsed: {
-    color: theme.color.dark,
-  },
-  ul: {
-    listStyle: 'none',
-    margin: '0 0 0 1rem',
-    padding: 0,
-  },
-  li: {
-    outline: 0,
-  },
-});
-
 export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
   const theme = useTheme();
   const data = useMemo(() => value && cloneDeep(value), [value]);
@@ -214,7 +189,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const onForceVisible = useCallback(() => {
     onChange({});
     setForceVisible(true);
-  }, [setForceVisible]);
+  }, [onChange, setForceVisible]);
 
   const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -223,9 +198,19 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     }
   }, [forceVisible]);
 
+  // Use string value as key to force re-render on Arg value reset.
+  const jsonString = useMemo(() => {
+    return JSON.stringify(data ?? '', null, 2);
+  }, [data]);
+
   if (!hasData) {
     return (
-      <Button disabled={readonly} id={getControlSetterButtonId(name)} onClick={onForceVisible}>
+      <Button
+        ariaLabel={false}
+        disabled={readonly}
+        id={getControlSetterButtonId(name)}
+        onClick={onForceVisible}
+      >
         Set object
       </Button>
     );
@@ -235,8 +220,10 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     <RawInput
       ref={htmlElRef}
       id={getControlId(name)}
+      minRows={3}
       name={name}
-      defaultValue={value === null ? '' : JSON.stringify(value, null, 2)}
+      key={jsonString}
+      defaultValue={jsonString}
       onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
       placeholder="Edit JSON string..."
       autoFocus={forceVisible}
@@ -249,19 +236,21 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
   return (
-    <Wrapper aria-readonly={readonly}>
+    <Wrapper>
       {isObjectOrArray && (
         <RawButton
-          role="switch"
-          aria-checked={showRaw}
-          aria-label={`Edit the ${name} properties in text format`}
+          disabled={readonly}
+          pressed={showRaw}
+          ariaLabel={`Edit ${name} as JSON`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
           }}
+          variant="ghost"
+          padding="small"
+          size="small"
         >
-          {showRaw ? <EyeCloseIcon /> : <EyeIcon />}
-          <span>RAW</span>
+          <EditIcon />
         </RawButton>
       )}
       {!showRaw ? (
@@ -271,7 +260,6 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
           data={data}
           rootName={name}
           onFullyUpdate={onChange}
-          getStyle={getCustomStyleFunction(theme)}
           cancelButtonElement={<ButtonInline type="button">Cancel</ButtonInline>}
           addButtonElement={
             <ButtonInline type="submit" primary>

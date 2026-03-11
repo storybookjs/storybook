@@ -56,6 +56,7 @@ export const optimizeViteDeps = [
   '@storybook/nextjs-vite/router.mock',
   '@storybook/nextjs-vite > styled-jsx',
   '@storybook/nextjs-vite > styled-jsx/style',
+  '@opentelemetry/api',
 ];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
@@ -68,9 +69,15 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
     await normalizePostCssConfig(searchPath);
   }
 
-  const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
+  const { nextConfigPath, image = {} } =
+    await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
   const nextDir = nextConfigPath ? dirname(nextConfigPath) : undefined;
+
+  const vitePluginOptions = {
+    image,
+    dir: nextDir,
+  };
 
   return {
     ...reactConfig,
@@ -83,6 +90,6 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
         'styled-jsx/style.js': fileURLToPath(import.meta.resolve('styled-jsx/style')),
       },
     },
-    plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],
+    plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs(vitePluginOptions)],
   };
 };

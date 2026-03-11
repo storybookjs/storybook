@@ -1,3 +1,6 @@
+import { fileURLToPath } from 'node:url';
+
+import { findConfigFile } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
@@ -6,6 +9,8 @@ import { loadCustomWebpackConfig } from '@storybook/core-webpack';
 import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 
+import { WebpackInjectMockerRuntimePlugin } from '../plugins/webpack-inject-mocker-runtime-plugin';
+import { WebpackMockPlugin } from '../plugins/webpack-mock-plugin';
 import { createDefaultWebpackConfig } from '../preview/base-webpack.config';
 
 export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<string, any> => {
@@ -26,6 +31,38 @@ export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<
   };
 };
 
+export async function webpackFinal(config: Configuration, options: Options) {
+  const previewConfigPath = findConfigFile('preview', options.configDir);
+
+  // If there's no preview file, there's nothing to mock.
+  if (!previewConfigPath) {
+    return config;
+  }
+
+  config.plugins = config.plugins || [];
+
+  // 1. Add the loader to normalize sb.mock(import(...)) calls.
+  config.module!.rules!.push({
+    test: /preview\.(t|j)sx?$/,
+    use: [
+      {
+        loader: fileURLToPath(
+          import.meta.resolve('@storybook/builder-webpack5/loaders/storybook-mock-transform-loader')
+        ),
+      },
+    ],
+  });
+
+  // 2. Add the plugin to handle module replacement based on sb.mock() calls.
+  // This plugin scans the preview file and sets up rules to swap modules.
+  config.plugins.push(new WebpackMockPlugin({ previewConfigPath }));
+
+  // 3. Add the plugin to inject the mocker runtime script into the HTML.
+  // This ensures the `sb` object is available before any other code runs.
+  config.plugins.push(new WebpackInjectMockerRuntimePlugin());
+  return config;
+}
+
 export async function webpack(config: Configuration, options: Options) {
   const { configDir, configType, presets } = options;
 
@@ -43,11 +80,11 @@ export async function webpack(config: Configuration, options: Options) {
   const customConfig = await loadCustomWebpackConfig(configDir);
 
   if (typeof customConfig === 'function') {
-    logger.info('=> Loading custom Webpack config (full-control mode).');
+    logger.info('Loading custom Webpack config (full-control mode).');
     return customConfig({ config: finalDefaultConfig, mode: configType });
   }
 
-  logger.info('=> Using default Webpack5 setup');
+  logger.info('Using default Webpack5 setup');
   return finalDefaultConfig;
 }
 

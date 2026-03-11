@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "10.1.0-alpha.2",
+  "version": "10.3.0-alpha.16",
   "description": "Storybook Links: Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "storybook",
@@ -29,16 +29,19 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./preview": {
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
       "default": "./dist/preview.js"
     },
     "./react": {
       "types": "./dist/react/index.d.ts",
+      "code": "./src/react/index.ts",
       "default": "./dist/react/index.js"
     }
   },
@@ -49,15 +52,11 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
@@ -71,7 +70,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l",
   "storybook": {
     "displayName": "Links",
     "icon": "https://user-images.githubusercontent.com/263385/101991673-48355c80-3c7c-11eb-9b6e-b627c96a75f6.png",

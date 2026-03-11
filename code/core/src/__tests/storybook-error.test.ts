@@ -6,6 +6,7 @@ describe('StorybookError', () => {
   class TestError extends StorybookError {
     constructor(documentation?: StorybookError['documentation']) {
       super({
+        name: 'TestError',
         category: 'TEST_CATEGORY',
         code: 123,
         message: 'This is a test error.',

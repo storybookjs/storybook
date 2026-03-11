@@ -147,6 +147,19 @@ export class SbPage {
     await this.waitForStoryLoaded();
   }
 
+  /**
+   * We have stories with modals set to auto-open (e.g. startOpen color control). This helper closes
+   * them to free scroll and keyboard focus traps.
+   */
+  async closeAnyPendingModal() {
+    const popover = this.page.locator('[role="dialog"]');
+    if (await popover.isVisible()) {
+      await this.page.keyboard.press('Escape');
+      await this.page.keyboard.press('Escape');
+      await popover.waitFor({ state: 'hidden', timeout: 1000 });
+    }
+  }
+
   previewIframe() {
     return this.page.frameLocator('#storybook-preview-iframe');
   }
@@ -157,11 +170,11 @@ export class SbPage {
   }
 
   panelContent() {
-    return this.page.locator('#storybook-panel-root #panel-tab-content > div:not([hidden])');
+    return this.page.locator('#storybook-panel-root').getByRole('tabpanel');
   }
 
   async viewAddonPanel(name: string) {
-    const tabs = this.page.locator('[role=tablist] button[role=tab]');
+    const tabs = this.page.locator('[role=tablist] div[role=tab]');
     const tab = tabs.locator(`text=/^${name}/`);
     await tab.click();
   }
@@ -174,15 +187,15 @@ export class SbPage {
   }
 
   async expandAllSidebarNodes() {
-    await this.page.keyboard.press('Escape');
     await this.page.keyboard.press(
       `${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+ArrowDown`
     );
   }
 
   async openTagsFilter() {
-    const tagFiltersButton = this.page.locator('[title="Tag filters"]');
-    const tooltip = this.page.locator('[data-testid="tooltip"]');
+    const tagFiltersButton = this.page.locator('[aria-label="Tag filters"]');
+    // FIXME: we might want to strengthen this locator with an aria-label or testid on the dialog.
+    const tooltip = this.page.locator('[role="dialog"]');
     const isTooltipVisible = await tooltip.isVisible();
 
     if (!isTooltipVisible) {
@@ -204,7 +217,10 @@ export class SbPage {
     await this.openTagsFilter();
 
     if (toggleExclusion) {
-      await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).hover();
+      await this.page
+        .getByRole('listitem')
+        .filter({ has: this.page.getByLabel(new RegExp(`tag filter: ${tag}`)) })
+        .hover();
       await this.page.getByLabel(new RegExp(`(Exclude|Include) tag: ${tag}`)).click();
     } else {
       await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).click();
@@ -218,10 +234,13 @@ export class SbPage {
     await this.openTagsFilter();
 
     if (toggleExclusion) {
-      await this.page.getByLabel(new RegExp(`filter: ${type}`)).hover();
+      await this.page
+        .getByRole('listitem')
+        .filter({ has: this.page.getByLabel(new RegExp(`built-in filter: ${type}`)) })
+        .hover();
       await this.page.getByLabel(new RegExp(`(Exclude|Include) built-in: ${type}`, 'i')).click();
     } else {
-      await this.page.getByLabel(new RegExp(`(Add|Remove) built-in filter: ${type}`)).click();
+      await this.page.getByLabel(new RegExp(`built-in filter: ${type}`)).click();
     }
   }
 

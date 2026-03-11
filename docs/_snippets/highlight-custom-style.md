@@ -1,11 +1,10 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
-import type { Meta, StoryObj } from '@storybook/angular';
-import { componentWrapperDecorator } from '@storybook/angular';
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Meta, type StoryObj, componentWrapperDecorator } from '@storybook/angular';
 
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
   component: MyComponent,
@@ -42,6 +41,50 @@ export const StyledHighlight: Story = {
     }),
   ],
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { componentWrapperDecorator } from '@storybook/angular';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    componentWrapperDecorator((story) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return story;
+    }),
+  ],
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
@@ -175,7 +218,7 @@ export const StyledHighlight: Story = {
 />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
 
@@ -260,7 +303,7 @@ export const StyledHighlight = {
 />
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -306,7 +349,7 @@ export const StyledHighlight: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
 
@@ -348,7 +391,7 @@ export const StyledHighlight = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { useChannel } from 'storybook/preview-api';
@@ -395,7 +438,7 @@ export const StyledHighlight: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
 
@@ -433,7 +476,7 @@ export const StyledHighlight = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { useChannel } from 'storybook/preview-api';
@@ -476,11 +519,181 @@ export const StyledHighlight: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    (story) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return story();
+    },
+  ],
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    (story) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'sb-highlight-pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes sb-highlight-pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return story();
+    },
+  ],
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    () => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return {
+        template: '<story />',
+      };
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    () => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return {
+        template: '<story />',
+      };
+    },
+  ],
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 
@@ -521,9 +734,10 @@ export const StyledHighlight = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 

@@ -7,7 +7,6 @@ import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
 import nextJSLoadConfigModule from 'next/dist/build/load-jsconfig.js';
-import { getSupportedBrowsers } from 'next/dist/build/utils.js';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { getNodeModulesExcludeRegex } from '../utils';
@@ -51,10 +50,26 @@ export const configureSWCLoader = async (
         hasReactRefresh: isDevelopment,
         jsConfig,
         nextConfig,
-        supportedBrowsers: getSupportedBrowsers(projectRoot, isDevelopment),
+        supportedBrowsers: await getSupportedBrowsers(projectRoot, isDevelopment),
         swcCacheDir: join(projectRoot, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
         bundleTarget: 'default',
       },
     },
   });
 };
+
+async function getSupportedBrowsers(projectRoot: string, isDevelopment: boolean) {
+  try {
+    // @ts-expect-error - Correct import since Next.js v16.2
+    return (await import('next/dist/build/get-supported-browsers.js')).getSupportedBrowsers(
+      projectRoot,
+      isDevelopment
+    );
+  } catch (e) {
+    // TODO: Remove as soon as we don't have to support Next.js < 16.2 anymore
+    return (await import('next/dist/build/utils.js')).getSupportedBrowsers(
+      projectRoot,
+      isDevelopment
+    );
+  }
+}

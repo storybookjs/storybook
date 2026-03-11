@@ -88,6 +88,14 @@ Disable the action panel.
 
 This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
 
+#### `limit`
+
+Type: `number`
+
+Default: `50`
+
+The maximum number of actions to display in the actions panel. When the limit is reached, the oldest actions are removed to make room for the newest ones.
+
 #### `expandLevel`
 
 Type: `number`

@@ -155,8 +155,8 @@ export class UserPreferencesCommand {
     let installType: InstallType = 'recommended';
 
     const recommendedLabel = isTestFeatureAvailable
-      ? `Recommended: Includes component development, docs and testing features.`
-      : `Recommended: Includes component development and docs`;
+      ? `Recommended: Component development, docs, and testing features.`
+      : `Recommended: Component development and docs`;
 
     if (!skipPrompt) {
       installType = await prompt.select({

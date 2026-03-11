@@ -82,6 +82,26 @@ test.describe("component testing", () => {
   });
 
   test.afterEach(async ({ page }) => {
+    await page.click("body");
+    try {
+      /** Sometimes the vitest instance fails, but the error-content is only shown in a modal.
+       * We click the link so the modal opens and we can close it.
+       * Having it open shortly is enough to have it be in the playwright trace, for debugging purposes.
+       */
+      const descriptionButton = page.locator("#testing-module-description a");
+      if (
+        await descriptionButton.isVisible({ timeout: 4000 }).catch(() => false)
+      ) {
+        await descriptionButton.click({ timeout: 4000, force: true });
+
+        await page
+          .getByLabel("Close modal")
+          .click({ timeout: 4000, force: true });
+      }
+    } catch {
+      // Ignore any errors when trying to open the modal
+    }
+
     await restoreAllFiles();
 
     const expandTestingModule = page.getByLabel("Expand testing module");

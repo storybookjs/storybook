@@ -11,6 +11,7 @@ import { CloseIcon } from '@storybook/icons';
 import { types, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { menuTool } from '../components/preview/tools/menu';
 import { matchesKeyCode, matchesModifiers } from '../keybinding';
 import { AboutPage } from './AboutPage';
 import { GuidePage } from './GuidePage';
@@ -22,6 +23,18 @@ const { document } = global;
 const Content = styled(ScrollArea)(({ theme }) => ({
   background: theme.background.content,
 }));
+
+const SidebarToggle = styled.div({
+  // Extra specificity is necessary here
+  '&&:has(*)': {
+    order: 0,
+    display: 'flex',
+    alignItems: 'center',
+    marginLeft: 10,
+    marginRight: 6,
+    gap: 6,
+  },
+});
 
 const RouteWrapper: FC<{ children: ReactNode; path: string }> = ({ children, path }) => {
   return (
@@ -109,17 +122,20 @@ const Pages: FC<{
           <TabsView
             tabs={tabs}
             tools={
-              <Button
-                padding="small"
-                variant="ghost"
-                onClick={(e: SyntheticEvent) => {
-                  e.preventDefault();
-                  return onClose();
-                }}
-                ariaLabel="Close settings page"
-              >
-                <CloseIcon />
-              </Button>
+              <>
+                <SidebarToggle>{menuTool.render({})}</SidebarToggle>
+                <Button
+                  padding="small"
+                  variant="ghost"
+                  onClick={(e: SyntheticEvent) => {
+                    e.preventDefault();
+                    return onClose();
+                  }}
+                  ariaLabel="Close settings page"
+                >
+                  <CloseIcon />
+                </Button>
+              </>
             }
             selected={selected}
             onSelectionChange={changeTab}

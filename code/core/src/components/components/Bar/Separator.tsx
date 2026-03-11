@@ -8,6 +8,7 @@ export interface SeparatorProps {
 
 export const Separator = styled.span<SeparatorProps>(
   ({ theme }) => ({
+    display: 'inline-block',
     width: 1,
     height: 20,
     background: theme.appBorderColor,

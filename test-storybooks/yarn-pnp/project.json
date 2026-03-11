@@ -1,0 +1,18 @@
+{
+  "name": "yarn-pnp",
+  "projectType": "application",
+  "targets": {
+    "test": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn --no-immutable && yarn storybook --smoke-test"
+      },
+      "configurations": {
+        "production": {}
+      }
+    }
+  },
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+}

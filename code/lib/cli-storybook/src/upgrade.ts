@@ -7,6 +7,7 @@ import {
   logger,
   prompt,
 } from 'storybook/internal/node-logger';
+import type { LogLevel } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -123,6 +124,7 @@ export type UpgradeOptions = {
   configDir?: string[];
   fixId?: string;
   skipInstall?: boolean;
+  loglevel?: LogLevel;
   logfile?: string | boolean;
 };
 
@@ -253,7 +255,7 @@ function logUpgradeResults(
 
   if (automigrationLinks.length > 0) {
     const automigrationLinksMessage = [
-      'If you want to learn more about the automigrations that executed in your project(s), please check the following links:\n',
+      'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
       ...automigrationLinks,
     ].join('\n');
 

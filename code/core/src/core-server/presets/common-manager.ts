@@ -1,7 +1,7 @@
 /* these imports are in the exact order in which the panels need to be registered */
 import { global } from '@storybook/global';
 
-import { addons } from 'storybook/manager-api';
+import { addons, Tag } from 'storybook/manager-api';
 
 // THE ORDER OF THESE IMPORTS MATTERS! IT DEFINES THE ORDER OF PANELS AND TOOLS!
 import controlsManager from '../../controls/manager';
@@ -33,7 +33,7 @@ const tagFiltersManager = addons.register(TAG_FILTERS, (api) => {
     const tags = item.tags ?? [];
     return (
       // we can filter out the primary story, but we still want to show autodocs
-      (tags.includes('dev') || item.type === 'docs') &&
+      (tags.includes(Tag.DEV) || item.type === 'docs') &&
       tags.filter((tag) => staticExcludeTags[tag]).length === 0
     );
   });

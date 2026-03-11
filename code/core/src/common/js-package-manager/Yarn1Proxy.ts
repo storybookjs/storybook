@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
@@ -50,11 +50,26 @@ export class Yarn1Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
+  getPackageCommand(args: string[]): string {
+    const [command, ...rest] = args;
+    return `yarn exec ${command} -- ${rest.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
+    useRemotePkg = false,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     const [command, ...rest] = args;
+    if (useRemotePkg) {
+      return executeCommand({
+        command: 'npx',
+        args,
+      });
+    }
     return executeCommand({
       command: `yarn`,
       args: ['exec', command, '--', ...rest],
@@ -95,7 +110,7 @@ export class Yarn1Proxy extends JsPackageManager {
       command: 'yarn',
       args: ['config', 'get', 'registry'],
     });
-    const url = (childProcess.stdout ?? '').trim();
+    const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -110,17 +125,19 @@ export class Yarn1Proxy extends JsPackageManager {
       const process = executeCommand({
         command: 'yarn',
         args: yarnArgs.concat(pattern),
+        shell: true,
         env: {
           FORCE_COLOR: 'false',
         },
         cwd: this.instanceDir,
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
     } catch (e) {
+      logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
       return undefined;
     }
   }
@@ -169,7 +186,7 @@ export class Yarn1Proxy extends JsPackageManager {
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       if (parsedOutput.type === 'inspect') {

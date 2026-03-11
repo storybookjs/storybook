@@ -1,18 +1,13 @@
 import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
 
 import {
-  ARGTYPES_INFO_REQUEST,
-  ARGTYPES_INFO_RESPONSE,
   CREATE_NEW_STORYFILE_REQUEST,
   CREATE_NEW_STORYFILE_RESPONSE,
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
-  SAVE_STORY_REQUEST,
-  SAVE_STORY_RESPONSE,
+  GHOST_STORIES_REQUEST,
 } from 'storybook/internal/core-events';
 import type {
-  ArgTypesRequestPayload,
-  ArgTypesResponsePayload,
   CreateNewStoryErrorPayload,
   CreateNewStoryRequestPayload,
   CreateNewStoryResponsePayload,
@@ -20,10 +15,9 @@ import type {
   FileComponentSearchResponsePayload,
   RequestData,
   ResponseData,
-  SaveStoryRequestPayload,
-  SaveStoryResponsePayload,
 } from 'storybook/internal/core-events';
 
+import { global } from '@storybook/global';
 import { CheckIcon } from '@storybook/icons';
 
 import type { RequestResponseError } from 'storybook/manager-api';
@@ -32,20 +26,14 @@ import { addons, experimental_requestResponse, useStorybookApi } from 'storybook
 import { useDebounce } from '../../hooks/useDebounce';
 import type { NewStoryPayload, SearchResult } from './FileSearchList';
 import { FileSearchModal } from './FileSearchModal';
-import { extractSeededRequiredArgs, trySelectNewStory } from './FileSearchModal.utils';
+import { trySelectNewStory } from './FileSearchModal.utils';
 
 interface CreateNewStoryFileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const stringifyArgs = (args: Record<string, any>) =>
-  JSON.stringify(args, (_, value) => {
-    if (typeof value === 'function') {
-      return '__sb_empty_function_arg__';
-    }
-    return value;
-  });
+const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
 export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFileModalProps) => {
   const [isLoading, setLoading] = useState(false);
@@ -57,6 +45,8 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
     null
   );
   const api = useStorybookApi();
+
+  const hasRunGhostStoriesFlow = useRef(false);
 
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
 
@@ -157,30 +147,6 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
 
         await trySelectNewStory(api.selectStory, storyId);
 
-        try {
-          const argTypesInfoResult = await experimental_requestResponse<
-            ArgTypesRequestPayload,
-            ArgTypesResponsePayload
-          >(channel, ARGTYPES_INFO_REQUEST, ARGTYPES_INFO_RESPONSE, {
-            storyId,
-          });
-
-          const argTypes = argTypesInfoResult.argTypes;
-
-          const requiredArgs = extractSeededRequiredArgs(argTypes);
-
-          await experimental_requestResponse<SaveStoryRequestPayload, SaveStoryResponsePayload>(
-            channel,
-            SAVE_STORY_REQUEST,
-            SAVE_STORY_RESPONSE,
-            {
-              args: stringifyArgs(requiredArgs),
-              importPath: createNewStoryResult.storyFilePath,
-              csfId: storyId,
-            }
-          );
-        } catch (e) {}
-
         handleSuccessfullyCreatedStory(componentExportName);
         handleFileSearch();
       } catch (e: any) {
@@ -207,6 +173,19 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
   useEffect(() => {
     return handleFileSearch();
   }, [handleFileSearch]);
+
+  const executeGhostStoriesFlow = useCallback(async () => {
+    const channel = addons.getChannel();
+    channel.emit(GHOST_STORIES_REQUEST);
+  }, []);
+
+  // Trigger the one-time flow when modal opens
+  useEffect(() => {
+    if (open && isRendererReact && !hasRunGhostStoriesFlow.current) {
+      hasRunGhostStoriesFlow.current = true;
+      executeGhostStoriesFlow();
+    }
+  }, [open, executeGhostStoriesFlow]);
 
   return (
     <FileSearchModal

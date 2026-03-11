@@ -4,7 +4,7 @@ export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Html,
   title: 'hrefTo',
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
   args: {
     content: '<div><code id="content">Waiting for hrefTo to resolve...</code></div>',

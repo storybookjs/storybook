@@ -65,9 +65,11 @@ const Checkbox = styled(Form.Checkbox)({
 });
 
 export const IntentSurvey = ({
+  isOpen,
   onComplete,
   onDismiss,
 }: {
+  isOpen: boolean;
   onComplete: (formData: Record<string, Record<string, boolean>>) => void;
   onDismiss: () => void;
 }) => {
@@ -172,7 +174,7 @@ export const IntentSurvey = ({
   return (
     <Modal
       ariaLabel="Storybook user survey"
-      defaultOpen
+      open={isOpen}
       width={420}
       onOpenChange={(isOpen) => {
         if (!isOpen) {

@@ -4,38 +4,21 @@ import { pipeline } from 'node:stream/promises';
 import type { ReadableStream } from 'node:stream/web';
 import { createGunzip } from 'node:zlib';
 
-import { temporaryDirectory, versions } from 'storybook/internal/common';
+import {
+  frameworkPackages,
+  rendererPackages,
+  temporaryDirectory,
+  versions,
+} from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { SupportedFramework, type SupportedRenderer } from 'storybook/internal/types';
+import type { SupportedFramework } from 'storybook/internal/types';
+import { type SupportedRenderer } from 'storybook/internal/types';
 
 import getNpmTarballUrlDefault from 'get-npm-tarball-url';
 import { unpackTar } from 'modern-tar/fs';
 import invariant from 'tiny-invariant';
 
 import { resolvePackageDir } from '../shared/utils/module';
-
-type ExternalFramework = {
-  name: SupportedFramework;
-  packageName?: string;
-  frameworks?: string[];
-  renderer?: string;
-};
-
-const externalFrameworks: ExternalFramework[] = [
-  { name: SupportedFramework.QWIK, packageName: 'storybook-framework-qwik' },
-  {
-    name: SupportedFramework.SOLID,
-    packageName: 'storybook-solidjs-vite',
-    frameworks: ['storybook-solidjs-vite'],
-    renderer: 'storybook-solidjs-vite',
-  },
-  {
-    name: SupportedFramework.NUXT,
-    packageName: '@storybook-vue/nuxt',
-    frameworks: ['@storybook-vue/nuxt'],
-    renderer: '@storybook/vue3',
-  },
-];
 
 const resolveUsingBranchInstall = async (packageManager: JsPackageManager, request: string) => {
   const tempDirectory = await temporaryDirectory();
@@ -71,23 +54,28 @@ export async function getRendererDir(
   packageManager: JsPackageManager,
   renderer: SupportedFramework | SupportedRenderer
 ) {
-  const externalFramework = externalFrameworks.find((framework) => framework.name === renderer);
-  const frameworkPackageName =
-    externalFramework?.packageName || externalFramework?.renderer || `@storybook/${renderer}`;
+  const [externalFramework] =
+    Object.entries({ ...frameworkPackages, ...rendererPackages }).find(
+      ([key, value]) => value === renderer
+    ) ?? [];
 
-  const packageJsonPath = join(frameworkPackageName, 'package.json');
+  if (!externalFramework) {
+    return null;
+  }
+
+  const packageJsonPath = join(externalFramework, 'package.json');
 
   const errors: Error[] = [];
 
   try {
-    return resolvePackageDir(frameworkPackageName, process.cwd());
+    return resolvePackageDir(externalFramework, process.cwd());
   } catch (e) {
     invariant(e instanceof Error);
     errors.push(e);
   }
 
   try {
-    return await resolveUsingBranchInstall(packageManager, frameworkPackageName);
+    return await resolveUsingBranchInstall(packageManager, externalFramework);
   } catch (e) {
     invariant(e instanceof Error);
     errors.push(e);

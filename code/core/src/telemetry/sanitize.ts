@@ -1,3 +1,4 @@
+import os from 'node:os';
 import path from 'node:path';
 
 export interface IErrorWithStdErrAndStdOut {
@@ -15,24 +16,47 @@ export function removeAnsiEscapeCodes(input = ''): string {
   return input.replace(/\u001B\[[0-9;]*m/g, '');
 }
 
+/**
+ * Removes all user-specific file system paths from the input string, replacing them with "$SNIP".
+ * This helps sanitize sensitive user information from output (such as error messages or logs). e.g.
+ * `/Users/username/storybook-app/src/pages/index.js` -> `$SNIP/src/pages/index.js`
+ */
 export function cleanPaths(str: string, separator: string = path.sep): string {
   if (!str) {
     return str;
   }
 
-  const stack = process.cwd().split(separator);
+  // Generate target strings to sanitize using both cwd and home dir
+  const separators = Array.from(new Set([separator, `/`, `\\`]));
+  const basePaths = [process.cwd(), os.homedir()].filter(Boolean);
+  const targets = basePaths.flatMap((basePath) =>
+    separators.map((sep) => ({
+      separator: sep,
+      normalizedPath: basePath.split(/[\\/]/).join(sep),
+    }))
+  );
 
-  while (stack.length > 1) {
-    const currentPath = stack.join(separator);
-    const currentRegex = new RegExp(regexpEscape(currentPath), `gi`);
-    str = str.replace(currentRegex, `$SNIP`);
+  // For each target paths, generalize up its parent directories
+  // and sanitize all such occurrences from the string.
+  targets.forEach(({ separator: sep, normalizedPath }) => {
+    // Split normalized path into its segments and iterate up the hierarchy.
+    const stack = normalizedPath.split(sep);
+    while (stack.length > 1) {
+      const currentPath = stack.join(sep);
 
-    const currentPath2 = stack.join(separator + separator);
-    const currentRegex2 = new RegExp(regexpEscape(currentPath2), `gi`);
-    str = str.replace(currentRegex2, `$SNIP`);
+      // Replace all case-insensitive occurrences of this path with "$SNIP".
+      const currentRegex = new RegExp(regexpEscape(currentPath), `gi`);
+      str = str.replace(currentRegex, `$SNIP`);
 
-    stack.pop();
-  }
+      // Also handle the Windows case of doubled separators (e.g., "//", "\\"),
+      const doubledSeparatorPath = stack.join(sep + sep);
+      const doubledSeparatorRegex = new RegExp(regexpEscape(doubledSeparatorPath), `gi`);
+      str = str.replace(doubledSeparatorRegex, `$SNIP`);
+
+      stack.pop();
+    }
+  });
+
   return str;
 }
 
@@ -51,7 +75,8 @@ export function sanitizeError(error: Error, pathSeparator: string = path.sep) {
     const errorString = cleanPaths(JSON.stringify(error), pathSeparator);
 
     return JSON.parse(errorString);
-  } catch (err: any) {
-    return `Sanitization error: ${err?.message}`;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return `Sanitization error: ${message}`;
   }
 }

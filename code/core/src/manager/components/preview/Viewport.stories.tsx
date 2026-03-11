@@ -139,5 +139,5 @@ export const Calculated = meta.story({
     chromatic: { disableSnapshot: true },
   },
   render: () => <></>,
-  tags: ['!test'], // Vitest browser does not support calculated viewports
+  tags: ['!test', '!vitest'], // Vitest browser does not support calculated viewports
 });

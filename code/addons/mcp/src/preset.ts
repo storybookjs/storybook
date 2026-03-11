@@ -130,7 +130,7 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 			</div>`;
 		} else if (!manifestStatus.hasFeatureFlag) {
 			docsNotice = `<div class="toolset-notice">
-				This toolset requires enabling the experimental component manifest feature.
+				This toolset requires enabling the component manifest feature.
 				<a target="_blank" href="https://github.com/storybookjs/mcp/tree/main/packages/addon-mcp#docs-tools-experimental">Learn how to enable it</a>
 			</div>`;
 		}

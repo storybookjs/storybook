@@ -143,7 +143,6 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    experimentalComponentsManifest: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig, { configType }) => {

@@ -1,8 +1,10 @@
+import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
 import { withReset } from '../lib/common';
 
-export const Span = styled.span(withReset, ({ theme }) => ({
+export const Span = styled.span(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
   '&.frame': {
     display: 'block',
     overflow: 'hidden',

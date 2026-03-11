@@ -10,7 +10,7 @@ export default defineGeneratorModule({
   },
   configure: async () => {
     return {
-      extraPackages: ['@stencil/storybook-plugin'],
+      extraPackages: ['@stencil/storybook-plugin', 'vite'],
     };
   },
 });

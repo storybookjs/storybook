@@ -1,5 +1,20 @@
 # @storybook/addon-mcp
 
+## 0.4.0
+
+### Minor Changes
+
+- [#185](https://github.com/storybookjs/mcp/pull/185) [`c5439b7`](https://github.com/storybookjs/mcp/commit/c5439b72425a614e23549ba661d43df87a58443a) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Add MCP server-level instructions to both packages
+
+  Both `@storybook/mcp` and `@storybook/addon-mcp` now include server instructions in the MCP `initialize` response. These instructions guide agents on how to use the available tools effectively without requiring explicit prompting from users.
+
+### Patch Changes
+
+- [#193](https://github.com/storybookjs/mcp/pull/193) [`dbb33c2`](https://github.com/storybookjs/mcp/commit/dbb33c29df2a2cee75eacb2f3575afddce6cd0bf) Thanks [@JReinhold](https://github.com/JReinhold)! - Fix enabling docs toolset even when component manifests were not present
+
+- Updated dependencies [[`eb0ea73`](https://github.com/storybookjs/mcp/commit/eb0ea73f30c73a8102d9023c5201d1459d791fa1), [`c5439b7`](https://github.com/storybookjs/mcp/commit/c5439b72425a614e23549ba661d43df87a58443a)]:
+  - @storybook/mcp@0.6.0
+
 ## 0.3.4
 
 ### Patch Changes

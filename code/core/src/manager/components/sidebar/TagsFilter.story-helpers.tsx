@@ -21,7 +21,7 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
 }> {
   api: ReturnType<typeof initStories>['api'];
   store: ReturnType<typeof createTestingStore>;
-  channel: API_Provider<API>['channel'];
+  channel: Channel;
   mounted: boolean;
 
   constructor(props: {
@@ -42,7 +42,7 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
     });
 
     // Mock channel and provider.
-    this.channel = new Channel({}) as API_Provider<API>['channel'];
+    this.channel = new Channel({});
     const provider: API_Provider<API> = {
       getConfig: () => ({}),
       handleAPI: () => {},

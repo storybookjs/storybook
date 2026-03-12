@@ -196,6 +196,10 @@ export class ManagerErrorBoundary extends Component<
     console.error('Storybook Manager UI Error:', error);
     console.error('Component Stack:', errorInfo.componentStack);
     this.setState({ errorInfo });
+
+    if (typeof globalThis.sendTelemetryError === 'function') {
+      globalThis.sendTelemetryError(error);
+    }
   }
 
   render() {

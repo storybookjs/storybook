@@ -79,6 +79,22 @@ describe('InteractionsPanel', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('labels nested-step toggle buttons with action and collapsed state', () => {
+    const interactions = getInteractions(CallStates.DONE).map((interaction) =>
+      interaction.method === 'step'
+        ? { ...interaction, childCallIds: ['child-call-id'], isCollapsed: true }
+        : interaction
+    );
+
+    renderPanel(createProps({ interactions }));
+
+    const toggle = screen.getByRole('button', {
+      name: 'Expand nested interaction steps for Click button',
+    });
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('announces run status and marks the list as busy while tests are running', () => {
     const { rerender } = renderPanel(
       createProps({

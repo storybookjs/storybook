@@ -108,7 +108,6 @@ const meta = {
         Wrapper: createOverride('Wrapper', true),
       },
     },
-    chromatic: { disableSnapshot: true },
   },
 } satisfies Meta<typeof TestBlock>;
 

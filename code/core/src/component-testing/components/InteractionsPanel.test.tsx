@@ -95,12 +95,26 @@ describe('InteractionsPanel', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('announces run status and marks the list as busy while tests are running', () => {
+  it('announces run status and updates busy state across lifecycle statuses', () => {
     const { rerender } = renderPanel(
       createProps({
-        status: 'playing',
+        status: 'rendering',
         interactions: getInteractions(CallStates.ACTIVE),
       })
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Component test is rendering.');
+    expect(screen.getByRole('list')).toHaveAttribute('aria-busy', 'true');
+
+    rerender(
+      <ThemeProvider theme={convert(themes.light)}>
+        <InteractionsPanel
+          {...createProps({
+            status: 'playing',
+            interactions: getInteractions(CallStates.ACTIVE),
+          })}
+        />
+      </ThemeProvider>
     );
 
     expect(screen.getByRole('status')).toHaveTextContent('Component test is running.');
@@ -118,6 +132,34 @@ describe('InteractionsPanel', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('Component test failed.');
+    expect(screen.getByRole('list')).toHaveAttribute('aria-busy', 'false');
+
+    rerender(
+      <ThemeProvider theme={convert(themes.light)}>
+        <InteractionsPanel
+          {...createProps({
+            status: 'completed',
+            interactions: getInteractions(CallStates.DONE),
+          })}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Component test completed successfully.');
+    expect(screen.getByRole('list')).toHaveAttribute('aria-busy', 'false');
+
+    rerender(
+      <ThemeProvider theme={convert(themes.light)}>
+        <InteractionsPanel
+          {...createProps({
+            status: 'aborted',
+            interactions: getInteractions(CallStates.DONE),
+          })}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Component test was aborted.');
     expect(screen.getByRole('list')).toHaveAttribute('aria-busy', 'false');
   });
 });

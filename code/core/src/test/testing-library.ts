@@ -36,6 +36,34 @@ testingLibrary.screen = new Proxy(testingLibrary.screen, {
   },
 });
 
+// Configure a better error message that avoids dumping the full document body
+// (which includes Storybook's own UI markup) when using `screen` queries.
+// When `screen` is used, the container is `document.body`, which would otherwise
+// produce hundreds of lines of irrelevant HTML in error messages.
+// See: https://github.com/storybookjs/storybook/issues/34118
+domTestingLibrary.configure({
+  getElementError(message: string | null, container: Element) {
+    const prettifiedDOM =
+      typeof document !== 'undefined' && container === document.body
+        ? null
+        : domTestingLibrary.prettyDOM(container);
+
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    const error = new Error(
+      [
+        message,
+        prettifiedDOM
+          ? `Ignored nodes: comments, ${domTestingLibrary.getConfig().defaultIgnore}\n${prettifiedDOM}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join('\n\n')
+    );
+    error.name = 'TestingLibraryElementError';
+    return error;
+  },
+});
+
 export const {
   buildQueries,
   configure,

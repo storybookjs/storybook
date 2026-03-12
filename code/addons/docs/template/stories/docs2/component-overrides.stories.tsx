@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from 'react';
-import React, { useContext } from 'react';
+import React from 'react';
 
-import { DocsContext } from '@storybook/addon-docs/blocks';
+import type { Preview } from '@storybook/react';
 
 type OverrideProps = {
   children?: ReactNode;
@@ -29,17 +29,7 @@ const createOverride = (name: string, renderChildren = false): FC<OverrideProps>
     return <OverrideShell name={name}>{renderChildren ? children : null}</OverrideShell>;
   };
 
-const MetaOverride = ({ of }: { of?: unknown }) => {
-  const context = useContext(DocsContext);
-
-  if (of) {
-    context.referenceMeta(of, true);
-  }
-
-  return <OverrideShell name="Meta" />;
-};
-
-const meta = {
+const meta: Preview = {
   title: 'Docs2/ComponentOverrides',
   component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs'],
@@ -64,7 +54,6 @@ const meta = {
         DocsStory: createOverride('DocsStory'),
         Heading: createOverride('Heading', true),
         Markdown: createOverride('Markdown', true),
-        Meta: MetaOverride,
         Primary: createOverride('Primary'),
         Source: createOverride('Source'),
         Stories: createOverride('Stories'),

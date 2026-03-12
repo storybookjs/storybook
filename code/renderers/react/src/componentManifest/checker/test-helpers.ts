@@ -94,6 +94,22 @@ export function createTempProject(
   return { projectDir, configPath, filePaths };
 }
 
+/**
+ * Derive a PascalCase component name from a file path. For `index.ts` files the parent directory
+ * name is used instead.
+ */
+export function defaultImportName(filePath: string): string {
+  const dir = path.dirname(filePath);
+  const baseName = path.basename(filePath, path.extname(filePath));
+  const rawName = baseName === 'index' ? path.basename(dir) : baseName;
+  const pascalName = rawName
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+  return pascalName || 'Component';
+}
+
 /** Best-effort cleanup of a temp directory. */
 export function cleanup(dir: string): void {
   try {

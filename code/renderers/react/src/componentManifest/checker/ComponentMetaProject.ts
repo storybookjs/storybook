@@ -263,7 +263,7 @@ export class ComponentMetaProject {
     const checker = program.getTypeChecker();
     const serializationContextByComponentPath = new Map<
       string,
-      { sourceFile: ts.SourceFile; defaultsSourcePath?: string } | null
+      { sourceFile: ts.SourceFile; defaultsSourcePath?: string }
     >();
     const serializedDocByKey = new Map<string, Map<ts.Type, ComponentDoc | undefined>>();
 
@@ -335,10 +335,6 @@ export class ComponentMetaProject {
                 : undefined,
           };
           serializationContextByComponentPath.set(componentPath, serializationContext);
-        }
-
-        if (serializationContext === null) {
-          continue;
         }
 
         const serializationCacheKey = `${componentPath}::${exportName}::${entry.component?.componentName ?? ''}`;

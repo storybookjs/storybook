@@ -20,6 +20,21 @@ export const groupBy = <K extends PropertyKey, T>(
   }, {});
 };
 
+/** Like {@link groupBy} but returns a `Map`, allowing non-PropertyKey keys. */
+export function groupByToMap<T, K>(items: Iterable<T>, getKey: (item: T) => K): Map<K, T[]> {
+  const result = new Map<K, T[]>();
+  for (const item of items) {
+    const key = getKey(item);
+    const group = result.get(key);
+    if (group) {
+      group.push(item);
+    } else {
+      result.set(key, [item]);
+    }
+  }
+  return result;
+}
+
 // This invariant allows for lazy evaluation of the message, which we need to avoid excessive computation.
 export function invariant(
   condition: unknown,

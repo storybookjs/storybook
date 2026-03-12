@@ -20,6 +20,7 @@ import * as path from 'path';
 import type ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports';
+import { groupByToMap } from '../utils';
 import { ComponentMetaProject } from './ComponentMetaProject';
 
 // Volar LS pattern (typescriptProject.ts line 18)
@@ -31,20 +32,6 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
   allowJs: true,
   skipLibCheck: true,
 };
-
-function groupByToMap<T, K>(items: Iterable<T>, getKey: (item: T) => K): Map<K, T[]> {
-  const result = new Map<K, T[]>();
-  for (const item of items) {
-    const key = getKey(item);
-    const group = result.get(key);
-    if (group) {
-      group.push(item);
-    } else {
-      result.set(key, [item]);
-    }
-  }
-  return result;
-}
 
 export class ComponentMetaManager {
   private static instance: Promise<ComponentMetaManager | null> | undefined;

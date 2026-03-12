@@ -15,7 +15,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import ts from 'typescript';
 
 import { ComponentMetaProject } from './checker/ComponentMetaProject';
-import { cleanup, createTempDir, sys, writeFiles } from './checker/test-helpers';
+import { cleanup, createTempDir, defaultImportName, sys, writeFiles } from './checker/test-helpers';
 import type { ComponentDoc } from './componentMetaExtractor';
 
 /**
@@ -1347,18 +1347,6 @@ function findExportNames(sourceFile: ts.SourceFile): string[] {
  * file with `export default { component: X }` so that Path 2 (resolveFromMetaComponent) fires. This
  * mirrors production where the user explicitly sets meta.component.
  */
-function defaultImportName(filePath: string): string {
-  const dir = path.dirname(filePath);
-  const baseName = path.basename(filePath, path.extname(filePath));
-  const rawName = baseName === 'index' ? path.basename(dir) : baseName;
-  const pascalName = rawName
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-  return pascalName || 'Component';
-}
-
 function docs(
   fileName: string,
   options: {

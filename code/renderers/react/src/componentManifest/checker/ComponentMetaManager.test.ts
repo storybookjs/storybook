@@ -7,19 +7,7 @@ import ts from 'typescript';
 import type { ComponentDoc } from '../componentMetaExtractor';
 import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager';
 import type { ComponentMetaProject } from './ComponentMetaProject';
-import { cleanup, createTempDir, sys, writeFiles } from './test-helpers';
-
-function defaultImportName(filePath: string): string {
-  const dir = path.dirname(filePath);
-  const baseName = path.basename(filePath, path.extname(filePath));
-  const rawName = baseName === 'index' ? path.basename(dir) : baseName;
-  const pascalName = rawName
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-  return pascalName || 'Component';
-}
+import { cleanup, createTempDir, defaultImportName, sys, writeFiles } from './test-helpers';
 
 /**
  * Test helper: extract docs for known exports via Path 2 (meta.component).

@@ -26,7 +26,8 @@ const toGlobalSelector = (element: string): string =>
 
 const breakpoint = 600;
 
-export const Title = styled.h1(withReset, ({ theme }) => ({
+export const Title = styled.h1(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
   color: theme.color.defaultText,
   fontSize: theme.typography.size.m3,
   fontWeight: theme.typography.weight.bold,
@@ -39,7 +40,8 @@ export const Title = styled.h1(withReset, ({ theme }) => ({
   },
 }));
 
-export const Subtitle = styled.h2(withReset, ({ theme }) => ({
+export const Subtitle = styled.h2(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
   fontWeight: theme.typography.weight.regular,
   fontSize: theme.typography.size.s3,
   lineHeight: '20px',

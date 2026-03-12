@@ -6,9 +6,6 @@ export default {
   framework: {
     name: '@storybook/your-framework',
     options: {
-      image: {
-        loading: 'eager',
-      },
       nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
     },
   },
@@ -26,9 +23,6 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/your-framework',
     options: {
-      image: {
-        loading: 'eager',
-      },
       nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
     },
   },
@@ -48,9 +42,6 @@ export default defineMain({
   framework: {
     name: '@storybook/your-framework',
     options: {
-      image: {
-        loading: 'eager',
-      },
       nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
     },
   },
@@ -70,9 +61,6 @@ export default defineMain({
   framework: {
     name: '@storybook/your-framework',
     options: {
-      image: {
-        loading: 'eager',
-      },
       nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
     },
   },

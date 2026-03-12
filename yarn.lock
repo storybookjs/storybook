@@ -8638,6 +8638,7 @@ __metadata:
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
+    "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@types/node": "npm:^22.19.1"
     magic-string: "npm:^0.30.0"
     svelte: "npm:^5.39.5"

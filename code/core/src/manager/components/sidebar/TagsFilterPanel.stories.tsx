@@ -1,10 +1,13 @@
-import type { DocsIndexEntry, StoryIndexEntry } from 'storybook/internal/types';
+import React from 'react';
+
+import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import type { API } from 'storybook/manager-api';
+import { type API, type Combo, Consumer, ManagerContext } from 'storybook/manager-api';
+import { fn } from 'storybook/test';
 
 import { MockAPIDecorator } from './TagsFilter.story-helpers';
 import { TagsFilterPanel } from './TagsFilterPanel';
@@ -89,15 +92,20 @@ const getEntries = (includeUserTags: boolean) => {
 const meta = {
   component: TagsFilterPanel,
   title: 'Sidebar/TagsFilterPanel',
+  // Will provide api mock
   decorators: [MockAPIDecorator],
+  tags: ['hoho'],
   args: {
-    api: {} as API, // Will be overridden by MockAPIWrapper
+    api: {} as API,
     indexJson: {
       v: 6,
       entries: getEntries(true),
-    },
+    } as StoryIndex,
+    defaultExcludedFilters: [],
+    defaultIncludedFilters: [],
+    includedFilters: [],
+    excludedFilters: [],
   },
-  tags: ['hoho'],
 } satisfies Meta<typeof TagsFilterPanel>;
 
 export default meta;
@@ -111,7 +119,7 @@ export const BuiltInOnly: Story = {
     indexJson: {
       v: 6,
       entries: getEntries(false),
-    },
+    } as StoryIndex,
   },
 };
 
@@ -122,64 +130,65 @@ export const BuiltInOnly: Story = {
  */
 export const BuiltInOnlyProduction: Story = {
   args: {
-    ...BuiltInOnly.args,
+    indexJson: {
+      v: 6,
+      entries: getEntries(false),
+    } as StoryIndex,
   },
 };
 
 export const Included: Story = {
-  parameters: {
-    initialStoryState: {
-      includedTagFilters: ['tag1'],
-    },
+  args: {
+    indexJson: {
+      v: 6,
+      entries: getEntries(true),
+    } as StoryIndex,
+    includedFilters: ['tag1'],
   },
 };
 
 export const Excluded: Story = {
-  parameters: {
-    initialStoryState: {
-      excludedTagFilters: ['tag1'],
-    },
+  args: {
+    indexJson: {
+      v: 6,
+      entries: getEntries(true),
+    } as StoryIndex,
+    excludedFilters: ['tag1'],
   },
 };
 
 export const Mixed: Story = {
-  parameters: {
-    initialStoryState: {
-      includedTagFilters: ['tag1'],
-      excludedTagFilters: ['tag2'],
-    },
+  args: {
+    indexJson: {
+      v: 6,
+      entries: getEntries(true),
+    } as StoryIndex,
+    includedFilters: ['tag1'],
+    excludedFilters: ['tag2'],
   },
 };
 
 export const DefaultSelection: Story = {
-  beforeEach: () => {
-    const originalTagsOptions = global.TAGS_OPTIONS;
-    global.TAGS_OPTIONS = {
-      tag1: { defaultFilterSelection: 'include' },
-      tag2: { defaultFilterSelection: 'exclude' },
-    };
-
-    return () => {
-      global.TAGS_OPTIONS = originalTagsOptions;
-    };
+  args: {
+    indexJson: {
+      v: 6,
+      entries: getEntries(true),
+    } as StoryIndex,
+    includedFilters: ['tag1'],
+    excludedFilters: ['tag2'],
+    defaultIncludedFilters: ['tag1'],
+    defaultExcludedFilters: ['tag2'],
   },
 };
 
 export const DefaultSelectionModified: Story = {
-  beforeEach: () => {
-    const originalTagsOptions = global.TAGS_OPTIONS;
-    global.TAGS_OPTIONS = {
-      tag1: { defaultFilterSelection: 'include' },
-      tag2: { defaultFilterSelection: 'exclude' },
-    };
-
-    return () => {
-      global.TAGS_OPTIONS = originalTagsOptions;
-    };
-  },
-  parameters: {
-    initialStoryState: {
-      includedTagFilters: ['tag1', 'tag2'],
-    },
+  args: {
+    indexJson: {
+      v: 6,
+      entries: getEntries(true),
+    } as StoryIndex,
+    includedFilters: ['tag1', 'tag2'],
+    defaultIncludedFilters: ['tag1'],
+    defaultExcludedFilters: ['tag2'],
   },
 };

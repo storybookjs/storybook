@@ -18,6 +18,7 @@ import type { API } from 'storybook/manager-api';
 import { color, styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags';
 
 type Filter = {
   id: string;
@@ -26,7 +27,7 @@ type Filter = {
   count: number;
 };
 
-export const groupByType = (filters: Filter[]) =>
+const groupByType = (filters: Filter[]) =>
   filters.filter(Boolean).reduce(
     (acc, filter) => {
       acc[filter.type] ??= [];
@@ -52,6 +53,10 @@ const MutedText = styled.span(({ theme }) => ({
 interface TagsFilterPanelProps {
   api: API;
   indexJson: StoryIndex;
+  defaultIncludedFilters: string[];
+  defaultExcludedFilters: string[];
+  includedFilters: string[];
+  excludedFilters: string[];
 }
 
 const BUILT_IN_TAGS = new Set([
@@ -69,13 +74,23 @@ const BUILT_IN_TAGS = new Set([
 const equal = (left: string[], right: string[]) =>
   left.length === right.length && new Set([...left, ...right]).size === left.length;
 
-export const TagsFilterPanel = ({ api, indexJson }: TagsFilterPanelProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+const getFilterFunction = (tag: Tag): FilterFunction | null => {
+  if (Object.hasOwn(BUILT_IN_FILTERS, tag)) {
+    return BUILT_IN_FILTERS[tag as keyof typeof BUILT_IN_FILTERS];
+  } else {
+    return USER_TAG_FILTER(tag);
+  }
+};
 
-  const defaultIncluded = api.getDefaultIncludedTagFilters();
-  const defaultExcluded = api.getDefaultExcludedTagFilters();
-  const includedFilters = api.getIncludedTagFilters();
-  const excludedFilters = api.getExcludedTagFilters();
+export const TagsFilterPanel = ({
+  api,
+  indexJson,
+  defaultIncludedFilters,
+  defaultExcludedFilters,
+  includedFilters,
+  excludedFilters,
+}: TagsFilterPanelProps) => {
+  const ref = useRef<HTMLDivElement>(null);
 
   const filtersById = useMemo<{ [id: string]: Filter }>(() => {
     const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
@@ -105,26 +120,26 @@ export const TagsFilterPanel = ({ api, indexJson }: TagsFilterPanelProps) => {
         type: 'built-in',
         title: 'Documentation',
         icon: <DocumentIcon color={color.gold} />,
-        count: getBuiltInCount(api.getFilterFunction('_docs')),
+        count: getBuiltInCount(getFilterFunction('_docs')),
       },
       _play: {
         id: '_play',
         type: 'built-in',
         title: 'Play',
         icon: <PlayHollowIcon color={color.seafoam} />,
-        count: getBuiltInCount(api.getFilterFunction('_play')),
+        count: getBuiltInCount(getFilterFunction('_play')),
       },
       _test: {
         id: '_test',
         type: 'built-in',
         title: 'Testing',
         icon: <BeakerIcon color={color.green} />,
-        count: getBuiltInCount(api.getFilterFunction('_test')),
+        count: getBuiltInCount(getFilterFunction('_test')),
       },
     };
 
     return { ...userFilters, ...builtInFilters };
-  }, [api, indexJson.entries]);
+  }, [indexJson.entries]);
 
   const toggleFilter = useCallback(
     (id: string, selected: boolean, excluded?: boolean) => {
@@ -147,12 +162,15 @@ export const TagsFilterPanel = ({ api, indexJson }: TagsFilterPanelProps) => {
   );
 
   const isDefaultSelection = useMemo(() => {
-    return equal(includedFilters, defaultIncluded) && equal(excludedFilters, defaultExcluded);
-  }, [includedFilters, excludedFilters, defaultIncluded, defaultExcluded]);
+    return (
+      equal(includedFilters, defaultIncludedFilters) &&
+      equal(excludedFilters, defaultExcludedFilters)
+    );
+  }, [includedFilters, excludedFilters, defaultIncludedFilters, defaultExcludedFilters]);
 
   const hasDefaultSelection = useMemo(() => {
-    return defaultIncluded.length > 0 || defaultExcluded.length > 0;
-  }, [defaultIncluded, defaultExcluded]);
+    return defaultIncludedFilters.length > 0 || defaultExcludedFilters.length > 0;
+  }, [defaultIncludedFilters, defaultExcludedFilters]);
 
   const builtInFilterIcons = useMemo(
     () => ({

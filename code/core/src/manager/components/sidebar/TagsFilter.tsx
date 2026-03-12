@@ -5,7 +5,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
 
-import type { API } from 'storybook/manager-api';
+import { type API, type Combo, Consumer } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { TagsFilterPanel } from './TagsFilterPanel';
@@ -38,24 +38,44 @@ const TagSelected = styled(Badge)(({ theme }) => ({
   color: theme.color.inverseText,
 }));
 
-export interface TagsFilterProps {
+const tagsFilterMapper = ({ api, state }: Combo) => ({
+  api,
+  indexJson: state.internal_index as StoryIndex | undefined,
+  activeFilterCount:
+    state.includedTagFilters?.length ?? 0 + (state.excludedTagFilters?.length ?? 0),
+  defaultIncludedFilters: state.defaultIncludedTagFilters,
+  defaultExcludedFilters: state.defaultExcludedTagFilters,
+  includedFilters: state.includedTagFilters,
+  excludedFilters: state.excludedTagFilters,
+});
+
+interface TagsFilterInnerProps {
   api: API;
   indexJson: StoryIndex;
+  activeFilterCount: number;
+  defaultIncludedFilters: string[];
+  defaultExcludedFilters: string[];
+  includedFilters: string[];
+  excludedFilters: string[];
 }
 
-export const TagsFilter = ({ api, indexJson }: TagsFilterProps) => {
-  const includedFilters = api.getIncludedTagFilters();
-  const excludedFilters = api.getExcludedTagFilters();
-
+const TagsFilterInner = ({
+  api,
+  indexJson,
+  activeFilterCount,
+  defaultIncludedFilters,
+  defaultExcludedFilters,
+  includedFilters,
+  excludedFilters,
+}: TagsFilterInnerProps) => {
   const [expanded, setExpanded] = useState(false);
-  const activeFilterCount = includedFilters.length + excludedFilters.length;
 
   const handleToggleExpand = useCallback(
     (event: React.SyntheticEvent<Element, Event>): void => {
       event.preventDefault();
       setExpanded(!expanded);
     },
-    [expanded, setExpanded]
+    [expanded]
   );
 
   return (
@@ -65,7 +85,16 @@ export const TagsFilter = ({ api, indexJson }: TagsFilterProps) => {
       onVisibleChange={setExpanded}
       offset={8}
       padding={0}
-      popover={() => <TagsFilterPanel api={api} indexJson={indexJson} />}
+      popover={() => (
+        <TagsFilterPanel
+          api={api}
+          indexJson={indexJson}
+          defaultIncludedFilters={defaultIncludedFilters}
+          defaultExcludedFilters={defaultExcludedFilters}
+          includedFilters={includedFilters}
+          excludedFilters={excludedFilters}
+        />
+      )}
     >
       <StyledButton
         key="tags"
@@ -86,3 +115,29 @@ export const TagsFilter = ({ api, indexJson }: TagsFilterProps) => {
     </PopoverProvider>
   );
 };
+
+export const TagsFilter = () => (
+  <Consumer filter={tagsFilterMapper}>
+    {({
+      api,
+      indexJson,
+      activeFilterCount,
+      defaultIncludedFilters,
+      defaultExcludedFilters,
+      includedFilters,
+      excludedFilters,
+    }) =>
+      indexJson ? (
+        <TagsFilterInner
+          api={api}
+          indexJson={indexJson}
+          activeFilterCount={activeFilterCount}
+          defaultIncludedFilters={defaultIncludedFilters}
+          defaultExcludedFilters={defaultExcludedFilters}
+          includedFilters={includedFilters}
+          excludedFilters={excludedFilters}
+        />
+      ) : null
+    }
+  </Consumer>
+);

@@ -51,7 +51,7 @@ import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 
-import { Tag as TagEnum } from '../../shared/constants/tags';
+import { BUILT_IN_FILTERS, Tag as TagEnum, USER_TAG_FILTER } from '../../shared/constants/tags';
 import { getEventMetadata } from '../lib/events';
 import {
   addPreparedStories,
@@ -69,22 +69,6 @@ const STORY_INDEX_PATH = './index.json';
 
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
-
-export const BUILT_IN_FILTERS = {
-  _docs: (entry: API_PreparedIndexEntry, excluded?: boolean) =>
-    excluded ? entry.type !== 'docs' : entry.type === 'docs',
-  _play: (entry: API_PreparedIndexEntry, excluded?: boolean) =>
-    excluded
-      ? entry.type !== 'story' || !entry.tags?.includes(TagEnum.PLAY_FN)
-      : entry.type === 'story' && !!entry.tags?.includes(TagEnum.PLAY_FN),
-  _test: (entry: API_PreparedIndexEntry, excluded?: boolean) =>
-    excluded
-      ? entry.type !== 'story' || entry.subtype !== 'test'
-      : entry.type === 'story' && entry.subtype === 'test',
-};
-
-export const USER_TAG_FILTER = (tag: Tag) => (entry: API_PreparedIndexEntry, excluded?: boolean) =>
-  excluded ? !entry.tags?.includes(tag) : !!entry.tags?.includes(tag);
 
 export const getDefaultTagsFromPreset = memoize(1)(
   (
@@ -175,6 +159,8 @@ export interface SubState extends API_LoadedRefData {
   viewMode: API_ViewMode;
   filters: Record<string, API_FilterFunction>;
   tagPresets: TagsOptions;
+  defaultIncludedTagFilters: Tag[];
+  defaultExcludedTagFilters: Tag[];
   includedTagFilters: Tag[];
   excludedTagFilters: Tag[];
 }
@@ -418,16 +404,6 @@ export interface SubAPI {
    * @param tags The tags to remove from filters.
    */
   removeTagFilters(tags: Tag[]): void;
-  /** Gets the function to use to filter the index based on a given tag. */
-  getFilterFunction(tag: Tag): FilterFunction | null;
-  /** Gets the default included tag filters. */
-  getDefaultIncludedTagFilters(): Tag[];
-  /** Gets the default excluded tag filters. */
-  getDefaultExcludedTagFilters(): Tag[];
-  /** Gets the currently included tag filters. */
-  getIncludedTagFilters(): Tag[];
-  /** Gets the currently excluded tag filters. */
-  getExcludedTagFilters(): Tag[];
 }
 
 const removedOptions = ['enableShortcuts', 'theme', 'showRoots'];
@@ -848,35 +824,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       provider.channel?.emit(SET_FILTER, { id });
     },
-
-    getDefaultIncludedTagFilters: () => {
-      const state = store.getState();
-      return getDefaultTagsFromPreset(state.tagPresets).included;
-    },
-
-    getDefaultExcludedTagFilters: () => {
-      const state = store.getState();
-      return getDefaultTagsFromPreset(state.tagPresets).excluded;
-    },
-
-    getIncludedTagFilters: () => {
-      const state = store.getState();
-      return state.includedTagFilters;
-    },
-
-    getExcludedTagFilters: () => {
-      const state = store.getState();
-      return state.excludedTagFilters;
-    },
-
     resetTagFilters: async () => {
-      const state = store.getState();
-      const { included, excluded } = getDefaultTagsFromPreset(state.tagPresets);
       await store.setState(
-        {
-          includedTagFilters: included,
-          excludedTagFilters: excluded,
-        },
+        (s) => ({
+          includedTagFilters: s.defaultIncludedTagFilters,
+          excludedTagFilters: s.defaultExcludedTagFilters,
+        }),
         { persistence: 'permanent' }
       );
       recomputeFilters();
@@ -926,14 +879,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         { persistence: 'permanent' }
       );
       recomputeFilters();
-    },
-
-    getFilterFunction(tag: Tag): FilterFunction | null {
-      if (Object.hasOwn(BUILT_IN_FILTERS, tag)) {
-        return BUILT_IN_FILTERS[tag as keyof typeof BUILT_IN_FILTERS];
-      } else {
-        return USER_TAG_FILTER(tag);
-      }
     },
   };
 
@@ -1206,6 +1151,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       previewInitialized: false,
       filters: initialFilters,
       tagPresets,
+      defaultIncludedTagFilters: defaultTags.included,
+      defaultExcludedTagFilters: defaultTags.excluded,
       includedTagFilters: initialIncluded,
       excludedTagFilters: initialExcluded,
     },

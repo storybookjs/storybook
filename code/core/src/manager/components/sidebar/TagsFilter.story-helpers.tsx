@@ -97,7 +97,8 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
     const { children, args } = this.props;
     return (
       <>
-        {React.cloneElement(children as React.ReactElement, {
+        x{children}
+        {/* {React.cloneElement(children as React.ReactElement, {
           args: {
             ...args,
             api: {
@@ -112,7 +113,7 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
               applyQueryParams: fn().mockName('api::applyQueryParams'),
             },
           },
-        })}
+        })} */}
       </>
     );
   }

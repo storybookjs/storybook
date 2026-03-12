@@ -19,6 +19,10 @@ type TestBlockProps = {
 
 const TestBlockImpl: FC<TestBlockProps> = ({ label }) => <span data-testid="default">{label}</span>;
 const TestBlock = withMdxComponentOverride('TestBlock', TestBlockImpl);
+const SubtitleBlockImpl: FC<TestBlockProps> = ({ label }) => (
+  <span data-testid="subtitle">{label}</span>
+);
+const SubtitleBlock = withMdxComponentOverride('SubtitleBlock', SubtitleBlockImpl);
 
 describe('withMdxComponentOverride', () => {
   it('renders the default block when there is no override', () => {
@@ -59,5 +63,15 @@ describe('withMdxComponentOverride', () => {
     );
 
     expect(screen.getByTestId('default')).toHaveTextContent('Hello');
+  });
+
+  it('allows overrides to point at a different wrapped block', () => {
+    render(
+      <MDXProvider components={{ TestBlock: SubtitleBlock }}>
+        <TestBlock label="Hello" />
+      </MDXProvider>
+    );
+
+    expect(screen.getByTestId('subtitle')).toHaveTextContent('Hello');
   });
 });

@@ -24,11 +24,7 @@ export const withMdxComponentOverride = <P extends object>(
     const components = useMDXComponents();
     const Override = components[blockName] as WrappedBlockComponent<P> | undefined;
 
-    if (
-      wrappedBlocks?.has(blockName) ||
-      Override === WrappedBlock ||
-      (typeof Override === 'function' && Override[MDX_WRAPPED_BLOCK])
-    ) {
+    if (wrappedBlocks?.has(blockName) || Override === WrappedBlock) {
       return <Block {...props} />;
     }
 

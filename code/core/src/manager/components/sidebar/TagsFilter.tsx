@@ -42,7 +42,7 @@ const tagsFilterMapper = ({ api, state }: Combo) => ({
   api,
   indexJson: state.internal_index as StoryIndex | undefined,
   activeFilterCount:
-    state.includedTagFilters?.length ?? 0 + (state.excludedTagFilters?.length ?? 0),
+    (state.includedTagFilters?.length ?? 0) + (state.excludedTagFilters?.length ?? 0),
   defaultIncludedFilters: state.defaultIncludedTagFilters,
   defaultExcludedFilters: state.defaultExcludedTagFilters,
   includedFilters: state.includedTagFilters,

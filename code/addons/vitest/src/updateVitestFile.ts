@@ -216,10 +216,12 @@ const wrapTestConfigAsProject = (
 
   const topLevelProps = TOP_LEVEL_TEST_PROPERTIES.map((name) =>
     findNamedProp(resolvedTestValue.properties, name)
-  ).filter(Boolean);
+  ).filter(Boolean) as t.ObjectProperty[];
 
   const topLevelPropSet = new Set(topLevelProps);
-  const projectTestProps = resolvedTestValue.properties.filter((p) => !topLevelPropSet.has(p));
+  const projectTestProps = resolvedTestValue.properties.filter(
+    (p) => !topLevelPropSet.has(p as any)
+  );
 
   // Create the existing test project: { extends: true, test: { ...projectTestProps } }
   const existingTestProject: t.ObjectExpression = {

@@ -33,10 +33,26 @@ export const resolveExpression = (
     return unwrapped;
   }
   const varName = (unwrapped as t.Identifier).name;
-  const declarator = ast.program.body
-    .filter((n): n is t.VariableDeclaration => n.type === 'VariableDeclaration')
-    .flatMap((varDecl) => varDecl.declarations)
-    .find((d) => d.id.type === 'Identifier' && (d.id as t.Identifier).name === varName);
+  let declarator: t.VariableDeclarator | undefined;
+  for (const node of ast.program.body) {
+    let declarations: t.VariableDeclarator[] | undefined;
+    if (node.type === 'VariableDeclaration') {
+      declarations = node.declarations;
+    } else if (
+      node.type === 'ExportNamedDeclaration' &&
+      node.declaration?.type === 'VariableDeclaration'
+    ) {
+      declarations = node.declaration.declarations;
+    }
+    if (declarations) {
+      declarator = declarations.find(
+        (d) => d.id.type === 'Identifier' && (d.id as t.Identifier).name === varName
+      );
+      if (declarator) {
+        break;
+      }
+    }
+  }
   if (!declarator?.init) {
     return unwrapped;
   }

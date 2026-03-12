@@ -7,8 +7,9 @@ import { Description } from './Description';
 import { Subheading } from './Subheading';
 import type { DocsStoryProps } from './types';
 import { useOf } from './useOf';
+import { withMdxComponentOverride } from './withMdxComponentOverride';
 
-export const DocsStory: FC<DocsStoryProps> = ({
+const DocsStoryImpl: FC<DocsStoryProps> = ({
   of,
   expanded = true,
   withToolbar: withToolbarProp = false,
@@ -37,3 +38,5 @@ export const DocsStory: FC<DocsStoryProps> = ({
     </Anchor>
   );
 };
+
+export const DocsStory = withMdxComponentOverride('DocsStory', DocsStoryImpl);

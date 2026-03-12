@@ -5,11 +5,12 @@ import PureMarkdown from 'markdown-to-jsx';
 import { dedent } from 'ts-dedent';
 
 import { AnchorMdx, CodeOrSourceMdx, HeadersMdx } from './mdx';
+import { withMdxComponentOverride } from './withMdxComponentOverride';
 
 // mirror props from markdown-to-jsx. From https://react-typescript-cheatsheet.netlify.app/docs/advanced/patterns_by_usecase#wrappingmirroring-a-component
 type MarkdownProps = typeof PureMarkdown extends React.ComponentType<infer Props> ? Props : never;
 
-export const Markdown = (props: MarkdownProps) => {
+const MarkdownImpl = (props: MarkdownProps) => {
   if (!props.children) {
     return null;
   }
@@ -50,3 +51,5 @@ export const Markdown = (props: MarkdownProps) => {
     />
   );
 };
+
+export const Markdown = withMdxComponentOverride('Markdown', MarkdownImpl);

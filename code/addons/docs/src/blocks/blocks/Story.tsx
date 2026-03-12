@@ -13,6 +13,7 @@ import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import { useStory } from './useStory';
+import { withMdxComponentOverride } from './withMdxComponentOverride';
 
 type PureStoryProps = ComponentProps<typeof PureStory>;
 
@@ -113,7 +114,7 @@ export const getStoryProps = <TFramework extends Renderer>(
   };
 };
 
-const Story: FC<StoryProps> = (props = { __forceInitialArgs: false, __primary: false }) => {
+const StoryImpl: FC<StoryProps> = (props = { __forceInitialArgs: false, __primary: false }) => {
   const context = useContext(DocsContext);
   const storyId = getStoryId(props, context);
   const story = useStory(storyId, context);
@@ -130,4 +131,4 @@ const Story: FC<StoryProps> = (props = { __forceInitialArgs: false, __primary: f
   return <PureStory {...storyProps} />;
 };
 
-export { Story };
+export const Story = withMdxComponentOverride('Story', StoryImpl);

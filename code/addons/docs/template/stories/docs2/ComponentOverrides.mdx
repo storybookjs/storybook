@@ -1,0 +1,59 @@
+import {
+  ArgTypes,
+  Canvas,
+  Controls,
+  Description,
+  DocsStory,
+  Heading,
+  Markdown,
+  Meta,
+  Primary,
+  Source,
+  Stories,
+  Story,
+  Subheading,
+  Subtitle,
+  Title,
+  Unstyled,
+  Wrapper,
+} from '@storybook/addon-docs/blocks';
+import * as ComponentOverrideStories from './component-overrides.stories.tsx';
+
+<Meta of={ComponentOverrideStories} name="MDX" />
+
+# Component override verification
+
+Every block below should render its `override:*` marker rather than the default Storybook block UI.
+
+<Title />
+<Subtitle />
+<Description of="meta" />
+
+<Primary />
+<Controls />
+<ArgTypes />
+<Stories />
+<Story of={ComponentOverrideStories.Basic} />
+<Canvas of={ComponentOverrideStories.Basic} />
+<Source of={ComponentOverrideStories.Basic} />
+<DocsStory of={ComponentOverrideStories.Secondary} />
+
+<Heading>Heading block</Heading>
+<Subheading>Subheading block</Subheading>
+
+<Markdown>
+  {`
+# Markdown block
+
+This should render as the Markdown override.
+`}
+
+</Markdown>
+
+<Wrapper>
+  <div>Wrapper child content</div>
+</Wrapper>
+
+<Unstyled>
+  <div>Unstyled child content</div>
+</Unstyled>

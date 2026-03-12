@@ -6,6 +6,7 @@ import { H2 } from 'storybook/internal/components';
 import GithubSlugger from 'github-slugger';
 
 import { HeaderMdx } from './mdx';
+import { withMdxComponentOverride } from './withMdxComponentOverride';
 
 export interface HeadingProps {
   disableAnchor?: boolean;
@@ -13,7 +14,7 @@ export interface HeadingProps {
 
 export const slugs = new GithubSlugger();
 
-export const Heading: FC<PropsWithChildren<HeadingProps>> = ({
+const HeadingImpl: FC<PropsWithChildren<HeadingProps>> = ({
   children,
   disableAnchor,
   ...props
@@ -28,3 +29,5 @@ export const Heading: FC<PropsWithChildren<HeadingProps>> = ({
     </HeaderMdx>
   );
 };
+
+export const Heading = withMdxComponentOverride('Heading', HeadingImpl);

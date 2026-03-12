@@ -1,4 +1,4 @@
-import type { ComponentProps, FC } from 'react';
+import type { ComponentProps } from 'react';
 import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
@@ -11,6 +11,7 @@ import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
 import { useTransformCode } from './useTransformCode';
+import { withMdxComponentOverride } from './withMdxComponentOverride';
 
 export type SourceParameters = SourceCodeProps & {
   /** Where to read the source code from, see `SourceType` */
@@ -112,7 +113,7 @@ export const useSourceProps = (
       try {
         // Always fall back to the primary story for source parameters, even if code is set.
         return docsContext.storyById();
-      } catch (err) {
+      } catch {
         // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
       }
     }
@@ -170,9 +171,11 @@ export const useSourceProps = (
  * Story source doc block renders source code if provided, or the source for a story if `storyId` is
  * provided, or the source for the current story if nothing is provided.
  */
-export const Source = (props: SourceProps) => {
+const SourceImpl = (props: SourceProps) => {
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
   const sourceProps = useSourceProps(props, docsContext, sourceContext);
   return <PureSource {...sourceProps} />;
 };
+
+export const Source = withMdxComponentOverride('Source', SourceImpl);

@@ -8,6 +8,7 @@ import { styled } from 'storybook/theming';
 import { DocsContext } from './DocsContext';
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';
+import { withMdxComponentOverride } from './withMdxComponentOverride';
 
 interface StoriesProps {
   title?: ReactElement | string;
@@ -30,7 +31,7 @@ const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
   },
 }));
 
-export const Stories: FC<StoriesProps> = ({ title = 'Stories', includePrimary = true }) => {
+const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = true }) => {
   const { componentStories, projectAnnotations, getStoryContext } = useContext(DocsContext);
 
   let stories = componentStories();
@@ -69,3 +70,5 @@ export const Stories: FC<StoriesProps> = ({ title = 'Stories', includePrimary = 
     </>
   );
 };
+
+export const Stories = withMdxComponentOverride('Stories', StoriesImpl);

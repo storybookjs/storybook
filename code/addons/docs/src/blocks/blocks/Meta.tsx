@@ -22,7 +22,7 @@ export const Meta: FC<MetaProps> = ({ of }) => {
     const primary = context.storyById();
     return <Anchor storyId={primary.id} />;
   } catch {
-    // It is possible to use <Meta> in a unnattached MDX file
+    // It is possible to use <Meta> in an unattached MDX file
     return null;
   }
 };

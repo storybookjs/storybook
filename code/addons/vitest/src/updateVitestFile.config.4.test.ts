@@ -1977,6 +1977,136 @@ describe('updateConfigFile', () => {
     `);
   });
 
+  it('supports mergeConfig with aliased defineConfig and updates the config that contains test', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import react from "@vitejs/plugin-react";
+      import { playwright } from "@vitest/browser-playwright";
+      import { defineConfig, mergeConfig } from "vite";
+      import tsconfigPaths from "vite-tsconfig-paths";
+      import { defineConfig as defineVitestConfig } from "vitest/config";
+
+      // https://vitejs.dev/config/
+      const viteConfig = defineConfig({
+        plugins: [tsconfigPaths(), react()],
+        optimizeDeps: {
+          exclude: ["@xmtp/wasm-bindings"],
+        },
+        server: {
+          allowedHosts: true,
+        },
+        build: {
+          sourcemap: true,
+        },
+      });
+
+      const vitestConfig = defineVitestConfig({
+        test: {
+          browser: {
+            provider: playwright(),
+            enabled: true,
+            headless: true,
+            screenshotFailures: false,
+            instances: [
+              {
+                browser: "chromium",
+              },
+            ],
+          },
+          testTimeout: 120000,
+        },
+      });
+
+      export default mergeConfig(viteConfig, vitestConfig);
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+    expect(after).not.toBe(before);
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        import { defineConfig as defineVitestConfig } from "vitest/config";
+        
+        // https://vitejs.dev/config/
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        const viteConfig = defineConfig({
+          plugins: [tsconfigPaths(), react()],
+          optimizeDeps: {
+            exclude: ["@xmtp/wasm-bindings"]
+      ...
+        });
+        const vitestConfig = defineVitestConfig({
+          test: {
+        
+      -     browser: {
+      -       provider: playwright(),
+      -       enabled: true,
+      -       headless: true,
+      -       screenshotFailures: false,
+      -       instances: [{
+      -         browser: "chromium"
+      -       }]
+      -     },
+      -     testTimeout: 120000
+      - 
+      +     projects: [{
+      +       extends: true,
+      +       test: {
+      +         browser: {
+      +           provider: playwright(),
+      +           enabled: true,
+      +           headless: true,
+      +           screenshotFailures: false,
+      +           instances: [{
+      +             browser: "chromium"
+      +           }]
+      +         },
+      +         testTimeout: 120000
+      +       }
+      +     }, {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        });
+        export default mergeConfig(viteConfig, vitestConfig);"
+    `);
+  });
+
   it('keeps coverage at top level instead of moving into projects', async () => {
     const source = babel.babelParse(
       await loadTemplate('vitest.config.4.template', {

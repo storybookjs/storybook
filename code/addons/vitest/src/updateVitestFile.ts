@@ -69,10 +69,56 @@ const mergeProperties = (
   }
 };
 
-/** Returns true if the call expression is a defineConfig or defineProject call. */
-const isDefineConfigLike = (node: t.CallExpression): boolean =>
+/**
+ * Returns true if the identifier is a local alias for `defineConfig`/`defineProject` imported from
+ * either `vitest/config` or `vite`.
+ */
+const isImportedDefineConfigLikeIdentifier = (localName: string, ast: BabelFile['ast']): boolean =>
+  ast.program.body.some(
+    (node): boolean =>
+      node.type === 'ImportDeclaration' &&
+      (node.source.value === 'vitest/config' || node.source.value === 'vite') &&
+      node.specifiers.some(
+        (specifier) =>
+          specifier.type === 'ImportSpecifier' &&
+          specifier.local.type === 'Identifier' &&
+          specifier.local.name === localName &&
+          specifier.imported.type === 'Identifier' &&
+          (specifier.imported.name === 'defineConfig' ||
+            specifier.imported.name === 'defineProject')
+      )
+  );
+
+/** Returns true if the call expression is a defineConfig or defineProject call (including aliases). */
+const isDefineConfigLike = (node: t.CallExpression, ast: BabelFile['ast']): boolean =>
   node.callee.type === 'Identifier' &&
-  (node.callee.name === 'defineConfig' || node.callee.name === 'defineProject');
+  (node.callee.name === 'defineConfig' ||
+    node.callee.name === 'defineProject' ||
+    isImportedDefineConfigLikeIdentifier(node.callee.name, ast));
+
+/**
+ * Resolves a mergeConfig argument to a config object expression when possible. Supports both direct
+ * object args and wrapped forms like `defineConfig({ ... })`.
+ */
+const getConfigObjectFromMergeArg = (
+  arg: t.Expression,
+  ast: BabelFile['ast']
+): t.ObjectExpression | null => {
+  const resolved = resolveExpression(arg, ast);
+  if (!resolved) {
+    return null;
+  }
+
+  if (resolved.type === 'ObjectExpression') {
+    return resolved;
+  }
+
+  if (resolved.type === 'CallExpression' && resolved.arguments[0]?.type === 'ObjectExpression') {
+    return resolved.arguments[0] as t.ObjectExpression;
+  }
+
+  return null;
+};
 
 /**
  * Resolves the value of a `test` ObjectProperty to an ObjectExpression. Handles both inline objects
@@ -339,7 +385,7 @@ const getEffectiveMergeConfigCall = (
   }
 
   // Handle defineConfig(mergeConfig(...)) – arg may itself be wrapped in a TS type expression
-  if (isDefineConfigLike(resolved) && resolved.arguments.length > 0) {
+  if (isDefineConfigLike(resolved, ast) && resolved.arguments.length > 0) {
     const innerArg = resolveExpression(resolved.arguments[0] as t.Expression, ast);
     if (
       innerArg?.type === 'CallExpression' &&
@@ -377,7 +423,7 @@ const getTargetConfigObject = (
   }
   if (
     resolved.type === 'CallExpression' &&
-    isDefineConfigLike(resolved) &&
+    isDefineConfigLike(resolved, target) &&
     resolved.arguments[0]?.type === 'ObjectExpression'
   ) {
     return resolved.arguments[0] as t.ObjectExpression;
@@ -433,7 +479,7 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
   const effectiveDecl = resolveExpression(targetExportDefault.declaration, target);
   if (
     effectiveDecl?.type === 'CallExpression' &&
-    isDefineConfigLike(effectiveDecl) &&
+    isDefineConfigLike(effectiveDecl, target) &&
     effectiveDecl.arguments.length > 0 &&
     effectiveDecl.arguments[0].type === 'ArrowFunctionExpression'
   ) {
@@ -501,24 +547,18 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
           const mergeConfigCall = getEffectiveMergeConfigCall(exportDefault.declaration, target);
           if (mergeConfigCall && mergeConfigCall.arguments.length >= 2) {
             // Collect all potential config object nodes from mergeConfig arguments.
-            // Each argument may be: defineConfig/defineProject({...}), a plain object {…},
+            // Each argument may be a plain object, a wrapper call with object argument,
             // an Identifier (variable reference), or wrapped in a TS type annotation.
             const configObjectNodes: t.ObjectExpression[] = [];
 
             for (const arg of mergeConfigCall.arguments) {
-              const resolved = resolveExpression(arg as t.Expression, target);
-              if (resolved?.type === 'ObjectExpression') {
-                configObjectNodes.push(resolved);
-              } else if (
-                resolved?.type === 'CallExpression' &&
-                isDefineConfigLike(resolved) &&
-                resolved.arguments[0]?.type === 'ObjectExpression'
-              ) {
-                configObjectNodes.push(resolved.arguments[0] as t.ObjectExpression);
+              const configObject = getConfigObjectFromMergeArg(arg as t.Expression, target);
+              if (configObject) {
+                configObjectNodes.push(configObject);
               }
             }
 
-            // Prefer a config object that already contains a `test` property
+            // Prefer the config object that already has an immediate `test` property.
             const configObjectWithTest = configObjectNodes.find((obj) =>
               obj.properties.some(
                 (p) =>

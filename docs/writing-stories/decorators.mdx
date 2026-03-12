@@ -79,6 +79,30 @@ This context can be used to adjust the behavior of your decorator based on the s
   For another example, see the section on [configuring the mock provider](./mocking-data-and-modules/mocking-providers.mdx#configuring-the-mock-provider), which demonstrates how to use the same technique to change which theme is provided to the component.
 </Callout>
 
+<IfRenderer renderer="vue">
+
+### Reactive globals
+
+To ensure `globals` in Vue decorators are fully reactive, you must pass them through the `setup` function. You can also compute derived values with Vue's `computed` function.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="decorator-with-reactive-globals.md" />
+
+{/* prettier-ignore-end */}
+
+### Preview API hooks
+
+The same applies to Storybook hooks you want to call in your decorator. For instance, this decorator increments a counter used by its decorated story.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="decorator-with-updateArgs.md" />
+
+{/* prettier-ignore-end */}
+
+</IfRenderer>
+
 ### Using decorators to provide data
 
 If your components are “connected” and require side-loaded data to render, you can use decorators to provide that data in a mocked way without having to refactor your components to take that data as an arg. There are several techniques to achieve this. Depending on exactly how you are loading that data. Read more in the [building pages in Storybook](./build-pages-with-storybook.mdx) section.

@@ -9,6 +9,18 @@ import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMet
 import type { ComponentMetaProject } from './ComponentMetaProject';
 import { cleanup, createTempDir, sys, writeFiles } from './test-helpers';
 
+function defaultImportName(filePath: string): string {
+  const dir = path.dirname(filePath);
+  const baseName = path.basename(filePath, path.extname(filePath));
+  const rawName = baseName === 'index' ? path.basename(dir) : baseName;
+  const pascalName = rawName
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+  return pascalName || 'Component';
+}
+
 /**
  * Test helper: extract docs for known exports via Path 2 (meta.component).
  *
@@ -24,14 +36,16 @@ function extractDocs(
   const dir = path.dirname(componentPath);
   const baseName = path.basename(componentPath, path.extname(componentPath));
   const allDocs: ComponentDoc[] = [];
+  const defaultComponentName = defaultImportName(componentPath);
 
   for (const name of exportNames) {
+    const componentName = name === 'default' ? defaultComponentName : name;
     const importLine =
       name === 'default'
-        ? `import __Component__ from './${baseName}';`
-        : `import { ${name} as __Component__ } from './${baseName}';`;
+        ? `import ${componentName} from './${baseName}';`
+        : `import { ${name} as ${componentName} } from './${baseName}';`;
 
-    const storyContent = `${importLine}\nexport default { component: __Component__ };`;
+    const storyContent = `${importLine}\nexport default { component: ${componentName} };`;
     const storyPath = path.join(dir, `${baseName}.__story_${name}__.tsx`);
 
     sys.writeFile(storyPath, storyContent);
@@ -39,17 +53,20 @@ function extractDocs(
 
     const entries = [
       {
-        storyFilePath: storyPath,
-        componentPath,
-        exportName: name,
+        storyPath,
+        component: {
+          componentName,
+          importName: name,
+          path: componentPath,
+          isPackage: false,
+        },
       },
     ];
 
     const results = project.extractPropsFromStories(entries);
-    const storyMap = results.get(storyPath);
-    if (storyMap) {
-      for (const [, d] of storyMap) {
-        allDocs.push(...d);
+    for (const result of results) {
+      if (result.storyPath === storyPath && result.component?.reactComponentMeta) {
+        allDocs.push(result.component.reactComponentMeta);
       }
     }
   }
@@ -472,20 +489,22 @@ describe('ComponentMetaManager', () => {
 
     const results = project.extractPropsFromStories([
       {
-        storyFilePath: storyPath,
-        componentPath,
-        exportName: 'Button',
-        importId: './Button',
+        storyPath,
+        component: {
+          componentName: 'Button',
+          importId: './Button',
+          importName: 'Button',
+          path: componentPath,
+          isPackage: false,
+        },
       },
     ]);
 
-    const storyMap = results.get(storyPath);
-    expect(storyMap).toBeDefined();
-
-    const docs: ComponentDoc[] = [];
-    for (const [, d] of storyMap!) {
-      docs.push(...d);
-    }
+    const docs = results
+      .filter((result) => result.storyPath === storyPath)
+      .flatMap((result) =>
+        result.component?.reactComponentMeta ? [result.component.reactComponentMeta] : []
+      );
 
     expect(docs).toHaveLength(1);
     expect(docs[0].displayName).toBe('Button');

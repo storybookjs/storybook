@@ -169,53 +169,53 @@ export const manifests: PresetPropertyFn<
           ? entry.importPath
           : // For attached docs entries, storiesImports[0] points to the stories file being attached to
             (entry as DocsIndexEntry).storiesImports[0];
-      const absoluteImportPath = path.join(process.cwd(), storyFilePath);
-      const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
+      const storyPath = path.join(process.cwd(), storyFilePath);
+      const storyFile = cachedReadFileSync(storyPath, 'utf-8') as string;
       const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
       const componentName = csf._meta?.component;
       const allComponents = await getComponents({
         csf,
-        storyFilePath: absoluteImportPath,
+        storyFilePath: storyPath,
         typescriptOptions,
         experimentalReactComponentMeta: docgenEngine === 'react-component-meta',
       });
       const component = findMatchingComponent(allComponents, componentName, entry.title);
       return {
+        storyPath,
+        component,
         entry,
         storyFilePath,
-        absoluteImportPath,
         storyFile,
         csf,
         componentName,
         allComponents,
-        component,
       };
     })
   );
 
   // Step 2: Batch extract rcm props (one TS program build per tsconfig project)
-  const rcmResults =
+  const enrichedEntries =
     docgenEngine === 'react-component-meta' && manager
       ? manager.batchExtract(resolvedEntries)
-      : undefined;
+      : resolvedEntries;
 
   // Step 3: Build manifests
-  const components = resolvedEntries
+  const components = enrichedEntries
     .map(
       ({
+        storyPath,
+        component,
         entry,
         storyFilePath,
-        absoluteImportPath,
         storyFile,
         csf,
         componentName,
         allComponents,
-        component,
       }): ReactComponentManifest | undefined => {
         const id = entry.id.split('--')[0];
         const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-        const packageName = getPackageInfo(component?.path, absoluteImportPath);
+        const packageName = getPackageInfo(component?.path, storyPath);
         const fallbackImport =
           packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
         const imports =
@@ -250,8 +250,7 @@ export const manifests: PresetPropertyFn<
           docgenDescription = reactDocgenTypescript?.description;
           docgenError = component?.reactDocgenTypescriptError;
         } else {
-          const exportName = component?.importName ?? 'default';
-          reactComponentMeta = rcmResults?.get(absoluteImportPath)?.get(exportName)?.[0];
+          reactComponentMeta = component?.reactComponentMeta;
           docgenDescription = reactComponentMeta?.description;
         }
 

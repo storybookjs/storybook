@@ -7,6 +7,7 @@ import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/inter
 
 import type { ParserOptions } from 'react-docgen-typescript';
 
+import type { ComponentDoc } from './componentMetaExtractor';
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
 import {
   type ComponentDocWithExportName,
@@ -38,7 +39,14 @@ export type ComponentRef = {
   jsxDepth?: number;
   reactDocgen?: ReturnType<typeof getReactDocgen>;
   reactDocgenTypescript?: ComponentDocWithExportName;
+  reactComponentMeta?: ComponentDoc;
   reactDocgenTypescriptError?: { name: string; message: string };
+};
+
+/** Selected component for a story file; `storyPath` is the absolute path on disk. */
+export type StoryRef = {
+  storyPath: string;
+  component?: ComponentRef;
 };
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;

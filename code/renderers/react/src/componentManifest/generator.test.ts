@@ -5,6 +5,7 @@ import { Tag } from 'storybook/internal/core-server';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
+import { ComponentMetaManager } from './checker';
 import { fsMocks, indexJson } from './fixtures';
 import { manifests } from './generator';
 
@@ -14,6 +15,11 @@ type ManifestEntries = ManifestOptions['manifestEntries'];
 
 const runManifests = (manifestEntries: ManifestEntries) =>
   manifests(undefined, { manifestEntries } as ManifestOptions);
+
+const runManifestsWithOptions = (
+  manifestEntries: ManifestEntries,
+  options: Partial<ManifestOptions> = {}
+) => manifests(undefined, { manifestEntries, ...options } as ManifestOptions);
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
@@ -486,6 +492,47 @@ test('unknown expressions', async () => {
       "summary": undefined,
     }
   `);
+});
+
+test('generator uses reactComponentMeta displayName from batch extraction', async () => {
+  const getInstance = vi.spyOn(ComponentMetaManager, 'getInstance');
+  getInstance.mockResolvedValue({
+    batchExtract: (entries) =>
+      entries.map((entry) => ({
+        ...entry,
+        component: entry.component
+          ? {
+              ...entry.component,
+              reactComponentMeta: {
+                displayName: 'Header',
+                exportName: 'default',
+                filePath: '/app/src/stories/Header.tsx',
+                description: '',
+                props: {},
+              },
+            }
+          : entry.component,
+      })),
+  } as Awaited<ReturnType<typeof ComponentMetaManager.getInstance>>);
+
+  const presets: NonNullable<ManifestOptions['presets']> = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries = [indexJson.entries['example-header--logged-in']] as ManifestEntries;
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const header = result?.components?.components?.['example-header'];
+
+  expect(header?.reactComponentMeta?.displayName).toBe('Header');
+  expect(getInstance).toHaveBeenCalled();
 });
 
 test('should create component manifest when only attached-mdx docs have manifest tag', async () => {

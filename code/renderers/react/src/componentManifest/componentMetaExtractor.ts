@@ -12,7 +12,7 @@
  * Vue's component-meta approach). Does NOT work for polymorphic/generic components (TS #61133).
  *
  * Both paths produce a `ts.Type` which is then serialized into `ComponentDoc` format by
- * `serializeComponentDocs()`.
+ * `serializeComponentDoc()`.
  *
  * TypeScript resolves props the same way as autocompletion — by calling
  * `checker.getResolvedSignature()` on the JSX element. For polymorphic components with generic call
@@ -48,7 +48,7 @@ export interface PropItem {
 }
 
 export interface ComponentDoc {
-  displayName: string;
+  displayName?: string;
   exportName: string;
   filePath: string;
   description: string;
@@ -1032,9 +1032,8 @@ function getBulkSourceExclusions(properties: ts.Symbol[]): Set<string> {
 
 function computeDisplayName(
   exportSymbol: ts.Symbol,
-  resolvedSymbol: ts.Symbol,
-  sourceFile: ts.SourceFile
-): string {
+  resolvedSymbol: ts.Symbol
+): string | undefined {
   const exportName = exportSymbol.getName();
 
   if (exportName === 'default') {
@@ -1042,14 +1041,7 @@ function computeDisplayName(
     if (resolvedName && resolvedName !== 'default' && resolvedName !== '__function') {
       return resolvedName;
     }
-    const fileName = sourceFile.fileName;
-    const parts = fileName.split('/');
-    let base = (parts.pop() ?? fileName).replace(/\.(tsx?|jsx?)$/, '');
-    // For barrel files (index.ts), use the parent directory name instead
-    if (base === 'index') {
-      base = parts.pop() ?? base;
-    }
-    return base;
+    return undefined;
   }
 
   return exportName;
@@ -1060,164 +1052,165 @@ function computeDisplayName(
 // ---------------------------------------------------------------------------
 
 /**
- * Serializes resolved props types into ComponentDoc format.
- *
- * Given a checker and a map of export names → resolved props types, iterates the source file's
- * exports, matches them against the `propsTypes` map, and serializes each component's props into
- * the ComponentDoc shape (compatible with react-docgen-typescript output).
+ * Serializes one resolved props type into ComponentDoc format.
  *
  * Used by `ComponentMetaProject` to convert the output of `resolvePropsFromStoryFile()` or
- * `resolvePropsFromComponentType()` into the final serialized format.
+ * `resolvePropsFromComponentType()` into the final serialized format for a single story/component
+ * pair.
  */
-export function serializeComponentDocs(
+export function serializeComponentDoc(
   typescript: typeof ts,
   checker: ts.TypeChecker,
-  filePath: string,
-  sourceFile: ts.SourceFile,
-  propsTypes: Map<string, ts.Type>,
-  /** When the sourceFile is a .d.ts, provide the original .tsx path for defaults extraction. */
-  defaultsSourcePath?: string
-): ComponentDoc[] {
+  {
+    filePath,
+    sourceFile,
+    exportName,
+    propsType,
+    defaultsSourcePath,
+    displayNameOverride,
+  }: {
+    filePath: string;
+    sourceFile: ts.SourceFile;
+    exportName: string;
+    propsType: ts.Type;
+    defaultsSourcePath?: string;
+    displayNameOverride?: string;
+  }
+): ComponentDoc | undefined {
   const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
   if (!moduleSymbol) {
-    return [];
+    return undefined;
   }
 
-  const fileExports = checker.getExportsOfModule(moduleSymbol);
-  const results: ComponentDoc[] = [];
+  const exp = checker
+    .getExportsOfModule(moduleSymbol)
+    .find((candidate) => candidate.getName() === exportName);
+  if (!exp) {
+    return undefined;
+  }
 
-  for (const exp of fileExports) {
-    const exportName = exp.getName();
-    const propsType = propsTypes.get(exportName);
-    if (!propsType) {
-      continue;
-    }
+  const resolved = exp.flags & typescript.SymbolFlags.Alias ? checker.getAliasedSymbol(exp) : exp;
 
-    const resolved = exp.flags & typescript.SymbolFlags.Alias ? checker.getAliasedSymbol(exp) : exp;
+  const contextNode = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
+  if (!contextNode) {
+    return undefined;
+  }
 
-    const contextNode = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
-    if (!contextNode) {
-      continue;
-    }
+  // getApparentProperties() on a union type only returns common members.
+  // For discriminated unions (e.g. Reshaped Slider: ControlledProps | UncontrolledProps),
+  // variant-specific props like `value`, `defaultValue` would be lost.
+  // Collect all properties across all union members, deduplicating by name.
+  // When deduplicating, prefer symbols with real types (e.g. `value: number` over
+  // `value?: never` which resolves to `undefined`). Props that are degraded or
+  // optional in any variant are force-optional since the caller doesn't always need them.
+  let allProperties: ts.Symbol[];
+  let unionForceOptional: Set<string> | undefined;
+  if (propsType.isUnion()) {
+    const seen = new Map<string, ts.Symbol>();
+    const forceOptional = new Set<string>();
+    const unionMembers = (propsType as ts.UnionType).types;
 
-    // getApparentProperties() on a union type only returns common members.
-    // For discriminated unions (e.g. Reshaped Slider: ControlledProps | UncontrolledProps),
-    // variant-specific props like `value`, `defaultValue` would be lost.
-    // Collect all properties across all union members, deduplicating by name.
-    // When deduplicating, prefer symbols with real types (e.g. `value: number` over
-    // `value?: never` which resolves to `undefined`). Props that are degraded or
-    // optional in any variant are force-optional since the caller doesn't always need them.
-    let allProperties: ts.Symbol[];
-    let unionForceOptional: Set<string> | undefined;
-    if (propsType.isUnion()) {
-      const seen = new Map<string, ts.Symbol>();
-      const forceOptional = new Set<string>();
-      const unionMembers = (propsType as ts.UnionType).types;
+    const allMemberPropSets: Set<string>[] = [];
+    for (const member of unionMembers) {
+      const memberPropNames = new Set<string>();
+      for (const prop of member.getApparentProperties()) {
+        const name = prop.getName();
+        memberPropNames.add(name);
 
-      const allMemberPropSets: Set<string>[] = [];
-      for (const member of unionMembers) {
-        const memberPropNames = new Set<string>();
-        for (const prop of member.getApparentProperties()) {
-          const name = prop.getName();
-          memberPropNames.add(name);
+        const propType = checker.getTypeOfSymbolAtLocation(prop, contextNode);
+        const isOptional = !!(prop.flags & typescript.SymbolFlags.Optional);
+        // `value?: never` resolves to type `undefined` (Never + Optional → Undefined).
+        // Detect these "degraded" props so we can prefer the real variant.
+        const isDegraded =
+          !!(propType.getFlags() & typescript.TypeFlags.Never) ||
+          !!(propType.getFlags() & typescript.TypeFlags.Undefined);
 
-          const propType = checker.getTypeOfSymbolAtLocation(prop, contextNode);
-          const isOptional = !!(prop.flags & typescript.SymbolFlags.Optional);
-          // `value?: never` resolves to type `undefined` (Never + Optional → Undefined).
-          // Detect these "degraded" props so we can prefer the real variant.
-          const isDegraded =
-            !!(propType.getFlags() & typescript.TypeFlags.Never) ||
-            !!(propType.getFlags() & typescript.TypeFlags.Undefined);
-
-          // Props with degraded type or optional in any variant → force optional
-          if (isOptional || isDegraded) {
-            forceOptional.add(name);
-          }
-
-          const existing = seen.get(name);
-          if (!existing) {
-            seen.set(name, prop);
-          } else if (!isDegraded) {
-            // Replace if existing is degraded but this one isn't
-            const existingType = checker.getTypeOfSymbolAtLocation(existing, contextNode);
-            const existingIsDegraded =
-              !!(existingType.getFlags() & typescript.TypeFlags.Never) ||
-              !!(existingType.getFlags() & typescript.TypeFlags.Undefined);
-            if (existingIsDegraded) {
-              seen.set(name, prop);
-            }
-          }
-        }
-        allMemberPropSets.push(memberPropNames);
-      }
-
-      // Props not present in ALL union members → force optional.
-      // A prop that exists in variant B but not variant A must be optional
-      // since the caller may pass variant A which doesn't have it.
-      for (const name of seen.keys()) {
-        if (!allMemberPropSets.every((s) => s.has(name))) {
+        // Props with degraded type or optional in any variant → force optional
+        if (isOptional || isDegraded) {
           forceOptional.add(name);
         }
+
+        const existing = seen.get(name);
+        if (!existing) {
+          seen.set(name, prop);
+        } else if (!isDegraded) {
+          // Replace if existing is degraded but this one isn't
+          const existingType = checker.getTypeOfSymbolAtLocation(existing, contextNode);
+          const existingIsDegraded =
+            !!(existingType.getFlags() & typescript.TypeFlags.Never) ||
+            !!(existingType.getFlags() & typescript.TypeFlags.Undefined);
+          if (existingIsDegraded) {
+            seen.set(name, prop);
+          }
+        }
       }
-
-      allProperties = Array.from(seen.values());
-      unionForceOptional = forceOptional;
-    } else {
-      allProperties = propsType.getApparentProperties();
-    }
-    const excluded = getBulkSourceExclusions(allProperties);
-
-    // Collect defaults: destructuring > defaultProps > JSDoc (in extractPropItem)
-    const defaultsMap = extractDestructuringDefaults(typescript, resolved, checker);
-
-    // Fallback: when the symbol resolves to a .d.ts file (e.g. package imports in
-    // monorepos), .d.ts declarations have no function bodies so extractDestructuringDefaults
-    // returns empty. Use the original source file for AST-only defaults extraction.
-    if (defaultsMap.size === 0 && defaultsSourcePath) {
-      const fallbackDefaults = extractDefaultsFromSourceFile(
-        typescript,
-        defaultsSourcePath,
-        exportName
-      );
-      for (const [key, value] of fallbackDefaults) {
-        defaultsMap.set(key, value);
-      }
+      allMemberPropSets.push(memberPropNames);
     }
 
-    // Also check for defaultProps pattern (legacy, deprecated in React 19)
-    const staticDefaults = extractStaticDefaultProps(typescript, checker, resolved);
-    for (const [key, value] of staticDefaults) {
-      if (!defaultsMap.has(key)) {
-        defaultsMap.set(key, value);
+    // Props not present in ALL union members → force optional.
+    // A prop that exists in variant B but not variant A must be optional
+    // since the caller may pass variant A which doesn't have it.
+    for (const name of seen.keys()) {
+      if (!allMemberPropSets.every((s) => s.has(name))) {
+        forceOptional.add(name);
       }
     }
 
-    const props: Record<string, PropItem> = {};
-    for (const prop of allProperties) {
-      if (excluded.has(prop.getName())) {
-        continue;
-      }
-      const item = extractPropItem(typescript, checker, prop, contextNode, defaultsMap);
-      if (unionForceOptional?.has(prop.getName())) {
-        item.required = false;
-      }
-      props[prop.getName()] = item;
+    allProperties = Array.from(seen.values());
+    unionForceOptional = forceOptional;
+  } else {
+    allProperties = propsType.getApparentProperties();
+  }
+  const excluded = getBulkSourceExclusions(allProperties);
+
+  // Collect defaults: destructuring > defaultProps > JSDoc (in extractPropItem)
+  const defaultsMap = extractDestructuringDefaults(typescript, resolved, checker);
+
+  // Fallback: when the symbol resolves to a .d.ts file (e.g. package imports in
+  // monorepos), .d.ts declarations have no function bodies so extractDestructuringDefaults
+  // returns empty. Use the original source file for AST-only defaults extraction.
+  if (defaultsMap.size === 0 && defaultsSourcePath) {
+    const fallbackDefaults = extractDefaultsFromSourceFile(
+      typescript,
+      defaultsSourcePath,
+      exportName
+    );
+    for (const [key, value] of fallbackDefaults) {
+      defaultsMap.set(key, value);
     }
-
-    const displayName = computeDisplayName(exp, resolved, sourceFile);
-
-    const description = typescript.displayPartsToString(resolved.getDocumentationComment(checker));
-
-    results.push({
-      displayName,
-      exportName,
-      filePath,
-      description,
-      props,
-    });
   }
 
-  return results;
+  // Also check for defaultProps pattern (legacy, deprecated in React 19)
+  const staticDefaults = extractStaticDefaultProps(typescript, checker, resolved);
+  for (const [key, value] of staticDefaults) {
+    if (!defaultsMap.has(key)) {
+      defaultsMap.set(key, value);
+    }
+  }
+
+  const props: Record<string, PropItem> = {};
+  for (const prop of allProperties) {
+    if (excluded.has(prop.getName())) {
+      continue;
+    }
+    const item = extractPropItem(typescript, checker, prop, contextNode, defaultsMap);
+    if (unionForceOptional?.has(prop.getName())) {
+      item.required = false;
+    }
+    props[prop.getName()] = item;
+  }
+
+  const displayName = computeDisplayName(exp, resolved) ?? displayNameOverride;
+
+  const description = typescript.displayPartsToString(resolved.getDocumentationComment(checker));
+
+  return {
+    displayName,
+    exportName,
+    filePath,
+    description,
+    props,
+  };
 }
 
 // ---------------------------------------------------------------------------

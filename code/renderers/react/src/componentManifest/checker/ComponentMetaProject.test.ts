@@ -73,15 +73,22 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       // memberAccess='Root' → find <Accordion.Root /> in story, get Root's props
       const results = project.extractPropsFromStories([
         {
-          storyFilePath: filePaths['accordion.stories.tsx'],
-          componentPath: filePaths['accordion.tsx'],
-          exportName: 'Accordion',
-          importId: './accordion',
-          memberAccess: 'Root',
+          storyPath: filePaths['accordion.stories.tsx'],
+          component: {
+            componentName: 'Accordion',
+            importId: './accordion',
+            importName: 'Accordion',
+            member: 'Root',
+            path: filePaths['accordion.tsx'],
+            isPackage: false,
+          },
         },
       ]);
-      const docs = results.get(filePaths['accordion.stories.tsx'])?.get('Accordion');
-      const doc = docs?.[0];
+      const doc = results.find(
+        (result) =>
+          result.storyPath === filePaths['accordion.stories.tsx'] &&
+          result.component?.importName === 'Accordion'
+      )?.component?.reactComponentMeta;
 
       expect(doc).toBeDefined();
       expect(doc!.props.multiple).toBeDefined();
@@ -161,16 +168,23 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       // memberAccess='Aligner' → find <Button.Aligner />, get Aligner's props
       const results = project.extractPropsFromStories([
         {
-          storyFilePath: filePaths['button.stories.tsx'],
-          componentPath: filePaths['button.tsx'],
-          exportName: 'default',
-          importId: './button',
-          memberAccess: 'Aligner',
+          storyPath: filePaths['button.stories.tsx'],
+          component: {
+            componentName: 'Button',
+            importId: './button',
+            importName: 'default',
+            member: 'Aligner',
+            path: filePaths['button.tsx'],
+            isPackage: false,
+          },
         },
       ]);
 
-      const docs = results.get(filePaths['button.stories.tsx'])?.get('default');
-      const doc = docs?.[0];
+      const doc = results.find(
+        (result) =>
+          result.storyPath === filePaths['button.stories.tsx'] &&
+          result.component?.importName === 'default'
+      )?.component?.reactComponentMeta;
       expect(doc).toBeDefined();
       expect(doc!.props.side).toBeDefined();
       // Should NOT have Button's own props
@@ -179,15 +193,22 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       // Without memberAccess → find <Button />, get Button's own props
       const results2 = project.extractPropsFromStories([
         {
-          storyFilePath: filePaths['button.stories.tsx'],
-          componentPath: filePaths['button.tsx'],
-          exportName: 'default',
-          importId: './button',
+          storyPath: filePaths['button.stories.tsx'],
+          component: {
+            componentName: 'Button',
+            importId: './button',
+            importName: 'default',
+            path: filePaths['button.tsx'],
+            isPackage: false,
+          },
         },
       ]);
 
-      const docs2 = results2.get(filePaths['button.stories.tsx'])?.get('default');
-      const doc2 = docs2?.[0];
+      const doc2 = results2.find(
+        (result) =>
+          result.storyPath === filePaths['button.stories.tsx'] &&
+          result.component?.importName === 'default'
+      )?.component?.reactComponentMeta;
       expect(doc2).toBeDefined();
       expect(doc2!.props.variant).toBeDefined();
       expect(doc2!.props.color).toBeDefined();
@@ -255,29 +276,45 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       // Mix: compound component with memberAccess + regular component
       const results = project.extractPropsFromStories([
         {
-          storyFilePath: filePaths['dialog.stories.tsx'],
-          componentPath: filePaths['dialog.tsx'],
-          exportName: 'Dialog',
-          importId: './dialog',
-          memberAccess: 'Root',
+          storyPath: filePaths['dialog.stories.tsx'],
+          component: {
+            componentName: 'Dialog',
+            importId: './dialog',
+            importName: 'Dialog',
+            member: 'Root',
+            path: filePaths['dialog.tsx'],
+            isPackage: false,
+          },
         },
         {
-          storyFilePath: filePaths['button.stories.tsx'],
-          componentPath: filePaths['button.tsx'],
-          exportName: 'Button',
-          importId: './button',
+          storyPath: filePaths['button.stories.tsx'],
+          component: {
+            componentName: 'Button',
+            importId: './button',
+            importName: 'Button',
+            path: filePaths['button.tsx'],
+            isPackage: false,
+          },
         },
       ]);
 
-      const dialogDocs = results.get(filePaths['dialog.stories.tsx'])?.get('Dialog');
-      expect(dialogDocs?.[0]).toBeDefined();
-      expect(dialogDocs![0].props.open).toBeDefined();
-      expect(dialogDocs![0].props.onOpenChange).toBeDefined();
+      const dialogDoc = results.find(
+        (result) =>
+          result.storyPath === filePaths['dialog.stories.tsx'] &&
+          result.component?.importName === 'Dialog'
+      )?.component?.reactComponentMeta;
+      expect(dialogDoc).toBeDefined();
+      expect(dialogDoc!.props.open).toBeDefined();
+      expect(dialogDoc!.props.onOpenChange).toBeDefined();
 
-      const buttonDocs = results.get(filePaths['button.stories.tsx'])?.get('Button');
-      expect(buttonDocs?.[0]).toBeDefined();
-      expect(buttonDocs![0].props.label).toBeDefined();
-      expect(buttonDocs![0].props.variant).toBeDefined();
+      const buttonDoc = results.find(
+        (result) =>
+          result.storyPath === filePaths['button.stories.tsx'] &&
+          result.component?.importName === 'Button'
+      )?.component?.reactComponentMeta;
+      expect(buttonDoc).toBeDefined();
+      expect(buttonDoc!.props.label).toBeDefined();
+      expect(buttonDoc!.props.variant).toBeDefined();
     } finally {
       project.dispose();
     }

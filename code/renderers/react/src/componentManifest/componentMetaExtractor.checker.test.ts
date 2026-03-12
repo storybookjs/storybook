@@ -1347,7 +1347,24 @@ function findExportNames(sourceFile: ts.SourceFile): string[] {
  * file with `export default { component: X }` so that Path 2 (resolveFromMetaComponent) fires. This
  * mirrors production where the user explicitly sets meta.component.
  */
-function docs(fileName: string): ComponentDoc[] {
+function defaultImportName(filePath: string): string {
+  const dir = path.dirname(filePath);
+  const baseName = path.basename(filePath, path.extname(filePath));
+  const rawName = baseName === 'index' ? path.basename(dir) : baseName;
+  const pascalName = rawName
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+  return pascalName || 'Component';
+}
+
+function docs(
+  fileName: string,
+  options: {
+    defaultComponentName?: string;
+  } = {}
+): ComponentDoc[] {
   const fp = filePaths[fileName];
   if (!fp) {
     throw new Error(`Unknown test file: "${fileName}"`);
@@ -1364,33 +1381,41 @@ function docs(fileName: string): ComponentDoc[] {
   const allDocs: ComponentDoc[] = [];
   const dir = path.dirname(fp);
   const baseName = path.basename(fp, path.extname(fp));
+  const defaultComponentName = options.defaultComponentName ?? defaultImportName(fp);
+  const storySuffix = options.defaultComponentName
+    ? `_${options.defaultComponentName.replace(/[^A-Za-z0-9]+/g, '_')}`
+    : '';
 
   for (const name of exportNames) {
+    const componentName = name === 'default' ? defaultComponentName : name;
     // Create a story file that imports and declares meta.component
     const importLine =
       name === 'default'
-        ? `import __Component__ from './${baseName}';`
-        : `import { ${name} as __Component__ } from './${baseName}';`;
+        ? `import ${componentName} from './${baseName}';`
+        : `import { ${name} as ${componentName} } from './${baseName}';`;
 
-    const storyContent = `${importLine}\nexport default { component: __Component__ };`;
-    const storyPath = path.join(dir, `${baseName}.__story_${name}__.tsx`);
+    const storyContent = `${importLine}\nexport default { component: ${componentName} };`;
+    const storyPath = path.join(dir, `${baseName}.__story_${name}${storySuffix}__.tsx`);
 
     sys.writeFile(storyPath, storyContent);
     project.ensureFiles([storyPath]);
 
     const entries = [
       {
-        storyFilePath: storyPath,
-        componentPath: fp,
-        exportName: name,
+        storyPath,
+        component: {
+          componentName,
+          importName: name,
+          path: fp,
+          isPackage: false,
+        },
       },
     ];
 
     const results = project.extractPropsFromStories(entries);
-    const storyMap = results.get(storyPath);
-    if (storyMap) {
-      for (const [, d] of storyMap) {
-        allDocs.push(...d);
+    for (const result of results) {
+      if (result.storyPath === storyPath && result.component?.reactComponentMeta) {
+        allDocs.push(result.component.reactComponentMeta);
       }
     }
   }
@@ -1643,12 +1668,25 @@ describe('componentMetaExtractor (LSP)', () => {
       expect(docs('extract/dn_default.tsx')[0].displayName).toBe('MyButton');
     });
 
-    it('falls back to filename for anonymous default exports', () => {
+    it('uses the story-level component name for anonymous default exports', () => {
       expect(docs('extract/dn/Widget.tsx')[0].displayName).toBe('Widget');
     });
 
-    it('uses parent directory for anonymous default exports from index.ts', () => {
+    it('uses a custom story alias for anonymous default exports', () => {
+      expect(
+        docs('extract/dn/Widget.tsx', { defaultComponentName: 'MarketingHeader' })[0].displayName
+      ).toBe('MarketingHeader');
+    });
+
+    it('uses the story-level component name for anonymous default exports from index.ts', () => {
       expect(docs('extract/dn/TextInput/index.ts')[0].displayName).toBe('TextInput');
+    });
+
+    it('uses a custom story alias for anonymous default exports from index.ts', () => {
+      expect(
+        docs('extract/dn/TextInput/index.ts', { defaultComponentName: 'SearchField' })[0]
+          .displayName
+      ).toBe('SearchField');
     });
   });
 
@@ -1763,7 +1801,7 @@ describe('componentMetaExtractor (LSP)', () => {
       expect(result).toHaveLength(1);
       const doc = result[0];
 
-      // Default export — should use filename as display name
+      // Anonymous default export — no displayName without a story-level hint
       expect(doc.exportName).toBe('default');
       expect(doc.displayName).toBe('Header');
 
@@ -2230,14 +2268,21 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
     }
     const results = project.extractPropsFromStories([
       {
-        storyFilePath: storyPath,
-        componentPath,
-        exportName,
-        importId: importId ?? `./${path.basename(componentFile, '.tsx')}`,
-        memberAccess,
+        storyPath,
+        component: {
+          componentName: exportName,
+          importId: importId ?? `./${path.basename(componentFile, '.tsx')}`,
+          importName: exportName,
+          member: memberAccess,
+          path: componentPath,
+          isPackage: false,
+        },
       },
     ]);
-    return results.get(storyPath)?.get(exportName) ?? [];
+    const doc = results.find(
+      (result) => result.storyPath === storyPath && result.component?.importName === exportName
+    )?.component?.reactComponentMeta;
+    return doc ? [doc] : [];
   }
 
   it('extracts props from a simple component via story JSX', () => {

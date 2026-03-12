@@ -19,7 +19,8 @@ import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
 import type ts from 'typescript';
 
-import { ComponentMetaProject, type StoryExtractionEntry } from './ComponentMetaProject';
+import type { StoryRef } from '../getComponentImports';
+import { ComponentMetaProject } from './ComponentMetaProject';
 
 // Volar LS pattern (typescriptProject.ts line 18)
 const rootTsConfigNames = ['tsconfig.json', 'jsconfig.json'];
@@ -30,6 +31,20 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
   allowJs: true,
   skipLibCheck: true,
 };
+
+function groupByToMap<T, K>(items: Iterable<T>, getKey: (item: T) => K): Map<K, T[]> {
+  const result = new Map<K, T[]>();
+  for (const item of items) {
+    const key = getKey(item);
+    const group = result.get(key);
+    if (group) {
+      group.push(item);
+    } else {
+      result.set(key, [item]);
+    }
+  }
+  return result;
+}
 
 export class ComponentMetaManager {
   private static instance: Promise<ComponentMetaManager | null> | undefined;
@@ -96,45 +111,29 @@ export class ComponentMetaManager {
    * Batch-extract component props across all entries, grouping by tsconfig project so each project
    * builds its TS program only once.
    */
-  batchExtract(
-    entries: Array<{
-      absoluteImportPath: string;
-      component?: { path?: string; importName?: string; importId?: string; member?: string };
-    }>
-  ) {
-    const byProject = new Map<ComponentMetaProject, StoryExtractionEntry[]>();
-    for (const { absoluteImportPath, component } of entries) {
-      if (!component?.path) {
-        continue;
-      }
-      const entry: StoryExtractionEntry = {
-        storyFilePath: absoluteImportPath,
-        componentPath: component.path,
-        exportName: component.importName ?? 'default',
-        importId: component.importId,
-        memberAccess: component.member,
-      };
-      const project = this.getProjectForFile(absoluteImportPath);
-      let group = byProject.get(project);
-      if (!group) {
-        group = [];
-        byProject.set(project, group);
-      }
-      group.push(entry);
-    }
+  batchExtract<T extends StoryRef>(entries: T[]): T[] {
+    const extractableEntries = entries.flatMap((storyRef, index) =>
+      storyRef.component?.path && storyRef.component.importName ? [{ index, storyRef }] : []
+    );
+    const byProject = groupByToMap(extractableEntries, ({ storyRef }) =>
+      this.getProjectForFile(storyRef.storyPath)
+    );
+    const enrichedEntries = [...entries];
 
-    const results: ReturnType<ComponentMetaProject['extractPropsFromStories']> = new Map();
     for (const [project, projectEntries] of byProject) {
       try {
-        const projectResults = project.extractPropsFromStories(projectEntries);
-        for (const [storyPath, exportMap] of projectResults) {
-          results.set(storyPath, exportMap);
-        }
+        const projectResults = project.extractPropsFromStories(
+          projectEntries.map(({ storyRef }) => storyRef)
+        );
+        projectEntries.forEach(({ index }, groupIndex) => {
+          enrichedEntries[index] = projectResults[groupIndex];
+        });
       } catch (err) {
         logger.debug(`[reactComponentMeta] Batch extraction failed: ${err}`);
       }
     }
-    return results;
+
+    return enrichedEntries;
   }
 
   // ---------------------------------------------------------------------------

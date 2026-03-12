@@ -14,7 +14,7 @@
  *
  * - Path 1 (primary): Find JSX in story files → getResolvedSignature() → props type
  * - Path 2 (fallback): Direct type inspection for args-only stories (component-meta approach)
- * - SerializeComponentDocs() serializes the resolved props type into ComponentDoc format
+ * - SerializeComponentDoc() serializes the resolved props type into ComponentDoc format
  */
 import { FileMap, createLanguage } from '@volar/language-core';
 import {
@@ -29,17 +29,9 @@ import {
   type ComponentDoc,
   resolvePropsFromComponentType,
   resolvePropsFromStoryFile,
-  serializeComponentDocs,
+  serializeComponentDoc,
 } from '../componentMetaExtractor';
-
-/** Descriptor for a single component to extract from a story file. */
-export interface StoryExtractionEntry {
-  storyFilePath: string;
-  componentPath: string;
-  exportName: string;
-  importId?: string;
-  memberAccess?: string;
-}
+import type { StoryRef } from '../getComponentImports';
 
 export class ComponentMetaProject {
   private ls: ts.LanguageService;
@@ -47,7 +39,7 @@ export class ComponentMetaProject {
   private shouldCheckRootFiles = false;
   private warmupTimer?: ReturnType<typeof setTimeout>;
   /** Entries to extract — set by the generator, replayed during warmup for targeted type resolution. */
-  private entries: StoryExtractionEntry[] = [];
+  private entries: StoryRef[] = [];
 
   constructor(
     private typescript: typeof ts,
@@ -253,54 +245,54 @@ export class ComponentMetaProject {
   // Primary extraction method — probe-free
   // ---------------------------------------------------------------------------
 
-  extractPropsFromStories(
-    entries: StoryExtractionEntry[]
-  ): Map<string, Map<string, ComponentDoc[]>> {
-    const result = new Map<string, Map<string, ComponentDoc[]>>();
+  extractPropsFromStories<T extends StoryRef>(entries: T[]): T[] {
+    const enrichedEntries = [...entries];
 
     this.entries = entries;
 
-    const allFiles = entries.flatMap((e) => [e.storyFilePath, e.componentPath]);
+    const allFiles = entries.flatMap((entry) =>
+      entry.component?.path ? [entry.storyPath, entry.component.path] : [entry.storyPath]
+    );
     this.ensureFiles(allFiles);
     this.ensureFresh(allFiles);
 
     const program = this.ls.getProgram();
     if (!program) {
-      return result;
+      return enrichedEntries;
     }
     const checker = program.getTypeChecker();
+    const serializationContextByComponentPath = new Map<
+      string,
+      { sourceFile: ts.SourceFile; defaultsSourcePath?: string } | null
+    >();
+    const serializedDocByKey = new Map<string, Map<ts.Type, ComponentDoc | undefined>>();
 
-    type Resolved = {
-      exportName: string;
-      propsType: ts.Type;
-      componentPath: string;
-      componentSourceFile: ts.SourceFile;
-      defaultsSourcePath?: string;
-    };
-    const byComponentPath = new Map<string, Resolved[]>();
-
-    for (const entry of entries) {
+    for (const [index, entry] of entries.entries()) {
       try {
-        const storySourceFile = program.getSourceFile(entry.storyFilePath);
-        if (!storySourceFile) {
+        const storySourceFile = program.getSourceFile(entry.storyPath);
+        const componentPath = entry.component?.path;
+        const exportName = entry.component?.importName;
+        if (!storySourceFile || !componentPath || !exportName) {
           continue;
         }
 
-        const isPackageImport = entry.importId && !entry.importId.startsWith('.');
+        const importId = entry.component.importId;
+        const memberAccess = entry.component.member;
+        const isPackageImport = importId && !importId.startsWith('.');
         let componentSourceFile: ts.SourceFile | undefined;
 
         if (isPackageImport) {
           const resolved = this.typescript.resolveModuleName(
-            entry.importId!,
-            entry.storyFilePath,
+            importId!,
+            entry.storyPath,
             this.commandLine.options,
             this.typescript.sys
           );
           componentSourceFile = resolved.resolvedModule
             ? program.getSourceFile(resolved.resolvedModule.resolvedFileName)
-            : program.getSourceFile(entry.componentPath);
+            : program.getSourceFile(componentPath);
         } else {
-          componentSourceFile = program.getSourceFile(entry.componentPath);
+          componentSourceFile = program.getSourceFile(componentPath);
         }
 
         if (!componentSourceFile) {
@@ -309,85 +301,88 @@ export class ComponentMetaProject {
 
         // Path 1: Find JSX in story file
         let propsType: ts.Type | undefined;
-        if (entry.importId) {
+        if (importId) {
           propsType = resolvePropsFromStoryFile(
             this.typescript,
             checker,
             storySourceFile,
-            entry.importId,
-            entry.exportName,
-            entry.memberAccess
+            importId,
+            exportName,
+            memberAccess
           );
         }
 
         // Path 2: Fallback — resolve from meta.component in the story file.
         // Only fires when the user explicitly set `component:` in the meta object.
         if (!propsType) {
-          propsType = this.resolveFromMetaComponent(checker, storySourceFile, entry.memberAccess);
+          propsType = this.resolveFromMetaComponent(checker, storySourceFile, memberAccess);
         }
 
         if (!propsType) {
           continue;
         }
 
-        const resolvedFileName = componentSourceFile.fileName;
-        const defaultsSourcePath =
-          resolvedFileName.endsWith('.d.ts') ||
-          resolvedFileName.endsWith('.d.mts') ||
-          resolvedFileName.endsWith('.d.cts')
-            ? entry.componentPath
-            : undefined;
-
-        const key = entry.componentPath;
-        let group = byComponentPath.get(key);
-        if (!group) {
-          group = [];
-          byComponentPath.set(key, group);
+        let serializationContext = serializationContextByComponentPath.get(componentPath);
+        if (serializationContext === undefined) {
+          const resolvedFileName = componentSourceFile.fileName;
+          serializationContext = {
+            sourceFile: componentSourceFile,
+            defaultsSourcePath:
+              resolvedFileName.endsWith('.d.ts') ||
+              resolvedFileName.endsWith('.d.mts') ||
+              resolvedFileName.endsWith('.d.cts')
+                ? componentPath
+                : undefined,
+          };
+          serializationContextByComponentPath.set(componentPath, serializationContext);
         }
-        group.push({
-          exportName: entry.exportName,
-          propsType,
-          componentPath: entry.componentPath,
-          componentSourceFile,
-          defaultsSourcePath,
-        });
+
+        if (serializationContext === null) {
+          continue;
+        }
+
+        const serializationCacheKey = `${componentPath}::${exportName}::${entry.component?.componentName ?? ''}`;
+        let docsByType = serializedDocByKey.get(serializationCacheKey);
+        if (!docsByType) {
+          docsByType = new Map();
+          serializedDocByKey.set(serializationCacheKey, docsByType);
+        }
+
+        let doc = docsByType.get(propsType);
+        if (doc === undefined && !docsByType.has(propsType)) {
+          doc = serializeComponentDoc(this.typescript, checker, {
+            filePath: componentPath,
+            sourceFile: serializationContext.sourceFile,
+            exportName,
+            propsType,
+            defaultsSourcePath: serializationContext.defaultsSourcePath,
+            displayNameOverride: entry.component?.componentName,
+          });
+          docsByType.set(propsType, doc);
+        }
+
+        if (!doc) {
+          continue;
+        }
+
+        const component = enrichedEntries[index].component;
+        if (!component) {
+          continue;
+        }
+        enrichedEntries[index] = {
+          ...enrichedEntries[index],
+          component: {
+            ...component,
+            reactComponentMeta: doc,
+          },
+        };
       } catch {
         // One bad component should not kill the entire batch.
         continue;
       }
     }
 
-    for (const [, resolvedEntries] of byComponentPath) {
-      const first = resolvedEntries[0];
-      const propsTypes = new Map<string, ts.Type>();
-      for (const r of resolvedEntries) {
-        propsTypes.set(r.exportName, r.propsType);
-      }
-
-      const docs = serializeComponentDocs(
-        this.typescript,
-        checker,
-        first.componentPath,
-        first.componentSourceFile,
-        propsTypes,
-        first.defaultsSourcePath
-      );
-
-      for (const doc of docs) {
-        for (const entry of entries) {
-          if (entry.componentPath === first.componentPath && entry.exportName === doc.exportName) {
-            let storyMap = result.get(entry.storyFilePath);
-            if (!storyMap) {
-              storyMap = new Map();
-              result.set(entry.storyFilePath, storyMap);
-            }
-            storyMap.set(entry.exportName, [doc]);
-          }
-        }
-      }
-    }
-
-    return result;
+    return enrichedEntries;
   }
 
   /**

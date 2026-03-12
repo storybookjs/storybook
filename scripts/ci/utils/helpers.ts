@@ -95,6 +95,19 @@ export const node = {
   },
 };
 
+export const playwright = {
+  install: (working_directory = 'code', isOnWindows = false) => {
+    return {
+      run: {
+        name: 'Install Playwright',
+        working_directory,
+        ...(isOnWindows ? { shell: 'powershell.exe' } : {}),
+        command: 'npx playwright install chromium --with-deps',
+      },
+    };
+  },
+};
+
 export const npm = {
   installScripts: () => {
     return {

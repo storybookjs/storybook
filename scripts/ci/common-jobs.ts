@@ -11,6 +11,7 @@ import {
   git,
   node,
   npm,
+  playwright,
   server,
   testResults,
   verdaccio,
@@ -273,6 +274,7 @@ export const testsStories_linux = defineJob(
     },
     steps: [
       ...workflow.restoreLinux(),
+      playwright.install('code'),
       {
         run: {
           name: 'Run stories tests',
@@ -309,6 +311,7 @@ export const testUnit_windows = defineJob(
           name: 'Install dependencies',
         },
       },
+      playwright.install(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`, true),
       {
         run: {
           command:

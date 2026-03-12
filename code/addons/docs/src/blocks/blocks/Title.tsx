@@ -6,7 +6,7 @@ import type { ComponentTitle } from 'storybook/internal/types';
 import { Title as PureTitle } from '../components';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface TitleProps {
   /**

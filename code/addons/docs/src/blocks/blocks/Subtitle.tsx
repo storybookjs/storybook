@@ -6,7 +6,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 import { Subtitle as PureSubtitle } from '../components';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface SubtitleProps {
   children?: ReactNode;

@@ -4,7 +4,7 @@ import React from 'react';
 import { Markdown } from './Markdown';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export enum DescriptionType {
   INFO = 'info',

@@ -7,7 +7,7 @@ import { Description } from './Description';
 import { Subheading } from './Subheading';
 import type { DocsStoryProps } from './types';
 import { useOf } from './useOf';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 const DocsStoryImpl: FC<DocsStoryProps> = ({
   of,

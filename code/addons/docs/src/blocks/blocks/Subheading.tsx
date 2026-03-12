@@ -6,7 +6,7 @@ import { H3 } from 'storybook/internal/components';
 import type { HeadingProps } from './Heading';
 import { slugs } from './Heading';
 import { HeaderMdx } from './mdx';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 const SubheadingImpl: FC<PropsWithChildren<HeadingProps>> = ({ children, disableAnchor }) => {
   if (disableAnchor || typeof children !== 'string') {

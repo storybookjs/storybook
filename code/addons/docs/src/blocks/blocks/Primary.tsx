@@ -3,7 +3,7 @@ import React from 'react';
 
 import { DocsStory } from './DocsStory';
 import { usePrimaryStory } from './usePrimaryStory';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 const PrimaryImpl: FC = () => {
   const primaryStory = usePrimaryStory();

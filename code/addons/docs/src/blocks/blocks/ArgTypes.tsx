@@ -13,7 +13,7 @@ import type { SortType } from '../components';
 import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
 import { useOf } from './useOf';
 import { getComponentName } from './utils';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type ArgTypesParameters = {
   include?: PropDescriptor;

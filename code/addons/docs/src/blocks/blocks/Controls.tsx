@@ -16,7 +16,7 @@ import { useArgs } from './useArgs';
 import { useGlobals } from './useGlobals';
 import { usePrimaryStory } from './usePrimaryStory';
 import { getComponentName } from './utils';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type ControlsParameters = {
   include?: PropDescriptor;

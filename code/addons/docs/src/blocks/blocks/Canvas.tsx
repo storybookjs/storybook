@@ -13,7 +13,7 @@ import { SourceContext } from './SourceContainer';
 import type { StoryProps } from './Story';
 import { Story } from './Story';
 import { useOf } from './useOf';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 'className'> & {
   /**

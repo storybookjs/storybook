@@ -8,7 +8,7 @@ import { styled } from 'storybook/theming';
 import { DocsContext } from './DocsContext';
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface StoriesProps {
   title?: ReactElement | string;

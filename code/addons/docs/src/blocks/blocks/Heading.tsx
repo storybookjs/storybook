@@ -6,7 +6,7 @@ import { H2 } from 'storybook/internal/components';
 import GithubSlugger from 'github-slugger';
 
 import { HeaderMdx } from './mdx';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export interface HeadingProps {
   disableAnchor?: boolean;

@@ -5,7 +5,7 @@ import PureMarkdown from 'markdown-to-jsx';
 import { dedent } from 'ts-dedent';
 
 import { AnchorMdx, CodeOrSourceMdx, HeadersMdx } from './mdx';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 // mirror props from markdown-to-jsx. From https://react-typescript-cheatsheet.netlify.app/docs/advanced/patterns_by_usecase#wrappingmirroring-a-component
 type MarkdownProps = typeof PureMarkdown extends React.ComponentType<infer Props> ? Props : never;

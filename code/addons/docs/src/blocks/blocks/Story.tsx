@@ -13,7 +13,7 @@ import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import { useStory } from './useStory';
-import { withMdxComponentOverride } from './withMdxComponentOverride';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type PureStoryProps = ComponentProps<typeof PureStory>;
 

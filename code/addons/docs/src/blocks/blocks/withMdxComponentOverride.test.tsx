@@ -48,4 +48,16 @@ describe('withMdxComponentOverride', () => {
 
     expect(screen.getByTestId('default')).toHaveTextContent('Hello');
   });
+
+  it('falls back to the default block when the override composes with the public block export', () => {
+    const Override: FC<TestBlockProps> = (props) => <TestBlock {...props} />;
+
+    render(
+      <MDXProvider components={{ TestBlock: Override }}>
+        <TestBlock label="Hello" />
+      </MDXProvider>
+    );
+
+    expect(screen.getByTestId('default')).toHaveTextContent('Hello');
+  });
 });

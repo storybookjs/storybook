@@ -24,6 +24,7 @@ import * as ComponentOverrideStories from './component-overrides.stories.tsx';
 # Component override verification
 
 Every block below should render its `override:*` marker rather than the default Storybook block UI.
+The `Title` override intentionally renders `<Title />` again, so it also proves recursive composition does not loop infinitely.
 `Meta` is intentionally excluded because it is not overridable.
 
 <Title />

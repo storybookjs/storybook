@@ -3,6 +3,8 @@ import React from 'react';
 
 import type { Preview } from '@storybook/react';
 
+import { Title as DocsTitle } from '@storybook/addon-docs/blocks';
+
 type OverrideProps = {
   children?: ReactNode;
 };
@@ -28,6 +30,12 @@ const createOverride = (name: string, renderChildren = false): FC<OverrideProps>
   function Override({ children }) {
     return <OverrideShell name={name}>{renderChildren ? children : null}</OverrideShell>;
   };
+
+const RecursiveTitleOverride: FC<OverrideProps> = (props) => (
+  <OverrideShell name="Title (via <Title /> composition)">
+    <DocsTitle {...props} />
+  </OverrideShell>
+);
 
 const meta: Preview = {
   title: 'Docs2/ComponentOverrides',
@@ -60,7 +68,7 @@ const meta: Preview = {
         Story: createOverride('Story'),
         Subheading: createOverride('Subheading', true),
         Subtitle: createOverride('Subtitle'),
-        Title: createOverride('Title'),
+        Title: RecursiveTitleOverride,
         Unstyled: createOverride('Unstyled', true),
         Wrapper: createOverride('Wrapper', true),
       },

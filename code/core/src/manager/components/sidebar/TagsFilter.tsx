@@ -10,11 +10,11 @@ import { styled } from 'storybook/theming';
 
 import { TagsFilterPanel } from './TagsFilterPanel';
 
-const StyledButton = styled(Button)<{ isHighlighted: boolean }>(({ isHighlighted, theme }) => ({
+const StyledButton = styled(Button)<{ $isHighlighted: boolean }>(({ $isHighlighted, theme }) => ({
   '&:focus-visible': {
     outlineOffset: 4,
   },
-  ...(isHighlighted && {
+  ...($isHighlighted && {
     background: theme.background.hoverable,
     color: theme.color.secondary,
   }),
@@ -77,7 +77,7 @@ export const TagsFilter = ({ api, indexJson }: TagsFilterProps) => {
         ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
         variant="ghost"
         padding="small"
-        isHighlighted={expanded}
+        $isHighlighted={activeFilterCount > 0}
         onClick={handleToggleExpand}
       >
         <FilterIcon />

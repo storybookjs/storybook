@@ -100,32 +100,40 @@ const findNamedProp = (
       p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === name
   );
 
-/** Type guard for a property that is a `projects` key with an ArrayExpression value. */
-const isProjectsArrayProp = (
+/** Type guard for a property that is a `workspace` or `projects` key with an array value. */
+const isWorkspaceOrProjectsArrayProp = (
   p: t.ObjectMethod | t.ObjectProperty | t.SpreadElement
 ): p is t.ObjectProperty =>
   p.type === 'ObjectProperty' &&
   p.key.type === 'Identifier' &&
-  p.key.name === 'projects' &&
+  (p.key.name === 'workspace' || p.key.name === 'projects') &&
   p.value.type === 'ArrayExpression';
 
 /**
- * Appends storybook project(s) from template into an existing `test.projects` array, then merges
- * any additional test-level options (e.g. coverage) that don't already exist.
+ * Appends storybook project(s) from template into an existing `test.workspace`/`test.projects`
+ * array, then merges any additional test-level options (e.g. coverage) that don't already exist.
  */
-const appendToExistingProjects = (
-  existingProjectsProp: t.ObjectProperty,
+const appendToExistingProjectRefs = (
+  existingProjectRefsProp: t.ObjectProperty,
   resolvedTestValue: t.ObjectExpression,
   templateTestProp: t.ObjectProperty | undefined,
   properties: t.ObjectExpression['properties'],
   targetConfigObject: t.ObjectExpression
 ) => {
+  const existingKeyName =
+    existingProjectRefsProp.key.type === 'Identifier' ? existingProjectRefsProp.key.name : null;
+
   if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
-    // Append template projects to existing projects array
-    const templateProjectsProp = templateTestProp.value.properties.find(isProjectsArrayProp);
-    if (templateProjectsProp && templateProjectsProp.value.type === 'ArrayExpression') {
-      (existingProjectsProp.value as t.ArrayExpression).elements.push(
-        ...(templateProjectsProp.value as t.ArrayExpression).elements
+    // Append template workspace/projects entries to existing workspace/projects array
+    const templateProjectRefsProp = templateTestProp.value.properties.find(
+      (p): p is t.ObjectProperty =>
+        isWorkspaceOrProjectsArrayProp(p) &&
+        (existingKeyName === null ||
+          (p.key.type === 'Identifier' && p.key.name === existingKeyName))
+    );
+    if (templateProjectRefsProp && templateProjectRefsProp.value.type === 'ArrayExpression') {
+      (existingProjectRefsProp.value as t.ArrayExpression).elements.push(
+        ...(templateProjectRefsProp.value as t.ArrayExpression).elements
       );
     }
 
@@ -142,6 +150,7 @@ const appendToExistingProjects = (
         templateProp.type === 'ObjectProperty' &&
         templateProp.key.type === 'Identifier' &&
         (templateProp.key as t.Identifier).name !== 'projects' &&
+        (templateProp.key as t.Identifier).name !== 'workspace' &&
         !existingTestPropNames.has((templateProp.key as t.Identifier).name)
       ) {
         resolvedTestValue.properties.push(templateProp);
@@ -258,6 +267,56 @@ const wrapTestConfigAsProject = (
   // Hoist top-level properties to the test object so they apply to all projects
   if (topLevelProps.length > 0 && templateTestProp.value.type === 'ObjectExpression') {
     templateTestProp.value.properties.unshift(...topLevelProps);
+  }
+
+  mergeProperties(properties, targetConfigObject.properties);
+};
+
+/**
+ * Merges template properties into a config object, handling Vitest `test.projects` migration
+ * semantics:
+ *
+ * - Append when projects already exists
+ * - Wrap existing test config as a project when template introduces projects/workspace
+ * - Otherwise perform a regular merge
+ */
+const mergeTemplateIntoConfigObject = (
+  targetConfigObject: t.ObjectExpression,
+  properties: t.ObjectExpression['properties'],
+  target: BabelFile['ast']
+) => {
+  const existingTestProp = findNamedProp(targetConfigObject.properties, 'test');
+  const resolvedTestValue = existingTestProp
+    ? resolveTestPropValue(existingTestProp, target)
+    : null;
+  const templateTestProp = findNamedProp(properties, 'test');
+
+  if (existingTestProp && resolvedTestValue !== null) {
+    const existingProjectRefsProp = resolvedTestValue.properties.find(
+      isWorkspaceOrProjectsArrayProp
+    );
+
+    if (existingProjectRefsProp) {
+      appendToExistingProjectRefs(
+        existingProjectRefsProp,
+        resolvedTestValue,
+        templateTestProp,
+        properties,
+        targetConfigObject
+      );
+      return;
+    }
+
+    if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
+      wrapTestConfigAsProject(
+        resolvedTestValue,
+        existingTestProp,
+        templateTestProp,
+        properties,
+        targetConfigObject
+      );
+      return;
+    }
   }
 
   mergeProperties(properties, targetConfigObject.properties);
@@ -436,7 +495,7 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
         const { properties } = sourceNode.declaration.arguments[0];
         const targetConfigObject = getTargetConfigObject(target, exportDefault);
         if (targetConfigObject !== null) {
-          mergeProperties(properties, targetConfigObject.properties);
+          mergeTemplateIntoConfigObject(targetConfigObject, properties, target);
           updated = true;
         } else {
           const mergeConfigCall = getEffectiveMergeConfigCall(exportDefault.declaration, target);
@@ -475,37 +534,7 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
               return false;
             }
 
-            const existingTestProp = findNamedProp(targetConfigObject.properties, 'test');
-            const resolvedTestValue = existingTestProp
-              ? resolveTestPropValue(existingTestProp, target)
-              : null;
-            const templateTestProp = findNamedProp(properties, 'test');
-
-            if (existingTestProp && resolvedTestValue !== null) {
-              const existingProjectsProp = resolvedTestValue.properties.find(isProjectsArrayProp);
-
-              if (existingProjectsProp) {
-                appendToExistingProjects(
-                  existingProjectsProp,
-                  resolvedTestValue,
-                  templateTestProp,
-                  properties,
-                  targetConfigObject
-                );
-              } else if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
-                wrapTestConfigAsProject(
-                  resolvedTestValue,
-                  existingTestProp,
-                  templateTestProp,
-                  properties,
-                  targetConfigObject
-                );
-              } else {
-                mergeProperties(properties, targetConfigObject.properties);
-              }
-            } else {
-              mergeProperties(properties, targetConfigObject.properties);
-            }
+            mergeTemplateIntoConfigObject(targetConfigObject, properties, target);
             updated = true;
           }
         }

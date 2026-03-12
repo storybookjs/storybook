@@ -261,8 +261,12 @@ describe('updateConfigFile', () => {
         
       -     globals: true
       - 
-      +     globals: true,
       +     projects: [{
+      +       extends: true,
+      +       test: {
+      +         globals: true
+      +       }
+      +     }, {
       +       extends: true,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
@@ -502,8 +506,12 @@ describe('updateConfigFile', () => {
         
       -     globals: true
       - 
-      +     globals: true,
       +     workspace: [{
+      +       extends: true,
+      +       test: {
+      +         globals: true
+      +       }
+      +     }, {
       +       extends: true,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
@@ -1658,13 +1666,19 @@ describe('updateConfigFile', () => {
       + 
         export default defineProject({
           test: {
-            name: 'node',
-            environment: 'happy-dom',
         
+      -     name: 'node',
+      -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
       - 
-      +     include: ['**/*.test.ts'],
       +     workspace: [{
+      +       extends: true,
+      +       test: {
+      +         name: 'node',
+      +         environment: 'happy-dom',
+      +         include: ['**/*.test.ts']
+      +       }
+      +     }, {
       +       extends: true,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config

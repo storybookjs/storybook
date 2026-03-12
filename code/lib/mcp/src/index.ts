@@ -6,6 +6,9 @@ import { addListAllDocumentationTool } from './tools/list-all-documentation.ts';
 import { addGetStoryDocumentationTool } from './tools/get-documentation-for-story.ts';
 import { addGetDocumentationTool } from './tools/get-documentation.ts';
 import type { StorybookContext } from './types.ts';
+import serverInstructions from './instructions.md';
+
+export { serverInstructions as STORYBOOK_MCP_INSTRUCTIONS };
 
 // Export tools for reuse by addon-mcp
 export { addListAllDocumentationTool, LIST_TOOL_NAME } from './tools/list-all-documentation.ts';
@@ -73,6 +76,7 @@ type Handler = (req: Request, context?: StorybookContext) => Promise<Response>;
 export const createStorybookMcpHandler = async (
 	options: StorybookMcpHandlerOptions = {},
 ): Promise<Handler> => {
+	const { onSessionInitialize, ...defaultContext } = options;
 	const adapter = new ValibotJsonSchemaAdapter();
 	const server = new McpServer(
 		{
@@ -82,14 +86,15 @@ export const createStorybookMcpHandler = async (
 		},
 		{
 			adapter,
+			instructions: serverInstructions,
 			capabilities: {
 				tools: { listChanged: true },
 			},
 		},
 	).withContext<StorybookContext>();
 
-	if (options.onSessionInitialize) {
-		server.on('initialize', options.onSessionInitialize);
+	if (onSessionInitialize) {
+		server.on('initialize', onSessionInitialize);
 	}
 
 	await addListAllDocumentationTool(server);
@@ -100,10 +105,9 @@ export const createStorybookMcpHandler = async (
 
 	return (async (req, context) => {
 		return await transport.respond(req, {
+			...defaultContext,
+			...context,
 			request: req,
-			manifestProvider: context?.manifestProvider ?? options.manifestProvider,
-			onListAllDocumentation: context?.onListAllDocumentation ?? options.onListAllDocumentation,
-			onGetDocumentation: context?.onGetDocumentation ?? options.onGetDocumentation,
 		});
 	}) as Handler;
 };

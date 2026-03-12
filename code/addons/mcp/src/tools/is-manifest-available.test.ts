@@ -92,4 +92,27 @@ describe('getManifestStatus', () => {
 		const result = await getManifestStatus(mockOptions);
 		expect(result).toEqual(expected);
 	});
+
+	it('should correctly detect no manifests when components are not present in experimental_manifests', async () => {
+		// the `manifests` preset can be present but without manifests.components, because `addon-docs` sets manifests.docs
+		const result = await getManifestStatus({
+			presets: {
+				apply: vi.fn(async (key: string) => {
+					if (key === 'features') {
+						return { componentsManifest: true };
+					}
+					if (key === 'experimental_manifests') {
+						// addon-docs has set manifests.docs, but there are no actual component manifests
+						return { docs: { v: 1, docs: {} } };
+					}
+					return undefined;
+				}),
+			},
+		} as unknown as Options);
+		expect(result).toEqual({
+			available: false,
+			hasManifests: false,
+			hasFeatureFlag: true,
+		});
+	});
 });

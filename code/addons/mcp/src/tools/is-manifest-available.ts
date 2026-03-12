@@ -21,7 +21,8 @@ export const getManifestStatus = async (options: Options): Promise<ManifestStatu
 		options.presets.apply('experimental_componentManifestGenerator'),
 	]);
 
-	const hasManifests = !!manifests || !!legacyComponentManifestGenerator;
+	const hasManifests =
+		(manifests && 'components' in manifests) || !!legacyComponentManifestGenerator;
 	const hasFeatureFlag = !!(
 		features?.componentsManifest ?? features?.experimentalComponentsManifest
 	);

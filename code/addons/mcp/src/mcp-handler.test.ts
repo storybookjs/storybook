@@ -278,6 +278,75 @@ describe('mcpServerHandler', () => {
 			},
 		});
 		expect(parsedResponse.result.serverInfo.version).toBeDefined();
+		expect(parsedResponse.result.instructions).toBeDefined();
+		expect(parsedResponse.result.instructions).toContain(
+			'Follow these workflows when working with UI and/or Storybook.',
+		);
+		expect(parsedResponse.result.instructions).toContain(
+			'## UI Building and Story Writing Workflow',
+		);
+		expect(parsedResponse.result.instructions).toContain('## Validation Workflow');
+		expect(parsedResponse.result.instructions).not.toContain('## Documentation Workflow');
+	});
+
+	it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {
+		const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
+			if (key === 'core') {
+				return { disableTelemetry: false };
+			}
+			if (key === 'features') {
+				return { experimentalComponentsManifest: true };
+			}
+			if (key === 'experimental_manifests') {
+				return { components: { v: 1, components: {} } };
+			}
+			return defaultValue;
+		});
+
+		const mockOptions = createMockOptions({
+			port: 6011,
+			presets: { apply: applyMock },
+		});
+		const mockReq = createMockIncomingMessage({
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				host: 'localhost:6011',
+				'X-MCP-Toolsets': 'docs',
+			},
+			body: createMCPInitializeRequest(),
+		});
+		const { response, getResponseData } = createMockServerResponse();
+
+		await mcpServerHandler({
+			req: mockReq,
+			res: response,
+			options: mockOptions as any,
+			addonOptions: {
+				toolsets: {
+					dev: true,
+					docs: true,
+					test: true,
+				},
+			},
+			compositionAuth: new CompositionAuth(),
+		});
+
+		const { body } = getResponseData();
+		const dataLine = body.split('\n').find((line) => line.startsWith('data: '));
+		const responseText = dataLine!.replace(/^data: /, '').trim();
+		const parsedResponse = JSON.parse(responseText);
+
+		expect(parsedResponse.result.instructions).toContain(
+			'Follow these workflows when working with UI and/or Storybook.',
+		);
+		expect(parsedResponse.result.instructions).toContain('## Documentation Workflow');
+		expect(parsedResponse.result.instructions).toContain('## Verification Rules');
+		expect(parsedResponse.result.instructions).toContain('## Multi-Source Requests');
+		expect(parsedResponse.result.instructions).not.toContain(
+			'## UI Building and Story Writing Workflow',
+		);
+		expect(parsedResponse.result.instructions).not.toContain('## Validation Workflow');
 	});
 
 	it('should respect disableTelemetry setting', async () => {
@@ -332,7 +401,7 @@ describe('mcpServerHandler', () => {
 				return { componentsManifest: true };
 			}
 			if (key === 'experimental_manifests') {
-				return vi.fn();
+				return { components: { v: 1, components: {} } };
 			}
 			return defaultValue;
 		});

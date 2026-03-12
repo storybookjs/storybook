@@ -31,7 +31,7 @@ test.describe('Vue 3', () => {
     await expect(previewRoot).toContainText('2');
   });
 
-  test('Decorators can inject reactive globals', async ({ page }) => {
+  test('Decorators can consume reactive globals', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory(

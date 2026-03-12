@@ -87,7 +87,6 @@ const updateArgsDecorator: DecoratorFunction<VueRenderer> = (story, { args }) =>
 const localeDecorator: DecoratorFunction<VueRenderer> = (story, { globals }) => {
   return {
     components: { story },
-    inject: ['globals'],
     setup() {
       const ctxGreeting = computed(() => getCaptionForLocale(globals?.locale) || 'Hello!');
 

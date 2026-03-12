@@ -24,6 +24,7 @@ export interface Controls {
 }
 
 interface InteractionsPanelProps {
+  id?: string;
   storyUrl: string;
   status: PlayStatus;
   controls: Controls;
@@ -117,8 +118,19 @@ const CaughtExceptionStack = styled.pre(({ theme }) => ({
   fontSize: theme.typography.size.s1 - 1,
 }));
 
+const StatusAnnouncementMapping: Record<PlayStatus, string> = {
+  rendering: 'Component test is rendering.',
+  playing: 'Component test is running.',
+  completed: 'Component test completed successfully.',
+  errored: 'Component test failed.',
+  aborted: 'Component test was aborted.',
+} as const;
+
+let generatedHeadingId = 0;
+
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
+    id,
     storyUrl,
     status,
     calls,
@@ -140,20 +152,13 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
-    const headingId = React.useId();
+    const autoHeadingId = React.useRef(id || `interactions-panel-${generatedHeadingId++}`);
+    const headingId = id || autoHeadingId.current;
     const isListBusy = status === 'rendering' || status === 'playing';
     const statusAnnouncement =
-      status === 'rendering'
-        ? 'Component test is rendering.'
-        : status === 'playing'
-          ? 'Component test is running.'
-          : status === 'errored'
-            ? 'Component test failed.'
-            : status === 'aborted'
-              ? 'Component test was aborted.'
-              : hasException
-                ? 'Component test completed with errors.'
-                : 'Component test completed successfully.';
+      status === 'completed' && hasException
+        ? 'Component test completed with errors.'
+        : StatusAnnouncementMapping[status];
 
     return (
       <Container>

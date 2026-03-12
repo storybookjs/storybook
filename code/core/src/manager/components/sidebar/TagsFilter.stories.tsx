@@ -238,7 +238,10 @@ export const NoUserTags = {
 
 export const WithSelection = {
   ...ClosedWithSelection,
-  play: Clear.play,
+  play: async ({ canvas }) => {
+    const button = await canvas.findByRole('button', {}, { timeout: 3000 });
+    button.click();
+  },
 } satisfies Story;
 
 export const WithSelectionInverted = {
@@ -256,10 +259,13 @@ export const WithSelectionInverted = {
       excludedTagFilters: ['A', 'B'],
     },
   },
+  play: async ({ canvas }) => {
+    const button = await canvas.findByRole('button', {}, { timeout: 3000 });
+    button.click();
+  },
 } satisfies Story;
 
 export const WithSelectionMixed = {
-  ...Clear,
   parameters: {
     initialStoryState: {
       internal_index: {
@@ -273,6 +279,10 @@ export const WithSelectionMixed = {
       includedTagFilters: ['A'],
       excludedTagFilters: ['B'],
     },
+  },
+  play: async ({ canvas }) => {
+    const button = await canvas.findByRole('button', {}, { timeout: 3000 });
+    button.click();
   },
 } satisfies Story;
 

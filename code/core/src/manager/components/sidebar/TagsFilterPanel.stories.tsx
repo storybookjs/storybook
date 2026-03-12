@@ -1,13 +1,8 @@
-import React from 'react';
-
 import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
-
-import { global } from '@storybook/global';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { type API, type Combo, Consumer, ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { type API } from 'storybook/manager-api';
 
 import { MockAPIDecorator } from './TagsFilter.story-helpers';
 import { TagsFilterPanel } from './TagsFilterPanel';

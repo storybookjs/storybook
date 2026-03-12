@@ -9,7 +9,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, screen, waitFor } from 'storybook/test';
 
-import { Close } from '../../../components/components/Modal/Modal.styled';
 import { TagsFilter } from './TagsFilter';
 
 const getDefaultTagFilters = () => {

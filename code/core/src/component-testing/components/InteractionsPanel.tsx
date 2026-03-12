@@ -55,6 +55,32 @@ const Container = styled.div(({ theme }) => ({
   background: theme.background.content,
 }));
 
+const InteractionsSection = styled.section({
+  position: 'relative',
+});
+
+const srOnlyStyles = {
+  border: 0,
+  clip: 'rect(0, 0, 0, 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  margin: -1,
+  overflow: 'hidden',
+  padding: 0,
+  position: 'absolute' as const,
+  whiteSpace: 'nowrap' as const,
+  width: 1,
+};
+
+const InteractionsHeading = styled.h2(srOnlyStyles);
+
+const InteractionsList = styled.ol({
+  margin: 0,
+  padding: 0,
+});
+
+const LiveStatus = styled.div(srOnlyStyles);
+
 const CaughtException = styled.div(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
   backgroundColor:
@@ -114,6 +140,20 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
+    const headingId = React.useId();
+    const isListBusy = status === 'rendering' || status === 'playing';
+    const statusAnnouncement =
+      status === 'rendering'
+        ? 'Component test is rendering.'
+        : status === 'playing'
+          ? 'Component test is running.'
+          : status === 'errored'
+            ? 'Component test failed.'
+            : status === 'aborted'
+              ? 'Component test was aborted.'
+              : hasException
+                ? 'Component test completed with errors.'
+                : 'Component test completed successfully.';
 
     return (
       <Container>
@@ -131,22 +171,32 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           canOpenInEditor={canOpenInEditor}
           api={api}
         />
-        <div aria-label="Interactions list">
-          {interactions.map((call) => (
-            <Interaction
-              key={call.id}
-              call={call}
-              callsById={calls}
-              controls={controls}
-              controlStates={controlStates}
-              childCallIds={call.childCallIds}
-              isHidden={call.isHidden}
-              isCollapsed={call.isCollapsed}
-              toggleCollapsed={call.toggleCollapsed}
-              pausedAt={pausedAt}
-            />
-          ))}
-        </div>
+        <LiveStatus
+          role={status === 'errored' ? 'alert' : 'status'}
+          aria-live={status === 'errored' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
+          {statusAnnouncement}
+        </LiveStatus>
+        <InteractionsSection aria-labelledby={headingId}>
+          <InteractionsHeading id={headingId}>Interaction steps</InteractionsHeading>
+          <InteractionsList aria-busy={isListBusy}>
+            {interactions.map((call) => (
+              <Interaction
+                key={call.id}
+                call={call}
+                callsById={calls}
+                controls={controls}
+                controlStates={controlStates}
+                childCallIds={call.childCallIds}
+                isHidden={call.isHidden}
+                isCollapsed={call.isCollapsed}
+                toggleCollapsed={call.toggleCollapsed}
+                pausedAt={pausedAt}
+              />
+            ))}
+          </InteractionsList>
+        </InteractionsSection>
         {caughtException && !isTestAssertionError(caughtException) && (
           <CaughtException>
             <CaughtExceptionTitle>

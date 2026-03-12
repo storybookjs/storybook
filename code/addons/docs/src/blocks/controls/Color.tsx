@@ -332,10 +332,12 @@ const usePresets = (
       return parseValue(preset.color);
     });
     const combined = initialPresets.concat(selectedColors).filter(Boolean);
-    if (!maxPresetColors || maxPresetColors === Infinity) {
+    if (maxPresetColors === 0 || maxPresetColors === Infinity) {
       return combined;
     }
-    return combined.slice(-maxPresetColors);
+    const limit =
+      Number.isInteger(maxPresetColors) && maxPresetColors > 0 ? maxPresetColors : 27;
+    return combined.slice(-limit);
   }, [presetColors, selectedColors, maxPresetColors]);
 
   const addPreset: (color: ParsedColor) => void = useCallback(

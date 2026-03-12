@@ -69,6 +69,7 @@ export const WithMaxPresetColors: Story = {
   name: 'With maxPresetColors (limit to 5)',
   args: {
     value: '#00ffff',
+    startOpen: true,
     maxPresetColors: 5,
     presetColors: [
       { color: '#ff4785', title: 'Coral' },
@@ -87,6 +88,7 @@ export const WithUnlimitedPresetColors: Story = {
   name: 'With unlimited presets (maxPresetColors: 0)',
   args: {
     value: '#00ffff',
+    startOpen: true,
     maxPresetColors: 0,
     presetColors: Array.from({ length: 40 }, (_, i) => {
       const hue = Math.round((i / 40) * 360);

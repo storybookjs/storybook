@@ -563,10 +563,9 @@ export class StoryIndexGenerator {
               )
             ) {
               csfEntry = first;
+              sortedDependencies = [dep, ...dependencies.filter((d) => d !== dep)];
             }
           }
-
-          sortedDependencies = [dep, ...dependencies.filter((d) => d !== dep)];
         });
 
         invariant(

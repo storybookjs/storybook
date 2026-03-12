@@ -102,19 +102,18 @@ export const getComponents = async ({
   const componentDepth = new Map<string, number>();
   const localToImport = new Map<string, { importId: string; importName: string }>();
 
-  // Gather components from all JSX opening elements
+  // Gather components from all JSX opening elements, tracking nesting depth incrementally.
+  let jsxDepth = 0;
   program.traverse({
+    JSXElement: {
+      enter() {
+        jsxDepth++;
+      },
+      exit() {
+        jsxDepth--;
+      },
+    },
     JSXOpeningElement(p) {
-      // Count JSX ancestor depth (how many JSXElements wrap this one)
-      let depth = 0;
-      let ancestor: typeof p.parentPath | null = p.parentPath;
-      while (ancestor) {
-        if (ancestor.isJSXElement()) {
-          depth++;
-        }
-        ancestor = ancestor.parentPath;
-      }
-
       const n = p.node.name;
       let name: string | undefined;
       if (t.isJSXIdentifier(n)) {
@@ -132,6 +131,9 @@ export const getComponents = async ({
       }
 
       if (name) {
+        // jsxDepth is already incremented by JSXElement.enter for the current element,
+        // so subtract 1 to get the number of *wrapping* JSX ancestors.
+        const depth = jsxDepth - 1;
         const existing = componentDepth.get(name);
         if (existing === undefined || depth < existing) {
           componentDepth.set(name, depth);

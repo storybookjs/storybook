@@ -1,4 +1,4 @@
-import { expect, test as setup } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import { SbPage } from './util';
 
@@ -6,9 +6,9 @@ const STORYBOOK_READY_TIMEOUT = 200000;
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const storybookReadyPath = `${storybookUrl}/?path=/story/example-button--primary`;
 
-setup.setTimeout(STORYBOOK_READY_TIMEOUT);
+test.setTimeout(STORYBOOK_READY_TIMEOUT);
 
-setup('wait for Storybook manager and preview to settle', async ({ page }) => {
+test('wait for Storybook manager and preview to settle', async ({ page }) => {
   const sbPage = new SbPage(page, expect);
 
   await expect

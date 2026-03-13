@@ -340,8 +340,11 @@ When `options.multiSource` is `true`, the tool schema requires `storybookId` inp
 Type:
 
 ```ts
-(server: McpServer<any, StorybookContext>, enabled?: () => boolean | Promise<boolean>) =>
-	Promise<void>;
+(
+	server: McpServer<any, StorybookContext>,
+	enabled?: () => boolean | Promise<boolean>,
+	options?: { multiSource?: boolean },
+) => Promise<void>;
 ```
 
 Registers [story-level documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation-for-story) for a specific story variant by `componentId` and `storyName`.

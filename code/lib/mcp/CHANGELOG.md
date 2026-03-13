@@ -1,5 +1,11 @@
 # @storybook/mcp
 
+## 0.6.1
+
+### Patch Changes
+
+- [#172](https://github.com/storybookjs/mcp/pull/172) [`a610073`](https://github.com/storybookjs/mcp/commit/a610073f123efc2843e1e0deffd6eb2902d94c96) Thanks [@JReinhold](https://github.com/JReinhold)! - Simplify package READMEs for docs-site-first documentation
+
 ## 0.6.0
 
 ### Minor Changes

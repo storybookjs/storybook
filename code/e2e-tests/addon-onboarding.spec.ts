@@ -52,9 +52,12 @@ test.describe('addon-onboarding', () => {
     await page.getByLabel('Last').click();
 
     const survey = page.getByRole('dialog', { name: 'Storybook user survey' });
-    await expect(survey).toBeVisible();
+    const applicationUi = survey.getByRole('checkbox', { name: 'Application UI' });
 
-    await survey.getByRole('checkbox', { name: 'Application UI' }).check();
+    // The modal shell mounts before its contents are fully open and ready for interaction.
+    await expect(applicationUi).toBeVisible({ timeout: 15_000 });
+
+    await applicationUi.check();
     await survey.getByRole('checkbox', { name: 'Functional testing' }).check();
     await survey.locator('#referrer').selectOption('Web Search');
     await survey.getByRole('button', { name: 'Submit' }).click();

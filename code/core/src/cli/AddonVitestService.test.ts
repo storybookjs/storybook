@@ -391,7 +391,7 @@ describe('AddonVitestService', () => {
       vi.mocked(logger.warn).mockImplementation(() => {});
       // Mock getPackageCommand to return a string
       vi.mocked(mockPackageManager.getPackageCommand).mockReturnValue(
-        'npx playwright install chromium --with-deps'
+        'npx playwright install chromium'
       );
     });
 
@@ -430,7 +430,7 @@ describe('AddonVitestService', () => {
       await service.installPlaywright();
 
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
-        args: ['playwright', 'install', 'chromium', '--with-deps'],
+        args: ['playwright', 'install', 'chromium'],
         signal: undefined,
         stdio: ['inherit', 'pipe', 'pipe'],
       });

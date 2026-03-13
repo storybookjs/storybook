@@ -167,7 +167,7 @@ export default async function postInstall(options: PostinstallOptions) {
     } else {
       logger.warn(dedent`
         Playwright browser binaries installation skipped. Please run the following command manually later:
-        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
+        ${CLI_COLORS.cta('npx playwright install chromium')}
       `);
     }
   }

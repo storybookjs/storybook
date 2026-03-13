@@ -17,6 +17,7 @@ import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybo
 import type { State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { focusableUIElements } from '../../../manager-api/modules/layout';
 import { useLandmark } from '../../hooks/useLandmark';
 import { useLayout } from '../layout/LayoutProvider';
 
@@ -160,7 +161,7 @@ export const AddonPanel = React.memo<{
   );
 
   return (
-    <Aside ref={asideRef} {...landmarkProps}>
+    <Aside ref={asideRef} id={focusableUIElements.addonPanel} {...landmarkProps}>
       <h2 id="storybook-panel-heading" className="sb-sr-only">
         Addon panel
       </h2>

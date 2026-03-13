@@ -553,6 +553,8 @@ export class StoryIndexGenerator {
       let csfEntry: StoryIndexEntryWithExtra | undefined;
       if (result.of) {
         const absoluteOf = makeAbsolute(result.of, normalizedPath, this.options.workingDir);
+        let metaDependency: StoriesCacheEntry | undefined;
+
         dependencies.forEach((dep) => {
           if (dep.entries.length > 0) {
             const first = dep.entries.find((e) => e.type !== 'docs') as StoryIndexEntryWithExtra;
@@ -563,10 +565,17 @@ export class StoryIndexGenerator {
               )
             ) {
               csfEntry = first;
-              sortedDependencies = [dep, ...dependencies.filter((d) => d !== dep)];
+              metaDependency = dep;
             }
           }
         });
+
+        if (metaDependency) {
+          sortedDependencies = [
+            metaDependency,
+            ...dependencies.filter((d) => d !== metaDependency),
+          ];
+        }
 
         invariant(
           csfEntry,

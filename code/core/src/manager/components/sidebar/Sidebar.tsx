@@ -10,6 +10,7 @@ import { PlusIcon } from '@storybook/icons';
 import { type State, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { focusableUIElements } from '../../../manager-api/modules/layout';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { useLandmark } from '../../hooks/useLandmark';
 import { useLayout } from '../layout/LayoutProvider';
@@ -128,6 +129,7 @@ export const Sidebar = React.memo(function Sidebar({
   const lastViewedProps = useLastViewed(selected);
   const { isMobile } = useLayout();
   const api = useStorybookApi();
+  const { viewMode } = api.getUrlState();
 
   const tagPresets = useMemo(
     () =>
@@ -145,8 +147,16 @@ export const Sidebar = React.memo(function Sidebar({
     headerRef
   );
 
+  const isPagesShown = viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs';
+  const skipLinkHref = isPagesShown ? '#main-content-wrapper' : '#storybook-preview-wrapper';
+
   return (
-    <Container className="container sidebar-container" ref={headerRef} {...landmarkProps}>
+    <Container
+      className="container sidebar-container"
+      id={focusableUIElements.sidebarRegion}
+      ref={headerRef}
+      {...landmarkProps}
+    >
       <h1 id="global-site-h1" className="sb-sr-only">
         Storybook
       </h1>
@@ -158,7 +168,7 @@ export const Sidebar = React.memo(function Sidebar({
               className="sidebar-header"
               menuHighlighted={menuHighlighted}
               menu={menu}
-              skipLinkHref="#storybook-preview-wrapper"
+              skipLinkHref={skipLinkHref}
               isLoading={isLoading}
               onMenuClick={onMenuClick}
             />

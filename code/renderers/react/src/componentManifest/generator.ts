@@ -9,7 +9,6 @@ import {
   type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
 import { ComponentMetaManager } from './checker';
@@ -30,6 +29,41 @@ interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
   reactDocgenTypescript?: ComponentDocWithExportName;
   reactComponentMeta?: ComponentDoc;
+}
+
+function selectComponentEntries(manifestEntries: IndexEntry[]) {
+  const entriesByComponentId = new Map<string, IndexEntry>();
+
+  manifestEntries
+    .filter(
+      (entry) =>
+        (entry.type === 'story' && entry.subtype === 'story') ||
+        // Attached docs entries are the only docs entries that can contribute to a
+        // component manifest, because they point back to a story file through storiesImports.
+        (entry.type === 'docs' &&
+          entry.tags?.includes(Tag.ATTACHED_MDX) &&
+          entry.storiesImports.length > 0)
+    )
+    .forEach((entry) => {
+      const componentId = entry.id.split('--')[0];
+      const existingEntry = entriesByComponentId.get(componentId);
+
+      if (!existingEntry) {
+        // Keep the first eligible entry as a fallback so docs-only manifest coverage
+        // continues to work when no story entry for that component carries the manifest tag.
+        entriesByComponentId.set(componentId, entry);
+        return;
+      }
+
+      if (existingEntry.type === 'docs' && entry.type === 'story') {
+        // When both entries exist for the same component id, the story entry is authoritative.
+        // Attached docs may list unrelated stories first in storiesImports, so using the story
+        // entry avoids resolving the manifest from the wrong file.
+        entriesByComponentId.set(componentId, entry);
+      }
+    });
+
+  return [...entriesByComponentId.values()];
 }
 
 function findMatchingComponent(
@@ -152,18 +186,7 @@ export const manifests: PresetPropertyFn<
   const manager =
     docgenEngine === 'react-component-meta' ? await ComponentMetaManager.getInstance() : null;
 
-  const entriesByUniqueComponent = uniqBy(
-    manifestEntries.filter(
-      (entry) =>
-        (entry.type === 'story' && entry.subtype === 'story') ||
-        // addon-docs will add docs entries to these manifest entries afterwards
-        // Docs entries have importPath pointing to MDX file, but storiesImports[0] points to the story file
-        (entry.type === 'docs' &&
-          entry.tags?.includes(Tag.ATTACHED_MDX) &&
-          entry.storiesImports.length > 0)
-    ),
-    (entry) => entry.id.split('--')[0]
-  );
+  const entriesByUniqueComponent = selectComponentEntries(manifestEntries);
 
   // Step 1: Resolve components for all entries
   const resolvedEntries = await Promise.all(

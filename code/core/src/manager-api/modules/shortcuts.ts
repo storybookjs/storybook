@@ -358,12 +358,49 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'togglePanel': {
+          const wasPanelShown = fullAPI.getIsPanelShown();
+          const panelElement = document.getElementById(focusableUIElements.storyPanelRoot);
+          const wasFocusInPanel =
+            panelElement && document.activeElement && panelElement.contains(document.activeElement);
+
           fullAPI.togglePanel();
+
+          if (wasPanelShown && wasFocusInPanel) {
+            // poll: true always returns a Promise.
+            (
+              fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel, {
+                poll: true,
+              }) as Promise<boolean>
+            ).then((success) => {
+              // Fallback to body for predictable behavior.
+              if (success === false) {
+                document.body.focus();
+              }
+            });
+          }
           break;
         }
 
         case 'toggleNav': {
+          const wasNavShown = fullAPI.getIsNavShown();
+          const sidebarElement = document.getElementById(focusableUIElements.sidebarRegion);
+          const wasFocusInSidebar = sidebarElement?.contains(document?.activeElement);
+
           fullAPI.toggleNav();
+
+          if (wasNavShown && wasFocusInSidebar) {
+            // poll: true always returns a Promise.
+            (
+              fullAPI.focusOnUIElement(focusableUIElements.showSidebar, {
+                poll: true,
+              }) as Promise<boolean>
+            ).then((success) => {
+              // Fallback to body for predictable behavior.
+              if (success === false) {
+                document.body.focus();
+              }
+            });
+          }
           break;
         }
 

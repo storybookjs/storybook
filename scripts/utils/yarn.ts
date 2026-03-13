@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { exec } from './exec';
 
@@ -80,8 +81,9 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   );
 };
 
-export const isViteSandbox = (key?: AllTemplatesKey) =>
-  !key || key.includes('vite') || key.includes('svelte-kit');
+export const isViteSandbox = (key?: AllTemplatesKey) => {
+  return allTemplates[key as AllTemplatesKey]?.expected.builder === '@storybook/builder-vite';
+};
 
 export const addWorkaroundResolutions = async ({
   cwd,
@@ -100,13 +102,6 @@ export const addWorkaroundResolutions = async ({
 
   let additionalResolutions = {};
 
-  if (isViteSandbox(key)) {
-    // Override vite to v8 beta for vite-based sandboxes to test Vite 8 compatibility
-    additionalResolutions = {
-      vite: '8.0.0-beta.18',
-    };
-  }
-
   // add additional resolutions for React 19
   if (['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)) {
     additionalResolutions = {
@@ -121,6 +116,12 @@ export const addWorkaroundResolutions = async ({
   } else if (key === 'react-rsbuild/default-ts') {
     additionalResolutions = {
       'react-docgen': '^8.0.2',
+    };
+  } else if (key === 'react-native-web-vite/expo-ts') {
+    additionalResolutions = {
+      // The expo sandbox started to break in beta 5, yet to investigate the root cause
+      // in the meantime, we downgrade to the version where things worked.
+      vite: '8.0.0-beta.4',
     };
   }
 

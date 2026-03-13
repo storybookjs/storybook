@@ -18,11 +18,23 @@ export function getExecutionEnvironment(config: UserConfig) {
 export const getNextjsVersion = (): string =>
   require("next/package.json").version;
 
+export const getViteVersion = (): string =>
+  require("vite/package.json").version;
+
 export const getNextjsMajorVersion = (): number => {
   try {
     const version = getNextjsVersion();
     return Number.parseInt(version.split(".")[0], 10);
   } catch (error) {
     return 16;
+  }
+};
+
+export const getViteMajorVersion = (): number => {
+  try {
+    const version = getViteVersion();
+    return Number.parseInt(version.split(".")[0], 10);
+  } catch (error) {
+    return 7;
   }
 };

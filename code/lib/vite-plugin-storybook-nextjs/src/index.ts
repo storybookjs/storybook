@@ -2,7 +2,7 @@ import { resolve } from "pathe";
 
 import { createRequire } from "node:module";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import type { Plugin } from "vite";
+import type { PluginOption } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 import { vitePluginNextEnv } from "./plugins/next-env/plugin";
@@ -26,6 +26,7 @@ import { vitePluginNextMocks } from "./plugins/next-mocks/plugin";
 import {
   getExecutionEnvironment,
   getNextjsMajorVersion,
+  getViteMajorVersion,
   isVitestEnv,
 } from "./utils";
 
@@ -50,8 +51,9 @@ export type PluginOptions = {
 function VitePlugin({
   dir = process.cwd(),
   image,
-}: PluginOptions = {}): (Plugin | Promise<Plugin>)[] {
+}: PluginOptions = {}): PluginOption[] {
   const resolvedDir = resolve(dir);
+  const isVite8orNewer = getViteMajorVersion() >= 8;
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
   const nodeEnv = process.env.NODE_ENV;
@@ -67,21 +69,21 @@ function VitePlugin({
   });
 
   return [
-    nextConfigResolver.promise.then(async (nextConfig) => {
-      const loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
-      loadedJSConfig.jsConfigPath;
+    isVite8orNewer
+      ? null
+      : nextConfigResolver.promise.then(async (nextConfig) => {
+          const loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
+          const { enforce, ...tsconfigPathConfig } = tsconfigPaths({
+            root: resolvedDir,
+            ...(loadedJSConfig.jsConfigPath
+              ? { projects: [loadedJSConfig.jsConfigPath] }
+              : {}),
+          });
 
-      const { enforce, ...tsconfigPathConfig } = tsconfigPaths({
-        root: resolvedDir,
-        ...(loadedJSConfig.jsConfigPath
-          ? { projects: [loadedJSConfig.jsConfigPath] }
-          : {}),
-      });
-
-      return {
-        ...tsconfigPathConfig,
-      };
-    }),
+          return {
+            ...tsconfigPathConfig,
+          };
+        }),
     {
       name: "vite-plugin-storybook-nextjs",
       enforce: "pre" as const,
@@ -90,58 +92,62 @@ function VitePlugin({
         const nextConfig = await nextConfigResolver.promise;
 
         const executionEnvironment = getExecutionEnvironment(config);
+        const resolveConfig = {
+          ...(isVite8orNewer ? { tsconfigPaths: true } : {}),
+          ...(!isVitestEnv && {
+            alias: [
+              {
+                find: /^react$/,
+                replacement: require.resolve("next/dist/compiled/react"),
+              },
+              {
+                find: /^react\/jsx-runtime$/,
+                replacement: require.resolve(
+                  "next/dist/compiled/react/jsx-runtime",
+                ),
+              },
+              {
+                find: /^react\/jsx-dev-runtime$/,
+                replacement: require.resolve(
+                  "next/dist/compiled/react/jsx-dev-runtime",
+                ),
+              },
+              {
+                find: /^react-dom$/,
+                replacement: require.resolve("next/dist/compiled/react-dom"),
+              },
+              {
+                find: /^react-dom\/server$/,
+                replacement: require.resolve(
+                  "next/dist/compiled/react-dom/server.browser.js",
+                ),
+              },
+              {
+                find: /^react-dom\/test-utils$/,
+                replacement: require.resolve(
+                  "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
+                ),
+              },
+              {
+                find: /^react-dom\/client$/,
+                replacement: require.resolve(
+                  "next/dist/compiled/react-dom/client.js",
+                ),
+              },
+              {
+                find: /^react-dom\/cjs\/react-dom\.development\.js$/,
+                replacement: require.resolve(
+                  "next/dist/compiled/react-dom/cjs/react-dom.development.js",
+                ),
+              },
+            ],
+          }),
+        };
 
         return {
-          ...(!isVitestEnv && {
-            resolve: {
-              alias: [
-                {
-                  find: /^react$/,
-                  replacement: require.resolve("next/dist/compiled/react"),
-                },
-                {
-                  find: /^react\/jsx-runtime$/,
-                  replacement: require.resolve(
-                    "next/dist/compiled/react/jsx-runtime",
-                  ),
-                },
-                {
-                  find: /^react\/jsx-dev-runtime$/,
-                  replacement: require.resolve(
-                    "next/dist/compiled/react/jsx-dev-runtime",
-                  ),
-                },
-                {
-                  find: /^react-dom$/,
-                  replacement: require.resolve("next/dist/compiled/react-dom"),
-                },
-                {
-                  find: /^react-dom\/server$/,
-                  replacement: require.resolve(
-                    "next/dist/compiled/react-dom/server.browser.js",
-                  ),
-                },
-                {
-                  find: /^react-dom\/test-utils$/,
-                  replacement: require.resolve(
-                    "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
-                  ),
-                },
-                {
-                  find: /^react-dom\/client$/,
-                  replacement: require.resolve(
-                    "next/dist/compiled/react-dom/client.js",
-                  ),
-                },
-                {
-                  find: /^react-dom\/cjs\/react-dom\.development\.js$/,
-                  replacement: require.resolve(
-                    "next/dist/compiled/react-dom/cjs/react-dom.development.js",
-                  ),
-                },
-              ],
-            },
-          }),
+          ...(Object.keys(resolveConfig).length > 0
+            ? { resolve: resolveConfig }
+            : {}),
           optimizeDeps: {
             include: [
               "next/dist/shared/lib/app-router-context.shared-runtime",

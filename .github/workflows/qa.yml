@@ -16,8 +16,13 @@ env:
 
 jobs:
   qa:
-    name: Run all merged e2e-tests-dev targets
+    name: Run all merged e2e-tests-dev targets (${{ matrix.iteration }}/20)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        iteration: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     env:
       ALL_TASKS: e2e-tests-dev
     steps:
@@ -54,6 +59,7 @@ jobs:
           {
             echo "## QA Summary"
             echo
+            echo "- Iteration: \`${{ matrix.iteration }}/20\`"
             echo "- Target: \`run-many -t $ALL_TASKS -c production -p=tag:library,tag:ci:merged\`"
             if [ -n "${{ steps.nx.outputs.nx_cloud_run }}" ]; then
               echo "- Nx Cloud: ${{ steps.nx.outputs.nx_cloud_run }}"
@@ -67,7 +73,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qa-nx-output
+          name: qa-nx-output-${{ matrix.iteration }}
           path: nx-output.log
           retention-days: 7
 
@@ -75,7 +81,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: qa-failure-artifacts
+          name: qa-failure-artifacts-${{ matrix.iteration }}
           path: |
             test-results
             code/playwright-results

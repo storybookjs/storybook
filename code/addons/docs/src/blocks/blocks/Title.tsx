@@ -6,6 +6,7 @@ import type { ComponentTitle } from 'storybook/internal/types';
 import { Title as PureTitle } from '../components';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface TitleProps {
   /**
@@ -25,7 +26,7 @@ export const extractTitle = (title: ComponentTitle) => {
   return groups?.[groups?.length - 1] || title;
 };
 
-export const Title: FunctionComponent<TitleProps> = (props) => {
+const TitleImpl: FunctionComponent<TitleProps> = (props) => {
   const { children, of } = props;
 
   if ('of' in props && of === undefined) {
@@ -50,3 +51,5 @@ export const Title: FunctionComponent<TitleProps> = (props) => {
 
   return content ? <PureTitle className="sbdocs-title sb-unstyled">{content}</PureTitle> : null;
 };
+
+export const Title = withMdxComponentOverride('Title', TitleImpl);

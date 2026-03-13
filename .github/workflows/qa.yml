@@ -1,35 +1,20 @@
 name: QA
-run-name: "QA ${{ inputs.template }}:${{ inputs.target }} x${{ inputs.attempts }}"
+run-name: "QA vue3-vite/default-ts:e2e-tests-dev x50"
 
 on:
-  workflow_dispatch:
-    inputs:
-      template:
-        description: Sandbox template to test
-        required: true
-        default: vue3-vite/default-ts
-        type: string
-      target:
-        description: Nx target to test
-        required: true
-        default: e2e-tests-dev
-        type: string
-      attempts:
-        description: Number of repeated runs
-        required: true
-        default: 50
-        type: number
-      max_parallel:
-        description: Number of runs to execute in parallel (each run already fans out via Nx Cloud)
-        required: true
-        default: 1
-        type: number
+  push:
+    branches:
+      - kasper/stabilize-onboarding-e2e-waits
 
 permissions:
   contents: read
 
 env:
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+  QA_TEMPLATE: vue3-vite/default-ts
+  QA_TARGET: e2e-tests-dev
+  QA_ATTEMPTS: "50"
+  QA_MAX_PARALLEL: "1"
 
 jobs:
   prepare:
@@ -38,24 +23,22 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - id: matrix
-        env:
-          ATTEMPTS: ${{ inputs.attempts }}
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json
           import os
 
-          attempts = int(os.environ["ATTEMPTS"])
+          attempts = int(os.environ["QA_ATTEMPTS"])
           print(f"matrix={json.dumps(list(range(1, attempts + 1)))}")
           PY
 
   qa:
-    name: "${{ inputs.template }}:${{ inputs.target }} (#${{ matrix.attempt }})"
+    name: "${{ env.QA_TEMPLATE }}:${{ env.QA_TARGET }} (#${{ matrix.attempt }})"
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: ${{ inputs.max_parallel }}
+      max-parallel: ${{ fromJSON(env.QA_MAX_PARALLEL) }}
       matrix:
         attempt: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
@@ -75,12 +58,12 @@ jobs:
         run: >
           npx nx@latest start-ci-run
           --distribute-on="./.nx/workflows/distribution-config.yaml"
-          --stop-agents-after="${{ inputs.target }}"
+          --stop-agents-after="${{ env.QA_TARGET }}"
 
       - id: nx
         name: Run target without Nx cache
         run: |
-          yarn nx run "${{ inputs.template }}:${{ inputs.target }}:production" --skip-nx-cache | tee nx-output.log
+          yarn nx run "${{ env.QA_TEMPLATE }}:${{ env.QA_TARGET }}:production" --skip-nx-cache | tee nx-output.log
           status=${PIPESTATUS[0]}
           nx_cloud_run=$(grep -o 'https://cloud\.nx\.app/runs/[A-Za-z0-9]\+' nx-output.log | tail -n 1 || true)
           echo "nx_cloud_run=${nx_cloud_run}" >> "$GITHUB_OUTPUT"
@@ -94,8 +77,8 @@ jobs:
           {
             "attempt": ${{ matrix.attempt }},
             "status": "${{ job.status }}",
-            "template": "${{ inputs.template }}",
-            "target": "${{ inputs.target }}",
+            "template": "${{ env.QA_TEMPLATE }}",
+            "target": "${{ env.QA_TARGET }}",
             "nxCloudRun": "${{ steps.nx.outputs.nx_cloud_run }}"
           }
           EOF

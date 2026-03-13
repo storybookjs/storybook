@@ -9,6 +9,7 @@ interface PanelContainerProps {
   children: React.ReactNode;
   bottomPanelHeight: number;
   rightPanelWidth: number;
+  panelMaxSize: number | undefined;
   panelResizerRef: React.Ref<HTMLDivElement>;
   position: API_Layout['panelPosition'];
 }
@@ -31,7 +32,8 @@ const PanelSlot = styled.div({
  * from the Accessibility Object Model when effectively collapsed.
  */
 const PanelContainer = React.memo<PanelContainerProps>(function PanelContainer(props) {
-  const { children, bottomPanelHeight, rightPanelWidth, panelResizerRef, position } = props;
+  const { children, bottomPanelHeight, rightPanelWidth, panelMaxSize, panelResizerRef, position } =
+    props;
 
   const shouldHidePanelContent =
     position === 'bottom' ? bottomPanelHeight === 0 : rightPanelWidth === 0;
@@ -39,10 +41,12 @@ const PanelContainer = React.memo<PanelContainerProps>(function PanelContainer(p
   return (
     <Container position={position}>
       <Drag
-        orientation={position === 'bottom' ? 'horizontal' : 'vertical'}
-        overlapping={position === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
-        position={position === 'bottom' ? 'left' : 'right'}
         ref={panelResizerRef}
+        position={position}
+        overlapping={position === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
+        aria-label="Addon panel resize handle"
+        aria-valuenow={position === 'bottom' ? bottomPanelHeight : rightPanelWidth}
+        aria-valuemax={panelMaxSize}
       />
       <PanelSlot
         // This ensures that the panel content is not reachable by keyboard or assistive

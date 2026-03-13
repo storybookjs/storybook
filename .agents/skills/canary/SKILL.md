@@ -50,7 +50,7 @@ Then test with:
 npx storybook@<VERSION_FROM_PR> sandbox
 ```
 
-Or upgrade a
+Or upgrade an existing project:
 
 ```bash
 npx storybook@<VERSION_FROM_PR> upgrade

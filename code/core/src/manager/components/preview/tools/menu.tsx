@@ -11,7 +11,6 @@ import type { Combo } from 'storybook/manager-api';
 const menuMapper = ({ api, state }: Combo) => ({
   isVisible: api.getIsNavShown(),
   singleStory: state.singleStory,
-  viewMode: state.viewMode,
   toggle: () => api.toggleNav(),
 });
 
@@ -23,7 +22,7 @@ export const menuTool: Addon_BaseType = {
   match: ({ viewMode }) => ['story', 'docs'].includes(viewMode),
   render: () => (
     <Consumer filter={menuMapper}>
-      {({ isVisible, toggle, singleStory, viewMode }) =>
+      {({ isVisible, toggle, singleStory }) =>
         !singleStory &&
         !isVisible && (
           <>
@@ -36,7 +35,7 @@ export const menuTool: Addon_BaseType = {
             >
               <MenuIcon />
             </Button>
-            {viewMode === 'story' && <Separator />}
+            <Separator />
           </>
         )
       }

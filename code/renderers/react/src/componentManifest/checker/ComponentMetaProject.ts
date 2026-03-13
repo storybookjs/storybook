@@ -245,9 +245,7 @@ export class ComponentMetaProject {
   // Primary extraction method — probe-free
   // ---------------------------------------------------------------------------
 
-  extractPropsFromStories<T extends StoryRef>(entries: T[]): T[] {
-    const enrichedEntries = [...entries];
-
+  extractPropsFromStories(entries: StoryRef[]): void {
     this.entries = entries;
 
     const allFiles = entries.flatMap((entry) =>
@@ -258,7 +256,7 @@ export class ComponentMetaProject {
 
     const program = this.ls.getProgram();
     if (!program) {
-      return enrichedEntries;
+      return;
     }
     const checker = program.getTypeChecker();
     const serializationContextByComponentPath = new Map<
@@ -362,24 +360,16 @@ export class ComponentMetaProject {
           continue;
         }
 
-        const component = enrichedEntries[index].component;
+        const component = entries[index].component;
         if (!component) {
           continue;
         }
-        enrichedEntries[index] = {
-          ...enrichedEntries[index],
-          component: {
-            ...component,
-            reactComponentMeta: doc,
-          },
-        };
+        component.reactComponentMeta = doc;
       } catch {
         // One bad component should not kill the entire batch.
         continue;
       }
     }
-
-    return enrichedEntries;
   }
 
   /**

@@ -72,7 +72,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
 
     try {
       // memberAccess='Root' → find <Accordion.Root /> in story, get Root's props
-      const results = project.extractPropsFromStories<StoryRef>([
+      const entries: StoryRef[] = [
         {
           storyPath: filePaths['accordion.stories.tsx'],
           component: {
@@ -84,11 +84,12 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
             isPackage: false,
           },
         },
-      ]);
-      const doc = results.find(
-        (result) =>
-          result.storyPath === filePaths['accordion.stories.tsx'] &&
-          result.component?.importName === 'Accordion'
+      ];
+      project.extractPropsFromStories(entries);
+      const doc = entries.find(
+        (entry) =>
+          entry.storyPath === filePaths['accordion.stories.tsx'] &&
+          entry.component?.importName === 'Accordion'
       )?.component?.reactComponentMeta;
 
       expect(doc).toBeDefined();
@@ -167,7 +168,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
 
     try {
       // memberAccess='Aligner' → find <Button.Aligner />, get Aligner's props
-      const results = project.extractPropsFromStories<StoryRef>([
+      const entries1: StoryRef[] = [
         {
           storyPath: filePaths['button.stories.tsx'],
           component: {
@@ -179,20 +180,17 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
             isPackage: false,
           },
         },
-      ]);
+      ];
+      project.extractPropsFromStories(entries1);
 
-      const doc = results.find(
-        (result) =>
-          result.storyPath === filePaths['button.stories.tsx'] &&
-          result.component?.importName === 'default'
-      )?.component?.reactComponentMeta;
+      const doc = entries1[0]?.component?.reactComponentMeta;
       expect(doc).toBeDefined();
       expect(doc!.props.side).toBeDefined();
       // Should NOT have Button's own props
       expect(doc!.props.variant).toBeUndefined();
 
       // Without memberAccess → find <Button />, get Button's own props
-      const results2 = project.extractPropsFromStories<StoryRef>([
+      const entries2: StoryRef[] = [
         {
           storyPath: filePaths['button.stories.tsx'],
           component: {
@@ -203,13 +201,10 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
             isPackage: false,
           },
         },
-      ]);
+      ];
+      project.extractPropsFromStories(entries2);
 
-      const doc2 = results2.find(
-        (result) =>
-          result.storyPath === filePaths['button.stories.tsx'] &&
-          result.component?.importName === 'default'
-      )?.component?.reactComponentMeta;
+      const doc2 = entries2[0]?.component?.reactComponentMeta;
       expect(doc2).toBeDefined();
       expect(doc2!.props.variant).toBeDefined();
       expect(doc2!.props.color).toBeDefined();
@@ -275,7 +270,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
 
     try {
       // Mix: compound component with memberAccess + regular component
-      const results = project.extractPropsFromStories<StoryRef>([
+      const entries: StoryRef[] = [
         {
           storyPath: filePaths['dialog.stories.tsx'],
           component: {
@@ -297,21 +292,22 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
             isPackage: false,
           },
         },
-      ]);
+      ];
+      project.extractPropsFromStories(entries);
 
-      const dialogDoc = results.find(
-        (result) =>
-          result.storyPath === filePaths['dialog.stories.tsx'] &&
-          result.component?.importName === 'Dialog'
+      const dialogDoc = entries.find(
+        (entry) =>
+          entry.storyPath === filePaths['dialog.stories.tsx'] &&
+          entry.component?.importName === 'Dialog'
       )?.component?.reactComponentMeta;
       expect(dialogDoc).toBeDefined();
       expect(dialogDoc!.props.open).toBeDefined();
       expect(dialogDoc!.props.onOpenChange).toBeDefined();
 
-      const buttonDoc = results.find(
-        (result) =>
-          result.storyPath === filePaths['button.stories.tsx'] &&
-          result.component?.importName === 'Button'
+      const buttonDoc = entries.find(
+        (entry) =>
+          entry.storyPath === filePaths['button.stories.tsx'] &&
+          entry.component?.importName === 'Button'
       )?.component?.reactComponentMeta;
       expect(buttonDoc).toBeDefined();
       expect(buttonDoc!.props.label).toBeDefined();

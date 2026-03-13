@@ -1401,10 +1401,10 @@ function docs(
       },
     ];
 
-    const results = project.extractPropsFromStories(entries);
-    for (const result of results) {
-      if (result.storyPath === storyPath && result.component?.reactComponentMeta) {
-        allDocs.push(result.component.reactComponentMeta);
+    project.extractPropsFromStories(entries);
+    for (const entry of entries) {
+      if (entry.storyPath === storyPath && entry.component?.reactComponentMeta) {
+        allDocs.push(entry.component.reactComponentMeta);
       }
     }
   }
@@ -2255,7 +2255,7 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
     if (!storyPath || !componentPath) {
       throw new Error(`Unknown test files: "${storyFile}" / "${componentFile}"`);
     }
-    const results = project.extractPropsFromStories<StoryRef>([
+    const entries: StoryRef[] = [
       {
         storyPath,
         component: {
@@ -2267,9 +2267,10 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
           isPackage: false,
         },
       },
-    ]);
-    const doc = results.find(
-      (result) => result.storyPath === storyPath && result.component?.importName === exportName
+    ];
+    project.extractPropsFromStories(entries);
+    const doc = entries.find(
+      (entry) => entry.storyPath === storyPath && entry.component?.importName === exportName
     )?.component?.reactComponentMeta;
     return doc ? [doc] : [];
   }

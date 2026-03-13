@@ -194,13 +194,12 @@ export const manifests: PresetPropertyFn<
   );
 
   // Step 2: Batch extract rcm props (one TS program build per tsconfig project)
-  const enrichedEntries =
-    docgenEngine === 'react-component-meta' && manager
-      ? manager.batchExtract(resolvedEntries)
-      : resolvedEntries;
+  if (docgenEngine === 'react-component-meta' && manager) {
+    manager.batchExtract(resolvedEntries);
+  }
 
   // Step 3: Build manifests
-  const components = enrichedEntries
+  const components = resolvedEntries
     .map(
       ({
         storyPath,

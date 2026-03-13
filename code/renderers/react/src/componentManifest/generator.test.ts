@@ -497,22 +497,19 @@ test('unknown expressions', async () => {
 test('generator uses reactComponentMeta displayName from batch extraction', async () => {
   const getInstance = vi.spyOn(ComponentMetaManager, 'getInstance');
   getInstance.mockResolvedValue({
-    batchExtract: (entries) =>
-      entries.map((entry) => ({
-        ...entry,
-        component: entry.component
-          ? {
-              ...entry.component,
-              reactComponentMeta: {
-                displayName: 'Header',
-                exportName: 'default',
-                filePath: '/app/src/stories/Header.tsx',
-                description: '',
-                props: {},
-              },
-            }
-          : entry.component,
-      })),
+    batchExtract: (entries) => {
+      for (const entry of entries) {
+        if (entry.component) {
+          entry.component.reactComponentMeta = {
+            displayName: 'Header',
+            exportName: 'default',
+            filePath: '/app/src/stories/Header.tsx',
+            description: '',
+            props: {},
+          };
+        }
+      }
+    },
   } as Awaited<ReturnType<typeof ComponentMetaManager.getInstance>>);
 
   const presets: NonNullable<ManifestOptions['presets']> = {

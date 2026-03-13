@@ -98,29 +98,21 @@ export class ComponentMetaManager {
    * Batch-extract component props across all entries, grouping by tsconfig project so each project
    * builds its TS program only once.
    */
-  batchExtract<T extends StoryRef>(entries: T[]): T[] {
-    const extractableEntries = entries.flatMap((storyRef, index) =>
-      storyRef.component?.path && storyRef.component.importName ? [{ index, storyRef }] : []
+  batchExtract(entries: StoryRef[]): void {
+    const extractableEntries = entries.flatMap((storyRef) =>
+      storyRef.component?.path && storyRef.component.importName ? [storyRef] : []
     );
-    const byProject = groupByToMap(extractableEntries, ({ storyRef }) =>
+    const byProject = groupByToMap(extractableEntries, (storyRef) =>
       this.getProjectForFile(storyRef.storyPath)
     );
-    const enrichedEntries = [...entries];
 
     for (const [project, projectEntries] of byProject) {
       try {
-        const projectResults = project.extractPropsFromStories(
-          projectEntries.map(({ storyRef }) => storyRef)
-        );
-        projectEntries.forEach(({ index }, groupIndex) => {
-          enrichedEntries[index] = projectResults[groupIndex];
-        });
+        project.extractPropsFromStories(projectEntries);
       } catch (err) {
         logger.debug(`[reactComponentMeta] Batch extraction failed: ${err}`);
       }
     }
-
-    return enrichedEntries;
   }
 
   // ---------------------------------------------------------------------------

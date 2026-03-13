@@ -52,10 +52,10 @@ function extractDocs(
       },
     ];
 
-    const results = project.extractPropsFromStories(entries);
-    for (const result of results) {
-      if (result.storyPath === storyPath && result.component?.reactComponentMeta) {
-        allDocs.push(result.component.reactComponentMeta);
+    project.extractPropsFromStories(entries);
+    for (const entry of entries) {
+      if (entry.storyPath === storyPath && entry.component?.reactComponentMeta) {
+        allDocs.push(entry.component.reactComponentMeta);
       }
     }
   }
@@ -488,12 +488,12 @@ describe('ComponentMetaManager', () => {
         },
       },
     ];
-    const results = project.extractPropsFromStories(entries);
+    project.extractPropsFromStories(entries);
 
-    const docs = results
-      .filter((result) => result.storyPath === storyPath)
-      .flatMap((result) =>
-        result.component?.reactComponentMeta ? [result.component.reactComponentMeta] : []
+    const docs = entries
+      .filter((entry) => entry.storyPath === storyPath)
+      .flatMap((entry) =>
+        entry.component?.reactComponentMeta ? [entry.component.reactComponentMeta] : []
       );
 
     expect(docs).toHaveLength(1);

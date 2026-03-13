@@ -16,6 +16,7 @@ import { useArgs } from './useArgs';
 import { useGlobals } from './useGlobals';
 import { usePrimaryStory } from './usePrimaryStory';
 import { getComponentName } from './utils';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type ControlsParameters = {
   include?: PropDescriptor;
@@ -38,7 +39,7 @@ function extractComponentArgTypes(
   return extractArgTypes(component) as StrictArgTypes;
 }
 
-export const Controls: FC<ControlsProps> = (props) => {
+const ControlsImpl: FC<ControlsProps> = (props) => {
   const { of } = props;
   const context = useContext(DocsContext);
   const primaryStory = usePrimaryStory();
@@ -104,3 +105,5 @@ export const Controls: FC<ControlsProps> = (props) => {
     />
   );
 };
+
+export const Controls = withMdxComponentOverride('Controls', ControlsImpl);

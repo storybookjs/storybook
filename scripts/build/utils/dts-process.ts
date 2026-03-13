@@ -1,9 +1,8 @@
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, sep } from 'node:path';
 
-import { rollup } from 'rollup';
-import { dts } from 'rollup-plugin-dts';
-import { JsxEmit, ScriptTarget } from 'typescript';
+import { build } from 'rolldown';
+import { dts } from 'rolldown-plugin-dts';
 
 import { getExternal } from './entry-utils';
 
@@ -18,23 +17,31 @@ async function run() {
   const { typesExternal: external } = await getExternal(process.cwd());
 
   const dir = dirname(entryPoint).replace('src', 'dist');
-  const outputFile = entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
-  const out = await rollup({
+  const outputDir = join(process.cwd(), dir);
+
+  const result = await build({
     input: entryPoint,
-    external: (id) => {
+    external: (id: string) => {
       return external.some(
-        (dep) => id === dep || id.startsWith(`${dep}/`) || id.includes(`${sep}node_modules${sep}${dep}${sep}`)
+        (dep) =>
+          id === dep ||
+          id.startsWith(`${dep}/`) ||
+          id.includes(`${sep}node_modules${sep}${dep}${sep}`)
       );
     },
-    output: { file: outputFile, format: 'es' },
+    output: {
+      dir: outputDir,
+      format: 'es',
+    },
     plugins: [
       dts({
-        respectExternal: true,
         tsconfig: join(process.cwd(), 'tsconfig.json'),
+        emitDtsOnly: true,
+        resolver: 'oxc',
         compilerOptions: {
           esModuleInterop: true,
           baseUrl: '.',
-          jsx: JsxEmit.React,
+          jsx: 'react',
           declaration: true,
           noEmit: false,
           emitDeclarationOnly: true,
@@ -43,25 +50,26 @@ async function run() {
           declarationMap: false,
           skipLibCheck: true,
           preserveSymlinks: false,
-          target: ScriptTarget.ESNext,
+          target: 'ESNext',
         },
       }),
     ],
-  });
-  const { output } = await out.generate({
-    format: 'es',
-    file: outputFile,
+    write: false,
   });
 
-  await Promise.all(
-    output.map(async (o) => {
-      if (o.type === 'chunk') {
-        await writeFile(join(dir, o.fileName), o.code);
-      } else {
-        throw new Error(`Unexpected output type: ${o.type} for ${entryPoint} (${o.fileName})`);
-      }
-    })
-  );
+  const { output } = result;
+  await mkdir(outputDir, { recursive: true });
+  for (const item of output) {
+    if (item.type === 'chunk') {
+      const filePath = join(outputDir, item.fileName);
+      await mkdir(dirname(filePath), { recursive: true });
+      await writeFile(filePath, item.code);
+    } else {
+      throw new Error(
+        `Unexpected output type: ${item.type} for ${entryPoint} (${(item as { fileName?: string }).fileName})`
+      );
+    }
+  }
 }
 
 run();

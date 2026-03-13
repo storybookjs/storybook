@@ -447,6 +447,36 @@ describe('AddonVitestService', () => {
       }
     });
 
+    it('should warn about missing system dependencies after install on Linux', async () => {
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            const commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            commandFactory();
+          }
+        );
+
+        const { result } = await service.installPlaywright();
+
+        expect(result).toBe('installed');
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('installed without system dependencies')
+        );
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('run Storybook Test from the Storybook UI')
+        );
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI;
+        }
+      }
+    });
+
     it('should execute playwright install command with --with-deps in CI', async () => {
       const originalCI = process.env.CI;
       process.env.CI = 'true';

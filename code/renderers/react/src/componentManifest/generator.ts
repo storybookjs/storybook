@@ -143,7 +143,7 @@ export const manifests: PresetPropertyFn<
 
   const docgenEngine: DocgenEngine = features?.experimentalReactComponentMeta
     ? 'react-component-meta'
-    : (typescriptOptions.reactDocgen ?? 'react-docgen');
+    : typescriptOptions.reactDocgen || 'react-docgen';
 
   invalidateCache();
   invalidateParser();

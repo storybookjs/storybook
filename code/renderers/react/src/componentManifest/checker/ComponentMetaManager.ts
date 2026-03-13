@@ -99,8 +99,8 @@ export class ComponentMetaManager {
    * builds its TS program only once.
    */
   batchExtract(entries: StoryRef[]): void {
-    const extractableEntries = entries.flatMap((storyRef) =>
-      storyRef.component?.path && storyRef.component.importName ? [storyRef] : []
+    const extractableEntries = entries.filter(
+      (storyRef) => storyRef.component?.path && storyRef.component.importName
     );
     const byProject = groupByToMap(extractableEntries, (storyRef) =>
       this.getProjectForFile(storyRef.storyPath)

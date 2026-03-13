@@ -265,11 +265,11 @@ export class ComponentMetaProject {
     >();
     const serializedDocByKey = new Map<string, Map<ts.Type, ComponentDoc | undefined>>();
 
-    for (const [index, entry] of entries.entries()) {
+    for (const entry of entries) {
       try {
         const storySourceFile = program.getSourceFile(entry.storyPath);
-        const componentPath = entry.component?.path;
         const entryComponent = entry.component;
+        const componentPath = entryComponent?.path;
         const exportName = entryComponent?.importName;
         if (!storySourceFile || !componentPath || !exportName || !entryComponent) {
           continue;
@@ -336,7 +336,7 @@ export class ComponentMetaProject {
           serializationContextByComponentPath.set(componentPath, serializationContext);
         }
 
-        const serializationCacheKey = `${componentPath}::${exportName}::${entry.component?.componentName ?? ''}`;
+        const serializationCacheKey = `${componentPath}::${exportName}::${entryComponent.componentName ?? ''}`;
         let docsByType = serializedDocByKey.get(serializationCacheKey);
         if (!docsByType) {
           docsByType = new Map();
@@ -351,20 +351,14 @@ export class ComponentMetaProject {
             exportName,
             propsType,
             defaultsSourcePath: serializationContext.defaultsSourcePath,
-            displayNameOverride: entry.component?.componentName,
+            displayNameOverride: entryComponent.componentName,
           });
           docsByType.set(propsType, doc);
         }
 
-        if (!doc) {
-          continue;
+        if (doc) {
+          entryComponent.reactComponentMeta = doc;
         }
-
-        const component = entries[index].component;
-        if (!component) {
-          continue;
-        }
-        component.reactComponentMeta = doc;
       } catch {
         // One bad component should not kill the entire batch.
         continue;

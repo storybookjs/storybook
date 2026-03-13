@@ -1,8 +1,11 @@
+import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
 import { withMargin, withReset } from '../lib/common';
 
-export const DL = styled.dl(withReset, withMargin, {
+export const DL = styled.dl(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
+  ...withMargin,
   padding: 0,
   '& dt': {
     fontSize: '14px',
@@ -34,4 +37,4 @@ export const DL = styled.dl(withReset, withMargin, {
   '& dd > :last-child': {
     marginBottom: 0,
   },
-});
+}));

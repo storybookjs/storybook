@@ -78,7 +78,7 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
 
   refsToLoad.forEach((ref) => {
     const id = `storybook-ref-${ref.id}`;
-    if (!frames[id]?.startsWith(ref.url)) {
+    if (!frames[id]?.startsWith(`${ref.url.replace(/\/?$/, '/')}iframe.html`)) {
       frames[id] = api.getStoryHrefs(storyId, {
         queryParams: { ...queryParams, ...(version && { version }) },
         refId: ref.id,

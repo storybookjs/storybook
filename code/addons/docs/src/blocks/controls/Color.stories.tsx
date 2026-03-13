@@ -97,6 +97,22 @@ export const WithUnlimitedPresetColors: Story = {
   },
 };
 
+export const WithInvalidMaxPresetColors: Story = {
+  name: 'With invalid maxPresetColors (negative, falls back to 27)',
+  args: {
+    value: '#00ffff',
+    startOpen: true,
+    maxPresetColors: -5,
+    presetColors: [
+      { color: '#ff4785', title: 'Coral' },
+      { color: '#1EA7FD', title: 'Ocean' },
+      { color: 'rgb(252, 82, 31)', title: 'Orange' },
+      { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
+      { color: 'hsl(101, 52%, 49%)', title: 'Green' },
+    ],
+  },
+};
+
 export const StartOpen: Story = {
   args: {
     startOpen: true,

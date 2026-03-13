@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
 
 import * as babel from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -106,8 +107,10 @@ export class AddonVitestService {
   /**
    * Install Playwright browser binaries for @storybook/addon-vitest
    *
-   * Installs Chromium via `npx playwright install chromium`. In CI environments, also installs
-   * system-level browser dependencies via `--with-deps`.
+   * Installs Chromium via `npx playwright install chromium`. In CI environments and on
+   * macOS/Windows (officially supported platforms), also installs system-level browser dependencies
+   * via `--with-deps`. On other platforms (e.g. Linux), `--with-deps` is omitted to avoid requiring
+   * `sudo` — system packages are typically managed by the distro package manager.
    *
    * @param packageManager - The package manager to use for installation
    * @param prompt - The prompt instance for displaying progress
@@ -124,7 +127,9 @@ export class AddonVitestService {
   ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
-    const playwrightCommand = process.env.CI
+    const platform = os.platform();
+    const useWithDeps = !!process.env.CI || platform === 'darwin' || platform === 'win32';
+    const playwrightCommand = useWithDeps
       ? ['playwright', 'install', 'chromium', '--with-deps']
       : ['playwright', 'install', 'chromium'];
     const playwrightCommandString = this.packageManager.getPackageCommand(playwrightCommand);

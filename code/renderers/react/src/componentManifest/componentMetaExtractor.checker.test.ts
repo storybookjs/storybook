@@ -17,6 +17,7 @@ import ts from 'typescript';
 import { ComponentMetaProject } from './checker/ComponentMetaProject';
 import { cleanup, createTempDir, defaultImportName, sys, writeFiles } from './checker/test-helpers';
 import type { ComponentDoc } from './componentMetaExtractor';
+import type { StoryRef } from './getComponentImports';
 
 /**
  * All test source files, keyed by relative path within the temp project. Written to disk in
@@ -1388,7 +1389,7 @@ function docs(
     sys.writeFile(storyPath, storyContent);
     project.ensureFiles([storyPath]);
 
-    const entries = [
+    const entries: StoryRef[] = [
       {
         storyPath,
         component: {
@@ -2254,7 +2255,7 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
     if (!storyPath || !componentPath) {
       throw new Error(`Unknown test files: "${storyFile}" / "${componentFile}"`);
     }
-    const results = project.extractPropsFromStories([
+    const results = project.extractPropsFromStories<StoryRef>([
       {
         storyPath,
         component: {

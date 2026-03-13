@@ -290,7 +290,7 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const manifestEntries = [
+  const manifestEntries: ManifestEntries = [
     {
       type: 'story',
       subtype: 'story',
@@ -531,7 +531,7 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
   const result = await runManifestsWithOptions(manifestEntries, { presets });
   const header = result?.components?.components?.['example-header'];
 
-  expect(header?.reactComponentMeta?.displayName).toBe('Header');
+  expect((header as any)?.reactComponentMeta?.displayName).toBe('Header');
   expect(getInstance).toHaveBeenCalled();
 });
 
@@ -581,7 +581,7 @@ test('should create component manifest when only attached-mdx docs have manifest
   // Only docs entry has manifest tag, story does not
   const manifestEntries = [
     {
-      type: 'docs',
+      type: 'docs' as const,
       id: 'example-button--docs',
       name: 'Docs',
       title: 'Example/Button',
@@ -589,7 +589,7 @@ test('should create component manifest when only attached-mdx docs have manifest
       tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
       storiesImports: ['./src/stories/Button.stories.ts'],
     },
-  ];
+  ] satisfies ManifestEntries;
 
   const result = await runManifests(manifestEntries);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
@@ -679,7 +679,7 @@ test('stories are populated when meta has no explicit title', async () => {
     '/app'
   );
 
-  const manifestEntries = [
+  const manifestEntries: ManifestEntries = [
     {
       type: 'story',
       subtype: 'story',

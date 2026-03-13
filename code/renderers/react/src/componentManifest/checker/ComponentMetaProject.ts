@@ -271,13 +271,14 @@ export class ComponentMetaProject {
       try {
         const storySourceFile = program.getSourceFile(entry.storyPath);
         const componentPath = entry.component?.path;
-        const exportName = entry.component?.importName;
-        if (!storySourceFile || !componentPath || !exportName) {
+        const entryComponent = entry.component;
+        const exportName = entryComponent?.importName;
+        if (!storySourceFile || !componentPath || !exportName || !entryComponent) {
           continue;
         }
 
-        const importId = entry.component.importId;
-        const memberAccess = entry.component.member;
+        const importId = entryComponent.importId;
+        const memberAccess = entryComponent.member;
         const isPackageImport = importId && !importId.startsWith('.');
         let componentSourceFile: ts.SourceFile | undefined;
 

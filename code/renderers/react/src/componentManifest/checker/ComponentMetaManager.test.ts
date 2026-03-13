@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import ts from 'typescript';
 
 import type { ComponentDoc } from '../componentMetaExtractor';
+import type { StoryRef } from '../getComponentImports';
 import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager';
 import type { ComponentMetaProject } from './ComponentMetaProject';
 import { cleanup, createTempDir, defaultImportName, sys, writeFiles } from './test-helpers';
@@ -39,7 +40,7 @@ function extractDocs(
     sys.writeFile(storyPath, storyContent);
     project.ensureFiles([storyPath]);
 
-    const entries = [
+    const entries: StoryRef[] = [
       {
         storyPath,
         component: {
@@ -475,7 +476,7 @@ describe('ComponentMetaManager', () => {
 
     project.ensureFiles([storyPath]);
 
-    const results = project.extractPropsFromStories([
+    const entries: StoryRef[] = [
       {
         storyPath,
         component: {
@@ -486,7 +487,8 @@ describe('ComponentMetaManager', () => {
           isPackage: false,
         },
       },
-    ]);
+    ];
+    const results = project.extractPropsFromStories(entries);
 
     const docs = results
       .filter((result) => result.storyPath === storyPath)

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import ts from 'typescript';
 
+import type { StoryRef } from '../getComponentImports';
 import { ComponentMetaProject } from './ComponentMetaProject';
 import { cleanup, createTempProject } from './test-helpers';
 
@@ -71,7 +72,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
 
     try {
       // memberAccess='Root' → find <Accordion.Root /> in story, get Root's props
-      const results = project.extractPropsFromStories([
+      const results = project.extractPropsFromStories<StoryRef>([
         {
           storyPath: filePaths['accordion.stories.tsx'],
           component: {
@@ -166,7 +167,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
 
     try {
       // memberAccess='Aligner' → find <Button.Aligner />, get Aligner's props
-      const results = project.extractPropsFromStories([
+      const results = project.extractPropsFromStories<StoryRef>([
         {
           storyPath: filePaths['button.stories.tsx'],
           component: {
@@ -191,7 +192,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       expect(doc!.props.variant).toBeUndefined();
 
       // Without memberAccess → find <Button />, get Button's own props
-      const results2 = project.extractPropsFromStories([
+      const results2 = project.extractPropsFromStories<StoryRef>([
         {
           storyPath: filePaths['button.stories.tsx'],
           component: {
@@ -274,7 +275,7 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
 
     try {
       // Mix: compound component with memberAccess + regular component
-      const results = project.extractPropsFromStories([
+      const results = project.extractPropsFromStories<StoryRef>([
         {
           storyPath: filePaths['dialog.stories.tsx'],
           component: {

@@ -619,7 +619,7 @@ function unwrapExpression(typescript: typeof ts, expression: ts.Expression): ts.
     typescript.isNonNullExpression(current) ||
     (typescript.isSatisfiesExpression?.(current) ?? false)
   ) {
-    current = current.expression;
+    current = (current as ts.ParenthesizedExpression).expression;
   }
 
   return current;

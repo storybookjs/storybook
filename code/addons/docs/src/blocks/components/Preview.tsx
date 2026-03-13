@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/client-logger';
 import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
 
-import { CopyIcon, MarkupIcon, SyncIcon } from '@storybook/icons';
+import { CopyIcon, MarkupIcon } from '@storybook/icons';
 
 import { useId } from '@react-aria/utils';
 import { darken } from 'polished';
@@ -191,17 +191,18 @@ export const Preview: FC<PreviewProps> = ({
   return (
     <>
       <PreviewContainer
-        {...{ withSource, withToolbar }}
+        {...{ withSource, withToolbar: withToolbar || !!onReloadStory }}
         {...props}
         className={previewClasses.join(' ')}
       >
-        {withToolbar && (
+        {(withToolbar || onReloadStory) && (
           <PositionedToolbar
             isLoading={isLoading}
             border
             zoom={(z: number) => setScale(scale * z)}
             resetZoom={() => setScale(1)}
             storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}
+            onReloadStory={onReloadStory}
           />
         )}
         <ZoomContext.Provider value={{ scale }}>
@@ -227,7 +228,7 @@ export const Preview: FC<PreviewProps> = ({
           </div>
         )}
       </PreviewContainer>
-      {(withSource || onReloadStory || additionalActionItems.length > 0) && (
+      {(withSource || additionalActionItems.length > 0) && (
         <ActionBar className="sbdocs sbdocs-preview-actions" innerStyle={{ paddingInline: 0 }}>
           {hasSourceError && (
             <Button
@@ -256,17 +257,6 @@ export const Preview: FC<PreviewProps> = ({
                 <CopyIcon /> {copied ?? 'Copy code'}
               </Button>
             </>
-          )}
-          {onReloadStory && (
-            <Button
-              ariaLabel="Reload story"
-              variant="ghost"
-              size="small"
-              padding="small"
-              onClick={onReloadStory}
-            >
-              <SyncIcon />
-            </Button>
           )}
           {additionalActionItems.map(({ title, className, onClick, disabled }, index: number) => (
             <Button

@@ -3,7 +3,7 @@ import React from 'react';
 
 import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components';
 
-import { ShareAltIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
+import { ShareAltIcon, SyncIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
@@ -18,6 +18,10 @@ interface EjectProps {
   storyId?: string;
 }
 
+interface ReloadProps {
+  onReloadStory?: () => void;
+}
+
 interface BarProps {
   border?: boolean;
 }
@@ -26,7 +30,7 @@ interface LoadingProps {
   isLoading?: boolean;
 }
 
-export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps;
+export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps & ReloadProps;
 
 const AbsoluteBar = styled(SharedToolbar)({
   position: 'absolute',
@@ -53,13 +57,31 @@ const IconPlaceholder = styled.div(({ theme }) => ({
   animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
 }));
 
-export const Toolbar: FC<ToolbarProps> = ({ isLoading, storyId, zoom, resetZoom, ...rest }) => (
+export const Toolbar: FC<ToolbarProps> = ({
+  isLoading,
+  storyId,
+  zoom,
+  resetZoom,
+  onReloadStory,
+  ...rest
+}) => (
   <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }} {...rest}>
     <Wrapper key="left">
       {isLoading ? (
         [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
       ) : (
         <>
+          {onReloadStory && (
+            <Button
+              padding="small"
+              variant="ghost"
+              key="reload"
+              onClick={onReloadStory}
+              ariaLabel="Reload story"
+            >
+              <SyncIcon />
+            </Button>
+          )}
           <Button
             padding="small"
             variant="ghost"

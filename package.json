@@ -35,7 +35,7 @@
     "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",
     "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
     "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts",
-    "prepare": "husky"
+    "postinstall": "husky"
   },
   "resolutions": {
     "@babel/runtime": "latest",

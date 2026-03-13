@@ -98,7 +98,8 @@ export type Template = {
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
-    useNode22?: boolean;
+    // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
+    ensureMinNodeVersion?: boolean;
   };
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
@@ -657,7 +658,7 @@ export const baseTemplates = {
       useCsfFactory: true,
     },
     extraCiSteps: {
-      useNode22: true,
+      ensureMinNodeVersion: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -675,7 +676,7 @@ export const baseTemplates = {
       useCsfFactory: true,
     },
     extraCiSteps: {
-      useNode22: true,
+      ensureMinNodeVersion: true,
     },
     expected: {
       framework: '@storybook/angular',

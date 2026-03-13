@@ -22,10 +22,11 @@ function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
   const templateData = sandboxTemplates.allTemplates[template as TemplateKey];
 
-  if (templateData.extraCiSteps?.useNode22) {
+  if (templateData.extraCiSteps?.ensureMinNodeVersion) {
     extraSteps.push({
       'node/install': {
         'install-yarn': true,
+        // Currently using Node 22.22.1 as minimum supported version for Angular sandboxes
         'node-version': '22.22.1',
       },
     });

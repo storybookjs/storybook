@@ -1,0 +1,167 @@
+name: QA
+run-name: "QA ${{ inputs.template }}:${{ inputs.target }} x${{ inputs.attempts }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      template:
+        description: Sandbox template to test
+        required: true
+        default: vue3-vite/default-ts
+        type: string
+      target:
+        description: Nx target to test
+        required: true
+        default: e2e-tests-dev
+        type: string
+      attempts:
+        description: Number of repeated runs
+        required: true
+        default: 50
+        type: number
+      max_parallel:
+        description: Number of runs to execute in parallel (each run already fans out via Nx Cloud)
+        required: true
+        default: 1
+        type: number
+
+permissions:
+  contents: read
+
+env:
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - id: matrix
+        env:
+          ATTEMPTS: ${{ inputs.attempts }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          attempts = int(os.environ["ATTEMPTS"])
+          print(f"matrix={json.dumps(list(range(1, attempts + 1)))}")
+          PY
+
+  qa:
+    name: "${{ inputs.template }}:${{ inputs.target }} (#${{ matrix.attempt }})"
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ inputs.max_parallel }}
+      matrix:
+        attempt: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: Install Playwright Dependencies
+        run: cd code && yarn exec playwright install chromium --with-deps
+
+      - name: Start Nx Cloud distributed run
+        run: >
+          npx nx@latest start-ci-run
+          --distribute-on="./.nx/workflows/distribution-config.yaml"
+          --stop-agents-after="${{ inputs.target }}"
+
+      - id: nx
+        name: Run target without Nx cache
+        run: |
+          yarn nx run "${{ inputs.template }}:${{ inputs.target }}:production" --skip-nx-cache | tee nx-output.log
+          status=${PIPESTATUS[0]}
+          nx_cloud_run=$(grep -o 'https://cloud\.nx\.app/runs/[A-Za-z0-9]\+' nx-output.log | tail -n 1 || true)
+          echo "nx_cloud_run=${nx_cloud_run}" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Record result
+        if: always()
+        run: |
+          mkdir -p qa-status
+          cat <<EOF > "qa-status/result-${{ matrix.attempt }}.json"
+          {
+            "attempt": ${{ matrix.attempt }},
+            "status": "${{ job.status }}",
+            "template": "${{ inputs.template }}",
+            "target": "${{ inputs.target }}",
+            "nxCloudRun": "${{ steps.nx.outputs.nx_cloud_run }}"
+          }
+          EOF
+
+      - name: Upload status artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-status-${{ matrix.attempt }}
+          path: qa-status/result-${{ matrix.attempt }}.json
+          retention-days: 7
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-failure-${{ matrix.attempt }}
+          path: |
+            nx-output.log
+            test-results
+            code/playwright-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  summary:
+    if: always()
+    needs: qa
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download status artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: qa-status-*
+          path: qa-status
+          merge-multiple: true
+
+      - name: Summarize results
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          files = sorted(Path("qa-status").glob("*.json"))
+          results = [json.loads(path.read_text()) for path in files]
+          total = len(results)
+          passed = sum(1 for result in results if result["status"] == "success")
+          failed = total - passed
+          rate = (passed / total * 100) if total else 0
+
+          print(f"Processed {total} runs")
+          print(f"Passed: {passed}")
+          print(f"Failed: {failed}")
+          print(f"Pass rate: {rate:.1f}%")
+
+          with open(Path.cwd() / "summary.md", "w") as handle:
+            handle.write("## QA Summary\n")
+            handle.write(f"- Target: `${results[0]['template']}:{results[0]['target']}`\n" if results else "- Target: unknown\n")
+            handle.write(f"- Runs: {total}\n")
+            handle.write(f"- Passed: {passed}\n")
+            handle.write(f"- Failed: {failed}\n")
+            handle.write(f"- Pass rate: {rate:.1f}%\n")
+            failed_results = [result for result in results if result["status"] != "success"]
+            if failed_results:
+              handle.write("\n### Failed attempts\n")
+              for result in failed_results:
+                link = result.get("nxCloudRun") or "(no Nx Cloud run link found)"
+                handle.write(f"- Attempt {result['attempt']}: {link}\n")
+          PY
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"

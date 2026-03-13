@@ -36,15 +36,17 @@ export default function ActionLogger({ active, api }: ActionLoggerProps) {
 
   const addAction = useCallback((action: ActionDisplay) => {
     setActions((prevActions) => {
+      const limit = Math.max(0, Number(action.options?.limit) || 0);
       const previous = prevActions.length ? prevActions[prevActions.length - 1] : null;
 
       if (previous && safeDeepEqual(previous.data, action.data)) {
         const updated = [...prevActions];
         updated[updated.length - 1] = { ...previous, count: previous.count + 1 };
-        return updated.slice(-action.options.limit);
+        return limit > 0 ? updated.slice(-limit) : updated;
       } else {
         const newAction = { ...action, count: 1 };
-        return [...prevActions, newAction].slice(-action.options.limit);
+        const newActions = [...prevActions, newAction];
+        return limit > 0 ? newActions.slice(-limit) : newActions;
       }
     });
   }, []);

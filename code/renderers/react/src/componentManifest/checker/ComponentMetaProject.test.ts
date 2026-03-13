@@ -316,4 +316,71 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       project.dispose();
     }
   });
+
+  it('extracts manifest JSDoc fields from TypeScript for react-component-meta', () => {
+    const { projectDir, configPath, filePaths } = createTempProject({
+      'button.tsx': `
+        import React from 'react';
+
+        export interface ButtonProps {
+          label: string;
+        }
+
+        /**
+         * Primary UI component for user interaction
+         * @import import { Button } from '@design-system/components/override';
+         * @summary Fast summary
+         */
+        export const Button = ({ label }: ButtonProps) => <button>{label}</button>;
+      `,
+      'button.stories.tsx': `
+        import React from 'react';
+        import { Button } from './button';
+        export default { component: Button };
+        export const Default = () => <Button label="Click" />;
+      `,
+    });
+    tempDir = projectDir;
+
+    const parsed = ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    );
+    const project = new ComponentMetaProject(ts, parsed, configPath);
+
+    try {
+      const entries: StoryRef[] = [
+        {
+          storyPath: filePaths['button.stories.tsx'],
+          component: {
+            componentName: 'Button',
+            importId: './button',
+            importName: 'Button',
+            path: filePaths['button.tsx'],
+            isPackage: false,
+          },
+        },
+      ];
+
+      project.extractPropsFromStories(entries);
+
+      const component = entries[0]?.component;
+      expect(component?.reactComponentMeta).toBeDefined();
+      expect(component?.reactComponentMeta?.description).toBe(
+        'Primary UI component for user interaction'
+      );
+      expect(component?.componentJsDocTags).toEqual({
+        import: ["import { Button } from '@design-system/components/override';"],
+        summary: ['Fast summary'],
+      });
+      expect(component?.importOverride).toBe(
+        "import { Button } from '@design-system/components/override';"
+      );
+    } finally {
+      project.dispose();
+    }
+  });
 });

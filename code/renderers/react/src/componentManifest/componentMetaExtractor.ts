@@ -22,6 +22,8 @@
  */
 import type ts from 'typescript';
 
+import { groupBy } from './utils';
+
 // ---------------------------------------------------------------------------
 // Output types — compatible with react-docgen-typescript's ComponentDoc shape
 // ---------------------------------------------------------------------------
@@ -52,6 +54,7 @@ export interface ComponentDoc {
   exportName: string;
   filePath: string;
   description: string;
+  jsDocTags?: Record<string, string[]>;
   props: Record<string, PropItem>;
 }
 
@@ -1047,6 +1050,25 @@ function computeDisplayName(
   return exportName;
 }
 
+function extractComponentJsDocTags(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  symbol: ts.Symbol
+): Record<string, string[]> | undefined {
+  const tags = symbol.getJsDocTags(checker);
+  if (tags.length === 0) {
+    return undefined;
+  }
+
+  const groupedTags = groupBy(tags, (tag) => tag.name);
+  return Object.fromEntries(
+    Object.entries(groupedTags).map(([name, grouped]) => [
+      name,
+      (grouped ?? []).map((tag) => typescript.displayPartsToString(tag.text ?? []).trim()),
+    ])
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Props type → ComponentDoc serialization
 // ---------------------------------------------------------------------------
@@ -1209,6 +1231,7 @@ export function serializeComponentDoc(
     exportName,
     filePath,
     description,
+    jsDocTags: extractComponentJsDocTags(typescript, checker, resolved),
     props,
   };
 }

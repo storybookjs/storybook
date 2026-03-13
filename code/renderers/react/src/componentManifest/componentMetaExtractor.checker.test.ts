@@ -1748,7 +1748,7 @@ describe('componentMetaExtractor (LSP)', () => {
 
       expect(doc.displayName).toBe('Button');
       expect(doc.exportName).toBe('Button');
-      expect(doc.description).toContain('Primary UI component for user interaction');
+      expect(doc.description).toBe('Primary UI component for user interaction');
 
       // Props
       expect(doc.props.primary).toBeDefined();

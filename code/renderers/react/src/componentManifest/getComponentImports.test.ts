@@ -19,6 +19,7 @@ const getImports = async (code: string, packageName?: string, storyFilePath?: st
     csf: loadCsf(code, { makeTitle: (t?: string) => t ?? 'title' }).parse(),
     packageName,
     storyFilePath,
+    docgenEngine: 'react-docgen',
   });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return { components: components.map(({ reactDocgen, ...rest }) => rest), imports };
@@ -918,6 +919,7 @@ test('importOverride: default override forces default import (keeps local name)'
     csf,
     packageName: 'my-package',
     storyFilePath: '/app/src/stories/Button.stories.tsx',
+    docgenEngine: 'react-docgen',
   });
   const patched = base.components.map((c) =>
     c.componentName === 'Button' ? { ...c, importOverride: "import Button from '@pkg/button';" } : c
@@ -943,6 +945,7 @@ test('importOverride: named override aliases imported to local name', async () =
     csf,
     packageName: 'pkg',
     storyFilePath: '/app/src/stories/Button.stories.tsx',
+    docgenEngine: 'react-docgen',
   });
   const patched = base.components.map((c) =>
     c.componentName === 'Button'
@@ -970,6 +973,7 @@ test('importOverride: uses namespace override as-is', async () => {
     csf,
     packageName: 'pkg',
     storyFilePath: '/app/src/stories/ui.stories.tsx',
+    docgenEngine: 'react-docgen',
   });
   const patched = discovered.components.map((c) =>
     c.componentName === 'UI.Button' ? { ...c, importOverride: "import * as UI from '@pkg/ui';" } : c
@@ -995,6 +999,7 @@ test('importOverride: malformed string is ignored and behavior falls back', asyn
     csf,
     packageName: 'pkg',
     storyFilePath: '/app/src/stories/Header.stories.tsx',
+    docgenEngine: 'react-docgen',
   });
   const patched = base.components.map((c) =>
     c.componentName === 'Header' ? { ...c, importOverride: 'import oops not valid' } : c
@@ -1022,6 +1027,7 @@ test('importOverride: merges multiple components into a single declaration per s
     csf,
     packageName: 'pkg',
     storyFilePath: '/app/src/stories/multi.stories.tsx',
+    docgenEngine: 'react-docgen',
   });
   const patched = base.components.map((c) =>
     c.componentName === 'Button'

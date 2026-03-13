@@ -532,6 +532,57 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
   expect(getInstance).toHaveBeenCalled();
 });
 
+test('generator preserves @import override when reactComponentMeta is enabled', async () => {
+  const getInstance = vi.spyOn(ComponentMetaManager, 'getInstance');
+  getInstance.mockResolvedValue({
+    batchExtract: (entries) => {
+      for (const entry of entries) {
+        if (entry.component) {
+          entry.component.reactComponentMeta = {
+            displayName: 'Button',
+            exportName: 'Button',
+            filePath: '/app/src/stories/Button.tsx',
+            description: 'Primary UI component for user interaction',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Button } from '@design-system/components/override';"],
+            summary: ['Fast summary'],
+          };
+          entry.component.importOverride =
+            "import { Button } from '@design-system/components/override';";
+        }
+      }
+    },
+  } as Awaited<ReturnType<typeof ComponentMetaManager.getInstance>>);
+
+  const presets: NonNullable<ManifestOptions['presets']> = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries = [indexJson.entries['example-button--primary']] as ManifestEntries;
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const button = result?.components?.components?.['example-button'];
+
+  expect((button as any)?.import).toBe(
+    'import { Button } from "@design-system/components/override";'
+  );
+  expect((button as any)?.jsDocTags?.import).toEqual([
+    "import { Button } from '@design-system/components/override';",
+  ]);
+  expect((button as any)?.description).toBe('Primary UI component for user interaction');
+  expect((button as any)?.summary).toBe('Fast summary');
+  expect(getInstance).toHaveBeenCalled();
+});
+
 test('should create component manifest when only attached-mdx docs have manifest tag', async () => {
   // This test verifies that the React renderer creates a component manifest entry
   // when only an attached-mdx docs entry has the 'manifest' tag (and no story entries do).

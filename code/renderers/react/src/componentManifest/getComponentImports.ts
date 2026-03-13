@@ -16,7 +16,8 @@ import {
 } from './reactDocgenTypescript';
 import { cachedResolveImport } from './utils';
 
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript';
+export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
+export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgen: ReactDocgenConfig;
@@ -28,6 +29,7 @@ export type ComponentRef = {
   componentName: string;
   localImportName?: string;
   importId?: string;
+  componentJsDocTags?: Record<string, string[]>;
   importOverride?: string;
   importName?: string;
   namespace?: string;
@@ -79,22 +81,21 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
  * Notes:
  *
  * - Member expressions like Foo.Bar are supported; namespace imports are represented accordingly.
- * - If react-docgen determines a package import override, it is stored in `importOverride`.
+ * - Other docgen engines may populate `importOverride` eagerly; react-component-meta provides it
+ *   later in ComponentMetaProject from TypeScript JSDoc tag data.
  */
 export const getComponents = async ({
   csf,
   storyFilePath,
-  typescriptOptions,
-  experimentalReactComponentMeta,
+  typescriptOptions = {},
+  docgenEngine,
 }: {
   csf: CsfFile;
   storyFilePath?: string;
-  typescriptOptions: Partial<TypescriptOptions>;
-  experimentalReactComponentMeta?: boolean;
+  typescriptOptions?: Partial<TypescriptOptions>;
+  docgenEngine: DocgenEngine;
 }): Promise<ComponentRef[]> => {
-  const { reactDocgen = 'react-docgen', reactDocgenTypescriptOptions } = typescriptOptions;
-  // For the manifest, false (docgen disabled) defaults to react-docgen
-  const reactDocgenConfig = reactDocgen || 'react-docgen';
+  const { reactDocgenTypescriptOptions } = typescriptOptions;
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
@@ -276,13 +277,7 @@ export const getComponents = async ({
         const componentWithPackage = { ...component, isPackage };
 
         if (path) {
-          // When the experimental feature flag is on, skip docgen entirely —
-          // react-component-meta in generator.ts handles prop extraction instead.
-          if (experimentalReactComponentMeta) {
-            return { ...componentWithPackage, path };
-          }
-
-          if (reactDocgenConfig === 'react-docgen-typescript') {
+          if (docgenEngine === 'react-docgen-typescript') {
             let reactDocgenTypescript: ComponentDocWithExportName | undefined;
             let reactDocgenTypescriptError: { name: string; message: string } | undefined;
             try {
@@ -298,7 +293,6 @@ export const getComponents = async ({
                 message: `File: ${path}\n${message}`,
               };
             }
-            // Extract importOverride from RDT's description (same JSDoc parsing as react-docgen)
             const importOverride = reactDocgenTypescript
               ? getImportTag(reactDocgenTypescript)
               : undefined;
@@ -312,7 +306,7 @@ export const getComponents = async ({
             };
           }
 
-          if (reactDocgenConfig === 'react-docgen') {
+          if (docgenEngine === 'react-docgen') {
             const reactDocgen = getReactDocgen(path, componentWithPackage);
             return {
               ...componentWithPackage,
@@ -320,6 +314,16 @@ export const getComponents = async ({
               reactDocgen,
               importOverride:
                 reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
+            };
+          }
+
+          if (docgenEngine === 'react-component-meta') {
+            // RCM fills importOverride later in ComponentMetaProject, where the TypeScript checker
+            // is available and we can read the official JSDoc tag data from the resolved symbol.
+            // Step 2 in generator.ts mutates the selected component before Step 3 calls getImports().
+            return {
+              ...componentWithPackage,
+              path,
             };
           }
         }
@@ -628,17 +632,24 @@ export async function getComponentData({
   csf,
   packageName,
   storyFilePath,
-  typescriptOptions = {},
+  typescriptOptions,
+  docgenEngine,
 }: {
   csf: CsfFile;
   packageName?: string;
   storyFilePath?: string;
   typescriptOptions?: Partial<TypescriptOptions>;
+  docgenEngine: DocgenEngine;
 }): Promise<{
   components: ComponentRef[];
   imports: string[];
 }> {
-  const components = await getComponents({ csf, storyFilePath, typescriptOptions });
+  const components = await getComponents({
+    csf,
+    storyFilePath,
+    typescriptOptions,
+    docgenEngine,
+  });
   const imports = getImports({ components, packageName });
   return { components, imports };
 }

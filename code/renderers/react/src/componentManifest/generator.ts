@@ -114,10 +114,14 @@ function extractStories(
 
 function extractComponentDescription(
   metaJsDoc: string | undefined,
-  docgenDescription: string | undefined
+  docgenDescription: string | undefined,
+  docgenJsDocTags?: Record<string, string[]>
 ) {
   const jsdocComment = metaJsDoc || docgenDescription;
-  const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+  const extracted = jsdocComment ? extractJSDocInfo(jsdocComment) : undefined;
+  const tags = docgenJsDocTags ?? extracted?.tags ?? {};
+  const description = extracted?.description;
+
   return {
     description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
     summary: tags.summary?.[0],
@@ -177,7 +181,7 @@ export const manifests: PresetPropertyFn<
         csf,
         storyFilePath: storyPath,
         typescriptOptions,
-        experimentalReactComponentMeta: docgenEngine === 'react-component-meta',
+        docgenEngine,
       });
       const component = findMatchingComponent(allComponents, componentName, entry.title);
       return {
@@ -237,6 +241,7 @@ export const manifests: PresetPropertyFn<
         let reactDocgenTypescript;
         let reactComponentMeta;
         let docgenDescription;
+        let docgenJsDocTags;
         let docgenError;
 
         if (docgenEngine === 'react-docgen') {
@@ -251,6 +256,7 @@ export const manifests: PresetPropertyFn<
         } else {
           reactComponentMeta = component?.reactComponentMeta;
           docgenDescription = reactComponentMeta?.description;
+          docgenJsDocTags = component?.componentJsDocTags;
         }
 
         if (!reactDocgen && !reactDocgenTypescript && !reactComponentMeta) {
@@ -279,7 +285,8 @@ export const manifests: PresetPropertyFn<
         const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
         const { description, summary, jsDocTags } = extractComponentDescription(
           metaJsDoc,
-          docgenDescription
+          docgenDescription,
+          docgenJsDocTags
         );
 
         return {

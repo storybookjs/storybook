@@ -46,13 +46,18 @@ test.describe('addon-onboarding', () => {
     await page.getByPlaceholder('Story export name').fill('Test-' + id);
     await page.getByRole('button', { exact: true, name: 'Create' }).click();
 
+    await expect(page).toHaveURL(/path=\/story\//, { timeout: 15_000 });
+    await expect(page.getByLabel('Last')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('You just added your first')).toBeVisible();
     await page.getByLabel('Last').click();
 
-    await page.getByRole('checkbox', { name: 'Application UI' }).check();
-    await page.getByRole('checkbox', { name: 'Functional testing' }).check();
-    await page.locator('#referrer').selectOption('Web Search');
-    await page.getByRole('button', { name: 'Submit' }).click();
+    const survey = page.getByRole('dialog', { name: 'Storybook user survey' });
+    await expect(survey).toBeVisible();
+
+    await survey.getByRole('checkbox', { name: 'Application UI' }).check();
+    await survey.getByRole('checkbox', { name: 'Functional testing' }).check();
+    await survey.locator('#referrer').selectOption('Web Search');
+    await survey.getByRole('button', { name: 'Submit' }).click();
 
     // After completing onboarding, verify we navigate to a story (first story in the index)
     await expect(sbPage.page).toHaveURL(/\/(story|docs)\//);

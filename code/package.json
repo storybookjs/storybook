@@ -75,7 +75,7 @@
   ],
   "dependencies": {
     "@chromatic-com/storybook": "^5.0.0",
-    "@playwright/test": "1.52.0",
+    "@playwright/test": "1.58.2",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.3",
     "@storybook/addon-docs": "workspace:*",
@@ -220,5 +220,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.2.19"
 }

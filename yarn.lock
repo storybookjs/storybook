@@ -4970,14 +4970,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@playwright/test@npm:1.52.0":
-  version: 1.52.0
-  resolution: "@playwright/test@npm:1.52.0"
+"@playwright/test@npm:1.58.2":
+  version: 1.58.2
+  resolution: "@playwright/test@npm:1.58.2"
   dependencies:
-    playwright: "npm:1.52.0"
+    playwright: "npm:1.58.2"
   bin:
     playwright: cli.js
-  checksum: 10c0/1c428b421593eb4f79b7c99783a389c3ab3526c9051ec772749f4fca61414dfa9f2344eba846faac5f238084aa96c836364a91d81d3034ac54924f239a93e247
+  checksum: 10c0/2164c03ad97c3653ff02e8818a71f3b2bbc344ac07924c9d8e31cd57505d6d37596015a41f51396b3ed8de6840f59143eaa9c21bf65515963da20740119811da
   languageName: node
   linkType: hard
 
@@ -7841,7 +7841,7 @@ __metadata:
     vite: "npm:^7.0.4"
   peerDependencies:
     storybook: "workspace:^"
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -7914,7 +7914,7 @@ __metadata:
   resolution: "@storybook/code@workspace:code"
   dependencies:
     "@chromatic-com/storybook": "npm:^5.0.0"
-    "@playwright/test": "npm:1.52.0"
+    "@playwright/test": "npm:1.58.2"
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-designs": "npm:^11.0.3"
     "@storybook/addon-docs": "workspace:*"
@@ -8160,7 +8160,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -8363,7 +8363,7 @@ __metadata:
     react-native: ">=0.74.5"
     react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
     storybook: "workspace:^"
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -8387,7 +8387,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -8452,7 +8452,7 @@ __metadata:
   resolution: "@storybook/root@workspace:."
   dependencies:
     "@nx/workspace": "npm:^22.1.3"
-    "@playwright/test": "npm:^1.52.0"
+    "@playwright/test": "npm:^1.58.2"
     "@types/kill-port": "npm:^2.0.3"
     http-server: "npm:^14.1.1"
     jiti: "npm:^2.6.1"
@@ -8555,8 +8555,8 @@ __metadata:
     p-limit: "npm:^7.2.0"
     p-retry: "npm:^7.1.0"
     picocolors: "npm:^1.1.0"
-    playwright: "npm:1.52.0"
-    playwright-core: "npm:1.52.0"
+    playwright: "npm:1.58.2"
+    playwright-core: "npm:1.58.2"
     polka: "npm:^1.0.0-next.28"
     prettier: "npm:^3.7.1"
     prettier-plugin-brace-style: "npm:^0.8.1"
@@ -8646,10 +8646,10 @@ __metadata:
     typescript: "npm:^5.9.3"
     vite: "npm:^7.0.4"
   peerDependencies:
-    "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0
+    "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -8685,7 +8685,7 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     svelte: ^5.0.0
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -8703,7 +8703,7 @@ __metadata:
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
     storybook: "workspace:^"
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -24653,27 +24653,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright-core@npm:1.52.0":
-  version: 1.52.0
-  resolution: "playwright-core@npm:1.52.0"
+"playwright-core@npm:1.58.2":
+  version: 1.58.2
+  resolution: "playwright-core@npm:1.58.2"
   bin:
     playwright-core: cli.js
-  checksum: 10c0/640945507e6ca2144e9f596b2a6ecac042c2fd3683ff99e6271e9a7b38f3602d415f282609d569456f66680aab8b3c5bb1b257d8fb63a7fc0ed648261110421f
+  checksum: 10c0/5aa15b2b764e6ffe738293a09081a6f7023847a0dbf4cd05fe10eed2e25450d321baf7482f938f2d2eb330291e197fa23e57b29a5b552b89927ceb791266225b
   languageName: node
   linkType: hard
 
-"playwright@npm:1.52.0":
-  version: 1.52.0
-  resolution: "playwright@npm:1.52.0"
+"playwright@npm:1.58.2":
+  version: 1.58.2
+  resolution: "playwright@npm:1.58.2"
   dependencies:
     fsevents: "npm:2.3.2"
-    playwright-core: "npm:1.52.0"
+    playwright-core: "npm:1.58.2"
   dependenciesMeta:
     fsevents:
       optional: true
   bin:
     playwright: cli.js
-  checksum: 10c0/2c6edf1e15e59bbaf77f3fa0fe0ac975793c17cff835d9c8b8bc6395a3b6f1c01898b3058ab37891b2e4d424bcc8f1b4844fe70d943e0143d239d7451408c579
+  checksum: 10c0/d060d9b7cc124bd8b5dffebaab5e84f6b34654a553758fe7b19cc598dfbee93f6ecfbdc1832b40a6380ae04eade86ef3285ba03aa0b136799e83402246dc0727
   languageName: node
   linkType: hard
 

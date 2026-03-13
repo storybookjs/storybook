@@ -180,7 +180,7 @@ export class AddonVitestService {
             logger.warn(dedent`
               Playwright was installed without system dependencies. Depending on your operating system, you may need to install additional libraries for Playwright to work correctly.
               To check for missing dependencies, run Storybook Test from the Storybook UI — it will report any libraries that need to be installed.
-              If needed, you can install system dependencies manually by running:
+              On MacOS, Windows, Debian and Ubuntu, you can install system dependencies manually by running:
               ${CLI_COLORS.cta(this.packageManager.getPackageCommand(['playwright', 'install', 'chromium', '--with-deps']))}
             `);
           }

@@ -108,17 +108,26 @@ export const addWorkaroundResolutions = async ({
       react: '^19.0.0',
       'react-dom': '^19.0.0',
     };
-  } else if (key === 'react-webpack/prerelease-ts') {
+  }
+
+  if (key === 'react-webpack/prerelease-ts') {
     additionalResolutions = {
+      ...additionalResolutions,
       react: packageJson.dependencies.react,
       'react-dom': packageJson.dependencies['react-dom'],
     };
-  } else if (key === 'react-rsbuild/default-ts') {
+  }
+
+  if (key === 'react-rsbuild/default-ts') {
     additionalResolutions = {
+      ...additionalResolutions,
       'react-docgen': '^8.0.2',
     };
-  } else if (key === 'react-native-web-vite/expo-ts') {
+  }
+
+  if (key === 'react-native-web-vite/expo-ts') {
     additionalResolutions = {
+      ...additionalResolutions,
       // The expo sandbox started to break in beta 5, yet to investigate the root cause
       // in the meantime, we downgrade to the version where things worked.
       vite: '8.0.0-beta.4',

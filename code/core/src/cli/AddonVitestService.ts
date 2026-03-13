@@ -106,7 +106,8 @@ export class AddonVitestService {
   /**
    * Install Playwright browser binaries for @storybook/addon-vitest
    *
-   * Installs Chromium via `npx playwright install chromium`
+   * Installs Chromium via `npx playwright install chromium`. In CI environments, also installs
+   * system-level browser dependencies via `--with-deps`.
    *
    * @param packageManager - The package manager to use for installation
    * @param prompt - The prompt instance for displaying progress
@@ -123,7 +124,9 @@ export class AddonVitestService {
   ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
-    const playwrightCommand = ['playwright', 'install', 'chromium'];
+    const playwrightCommand = process.env.CI
+      ? ['playwright', 'install', 'chromium', '--with-deps']
+      : ['playwright', 'install', 'chromium'];
     const playwrightCommandString = this.packageManager.getPackageCommand(playwrightCommand);
 
     let result: 'installed' | 'skipped' | 'aborted' | 'failed';

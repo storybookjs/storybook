@@ -12,7 +12,7 @@ test.describe('Vue 3', () => {
     await new SbPage(page, expect).waitUntilLoaded();
   });
 
-  test.skip(!templateName?.includes('vue3'), 'Only run these tests on Vue 3');
+  test.skip(templateName !== 'vue3-vite/default-ts', 'Only run these tests on Vue 3');
 
   test('updateArgs works in decorators', async ({ page }) => {
     const sbPage = new SbPage(page, expect);

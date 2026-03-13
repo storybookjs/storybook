@@ -1,5 +1,15 @@
 ## 3.1.12
 
+## 3.2.3
+
+### Patch Changes
+
+- [#109](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/109) [`3c9a4e1`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/3c9a4e1209567a133ade8d885a02ecf87c3f5794) Thanks [@Stanzilla](https://github.com/Stanzilla)! - # Patch Changes
+
+  Stop injecting `vite-tsconfig-paths` on Vite 8+ and use Vite's native `resolve.tsconfigPaths` support instead.
+
+- [#105](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/105) [`bb3a407`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/bb3a4079afa12fa592e99db4c5c6822cf99e502f) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Support Next.js v16.2
+
 ## 3.2.2
 
 ### Patch Changes

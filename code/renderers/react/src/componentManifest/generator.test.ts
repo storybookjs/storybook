@@ -808,13 +808,8 @@ test('stories are populated when meta has no explicit title', async () => {
       `,
       ['./src/stories/Card.tsx']: dedent`
         import React from 'react';
-        export interface CardProps {
-          label: string;
-          size?: 'small' | 'large';
-        }
-
         /** A simple card component */
-        export const Card = ({ label, size }: CardProps) => {
+        export const Card = ({ label, size }) => {
           return <div className={size}>{label}</div>;
         };
       `,

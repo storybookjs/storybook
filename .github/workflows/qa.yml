@@ -18,30 +18,31 @@ jobs:
   qa:
     name: Run all merged e2e-tests-dev targets
     runs-on: ubuntu-latest
+    env:
+      ALL_TASKS: e2e-tests-dev
     steps:
       - uses: actions/checkout@v4
         with:
           filter: tree:0
           fetch-depth: 0
 
-      - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
+      - uses: actions/setup-node@v4
         with:
-          install-code-deps: true
+          node-version: 22
+          cache: 'yarn'
 
-      - name: Install Playwright Dependencies
-        run: cd code && yarn exec playwright install chromium --with-deps
+      - run: yarn install --immutable
 
       - name: Start Nx Cloud distributed run
         run: >
           npx nx@latest start-ci-run
           --distribute-on="./.nx/workflows/distribution-config.yaml"
-          --stop-agents-after="e2e-tests-dev"
+          --stop-agents-after="$ALL_TASKS"
 
       - id: nx
         name: Run nx
         run: |
-          yarn nx run-many -t e2e-tests-dev -c production -p="tag:library,tag:ci:merged" --skip-nx-cache | tee nx-output.log
+          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:merged" --skip-nx-cache | tee nx-output.log
           status=${PIPESTATUS[0]}
           nx_cloud_run=$(grep -o 'https://cloud\.nx\.app/runs/[A-Za-z0-9]\+' nx-output.log | tail -n 1 || true)
           echo "nx_cloud_run=${nx_cloud_run}" >> "$GITHUB_OUTPUT"
@@ -53,7 +54,7 @@ jobs:
           {
             echo "## QA Summary"
             echo
-            echo "- Target: \`run-many -t e2e-tests-dev -c production -p=tag:library,tag:ci:merged\`"
+            echo "- Target: \`run-many -t $ALL_TASKS -c production -p=tag:library,tag:ci:merged\`"
             if [ -n "${{ steps.nx.outputs.nx_cloud_run }}" ]; then
               echo "- Nx Cloud: ${{ steps.nx.outputs.nx_cloud_run }}"
             fi

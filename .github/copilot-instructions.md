@@ -303,7 +303,7 @@ cd code && yarn test
 
 ### End-to-End Testing
 
-- Playwright tests available (version 1.52.0 configured)
+- Playwright tests available (version 1.58.2 configured)
 - E2E test tasks: `yarn task e2e-tests-build --start-from auto` or `yarn task e2e-tests-dev --start-from auto`
 - Test runner scenarios: `yarn task test-runner-build --start-from auto` or `yarn task test-runner-dev --start-from auto`
 - Smoke tests: `yarn task smoke-test --start-from auto`

@@ -141,6 +141,56 @@ describe('ArgsStore', () => {
       expect(store.get('id')).toEqual({ obj: { baz: 'bing' } });
     });
 
+    it('preserves function properties in nested objects not present in the update', () => {
+      const store = new ArgsStore();
+      const onClick = vi.fn();
+
+      store.setInitial({
+        id: 'id',
+        initialArgs: { buttonProps: { title: 'Click me', onClick, variant: 'primary' } },
+      } as any);
+
+      // Simulate what happens when manager sends an update after channel serialization
+      // stripped the function: the update lacks `onClick`
+      store.update('id', { buttonProps: { title: 'New title', variant: 'primary' } });
+
+      const result = store.get('id');
+      expect(result.buttonProps.title).toBe('New title');
+      expect(result.buttonProps.variant).toBe('primary');
+      expect(result.buttonProps.onClick).toBe(onClick);
+    });
+
+    it('allows non-function properties to be removed from nested objects', () => {
+      const store = new ArgsStore();
+      const onClick = vi.fn();
+
+      store.setInitial({
+        id: 'id',
+        initialArgs: { buttonProps: { title: 'Click me', onClick, variant: 'primary' } },
+      } as any);
+
+      // User explicitly removes `variant` from the Controls panel object editor
+      store.update('id', { buttonProps: { title: 'Click me' } });
+
+      const result = store.get('id');
+      expect(result.buttonProps.title).toBe('Click me');
+      expect(result.buttonProps.onClick).toBe(onClick);
+      expect('variant' in result.buttonProps).toBe(false);
+    });
+
+    it('preserves function properties at the top level', () => {
+      const store = new ArgsStore();
+      const onSubmit = vi.fn();
+
+      store.setInitial({ id: 'id', initialArgs: { onSubmit, label: 'old' } } as any);
+
+      store.update('id', { label: 'new' });
+
+      const result = store.get('id');
+      expect(result.label).toBe('new');
+      expect(result.onSubmit).toBe(onSubmit);
+    });
+
     it('does not set keys to undefined, it simply unsets them', () => {
       const store = new ArgsStore();
 

@@ -7,7 +7,6 @@ import {
   CACHE_KEYS,
   artifact,
   cache,
-  playwright,
   server,
   testResults,
   toId,
@@ -19,12 +18,12 @@ import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types';
 import type { JobOrNoOpJob, Workflow } from './utils/types';
 
 function defineSandboxJob_build({
-  id,
+  directory,
   name,
   template,
   requires,
 }: {
-  id: string;
+  directory: string;
   name: string;
   requires: JobOrNoOpJob[];
   template: string;
@@ -44,21 +43,19 @@ function defineSandboxJob_build({
             command: `yarn task build --template ${template} --no-link -s build`,
           },
         },
-        workspace.persist([`${SANDBOX_DIR}/${id}/storybook-static`]),
+        workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`]),
       ],
     }),
     requires
   );
 }
 function defineSandboxJob_dev({
-  id,
   name,
   template,
   requires,
   options,
 }: {
   name: string;
-  id: string;
   requires: JobOrNoOpJob[];
   template: string;
   options: {
@@ -81,7 +78,6 @@ function defineSandboxJob_dev({
         ...workflow.restoreLinux(),
         ...(options.e2e
           ? [
-              playwright.install(`${SANDBOX_DIR}/${id}`),
               {
                 run: {
                   name: 'Run storybook',
@@ -127,6 +123,8 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
   const id = toId(key);
   const data = sandboxTemplates.allTemplates[key as keyof typeof sandboxTemplates.allTemplates];
   const { skipTasks = [], name } = data;
+
+  const path = key.replace('/', '-');
 
   const createJob = defineJob(
     `${name} (create)`,
@@ -208,13 +206,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
   const buildJob = defineSandboxJob_build({
     name: `${name} (build)`,
     template: key,
-    id,
+    directory: id,
     requires: [createJob],
   });
   const devJob = defineSandboxJob_dev({
     name: `${name} (dev)`,
     template: key,
-    id,
     requires: [createJob],
     options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
   });
@@ -258,7 +255,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       },
       steps: [
         ...workflow.restoreLinux(),
-        playwright.install(`${SANDBOX_DIR}/${id}`),
         {
           run: {
             name: 'Running Vitest',
@@ -279,7 +275,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       },
       steps: [
         ...workflow.restoreLinux(),
-        playwright.install(`${SANDBOX_DIR}/${id}`),
         {
           run: {
             name: 'Serve storybook',
@@ -316,7 +311,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       },
       steps: [
         ...workflow.restoreLinux(),
-        playwright.install(`${SANDBOX_DIR}/${id}`),
         {
           run: {
             name: 'Running test-runner',
@@ -351,7 +345,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
   ].filter(Boolean);
   return {
     name: key,
-    id,
+    path,
     jobs,
   };
 }
@@ -366,7 +360,6 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
       },
       steps: [
         ...workflow.restoreLinux(),
-        playwright.install(`${SANDBOX_DIR}/${sandbox.id}`),
         {
           run: {
             name: 'Running test-runner',
@@ -396,16 +389,21 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
         {
           run: {
             name: 'Run Install',
-            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.id}`,
+            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
             command: 'yarn install',
           },
         },
-        playwright.install(`${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.id}`, true),
+        {
+          run: {
+            name: 'Install playwright',
+            command: 'yarn playwright install chromium --with-deps',
+          },
+        },
         {
           run: {
             name: 'Run storybook',
             background: true,
-            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.id}`,
+            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
             command: 'yarn storybook --port 8001',
           },
         },
@@ -440,11 +438,16 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
         {
           run: {
             name: 'Run Install',
-            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.id}`,
+            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
             command: 'yarn install',
           },
         },
-        playwright.install(`${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.id}`, true),
+        {
+          run: {
+            name: 'Install playwright',
+            command: 'yarn playwright install chromium --with-deps',
+          },
+        },
         {
           run: {
             name: 'Build storybook',

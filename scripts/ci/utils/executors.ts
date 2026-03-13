@@ -47,7 +47,7 @@ export const executors = {
         environment: {
           NODE_OPTIONS: '--max_old_space_size=6144',
         },
-        image: 'cimg/node:22.22.1-browsers',
+        image: 'mcr.microsoft.com/playwright:v1.58.2-noble',
       },
     ],
     parameters: {

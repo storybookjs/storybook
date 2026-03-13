@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path/posix';
 
 import { build_linux } from './common-jobs';
-import { artifact, playwright, workflow } from './utils/helpers';
+import { artifact, workflow } from './utils/helpers';
 import {
   type JobOrNoOpJob,
   type Workflow,
@@ -37,7 +37,6 @@ export function definePortableStoryTest(directory: string) {
             },
           },
         },
-        playwright.install(working_directory),
         {
           run: {
             name: 'Run Jest tests',
@@ -137,7 +136,6 @@ export function definePortableStoryTestVitest3() {
             },
           },
         },
-        playwright.install('test-storybooks/portable-stories-kitchen-sink/react-vitest-3'),
         {
           run: {
             name: 'Run Playwright E2E tests',

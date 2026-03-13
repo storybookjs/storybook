@@ -96,6 +96,10 @@ export type Template = {
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
   };
+  /** Additional CI steps in case this template has special needs during CI. */
+  extraCiSteps?: {
+    useNode22?: boolean;
+  };
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
     builder?: SupportedBuilder;
@@ -652,6 +656,9 @@ export const baseTemplates = {
       // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
       useCsfFactory: true,
     },
+    extraCiSteps: {
+      useNode22: true,
+    },
     expected: {
       framework: '@storybook/angular',
       renderer: '@storybook/angular',
@@ -666,6 +673,9 @@ export const baseTemplates = {
     modifications: {
       extraDependencies: ['@angular/forms@latest'],
       useCsfFactory: true,
+    },
+    extraCiSteps: {
+      useNode22: true,
     },
     expected: {
       framework: '@storybook/angular',

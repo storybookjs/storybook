@@ -13,6 +13,7 @@ import { SourceContext } from './SourceContainer';
 import type { StoryProps } from './Story';
 import { Story } from './Story';
 import { useOf } from './useOf';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 'className'> & {
   /**
@@ -60,7 +61,7 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
   story?: Pick<StoryProps, 'inline' | 'height' | 'autoplay' | '__forceInitialArgs' | '__primary'>;
 };
 
-export const Canvas: FC<CanvasProps> = (props) => {
+const CanvasImpl: FC<CanvasProps> = (props) => {
   const docsContext = useContext(DocsContext);
   const sourceContext = useContext(SourceContext);
   const { of, source } = props;
@@ -95,3 +96,5 @@ export const Canvas: FC<CanvasProps> = (props) => {
     </PurePreview>
   );
 };
+
+export const Canvas = withMdxComponentOverride('Canvas', CanvasImpl);

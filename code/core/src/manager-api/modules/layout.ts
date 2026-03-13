@@ -159,6 +159,8 @@ export const focusableUIElements = {
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',
   showAddonPanel: 'storybook-show-addon-panel',
+  sidebarRegion: 'storybook-sidebar-region',
+  showSidebar: 'storybook-show-sidebar',
 };
 
 const getIsNavShown = (state: State) => {

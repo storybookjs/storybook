@@ -96,6 +96,11 @@ export type Template = {
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
   };
+  /** Additional CI steps in case this template has special needs during CI. */
+  extraCiSteps?: {
+    // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
+    ensureMinNodeVersion?: boolean;
+  };
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
     builder?: SupportedBuilder;
@@ -625,6 +630,9 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      extraDependencies: ['@sveltejs/vite-plugin-svelte@7.0.0'],
+    },
     skipTasks: ['e2e-tests', 'bench'],
   },
   'svelte-vite/default-ts': {
@@ -634,6 +642,9 @@ export const baseTemplates = {
       framework: '@storybook/svelte-vite',
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['@sveltejs/vite-plugin-svelte@7.0.0'],
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
@@ -645,6 +656,9 @@ export const baseTemplates = {
     modifications: {
       // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
       useCsfFactory: true,
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -661,6 +675,9 @@ export const baseTemplates = {
       extraDependencies: ['@angular/forms@latest'],
       useCsfFactory: true,
     },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
     expected: {
       framework: '@storybook/angular',
       renderer: '@storybook/angular',
@@ -676,6 +693,9 @@ export const baseTemplates = {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['@sveltejs/vite-plugin-svelte@7.0.0'],
     },
     skipTasks: ['e2e-tests', 'bench'],
   },

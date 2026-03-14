@@ -1458,7 +1458,15 @@ describe('stories API', () => {
 
       expect(state).toEqual(
         expect.objectContaining({
-          filters: {},
+          defaultExcludedTagFilters: expect.arrayContaining([]),
+          defaultIncludedTagFilters: expect.arrayContaining([]),
+          excludedTagFilters: expect.arrayContaining([]),
+          includedTagFilters: expect.arrayContaining([]),
+          filters: expect.objectContaining({
+            'static-filter': expect.any(Function),
+            'tags-filter': expect.any(Function),
+          }),
+          tagPresets: expect.objectContaining({}),
         })
       );
     });

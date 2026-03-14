@@ -8299,6 +8299,7 @@ __metadata:
     knip: "npm:^5.70.2"
     lint-staged: "npm:^16.2.7"
     mock-require: "npm:^3.0.3"
+    oxlint-tsgolint: "npm:^0.16.0"
     prettier: "npm:^3.7.1"
     process: "npm:^0.11.10"
     react: "npm:^18.2.0"
@@ -24398,7 +24399,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"oxlint-tsgolint@npm:=0.16.0":
+"oxlint-tsgolint@npm:=0.16.0, oxlint-tsgolint@npm:^0.16.0":
   version: 0.16.0
   resolution: "oxlint-tsgolint@npm:0.16.0"
   dependencies:

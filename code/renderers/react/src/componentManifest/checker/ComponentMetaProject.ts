@@ -27,12 +27,12 @@ import type ts from 'typescript';
 
 import {
   type ComponentDoc,
-  type ResolvedComponent,
   resolvePropsFromComponentType,
   resolvePropsFromStoryFile,
   serializeComponentDoc,
 } from '../componentMetaExtractor';
 import type { StoryRef } from '../getComponentImports';
+import type { ResolvedComponentRef, ResolvedComponentTarget } from '../types';
 
 export class ComponentMetaProject {
   private ls: ts.LanguageService;
@@ -299,22 +299,32 @@ export class ComponentMetaProject {
         }
 
         // Path 1: Find JSX in story file
-        let resolvedComponent: ResolvedComponent | undefined;
+        const resolvedComponentRef: ResolvedComponentRef = {
+          componentName: entryComponent.componentName,
+          importId,
+          importName: exportName,
+          member: memberAccess,
+          path: componentPath,
+        };
+
+        let resolvedComponent: ResolvedComponentTarget | undefined;
         if (importId) {
           resolvedComponent = resolvePropsFromStoryFile(
             this.typescript,
             checker,
             storySourceFile,
-            importId,
-            exportName,
-            memberAccess
+            resolvedComponentRef
           );
         }
 
         // Path 2: Fallback — resolve from meta.component in the story file.
         // Only fires when the user explicitly set `component:` in the meta object.
         if (!resolvedComponent) {
-          resolvedComponent = this.resolveFromMetaComponent(checker, storySourceFile, memberAccess);
+          resolvedComponent = this.resolveFromMetaComponent(
+            checker,
+            storySourceFile,
+            resolvedComponentRef
+          );
         }
 
         if (!resolvedComponent) {
@@ -337,13 +347,9 @@ export class ComponentMetaProject {
         }
 
         const doc = serializeComponentDoc(this.typescript, checker, {
-          filePath: componentPath,
           sourceFile: serializationContext.sourceFile,
-          exportName,
           resolvedComponent,
-          isMemberSelection: Boolean(memberAccess),
           defaultsSourcePath: serializationContext.defaultsSourcePath,
-          displayNameOverride: entryComponent.componentName,
         });
 
         if (doc) {
@@ -396,8 +402,9 @@ export class ComponentMetaProject {
   private resolveFromMetaComponent(
     checker: ts.TypeChecker,
     storySourceFile: ts.SourceFile,
-    memberAccess?: string
-  ): ResolvedComponent | undefined {
+    componentRef: ResolvedComponentRef
+  ): ResolvedComponentTarget | undefined {
+    const { member: memberAccess } = componentRef;
     const moduleSymbol = checker.getSymbolAtLocation(storySourceFile);
     if (!moduleSymbol) {
       return undefined;
@@ -439,6 +446,7 @@ export class ComponentMetaProject {
     }
 
     return {
+      componentRef,
       propsType,
       symbol: selectedSymbol,
     };

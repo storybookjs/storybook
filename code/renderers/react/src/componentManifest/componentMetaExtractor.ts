@@ -11,9 +11,9 @@
  * inspects the component's type directly via `getCallSignatures()[0].parameters[0]` (similar to
  * Vue's component-meta approach). Does NOT work for polymorphic/generic components (TS #61133).
  *
- * The story path returns the selected component symbol together with its props type, and the
+ * The story path returns the selected component target together with its props type, and the
  * fallback path still resolves the props type directly. `serializeComponentDoc()` uses the selected
- * symbol when available so member components keep their own metadata.
+ * symbol and component ref from that target so member components keep their own metadata.
  *
  * TypeScript resolves props the same way as autocompletion — by calling
  * `checker.getResolvedSignature()` on the JSX element. For polymorphic components with generic call
@@ -23,6 +23,7 @@
  */
 import type ts from 'typescript';
 
+import type { ResolvedComponentRef, ResolvedComponentTarget } from './types';
 import { groupBy } from './utils';
 
 // ---------------------------------------------------------------------------
@@ -57,11 +58,6 @@ export interface ComponentDoc {
   description: string;
   jsDocTags?: Record<string, string[]>;
   props: Record<string, PropItem>;
-}
-
-export interface ResolvedComponent {
-  propsType: ts.Type;
-  symbol: ts.Symbol;
 }
 
 // ---------------------------------------------------------------------------
@@ -234,10 +230,15 @@ export function resolvePropsFromStoryFile(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   storySourceFile: ts.SourceFile,
-  importSpecifier: string,
-  importName: string,
-  memberAccess?: string
-): ResolvedComponent | undefined {
+  componentRef: ResolvedComponentRef
+): ResolvedComponentTarget | undefined {
+  const importSpecifier = componentRef.importId;
+  const importName = componentRef.importName;
+  const memberAccess = componentRef.member;
+  if (!importSpecifier) {
+    return undefined;
+  }
+
   // Step 1: Find the import binding symbol in the story file.
   // This is the local symbol that the story uses in JSX (e.g., `Button` from `import { Button } from './Button'`).
   let importSymbol: ts.Symbol | undefined;
@@ -313,7 +314,7 @@ export function resolvePropsFromStoryFile(
   }
 
   // Step 2: Walk story file to find JSX elements using this import
-  let result: ResolvedComponent | undefined;
+  let result: ResolvedComponentTarget | undefined;
 
   function extractPropsFromJsx(
     node: ts.JsxSelfClosingElement | ts.JsxOpeningElement
@@ -350,6 +351,7 @@ export function resolvePropsFromStoryFile(
                 checker.getTypeAtLocation(tagName.expression).getProperty(tagName.name.text) ??
                 resolveComponentSymbolFromNode(typescript, checker, tagName);
               result = {
+                componentRef,
                 propsType,
                 symbol: memberSymbol
                   ? resolveComponentSymbol(typescript, checker, memberSymbol, tagName.name)
@@ -367,6 +369,7 @@ export function resolvePropsFromStoryFile(
             const propsType = extractPropsFromJsx(node);
             if (propsType) {
               result = {
+                componentRef,
                 propsType,
                 symbol: resolveAliasedSymbol(typescript, checker, sym),
               };
@@ -1191,19 +1194,11 @@ function getBulkSourceExclusions(properties: ts.Symbol[]): Set<string> {
 function computeDisplayName({
   exportSymbol,
   resolvedSymbol,
-  displayNameOverride,
-  preferDisplayNameOverride = false,
 }: {
   exportSymbol?: ts.Symbol;
   resolvedSymbol: ts.Symbol;
-  displayNameOverride?: string;
-  preferDisplayNameOverride?: boolean;
 }): string | undefined {
   const resolvedName = resolvedSymbol.getName();
-
-  if (preferDisplayNameOverride && displayNameOverride) {
-    return displayNameOverride;
-  }
 
   if (!exportSymbol) {
     if (resolvedName && resolvedName !== 'default' && resolvedName !== '__function') {
@@ -1257,24 +1252,20 @@ export function serializeComponentDoc(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   {
-    filePath,
     sourceFile,
-    exportName,
     resolvedComponent,
-    isMemberSelection,
     defaultsSourcePath,
-    displayNameOverride,
   }: {
-    filePath: string;
     sourceFile: ts.SourceFile;
-    exportName: string;
-    resolvedComponent: ResolvedComponent;
-    isMemberSelection?: boolean;
+    resolvedComponent: ResolvedComponentTarget;
     defaultsSourcePath?: string;
-    displayNameOverride?: string;
   }
 ): ComponentDoc | undefined {
-  const { propsType, symbol } = resolvedComponent;
+  const { componentRef, propsType, symbol } = resolvedComponent;
+  const exportName = componentRef.importName;
+  const displayNameOverride = componentRef.componentName;
+  const isMemberSelection = Boolean(componentRef.member);
+  const filePath = componentRef.path ?? sourceFile.fileName;
   const resolved = resolveAliasedSymbol(typescript, checker, symbol);
 
   const contextNode = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
@@ -1394,12 +1385,12 @@ export function serializeComponentDoc(
   }
 
   const displayName =
+    (isMemberSelection ? displayNameOverride : undefined) ??
     computeDisplayName({
       exportSymbol,
       resolvedSymbol: resolved,
-      displayNameOverride,
-      preferDisplayNameOverride: isMemberSelection,
-    }) ?? displayNameOverride;
+    }) ??
+    displayNameOverride;
 
   const description = typescript.displayPartsToString(resolved.getDocumentationComment(checker));
   const selectedJsDocTags = extractComponentJsDocTags(typescript, checker, resolved);

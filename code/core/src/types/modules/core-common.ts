@@ -507,7 +507,12 @@ export interface StorybookConfigRaw {
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
 
-    experimentalComponentsManifest?: boolean;
+    /**
+     * Enable component manifest generation for MCP and other tooling integrations.
+     *
+     * @default true
+     */
+    componentsManifest?: boolean;
 
     /**
      * Enables the new code example generation for React components. You can see those examples when

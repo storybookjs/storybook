@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.3.0-alpha.15",
+  "version": "10.3.0-alpha.17",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -357,6 +357,7 @@
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "source-map": "^0.7.4",
+    "std-env": "^4.0.0",
     "store2": "^2.14.2",
     "strip-ansi": "^7.1.0",
     "strip-json-comments": "^5.0.1",

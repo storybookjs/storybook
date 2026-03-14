@@ -18,7 +18,7 @@ module.exports = {
   create(context) {
     return {
       ImportDeclaration: (node) => {
-        const fileName = context.getPhysicalFilename();
+        const fileName = context.physicalFilename ?? context.getPhysicalFilename();
         const isInCLI = !!fileName.includes(path.join('code', 'lib', 'cli') + path.sep);
         const isInCodemod = !!fileName.includes(path.join('code', 'lib', 'codemod'));
         const isInCreateStorybook = !!fileName.includes(

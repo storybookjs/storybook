@@ -60,7 +60,7 @@ jobs:
           fi
 
           echo "tag=$tags" >> "$GITHUB_OUTPUT"
-      - run: yarn nx-cloud start-ci-run --distribute-on="./.nx/workflows/distribution-config.yaml" --stop-agents-after="$ALL_TASKS"
+      - run: npx nx@latest start-ci-run --distribute-on="./.nx/workflows/distribution-config.yaml" --stop-agents-after="$ALL_TASKS"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@v7
         with:

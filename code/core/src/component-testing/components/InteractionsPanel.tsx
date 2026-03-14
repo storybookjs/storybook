@@ -24,6 +24,7 @@ export interface Controls {
 }
 
 interface InteractionsPanelProps {
+  id?: string;
   storyUrl: string;
   status: PlayStatus;
   controls: Controls;
@@ -54,6 +55,32 @@ const Container = styled.div(({ theme }) => ({
   height: '100%',
   background: theme.background.content,
 }));
+
+const InteractionsSection = styled.section({
+  position: 'relative',
+});
+
+const srOnlyStyles = {
+  border: 0,
+  clip: 'rect(0, 0, 0, 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  margin: -1,
+  overflow: 'hidden',
+  padding: 0,
+  position: 'absolute' as const,
+  whiteSpace: 'nowrap' as const,
+  width: 1,
+};
+
+const InteractionsHeading = styled.h2(srOnlyStyles);
+
+const InteractionsList = styled.ol({
+  margin: 0,
+  padding: 0,
+});
+
+const LiveStatus = styled.div(srOnlyStyles);
 
 const CaughtException = styled.div(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
@@ -91,8 +118,19 @@ const CaughtExceptionStack = styled.pre(({ theme }) => ({
   fontSize: theme.typography.size.s1 - 1,
 }));
 
+const StatusAnnouncementMapping: Record<PlayStatus, string> = {
+  rendering: 'Component test is rendering.',
+  playing: 'Component test is running.',
+  completed: 'Component test completed successfully.',
+  errored: 'Component test failed.',
+  aborted: 'Component test was aborted.',
+} as const;
+
+let generatedHeadingId = 0;
+
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
+    id,
     storyUrl,
     status,
     calls,
@@ -114,6 +152,13 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
+    const autoHeadingId = React.useRef(id || `interactions-panel-${generatedHeadingId++}`);
+    const headingId = id || autoHeadingId.current;
+    const isListBusy = status === 'rendering' || status === 'playing';
+    const statusAnnouncement =
+      status === 'completed' && hasException
+        ? 'Component test completed with errors.'
+        : StatusAnnouncementMapping[status];
 
     return (
       <Container>
@@ -131,22 +176,32 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           canOpenInEditor={canOpenInEditor}
           api={api}
         />
-        <div aria-label="Interactions list">
-          {interactions.map((call) => (
-            <Interaction
-              key={call.id}
-              call={call}
-              callsById={calls}
-              controls={controls}
-              controlStates={controlStates}
-              childCallIds={call.childCallIds}
-              isHidden={call.isHidden}
-              isCollapsed={call.isCollapsed}
-              toggleCollapsed={call.toggleCollapsed}
-              pausedAt={pausedAt}
-            />
-          ))}
-        </div>
+        <LiveStatus
+          role={status === 'errored' ? 'alert' : 'status'}
+          aria-live={status === 'errored' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
+          {statusAnnouncement}
+        </LiveStatus>
+        <InteractionsSection aria-labelledby={headingId}>
+          <InteractionsHeading id={headingId}>Interaction steps</InteractionsHeading>
+          <InteractionsList aria-busy={isListBusy}>
+            {interactions.map((call) => (
+              <Interaction
+                key={call.id}
+                call={call}
+                callsById={calls}
+                controls={controls}
+                controlStates={controlStates}
+                childCallIds={call.childCallIds}
+                isHidden={call.isHidden}
+                isCollapsed={call.isCollapsed}
+                toggleCollapsed={call.toggleCollapsed}
+                pausedAt={pausedAt}
+              />
+            ))}
+          </InteractionsList>
+        </InteractionsSection>
         {caughtException && !isTestAssertionError(caughtException) && (
           <CaughtException>
             <CaughtExceptionTitle>

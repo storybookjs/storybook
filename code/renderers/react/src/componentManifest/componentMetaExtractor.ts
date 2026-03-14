@@ -343,7 +343,7 @@ export function resolvePropsFromStoryFile(
         // Handle <Accordion.Root /> pattern
         if (typescript.isPropertyAccessExpression(tagName) && tagName.name.text === memberAccess) {
           const leftSym = checker.getSymbolAtLocation(tagName.expression);
-          if (leftSym === importSymbol) {
+          if (leftSym && importSymbol && leftSym === importSymbol) {
             const propsType = extractPropsFromJsx(node);
             if (propsType) {
               const memberSymbol =
@@ -365,7 +365,7 @@ export function resolvePropsFromStoryFile(
         // Handle <Button /> pattern
         if (typescript.isIdentifier(tagName)) {
           const sym = checker.getSymbolAtLocation(tagName);
-          if (sym === importSymbol) {
+          if (sym && importSymbol && sym === importSymbol) {
             const propsType = extractPropsFromJsx(node);
             if (propsType) {
               result = {
@@ -1263,6 +1263,9 @@ export function serializeComponentDoc(
 ): ComponentDoc | undefined {
   const { componentRef, propsType, symbol } = resolvedComponent;
   const exportName = componentRef.importName;
+  if (!exportName) {
+    return undefined;
+  }
   const displayNameOverride = componentRef.componentName;
   const isMemberSelection = Boolean(componentRef.member);
   const filePath = componentRef.path ?? sourceFile.fileName;

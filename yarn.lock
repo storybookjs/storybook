@@ -8279,6 +8279,7 @@ __metadata:
   resolution: "@storybook/preset-react-webpack@workspace:code/presets/react-webpack"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
+    "@storybook/react": "workspace:*"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/node": "npm:^22.19.1"
     "@types/semver": "npm:^7.7.1"

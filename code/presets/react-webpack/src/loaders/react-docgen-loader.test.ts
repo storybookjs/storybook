@@ -14,10 +14,13 @@ const reactDocgenResolverMock = vi.hoisted(() => {
   };
 });
 
-vi.mock('./docgen-resolver', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('path')>();
+vi.mock('./docgen-resolver', async () => {
+  const { supportedExtensions } = await import('storybook/internal/common');
   return {
-    ...actual,
+    RESOLVE_EXTENSIONS: supportedExtensions,
+    ReactDocgenResolveError: class ReactDocgenResolveError extends Error {
+      readonly code = 'MODULE_NOT_FOUND';
+    },
     defaultLookupModule: reactDocgenResolverMock.defaultLookupModule,
   };
 });

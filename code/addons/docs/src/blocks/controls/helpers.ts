@@ -10,7 +10,10 @@
  *
  * @link http://xahlee.info/js/html_allowed_chars_in_attribute.html
  */
-export const getControlId = (value: string) => `control-${value.replace(/\s+/g, '-')}`;
+export const getControlId = (value: string, storyId?: string) => {
+  const base = value.replace(/\s+/g, '-');
+  return storyId ? `control-${storyId}-${base}` : `control-${base}`;
+};
 
 /**
  * Adds `set` prefix to make ID attribute more specific. Removes spaces because spaces are not
@@ -24,4 +27,7 @@ export const getControlId = (value: string) => `control-${value.replace(/\s+/g, 
  *
  * @link http://xahlee.info/js/html_allowed_chars_in_attribute.html
  */
-export const getControlSetterButtonId = (value: string) => `set-${value.replace(/\s+/g, '-')}`;
+export const getControlSetterButtonId = (value: string, storyId?: string) => {
+  const base = value.replace(/\s+/g, '-');
+  return storyId ? `set-${storyId}-${base}` : `set-${base}`;
+};

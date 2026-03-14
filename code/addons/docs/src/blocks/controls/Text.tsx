@@ -22,6 +22,7 @@ const MaxLength = styled.div<{ isMaxed: boolean }>(({ isMaxed }) => ({
 
 export const TextControl: FC<TextProps> = ({
   name,
+  storyId,
   value,
   onChange,
   onFocus,
@@ -49,7 +50,7 @@ export const TextControl: FC<TextProps> = ({
         variant="outline"
         size="medium"
         disabled={readonly}
-        id={getControlSetterButtonId(name)}
+        id={getControlSetterButtonId(name, storyId)}
         onClick={onForceVisible}
       >
         Set string
@@ -62,7 +63,7 @@ export const TextControl: FC<TextProps> = ({
   return (
     <Wrapper>
       <Form.Textarea
-        id={getControlId(name)}
+        id={getControlId(name, storyId)}
         maxLength={maxLength}
         onChange={handleChange}
         disabled={readonly}

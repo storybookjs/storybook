@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { ComponentsManifest, Manifests, Presets } from 'storybook/internal/types';
+import type { Manifests, Presets } from 'storybook/internal/types';
 
 import { join } from 'pathe';
 import type { Polka } from 'polka';
@@ -9,6 +9,10 @@ import invariant from 'tiny-invariant';
 
 import { Tag } from '../../../shared/constants/tags';
 import { type DocsManifest, renderComponentsManifest } from './render-components-manifest';
+
+function isDocsManifest(manifest: unknown): manifest is DocsManifest {
+  return typeof manifest === 'object' && manifest !== null && 'docs' in manifest;
+}
 
 async function getManifests(presets: Presets, { watch }: { watch?: boolean } = {}) {
   const generator = await presets.apply('storyIndexGenerator');
@@ -29,6 +33,8 @@ async function getManifests(presets: Presets, { watch }: { watch?: boolean } = {
 export async function writeManifests(outputDir: string, presets: Presets) {
   try {
     const manifests = await getManifests(presets);
+    const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
+
     if (Object.keys(manifests).length === 0) {
       return;
     }
@@ -41,10 +47,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
     if ('components' in manifests || 'docs' in manifests) {
       await writeFile(
         join(outputDir, 'manifests', 'components.html'),
-        renderComponentsManifest(
-          manifests.components as ComponentsManifest | undefined,
-          manifests.docs as DocsManifest | undefined
-        )
+        renderComponentsManifest(manifests.components, docsManifest)
       );
     }
   } catch (e) {
@@ -77,7 +80,7 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
     try {
       const manifests = await getManifests(presets, { watch: true });
       const componentsManifest = manifests.components;
-      const docsManifest = manifests.docs as DocsManifest | undefined;
+      const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
       if (!componentsManifest && !docsManifest) {
         res.statusCode = 404;

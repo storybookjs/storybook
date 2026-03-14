@@ -77,6 +77,31 @@ const LARGE_SOURCE_THRESHOLD = 30;
 /** Max recursion depth for unwrapping React.memo/forwardRef/Object.assign chains. */
 const MAX_UNWRAP_DEPTH = 5;
 const MAX_SERIALIZATION_DEPTH = 5;
+type WrappedExpression =
+  | ts.ParenthesizedExpression
+  | ts.AsExpression
+  | ts.NonNullExpression
+  | ts.SatisfiesExpression;
+
+function isLiteralType(type: ts.Type): type is ts.LiteralType {
+  return type.isStringLiteral() || type.isNumberLiteral();
+}
+
+function isUnionType(type: ts.Type): type is ts.UnionType {
+  return type.isUnion();
+}
+
+function isWrappedExpression(
+  typescript: typeof ts,
+  expression: ts.Expression
+): expression is WrappedExpression {
+  return (
+    typescript.isParenthesizedExpression(expression) ||
+    typescript.isAsExpression(expression) ||
+    typescript.isNonNullExpression(expression) ||
+    (typescript.isSatisfiesExpression?.(expression) ?? false)
+  );
+}
 
 function resolveAliasedSymbol(
   typescript: typeof ts,
@@ -546,9 +571,7 @@ function serializeType(
       (t) => !(t.getFlags() & typescript.TypeFlags.Undefined)
     );
 
-    const literalMembers = nonUndefinedTypes.filter(
-      (t) => t.isStringLiteral() || t.isNumberLiteral()
-    );
+    const literalMembers = nonUndefinedTypes.filter(isLiteralType);
 
     if (literalMembers.length > 0 && literalMembers.length === nonUndefinedTypes.length) {
       const rawParts = literalMembers.map((m) => checker.typeToString(m));
@@ -556,7 +579,7 @@ function serializeType(
         name: 'enum',
         raw: rawParts.join(' | '),
         value: literalMembers.map((m) => ({
-          value: JSON.stringify((m as ts.LiteralType).value),
+          value: JSON.stringify(m.value),
         })),
       };
     }
@@ -774,13 +797,8 @@ function collectBindingDefaults(
 function unwrapExpression(typescript: typeof ts, expression: ts.Expression): ts.Expression {
   let current = expression;
 
-  while (
-    typescript.isParenthesizedExpression(current) ||
-    typescript.isAsExpression(current) ||
-    typescript.isNonNullExpression(current) ||
-    (typescript.isSatisfiesExpression?.(current) ?? false)
-  ) {
-    current = (current as ts.ParenthesizedExpression).expression;
+  while (isWrappedExpression(typescript, current)) {
+    current = current.expression;
   }
 
   return current;
@@ -1292,10 +1310,10 @@ export function serializeComponentDoc(
   // optional in any variant are force-optional since the caller doesn't always need them.
   let allProperties: ts.Symbol[];
   let unionForceOptional: Set<string> | undefined;
-  if (propsType.isUnion()) {
+  if (isUnionType(propsType)) {
     const seen = new Map<string, ts.Symbol>();
     const forceOptional = new Set<string>();
-    const unionMembers = (propsType as ts.UnionType).types;
+    const unionMembers = propsType.types;
 
     const allMemberPropSets: Set<string>[] = [];
     for (const member of unionMembers) {

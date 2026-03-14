@@ -157,6 +157,10 @@ export const invalidateCache = () => {
 };
 
 export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' });
+export const cachedReadTextFileSync = cached(
+  (filePath: string) => readFileSync(filePath, 'utf-8'),
+  { name: 'cachedReadTextFile' }
+);
 
 export const cachedFindUp = cached(find.up, { name: 'findUp' });
 

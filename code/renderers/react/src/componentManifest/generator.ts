@@ -24,7 +24,7 @@ import {
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
 import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
-import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
+import { cachedFindUp, cachedReadTextFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
@@ -54,6 +54,16 @@ async function createComponentMetaManager(
   }
 }
 
+function isAttachedDocsEntry(
+  entry: IndexEntry
+): entry is DocsIndexEntry & { storiesImports: [string, ...string[]] } {
+  return (
+    entry.type === 'docs' &&
+    entry.tags?.includes(Tag.ATTACHED_MDX) === true &&
+    entry.storiesImports.length > 0
+  );
+}
+
 function selectComponentEntries(manifestEntries: IndexEntry[]) {
   const entriesByComponentId = new Map<string, IndexEntry>();
 
@@ -63,9 +73,7 @@ function selectComponentEntries(manifestEntries: IndexEntry[]) {
         (entry.type === 'story' && entry.subtype === 'story') ||
         // Attached docs entries are the only docs entries that can contribute to a
         // component manifest, because they point back to a story file through storiesImports.
-        (entry.type === 'docs' &&
-          entry.tags?.includes(Tag.ATTACHED_MDX) &&
-          entry.storiesImports.length > 0)
+        isAttachedDocsEntry(entry)
     )
     .forEach((entry) => {
       const componentId = entry.id.split('--')[0];
@@ -131,8 +139,16 @@ function getPackageInfo(componentPath: string | undefined, fallbackPath: string)
   });
 
   try {
-    return nearestPkg
-      ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
+    if (!nearestPkg) {
+      return undefined;
+    }
+
+    const parsed = JSON.parse(cachedReadTextFileSync(nearestPkg));
+    return typeof parsed === 'object' &&
+      parsed &&
+      'name' in parsed &&
+      typeof parsed.name === 'string'
+      ? parsed.name
       : undefined;
   } catch {
     return undefined;
@@ -224,9 +240,9 @@ export const manifests: PresetPropertyFn<
           entry.type === 'story'
             ? entry.importPath
             : // For attached docs entries, storiesImports[0] points to the stories file being attached to
-              (entry as DocsIndexEntry).storiesImports[0];
+              entry.storiesImports[0];
         const storyPath = path.join(process.cwd(), storyFilePath);
-        const storyFile = cachedReadFileSync(storyPath, 'utf-8') as string;
+        const storyFile = cachedReadTextFileSync(storyPath);
         const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
         const componentName = csf._meta?.component;
         const allComponents = await getComponents({

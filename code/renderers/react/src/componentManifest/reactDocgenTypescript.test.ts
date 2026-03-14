@@ -2,12 +2,15 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { parseWithReactDocgenTypescript } from './reactDocgenTypescript';
+import {
+  type ComponentDocWithExportName,
+  parseWithReactDocgenTypescript,
+} from './reactDocgenTypescript';
 
 const fixture = (name: string) => join(__dirname, '__testfixtures__', name);
 
 // Strip absolute paths so snapshots are portable across machines and CI environments
-function normalize(results: any[]) {
+function normalize(results: ComponentDocWithExportName[]) {
   return JSON.parse(
     JSON.stringify(results, (key, value) => {
       if ((key === 'filePath' || key === 'fileName') && typeof value === 'string') {

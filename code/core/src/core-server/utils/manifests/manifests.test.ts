@@ -4,7 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
-import type { Polka, Request, Response } from 'polka';
+import type { Polka } from 'polka';
 
 import { Tag } from '../../../shared/constants/tags';
 import { registerManifests, writeManifests } from './manifests';
@@ -18,7 +18,20 @@ vi.mock('storybook/internal/node-logger');
 
 describe('manifests', () => {
   let mockGenerator: { getIndex: ReturnType<typeof vi.fn> };
-  let mockManifests: Manifests;
+  let mockManifests: Manifests | null;
+
+  type RouteHandler = (req: { params?: { name?: string } }, res: MockResponse) => Promise<void>;
+  type MockResponse = {
+    setHeader: ReturnType<typeof vi.fn>;
+    end: ReturnType<typeof vi.fn>;
+    statusCode?: number | undefined;
+  };
+
+  const createResponse = (): MockResponse => ({
+    setHeader: vi.fn(),
+    end: vi.fn(),
+    statusCode: undefined,
+  });
 
   const setupMockPresets = () => {
     mockGenerator = {
@@ -34,12 +47,12 @@ describe('manifests', () => {
           case 'storyIndexGenerator':
             return Promise.resolve(mockGenerator);
           case 'experimental_manifests':
-            return Promise.resolve(mockManifests);
+            return Promise.resolve(mockManifests ?? undefined);
           default:
             return Promise.resolve(undefined);
         }
       }),
-    } as any as Presets;
+    } satisfies Presets;
   };
 
   beforeEach(() => {
@@ -193,12 +206,16 @@ describe('manifests', () => {
       );
 
       // Get the specific apply call to the experimental_manifests preset
-      const manifestsPresetCall = (mockPresets.apply as any).mock.calls.find(
-        (call: any) => call[0] === 'experimental_manifests'
-      );
+      const manifestsPresetCall = vi
+        .mocked(mockPresets.apply)
+        .mock.calls.find((call) => call[0] === 'experimental_manifests');
+
+      expect(manifestsPresetCall).toBeDefined();
+      const manifestEntriesArg = manifestsPresetCall?.[2]?.manifestEntries ?? [];
+
       // Should include both story and docs entries with manifest tag
-      expect(manifestsPresetCall[2].manifestEntries).toHaveLength(2);
-      const entryIds = manifestsPresetCall[2].manifestEntries.map((entry: any) => entry.id);
+      expect(manifestEntriesArg).toHaveLength(2);
+      const entryIds = manifestEntriesArg.map((entry) => entry.id);
       expect(entryIds).toContain('story-with-manifest');
       expect(entryIds).toContain('docs');
       // Should NOT include story without manifest tag
@@ -207,13 +224,13 @@ describe('manifests', () => {
   });
 
   describe('registerManifests', () => {
-    let mockApp: Polka;
+    let mockApp: Pick<Polka, 'get'>;
     let mockGet: ReturnType<typeof vi.fn>;
     let mockPresets: Presets;
 
     beforeEach(() => {
       mockGet = vi.fn();
-      mockApp = { get: mockGet } as any;
+      mockApp = { get: mockGet };
       mockPresets = setupMockPresets();
     });
 
@@ -233,14 +250,11 @@ describe('manifests', () => {
           custom: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1];
-        const req = { params: { name: 'custom' } } as any as Request;
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-        } as any as Response;
+        const handler = mockGet.mock.calls[0][1] as RouteHandler;
+        const req = { params: { name: 'custom' } };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -254,15 +268,11 @@ describe('manifests', () => {
           existing: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1];
+        const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'nonexistent' } };
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -273,15 +283,11 @@ describe('manifests', () => {
       it('should return 404 when manifests object is empty', async () => {
         mockManifests = {};
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1];
+        const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'any' } };
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -293,15 +299,11 @@ describe('manifests', () => {
         const error = new Error('Preset failed');
         vi.mocked(mockPresets.apply).mockRejectedValue(error);
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1];
-        const req = { params: { name: 'custom' } } as any as Request;
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        } as any as Response;
+        const handler = mockGet.mock.calls[0][1] as RouteHandler;
+        const req = { params: { name: 'custom' } };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -314,15 +316,11 @@ describe('manifests', () => {
         const errorString = 'Something went wrong';
         vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1];
-        const req = { params: { name: 'custom' } } as any as Request;
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        } as any as Response;
+        const handler = mockGet.mock.calls[0][1] as RouteHandler;
+        const req = { params: { name: 'custom' } };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -332,17 +330,13 @@ describe('manifests', () => {
       });
 
       it('should handle when presets.apply returns null/undefined', async () => {
-        mockManifests = null as any;
+        mockManifests = null;
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1];
-        const req = { params: { name: 'custom' } } as any as Request;
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        } as any as Response;
+        const handler = mockGet.mock.calls[0][1] as RouteHandler;
+        const req = { params: { name: 'custom' } };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -369,20 +363,17 @@ describe('manifests', () => {
           components: componentsManifest,
         };
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1];
-        const req = {} as any as Request;
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-        } as any as Response;
+        const handler = mockGet.mock.calls[1][1] as RouteHandler;
+        const req = {};
+        const res = createResponse();
 
         await handler(req, res);
 
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/html; charset=utf-8');
         expect(res.end).toHaveBeenCalled();
-        const html = (res.end as any).mock.calls[0][0];
+        const html = res.end.mock.calls[0]?.[0];
         expect(html).toContain('<!doctype html>');
         expect(html).toContain('Manifest Debugger');
         expect(res.statusCode).toBeUndefined();
@@ -393,15 +384,11 @@ describe('manifests', () => {
           other: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1];
+        const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -415,15 +402,11 @@ describe('manifests', () => {
       it('should return 404 when manifests is empty', async () => {
         mockManifests = {};
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1];
+        const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -438,15 +421,11 @@ describe('manifests', () => {
         error.stack = 'Error: Rendering failed\n  at test.ts:123';
         vi.mocked(mockPresets.apply).mockRejectedValue(error);
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1];
+        const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        };
+        const res = createResponse();
 
         await handler(req, res);
 
@@ -461,15 +440,11 @@ describe('manifests', () => {
         const errorString = 'Something went wrong';
         vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp as Polka, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1];
+        const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
-        const res = {
-          setHeader: vi.fn(),
-          end: vi.fn(),
-          statusCode: undefined as number | undefined,
-        };
+        const res = createResponse();
 
         await handler(req, res);
 

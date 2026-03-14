@@ -12,14 +12,18 @@ import { manifests } from './generator';
 /** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
 type ManifestOptions = Parameters<typeof manifests>[1];
 type ManifestEntries = ManifestOptions['manifestEntries'];
+const createManifestOptions = (
+  manifestEntries: ManifestEntries,
+  options: Partial<ManifestOptions> = {}
+): ManifestOptions => ({ watch: false, manifestEntries, ...options }) as ManifestOptions;
 
 const runManifests = (manifestEntries: ManifestEntries) =>
-  manifests(undefined, { manifestEntries } as ManifestOptions);
+  manifests(undefined, createManifestOptions(manifestEntries));
 
 const runManifestsWithOptions = (
   manifestEntries: ManifestEntries,
   options: Partial<ManifestOptions> = {}
-) => manifests(undefined, { manifestEntries, ...options } as ManifestOptions);
+) => manifests(undefined, createManifestOptions(manifestEntries, options));
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
@@ -511,7 +515,7 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
       }
     });
 
-  const presets: NonNullable<ManifestOptions['presets']> = {
+  const presets = {
     apply: async (extension: string, config?: unknown) => {
       if (extension === 'typescript') {
         return {};
@@ -521,13 +525,15 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
       }
       return config;
     },
-  } as NonNullable<ManifestOptions['presets']>;
+  } satisfies NonNullable<ManifestOptions['presets']>;
 
-  const manifestEntries = [indexJson.entries['example-header--logged-in']] as ManifestEntries;
+  const manifestEntries: ManifestEntries = [indexJson.entries['example-header--logged-in']];
   const result = await runManifestsWithOptions(manifestEntries, { presets });
   const header = result?.components?.components?.['example-header'];
 
-  expect((header as any)?.reactComponentMeta?.displayName).toBe('Header');
+  expect(
+    header && 'reactComponentMeta' in header ? header.reactComponentMeta?.displayName : undefined
+  ).toBe('Header');
   expect(batchExtract).toHaveBeenCalled();
 });
 
@@ -554,7 +560,7 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
       }
     });
 
-  const presets: NonNullable<ManifestOptions['presets']> = {
+  const presets = {
     apply: async (extension: string, config?: unknown) => {
       if (extension === 'typescript') {
         return {};
@@ -564,20 +570,18 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
       }
       return config;
     },
-  } as NonNullable<ManifestOptions['presets']>;
+  } satisfies NonNullable<ManifestOptions['presets']>;
 
-  const manifestEntries = [indexJson.entries['example-button--primary']] as ManifestEntries;
+  const manifestEntries: ManifestEntries = [indexJson.entries['example-button--primary']];
   const result = await runManifestsWithOptions(manifestEntries, { presets });
   const button = result?.components?.components?.['example-button'];
 
-  expect((button as any)?.import).toBe(
-    'import { Button } from "@design-system/components/override";'
-  );
-  expect((button as any)?.jsDocTags?.import).toEqual([
+  expect(button?.import).toBe('import { Button } from "@design-system/components/override";');
+  expect(button?.jsDocTags.import).toEqual([
     "import { Button } from '@design-system/components/override';",
   ]);
-  expect((button as any)?.description).toBe('Primary UI component for user interaction');
-  expect((button as any)?.summary).toBe('Fast summary');
+  expect(button?.description).toBe('Primary UI component for user interaction');
+  expect(button?.summary).toBe('Fast summary');
   expect(batchExtract).toHaveBeenCalled();
 });
 
@@ -631,7 +635,7 @@ test('generator falls back to title-based matching when meta.component aliases a
       }
     });
 
-  const presets: NonNullable<ManifestOptions['presets']> = {
+  const presets = {
     apply: async (extension: string, config?: unknown) => {
       if (extension === 'typescript') {
         return {};
@@ -641,7 +645,7 @@ test('generator falls back to title-based matching when meta.component aliases a
       }
       return config;
     },
-  } as NonNullable<ManifestOptions['presets']>;
+  } satisfies NonNullable<ManifestOptions['presets']>;
 
   const manifestEntries = [
     {
@@ -857,7 +861,7 @@ test('should prefer story entries over attached-mdx docs entries for the same co
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
 
   const component = result?.components?.components?.['example-primary'];
 

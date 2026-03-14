@@ -1,8 +1,10 @@
 /**
  * ComponentMetaManager — multi-project manager for component metadata extraction.
  *
- * Mirrors Volar LS's typescriptProject.ts:
+ * Mirrors Volar-style project management patterns:
  *
+ * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L18-L390
+ * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L262-L353
  * - ConfigProjects / inferredProject / rootTsConfigs / searchedDirs
  * - FindMatchTSConfig → prepareClosestRootCommandLine / findDirectIncludeTsconfig /
  *   findIndirectReferenceTsconfig / findTSConfig / getReferencesChains / getCommandLine
@@ -23,7 +25,8 @@ import type { StoryRef } from '../getComponentImports';
 import { groupByToMap } from '../utils';
 import { ComponentMetaProject } from './ComponentMetaProject';
 
-// Volar LS pattern (typescriptProject.ts line 18)
+// Adapted from:
+// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L18
 const rootTsConfigNames = ['tsconfig.json', 'jsconfig.json'];
 
 const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
@@ -34,7 +37,8 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
 };
 
 export class ComponentMetaManager {
-  // Volar LS pattern (typescriptProject.ts lines 34-37)
+  // Adapted from:
+  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L34-L37
   private configProjects = new Map<string, ComponentMetaProject>();
   private inferredProject: ComponentMetaProject | undefined;
   private rootTsConfigs = new Set<string>();
@@ -45,7 +49,8 @@ export class ComponentMetaManager {
   private watchersByDir = new Map<string, FSWatcher>();
   private pendingEvents = new Map<string, ReturnType<typeof setTimeout>>();
 
-  // Volar Kit pattern (createChecker.ts line 83): module-level fsFileSnapshots
+  // Adapted from:
+  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
   readonly fsFileSnapshots = new Map<
     string,
     [number | undefined, ts.IScriptSnapshot | undefined]
@@ -54,13 +59,15 @@ export class ComponentMetaManager {
   constructor(private typescript: typeof ts) {}
 
   // ---------------------------------------------------------------------------
-  // Volar LS pattern: getLanguageService (typescriptProject.ts lines 70-79)
+  // Adapted from:
+  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L70-L79
   // ---------------------------------------------------------------------------
 
   getProjectForFile(fileName: string): ComponentMetaProject {
     const tsconfig = this.findMatchTSConfig(fileName);
     if (tsconfig) {
-      // Volar LS pattern (typescriptProject.ts lines 72-74):
+      // Adapted from:
+      // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L71-L77
       // Always go through getOrCreateConfiguredProject — never raw map lookup.
       return (
         this.getOrCreateConfiguredProject(tsconfig) ?? this.getOrCreateInferredProject(fileName)
@@ -91,13 +98,15 @@ export class ComponentMetaManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Volar LS pattern: findMatchTSConfig (typescriptProject.ts lines 101-234)
+  // Adapted from:
+  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L101-L234
   // ---------------------------------------------------------------------------
 
   private findMatchTSConfig(filePath: string): string | null {
     const fileName = filePath.replace(/\\/g, '/');
 
-    // Volar LS pattern (typescriptProject.ts lines 104-118): walk up directories
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L104-L118
     let dir = path.dirname(fileName);
     while (true) {
       if (this.searchedDirs.has(dir)) {
@@ -121,7 +130,8 @@ export class ComponentMetaManager {
       return null;
     }
 
-    // Volar LS pattern: prepareClosestRootCommandLine (lines 124-138)
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L124-L138
     // Side-effect only: pre-creates the closest project via getCommandLine() so that
     // findIndirectReferenceTsconfig below can inspect its project references.
     const prepareClosestRootCommandLine = () => {
@@ -137,7 +147,8 @@ export class ComponentMetaManager {
       }
     };
 
-    // Volar LS pattern: findIndirectReferenceTsconfig (lines 139-148)
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L139-L147
     const findIndirectReferenceTsconfig = () => {
       return findTSConfig((tsconfig) => {
         const project = this.configProjects.get(tsconfig);
@@ -145,7 +156,8 @@ export class ComponentMetaManager {
       });
     };
 
-    // Volar LS pattern: findDirectIncludeTsconfig (lines 149-158)
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L149-L158
     const findDirectIncludeTsconfig = () => {
       return findTSConfig((tsconfig) => {
         const commandLine = getCommandLine(tsconfig);
@@ -154,7 +166,8 @@ export class ComponentMetaManager {
       });
     };
 
-    // Volar LS pattern: findTSConfig (lines 160-188)
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L160-L188
     const findTSConfig = (match: (tsconfig: string) => boolean): string | null => {
       const checked = new Set<string>();
 
@@ -188,7 +201,8 @@ export class ComponentMetaManager {
       return null;
     };
 
-    // Volar LS pattern: getReferencesChains (lines 189-229)
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L189-L229
     const getReferencesChains = (
       commandLine: ts.ParsedCommandLine,
       tsConfig: string,
@@ -233,7 +247,8 @@ export class ComponentMetaManager {
       }
     };
 
-    // Volar LS pattern: getCommandLine (lines 230-233)
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L230-L233
     const getCommandLine = (tsConfig: string) => {
       const project = this.getOrCreateConfiguredProject(tsConfig);
       return project?.getCommandLine();
@@ -245,7 +260,8 @@ export class ComponentMetaManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Volar LS pattern: getOrCreateConfiguredProject (lines 236-256)
+  // Adapted from:
+  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L236-L256
   // ---------------------------------------------------------------------------
 
   private getOrCreateConfiguredProject(tsconfig: string): ComponentMetaProject | null {
@@ -278,7 +294,8 @@ export class ComponentMetaManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Volar LS pattern: getOrCreateInferredProject (lines 258-284)
+  // Adapted from:
+  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L258-L284
   // ---------------------------------------------------------------------------
 
   private getOrCreateInferredProject(fileName: string): ComponentMetaProject {
@@ -307,7 +324,8 @@ export class ComponentMetaManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Volar LS pattern: parseConfigWorker (typescriptProjectLs.ts lines 262-353)
+  // Adapted from:
+  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L262-L353
   // ---------------------------------------------------------------------------
 
   private parseConfigWorker(tsconfig: string): ts.ParsedCommandLine {
@@ -331,8 +349,10 @@ export class ComponentMetaManager {
   // ---------------------------------------------------------------------------
 
   /**
-   * Broadcast file changes to all projects. Each project selectively bumps projectVersion (Volar
-   * Kit checker pattern).
+   * Broadcast file changes to all projects. Each project selectively bumps projectVersion.
+   *
+   * Adapted from:
+   * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L409-L432
    */
   onFilesChanged(changes: Array<{ filePath: string; type: 'changed' | 'created' | 'deleted' }>) {
     for (const project of this.configProjects.values()) {
@@ -342,8 +362,8 @@ export class ComponentMetaManager {
   }
 
   /**
-   * Volar LS pattern (typescriptProject.ts lines 43-68): Config change handler — Created /
-   * (Changed||Deleted && has project).
+   * Adapted from:
+   * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L43-L68
    */
   onConfigChanged(configPath: string, type: 'created' | 'changed' | 'deleted') {
     configPath = configPath.replace(/\\/g, '/');
@@ -572,7 +592,8 @@ export class ComponentMetaManager {
   }
 }
 
-// Volar LS pattern (typescriptProject.ts lines 365-385)
+// Adapted from:
+// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L365-L385
 export function sortTSConfigs(file: string, a: string, b: string) {
   const inA = isFileInDir(file, path.dirname(a));
   const inB = isFileInDir(file, path.dirname(b));
@@ -595,7 +616,8 @@ export function sortTSConfigs(file: string, a: string, b: string) {
   return bLength - aLength;
 }
 
-// Volar LS pattern (typescriptProject.ts lines 387-390)
+// Adapted from:
+// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L387-L390
 export function isFileInDir(fileName: string, dir: string) {
   const relative = path.relative(dir, fileName);
   return !!relative && !relative.startsWith('..') && !path.isAbsolute(relative);

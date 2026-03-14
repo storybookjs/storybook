@@ -1,9 +1,11 @@
 /**
  * ComponentMetaProject — one TS LanguageService per tsconfig.
  *
- * Mirrors Volar Kit's `createTypeScriptCheckerLanguageService` (createChecker.ts) and Volar LS's
- * `TypeScriptProjectLS` (typescriptProjectLs.ts):
+ * Mirrors Volar-style checker/project-host patterns:
  *
+ * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83-L461
+ * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L44-L233
+ * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/typescript/lib/protocol/createProject.ts#L30-L120
  * - CreateLanguage + createLanguageServiceHost from @volar/typescript
  * - FsFileSnapshots with mtime-based caching (shared across projects)
  * - TypeScriptProjectHost contract (projectVersion, shouldCheckRootFiles, checkRootFilesUpdate)
@@ -47,8 +49,10 @@ export class ComponentMetaProject {
     private commandLine: ts.ParsedCommandLine,
     public readonly configFileName: string | undefined,
     /**
-     * Shared snapshot cache owned by ComponentMetaManager. Volar pattern (createChecker.ts line
-     * 83): module-level fsFileSnapshots shared across all checker instances.
+     * Shared snapshot cache owned by ComponentMetaManager.
+     *
+     * Adapted from:
+     * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
      */
     private fsFileSnapshots: Map<
       string,
@@ -56,8 +60,8 @@ export class ComponentMetaProject {
     > = new Map(),
     private getCommandLineFn?: () => ts.ParsedCommandLine
   ) {
-    // Volar Kit pattern (createChecker.ts lines 110-141):
-    // createLanguage with mtime-based sync callback.
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L110-L141
     const language = createLanguage<string>(
       [{ getLanguageId: (fileName: string) => resolveFileLanguageId(fileName) }],
       new FileMap(typescript.sys.useCaseSensitiveFileNames),
@@ -86,8 +90,8 @@ export class ComponentMetaProject {
       }
     );
 
-    // Volar Kit pattern (createChecker.ts lines 359-383):
-    // TypeScriptProjectHost — minimal contract for project configuration.
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L359-L383
     const projectHost: TypeScriptProjectHost = {
       getCurrentDirectory: () =>
         configFileName
@@ -109,8 +113,8 @@ export class ComponentMetaProject {
       },
     };
 
-    // Volar Kit pattern (createChecker.ts lines 392-399):
-    // createLanguageServiceHost creates the full ts.LanguageServiceHost.
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/typescript/lib/protocol/createProject.ts#L30-L120
     const { languageServiceHost } = createLanguageServiceHost(
       typescript,
       typescript.sys,
@@ -153,8 +157,8 @@ export class ComponentMetaProject {
   }
 
   /**
-   * Volar Kit pattern (createChecker.ts lines 436-447): Lazy config re-parse, triggered by
-   * shouldCheckRootFiles flag.
+   * Adapted from:
+   * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L436-L447
    */
   private checkRootFilesUpdate(): void {
     if (!this.shouldCheckRootFiles) {
@@ -192,10 +196,12 @@ export class ComponentMetaProject {
   }
 
   /**
-   * Volar Kit pattern (createChecker.ts lines 409-432): Selective projectVersion bump with break on
-   * created/deleted. Created events only set shouldCheckRootFiles (version bump happens in
-   * checkRootFilesUpdate if the file list actually changed). Deleted/created break early since they
-   * trigger a full config reparse — processing remaining changes is unnecessary.
+   * Adapted from:
+   * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L409-L432
+   *
+   * Created events only set shouldCheckRootFiles (version bump happens in checkRootFilesUpdate if
+   * the file list actually changed). Deleted/created break early since they trigger a full config
+   * reparse — processing remaining changes is unnecessary.
    */
   onFilesChanged(
     changes: Array<{ filePath: string; type: 'changed' | 'created' | 'deleted' }>
@@ -445,7 +451,8 @@ export class ComponentMetaProject {
   }
 }
 
-// Volar Kit pattern (createChecker.ts lines 450-461)
+// Adapted from:
+// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L450-L461
 function arrayItemsEqual(a: string[], b: string[]) {
   if (a.length !== b.length) {
     return false;

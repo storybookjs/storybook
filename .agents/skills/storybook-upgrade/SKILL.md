@@ -1,12 +1,19 @@
 ---
 name: storybook-upgrade
-description: Upgrade Storybook to a specific version (canary or release). Use this when upgrading Storybook packages in a project.
+description: Upgrade Storybook to a specific version (canary or release). Use this when upgrading Storybook packages in an external app, reproduction, or test project.
 allowed-tools: Bash
 ---
 
 # Storybook Upgrade
 
 Upgrades all Storybook packages in a project to a specific version.
+
+## Why this matters for the monorepo
+
+This skill is mainly for validating Storybook changes outside this repository.
+
+- QA a canary build from a Storybook PR in a downstream app
+- Reproduce or verify a bug in an external project
 
 ## Usage
 
@@ -49,4 +56,3 @@ npx storybook@8.5.0 upgrade
 - **ALWAYS upgrade only 1 major version at a time!**
   - Example: 8.x → 9.x → 10.x → canary of 10
   - Never skip major versions (e.g., don't go from 8.x directly to 10.x)
-

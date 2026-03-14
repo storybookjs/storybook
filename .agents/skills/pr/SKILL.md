@@ -36,16 +36,16 @@ Add these labels to the PR:
 
 **CI (required, pick one):**
 
-- `ci:normal` - standard sandbox set
+- `ci:normal` - standard sandbox set; default for most code changes
 - `ci:merged` - merged sandbox set
-- `ci:daily` - daily sandbox set
+- `ci:daily` - daily sandbox set; use this when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest
 - `ci:docs` - documentation-only changes (use with `documentation` category)
 
 ## PR body
 
-@.github/PULL_REQUEST_TEMPLATE.md
+Read `.github/PULL_REQUEST_TEMPLATE.md` from the repository root.
 
-Copy the template above **EXACTLY**, including all HTML comments (`<!-- ... -->`). Fill in the relevant sections based on the changes, but keep all comments intact.
+Copy that template **EXACTLY**, including all HTML comments (`<!-- ... -->`). Fill in the relevant sections based on the changes, but keep all comments intact.
 
 ## Command
 

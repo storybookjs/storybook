@@ -39,11 +39,11 @@ storybook/
 
 ### Renderer vs builder vs framework
 
-| Concept | Role | Example |
-| --- | --- | --- |
-| Renderer | Mounts UI framework to the DOM | `@storybook/react` |
-| Builder | Bundles and serves Storybook | `@storybook/builder-vite` |
-| Framework | Renderer + builder + framework config | `@storybook/react-vite` |
+| Concept   | Role                                  | Example                   |
+| --------- | ------------------------------------- | ------------------------- |
+| Renderer  | Mounts UI framework to the DOM        | `@storybook/react`        |
+| Builder   | Bundles and serves Storybook          | `@storybook/builder-vite` |
+| Framework | Renderer + builder + framework config | `@storybook/react-vite`   |
 
 ### Core package
 
@@ -86,22 +86,24 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 
 Run commands from the repository root unless stated otherwise.
 
+For routine agent work, prefer the faster non-production commands first. Add `-c production` only when you need sandbox-related NX tasks or you are explicitly matching CI behavior.
+
 ### Install and compile
 
 ```bash
 yarn
 yarn task compile
-yarn nx run-many -t compile -c production
-yarn nx compile <package-name> -c production
+yarn nx run-many -t compile
+yarn nx compile <package-name>
 ```
 
 ### Lint and typecheck
 
 ```bash
 yarn lint
-yarn --cwd code lint:js:cmd <file> --fix
+yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix
 yarn task check
-yarn nx run-many -t check -c production
+yarn nx run-many -t check
 ```
 
 ### Development and tests
@@ -114,37 +116,48 @@ cd code && yarn test:watch
 cd code && yarn storybook:vitest
 ```
 
-### Task runner examples
+### Common task scenarios
 
-```bash
-yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto
-yarn task e2e-tests --template react-vite/default-ts --start-from auto
-yarn task test-runner-dev --template react-vite/default-ts --start-from auto
-yarn task test-runner --template react-vite/default-ts --start-from auto
-```
+| Scenario                        | Command                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------ |
+| Compile everything quickly      | `yarn nx run-many -t compile`                                                  |
+| Compile one package             | `yarn nx compile <package-name>`                                               |
+| Check TypeScript errors quickly | `yarn nx run-many -t check`                                                    |
+| Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
+| Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
+| Run unit tests                  | `cd code && yarn test`                                                         |
+| Run Storybook Vitest tests      | `cd code && yarn storybook:vitest`                                             |
+| Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
+| Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
+| Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
 
 ## NX and `yarn task`
 
-Use NX when you want better caching and dependency tracking.
+Use NX when you want better caching and dependency tracking. Prefer these faster defaults first, and only add `-c production` or `--no-link` when you specifically need sandbox parity or CI-like behavior.
 
 ```bash
 # Compile all packages
-yarn task compile --no-link
-yarn nx run-many -t compile -c production
+yarn task compile
+yarn nx run-many -t compile
+
+# Check all packages
+yarn task check
+yarn nx run-many -t check
 
 # Run E2E tests for a template
-yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto --no-link
+yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto
 yarn nx e2e-tests-dev react-vite/default-ts -c production
 
 # Jump to a later step
-yarn task e2e-tests-dev --start-from e2e-tests --template react-vite/default-ts --no-link
+yarn task e2e-tests-dev --start-from e2e-tests --template react-vite/default-ts
 yarn nx e2e-tests-dev -c production --exclude-task-dependencies
 ```
 
 Key points:
 
-- `-c production` is required for sandbox-related NX commands
+- `-c production` is required for sandbox-related NX commands and CI-parity runs
 - `react-vite/default-ts` is the default sandbox template
+- `--no-link` is opt-in, not the default
 - NX handles task dependencies via `nx.json`
 
 ## Sandbox Notes
@@ -180,17 +193,17 @@ Common templates:
 ### For normal code changes
 
 1. Install if needed: `yarn`
-2. Compile with NX: `yarn nx run-many -t compile -c production`
+2. Compile with NX: `yarn nx run-many -t compile`
 3. Make changes
 4. Recompile affected packages
-5. Validate there are no TypeScript errors with `yarn nx run-many -t check -c production`
+5. Validate there are no TypeScript errors with `yarn nx run-many -t check`
 6. Run relevant lint and tests
-7. Validate behavior in a sandbox or the internal Storybook UI
+7. Validate behavior in the internal Storybook UI first, then switch to sandbox or `-c production` flows only if you need template or CI parity
 
 ### For addon, framework, or renderer work
 
 1. Edit the relevant package under `code/addons/`, `code/frameworks/`, or `code/renderers/`
-2. Recompile with NX
+2. Recompile with NX, starting without `-c production`
 3. Generate a matching sandbox
 4. Run the relevant test-runner, E2E, or Storybook UI validation flow
 
@@ -222,7 +235,7 @@ When writing tests:
 After changing files:
 
 1. Format with `yarn prettier --write <file>`
-2. Lint with `yarn --cwd code lint:js:cmd <file> --fix` or `cd code && yarn lint:js:cmd <file>`
+2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 
 Use Storybook loggers instead of raw `console.*` in normal code paths:
@@ -232,30 +245,9 @@ Use Storybook loggers instead of raw `console.*` in normal code paths:
 
 Avoid `console.log`, `console.warn`, and `console.error` unless the file is isolated enough that importing the logger is not reasonable.
 
-## Releases
-
-Release automation lives in `scripts/release/`.
-
-```bash
-cd scripts
-yarn release:version --release-type <major|minor|patch|premajor|preminor|prepatch|prerelease>
-yarn release:publish --tag next
-yarn release:write-changelog 7.1.0-alpha.29
-```
-
-Release branches:
-
-- `next-release`
-- `latest-release`
-
-Patch labels:
-
-- `patch:yes`
-- `patch:done`
-
 ## Troubleshooting
 
-- Build failures are often fixed by rerunning `yarn` and `yarn nx run-many -t compile -c production`
+- Build failures are often fixed by rerunning `yarn` and `yarn nx run-many -t compile`
 - Storybook UI uses port `6006` by default
 - Large compiles may require more Node.js memory
 - Sandbox paths are `../storybook-sandboxes/`, not `./sandbox` or `code/sandbox/`
@@ -264,12 +256,12 @@ Patch labels:
 
 ## Environment Variables
 
-| Variable | Purpose |
-| --- | --- |
-| `IN_STORYBOOK_SANDBOX` | Set during sandbox creation |
-| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry |
-| `STORYBOOK_TELEMETRY_DEBUG` | Log telemetry events |
-| `DEBUG` | Enable debug logging |
+| Variable                      | Purpose                     |
+| ----------------------------- | --------------------------- |
+| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation |
+| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry           |
+| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events        |
+| `DEBUG`                       | Enable debug logging        |
 
 ## Commands To Avoid
 

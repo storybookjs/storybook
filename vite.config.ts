@@ -12,7 +12,7 @@ export default defineConfig({
       "eslint-plugin-compat",
       "eslint-plugin-depend",
       {
-        name: "@typescript-eslint",
+        name: "@typescript-eslint-js",
         specifier: "@typescript-eslint/eslint-plugin",
       },
       {
@@ -20,11 +20,6 @@ export default defineConfig({
         specifier: "./scripts/eslint-plugin-local-rules",
       },
     ],
-    settings: {
-      react: {
-        version: "detect",
-      },
-    },
     categories: {
       correctness: "warn",
     },
@@ -105,7 +100,7 @@ export default defineConfig({
       "typescript/triple-slash-reference": "off",
       "typescript/return-await": "off",
 
-      "@typescript-eslint/dot-notation": [
+      "@typescript-eslint-js/dot-notation": [
         "error",
         { allowIndexSignaturePropertyAccess: true },
       ],
@@ -159,7 +154,7 @@ export default defineConfig({
         files: ["**/frameworks/angular/template/**/*"],
         rules: {
           "typescript/no-useless-constructor": "off",
-          "@typescript-eslint/dot-notation": "off",
+          "@typescript-eslint-js/dot-notation": "off",
         },
       },
       {
@@ -174,7 +169,7 @@ export default defineConfig({
           "**/.storybook/**/*.tsx",
         ],
         rules: {
-          "@typescript-eslint/dot-notation": "off",
+          "@typescript-eslint-js/dot-notation": "off",
           "typescript/no-implied-eval": "off",
           "typescript/return-await": "off",
         },
@@ -354,6 +349,37 @@ export default defineConfig({
     tsdoc: true,
     braceStyle: "1tbs",
     sortPackageJson: false,
-    ignorePatterns: [],
+    overrides: [
+      {
+        files: "*.component.html",
+        options: { parser: "angular" },
+      },
+      {
+        files: [
+          "**/frameworks/angular/src/**/*.ts",
+          "**/frameworks/angular/template/**/*.ts",
+        ],
+        options: { parser: "babel-ts" },
+      },
+      {
+        files: ["*.md", "*.mdx"],
+        options: {
+          importOrderSeparation: false,
+          importOrderSortSpecifiers: false,
+        },
+      },
+    ],
+    ignorePatterns: [
+      "*.mdx",
+      ".yarn",
+      ".vscode",
+      "dist",
+      "bench",
+      ".nx/cache",
+      "core/report",
+      ".nx/workspace-data",
+      "core/src/core-server/presets/common-manager.ts",
+      "lib/eslint-plugin/docs/rules/no-stories-of.md",
+    ],
   },
 });

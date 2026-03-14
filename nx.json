@@ -26,7 +26,7 @@
       "dependsOn": ["^compile"],
       "command": "yarn exec jiti ./scripts/build/build-package.ts --cwd {projectRoot}",
       "configurations": { "production": { "args": "--prod" } },
-      "cache": false,
+      "cache": true,
       "inputs": ["production", "^production"],
       "outputs": [
         "{projectRoot}/dist",
@@ -36,14 +36,14 @@
     "check": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "command": "yarn exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
-      "cache": false,
+      "cache": true,
       "inputs": ["default", "^production"],
       "configurations": { "production": {} }
     },
     "publish": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "command": "yarn workspace @storybook/scripts local-registry --publish",
-      "cache": false,
+      "cache": true,
       "inputs": ["all-production"],
       "outputs": ["{workspaceRoot}/.verdaccio-cache"],
       "configurations": { "production": {} }
@@ -57,7 +57,7 @@
     "sandbox": {
       "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task sandbox -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}"],
       "configurations": { "production": {} }
@@ -71,14 +71,14 @@
     "check-sandbox": {
       "dependsOn": ["prepare-sandbox"],
       "command": "yarn task check-sandbox -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "build": {
       "dependsOn": ["prepare-sandbox"],
       "command": "yarn task build -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}/storybook-static"],
       "configurations": { "production": {} }
@@ -98,14 +98,14 @@
     "vitest-integration": {
       "dependsOn": ["prepare-sandbox"],
       "command": "yarn task vitest-integration -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "chromatic": {
       "dependsOn": ["prepare-build-sandbox"],
       "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
@@ -118,7 +118,7 @@
     "e2e-tests": {
       "dependsOn": ["serve"],
       "command": "yarn task e2e-tests --junit -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
@@ -126,7 +126,7 @@
     "test-runner": {
       "dependsOn": ["serve"],
       "command": "yarn task test-runner --junit -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
@@ -134,7 +134,7 @@
     "e2e-tests-dev": {
       "dependsOn": ["dev"],
       "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
@@ -142,7 +142,7 @@
     "test-runner-dev": {
       "dependsOn": ["dev"],
       "command": "yarn task test-runner-dev --junit -s task --debug --no-link --template={projectName}",
-      "cache": false,
+      "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
@@ -155,7 +155,7 @@
         "cwd": "{projectRoot}",
         "command": "yarn --no-immutable && yarn playwright-e2e"
       },
-      "cache": false,
+      "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
@@ -164,7 +164,7 @@
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
-      "cache": false,
+      "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
@@ -173,7 +173,7 @@
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
-      "cache": false,
+      "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
@@ -182,7 +182,7 @@
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn playwright-ct" },
-      "cache": false,
+      "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
@@ -191,7 +191,7 @@
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
-      "cache": false,
+      "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }

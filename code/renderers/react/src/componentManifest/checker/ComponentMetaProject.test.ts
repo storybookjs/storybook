@@ -105,6 +105,84 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
     }
   });
 
+  it('serializes metadata from the selected compound member instead of the wrapper export', () => {
+    const { projectDir, configPath, filePaths } = createTempProject({
+      'accordion.tsx': `
+        import React from 'react';
+
+        interface RootProps {
+          /** Root size */
+          size?: 'sm' | 'md';
+        }
+
+        /**
+         * Root-specific description
+         * @summary Root summary
+         */
+        const Root = ({ size = 'md' }: RootProps) => <div data-size={size} />;
+
+        interface ItemProps {
+          value: string;
+        }
+        const Item = (props: ItemProps) => <div />;
+
+        /**
+         * Wrapper description
+         * @summary Wrapper summary
+         */
+        export const Accordion = { Root, Item };
+      `,
+      'accordion.stories.tsx': `
+        import React from 'react';
+        import { Accordion } from './accordion';
+        export default {};
+        export const Default = () => <Accordion.Root />;
+      `,
+    });
+    tempDir = projectDir;
+
+    const parsed = ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    );
+    const project = new ComponentMetaProject(ts, parsed, configPath);
+
+    try {
+      const entries: StoryRef[] = [
+        {
+          storyPath: filePaths['accordion.stories.tsx'],
+          component: {
+            componentName: 'Accordion.Root',
+            importId: './accordion',
+            importName: 'Accordion',
+            member: 'Root',
+            path: filePaths['accordion.tsx'],
+            isPackage: false,
+          },
+        },
+      ];
+
+      project.extractPropsFromStories(entries);
+
+      const component = entries[0]?.component;
+      const doc = component?.reactComponentMeta;
+
+      expect(doc).toBeDefined();
+      expect(doc?.displayName).toBe('Accordion.Root');
+      expect(doc?.description).toBe('Root-specific description');
+      expect(doc?.jsDocTags).toEqual({
+        summary: ['Root summary'],
+      });
+      expect(component?.importOverride).toBeUndefined();
+      expect(doc?.props.size.defaultValue).toEqual({ value: "'md'" });
+    } finally {
+      project.dispose();
+    }
+  });
+
   it('probes the member directly when memberAccess is set', () => {
     // When memberAccess is set (derived from outermost JSX like <Button.Aligner>),
     // the probe targets that member directly — no fallback needed.
@@ -210,6 +288,166 @@ describe('extractPropsFromStories with memberAccess (compound components)', () =
       expect(doc2!.props.color).toBeDefined();
       // Should NOT have Aligner's props
       expect(doc2!.props.side).toBeUndefined();
+    } finally {
+      project.dispose();
+    }
+  });
+
+  it('serializes metadata from the selected default-export member instead of the default wrapper', () => {
+    const { projectDir, configPath, filePaths } = createTempProject({
+      'button.tsx': `
+        import React from 'react';
+
+        interface ButtonProps {
+          variant?: 'solid' | 'outline';
+        }
+        const Button = (props: ButtonProps) => <button />;
+
+        interface AlignerProps {
+          /** Aligner direction */
+          side?: 'start' | 'end';
+        }
+
+        /**
+         * Aligner-specific description
+         * @summary Aligner summary
+         */
+        const Aligner = ({ side = 'start' }: AlignerProps) => <div data-side={side} />;
+
+        /**
+         * Wrapper description
+         * @summary Wrapper summary
+         */
+        const ButtonRoot = Button as typeof Button & {
+          Aligner: typeof Aligner;
+        };
+
+        ButtonRoot.Aligner = Aligner;
+
+        export default ButtonRoot;
+      `,
+      'button.stories.tsx': `
+        import React from 'react';
+        import Button from './button';
+        export default { component: Button };
+        export const AlignerStory = () => <Button.Aligner />;
+      `,
+    });
+    tempDir = projectDir;
+
+    const parsed = ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    );
+    const project = new ComponentMetaProject(ts, parsed, configPath);
+
+    try {
+      const entries: StoryRef[] = [
+        {
+          storyPath: filePaths['button.stories.tsx'],
+          component: {
+            componentName: 'Button.Aligner',
+            importId: './button',
+            importName: 'default',
+            member: 'Aligner',
+            path: filePaths['button.tsx'],
+            isPackage: false,
+          },
+        },
+      ];
+
+      project.extractPropsFromStories(entries);
+
+      const component = entries[0]?.component;
+      const doc = component?.reactComponentMeta;
+
+      expect(doc).toBeDefined();
+      expect(doc?.displayName).toBe('Button.Aligner');
+      expect(doc?.description).toBe('Aligner-specific description');
+      expect(doc?.jsDocTags).toEqual({
+        summary: ['Aligner summary'],
+      });
+      expect(component?.importOverride).toBeUndefined();
+      expect(doc?.props.side.defaultValue).toEqual({ value: "'start'" });
+    } finally {
+      project.dispose();
+    }
+  });
+
+  it('preserves wrapper-level import overrides for selected compound members', () => {
+    const { projectDir, configPath, filePaths } = createTempProject({
+      'accordion.tsx': `
+        import React from 'react';
+
+        interface RootProps {
+          /** Root size */
+          size?: 'sm' | 'md';
+        }
+
+        /**
+         * Root-specific description
+         * @summary Root summary
+         */
+        const Root = ({ size = 'md' }: RootProps) => <div data-size={size} />;
+
+        interface ItemProps {
+          value: string;
+        }
+        const Item = (props: ItemProps) => <div />;
+
+        /**
+         * Wrapper description
+         * @import import { Accordion } from '@design-system/components/accordion';
+         */
+        export const Accordion = { Root, Item };
+      `,
+      'accordion.stories.tsx': `
+        import React from 'react';
+        import { Accordion } from './accordion';
+        export default {};
+        export const Default = () => <Accordion.Root />;
+      `,
+    });
+    tempDir = projectDir;
+
+    const parsed = ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    );
+    const project = new ComponentMetaProject(ts, parsed, configPath);
+
+    try {
+      const entries: StoryRef[] = [
+        {
+          storyPath: filePaths['accordion.stories.tsx'],
+          component: {
+            componentName: 'Accordion.Root',
+            importId: './accordion',
+            importName: 'Accordion',
+            member: 'Root',
+            path: filePaths['accordion.tsx'],
+            isPackage: false,
+          },
+        },
+      ];
+
+      project.extractPropsFromStories(entries);
+
+      const component = entries[0]?.component;
+      const doc = component?.reactComponentMeta;
+
+      expect(doc).toBeDefined();
+      expect(doc?.description).toBe('Root-specific description');
+      expect(doc?.props.size.defaultValue).toEqual({ value: "'md'" });
+      expect(component?.importOverride).toBe(
+        "import { Accordion } from '@design-system/components/accordion';"
+      );
     } finally {
       project.dispose();
     }

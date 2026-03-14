@@ -47,11 +47,20 @@ test.describe('addon-onboarding', () => {
     await page.getByRole('button', { exact: true, name: 'Create' }).click();
 
     await expect(page).toHaveURL(/path=\/story\//, { timeout: 15_000 });
-    await expect(page.getByLabel('Last')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('You just added your first')).toBeVisible();
-    await page.getByLabel('Last').click();
 
     const survey = page.getByRole('dialog', { name: 'Storybook user survey' });
+    const lastButton = page.getByRole('button', { exact: true, name: 'Last' });
+
+    await sbPage.retryTimes(
+      async () => {
+        await expect(lastButton).toBeVisible({ timeout: 15_000 });
+        await lastButton.click();
+        await expect(survey).toBeVisible({ timeout: 5_000 });
+      },
+      { retries: 3, delay: 1_000 }
+    );
+
     const applicationUi = survey.getByRole('checkbox', { name: 'Application UI' });
 
     // The modal shell mounts before its contents are fully open and ready for interaction.

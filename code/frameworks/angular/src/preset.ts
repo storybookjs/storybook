@@ -3,6 +3,10 @@ import type { PresetProperty } from 'storybook/internal/types';
 import type { StandaloneOptions } from './builders/utils/standalone-options';
 import { fileURLToPath } from 'node:url';
 
+// Export the Angular componentManifest (experimental)
+export { manifests as experimental_manifests } from './componentManifest/generator';
+export { enrichCsf as experimental_enrichCsf } from './enrichCsf';
+
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/angular/server/framework-preset-angular-cli')),
   fileURLToPath(import.meta.resolve('@storybook/angular/server/framework-preset-angular-ivy')),

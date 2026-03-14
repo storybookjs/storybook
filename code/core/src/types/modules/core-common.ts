@@ -376,7 +376,7 @@ export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
   meta?: {
-    docgen: 'react-docgen' | 'react-docgen-typescript';
+    docgen: 'react-docgen' | 'react-docgen-typescript' | 'compodoc';
     durationMs: number;
   };
 }

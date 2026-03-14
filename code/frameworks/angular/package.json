@@ -61,6 +61,8 @@
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
+    "comment-parser": "^1.4.1",
+    "es-toolkit": "^1.43.0",
     "telejson": "8.0.0",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",

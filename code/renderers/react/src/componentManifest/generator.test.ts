@@ -495,9 +495,9 @@ test('unknown expressions', async () => {
 });
 
 test('generator uses reactComponentMeta displayName from batch extraction', async () => {
-  const getInstance = vi.spyOn(ComponentMetaManager, 'getInstance');
-  getInstance.mockResolvedValue({
-    batchExtract: (entries) => {
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
       for (const entry of entries) {
         if (entry.component) {
           entry.component.reactComponentMeta = {
@@ -509,8 +509,7 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
           };
         }
       }
-    },
-  } as Awaited<ReturnType<typeof ComponentMetaManager.getInstance>>);
+    });
 
   const presets: NonNullable<ManifestOptions['presets']> = {
     apply: async (extension: string, config?: unknown) => {
@@ -529,13 +528,13 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
   const header = result?.components?.components?.['example-header'];
 
   expect((header as any)?.reactComponentMeta?.displayName).toBe('Header');
-  expect(getInstance).toHaveBeenCalled();
+  expect(batchExtract).toHaveBeenCalled();
 });
 
 test('generator preserves @import override when reactComponentMeta is enabled', async () => {
-  const getInstance = vi.spyOn(ComponentMetaManager, 'getInstance');
-  getInstance.mockResolvedValue({
-    batchExtract: (entries) => {
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
       for (const entry of entries) {
         if (entry.component) {
           entry.component.reactComponentMeta = {
@@ -553,8 +552,7 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
             "import { Button } from '@design-system/components/override';";
         }
       }
-    },
-  } as Awaited<ReturnType<typeof ComponentMetaManager.getInstance>>);
+    });
 
   const presets: NonNullable<ManifestOptions['presets']> = {
     apply: async (extension: string, config?: unknown) => {
@@ -580,7 +578,7 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
   ]);
   expect((button as any)?.description).toBe('Primary UI component for user interaction');
   expect((button as any)?.summary).toBe('Fast summary');
-  expect(getInstance).toHaveBeenCalled();
+  expect(batchExtract).toHaveBeenCalled();
 });
 
 test('should create component manifest when only attached-mdx docs have manifest tag', async () => {

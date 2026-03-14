@@ -34,31 +34,6 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
 };
 
 export class ComponentMetaManager {
-  private static instance: Promise<ComponentMetaManager | null> | undefined;
-
-  /**
-   * Lazy singleton — dynamically imports TypeScript and creates a single manager instance. Returns
-   * null if TypeScript is not available.
-   */
-  static getInstance(): Promise<ComponentMetaManager | null> {
-    if (!this.instance) {
-      this.instance = import('typescript').then(
-        (ts) => {
-          const manager = new ComponentMetaManager(ts);
-          process.on('exit', () => manager.dispose());
-          return manager;
-        },
-        () => {
-          logger.debug(
-            '[reactComponentMeta] TypeScript not available, skipping component meta extraction'
-          );
-          return null;
-        }
-      );
-    }
-    return this.instance;
-  }
-
   // Volar LS pattern (typescriptProject.ts lines 34-37)
   private configProjects = new Map<string, ComponentMetaProject>();
   private inferredProject: ComponentMetaProject | undefined;

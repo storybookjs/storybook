@@ -145,8 +145,8 @@ test.describe('addon-docs', () => {
     await expect(storiesCode).toContainText('Basic');
 
     const labelControl = root.locator('textarea[name=label]');
-    labelControl.fill('Changed');
-    labelControl.blur();
+    await labelControl.fill('Changed');
+    await labelControl.blur();
 
     // Check the Primary one has changed
     await expect(primaryCode).toContainText('Changed');

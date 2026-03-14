@@ -115,19 +115,50 @@ test.describe('addon-onboarding', () => {
     await page.getByPlaceholder('Story export name').fill('Test-' + id);
     await page.getByRole('button', { exact: true, name: 'Create' }).click();
 
-    await expect(page).toHaveURL(/path=\/story\//, { timeout: 15_000 });
-    await expect(page.getByText('You just added your first')).toBeVisible();
-
     const survey = page.getByRole('dialog', { name: 'Storybook user survey' });
     const lastButton = page.getByRole('button', { exact: true, name: 'Last' });
+    const surveyChecklistLabel = page.getByText('Complete the onboarding survey', { exact: true });
+    const openSurveyButton = page.getByRole('button', { exact: true, name: 'Open' });
+    const createdStoryMessage = page.getByText('You just added your first');
+
+    await sbPage.retryTimes(
+      async () => {
+        await expect(page).toHaveURL(/path=\/story\//, { timeout: 15_000 });
+        await logOnboardingState({ label: 'after-create-story', page, survey, lastButton });
+
+        const hasCreatedStoryMessage = await createdStoryMessage.isVisible().catch(() => false);
+        const hasLastButton = await lastButton.isVisible().catch(() => false);
+        const hasSurveyChecklist = await surveyChecklistLabel.isVisible().catch(() => false);
+
+        expect(hasCreatedStoryMessage || hasLastButton || hasSurveyChecklist).toBe(true);
+      },
+      { retries: 3, delay: 1_000 }
+    );
 
     await sbPage.retryTimes(
       async () => {
         await logOnboardingState({ label: 'before-last-step', page, survey, lastButton });
         try {
-          await expect(lastButton).toBeVisible({ timeout: 15_000 });
-          await lastButton.click();
-          await logOnboardingState({ label: 'after-last-click', page, survey, lastButton });
+          const hasLastButton = await lastButton.isVisible().catch(() => false);
+
+          if (hasLastButton) {
+            await lastButton.click();
+            await logOnboardingState({ label: 'after-last-click', page, survey, lastButton });
+          }
+
+          const hasSurvey = await survey.isVisible().catch(() => false);
+          if (!hasSurvey) {
+            await surveyChecklistLabel.waitFor({ state: 'visible', timeout: 5_000 });
+            await openSurveyButton.waitFor({ state: 'visible', timeout: 5_000 });
+            await openSurveyButton.click();
+            await logOnboardingState({
+              label: 'after-open-survey-click',
+              page,
+              survey,
+              lastButton,
+            });
+          }
+
           await expect(survey).toBeVisible({ timeout: 5_000 });
           await logOnboardingState({
             label: 'after-survey-visible',

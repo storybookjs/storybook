@@ -11,8 +11,9 @@
  * inspects the component's type directly via `getCallSignatures()[0].parameters[0]` (similar to
  * Vue's component-meta approach). Does NOT work for polymorphic/generic components (TS #61133).
  *
- * Both paths produce a `ts.Type` which is then serialized into `ComponentDoc` format by
- * `serializeComponentDoc()`.
+ * The story path returns the selected component target together with its props type, and the
+ * fallback path still resolves the props type directly. `serializeComponentDoc()` uses the selected
+ * symbol and component ref from that target so member components keep their own metadata.
  *
  * TypeScript resolves props the same way as autocompletion — by calling
  * `checker.getResolvedSignature()` on the JSX element. For polymorphic components with generic call
@@ -22,6 +23,7 @@
  */
 import type ts from 'typescript';
 
+import type { ComponentRef, ResolvedComponentTarget } from './types';
 import { groupBy } from './utils';
 
 // ---------------------------------------------------------------------------
@@ -76,12 +78,143 @@ const LARGE_SOURCE_THRESHOLD = 30;
 const MAX_UNWRAP_DEPTH = 5;
 const MAX_SERIALIZATION_DEPTH = 5;
 
+function resolveAliasedSymbol(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  symbol: ts.Symbol
+): ts.Symbol {
+  return symbol.flags & typescript.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+}
+
+function getSymbolContextNode(symbol: ts.Symbol): ts.Node | undefined {
+  return symbol.valueDeclaration ?? symbol.getDeclarations()?.[0];
+}
+
+function resolveComponentSymbolFromNode(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  node: ts.Node | undefined
+): ts.Symbol | undefined {
+  if (!node) {
+    return undefined;
+  }
+
+  const symbol = checker.getSymbolAtLocation(node);
+  return symbol ? resolveComponentSymbol(typescript, checker, symbol, node) : undefined;
+}
+
+/**
+ * Normalizes the symbol we get from JSX/member resolution to the declaration symbol that owns the
+ * component metadata.
+ *
+ * For top-level components, TypeScript usually gives us the declaration symbol directly. For member
+ * selections it often gives an intermediate symbol instead, for example:
+ *
+ * - A shorthand/property symbol from `export const Accordion = { Root }`
+ * - An attached-member symbol from `ButtonRoot.Aligner = Aligner`
+ * - A property signature from `Aligner: typeof Aligner`
+ * - An anonymous function symbol (`__function`) for `const Aligner = () => ...`
+ *
+ * Those symbols do not reliably carry the selected member's JSDoc/defaults, so we follow them back
+ * to the actual component declaration before serialization.
+ */
+function resolveComponentSymbol(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  symbol: ts.Symbol,
+  contextNode: ts.Node,
+  depth = 0
+): ts.Symbol {
+  let resolved = resolveAliasedSymbol(typescript, checker, symbol);
+  if (depth > MAX_UNWRAP_DEPTH) {
+    return resolved;
+  }
+
+  const declarationForPromotion = getSymbolContextNode(resolved);
+  if (
+    declarationForPromotion &&
+    (typescript.isArrowFunction(declarationForPromotion) ||
+      typescript.isFunctionExpression(declarationForPromotion)) &&
+    declarationForPromotion.parent &&
+    typescript.isVariableDeclaration(declarationForPromotion.parent) &&
+    typescript.isIdentifier(declarationForPromotion.parent.name)
+  ) {
+    const variableSymbol = checker.getSymbolAtLocation(declarationForPromotion.parent.name);
+    if (variableSymbol) {
+      resolved = resolveAliasedSymbol(typescript, checker, variableSymbol);
+    }
+  }
+
+  const declaration = getSymbolContextNode(resolved);
+  if (declaration) {
+    if (typescript.isShorthandPropertyAssignment(declaration)) {
+      const valueSymbol = checker.getShorthandAssignmentValueSymbol(declaration);
+      if (valueSymbol) {
+        return resolveComponentSymbol(
+          typescript,
+          checker,
+          valueSymbol,
+          declaration.name,
+          depth + 1
+        );
+      }
+    }
+
+    if (typescript.isPropertyAssignment(declaration)) {
+      const next = resolveComponentSymbolFromNode(typescript, checker, declaration.initializer);
+      if (next) {
+        return next;
+      }
+    }
+
+    if (
+      typescript.isBinaryExpression(declaration) &&
+      declaration.operatorToken.kind === typescript.SyntaxKind.EqualsToken
+    ) {
+      const next = resolveComponentSymbolFromNode(typescript, checker, declaration.right);
+      if (next) {
+        return next;
+      }
+    }
+  }
+
+  const shouldUseTypeSymbolFallback =
+    Boolean(resolved.flags & typescript.SymbolFlags.Property) ||
+    (declaration !== undefined &&
+      (typescript.isPropertyAssignment(declaration) ||
+        typescript.isShorthandPropertyAssignment(declaration) ||
+        typescript.isPropertySignature(declaration) ||
+        typescript.isPropertyDeclaration(declaration) ||
+        (typescript.isBinaryExpression(declaration) &&
+          declaration.operatorToken.kind === typescript.SyntaxKind.EqualsToken)));
+
+  const typeSymbol =
+    shouldUseTypeSymbolFallback &&
+    checker.getTypeOfSymbolAtLocation(resolved, contextNode).getSymbol?.();
+  if (typeSymbol) {
+    const resolvedTypeSymbol = resolveAliasedSymbol(typescript, checker, typeSymbol);
+    const typeDeclaration = getSymbolContextNode(resolvedTypeSymbol);
+    if (resolvedTypeSymbol !== resolved && typeDeclaration) {
+      return resolveComponentSymbol(
+        typescript,
+        checker,
+        resolvedTypeSymbol,
+        typeDeclaration,
+        depth + 1
+      );
+    }
+  }
+
+  return resolved;
+}
+
 // ---------------------------------------------------------------------------
 // Story-based prop extraction (probe-free)
 // ---------------------------------------------------------------------------
 
 /**
- * Resolves props type by finding JSX usage of the target component in a story file.
+ * Resolves the selected component symbol and props type by finding JSX usage of the target
+ * component in a story file.
  *
  * Story files already contain JSX like `<Button />` that TypeScript has resolved. This function
  * walks the story AST to find a JSX element matching the target component and extracts the props
@@ -97,10 +230,15 @@ export function resolvePropsFromStoryFile(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   storySourceFile: ts.SourceFile,
-  importSpecifier: string,
-  importName: string,
-  memberAccess?: string
-): ts.Type | undefined {
+  componentRef: ComponentRef
+): ResolvedComponentTarget | undefined {
+  const importSpecifier = componentRef.importId;
+  const importName = componentRef.importName;
+  const memberAccess = componentRef.member;
+  if (!importSpecifier) {
+    return undefined;
+  }
+
   // Step 1: Find the import binding symbol in the story file.
   // This is the local symbol that the story uses in JSX (e.g., `Button` from `import { Button } from './Button'`).
   let importSymbol: ts.Symbol | undefined;
@@ -176,7 +314,7 @@ export function resolvePropsFromStoryFile(
   }
 
   // Step 2: Walk story file to find JSX elements using this import
-  let result: ts.Type | undefined;
+  let result: ResolvedComponentTarget | undefined;
 
   function extractPropsFromJsx(
     node: ts.JsxSelfClosingElement | ts.JsxOpeningElement
@@ -206,8 +344,21 @@ export function resolvePropsFromStoryFile(
         if (typescript.isPropertyAccessExpression(tagName) && tagName.name.text === memberAccess) {
           const leftSym = checker.getSymbolAtLocation(tagName.expression);
           if (leftSym === importSymbol) {
-            result = extractPropsFromJsx(node);
-            return;
+            const propsType = extractPropsFromJsx(node);
+            if (propsType) {
+              const memberSymbol =
+                checker.getSymbolAtLocation(tagName.name) ??
+                checker.getTypeAtLocation(tagName.expression).getProperty(tagName.name.text) ??
+                resolveComponentSymbolFromNode(typescript, checker, tagName);
+              result = {
+                componentRef,
+                propsType,
+                symbol: memberSymbol
+                  ? resolveComponentSymbol(typescript, checker, memberSymbol, tagName.name)
+                  : resolveAliasedSymbol(typescript, checker, importSymbol),
+              };
+              return;
+            }
           }
         }
       } else {
@@ -215,8 +366,15 @@ export function resolvePropsFromStoryFile(
         if (typescript.isIdentifier(tagName)) {
           const sym = checker.getSymbolAtLocation(tagName);
           if (sym === importSymbol) {
-            result = extractPropsFromJsx(node);
-            return;
+            const propsType = extractPropsFromJsx(node);
+            if (propsType) {
+              result = {
+                componentRef,
+                propsType,
+                symbol: resolveAliasedSymbol(typescript, checker, sym),
+              };
+              return;
+            }
           }
         }
       }
@@ -1033,14 +1191,25 @@ function getBulkSourceExclusions(properties: ts.Symbol[]): Set<string> {
 // Display name computation
 // ---------------------------------------------------------------------------
 
-function computeDisplayName(
-  exportSymbol: ts.Symbol,
-  resolvedSymbol: ts.Symbol
-): string | undefined {
+function computeDisplayName({
+  exportSymbol,
+  resolvedSymbol,
+}: {
+  exportSymbol?: ts.Symbol;
+  resolvedSymbol: ts.Symbol;
+}): string | undefined {
+  const resolvedName = resolvedSymbol.getName();
+
+  if (!exportSymbol) {
+    if (resolvedName && resolvedName !== 'default' && resolvedName !== '__function') {
+      return resolvedName;
+    }
+    return undefined;
+  }
+
   const exportName = exportSymbol.getName();
 
   if (exportName === 'default') {
-    const resolvedName = resolvedSymbol.getName();
     if (resolvedName && resolvedName !== 'default' && resolvedName !== '__function') {
       return resolvedName;
     }
@@ -1074,49 +1243,42 @@ function extractComponentJsDocTags(
 // ---------------------------------------------------------------------------
 
 /**
- * Serializes one resolved props type into ComponentDoc format.
+ * Serializes one resolved component target into ComponentDoc format.
  *
- * Used by `ComponentMetaProject` to convert the output of `resolvePropsFromStoryFile()` or
- * `resolvePropsFromComponentType()` into the final serialized format for a single story/component
- * pair.
+ * Used by `ComponentMetaProject` to convert the output of JSX/meta resolution into the final
+ * serialized format for a single story/component pair.
  */
 export function serializeComponentDoc(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   {
-    filePath,
     sourceFile,
-    exportName,
-    propsType,
+    resolvedComponent,
     defaultsSourcePath,
-    displayNameOverride,
   }: {
-    filePath: string;
     sourceFile: ts.SourceFile;
-    exportName: string;
-    propsType: ts.Type;
+    resolvedComponent: ResolvedComponentTarget;
     defaultsSourcePath?: string;
-    displayNameOverride?: string;
   }
 ): ComponentDoc | undefined {
-  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
-  if (!moduleSymbol) {
-    return undefined;
-  }
-
-  const exp = checker
-    .getExportsOfModule(moduleSymbol)
-    .find((candidate) => candidate.getName() === exportName);
-  if (!exp) {
-    return undefined;
-  }
-
-  const resolved = exp.flags & typescript.SymbolFlags.Alias ? checker.getAliasedSymbol(exp) : exp;
+  const { componentRef, propsType, symbol } = resolvedComponent;
+  const exportName = componentRef.importName;
+  const displayNameOverride = componentRef.componentName;
+  const isMemberSelection = Boolean(componentRef.member);
+  const filePath = componentRef.path ?? sourceFile.fileName;
+  const resolved = resolveAliasedSymbol(typescript, checker, symbol);
 
   const contextNode = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
   if (!contextNode) {
     return undefined;
   }
+
+  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+  const exportSymbol = moduleSymbol
+    ? checker
+        .getExportsOfModule(moduleSymbol)
+        .find((candidate) => candidate.getName() === exportName)
+    : undefined;
 
   // getApparentProperties() on a union type only returns common members.
   // For discriminated unions (e.g. Reshaped Slider: ControlledProps | UncontrolledProps),
@@ -1192,11 +1354,11 @@ export function serializeComponentDoc(
   // monorepos), .d.ts declarations have no function bodies so extractDestructuringDefaults
   // returns empty. Use the original source file for AST-only defaults extraction.
   if (defaultsMap.size === 0 && defaultsSourcePath) {
-    const fallbackDefaults = extractDefaultsFromSourceFile(
-      typescript,
-      defaultsSourcePath,
-      exportName
-    );
+    const fallbackDefaults = extractDefaultsFromSourceFile(typescript, defaultsSourcePath, {
+      exportName,
+      localName: resolved.getName(),
+      preferLocalName: isMemberSelection,
+    });
     for (const [key, value] of fallbackDefaults) {
       defaultsMap.set(key, value);
     }
@@ -1222,16 +1384,37 @@ export function serializeComponentDoc(
     props[prop.getName()] = item;
   }
 
-  const displayName = computeDisplayName(exp, resolved) ?? displayNameOverride;
+  const displayName =
+    (isMemberSelection ? displayNameOverride : undefined) ??
+    computeDisplayName({
+      exportSymbol,
+      resolvedSymbol: resolved,
+    }) ??
+    displayNameOverride;
 
   const description = typescript.displayPartsToString(resolved.getDocumentationComment(checker));
+  const selectedJsDocTags = extractComponentJsDocTags(typescript, checker, resolved);
+  const exportResolved =
+    exportSymbol && exportSymbol !== resolved
+      ? resolveAliasedSymbol(typescript, checker, exportSymbol)
+      : undefined;
+  const exportJsDocTags = exportResolved
+    ? extractComponentJsDocTags(typescript, checker, exportResolved)
+    : undefined;
+  const jsDocTags =
+    selectedJsDocTags?.import || !exportJsDocTags?.import
+      ? selectedJsDocTags
+      : {
+          ...(selectedJsDocTags ?? {}),
+          import: exportJsDocTags.import,
+        };
 
   return {
     displayName,
     exportName,
     filePath,
     description,
-    jsDocTags: extractComponentJsDocTags(typescript, checker, resolved),
+    jsDocTags,
     props,
   };
 }
@@ -1253,7 +1436,15 @@ export function serializeComponentDoc(
 function extractDefaultsFromSourceFile(
   typescript: typeof ts,
   filePath: string,
-  exportName: string
+  {
+    exportName,
+    localName,
+    preferLocalName = false,
+  }: {
+    exportName: string;
+    localName?: string;
+    preferLocalName?: boolean;
+  }
 ): Map<string, string> {
   const defaults = new Map<string, string>();
 
@@ -1289,7 +1480,11 @@ function extractDefaultsFromSourceFile(
   // Find the target: the function associated with the exported symbol.
   // For "default" export, look at export default ... or export { X as default }.
   // For named exports, look at export const X = ... or export { X }.
-  const fn = findExportedFunction(typescript, sf, exportName, varMap);
+  const fn = preferLocalName
+    ? (findLocalFunction(typescript, sf, localName, varMap) ??
+      findExportedFunction(typescript, sf, exportName, varMap))
+    : (findExportedFunction(typescript, sf, exportName, varMap) ??
+      findLocalFunction(typescript, sf, localName, varMap));
   if (!fn) {
     return defaults;
   }
@@ -1326,6 +1521,24 @@ function extractDefaultsFromSourceFile(
   }
 
   return defaults;
+}
+
+function findLocalFunction(
+  typescript: typeof ts,
+  sf: ts.SourceFile,
+  localName: string | undefined,
+  varMap: Map<string, ts.Expression | ts.FunctionDeclaration>
+): ts.FunctionLikeDeclaration | undefined {
+  if (!localName) {
+    return undefined;
+  }
+
+  const targetExpr = varMap.get(localName);
+  if (!targetExpr) {
+    return undefined;
+  }
+
+  return unwrapToFunctionAST(typescript, targetExpr, varMap, 0);
 }
 
 /**

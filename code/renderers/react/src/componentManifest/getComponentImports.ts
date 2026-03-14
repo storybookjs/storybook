@@ -7,13 +7,13 @@ import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/inter
 
 import type { ParserOptions } from 'react-docgen-typescript';
 
-import type { ComponentDoc } from './componentMetaExtractor';
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
 import {
   type ComponentDocWithExportName,
   matchComponentDoc,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript';
+import type { ComponentRef } from './types';
 import { cachedResolveImport } from './utils';
 
 export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
@@ -24,26 +24,7 @@ export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgenTypescriptOptions: ParserOptions;
 }
 
-// Public component metadata type used across passes
-export type ComponentRef = {
-  componentName: string;
-  localImportName?: string;
-  importId?: string;
-  componentJsDocTags?: Record<string, string[]>;
-  importOverride?: string;
-  importName?: string;
-  namespace?: string;
-  /** For member expressions like `Accordion.Root`, the member part (`"Root"`). */
-  member?: string;
-  path?: string;
-  isPackage: boolean;
-  /** Minimum JSX nesting depth where this component first appears (1 = outermost JSX element). */
-  jsxDepth?: number;
-  reactDocgen?: ReturnType<typeof getReactDocgen>;
-  reactDocgenTypescript?: ComponentDocWithExportName;
-  reactComponentMeta?: ComponentDoc;
-  reactDocgenTypescriptError?: { name: string; message: string };
-};
+export type { ComponentRef } from './types';
 
 /** Selected component for a story file; `storyPath` is the absolute path on disk. */
 export type StoryRef = {

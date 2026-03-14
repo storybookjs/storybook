@@ -1180,7 +1180,11 @@ const TEST_FILES: Record<string, string> = {
       /** Whether multiple items can be open */
       multiple?: boolean;
     }
-    const Root = (props: RootProps) => <div />;
+    /**
+     * Compound root description
+     * @summary Compound root summary
+     */
+    const Root = ({ multiple = true }: RootProps) => <div data-multiple={multiple} />;
     interface ItemProps {
       value: string;
       disabled?: boolean;
@@ -1206,7 +1210,11 @@ const TEST_FILES: Record<string, string> = {
       open?: boolean;
       label: string;
     }
-    export const Panel = (props: PanelProps) => <div />;
+    /**
+     * Panel description
+     * @summary Panel summary
+     */
+    export const Panel = ({ open = false, label }: PanelProps) => <div data-open={open}>{label}</div>;
     interface TriggerProps {
       onClick: () => void;
     }
@@ -1234,6 +1242,38 @@ const TEST_FILES: Record<string, string> = {
     import Header from './DefaultExport';
     export default { component: Header };
     export const Default = () => <Header title="Welcome" subtitle="Hi" />;
+  `,
+
+  'path1/AttachedMember.tsx': `
+    import React from 'react';
+    interface ButtonProps {
+      variant?: 'solid' | 'outline';
+    }
+    const Button = (props: ButtonProps) => <button />;
+
+    interface AlignerProps {
+      /** Side to align */
+      side?: 'start' | 'end';
+    }
+
+    /**
+     * Aligner description
+     * @summary Aligner summary
+     */
+    const Aligner = ({ side = 'start' }: AlignerProps) => <div data-side={side} />;
+
+    const ButtonRoot = Button as typeof Button & {
+      Aligner: typeof Aligner;
+    };
+    ButtonRoot.Aligner = Aligner;
+
+    export default ButtonRoot;
+  `,
+  'path1/AttachedMember.stories.tsx': `
+    import React from 'react';
+    import Button from './AttachedMember';
+    export default { component: Button };
+    export const Default = () => <Button.Aligner />;
   `,
 };
 
@@ -2248,7 +2288,8 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
     componentFile: string,
     exportName: string,
     importId?: string,
-    memberAccess?: string
+    memberAccess?: string,
+    componentName = exportName
   ): ComponentDoc[] {
     const storyPath = filePaths[storyFile];
     const componentPath = filePaths[componentFile];
@@ -2259,7 +2300,7 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
       {
         storyPath,
         component: {
-          componentName: exportName,
+          componentName,
           importId: importId ?? `./${path.basename(componentFile, '.tsx')}`,
           importName: exportName,
           member: memberAccess,
@@ -2333,12 +2374,17 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
       'path1/Compound.tsx',
       'Accordion',
       './Compound',
-      'Root'
+      'Root',
+      'Accordion.Root'
     );
 
     expect(result).toHaveLength(1);
+    expect(result[0].displayName).toBe('Accordion.Root');
+    expect(result[0].description).toBe('Compound root description');
+    expect(result[0].jsDocTags).toEqual({ summary: ['Compound root summary'] });
     expect(result[0].props.multiple).toBeDefined();
     expect(result[0].props.multiple.description).toBe('Whether multiple items can be open');
+    expect(result[0].props.multiple.defaultValue).toEqual({ value: 'true' });
     // Should NOT have Item props
     expect(result[0].props.value).toBeUndefined();
     expect(result[0].props.disabled).toBeUndefined();
@@ -2350,15 +2396,40 @@ describe('Path 1: resolvePropsFromStoryFile (JSX-based extraction)', () => {
       'path1/NamespaceCompound.tsx',
       'Panel',
       './NamespaceCompound',
-      'Panel'
+      'Panel',
+      'Popover.Panel'
     );
 
     expect(result).toHaveLength(1);
+    expect(result[0].displayName).toBe('Popover.Panel');
+    expect(result[0].description).toBe('Panel description');
+    expect(result[0].jsDocTags).toEqual({ summary: ['Panel summary'] });
     expect(result[0].props.open).toBeDefined();
     expect(result[0].props.open.description).toBe('Whether the panel is open');
+    expect(result[0].props.open.defaultValue).toEqual({ value: 'false' });
     expect(result[0].props.label).toBeDefined();
     // Should NOT have Trigger props
     expect(result[0].props.onClick).toBeUndefined();
+  });
+
+  it('extracts metadata from a default-export attached member via story JSX', () => {
+    const result = storyDocs(
+      'path1/AttachedMember.stories.tsx',
+      'path1/AttachedMember.tsx',
+      'default',
+      './AttachedMember',
+      'Aligner',
+      'Button.Aligner'
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].displayName).toBe('Button.Aligner');
+    expect(result[0].description).toBe('Aligner description');
+    expect(result[0].jsDocTags).toEqual({ summary: ['Aligner summary'] });
+    expect(result[0].props.side).toBeDefined();
+    expect(result[0].props.side.description).toBe('Side to align');
+    expect(result[0].props.side.defaultValue).toEqual({ value: "'start'" });
+    expect(result[0].props.variant).toBeUndefined();
   });
 
   it('extracts props from a default export via story JSX', () => {

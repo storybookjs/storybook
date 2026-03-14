@@ -32,6 +32,7 @@ import {
   serializeComponentDoc,
 } from '../componentMetaExtractor';
 import type { StoryRef } from '../getComponentImports';
+import type { ComponentRef, ResolvedComponentTarget } from '../types';
 
 export class ComponentMetaProject {
   private ls: ts.LanguageService;
@@ -263,7 +264,6 @@ export class ComponentMetaProject {
       string,
       { sourceFile: ts.SourceFile; defaultsSourcePath?: string }
     >();
-    const serializedDocByKey = new Map<string, Map<ts.Type, ComponentDoc | undefined>>();
 
     for (const entry of entries) {
       try {
@@ -299,25 +299,27 @@ export class ComponentMetaProject {
         }
 
         // Path 1: Find JSX in story file
-        let propsType: ts.Type | undefined;
+        let resolvedComponent: ResolvedComponentTarget | undefined;
         if (importId) {
-          propsType = resolvePropsFromStoryFile(
+          resolvedComponent = resolvePropsFromStoryFile(
             this.typescript,
             checker,
             storySourceFile,
-            importId,
-            exportName,
-            memberAccess
+            entryComponent
           );
         }
 
         // Path 2: Fallback — resolve from meta.component in the story file.
         // Only fires when the user explicitly set `component:` in the meta object.
-        if (!propsType) {
-          propsType = this.resolveFromMetaComponent(checker, storySourceFile, memberAccess);
+        if (!resolvedComponent) {
+          resolvedComponent = this.resolveFromMetaComponent(
+            checker,
+            storySourceFile,
+            entryComponent
+          );
         }
 
-        if (!propsType) {
+        if (!resolvedComponent) {
           continue;
         }
 
@@ -336,25 +338,11 @@ export class ComponentMetaProject {
           serializationContextByComponentPath.set(componentPath, serializationContext);
         }
 
-        const serializationCacheKey = `${componentPath}::${exportName}::${entryComponent.componentName ?? ''}`;
-        let docsByType = serializedDocByKey.get(serializationCacheKey);
-        if (!docsByType) {
-          docsByType = new Map();
-          serializedDocByKey.set(serializationCacheKey, docsByType);
-        }
-
-        let doc = docsByType.get(propsType);
-        if (doc === undefined && !docsByType.has(propsType)) {
-          doc = serializeComponentDoc(this.typescript, checker, {
-            filePath: componentPath,
-            sourceFile: serializationContext.sourceFile,
-            exportName,
-            propsType,
-            defaultsSourcePath: serializationContext.defaultsSourcePath,
-            displayNameOverride: entryComponent.componentName,
-          });
-          docsByType.set(propsType, doc);
-        }
+        const doc = serializeComponentDoc(this.typescript, checker, {
+          sourceFile: serializationContext.sourceFile,
+          resolvedComponent,
+          defaultsSourcePath: serializationContext.defaultsSourcePath,
+        });
 
         if (doc) {
           entryComponent.reactComponentMeta = doc;
@@ -406,8 +394,9 @@ export class ComponentMetaProject {
   private resolveFromMetaComponent(
     checker: ts.TypeChecker,
     storySourceFile: ts.SourceFile,
-    memberAccess?: string
-  ): ts.Type | undefined {
+    componentRef: ComponentRef
+  ): ResolvedComponentTarget | undefined {
+    const { member: memberAccess } = componentRef;
     const moduleSymbol = checker.getSymbolAtLocation(storySourceFile);
     if (!moduleSymbol) {
       return undefined;
@@ -427,17 +416,32 @@ export class ComponentMetaProject {
     }
 
     let componentType = checker.getTypeOfSymbol(componentProp);
+    let selectedSymbol =
+      componentProp.valueDeclaration &&
+      this.typescript.isPropertyAssignment(componentProp.valueDeclaration)
+        ? checker.getSymbolAtLocation(componentProp.valueDeclaration.initializer)
+        : componentType.getSymbol?.();
 
     if (memberAccess) {
       const prop = componentType.getProperty(memberAccess);
       if (prop) {
         componentType = checker.getTypeOfSymbol(prop);
+        selectedSymbol = prop;
       } else {
         return undefined;
       }
     }
 
-    return resolvePropsFromComponentType(this.typescript, checker, componentType);
+    const propsType = resolvePropsFromComponentType(this.typescript, checker, componentType);
+    if (!propsType || !selectedSymbol) {
+      return undefined;
+    }
+
+    return {
+      componentRef,
+      propsType,
+      symbol: selectedSymbol,
+    };
   }
 }
 

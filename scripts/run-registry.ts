@@ -27,6 +27,8 @@ const logger = console;
 const root = resolvePath(__dirname, '..');
 
 const opts = program.opts();
+const registryInstanceId = `${hostname()}:${process.pid}:${Date.now()}`;
+const registryStartedAt = new Date().toISOString();
 
 const getEnvContext = () => ({
   ci: process.env.CI ?? null,
@@ -60,6 +62,8 @@ const logRegistry = (event: string, extra: Record<string, unknown> = {}) => {
     `[run-registry] ${JSON.stringify({
       event,
       at: new Date().toISOString(),
+      registryInstanceId,
+      registryStartedAt,
       pid: process.pid,
       host: hostname(),
       cwd: process.cwd(),
@@ -115,6 +119,21 @@ const startVerdaccio = async () => {
        * If you want to access the verdaccio UI, you can do so by visiting http://localhost:6002
        */
       const proxy = http.createServer((req, res) => {
+        if (req.url === '/__registry-meta') {
+          res.writeHead(200, { 'content-type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              registryInstanceId,
+              registryStartedAt,
+              pid: process.pid,
+              host: hostname(),
+              ready,
+              env: getEnvContext(),
+            })
+          );
+          return;
+        }
+
         // if request contains "storybook" redirect to verdaccio
         if (req.url?.includes('storybook') || req.url?.includes('/sb') || req.method === 'PUT') {
           res.writeHead(302, { Location: 'http://localhost:6002' + req.url });

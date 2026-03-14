@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { cp, rm } from 'node:fs/promises';
 import { hostname } from 'node:os';
@@ -51,6 +52,47 @@ const serializeError = (error: unknown) =>
       }
     : { message: String(error) };
 
+const shellEscape = (value: string) => `"${value.replace(/(["\\$`])/g, '\\$1')}"`;
+
+const getDiskSnapshot = (...paths: string[]) => {
+  try {
+    const existingPaths = paths.filter(Boolean).filter((path) => existsSync(path));
+    const commands = ['df -h .', 'df -i .'];
+
+    if (existingPaths.length > 0) {
+      commands.push(`du -sh ${existingPaths.map(shellEscape).join(' ')} 2>/dev/null || true`);
+    }
+
+    return execSync(commands.join(' && '), {
+      cwd: ROOT_DIRECTORY,
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024,
+    })
+      .trim()
+      .split('\n');
+  } catch (error) {
+    return [`disk snapshot failed: ${serializeError(error).message}`];
+  }
+};
+
+const getRegistryMeta = async () => {
+  try {
+    const response = await fetch('http://localhost:6001/__registry-meta');
+    const text = await response.text();
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      body: text,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: serializeError(error),
+    };
+  }
+};
+
 const logPrepareSandbox = (event: string, extra: Record<string, unknown> = {}) => {
   logger.log(
     `[prepare-sandbox] ${JSON.stringify({
@@ -84,6 +126,7 @@ async function main() {
     sandboxDir,
     cacheDir,
     hasNodeModules: existsSync(join(sandboxDir, 'node_modules')),
+    disk: getDiskSnapshot(cacheDir, sandboxDir),
   });
 
   if (!existsSync(join(sandboxDir, 'node_modules'))) {
@@ -102,6 +145,7 @@ async function main() {
         sandboxDir,
         cacheDir,
         sandboxExists: existsSync(sandboxDir),
+        disk: getDiskSnapshot(cacheDir, sandboxDir),
       });
     }
 
@@ -117,24 +161,33 @@ async function main() {
         });
         await logPrepareSandboxWithPorts('registry.wait.done', {
           durationMs: Date.now() - waitStartedAt,
+          registryMeta: await getRegistryMeta(),
         });
       } catch (error) {
         await logPrepareSandboxWithPorts('registry.wait.failed', {
           durationMs: Date.now() - waitStartedAt,
           error: serializeError(error),
+          registryMeta: await getRegistryMeta(),
         });
         throw error;
       }
     }
 
-    await logPrepareSandbox('yarn.install.begin', { sandboxDir });
+    await logPrepareSandbox('yarn.install.begin', {
+      sandboxDir,
+      disk: getDiskSnapshot(cacheDir, sandboxDir),
+    });
     try {
       await exec('yarn install --immutable', { cwd: sandboxDir }, { debug: true });
-      await logPrepareSandbox('yarn.install.done', { sandboxDir });
+      await logPrepareSandbox('yarn.install.done', {
+        sandboxDir,
+        disk: getDiskSnapshot(cacheDir, sandboxDir),
+      });
     } catch (error) {
       await logPrepareSandbox('yarn.install.failed', {
         sandboxDir,
         error: serializeError(error),
+        disk: getDiskSnapshot(cacheDir, sandboxDir),
       });
       throw error;
     }
@@ -177,6 +230,7 @@ async function main() {
     template,
     sandboxDir,
     hasNodeModules: existsSync(join(sandboxDir, 'node_modules')),
+    disk: getDiskSnapshot(cacheDir, sandboxDir),
   });
 }
 

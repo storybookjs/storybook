@@ -2,10 +2,11 @@
  * Shared test infrastructure for ComponentMetaProject / ComponentMetaManager /
  * componentMetaExtractor tests.
  *
- * All helpers use `ts.sys` for file I/O because the react vitest setup mocks `node:fs` with memfs,
- * but `ts.sys` uses the real filesystem (it imported fs before mocks were applied).
+ * These helpers avoid importing `node:fs` normally because the react vitest setup mocks it with
+ * memfs, while `ts.sys` still points at the real filesystem. `process.getBuiltinModule()` gives us
+ * the real builtin fs implementation for recursive copy/delete on disk.
  */
-import { execSync } from 'node:child_process';
+import type * as nodeFs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -17,16 +18,27 @@ export const sys = ts.sys;
 /** Resolve the real node_modules directory (may be hoisted to the workspace root). */
 const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');
 
+const realFs = process.getBuiltinModule('node:fs') as typeof nodeFs;
+
 /** Copy the minimal node_modules packages TypeScript needs for React type resolution. */
 function copyNodeModules(projectDir: string): void {
   const dest = path.join(projectDir, 'node_modules');
   const typesSrc = path.join(NODE_MODULES_DIR, '@types');
-  execSync(`mkdir -p "${dest}/@types"`);
+
+  realFs.mkdirSync(path.join(dest, '@types'), { recursive: true });
+
   for (const pkg of ['react', 'csstype']) {
-    execSync(`cp -rL "${path.join(NODE_MODULES_DIR, pkg)}" "${path.join(dest, pkg)}"`);
+    realFs.cpSync(path.join(NODE_MODULES_DIR, pkg), path.join(dest, pkg), {
+      recursive: true,
+      dereference: true,
+    });
   }
+
   for (const pkg of ['react', 'prop-types']) {
-    execSync(`cp -rL "${path.join(typesSrc, pkg)}" "${path.join(dest, '@types', pkg)}"`);
+    realFs.cpSync(path.join(typesSrc, pkg), path.join(dest, '@types', pkg), {
+      recursive: true,
+      dereference: true,
+    });
   }
 }
 
@@ -113,7 +125,7 @@ export function defaultImportName(filePath: string): string {
 /** Best-effort cleanup of a temp directory. */
 export function cleanup(dir: string): void {
   try {
-    execSync(`rm -rf "${dir}"`);
+    realFs.rmSync(dir, { recursive: true, force: true });
   } catch {
     // best-effort cleanup
   }

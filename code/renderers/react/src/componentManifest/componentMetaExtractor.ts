@@ -23,7 +23,7 @@
  */
 import type ts from 'typescript';
 
-import type { ResolvedComponentRef, ResolvedComponentTarget } from './types';
+import type { ComponentRef, ResolvedComponentTarget } from './types';
 import { groupBy } from './utils';
 
 // ---------------------------------------------------------------------------
@@ -230,7 +230,7 @@ export function resolvePropsFromStoryFile(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   storySourceFile: ts.SourceFile,
-  componentRef: ResolvedComponentRef
+  componentRef: ComponentRef
 ): ResolvedComponentTarget | undefined {
   const importSpecifier = componentRef.importId;
   const importName = componentRef.importName;

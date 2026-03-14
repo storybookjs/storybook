@@ -32,7 +32,7 @@ import {
   serializeComponentDoc,
 } from '../componentMetaExtractor';
 import type { StoryRef } from '../getComponentImports';
-import type { ResolvedComponentRef, ResolvedComponentTarget } from '../types';
+import type { ComponentRef, ResolvedComponentTarget } from '../types';
 
 export class ComponentMetaProject {
   private ls: ts.LanguageService;
@@ -299,21 +299,13 @@ export class ComponentMetaProject {
         }
 
         // Path 1: Find JSX in story file
-        const resolvedComponentRef: ResolvedComponentRef = {
-          componentName: entryComponent.componentName,
-          importId,
-          importName: exportName,
-          member: memberAccess,
-          path: componentPath,
-        };
-
         let resolvedComponent: ResolvedComponentTarget | undefined;
         if (importId) {
           resolvedComponent = resolvePropsFromStoryFile(
             this.typescript,
             checker,
             storySourceFile,
-            resolvedComponentRef
+            entryComponent
           );
         }
 
@@ -323,7 +315,7 @@ export class ComponentMetaProject {
           resolvedComponent = this.resolveFromMetaComponent(
             checker,
             storySourceFile,
-            resolvedComponentRef
+            entryComponent
           );
         }
 
@@ -402,7 +394,7 @@ export class ComponentMetaProject {
   private resolveFromMetaComponent(
     checker: ts.TypeChecker,
     storySourceFile: ts.SourceFile,
-    componentRef: ResolvedComponentRef
+    componentRef: ComponentRef
   ): ResolvedComponentTarget | undefined {
     const { member: memberAccess } = componentRef;
     const moduleSymbol = checker.getSymbolAtLocation(storySourceFile);

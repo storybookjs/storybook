@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import * as paths from './paths';
 import { scanAndTransformFiles } from './scan-and-transform-files';

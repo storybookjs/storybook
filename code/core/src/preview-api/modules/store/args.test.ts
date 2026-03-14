@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { once } from 'storybook/internal/client-logger';
 import type { SBType } from 'storybook/internal/types';

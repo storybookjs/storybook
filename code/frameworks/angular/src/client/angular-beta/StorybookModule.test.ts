@@ -2,7 +2,7 @@
 
 import type { NgModule } from '@angular/core';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';

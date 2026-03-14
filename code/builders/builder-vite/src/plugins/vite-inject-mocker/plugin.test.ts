@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 /**
  * Unit-tests for the vite-inject-mocker plugin, focused on the `transformIndexHtml` hook which must

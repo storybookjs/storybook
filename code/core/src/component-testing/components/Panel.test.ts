@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
 import { INTERNAL_RENDER_CALL_ID } from '../constants';

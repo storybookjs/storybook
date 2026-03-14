@@ -1,6 +1,6 @@
 /** @vitest-environment happy-dom */
-import type { Mock } from 'vitest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vite-plus/test';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import type { FC, PropsWithChildren } from 'react';
 import React, { Profiler, StrictMode, createElement } from 'react';

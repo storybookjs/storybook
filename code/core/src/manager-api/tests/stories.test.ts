@@ -1,5 +1,5 @@
-import type { Mocked } from 'vitest';
-import { describe, expect, it, vi } from 'vitest';
+import type { Mocked } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import {
   CONFIG_ERROR,

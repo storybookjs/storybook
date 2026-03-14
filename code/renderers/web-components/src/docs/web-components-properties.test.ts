@@ -3,7 +3,7 @@ import { readdirSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { spawn } from 'cross-spawn';
 import tmp from 'tmp';

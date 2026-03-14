@@ -1,7 +1,7 @@
 import type { BuilderContext } from '@angular-devkit/architect';
 // @ts-expect-error (TODO)
 import type { LoggerApi } from '@angular-devkit/core/src/logger';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { runCompodoc } from './run-compodoc';
 

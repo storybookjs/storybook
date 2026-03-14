@@ -1,5 +1,5 @@
 // this file primarily tests TypeScript types with some runtime assertions
-import { describe, expect, it, test } from 'vitest';
+import { describe, expect, it, test } from 'vite-plus/test';
 
 import type { Args } from 'storybook/internal/types';
 

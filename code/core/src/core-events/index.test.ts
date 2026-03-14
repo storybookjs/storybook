@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import * as EventsPackageExport from './index';
 import EventsDefaultExport, { CHANNEL_CREATED } from './index';

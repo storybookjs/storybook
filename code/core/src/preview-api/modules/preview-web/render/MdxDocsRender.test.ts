@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { Channel } from 'storybook/internal/channels';
 import { Tag } from 'storybook/internal/core-server';

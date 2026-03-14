@@ -1,5 +1,5 @@
 /* global HTMLElement */
-import { test } from 'vitest';
+import { test } from 'vite-plus/test';
 
 import { expectTypeOf } from 'expect-type';
 

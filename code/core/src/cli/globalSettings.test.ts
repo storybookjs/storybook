@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { afterEach } from 'node:test';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { type Settings, _clearGlobalSettings, globalSettings } from './globalSettings';
 

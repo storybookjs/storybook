@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, test } from 'vitest';
+import { describe, it, test } from 'vite-plus/test';
 
 import { action } from '../actions';
 import { expect, fn, isMockFunction } from './index';

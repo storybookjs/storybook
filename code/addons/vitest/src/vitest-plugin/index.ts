@@ -36,7 +36,7 @@ import path from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
-import type { PluginOption } from 'vite';
+import type { PluginOption } from 'vite-plus';
 
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { Tag } from 'storybook/internal/core-server';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';

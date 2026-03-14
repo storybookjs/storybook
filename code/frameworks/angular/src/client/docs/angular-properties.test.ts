@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 // File hierarchy: __testfixtures__ / some-test-case / input.*
 const inputRegExp = /^input\..*$/;

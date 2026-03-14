@@ -1,6 +1,6 @@
 import { Component, Input, Output } from '@angular/core';
 import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { componentWrapperDecorator } from './decorators';
 
 import decorateStory from './decorateStory';

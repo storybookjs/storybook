@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybook/internal/types';

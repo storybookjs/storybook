@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { getComponentComplexity } from './component-analyzer';
 import { getCandidatesForStorybook } from './get-candidates';

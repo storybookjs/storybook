@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { extractType, setCompodocJson } from './compodoc';
 import type { CompodocJson, Decorator } from './compodoc-types';

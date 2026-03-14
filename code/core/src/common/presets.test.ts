@@ -1,7 +1,7 @@
 import path, { join, normalize, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL, resolve } from 'node:url';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { logger } from 'storybook/internal/node-logger';
 

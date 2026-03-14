@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import type { ArgTypes } from 'storybook/internal/types';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import {
   computesTemplateFromComponent,
   computesTemplateSourceFromComponent,

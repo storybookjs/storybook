@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { Channel } from 'storybook/internal/channels';
 import type { Options, Presets } from 'storybook/internal/types';

@@ -1,4 +1,4 @@
-import * as vitest from 'vitest';
+import * as vitest from 'vite-plus/test';
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
 

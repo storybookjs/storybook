@@ -1,5 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
-import { it, expect, describe, afterEach } from 'vitest';
+import { it, expect, describe, afterEach } from 'vite-plus/test';
 import { render, screen, cleanup } from '@testing-library/svelte';
 // import '@testing-library/svelte/vitest';
 import * as stories from './Button.stories';

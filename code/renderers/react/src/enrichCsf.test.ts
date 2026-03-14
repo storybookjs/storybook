@@ -1,4 +1,4 @@
-import { expect, test, vi } from 'vitest';
+import { expect, test, vi } from 'vite-plus/test';
 
 import { generate } from 'storybook/internal/babel';
 import { type InterPresetOptions, getPresets } from 'storybook/internal/common';

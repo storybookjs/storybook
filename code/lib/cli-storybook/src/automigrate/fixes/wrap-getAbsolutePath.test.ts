@@ -1,5 +1,5 @@
-import type { MockInstance } from 'vitest';
-import { describe, expect, it, vi } from 'vitest';
+import type { MockInstance } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import * as detect from 'storybook/internal/cli';
 

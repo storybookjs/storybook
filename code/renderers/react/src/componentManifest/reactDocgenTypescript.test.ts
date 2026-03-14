@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vite-plus/test';
 
 import { parseWithReactDocgenTypescript } from './reactDocgenTypescript';
 

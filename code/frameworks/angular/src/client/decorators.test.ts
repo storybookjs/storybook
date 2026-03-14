@@ -1,6 +1,6 @@
 import type { Addon_StoryContext } from 'storybook/internal/types';
 
-import { vi, expect, describe, it } from 'vitest';
+import { vi, expect, describe, it } from 'vite-plus/test';
 import { Component } from '@angular/core';
 import { moduleMetadata, applicationConfig } from './decorators';
 import type { AngularRenderer } from './types';

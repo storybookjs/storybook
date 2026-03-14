@@ -1,5 +1,5 @@
 // this file tests Typescript types that's why there are no assertions
-import { describe, it } from 'vitest';
+import { describe, it } from 'vite-plus/test';
 
 import { satisfies } from 'storybook/internal/common';
 import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';

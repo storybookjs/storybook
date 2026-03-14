@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { JsPackageManager } from 'storybook/internal/common';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';

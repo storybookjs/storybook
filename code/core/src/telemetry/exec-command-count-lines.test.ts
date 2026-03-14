@@ -1,7 +1,7 @@
 import type { Transform } from 'node:stream';
 import { PassThrough } from 'node:stream';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execa as rawExeca } from 'execa';

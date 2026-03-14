@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { SELECT_STORY } from 'storybook/internal/core-events';
 

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import type { AddonVitestService } from 'storybook/internal/cli';
 import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';

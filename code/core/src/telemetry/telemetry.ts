@@ -51,7 +51,7 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
 // by the app. currently:
 // - cliVersion
 const inCI = isCI();
-const agentDetection = detectAgent({ stdoutIsTTY: process.stdout.isTTY, env: process.env });
+const agentDetection = detectAgent();
 const globalContext = {
   inCI,
   isTTY: process.stdout.isTTY,

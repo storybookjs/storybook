@@ -121,30 +121,36 @@ export interface SubAPI {
 
 type PartialSubState = Partial<SubState>;
 
-export const defaultLayoutState: SubState = {
-  ui: {
-    enableShortcuts: true,
-  },
-  layout: {
-    initialActive: ActiveTabs.CANVAS,
-    showToolbar: true,
-    navSize: 300,
-    bottomPanelHeight: 300,
-    rightPanelWidth: 400,
-    recentVisibleSizes: {
-      navSize: 300,
-      bottomPanelHeight: 300,
-      rightPanelWidth: 400,
+export const DEFAULT_NAV_SIZE = 300;
+export const DEFAULT_BOTTOM_PANEL_HEIGHT = 300;
+export const DEFAULT_RIGHT_PANEL_WIDTH = 400;
+
+export const getDefaultLayoutState: () => SubState = () => {
+  return {
+    ui: {
+      enableShortcuts: true,
     },
-    panelPosition: 'bottom',
-    showTabs: true,
-  },
-  layoutCustomisations: {
-    showSidebar: undefined,
-    showToolbar: undefined,
-  },
-  selectedPanel: undefined,
-  theme: create(),
+    layout: {
+      initialActive: ActiveTabs.CANVAS,
+      showToolbar: true,
+      navSize: DEFAULT_NAV_SIZE,
+      bottomPanelHeight: DEFAULT_BOTTOM_PANEL_HEIGHT,
+      rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
+      recentVisibleSizes: {
+        navSize: DEFAULT_NAV_SIZE,
+        bottomPanelHeight: DEFAULT_BOTTOM_PANEL_HEIGHT,
+        rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
+      },
+      panelPosition: 'bottom',
+      showTabs: true,
+    },
+    layoutCustomisations: {
+      showSidebar: undefined,
+      showToolbar: undefined,
+    },
+    selectedPanel: undefined,
+    theme: create(),
+  };
 };
 
 export const focusableUIElements = {
@@ -153,6 +159,8 @@ export const focusableUIElements = {
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',
   showAddonPanel: 'storybook-show-addon-panel',
+  sidebarRegion: 'storybook-sidebar-region',
+  showSidebar: 'storybook-show-sidebar',
 };
 
 const getIsNavShown = (state: State) => {
@@ -432,6 +440,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
     getInitialOptions() {
       const { theme, selectedPanel, layoutCustomisations, ...options } = provider.getConfig();
+      const defaultLayoutState = getDefaultLayoutState();
 
       return {
         ...defaultLayoutState,

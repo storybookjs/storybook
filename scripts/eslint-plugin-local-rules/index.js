@@ -3,5 +3,6 @@ module.exports = {
     'no-uncategorized-errors': require('./no-uncategorized-errors'),
     'no-duplicated-error-codes': require('./no-duplicated-error-codes'),
     'storybook-monorepo-imports': require('./storybook-monorepo-imports'),
+    'label-in-name': require('./label-in-name'),
   },
 };

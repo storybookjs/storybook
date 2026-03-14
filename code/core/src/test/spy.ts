@@ -16,6 +16,19 @@ export type * from '@vitest/spy';
 
 export { isMockFunction, mocks };
 
+/**
+ * Global registry for module mock spies created by `sb.mock('...', { spy: true })`.
+ *
+ * These spies are created by the module mocker (via `__vitest_mocker__.mockObject()`) and may use a
+ * different `@vitest/spy` instance than the one bundled with storybook/test. This means they won't
+ * appear in the `mocks` Set that `clearAllMocks`/`resetAllMocks`/`restoreAllMocks` iterate over.
+ *
+ * The automock code generation registers spies here so they can be properly cleared between
+ * stories.
+ */
+const moduleMockSpies: Set<MockInstance> = ((globalThis as any).__STORYBOOK_MODULE_MOCK_SPIES__ ??=
+  new Set<MockInstance>());
+
 type Listener = (mock: MockInstance, args: unknown[]) => void;
 const listeners = new Set<Listener>();
 
@@ -63,6 +76,7 @@ function listenWhenCalled(mock: MockInstance) {
  */
 export function clearAllMocks() {
   mocks.forEach((spy) => spy.mockClear());
+  moduleMockSpies.forEach((spy) => spy.mockClear());
 }
 
 /**
@@ -74,6 +88,7 @@ export function clearAllMocks() {
  */
 export function resetAllMocks() {
   mocks.forEach((spy) => spy.mockReset());
+  moduleMockSpies.forEach((spy) => spy.mockReset());
 }
 
 /**
@@ -82,6 +97,11 @@ export function resetAllMocks() {
  */
 export function restoreAllMocks() {
   mocks.forEach((spy) => spy.mockRestore());
+  // For module mock spies, we only clear call history (not restore), because:
+  // - mockRestore() would try to undo the spyOn on the module export object, which is not
+  //   meaningful for automocked modules where the spy reference is captured at module load time
+  // - The spy needs to remain active for subsequent stories
+  moduleMockSpies.forEach((spy) => spy.mockClear());
 }
 
 /**

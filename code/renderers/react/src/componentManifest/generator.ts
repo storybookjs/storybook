@@ -96,9 +96,14 @@ function findMatchingComponent(
 ) {
   // When meta.component is set, find the exact match.
   // meta.component is the local variable name (e.g. "Button", "Accordion"),
-  // and getComponents adds it to the component set as-is, so componentName matches directly.
+  // and getComponents adds it to the component set as-is when it maps cleanly to a component ref.
+  // If that strict lookup misses (for example `const Root = Accordion.Root`), continue into the
+  // regular title-based candidate selection below.
   if (componentName) {
-    return components.find((it) => it.componentName === componentName);
+    const match = components.find((it) => it.componentName === componentName);
+    if (match) {
+      return match;
+    }
   }
 
   // No meta.component — guess by title match.

@@ -581,6 +581,91 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
   expect(batchExtract).toHaveBeenCalled();
 });
 
+test('generator falls back to title-based matching when meta.component aliases a compound member', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Accordion.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import * as Accordion from './accordion';
+
+        const Root = Accordion.Root;
+
+        const meta = {
+          title: 'Example/Accordion',
+          component: Root,
+        } satisfies Meta<typeof Root>;
+        export default meta;
+
+        export const Default = () => <Accordion.Root multiple />;
+      `,
+      ['./src/stories/accordion.tsx']: dedent`
+        import React from 'react';
+
+        type RootProps = {
+          /** Allow multiple items open */
+          multiple?: boolean;
+        };
+
+        const Root = ({ multiple = false }: RootProps) => <div data-multiple={multiple} />;
+
+        export const Accordion = { Root };
+      `,
+    },
+    '/app'
+  );
+
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component?.componentName === 'Accordion.Root') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Accordion.Root',
+            exportName: 'Root',
+            filePath: '/app/src/stories/accordion.tsx',
+            description: '',
+            props: {},
+          };
+        }
+      }
+    });
+
+  const presets: NonNullable<ManifestOptions['presets']> = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries = [
+    {
+      type: 'story' as const,
+      subtype: 'story' as const,
+      id: 'example-accordion--default',
+      name: 'Default',
+      title: 'Example/Accordion',
+      importPath: './src/stories/Accordion.stories.tsx',
+      componentPath: './src/stories/accordion.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ] satisfies ManifestEntries;
+
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const accordion = result?.components?.components?.['example-accordion'];
+
+  expect(accordion?.error).toBeUndefined();
+  expect(accordion?.name).toBe('Root');
+  expect(accordion?.import).toBe('import { Root } from "some-package";');
+  expect(batchExtract).toHaveBeenCalled();
+});
+
 test('should create component manifest when only attached-mdx docs have manifest tag', async () => {
   // This test verifies that the React renderer creates a component manifest entry
   // when only an attached-mdx docs entry has the 'manifest' tag (and no story entries do).

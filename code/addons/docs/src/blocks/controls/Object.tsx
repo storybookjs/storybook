@@ -147,6 +147,18 @@ const RawInput = styled(Form.Textarea)(({ theme }) => ({
   },
 }));
 
+const RawInputWrapper = styled.div({
+  flex: 1,
+  display: 'grid',
+  gap: 6,
+});
+
+const ErrorMessage = styled.p(({ theme }) => ({
+  margin: 0,
+  color: theme.color.negative,
+  fontSize: theme.typography.size.s2,
+}));
+
 const ENTER_EVENT = {
   bubbles: true,
   cancelable: true,
@@ -165,6 +177,8 @@ export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
 export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
   const theme = useTheme();
+  const controlId = getControlId(name);
+  const jsonErrorId = `${controlId}-error`;
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
@@ -203,6 +217,12 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     return JSON.stringify(data ?? '', null, 2);
   }, [data]);
 
+  useEffect(() => {
+    if (showRaw) {
+      setParseError(null);
+    }
+  }, [jsonString, showRaw]);
+
   if (!hasData) {
     return (
       <Button
@@ -217,19 +237,30 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   }
 
   const rawJSONForm = (
-    <RawInput
-      ref={htmlElRef}
-      id={getControlId(name)}
-      minRows={3}
-      name={name}
-      key={jsonString}
-      defaultValue={jsonString}
-      onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
-      placeholder="Edit JSON string..."
-      autoFocus={forceVisible}
-      valid={parseError ? 'error' : undefined}
-      readOnly={readonly}
-    />
+    <RawInputWrapper>
+      <label htmlFor={controlId} className="sb-sr-only">
+        Edit {name} as JSON
+      </label>
+      <RawInput
+        ref={htmlElRef}
+        id={controlId}
+        minRows={3}
+        name={name}
+        key={jsonString}
+        defaultValue={jsonString}
+        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
+        autoFocus={forceVisible}
+        valid={parseError ? 'error' : undefined}
+        aria-invalid={!!parseError}
+        aria-describedby={parseError ? jsonErrorId : undefined}
+        readOnly={readonly}
+      />
+      {parseError && (
+        <ErrorMessage id={jsonErrorId} role="status" aria-live="polite">
+          Invalid JSON: {parseError.message}
+        </ErrorMessage>
+      )}
+    </RawInputWrapper>
   );
 
   const isObjectOrArray =
@@ -242,6 +273,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
           disabled={readonly}
           pressed={showRaw}
           ariaLabel={`Edit ${name} as JSON`}
+          ariaDescription="Toggle between the structured object editor and the raw JSON editor."
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);

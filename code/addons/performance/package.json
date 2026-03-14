@@ -1,0 +1,68 @@
+{
+  "name": "@storybook/addon-performance",
+  "version": "10.3.0-alpha.2",
+  "description": "Storybook Addon Performance: Measure and visualize React component render performance",
+  "keywords": [
+    "performance",
+    "profiler",
+    "render",
+    "optimization",
+    "storybook",
+    "storybook-addon",
+    "react",
+    "web-vitals",
+    "cls",
+    "budget"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/performance",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/performance"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "devDependencies": {
+    "@storybook/icons": "^2.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "storybook": {
+    "displayName": "Performance Profiler",
+    "icon": "https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png",
+    "supportedFrameworks": ["react"]
+  }
+}

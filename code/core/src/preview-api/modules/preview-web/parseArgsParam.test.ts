@@ -188,34 +188,39 @@ describe('parseArgsParam', () => {
   });
 
   describe('value sanitization', () => {
-    it("omits values that aren't in the extended alphanumeric set", () => {
-      expect(parseArgsParam('key:a`b')).toStrictEqual({});
-      expect(parseArgsParam('key:a~b')).toStrictEqual({});
-      expect(parseArgsParam('key:a!b')).toStrictEqual({});
-      expect(parseArgsParam('key:a@b')).toStrictEqual({});
-      expect(parseArgsParam('key:a#b')).toStrictEqual({});
-      expect(parseArgsParam('key:a$b')).toStrictEqual({});
-      expect(parseArgsParam('key:a%b')).toStrictEqual({});
-      expect(parseArgsParam('key:a^b')).toStrictEqual({});
-      expect(parseArgsParam('key:a&b')).toStrictEqual({});
-      expect(parseArgsParam('key:a*b')).toStrictEqual({});
-      expect(parseArgsParam('key:a(b')).toStrictEqual({});
-      expect(parseArgsParam('key:a)b')).toStrictEqual({});
-      expect(parseArgsParam('key:a=b')).toStrictEqual({});
-      expect(parseArgsParam('key:a[b')).toStrictEqual({});
-      expect(parseArgsParam('key:a]b')).toStrictEqual({});
-      expect(parseArgsParam('key:a{b')).toStrictEqual({});
-      expect(parseArgsParam('key:a}b')).toStrictEqual({});
-      expect(parseArgsParam('key:a\\b')).toStrictEqual({});
-      expect(parseArgsParam('key:a|b')).toStrictEqual({});
-      expect(parseArgsParam("key:a'b")).toStrictEqual({});
-      expect(parseArgsParam('key:a"b')).toStrictEqual({});
-      expect(parseArgsParam('key:a,b')).toStrictEqual({});
-      expect(parseArgsParam('key:a.b')).toStrictEqual({});
-      expect(parseArgsParam('key:a<b')).toStrictEqual({});
-      expect(parseArgsParam('key:a>b')).toStrictEqual({});
-      expect(parseArgsParam('key:a/b')).toStrictEqual({});
-      expect(parseArgsParam('key:a?b')).toStrictEqual({});
+    it('omits values that contain control characters', () => {
+      expect(parseArgsParam('key:a\x00b')).toStrictEqual({});
+      expect(parseArgsParam('key:a\x1Fb')).toStrictEqual({});
+      expect(parseArgsParam('key:a\x7Fb')).toStrictEqual({});
+    });
+
+    it('allows values with printable special characters', () => {
+      expect(parseArgsParam('key:a`b')).toStrictEqual({ key: 'a`b' });
+      expect(parseArgsParam('key:a~b')).toStrictEqual({ key: 'a~b' });
+      expect(parseArgsParam('key:a!b')).toStrictEqual({ key: 'a!b' });
+      expect(parseArgsParam('key:a@b')).toStrictEqual({ key: 'a@b' });
+      expect(parseArgsParam('key:a#b')).toStrictEqual({ key: 'a#b' });
+      expect(parseArgsParam('key:a$b')).toStrictEqual({ key: 'a$b' });
+      expect(parseArgsParam('key:a^b')).toStrictEqual({ key: 'a^b' });
+      expect(parseArgsParam('key:a&b')).toStrictEqual({ key: 'a&b' });
+      expect(parseArgsParam('key:a*b')).toStrictEqual({ key: 'a*b' });
+      expect(parseArgsParam('key:a(b')).toStrictEqual({ key: 'a(b' });
+      expect(parseArgsParam('key:a)b')).toStrictEqual({ key: 'a)b' });
+      expect(parseArgsParam('key:a{b')).toStrictEqual({ key: 'a{b' });
+      expect(parseArgsParam('key:a}b')).toStrictEqual({ key: 'a}b' });
+      expect(parseArgsParam('key:a\\b')).toStrictEqual({ key: 'a\\b' });
+      expect(parseArgsParam('key:a|b')).toStrictEqual({ key: 'a|b' });
+      expect(parseArgsParam("key:a'b")).toStrictEqual({ key: "a'b" });
+      expect(parseArgsParam('key:a"b')).toStrictEqual({ key: 'a"b' });
+      expect(parseArgsParam('key:a<b')).toStrictEqual({ key: 'a<b' });
+      expect(parseArgsParam('key:a>b')).toStrictEqual({ key: 'a>b' });
+      expect(parseArgsParam('key:a/b')).toStrictEqual({ key: 'a/b' });
+      expect(parseArgsParam('key:a?b')).toStrictEqual({ key: 'a?b' });
+    });
+
+    it('decodes !str(...) as a string starting with !', () => {
+      expect(parseArgsParam('key:!str(important)')).toStrictEqual({ key: '!important' });
+      expect(parseArgsParam('key:!str(str(nested))')).toStrictEqual({ key: '!str(nested)' });
     });
 
     it('allows values that are in the extended alphanumeric set', () => {
@@ -236,17 +241,13 @@ describe('parseArgsParam', () => {
     });
 
     it('also applies to nested object and array values', () => {
-      expect(parseArgsParam('obj.key:a!b')).toStrictEqual({});
-      expect(parseArgsParam('arr[0]:a!b')).toStrictEqual({});
+      expect(parseArgsParam('obj.key:a!b')).toStrictEqual({ obj: { key: 'a!b' } });
+      expect(parseArgsParam('arr[0]:a!b')).toStrictEqual({ arr: ['a!b'] });
     });
 
     it('completely omits an arg when a (deeply) nested value is invalid', () => {
-      expect(parseArgsParam('obj.key:a!b;obj.foo:val;obj.bar.baz:val')).toStrictEqual({});
-      expect(parseArgsParam('obj.arr[]:a!b;obj.foo:val;obj.bar.baz:val')).toStrictEqual({});
-      expect(parseArgsParam('obj.arr[0]:val;obj.arr[1]:a!b;obj.foo:val')).toStrictEqual({});
-      expect(parseArgsParam('arr[]:val;arr[]:a!b;key:val')).toStrictEqual({ key: 'val' });
-      expect(parseArgsParam('arr[0]:val;arr[1]:a!1;key:val')).toStrictEqual({ key: 'val' });
-      expect(parseArgsParam('arr[0]:val;arr[2]:a!1;key:val')).toStrictEqual({ key: 'val' });
+      expect(parseArgsParam('obj.key:a\x00b;obj.foo:val;obj.bar.baz:val')).toStrictEqual({});
+      expect(parseArgsParam('arr[]:val;arr[]:a\x00b;key:val')).toStrictEqual({ key: 'val' });
     });
   });
 });

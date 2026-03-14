@@ -181,6 +181,16 @@ describe('buildArgsParam', () => {
     expect(param).toEqual('key:foo+bar+baz');
   });
 
+  it('encodes strings with special characters', () => {
+    const param = buildArgsParam({}, { key: 'My text!' });
+    expect(param).toEqual('key:My+text!');
+  });
+
+  it('encodes strings starting with ! using !str() escaping', () => {
+    const param = buildArgsParam({}, { key: '!important' });
+    expect(param).toEqual('key:!str(important)');
+  });
+
   it('encodes null values as !null', () => {
     const param = buildArgsParam({}, { key: null });
     expect(param).toEqual('key:!null');

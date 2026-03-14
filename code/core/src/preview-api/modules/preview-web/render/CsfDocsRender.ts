@@ -24,6 +24,8 @@ import { PREPARE_ABORTED } from './Render';
  * - Autodocs, where there is no story, and we fall back to the globally defined template.
  */
 export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRenderer> {
+  public readonly renderId: number;
+
   public readonly type: RenderType = 'docs';
 
   public readonly subtype = 'csf';
@@ -51,6 +53,7 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
     private callbacks: RenderContextCallbacks<TRenderer>
   ) {
     this.id = entry.id;
+    this.renderId = Date.now();
   }
 
   isPreparing() {

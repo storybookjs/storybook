@@ -1,8 +1,13 @@
-import { definePreview } from 'storybook/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import { PARAM_KEY } from './constants';
 import { withBackgroundAndGrid } from './decorator';
-import type { BackgroundsParameters, GlobalState } from './types';
+import type {
+  BackgroundTypes,
+  BackgroundsGlobals,
+  BackgroundsParameters,
+  GlobalState,
+} from './types';
 
 const decorators = globalThis.FEATURES?.backgrounds ? [withBackgroundAndGrid] : [];
 
@@ -21,8 +26,10 @@ const initialGlobals: Record<string, GlobalState> = {
   [PARAM_KEY]: { value: undefined, grid: false },
 };
 
+export type { BackgroundTypes, BackgroundsGlobals };
+
 export default () =>
-  definePreview({
+  definePreviewAddon<BackgroundTypes>({
     decorators,
     parameters,
     initialGlobals,

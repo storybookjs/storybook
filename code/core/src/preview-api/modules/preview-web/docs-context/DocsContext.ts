@@ -157,7 +157,19 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
   ): ResolvedModuleExportFromType<TType, TRenderer> {
     type TResolvedExport = ResolvedModuleExportFromType<TType, TRenderer>;
 
-    const csfFile = this.exportsToCSFFile.get(moduleExportOrType);
+    let csfFile = this.exportsToCSFFile.get(moduleExportOrType);
+
+    // If direct lookup fails and the object has a .default property,
+    // try looking up by the default export. This handles bundlers like Rolldown
+    // that don't preserve module namespace object identity across imports.
+    if (
+      !csfFile &&
+      moduleExportOrType &&
+      typeof moduleExportOrType === 'object' &&
+      'default' in moduleExportOrType
+    ) {
+      csfFile = this.exportsToCSFFile.get((moduleExportOrType as ModuleExports).default);
+    }
 
     if (csfFile) {
       return { type: 'meta', csfFile } as TResolvedExport;

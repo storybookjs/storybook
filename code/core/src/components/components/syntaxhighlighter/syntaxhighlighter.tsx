@@ -7,7 +7,7 @@ import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 // @ts-expect-error (Converted from ts-ignore)
-import { createElement } from 'react-syntax-highlighter/dist/esm/index';
+import createElement from 'react-syntax-highlighter/dist/esm/create-element';
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
@@ -26,13 +26,14 @@ import { styled } from 'storybook/theming';
 import { ActionBar } from '../ActionBar/ActionBar';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
 import { ScrollArea } from '../ScrollArea/ScrollArea';
+import { createCopyToClipboardFunction } from './clipboard';
 import type {
   SyntaxHighlighterProps,
   SyntaxHighlighterRenderer,
   SyntaxHighlighterRendererProps,
 } from './syntaxhighlighter-types';
 
-const { navigator, document, window: globalWindow } = global;
+const { window: globalWindow } = global;
 
 export const supportedLanguages = {
   jsextra: jsExtras,
@@ -58,24 +59,6 @@ const themedSyntax = memoize(2)((theme) =>
 
 const copyToClipboard: (text: string) => Promise<void> = createCopyToClipboardFunction();
 
-export function createCopyToClipboardFunction() {
-  if (navigator?.clipboard) {
-    return (text: string) => navigator.clipboard.writeText(text);
-  }
-  return async (text: string) => {
-    const tmp = document.createElement('TEXTAREA') as HTMLTextAreaElement;
-    const focus = document.activeElement as HTMLTextAreaElement;
-
-    tmp.value = text;
-
-    document.body.appendChild(tmp);
-    tmp.select();
-    document.execCommand('copy');
-    document.body.removeChild(tmp);
-    focus.focus();
-  };
-}
-
 export interface WrapperProps {
   bordered?: boolean;
   padded?: boolean;
@@ -85,6 +68,8 @@ export interface WrapperProps {
 const Wrapper = styled.div<WrapperProps>(
   ({ theme }) => ({
     position: 'relative',
+    display: 'flex',
+    flexWrap: 'wrap',
     overflow: 'hidden',
     color: theme.color.defaultText,
   }),
@@ -108,13 +93,16 @@ const Wrapper = styled.div<WrapperProps>(
 );
 
 const UnstyledScroller = ({ children, className }: ScrollAreaProps) => (
-  <ScrollArea horizontal vertical className={className}>
+  <ScrollArea horizontal vertical focusable className={className}>
     {children}
   </ScrollArea>
 );
 const Scroller = styled(UnstyledScroller)(
   {
-    position: 'relative',
+    flex: 1,
+    flexShrink: 0,
+    flexBasis: 'fit-content',
+    maxWidth: '100%',
   },
   ({ theme }) => themedSyntax(theme)
 );
@@ -264,7 +252,7 @@ export const SyntaxHighlighter = ({
       </Scroller>
 
       {copyable ? (
-        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} />
+        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} flexLayout />
       ) : null}
     </Wrapper>
   );

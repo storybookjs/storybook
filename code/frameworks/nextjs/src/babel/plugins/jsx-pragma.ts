@@ -3,7 +3,9 @@
  * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/jsx-pragma.ts
  */
 import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';
-import jsx from 'next/dist/compiled/babel/plugin-syntax-jsx';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import jsx from 'next/dist/compiled/babel/plugin-syntax-jsx.js';
 
 export default function jsxPragma({ types: t }: { types: typeof BabelTypes }): PluginObj<any> {
   return {

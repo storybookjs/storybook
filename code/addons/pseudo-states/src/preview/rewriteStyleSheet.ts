@@ -1,8 +1,12 @@
-import { EXCLUDED_PSEUDO_ELEMENT_PATTERNS, PSEUDO_STATES } from '../constants';
+import {
+  EXCLUDED_PSEUDO_ELEMENT_PATTERNS,
+  EXCLUDED_PSEUDO_ESCAPE_SEQUENCE,
+  PSEUDO_STATES,
+} from '../constants';
 import { splitSelectors } from './splitSelectors';
 
 const pseudoStates = Object.values(PSEUDO_STATES);
-const pseudoStatesPattern = `:(${pseudoStates.join('|')})`;
+const pseudoStatesPattern = `${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:(${pseudoStates.join('|')})`;
 const matchOne = new RegExp(pseudoStatesPattern);
 const matchAll = new RegExp(pseudoStatesPattern, 'g');
 
@@ -21,7 +25,7 @@ const replacePseudoStates = (selector: string, allClass?: boolean) => {
   return pseudoStates.reduce(
     (acc, state) =>
       acc.replace(
-        new RegExp(`${negativeLookbehind}:${state}`, 'g'),
+        new RegExp(`${negativeLookbehind}${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:${state}`, 'g'),
         `.pseudo-${state}${allClass ? '-all' : ''}`
       ),
     selector
@@ -75,12 +79,15 @@ const extractPseudoStates = (selector: string) => {
 };
 
 const rewriteNotSelectors = (selector: string, forShadowDOM: boolean) => {
-  return [...selector.matchAll(/:not\(([^)]+)\)/g)].reduce((acc, match) => {
-    const originalNot = match[0];
-    const selectorList = match[1];
-    const rewrittenNot = rewriteNotSelector(selectorList, forShadowDOM);
-    return acc.replace(originalNot, rewrittenNot);
-  }, selector);
+  // Accept up to 3 levels of nested parentheses.
+  return [...selector.matchAll(/:not\((?:[^()]|\([^()]+\)|\((?:[^()]|\([^()]+\))+\))+\)/g)].reduce(
+    (acc, [originalNot]) => {
+      const selectorList = originalNot.match(/^:not\((.+)\)$/)?.[1] ?? '';
+      const rewrittenNot = rewriteNotSelector(selectorList, forShadowDOM);
+      return acc.replace(originalNot, rewrittenNot);
+    },
+    selector
+  );
 };
 
 const rewriteNotSelector = (negatedSelectorList: string, forShadowDOM: boolean) => {
@@ -191,24 +198,28 @@ const rewriteRuleContainer = (
       // @ts-expect-error We're adding this nonstandard property below
       numRewritten = cssRule.__pseudoStatesRewrittenCount;
     } else {
-      if ('cssRules' in cssRule && (cssRule.cssRules as CSSRuleList).length) {
-        numRewritten = rewriteRuleContainer(
-          cssRule as CSSGroupingRule,
-          rewriteLimit - count,
-          forShadowDOM
-        );
-      } else {
-        if (!('selectorText' in cssRule)) {
-          continue;
-        }
-        const styleRule = cssRule as CSSStyleRule;
+      let styleRule = cssRule as CSSStyleRule;
+
+      // Modify the rule, if it contains a pseudo state
+      if ('selectorText' in styleRule) {
         if (matchOne.test(styleRule.selectorText)) {
           const newRule = rewriteRule(styleRule, forShadowDOM);
           ruleContainer.deleteRule(index);
           ruleContainer.insertRule(newRule, index);
+          styleRule = ruleContainer.cssRules[index] as CSSStyleRule;
           numRewritten = 1;
         }
       }
+
+      // If it has nested rules, check them as well
+      if ('cssRules' in styleRule && (styleRule.cssRules as CSSRuleList).length) {
+        numRewritten = rewriteRuleContainer(
+          styleRule as CSSGroupingRule,
+          rewriteLimit - count,
+          forShadowDOM
+        );
+      }
+
       // @ts-expect-error We're adding this nonstandard property
       cssRule.__processed = true;
       // @ts-expect-error We're adding this nonstandard property

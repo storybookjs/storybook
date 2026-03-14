@@ -4,8 +4,14 @@ export interface ControlsParameters {
    *
    * @see https://storybook.js.org/docs/essentials/controls#parameters-1
    */
-  controls: {
-    /** Remove the addon panel and disable the addon's behavior */
+  controls?: {
+    /**
+     * Removes the addon panel and turns off the feature's behavior. If you wish to turn off this
+     * feature for the entire Storybook, you can set the option in your `main.js|ts` configuration
+     * file.
+     *
+     * @see https://storybook.js.org/docs/essentials/controls#disable
+     */
     disable?: boolean;
 
     /** Disable the ability to create or edit stories from the Controls panel */
@@ -24,6 +30,16 @@ export interface ControlsParameters {
     include?: string[] | RegExp;
 
     /**
+     * Custom control type matchers
+     *
+     * @see https://storybook.js.org/docs/essentials/controls#custom-control-type-matchers
+     */
+    matchers?: {
+      date?: RegExp;
+      color?: RegExp;
+    };
+
+    /**
      * Preset color swatches for the color picker control
      *
      * @example PresetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)',
@@ -34,4 +50,8 @@ export interface ControlsParameters {
     /** Controls sorting order */
     sort?: 'none' | 'alpha' | 'requiredFirst';
   };
+}
+
+export interface ControlsTypes {
+  parameters: ControlsParameters;
 }

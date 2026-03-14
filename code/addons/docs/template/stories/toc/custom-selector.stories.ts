@@ -2,7 +2,7 @@ export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs'],
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     // Select all the headings in the document
     docs: { toc: { headingSelector: 'h1, h2, h3' } },
   },

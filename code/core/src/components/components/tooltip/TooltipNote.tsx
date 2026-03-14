@@ -14,7 +14,6 @@ const Note = styled.div(({ theme }) => ({
   pointerEvents: 'none',
   zIndex: -1,
   background: theme.base === 'light' ? 'rgba(60, 60, 60, 0.9)' : 'rgba(0, 0, 0, 0.95)',
-  margin: 6,
 }));
 
 export interface TooltipNoteProps {

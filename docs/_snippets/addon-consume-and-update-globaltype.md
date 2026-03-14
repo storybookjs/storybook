@@ -3,7 +3,7 @@ import React, { useCallback } from 'react';
 import { OutlineIcon } from '@storybook/icons';
 import { useGlobals } from 'storybook/manager-api';
 import { addons } from 'storybook/preview-api';
-import { IconButton } from 'storybook/internal/components';
+import { ToggleButton } from 'storybook/internal/components';
 import { FORCE_RE_RENDER } from 'storybook/internal/core-events';
 
 const ExampleToolbar = () => {
@@ -16,22 +16,25 @@ const ExampleToolbar = () => {
     // Updates Storybook global value
     updateGlobals({
       ['my-param-key']: !isActive,
-    }),
-      // Invokes Storybook's addon API method (with the FORCE_RE_RENDER) event to trigger a UI refresh
-      addons.getChannel().emit(FORCE_RE_RENDER);
+    });
+    // Invokes Storybook's addon API method (with the FORCE_RE_RENDER) event to trigger a UI refresh
+    addons.getChannel().emit(FORCE_RE_RENDER);
   };
 
   const toggleOutline = useCallback(() => refreshAndUpdateGlobal(), [isActive]);
 
   return (
-    <IconButton
+    <ToggleButton
       key="Example"
-      active={isActive}
-      title="Show a Storybook toolbar"
+      padding="small"
+      variant="ghost"
+      pressed={isActive}
       onClick={toggleOutline}
+      ariaLabel="Addon feature"
+      tooltip="Toggle addon feature"
     >
       <OutlineIcon />
-    </IconButton>
+    </ToggleButton>
   );
 };
 ```

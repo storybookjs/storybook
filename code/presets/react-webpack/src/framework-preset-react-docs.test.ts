@@ -48,7 +48,7 @@ describe('framework-preset-react-docgen', () => {
           rules: [
             {
               exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
-              loader: '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader',
+              loader: expect.stringContaining('@storybook/preset-react-webpack'),
               options: { babelOptions: { plugins: [], presets: [] }, debug: false },
               test: /\.(cjs|mjs|tsx?|jsx?)$/,
             },
@@ -93,7 +93,7 @@ describe('framework-preset-react-docgen', () => {
           rules: [
             {
               exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
-              loader: '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader',
+              loader: expect.stringContaining('@storybook/preset-react-webpack'),
               options: { babelOptions: { plugins: [], presets: [] }, debug: false },
               test: /\.(cjs|mjs|jsx?)$/,
             },

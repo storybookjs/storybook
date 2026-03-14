@@ -64,7 +64,10 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
   },
   a: {
     color: theme.color.secondary,
-    textDecoration: 'none',
+    // Ensure WCAG Level A compliance (SC 1.4.1), see https://www.w3.org/WAI/WCAG22/Techniques/failures/F73
+    textDecoration: 'underline',
+    textDecorationThickness: '0.03125rem',
+    textUnderlineOffset: '0.11em',
   },
   'a.absent': {
     color: '#cc0000',
@@ -78,6 +81,10 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
     top: 0,
     left: 0,
     bottom: 0,
+    textDecoration: 'none',
+  },
+  '&.anchor:hover, &.anchor:focus': {
+    textDecoration: 'underline',
   },
   'h1, h2, h3, h4, h5, h6': {
     margin: '20px 0 10px',

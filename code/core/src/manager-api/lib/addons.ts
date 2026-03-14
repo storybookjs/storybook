@@ -21,7 +21,8 @@ import { global } from '@storybook/global';
 import type { API } from '../root';
 import { mockChannel } from './storybook-channel-mock';
 
-export { Addon_Type as Addon, Addon_TypesEnum as types };
+export type { Addon_Type as Addon };
+export { Addon_TypesEnum as types };
 
 export function isSupportedType(type: Addon_Types): boolean {
   return !!Object.values(Addon_TypesEnum).find((typeVal) => typeVal === type);

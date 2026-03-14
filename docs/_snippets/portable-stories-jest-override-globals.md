@@ -1,7 +1,7 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { test } from '@jest/globals';
-// 👉 Using Next.js? Import from @storybook/nextjs instead
-import { composeStory } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStory } from '@storybook/your-framework';
 
 import meta, { Primary as PrimaryStory } from './Button.stories';
 
@@ -9,7 +9,7 @@ test('renders in English', async () => {
   const Primary = composeStory(
     PrimaryStory,
     meta,
-    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
+    { globals: { locale: 'en' } }, // 👈 Project annotations to override the locale
   );
 
   await Primary.run();
@@ -33,7 +33,7 @@ test('renders in English', async () => {
   const Primary = composeStory(
     PrimaryStory,
     meta,
-    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
+    { globals: { locale: 'en' } }, // 👈 Project annotations to override the locale
   );
 
   await Primary.run();

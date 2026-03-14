@@ -50,10 +50,8 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
       isCollapsed,
       onDeltaUpdate,
       readOnly,
-      getStyle,
       addButtonElement,
       cancelButtonElement,
-      editButtonElement,
       inputElement,
       textareaElement,
       minusMenuElement,
@@ -95,10 +93,8 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
             onUpdate={this.onUpdate}
             onDeltaUpdate={onDeltaUpdate ?? (() => {})}
             readOnly={readOnlyFunction as (...args: any) => any}
-            getStyle={getStyle ?? (() => ({}))}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementFunction as (...args: any) => any}
             textareaElementGenerator={textareaElementFunction as (...args: any) => any}
             minusMenuElement={minusMenuElement}
@@ -125,10 +121,8 @@ interface JsonTreeProps {
   onFullyUpdate?: (...args: any) => any;
   onDeltaUpdate?: (...args: any) => any;
   readOnly?: boolean | ((...args: any) => any);
-  getStyle?: (...args: any) => any;
   addButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
-  editButtonElement?: ReactElement;
   inputElement?: ReactElement | ((...args: any) => ReactElement);
   textareaElement?: ReactElement | ((...args: any) => ReactElement);
   minusMenuElement?: ReactElement;
@@ -145,17 +139,6 @@ interface JsonTreeProps {
 JsonTree.defaultProps = {
   rootName: 'root',
   isCollapsed: (keyPath, deep) => deep !== -1,
-  getStyle: (keyName, data, keyPath, deep, dataType) => {
-    switch (dataType) {
-      case 'Object':
-      case 'Error':
-        return object;
-      case 'Array':
-        return array;
-      default:
-        return value;
-    }
-  },
   readOnly: () => false,
   onFullyUpdate: () => {},
   onDeltaUpdate: () => {},

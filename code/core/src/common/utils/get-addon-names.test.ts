@@ -42,6 +42,18 @@ describe('getAddonNames', () => {
     expect(result).toEqual(['@storybook/addon-highlight', '@storybook/addon-outline']);
   });
 
+  it('should extract addon names from windows absolute paths', () => {
+    const config = {
+      stories: [],
+      addons: [
+        '\\sandbox\\react-vite-default-ts\\node_modules\\@storybook\\addon-highlight',
+        '\\sandbox\\react-vite-default-ts\\node_modules\\@storybook\\addon-outline',
+      ],
+    };
+    const result = getAddonNames(config);
+    expect(result).toEqual(['@storybook/addon-highlight', '@storybook/addon-outline']);
+  });
+
   it('should extract addon names from pnpm paths', () => {
     const config = {
       stories: [],

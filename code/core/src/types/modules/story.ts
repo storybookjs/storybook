@@ -18,12 +18,10 @@ import type {
   StoryAnnotations,
   StoryContext,
   StoryContextForEnhancers,
-  StoryFn,
   StoryId,
   StoryIdentifier,
   StoryName,
   StrictArgTypes,
-  StrictGlobalTypes,
 } from './csf';
 
 // Store Types
@@ -42,9 +40,9 @@ export type RenderToCanvas<TRenderer extends Renderer> = (
   element: TRenderer['canvasElement']
 ) => MaybePromise<void | TeardownRenderToCanvas>;
 
-export interface ProjectAnnotations<TRenderer extends Renderer>
-  extends BaseProjectAnnotations<TRenderer> {
-  addons?: ProjectAnnotations<TRenderer>[];
+export interface ProjectAnnotations<
+  TRenderer extends Renderer,
+> extends BaseProjectAnnotations<TRenderer> {
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
 }
@@ -59,7 +57,6 @@ export type NormalizedProjectAnnotations<TRenderer extends Renderer = Renderer> 
   'decorators' | 'loaders' | 'runStep' | 'beforeAll'
 > & {
   argTypes?: StrictArgTypes;
-  globalTypes?: StrictGlobalTypes;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
   runStep: StepRunner<TRenderer>;

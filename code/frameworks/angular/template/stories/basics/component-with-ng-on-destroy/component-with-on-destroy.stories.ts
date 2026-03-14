@@ -1,5 +1,6 @@
-import { OnDestroy, OnInit, Component } from '@angular/core';
-import { Meta, StoryObj } from '@storybook/angular';
+import type { OnDestroy, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
+import type { Meta, StoryObj } from '@storybook/angular';
 
 @Component({
   standalone: false,
@@ -33,7 +34,7 @@ const meta: Meta<OnDestroyComponent> = {
   component: OnDestroyComponent,
   parameters: {
     // disabled due to new Date()
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 } as Meta;
 

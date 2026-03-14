@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
-import { ArgTypes } from 'storybook/internal/types';
+import type { ArgTypes } from 'storybook/internal/types';
 import { describe, it, expect } from 'vitest';
 import {
   computesTemplateFromComponent,
   computesTemplateSourceFromComponent,
 } from './ComputesTemplateFromComponent';
-import { ISomeInterface, ButtonAccent, InputComponent } from './__testfixtures__/input.component';
+import type { ISomeInterface } from './__testfixtures__/input.component';
+import { ButtonAccent, InputComponent } from './__testfixtures__/input.component';
 
 describe('angular template decorator', () => {
   it('with props should generate tag with properties', () => {

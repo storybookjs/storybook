@@ -1,10 +1,11 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { readJSON, writeJSON } from 'fs-extra';
+import { readFile, writeFile } from 'node:fs/promises';
+
 import { join } from 'path';
 
 export async function updatePackageScripts({ cwd, prefix }: { cwd: string; prefix: string }) {
   const packageJsonPath = join(cwd, 'package.json');
-  const packageJson = await readJSON(packageJsonPath);
+  const content = await readFile(packageJsonPath, 'utf-8');
+  const packageJson = JSON.parse(content);
   packageJson.scripts = {
     ...packageJson.scripts,
     ...(packageJson.scripts.storybook && {
@@ -12,5 +13,5 @@ export async function updatePackageScripts({ cwd, prefix }: { cwd: string; prefi
       'build-storybook': `${prefix} ${packageJson.scripts['build-storybook']}`,
     }),
   };
-  await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 }

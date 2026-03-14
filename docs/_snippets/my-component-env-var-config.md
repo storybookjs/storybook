@@ -1,9 +1,8 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './MyComponent';
 
-// To apply a set of backgrounds to all stories of Button:
 const meta: Meta<MyComponent> = {
   component: MyComponent,
 };
@@ -11,29 +10,45 @@ const meta: Meta<MyComponent> = {
 export default meta;
 type Story = StoryObj<MyComponent>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 export default {
   component: MyComponent,
 };
 
-export const Default = {
+export const Basic = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { MyComponent } from './MyComponent';
@@ -45,26 +60,26 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
 };
 
-export const Default = {
+export const Basic = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -74,9 +89,103 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
 ```

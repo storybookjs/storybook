@@ -9,55 +9,48 @@ import { getControlId } from '../helpers';
 import type { ControlProps, NormalizedOptionsConfig, OptionsMultiSelection } from '../types';
 import { selectedKeys, selectedValues } from './helpers';
 
-const Wrapper = styled.div<{ isInline: boolean }>(
-  ({ isInline }) =>
+const Wrapper = styled.fieldset<{ $isInline: boolean }>(
+  {
+    border: 'none',
+    marginInline: 0,
+    padding: 0,
+    display: 'flex',
+    alignItems: 'flex-start',
+  },
+  ({ $isInline: isInline }) =>
     isInline
       ? {
-          display: 'flex',
           flexWrap: 'wrap',
-          alignItems: 'flex-start',
-
+          gap: 15,
           label: {
             display: 'inline-flex',
-            marginRight: 15,
           },
         }
       : {
+          flexDirection: 'column',
+          gap: 8,
           label: {
             display: 'flex',
           },
-        },
-  (props) => {
-    if (props['aria-readonly'] === 'true') {
-      return {
-        input: {
-          cursor: 'not-allowed',
-        },
-      };
-    }
-  }
+        }
 );
 
-const Text = styled.span({
-  '[aria-readonly=true] &': {
-    opacity: 0.5,
-  },
-});
+const Text = styled.span<{ $readOnly: boolean }>(({ $readOnly }) => ({
+  opacity: $readOnly ? 0.5 : 1,
+}));
 
-const Label = styled.label({
+const Label = styled.label<{ $readOnly: boolean }>(({ $readOnly }) => ({
   lineHeight: '20px',
   alignItems: 'center',
-  marginBottom: 8,
-
-  '&:last-child': {
-    marginBottom: 0,
-  },
+  cursor: $readOnly ? 'not-allowed' : 'pointer',
 
   input: {
+    cursor: $readOnly ? 'not-allowed' : 'pointer',
+
     margin: 0,
     marginRight: 6,
   },
-});
+}));
 
 type CheckboxConfig = NormalizedOptionsConfig & { isInline: boolean };
 type CheckboxProps = ControlProps<OptionsMultiSelection> & CheckboxConfig;
@@ -98,11 +91,12 @@ export const CheckboxControl: FC<CheckboxProps> = ({
   const controlId = getControlId(name);
 
   return (
-    <Wrapper aria-readonly={readonly} isInline={isInline}>
+    <Wrapper $isInline={isInline}>
+      <legend className="sb-sr-only">{name}</legend>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;
         return (
-          <Label key={id} htmlFor={id}>
+          <Label key={id} htmlFor={id} $readOnly={readonly}>
             <input
               type="checkbox"
               disabled={readonly}
@@ -112,7 +106,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
               onChange={handleChange}
               checked={selected?.includes(key)}
             />
-            <Text>{key}</Text>
+            <Text $readOnly={readonly}>{key}</Text>
           </Label>
         );
       })}

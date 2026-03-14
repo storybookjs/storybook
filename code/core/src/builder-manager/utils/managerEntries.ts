@@ -4,6 +4,7 @@ import { dirname, join, parse, relative, sep } from 'node:path';
 
 import { resolvePathInStorybookCache } from 'storybook/internal/common';
 
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 const sanitizeBase = (path: string) => {

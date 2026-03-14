@@ -1,6 +1,8 @@
 import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
+import type { ToolbarArgType } from '../toolbar';
 import type { SBScalarType, SBType } from './SBType';
+import type { CoreTypes } from './core-annotations';
 
 export * from './SBType';
 export type StoryId = string;
@@ -125,13 +127,13 @@ export interface InputType<TArgs = Args> {
     /** @see https://storybook.js.org/docs/api/arg-types#tablecategory */
     category?: string;
     /** @see https://storybook.js.org/docs/api/arg-types#tabledefaultvalue */
-    defaultValue?: { summary?: string; detail?: string };
+    defaultValue?: { summary?: string | undefined; detail?: string | undefined };
     /** @see https://storybook.js.org/docs/api/arg-types#tabledisable */
     disable?: boolean;
     /** @see https://storybook.js.org/docs/api/arg-types#tablesubcategory */
     subcategory?: string;
     /** @see https://storybook.js.org/docs/api/arg-types#tabletype */
-    type?: { summary?: string; detail?: string };
+    type?: { summary?: string | undefined; detail?: string | undefined };
   };
   /** @see https://storybook.js.org/docs/api/arg-types#type */
   type?: SBType | SBScalarType['name'];
@@ -164,13 +166,31 @@ export interface Globals {
   [name: string]: any;
 }
 export interface GlobalTypes {
-  [name: string]: InputType;
-}
-export interface StrictGlobalTypes {
-  [name: string]: StrictInputType;
+  [name: string]: ToolbarArgType;
 }
 
-export interface Renderer {
+/**
+ * AddonTypes allows addons to extend the type system with additional args, parameters, and globals.
+ *
+ * Addons can use `definePreviewAddon<AddonTypes>()` to declare additional types that will be merged
+ * into the story context. For example, an addon that provides a `theme` arg could declare:
+ *
+ * ```ts
+ * const themeAddon = definePreviewAddon<{ args: { theme: 'light' | 'dark' } }>({
+ *   decorators: [(Story, { args }) => <ThemeProvider theme={args.theme}><Story /></ThemeProvider>]
+ * });
+ * ```
+ *
+ * When users include this addon in their preview config, the `theme` arg becomes available and
+ * type-checked across all stories.
+ */
+export interface AddonTypes {
+  args?: unknown;
+  parameters?: Record<string, any>;
+  globals?: Record<string, any>;
+}
+
+export interface Renderer extends AddonTypes {
   /** What is the type of the `component` annotation in this renderer? */
   component: any;
 
@@ -187,13 +207,19 @@ export interface Renderer {
   // This generic type will eventually be filled in with TArgs
   // Credits to Michael Arnaldi.
   T?: unknown;
+
+  args: unknown;
+
+  csf4: boolean;
 }
 
 /** @deprecated - Use `Renderer` */
 export type AnyFramework = Renderer;
 
-export interface StoryContextForEnhancers<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryIdentifier {
+export interface StoryContextForEnhancers<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends StoryIdentifier {
   component?: (TRenderer & { T: any })['component'];
   subcomponents?: Record<string, (TRenderer & { T: any })['component']>;
   parameters: Parameters;
@@ -240,8 +266,7 @@ export type AfterEach<TRenderer extends Renderer = Renderer, TArgs = Args> = (
 export interface Canvas {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryContextForEnhancers<TRenderer, TArgs>,
-    Required<StoryContextUpdate<TArgs>> {
+  extends StoryContextForEnhancers<TRenderer, TArgs>, Required<StoryContextUpdate<TArgs>> {
   loaded: Record<string, any>;
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
@@ -256,12 +281,16 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
 }
 
 /** @deprecated Use {@link StoryContext} instead. */
-export interface StoryContextForLoaders<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryContext<TRenderer, TArgs> {}
+export interface StoryContextForLoaders<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends StoryContext<TRenderer, TArgs> {}
 
 /** @deprecated Use {@link StoryContext} instead. */
-export interface PlayFunctionContext<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryContext<TRenderer, TArgs> {}
+export interface PlayFunctionContext<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends StoryContext<TRenderer, TArgs> {}
 
 export type StepLabel = string;
 
@@ -272,6 +301,10 @@ export type StepFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = 
 
 export type PlayFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   context: PlayFunctionContext<TRenderer, TArgs>
+) => Promise<void> | void;
+
+export type TestFunction<TRenderer extends Renderer = Renderer, TArgs = TRenderer['args']> = (
+  context: StoryContext<TRenderer, TArgs>
 ) => Promise<void> | void;
 
 // This is the type of story function passed to a decorator -- does not rely on being passed any context
@@ -328,7 +361,8 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    *
    * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
    */
-  parameters?: Parameters;
+  parameters?: Parameters &
+    (TRenderer['csf4'] extends true ? CoreTypes['parameters'] & TRenderer['parameters'] : unknown);
 
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
@@ -384,8 +418,10 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   mount?: (context: StoryContext<TRenderer, TArgs>) => TRenderer['mount'];
 }
 
-export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends BaseAnnotations<TRenderer, TArgs> {
+export interface ProjectAnnotations<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends BaseAnnotations<TRenderer, TArgs> {
   argsEnhancers?: ArgsEnhancer<TRenderer, Args>[];
   argTypesEnhancers?: ArgTypesEnhancer<TRenderer, Args>[];
 
@@ -405,15 +441,18 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
    */
   beforeAll?: BeforeAll;
 
-  initialGlobals?: Globals;
+  initialGlobals?: Globals &
+    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
   globalTypes?: GlobalTypes;
   applyDecorators?: DecoratorApplicator<TRenderer, Args>;
   runStep?: StepRunner<TRenderer, TArgs>;
 }
 
 type StoryDescriptor = string[] | RegExp;
-export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends BaseAnnotations<TRenderer, TArgs> {
+export interface ComponentAnnotations<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends BaseAnnotations<TRenderer, TArgs> {
   /**
    * Title of the component which will be presented in the navigation. **Should be unique.**
    *
@@ -491,13 +530,14 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
    *
    * By defining them each component will have its tab in the args table.
    */
-  subcomponents?: Record<string, TRenderer['component']>;
+  subcomponents?: Record<string, (TRenderer & { T: any })['component']>;
 
   /** Function that is executed after the story is rendered. */
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for all stories in this component */
-  globals?: Globals;
+  globals?: Globals &
+    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
 }
 
 export type StoryAnnotations<
@@ -515,7 +555,8 @@ export type StoryAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for this story */
-  globals?: Globals;
+  globals?: Globals &
+    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;

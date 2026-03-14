@@ -212,7 +212,7 @@ export class PostMessageTransport implements ChannelTransport {
         }
 
         event.source =
-          this.config.page === 'preview' ? rawEvent.origin : getEventSourceUrl(rawEvent);
+          this.config.page === 'preview' ? rawEvent.origin : getEventSourceUrl(rawEvent, refId);
 
         if (!event.source) {
           pretty.error(

@@ -1,9 +1,11 @@
 import { dirname, join } from 'node:path';
 
-import { sync as findUpSync } from 'find-up';
+import { getProjectRoot } from 'storybook/internal/common';
+
+import * as pkg from 'empathic/package';
 
 export const findDistFile = (cwd: string, relativePath: string) => {
-  const nearestPackageJson = findUpSync('package.json', { cwd });
+  const nearestPackageJson = pkg.up({ cwd, last: getProjectRoot() });
   if (!nearestPackageJson) {
     throw new Error(`Could not find package.json in: ${cwd}`);
   }

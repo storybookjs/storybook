@@ -163,7 +163,7 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
 - Some PR \`title\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [@JReinhold](https://github.com/JReinhold)
 - Some PR 'title' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [@JReinhold](https://github.com/JReinhold)
-- Antoher PR "title" for maintainance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@JReinhold](https://github.com/JReinhold)`;
+- Another PR "title" for maintenance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@JReinhold](https://github.com/JReinhold)`;
       expect(
         generateReleaseDescription({
           currentVersion: '7.1.0-alpha.10',
@@ -235,9 +235,9 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
         ## 7.1.0-alpha.11
 
-        - Some PR \\\`title\\\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [@ JReinhold](https://github.com/JReinhold)
-        - Some PR \\'title\\' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [@ JReinhold](https://github.com/JReinhold)
-        - Antoher PR \\"title\\" for maintainance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@ JReinhold](https://github.com/JReinhold)"
+        - Some PR \\\`title\\\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [JReinhold](https://github.com/JReinhold)
+        - Some PR \\'title\\' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [JReinhold](https://github.com/JReinhold)
+        - Another PR \\"title\\" for maintenance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [JReinhold](https://github.com/JReinhold)"
       `);
     });
 
@@ -296,7 +296,7 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
 - Some PR \`title\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [@JReinhold](https://github.com/JReinhold)
 - Some PR 'title' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [@JReinhold](https://github.com/JReinhold)
-- Antoher PR "title" for maintainance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@JReinhold](https://github.com/JReinhold)`;
+- Another PR "title" for maintenance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@JReinhold](https://github.com/JReinhold)`;
       expect(
         generateReleaseDescription({
           currentVersion: '7.1.0-alpha.10',
@@ -362,9 +362,9 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
         ## 7.1.0-alpha.11
 
-        - Some PR \\\`title\\\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [@ JReinhold](https://github.com/JReinhold)
-        - Some PR \\'title\\' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [@ JReinhold](https://github.com/JReinhold)
-        - Antoher PR \\"title\\" for maintainance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@ JReinhold](https://github.com/JReinhold)"
+        - Some PR \\\`title\\\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [JReinhold](https://github.com/JReinhold)
+        - Some PR \\'title\\' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [JReinhold](https://github.com/JReinhold)
+        - Another PR \\"title\\" for maintenance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [JReinhold](https://github.com/JReinhold)"
       `);
     });
 

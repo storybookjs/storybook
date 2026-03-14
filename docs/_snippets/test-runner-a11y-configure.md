@@ -4,7 +4,7 @@ const { injectAxe, checkA11y, configureAxe } = require('axe-playwright');
 const { getStoryContext } = require('@storybook/test-runner');
 
 /*
- * See https://storybook.js.org/docs/writing-tests/test-runner#test-hook-api
+ * See https://storybook.js.org/docs/writing-tests/integrations/test-runner#test-hook-api
  * to learn more about the test-runner hooks API.
  */
 module.exports = {
@@ -38,7 +38,7 @@ import { getStoryContext } from '@storybook/test-runner';
 import { injectAxe, checkA11y, configureAxe } from 'axe-playwright';
 
 /*
- * See https://storybook.js.org/docs/writing-tests/test-runner#test-hook-api
+ * See https://storybook.js.org/docs/writing-tests/integrations/test-runner#test-hook-api
  * to learn more about the test-runner hooks API.
  */
 const config: TestRunnerConfig = {

@@ -29,7 +29,7 @@ Storybook is packaged as a small, development-only, [workshop](https://bradfrost
 
 ### Capture UI variations as “stories”
 
-When developing a component variation in isolation, save it as a story. [Stories](https://github.com/ComponentDriven/csf) are a declarative syntax for supplying props and mock data to simulate component variations. Each component can have multiple stories. Each story allows you to demonstrate a specific variation of that component to verify appearance and behavior.
+When developing a component variation in isolation, save it as a story. [Stories](../writing-stories/index.mdx) are a declarative syntax for supplying props and mock data to simulate component variations. Each component can have multiple stories. Each story allows you to demonstrate a specific variation of that component to verify appearance and behavior.
 
 You write stories for granular UI component variation and then use those stories in development, testing, and documentation.
 
@@ -43,7 +43,7 @@ You write stories for granular UI component variation and then use those stories
 
 Storybook is an interactive directory of your UI components and their stories. In the past, you'd have to spin up the app, navigate to a page, and contort the UI into the right state. This is a huge waste of time and bogs down frontend development. With Storybook, you can skip all those steps and jump straight to working on a UI component in a specific state.
 
-<Video src="../_assets/get-started/7.0-storybook-hero-video.mp4" />
+<Video src="../_assets/get-started/histogram-stories-optimized.mp4" />
 
 <details>
   <summary>Where does Storybook fit into my project?</summary>
@@ -84,7 +84,7 @@ Isolate components and pages and track their use cases as [stories](../writing-s
 
 **✅ Test UIs with less effort and no flakes**
 
-Stories are a pragmatic, reproducible way of tracking UI states. Use them to spot-test the UI during development. Storybook offers built-in workflows for automated [Component](../writing-tests/component-testing.mdx), [Accessibility](../writing-tests/accessibility-testing.mdx), and [Visual](../writing-tests/visual-testing.mdx) testing. Or use stories as test cases by [importing them into other JavaScript testing tools](../writing-tests/import-stories-in-tests/stories-in-unit-tests.mdx).
+Stories are a pragmatic, reproducible way of tracking UI states. Use them to spot-test the UI during development. Storybook offers built-in workflows for automated [Interaction](../writing-tests/interaction-testing.mdx), [Accessibility](../writing-tests/accessibility-testing.mdx), and [Visual](../writing-tests/visual-testing.mdx) testing. Or use stories as test cases by [importing them into other JavaScript testing tools](../writing-tests/integrations/stories-in-unit-tests.mdx).
 
 **📚 Document UI for your team to reuse**
 
@@ -100,7 +100,7 @@ Storybook is compatible with your continuous integration workflow. Add it as a C
 
 ## Write stories once, reuse everywhere
 
-Storybook is powered by [Component Story Format](https://github.com/ComponentDriven/csf), an open standard based on JavaScript ES6 modules. This enables stories to interoperate between development, testing, and design tools. Each story is exported as a JavaScript function enabling you to reuse it with other tools. No vendor lock-in.
+Storybook is powered by [Component Story Format](../api/csf/index.mdx), an open standard based on JavaScript ES6 modules. This enables stories to interoperate between development, testing, and design tools. Each story is exported as a JavaScript function enabling you to reuse it with other tools. No vendor lock-in.
 
 Reuse stories with [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) to verify interactions. Put them in [Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) for visual testing. Audit story accessibility with [Axe](https://github.com/dequelabs/axe-core). Or test user flows with [Playwright](https://playwright.dev/) and [Cypress](https://www.cypress.io/). Reuse unlocks more workflows at no extra cost.
 

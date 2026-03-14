@@ -12,11 +12,13 @@ const currentDirPath = dirname(currentFilePath);
 
 const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
 const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
+const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
+const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
   stories: [
-    './*.stories.@(js|jsx|ts|tsx)',
+    './bench/*.stories.@(js|jsx|ts|tsx)',
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',
@@ -54,10 +56,6 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
-      directory: '../addons/docs/src/blocks',
-      titlePrefix: 'addons/docs/blocks',
-    },
-    {
       directory: '../addons/a11y/src',
       titlePrefix: 'addons/accessibility',
     },
@@ -67,6 +65,10 @@ const config = defineMain({
     },
     {
       directory: '../addons/docs/template/stories',
+      titlePrefix: 'addons/docs',
+    },
+    {
+      directory: '../addons/docs/src',
       titlePrefix: 'addons/docs',
     },
     {
@@ -82,6 +84,9 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
+      directory: '../addons/onboarding/example-stories',
+    },
+    {
       directory: '../addons/pseudo-states/src',
       titlePrefix: 'addons/pseudo-states',
     },
@@ -93,8 +98,14 @@ const config = defineMain({
       directory: '../addons/vitest/template/stories',
       titlePrefix: 'addons/vitest',
     },
+    {
+      directory: '../addons/vitest/src',
+      titlePrefix: 'addons/vitest',
+      files: 'stories.tsx',
+    },
   ],
   addons: [
+    '@storybook/addon-onboarding',
     '@storybook/addon-themes',
     '@storybook/addon-docs',
     '@storybook/addon-designs',
@@ -131,7 +142,9 @@ const config = defineMain({
   },
   features: {
     developmentModeForBuild: true,
+    experimentalTestSyntax: true,
   },
+  staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');
 
@@ -142,6 +155,8 @@ const config = defineMain({
             ? {
                 'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
+                'storybook/theming/create': themingCreatePath,
+                'storybook/theming': themingPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {

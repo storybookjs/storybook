@@ -1,6 +1,6 @@
 ```js filename="Form.test.js|ts" renderer="common" language="js" tabTitle="compose-stories"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from './LoginForm.stories';
 
@@ -18,8 +18,8 @@ const { ValidForm } = composeStories(stories, {
 ```
 
 ```js filename="Form.test.js|ts" renderer="common" language="js" tabTitle="compose-story"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 

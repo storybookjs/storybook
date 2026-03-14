@@ -1,7 +1,7 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
-import { Button } from './Button';
+import { Button } from './Button.component';
 
 const meta: Meta<Button> = {
   component: Button,
@@ -9,6 +9,18 @@ const meta: Meta<Button> = {
   tags: ['autodocs'],
 };
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button.component';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -25,7 +37,7 @@ export default meta;
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Button from './Button.svelte';
 
 export default {
@@ -35,7 +47,7 @@ export default {
 };
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js"
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -59,7 +71,7 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -73,8 +85,8 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -87,7 +99,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   title: 'Button',
   component: 'demo-button',
@@ -96,7 +108,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -106,4 +118,76 @@ const meta: Meta = {
   tags: ['autodocs'],
 };
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
 ```

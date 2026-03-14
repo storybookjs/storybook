@@ -8,17 +8,21 @@ sidebar:
 
 Last chapter, we learned that stories correspond with discrete component states. This chapter demonstrates how to use Storybook as a workshop for building components.
 
-## Sidebar and Canvas
+## Sidebar and Preview
 
-A `*.stories.js|ts|svelte` file defines all the stories for a component. Each story has a corresponding sidebar item. When you click on a story, it renders in the Canvas an isolated preview iframe.
+A `*.stories.js|ts|svelte` file defines all the stories for a component. Each story has a corresponding sidebar item. When you click on a story, it renders in an isolated preview iframe.
 
 <Video src="../_assets/get-started/example-browse-all-stories-optimized.mp4" />
 
-Navigate between stories by clicking on them in the sidebar. Try the sidebar search to find a story by name.
+The sidebar contains three areas: sidebar search, story explorer, and [testing widget](../writing-tests/index.mdx). Try the sidebar search to find a story by name. Navigate between stories by clicking on them in the explorer. Run component tests for all stories using the widget at the bottom of the sidebar.
 
-Or use keyboard shortcuts. Click on the Storybook's menu to see the list of shortcuts available.
+Or use keyboard shortcuts. Click on the Storybook menu to see a list of available shortcuts.
 
 ![Storybook keyboard shortcuts examples](../_assets/get-started/storybook-keyboard-shortcuts.png)
+
+<Callout variant="info" icon="♿">
+  Storybook supports fast keyboard navigation between landmark regions. Press <kbd>F6</kbd> and <kbd>Shift+F6</kbd> to navigate between the sidebar, toolbar, preview, and addons panel.
+</Callout>
 
 ## Toolbar
 
@@ -47,7 +51,8 @@ Addons are plugins that extend Storybook's core functionality. You can find them
 
 * **Controls** allows you to interact with a component’s args (inputs) dynamically. Experiment with alternate configurations of the component to discover edge cases.
 * **Actions** help you verify interactions produce the correct outputs via callbacks. For instance, if you view the “Logged In” story of the `Header` component, we can verify that clicking the “Log out” button triggers the `onLogout` callback, which would be provided by the component that made use of the Header.
-* **Interactions** provides a helpful user interface for debugging [component tests](../writing-tests/component-testing.mdx) with the `play` function.
+* **Interactions** provides a helpful user interface for debugging [interaction tests](../writing-tests/interaction-testing.mdx) with the `play` function.
+* **Accessibility** helps you identify [accessibility violations](../writing-tests/accessibility-testing.mdx) in your components.
 * **Visual Tests** lets you pinpoint UI bugs in your local development environment by providing instant feedback directly in Storybook.
 
 <Video src="../_assets/get-started/addons-walkthrough-optimized.mp4" />

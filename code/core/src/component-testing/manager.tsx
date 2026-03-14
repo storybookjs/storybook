@@ -7,12 +7,18 @@ import { type Combo, Consumer, addons, types } from 'storybook/manager-api';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { ADDON_ID, PANEL_ID } from './constants';
+import { isInteractionsDisabled } from './utils';
 
 export default addons.register(ADDON_ID, () => {
   if (globalThis?.FEATURES?.interactions) {
     const filter = ({ state }: Combo) => {
+      const origin = (state.refId && state.refs[state.refId]?.url) || document.location.origin;
+      const { pathname, search = '' } = state.location;
+      const path = pathname + (state.refId ? search.replace(`/${state.refId}_`, '/') : search);
       return {
+        refId: state.refId,
         storyId: state.storyId,
+        storyUrl: origin + path,
       };
     };
 
@@ -20,10 +26,11 @@ export default addons.register(ADDON_ID, () => {
       type: types.PANEL,
       title: () => <PanelTitle />,
       match: ({ viewMode }) => viewMode === 'story',
+      disabled: isInteractionsDisabled,
       render: ({ active }) => {
         return (
           <AddonPanel active={!!active}>
-            <Consumer filter={filter}>{({ storyId }) => <Panel storyId={storyId} />}</Consumer>
+            <Consumer filter={filter}>{(props) => <Panel {...props} />}</Consumer>
           </AddonPanel>
         );
       },

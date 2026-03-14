@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
+import type { Type } from '@angular/core';
 import {
-  Type,
   Component,
   ComponentFactoryResolver,
   Directive,
@@ -181,7 +181,7 @@ describe('getComponentInputsOutputs', () => {
     })
     class FooComponent extends BarComponent {
       @Input()
-      public b: string;
+      declare public b: string;
 
       @Input()
       public c: string;

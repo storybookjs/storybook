@@ -1,8 +1,10 @@
 import React from 'react';
 
+import { ModalDecorator } from 'storybook/internal/components';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, fireEvent, fn, within } from 'storybook/test';
+import { expect, fireEvent, fn, screen, within } from 'storybook/test';
 
 import { SaveStory } from './SaveStory';
 
@@ -16,13 +18,8 @@ const meta = {
   parameters: {
     layout: 'fullscreen',
   },
-  decorators: [
-    (Story) => (
-      <div style={{ minHeight: '100vh' }}>
-        <Story />
-      </div>
-    ),
-  ],
+  decorators: [ModalDecorator],
+  tags: ['!vitest'],
 } satisfies Meta<typeof SaveStory>;
 
 export default meta;
@@ -31,22 +28,21 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const Creating = {
-  play: async ({ canvasElement }) => {
-    const createButton = await within(canvasElement).findByRole('button', { name: /Create/i });
+  play: async ({ canvas }) => {
+    const createButton = await canvas.findByRole('button', { name: /Create/i });
     await fireEvent.click(createButton);
     await new Promise((resolve) => setTimeout(resolve, 300));
   },
 } satisfies Story;
 
 export const Created: Story = {
-  play: async ({ context, userEvent }) => {
+  play: async ({ context }) => {
     await Creating.play(context);
 
-    const dialog = await within(document.body).findByRole('dialog');
+    const dialog = await screen.findByRole('dialog');
     const input = await within(dialog).findByRole('textbox');
-    await userEvent.type(input, 'MyNewStory');
-
-    fireEvent.submit(dialog.getElementsByTagName('form')[0]);
+    await fireEvent.change(input, { target: { value: 'MyNewStory' } });
+    await fireEvent.submit(dialog.getElementsByTagName('form')[0]);
     await expect(context.args.createStory).toHaveBeenCalledWith('MyNewStory');
   },
 };

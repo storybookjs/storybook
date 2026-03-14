@@ -1,91 +1,320 @@
-import React from 'react';
+import React, { Fragment, useCallback, useMemo, useRef } from 'react';
 
-import { TooltipLinkList } from 'storybook/internal/components';
-import type { Tag } from 'storybook/internal/types';
+import { ActionList, Form } from 'storybook/internal/components';
+import type { FilterFunction, StoryIndex, Tag } from 'storybook/internal/types';
 
-import { ShareAltIcon } from '@storybook/icons';
+import {
+  BatchAcceptIcon,
+  BeakerIcon,
+  DeleteIcon,
+  DocumentIcon,
+  PlayHollowIcon,
+  ShareAltIcon,
+  SweepIcon,
+  UndoIcon,
+} from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { color, styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags';
 
-const BUILT_IN_TAGS_SHOW = new Set(['play-fn']);
+type Filter = {
+  id: string;
+  type: string;
+  title: string;
+  count: number;
+};
+
+const groupByType = (filters: Filter[]) =>
+  filters.filter(Boolean).reduce(
+    (acc, filter) => {
+      acc[filter.type] ??= [];
+      acc[filter.type].push(filter);
+      return acc;
+    },
+    {} as Record<string, Filter[]>
+  );
 
 const Wrapper = styled.div({
-  minWidth: 180,
-  maxWidth: 220,
+  minWidth: 240,
+  maxWidth: 300,
+  maxHeight: 15.5 * 32 + 8, // 15.5 items at 32px each + 8px padding
+  overflow: 'hidden',
+  overflowY: 'auto',
+  scrollbarWidth: 'thin',
 });
+
+const MutedText = styled.span(({ theme }) => ({
+  color: theme.textMutedColor,
+}));
 
 interface TagsFilterPanelProps {
   api: API;
-  allTags: Tag[];
-  selectedTags: Tag[];
-  toggleTag: (tag: Tag) => void;
-  isDevelopment: boolean;
+  indexJson: StoryIndex;
+  defaultIncludedFilters: string[];
+  defaultExcludedFilters: string[];
+  includedFilters: string[];
+  excludedFilters: string[];
 }
+
+const BUILT_IN_TAGS = new Set([
+  'dev',
+  'test',
+  'autodocs',
+  'attached-mdx',
+  'unattached-mdx',
+  'play-fn',
+  'test-fn',
+]);
+
+// This equality check works on the basis that there are no duplicates in the arrays.
+// We use arrays because we need arrays for data persistence in the layout module.
+const equal = (left: string[], right: string[]) =>
+  left.length === right.length && new Set([...left, ...right]).size === left.length;
+
+const getFilterFunction = (tag: Tag): FilterFunction | null => {
+  if (Object.hasOwn(BUILT_IN_FILTERS, tag)) {
+    return BUILT_IN_FILTERS[tag as keyof typeof BUILT_IN_FILTERS];
+  } else {
+    return USER_TAG_FILTER(tag);
+  }
+};
 
 export const TagsFilterPanel = ({
   api,
-  allTags,
-  selectedTags,
-  toggleTag,
-  isDevelopment,
+  indexJson,
+  defaultIncludedFilters,
+  defaultExcludedFilters,
+  includedFilters,
+  excludedFilters,
 }: TagsFilterPanelProps) => {
-  const userTags = allTags.filter((tag) => !BUILT_IN_TAGS_SHOW.has(tag));
-  const docsUrl = api.getDocsUrl({ subpath: 'writing-stories/tags#filtering-by-custom-tags' });
+  const ref = useRef<HTMLDivElement>(null);
 
-  const groups = [
-    allTags.map((tag) => {
-      const checked = selectedTags.includes(tag);
-      const id = `tag-${tag}`;
-      return {
-        id,
-        title: tag,
-        right: (
-          <input
-            type="checkbox"
-            id={id}
-            name={id}
-            value={tag}
-            checked={checked}
-            onChange={() => {
-              // The onClick handler higher up the tree will handle the toggle
-              // For controlled inputs, a onClick handler is needed, though
-              // Accessibility-wise this isn't optimal, but I guess that's a limitation
-              // of the current design of TooltipLinkList
-            }}
-          />
-        ),
-        onClick: () => toggleTag(tag),
-      };
+  const filtersById = useMemo<{ [id: string]: Filter }>(() => {
+    const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
+      (acc, entry) => {
+        entry.tags?.forEach((tag: Tag) => {
+          if (!BUILT_IN_TAGS.has(tag)) {
+            acc[tag] = (acc[tag] || 0) + 1;
+          }
+        });
+        return acc;
+      },
+      {}
+    );
+
+    const userFilters = Object.fromEntries(
+      Object.entries(userTagsCounts).map(([tag, count]) => {
+        return [tag, { id: tag, type: 'tag', title: tag, count }];
+      })
+    );
+
+    const getBuiltInCount = (filterFn: FilterFunction | null) =>
+      Object.values(indexJson.entries).filter((entry) => filterFn?.(entry)).length;
+
+    const builtInFilters = {
+      _docs: {
+        id: '_docs',
+        type: 'built-in',
+        title: 'Documentation',
+        icon: <DocumentIcon color={color.gold} />,
+        count: getBuiltInCount(getFilterFunction('_docs')),
+      },
+      _play: {
+        id: '_play',
+        type: 'built-in',
+        title: 'Play',
+        icon: <PlayHollowIcon color={color.seafoam} />,
+        count: getBuiltInCount(getFilterFunction('_play')),
+      },
+      _test: {
+        id: '_test',
+        type: 'built-in',
+        title: 'Testing',
+        icon: <BeakerIcon color={color.green} />,
+        count: getBuiltInCount(getFilterFunction('_test')),
+      },
+    };
+
+    return { ...userFilters, ...builtInFilters };
+  }, [indexJson.entries]);
+
+  const toggleFilter = useCallback(
+    (id: string, selected: boolean, excluded?: boolean) => {
+      if (excluded !== undefined) {
+        api.addTagFilters([id], excluded);
+      } else if (selected) {
+        api.addTagFilters([id], false);
+      } else {
+        api.removeTagFilters([id]);
+      }
+    },
+    [api]
+  );
+
+  const setAllFilters = useCallback(
+    (selected: boolean) => {
+      api.setAllTagFilters(selected ? Object.keys(filtersById) : [], []);
+    },
+    [api, filtersById]
+  );
+
+  const isDefaultSelection = useMemo(() => {
+    return (
+      equal(includedFilters, defaultIncludedFilters) &&
+      equal(excludedFilters, defaultExcludedFilters)
+    );
+  }, [includedFilters, excludedFilters, defaultIncludedFilters, defaultExcludedFilters]);
+
+  const hasDefaultSelection = useMemo(() => {
+    return defaultIncludedFilters.length > 0 || defaultExcludedFilters.length > 0;
+  }, [defaultIncludedFilters, defaultExcludedFilters]);
+
+  const builtInFilterIcons = useMemo(
+    () => ({
+      _docs: <DocumentIcon color={color.gold} />,
+      _play: <PlayHollowIcon color={color.seafoam} />,
+      _test: <BeakerIcon color={color.green} />,
     }),
-  ] as Link[][];
+    []
+  );
 
-  if (allTags.length === 0) {
-    groups.push([
-      {
-        id: 'no-tags',
-        title: 'There are no tags. Use tags to organize and filter your Storybook.',
-        isIndented: false,
-      },
-    ]);
-  }
+  const renderLink = ({ id, type, title, count }: Filter): Link | undefined => {
+    const onToggle = (selected: boolean, excluded?: boolean) =>
+      toggleFilter(id, selected, excluded);
+    const isIncluded = includedFilters.includes(id);
+    const isExcluded = excludedFilters.includes(id);
+    const isChecked = isIncluded || isExcluded;
+    const toggleLabel = `${type} filter: ${isExcluded ? `exclude ${title}` : title}`;
+    const toggleTooltip = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
+    const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
+    const icon =
+      type === 'built-in' ? builtInFilterIcons[id as keyof typeof builtInFilterIcons] : null;
 
-  if (userTags.length === 0 && isDevelopment) {
-    groups.push([
-      {
-        id: 'tags-docs',
-        title: 'Learn how to add tags',
-        icon: <ShareAltIcon />,
-        href: docsUrl,
-      },
-    ]);
-  }
+    // for built-in filters (docs, play, test), don't show if there are no matches
+    if (count === 0 && type === 'built-in') {
+      return undefined;
+    }
+
+    return {
+      id: `filter-${type}-${id}`,
+      content: (
+        <ActionList.HoverItem targetId={`filter-${type}-${id}`}>
+          <ActionList.Action as="label" ariaLabel={false} tabIndex={-1} tooltip={toggleTooltip}>
+            <ActionList.Icon>
+              {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
+              <Form.Checkbox
+                checked={isChecked}
+                onChange={() => onToggle(!isChecked)}
+                data-tag={title}
+                aria-label={toggleLabel}
+              />
+            </ActionList.Icon>
+            <ActionList.Text>
+              <span>
+                {title}
+                {isExcluded && <MutedText> (excluded)</MutedText>}
+              </span>
+            </ActionList.Text>
+            {isExcluded ? <s>{count}</s> : <span>{count}</span>}
+          </ActionList.Action>
+          <ActionList.Button
+            data-target-id={`filter-${type}-${id}`}
+            ariaLabel={invertButtonLabel}
+            onClick={() => onToggle(true, !isExcluded)}
+          >
+            <span style={{ minWidth: 45 }}>{isExcluded ? 'Include' : 'Exclude'}</span>
+          </ActionList.Button>
+        </ActionList.HoverItem>
+      ),
+    };
+  };
+
+  const groups = groupByType(Object.values(filtersById));
+  const links: Link[][] = Object.values(groups)
+    .map((group) =>
+      group
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((filter) => renderLink(filter))
+        .filter((value): value is Link => !!value)
+    )
+    .filter((value): value is Link[] => value.length > 0);
+
+  const hasItems = links.length > 0;
+  const hasUserTags = Object.values(filtersById).some(({ type }) => type === 'tag');
+  const isNothingSelectedYet = includedFilters.length === 0 && excludedFilters.length === 0;
 
   return (
-    <Wrapper>
-      <TooltipLinkList links={groups} />
+    <Wrapper ref={ref}>
+      {hasItems && (
+        <ActionList as="div">
+          <ActionList.Item as="div">
+            {isNothingSelectedYet ? (
+              <ActionList.Button
+                ariaLabel={false}
+                id="select-all"
+                key="select-all"
+                onClick={() => setAllFilters(true)}
+              >
+                <BatchAcceptIcon />
+                <ActionList.Text>Select all</ActionList.Text>
+              </ActionList.Button>
+            ) : (
+              <ActionList.Button
+                ariaLabel={false}
+                id="deselect-all"
+                key="deselect-all"
+                onClick={() => setAllFilters(false)}
+              >
+                <SweepIcon />
+                <ActionList.Text>Clear filters</ActionList.Text>
+              </ActionList.Button>
+            )}
+            {hasDefaultSelection && (
+              <ActionList.Button
+                id="reset-filters"
+                key="reset-filters"
+                onClick={() => api.resetTagFilters()}
+                ariaLabel="Reset filters"
+                tooltip="Reset to default selection"
+                disabled={isDefaultSelection}
+              >
+                <UndoIcon />
+              </ActionList.Button>
+            )}
+          </ActionList.Item>
+        </ActionList>
+      )}
+      {links.map((group) => (
+        <ActionList key={group.map((link) => link.id).join('_')}>
+          {group.map((link) => (
+            <Fragment key={link.id}>{link.content}</Fragment>
+          ))}
+        </ActionList>
+      ))}
+      {!hasUserTags && (
+        <ActionList as="div">
+          <ActionList.Item as="div">
+            <ActionList.Link
+              ariaLabel={false}
+              href={api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' })}
+              target="_blank"
+            >
+              <ActionList.Icon>
+                <DocumentIcon />
+              </ActionList.Icon>
+              <ActionList.Text>
+                <span>Learn how to add tags</span>
+              </ActionList.Text>
+              <ActionList.Icon>
+                <ShareAltIcon />
+              </ActionList.Icon>
+            </ActionList.Link>
+          </ActionList.Item>
+        </ActionList>
+      )}
     </Wrapper>
   );
 };

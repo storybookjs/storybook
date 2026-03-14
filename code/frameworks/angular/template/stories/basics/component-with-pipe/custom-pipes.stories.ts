@@ -1,4 +1,5 @@
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 
 import { CustomPipePipe } from './custom.pipe';
 import { WithPipeComponent } from './with-pipe.component';

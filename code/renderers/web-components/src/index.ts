@@ -1,4 +1,3 @@
-/// <reference types="webpack-env" />
 import { global } from '@storybook/global';
 
 import './globals';
@@ -8,9 +7,16 @@ const { window, EventSource } = global;
 export * from './public-types';
 export * from './framework-api';
 export * from './portable-stories';
+export * from './preview';
+
+export type { WebComponentsTypes } from './types';
 
 // TODO: disable HMR and do full page loads because of customElements.define
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 if (typeof module !== 'undefined' && module?.hot?.decline) {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   module.hot.decline();
 
   // forcing full reloads for customElements as elements can only be defined once per page

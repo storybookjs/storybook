@@ -43,4 +43,20 @@ export const { expect } = instrument(
   }
 );
 
+type ModuleMockOptions = {
+  spy?: boolean;
+};
+type ReturnTypeOfModuleMocker = (
+  path: string | Promise<unknown>,
+  factory?: ModuleMockOptions
+) => void;
+
+export const sb: {
+  mock: ReturnTypeOfModuleMocker;
+} = {
+  mock: () => {
+    // noop
+  },
+};
+
 export * from './testing-library';

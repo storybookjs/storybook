@@ -1,13 +1,22 @@
 import type { IconName } from './icons';
 
+export interface HighlightTypes {
+  parameters: HighlightParameters;
+}
+
 export interface HighlightParameters {
   /**
    * Highlight configuration
    *
    * @see https://storybook.js.org/docs/essentials/highlight#parameters
    */
-  highlight: {
-    /** Remove the addon panel and disable the addon's behavior */
+  highlight?: {
+    /**
+     * Removes the tool and disables the feature's behavior. If you wish to turn off this feature
+     * for the entire Storybook, you can set the option in your `main.js|ts` configuration file.
+     *
+     * @see https://storybook.js.org/docs/essentials/highlight#disable
+     */
     disable?: boolean;
   };
 }

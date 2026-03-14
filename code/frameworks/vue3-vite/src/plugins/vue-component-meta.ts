@@ -1,7 +1,8 @@
 import { readFile, stat } from 'node:fs/promises';
-import { dirname, join, parse, relative, resolve } from 'node:path';
+import { join, parse } from 'node:path';
 
-import findPackageJson from 'find-package-json';
+import { getProjectRoot } from 'storybook/internal/common';
+
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
 import {
@@ -134,14 +135,16 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
             s.append('\nexport default _sfc_main;');
           }
 
-          s.append(`\n;${name}.__docgenInfo = ${JSON.stringify(meta)}`);
+          s.append(`\n;${name}.__docgenInfo = Object.assign({
+            displayName: ${name}.name ?? ${name}.__name
+          }, ${JSON.stringify(meta)})`);
         });
 
         return {
           code: s.toString(),
           map: s.generateMap({ hires: true, source: id }),
         };
-      } catch (e) {
+      } catch {
         return undefined;
       }
     },
@@ -174,6 +177,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   };
 
   const projectRoot = getProjectRoot();
+
   const projectTsConfigPath = join(projectRoot, tsconfigPath);
 
   const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, checkerOptions);
@@ -192,16 +196,6 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   }
 
   return defaultChecker;
-}
-
-/** Gets the absolute path to the project root. */
-function getProjectRoot() {
-  const projectRoot = findPackageJson().next().value?.path ?? '';
-
-  const currentFileDir = dirname(__filename);
-  const relativePathToProjectRoot = relative(currentFileDir, projectRoot);
-
-  return resolve(currentFileDir, relativePathToProjectRoot);
 }
 
 /** Gets the filename without file extension. */

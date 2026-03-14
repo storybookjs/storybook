@@ -18,6 +18,7 @@ export default {
   globals: {
     sb_theme: 'light',
   },
+  tags: ['!vitest'],
 };
 
 export const Validation = {

@@ -1,12 +1,12 @@
-import type { ComponentProps, FC, FocusEvent, SyntheticEvent } from 'react';
+import type { FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Form, IconButton } from 'storybook/internal/components';
+import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
-import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
+import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
-import { cloneDeep } from 'es-toolkit/compat';
-import { type Theme, styled, useTheme } from 'storybook/theming';
+import { cloneDeep } from 'es-toolkit/object';
+import { styled, useTheme } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -14,35 +14,22 @@ import type { ControlProps, ObjectConfig, ObjectValue } from './types';
 
 const { window: globalWindow } = globalThis;
 
-type JsonTreeProps = ComponentProps<typeof JsonTree>;
-
 const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
-
-  '&[aria-readonly="true"]': {
-    opacity: 0.5,
-  },
+  isolation: 'isolate',
+  gap: 8,
 
   '.rejt-tree': {
+    flex: 1,
     marginLeft: '1rem',
     fontSize: '13px',
+    listStyleType: 'none',
   },
-  '.rejt-value-node, .rejt-object-node > .rejt-collapsed, .rejt-array-node > .rejt-collapsed, .rejt-object-node > .rejt-not-collapsed, .rejt-array-node > .rejt-not-collapsed':
-    {
-      '& > svg': {
-        opacity: 0,
-        transition: 'opacity 0.2s',
-      },
+  '.rejt-value-node:hover': {
+    '& > button': {
+      opacity: 1,
     },
-  '.rejt-value-node:hover, .rejt-object-node:hover > .rejt-collapsed, .rejt-array-node:hover > .rejt-collapsed, .rejt-object-node:hover > .rejt-not-collapsed, .rejt-array-node:hover > .rejt-not-collapsed':
-    {
-      '& > svg': {
-        opacity: 1,
-      },
-    },
-  '.rejt-edit-form button': {
-    display: 'none',
   },
   '.rejt-add-form': {
     marginLeft: 10,
@@ -52,66 +39,16 @@ const Wrapper = styled.div(({ theme }) => ({
     alignItems: 'center',
   },
   '.rejt-name': {
+    color: theme.color.secondary,
     lineHeight: '22px',
+  },
+  '.rejt-not-collapsed-list': {
+    listStyle: 'none',
+    margin: '0 0 0 1rem',
+    padding: 0,
   },
   '.rejt-not-collapsed-delimiter': {
     lineHeight: '22px',
-  },
-  '.rejt-plus-menu': {
-    marginLeft: 5,
-  },
-  '.rejt-object-node > span > *, .rejt-array-node > span > *': {
-    position: 'relative',
-    zIndex: 2,
-  },
-  '.rejt-object-node, .rejt-array-node': {
-    position: 'relative',
-  },
-  '.rejt-object-node > span:first-of-type::after, .rejt-array-node > span:first-of-type::after, .rejt-collapsed::before, .rejt-not-collapsed::before':
-    {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      display: 'block',
-      width: '100%',
-      marginLeft: '-1rem',
-      padding: '0 4px 0 1rem',
-      height: 22,
-    },
-  '.rejt-collapsed::before, .rejt-not-collapsed::before': {
-    zIndex: 1,
-    background: 'transparent',
-    borderRadius: 4,
-    transition: 'background 0.2s',
-    pointerEvents: 'none',
-    opacity: 0.1,
-  },
-  '.rejt-object-node:hover, .rejt-array-node:hover': {
-    '& > .rejt-collapsed::before, & > .rejt-not-collapsed::before': {
-      background: theme.color.secondary,
-    },
-  },
-  '.rejt-collapsed::after, .rejt-not-collapsed::after': {
-    content: '""',
-    position: 'absolute',
-    display: 'inline-block',
-    pointerEvents: 'none',
-    width: 0,
-    height: 0,
-  },
-  '.rejt-collapsed::after': {
-    left: -8,
-    top: 8,
-    borderTop: '3px solid transparent',
-    borderBottom: '3px solid transparent',
-    borderLeft: '3px solid rgba(153,153,153,0.6)',
-  },
-  '.rejt-not-collapsed::after': {
-    left: -10,
-    top: 10,
-    borderTop: '3px solid rgba(153,153,153,0.6)',
-    borderLeft: '3px solid transparent',
-    borderRight: '3px solid transparent',
   },
   '.rejt-value': {
     display: 'inline-block',
@@ -123,8 +60,11 @@ const Wrapper = styled.div(({ theme }) => ({
     color: theme.color.defaultText,
   },
   '.rejt-value-node:hover > .rejt-value': {
-    background: theme.color.lighter,
+    background: theme.base === 'light' ? theme.color.lighter : 'hsl(0 0 100 / 0.02)',
     borderColor: theme.appBorderColor,
+  },
+  '.rejt-collapsed-value': {
+    color: theme.color.defaultText,
   },
 }));
 
@@ -137,36 +77,37 @@ const ButtonInline = styled.button<{ primary?: boolean }>(({ theme, primary }) =
   color: primary ? theme.color.lightest : theme.color.dark,
   fontWeight: primary ? 'bold' : 'normal',
   cursor: 'pointer',
-  order: primary ? 'initial' : 9,
 }));
 
-const ActionAddIcon = styled(AddIcon)<{ disabled?: boolean }>(({ theme, disabled }) => ({
-  display: 'inline-block',
+const ActionButton = styled.button(({ theme }) => ({
+  background: 'none',
+  border: 0,
+  display: 'inline-flex',
   verticalAlign: 'middle',
-  width: 15,
-  height: 15,
   padding: 3,
   marginLeft: 5,
-  cursor: disabled ? 'not-allowed' : 'pointer',
   color: theme.textMutedColor,
-  '&:hover': disabled ? {} : { color: theme.color.ancillary },
-  'svg + &': {
-    marginLeft: 0,
+  opacity: 0,
+  transition: 'opacity 0.2s',
+  cursor: 'pointer',
+  position: 'relative',
+  svg: {
+    width: 9,
+    height: 9,
   },
-}));
-
-const ActionSubstractIcon = styled(SubtractIcon)<{ disabled?: boolean }>(({ theme, disabled }) => ({
-  display: 'inline-block',
-  verticalAlign: 'middle',
-  width: 15,
-  height: 15,
-  padding: 3,
-  marginLeft: 5,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  color: theme.textMutedColor,
-  '&:hover': disabled ? {} : { color: theme.color.negative },
-  'svg + &': {
-    marginLeft: 0,
+  ':disabled': {
+    cursor: 'not-allowed',
+  },
+  ':hover, :focus-visible': {
+    opacity: 1,
+  },
+  '&:hover:not(:disabled), &:focus-visible:not(:disabled)': {
+    '&.rejt-plus-menu': {
+      color: theme.color.ancillary,
+    },
+    '&.rejt-minus-menu': {
+      color: theme.color.negative,
+    },
   },
 }));
 
@@ -185,25 +126,11 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  zIndex: 2,
-  top: 2,
-  right: 2,
-  height: 21,
-  padding: '0 3px',
-  background: theme.background.bar,
-  border: `1px solid ${theme.appBorderColor}`,
-  borderRadius: 3,
-  color: theme.textMutedColor,
-  fontSize: '9px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  span: {
-    marginLeft: 3,
-    marginTop: 1,
-  },
-}));
+const RawButton = styled(ToggleButton)({
+  alignSelf: 'flex-start',
+  order: 2,
+  marginRight: -10,
+});
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
   flex: 1,
@@ -220,7 +147,13 @@ const RawInput = styled(Form.Textarea)(({ theme }) => ({
   },
 }));
 
-const ENTER_EVENT = { bubbles: true, cancelable: true, key: 'Enter', code: 'Enter', keyCode: 13 };
+const ENTER_EVENT = {
+  bubbles: true,
+  cancelable: true,
+  key: 'Enter',
+  code: 'Enter',
+  keyCode: 13,
+};
 const dispatchEnterKey = (event: SyntheticEvent<HTMLInputElement>) => {
   event.currentTarget.dispatchEvent(new globalWindow.KeyboardEvent('keydown', ENTER_EVENT));
 };
@@ -229,23 +162,6 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
 };
 
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
-
-const getCustomStyleFunction: (theme: Theme) => JsonTreeProps['getStyle'] = (theme) => () => ({
-  name: {
-    color: theme.color.secondary,
-  },
-  collapsed: {
-    color: theme.color.dark,
-  },
-  ul: {
-    listStyle: 'none',
-    margin: '0 0 0 1rem',
-    padding: 0,
-  },
-  li: {
-    outline: 0,
-  },
-});
 
 export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
   const theme = useTheme();
@@ -273,7 +189,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const onForceVisible = useCallback(() => {
     onChange({});
     setForceVisible(true);
-  }, [setForceVisible]);
+  }, [onChange, setForceVisible]);
 
   const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -282,9 +198,19 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     }
   }, [forceVisible]);
 
+  // Use string value as key to force re-render on Arg value reset.
+  const jsonString = useMemo(() => {
+    return JSON.stringify(data ?? '', null, 2);
+  }, [data]);
+
   if (!hasData) {
     return (
-      <Button disabled={readonly} id={getControlSetterButtonId(name)} onClick={onForceVisible}>
+      <Button
+        ariaLabel={false}
+        disabled={readonly}
+        id={getControlSetterButtonId(name)}
+        onClick={onForceVisible}
+      >
         Set object
       </Button>
     );
@@ -294,8 +220,10 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     <RawInput
       ref={htmlElRef}
       id={getControlId(name)}
+      minRows={3}
       name={name}
-      defaultValue={value === null ? '' : JSON.stringify(value, null, 2)}
+      key={jsonString}
+      defaultValue={jsonString}
       onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
       placeholder="Edit JSON string..."
       autoFocus={forceVisible}
@@ -308,16 +236,21 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
   return (
-    <Wrapper aria-readonly={readonly}>
+    <Wrapper>
       {isObjectOrArray && (
         <RawButton
+          disabled={readonly}
+          pressed={showRaw}
+          ariaLabel={`Edit ${name} as JSON`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
-            setShowRaw((v) => !v);
+            setShowRaw((isRaw) => !isRaw);
           }}
+          variant="ghost"
+          padding="small"
+          size="small"
         >
-          {showRaw ? <EyeCloseIcon /> : <EyeIcon />}
-          <span>RAW</span>
+          <EditIcon />
         </RawButton>
       )}
       {!showRaw ? (
@@ -327,16 +260,22 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
           data={data}
           rootName={name}
           onFullyUpdate={onChange}
-          getStyle={getCustomStyleFunction(theme)}
           cancelButtonElement={<ButtonInline type="button">Cancel</ButtonInline>}
-          editButtonElement={<ButtonInline type="submit">Save</ButtonInline>}
           addButtonElement={
             <ButtonInline type="submit" primary>
               Save
             </ButtonInline>
           }
-          plusMenuElement={<ActionAddIcon />}
-          minusMenuElement={<ActionSubstractIcon />}
+          plusMenuElement={
+            <ActionButton type="button">
+              <AddIcon />
+            </ActionButton>
+          }
+          minusMenuElement={
+            <ActionButton type="button">
+              <SubtractIcon />
+            </ActionButton>
+          }
           inputElement={(_: any, __: any, ___: any, key: string) =>
             key ? <Input onFocus={selectValue} onBlur={dispatchEnterKey} /> : <Input />
           }

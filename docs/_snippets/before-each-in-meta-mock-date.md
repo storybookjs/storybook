@@ -1,11 +1,9 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
-import { Page } from './Page';
+import { Page } from './Page.component';
 
 const meta: Meta<Page> = {
   component: Page,
@@ -23,11 +21,38 @@ export default meta;
 
 type Story = StoryObj<Page>;
 
-export const Default: Story = {
-  async play({ canvasElement }) {
+export const Basic: Story = {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import { Page } from './Page.component';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -36,12 +61,9 @@ export const Default: Story = {
 
   import MockDate from 'mockdate';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getUserFromSession } from '#api/session.mock';
-
   import Page from './Page.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Page,
     // 👇 Set the value of Date for every story in the file
     async beforeEach() {
@@ -55,16 +77,14 @@ export const Default: Story = {
   });
 </script>
 
-<Story name="Default" play={async ({ canvasElement }) => {
+<Story name="Default" play={async ({ canvas }) => {
   // ... This will run with the mocked Date
   }}
 />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
-
-import { getUserFromSession } from '#api/session.mock';
 
 import Page from './Page.svelte';
 
@@ -81,17 +101,16 @@ export default {
   },
 };
 
-export const Default = {
-  async play({ canvasElement }) {
+export const Basic = {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
 ```
 
-```js filename="Page.stories.js" renderer="common" language="js"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
-import { getUserFromSession } from '#api/session.mock';
 import { Page } from './Page';
 
 export default {
@@ -107,8 +126,8 @@ export default {
   },
 };
 
-export const Default = {
-  async play({ canvasElement }) {
+export const Basic = {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -120,12 +139,9 @@ export const Default = {
 
   import MockDate from 'mockdate';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getUserFromSession } from '#api/session.mock';
-
   import Page from './Page.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Page,
     // 👇 Set the value of Date for every story in the file
     async beforeEach() {
@@ -139,20 +155,18 @@ export const Default = {
   });
 </script>
 
-<Story name="Default" play={async ({ canvasElement }) => {
+<Story name="Default" play={async ({ canvas }) => {
   // ... This will run with the mocked Date
   }}
 />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 import Page from './Page.svelte';
 
 const meta = {
@@ -171,21 +185,19 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  async play({ canvasElement }) {
+export const Basic: Story = {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 import { Page } from './Page';
 
 const meta = {
@@ -204,17 +216,15 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  async play({ canvasElement }) {
+export const Basic: Story = {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
-
-import { getUserFromSession } from '../../api/session.mock';
 
 export default {
   component: 'my-page',
@@ -229,20 +239,17 @@ export default {
   },
 };
 
-export const Default = {
-  async play({ canvasElement }) {
+export const Basic = {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import MockDate from 'mockdate';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 
 const meta: Meta = {
   component: 'my-page',
@@ -260,9 +267,171 @@ export default meta;
 
 type Story = StoryObj;
 
-export const Default: Story = {
-  async play({ canvasElement }) {
+export const Basic: Story = {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-page',
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-page',
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
 ```

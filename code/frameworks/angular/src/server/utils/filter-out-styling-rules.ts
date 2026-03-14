@@ -1,4 +1,4 @@
-import { Configuration, RuleSetRule } from 'webpack';
+import type { Configuration, RuleSetRule } from 'webpack';
 
 const isStylingRule = (rule: RuleSetRule) => {
   const { test } = rule;

@@ -4,7 +4,7 @@ export function babelDefault(config) {
     ...config,
     plugins: [
       ...config.plugins,
-      [require.resolve('@babel/plugin-transform-react-jsx'), {}, 'preset'],
+      [import.meta.resolve('@babel/plugin-transform-react-jsx'), {}, 'preset'],
     ],
   };
 }
@@ -18,7 +18,7 @@ export function babelDefault(config: TransformOptions) {
     ...config,
     plugins: [
       ...config.plugins,
-      [require.resolve('@babel/plugin-transform-react-jsx'), {}, 'preset'],
+      [import.meta.resolve('@babel/plugin-transform-react-jsx'), {}, 'preset'],
     ],
   };
 }

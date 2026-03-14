@@ -1,9 +1,19 @@
+import { fileURLToPath } from 'node:url';
+
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
 import { getVirtualModules } from '@storybook/builder-webpack5';
 
-export const configureBabelLoader = async (baseConfig: any, options: Options) => {
+import type { NextConfig } from 'next';
+
+import { getNodeModulesExcludeRegex } from '../utils';
+
+export const configureBabelLoader = async (
+  baseConfig: any,
+  options: Options,
+  nextConfig: NextConfig
+) => {
   const { virtualModules } = await getVirtualModules(options);
 
   const babelOptions = await options.presets.apply('babel', {}, options);
@@ -15,7 +25,7 @@ export const configureBabelLoader = async (baseConfig: any, options: Options) =>
       test: typescriptOptions.skipCompiler ? /\.((c|m)?jsx?)$/ : /\.((c|m)?(j|t)sx?)$/,
       use: [
         {
-          loader: require.resolve('babel-loader'),
+          loader: fileURLToPath(import.meta.resolve('babel-loader')),
           options: {
             cacheDirectory: resolvePathInStorybookCache('babel'),
             ...babelOptions,
@@ -23,7 +33,10 @@ export const configureBabelLoader = async (baseConfig: any, options: Options) =>
         },
       ],
       include: [getProjectRoot()],
-      exclude: [/node_modules/, ...Object.keys(virtualModules)],
+      exclude: [
+        getNodeModulesExcludeRegex(nextConfig.transpilePackages ?? []),
+        ...Object.keys(virtualModules),
+      ],
     },
   ];
 };

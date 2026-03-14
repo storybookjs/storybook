@@ -16,7 +16,13 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('storybook/internal/common')>();
   return {
     ...actual,
-    getProjectRoot: vi.fn().mockReturnValue(process.cwd()),
+    getProjectRoot: () => process.cwd(),
+    extractFrameworkPackageName: (name: string) => name?.replace('@storybook/', '') || '',
+    normalizeStories: actual.normalizeStories || ((stories) => stories),
+    getStoryId: async () => ({
+      storyId: 'components-page--default',
+      kind: 'components-page',
+    }),
   };
 });
 

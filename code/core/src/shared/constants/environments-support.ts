@@ -1,9 +1,7 @@
 import type { BuildOptions } from 'esbuild';
-import type { Options } from 'tsup';
 
 // https://esbuild.github.io/api/#target
-// https://tsup.egoist.dev/#target-environment
-export const BROWSER_TARGETS: Options['target'] = [
+export const BROWSER_TARGETS: BuildOptions['target'] = [
   'chrome131',
   'edge134',
   'firefox136',
@@ -13,8 +11,7 @@ export const BROWSER_TARGETS: Options['target'] = [
 ];
 
 // https://esbuild.github.io/api/#target
-// https://tsup.egoist.dev/#target-environment
-export const NODE_TARGET: Options['target'] = 'node20';
+export const NODE_TARGET: BuildOptions['target'] = 'node20.19';
 
 // https://esbuild.github.io/api/#supported
 export const SUPPORTED_FEATURES: BuildOptions['supported'] = {

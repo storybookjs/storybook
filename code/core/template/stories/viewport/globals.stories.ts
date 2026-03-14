@@ -10,7 +10,7 @@ export default {
     text: 'Testing the viewport',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

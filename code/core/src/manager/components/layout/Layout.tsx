@@ -1,23 +1,29 @@
+import type { CSSProperties } from 'react';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 
-import { Match } from 'storybook/internal/router';
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
 import { type API, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants';
 import { Notifications } from '../../container/Notifications';
 import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
 import { useLayout } from './LayoutProvider';
+import { MainAreaContainer } from './MainAreaContainer';
+import { PanelContainer } from './PanelContainer';
+import { SidebarContainer } from './SidebarContainer';
 import { useDragging } from './useDragging';
+import { useLandmarkIndicator } from './useLandmarkIndicator';
 
 interface InternalLayoutState {
   isDragging: boolean;
 }
 
-interface ManagerLayoutState
-  extends Pick<API_Layout, 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'> {
+interface ManagerLayoutState extends Pick<
+  API_Layout,
+  'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'
+> {
   viewMode: API_ViewMode;
 }
 
@@ -32,7 +38,6 @@ interface Props {
   slotPages?: React.ReactNode;
   hasTab: boolean;
 }
-const MINIMUM_CONTENT_WIDTH_PX = 100;
 
 const layoutStateIsEqual = (state: ManagerLayoutState, other: ManagerLayoutState) =>
   state.navSize === other.navSize &&
@@ -100,19 +105,26 @@ const useLayoutSyncingState = ({
   }, [internalDraggingSizeState, setManagerLayoutState]);
 
   const isPagesShown =
-    managerLayoutState.viewMode !== 'story' && managerLayoutState.viewMode !== 'docs';
+    managerLayoutState.viewMode !== undefined &&
+    managerLayoutState.viewMode !== 'story' &&
+    managerLayoutState.viewMode !== 'docs';
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
-  const { panelResizerRef, sidebarResizerRef } = useDragging({
-    setState: setInternalDraggingSizeState,
-    isPanelShown,
-    isDesktop,
-  });
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
     ? internalDraggingSizeState
     : managerLayoutState;
 
   const customisedNavSize = api.getNavSizeWithCustomisations?.(navSize) ?? navSize;
+  const customisedShowPanel = api.getShowPanelWithCustomisations?.(isPanelShown) ?? isPanelShown;
+
+  const { panelResizerRef, sidebarResizerRef, sidebarMaxWidth, panelMaxSize } = useDragging({
+    setState: setInternalDraggingSizeState,
+    isDesktop,
+    navSize: customisedNavSize,
+    showPanel: customisedShowPanel,
+    rightPanelWidth,
+    panelPosition: managerLayoutState.panelPosition,
+  });
 
   return {
     navSize: customisedNavSize,
@@ -121,17 +133,12 @@ const useLayoutSyncingState = ({
     panelPosition: managerLayoutState.panelPosition,
     panelResizerRef,
     sidebarResizerRef,
+    sidebarMaxWidth,
+    panelMaxSize,
     showPages: isPagesShown,
-    showPanel: isPanelShown,
+    showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
   };
-};
-const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-      {({ match }) => <ContentContainer shown={!!match}>{children}</ContentContainer>}
-    </Match>
-  );
 };
 
 const OrderedMobileNavigation = styled(MobileNavigation)({
@@ -149,182 +156,97 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     panelPosition,
     panelResizerRef,
     sidebarResizerRef,
+    sidebarMaxWidth,
+    panelMaxSize,
     showPages,
     showPanel,
-    isDragging,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
+
+  // Install landmark navigation listener in parent container of all landmarks.
+  useLandmarkIndicator();
 
   return (
     <LayoutContainer
-      navSize={navSize}
-      rightPanelWidth={rightPanelWidth}
-      bottomPanelHeight={bottomPanelHeight}
       panelPosition={managerLayoutState.panelPosition}
-      isDragging={isDragging}
-      viewMode={managerLayoutState.viewMode}
       showPanel={showPanel}
+      style={
+        {
+          '--nav-width': `${navSize}px`,
+          '--right-panel-width': `${rightPanelWidth}px`,
+          '--bottom-panel-height': `${bottomPanelHeight}px`,
+        } as CSSProperties
+      }
     >
-      {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
-      {isDesktop && (
-        <>
-          <SidebarContainer>
-            <Drag ref={sidebarResizerRef} />
+      <>
+        {isDesktop && (
+          <SidebarContainer
+            navSize={navSize}
+            sidebarMaxWidth={sidebarMaxWidth}
+            sidebarResizerRef={sidebarResizerRef}
+          >
             {slots.slotSidebar}
           </SidebarContainer>
-
-          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
-
-          {showPanel && (
-            <PanelContainer position={panelPosition}>
-              <Drag
-                orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
-                position={panelPosition === 'bottom' ? 'left' : 'right'}
-                ref={panelResizerRef}
-              />
-              {slots.slotPanel}
-            </PanelContainer>
-          )}
-        </>
-      )}
-
-      {isMobile && (
-        <>
+        )}
+        {isMobile && (
           <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
             showPanel={showPanel}
           />
-          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
-          <Notifications />
-        </>
-      )}
+        )}
+
+        <MainAreaContainer
+          showPages={showPages}
+          slotMain={slots.slotMain}
+          slotPages={slots.slotPages}
+        />
+
+        {isDesktop && (
+          <PanelContainer
+            bottomPanelHeight={bottomPanelHeight}
+            rightPanelWidth={rightPanelWidth}
+            panelMaxSize={panelMaxSize}
+            panelResizerRef={panelResizerRef}
+            position={panelPosition}
+          >
+            {showPanel && slots.slotPanel}
+          </PanelContainer>
+        )}
+        {isMobile && <Notifications />}
+      </>
     </LayoutContainer>
   );
 };
 
-const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
-  ({ navSize, rightPanelWidth, bottomPanelHeight, viewMode, panelPosition, showPanel }) => {
-    return {
-      width: '100%',
-      height: ['100vh', '100dvh'], // This array is a special Emotion syntax to set a fallback if 100dvh is not supported
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-
-      [MEDIA_DESKTOP_BREAKPOINT]: {
-        display: 'grid',
-        gap: 0,
-        gridTemplateColumns: `minmax(0, ${navSize}px) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, ${rightPanelWidth}px)`,
-        gridTemplateRows: `1fr minmax(0, ${bottomPanelHeight}px)`,
-        gridTemplateAreas: (() => {
-          if (viewMode === 'docs' || !showPanel) {
-            // remove panel in docs viewMode
-            return `"sidebar content content"
-                  "sidebar content content"`;
-          }
-          if (panelPosition === 'right') {
-            return `"sidebar content panel"
-                  "sidebar content panel"`;
-          }
-          return `"sidebar content content"
-                "sidebar panel   panel"`;
-        })(),
-      },
-    };
-  }
-);
-
-const SidebarContainer = styled.div(({ theme }) => ({
-  backgroundColor: theme.background.app,
-  gridArea: 'sidebar',
-  position: 'relative',
-  borderRight: `1px solid ${theme.color.border}`,
-}));
-
-const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
-  flex: 1,
-  position: 'relative',
-  backgroundColor: theme.background.content,
-  display: shown ? 'grid' : 'none', // This is needed to make the content container fill the available space
-  overflow: 'auto',
+const LayoutContainer = styled.div<{
+  panelPosition: LayoutState['panelPosition'];
+  showPanel: boolean;
+}>(({ panelPosition, showPanel }) => ({
+  width: '100%',
+  height: ['100vh', '100dvh'],
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  colorScheme: 'light dark',
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
-    flex: 'auto',
-    gridArea: 'content',
+    display: 'grid',
+    gap: 0,
+    // This uses CSS variables to prevent Emotion from generating a new CSS className for every possible value
+    gridTemplateColumns: `minmax(0, var(--nav-width)) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`,
+    gridTemplateRows: `1fr minmax(0, var(--bottom-panel-height))`,
+    gridTemplateAreas: (() => {
+      if (!showPanel) {
+        // showPanel is false by default when viewMode is not 'story', but can be overridden by the user
+        return `"sidebar content content"
+                  "sidebar content content"`;
+      }
+      if (panelPosition === 'right') {
+        return `"sidebar content panel"
+                  "sidebar content panel"`;
+      }
+      return `"sidebar content content"
+                "sidebar panel   panel"`;
+    })(),
   },
 }));
-
-const PagesContainer = styled.div(({ theme }) => ({
-  gridRowStart: 'sidebar-start',
-  gridRowEnd: '-1',
-  gridColumnStart: 'sidebar-end',
-  gridColumnEnd: '-1',
-  backgroundColor: theme.background.content,
-  zIndex: 1,
-}));
-
-const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
-  ({ theme, position }) => ({
-    gridArea: 'panel',
-    position: 'relative',
-    backgroundColor: theme.background.content,
-    borderTop: position === 'bottom' ? `1px solid ${theme.color.border}` : undefined,
-    borderLeft: position === 'right' ? `1px solid ${theme.color.border}` : undefined,
-  })
-);
-
-const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'left' | 'right' }>(
-  ({ theme }) => ({
-    position: 'absolute',
-    opacity: 0,
-    transition: 'opacity 0.2s ease-in-out',
-    zIndex: 100,
-
-    '&:after': {
-      content: '""',
-      display: 'block',
-      backgroundColor: theme.color.secondary,
-    },
-
-    '&:hover': {
-      opacity: 1,
-    },
-  }),
-  ({ orientation = 'vertical', position = 'left' }) => {
-    if (orientation === 'vertical') {
-      return {
-        width: position === 'left' ? 10 : 13,
-        height: '100%',
-        top: 0,
-        right: position === 'left' ? '-7px' : undefined,
-        left: position === 'right' ? '-7px' : undefined,
-
-        '&:after': {
-          width: 1,
-          height: '100%',
-          marginLeft: position === 'left' ? 3 : 6,
-        },
-
-        '&:hover': {
-          cursor: 'col-resize',
-        },
-      };
-    }
-    return {
-      width: '100%',
-      height: '13px',
-      top: '-7px',
-      left: 0,
-
-      '&:after': {
-        width: '100%',
-        height: 1,
-        marginTop: 6,
-      },
-
-      '&:hover': {
-        cursor: 'row-resize',
-      },
-    };
-  }
-);

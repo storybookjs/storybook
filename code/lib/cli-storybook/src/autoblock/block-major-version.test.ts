@@ -1,169 +1,279 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { blocker, checkUpgrade } from './block-major-version';
+// Import mocked modules
+import * as semver from 'semver';
 
-vi.mock('storybook/internal/cli', () => ({
-  getStorybookVersionSpecifier: vi.fn((pkg) => {
-    if (!pkg.dependencies) {
-      throw new Error(`Couldn't find any official storybook packages in package.json`);
+import { blocker, validateVersionTransition } from './block-major-version';
+
+// Mock all dependencies at the top level
+vi.mock('storybook/internal/common', () => ({
+  versions: {
+    storybook: '9.0.0',
+  },
+}));
+
+vi.mock('picocolors', () => ({
+  default: {
+    red: (s: string) => s,
+    cyan: (s: string) => s,
+  },
+}));
+
+vi.mock('semver', () => ({
+  coerce: vi.fn(),
+  gt: vi.fn(),
+  major: vi.fn(),
+  parse: vi.fn(),
+  prerelease: vi.fn(),
+}));
+
+vi.mock('ts-dedent', () => ({
+  dedent: vi.fn((strings: TemplateStringsArray, ...values: any[]) => {
+    // Simple dedent mock that just joins the template
+    let result = strings[0];
+    for (let i = 0; i < values.length; i++) {
+      result += values[i] + strings[i + 1];
     }
-    return pkg.dependencies['@storybook/react'];
+    return result.trim();
   }),
 }));
 
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/common')>()),
-  versions: {
-    storybook: '8.0.0',
-  },
-  frameworkToRenderer: {},
-  // Add any other exports that might be needed
+vi.mock('./types', () => ({
+  createBlocker: vi.fn((blocker) => blocker),
 }));
 
-describe('checkUpgrade', () => {
-  it('invalid versions - returns ok for empty or invalid versions', () => {
-    expect(checkUpgrade('', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('7.0.0', '')).toBe('ok');
-    expect(checkUpgrade('invalid', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('7.0.0', 'invalid')).toBe('ok');
+const mockedSemver = vi.mocked(semver);
+
+describe('validateVersionTransition', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('prerelease - allows upgrades from any prerelease version', () => {
-    expect(checkUpgrade('6.0.0-canary.1', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0-alpha.0', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0-beta.1', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0-rc.1', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('0.0.0-bla-0', '8.0.0')).toBe('ok');
+  test('should return "ok" for missing currentVersion', () => {
+    const result = validateVersionTransition('', '9.0.0');
+    expect(result).toBe('ok');
   });
 
-  it('prerelease - allows upgrades to any prerelease version', () => {
-    expect(checkUpgrade('6.0.0', '8.0.0-alpha.1')).toBe('ok');
-    expect(checkUpgrade('6.0.0', '8.0.0-canary.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0', '8.0.0-beta.1')).toBe('ok');
-    expect(checkUpgrade('6.0.0', '8.0.0-rc.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0', '0.0.0-bla-0')).toBe('ok');
+  test('should return "ok" for missing targetVersion', () => {
+    const result = validateVersionTransition('8.0.0', '');
+    expect(result).toBe('ok');
   });
 
-  it('prerelease - allows downgrades to and from prereleases', () => {
-    expect(checkUpgrade('8.0.0', '6.0.0-alpha.1')).toBe('ok');
-    expect(checkUpgrade('8.0.0-beta.1', '6.0.0')).toBe('ok');
-    expect(checkUpgrade('8.0.0-rc.1', '6.0.0-alpha.1')).toBe('ok');
+  test('should return "ok" for invalid currentVersion', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+
+    const result = validateVersionTransition('invalid', '9.0.0');
+    expect(result).toBe('ok');
   });
 
-  it('upgrade - allows upgrades one major version apart', () => {
-    expect(checkUpgrade('6.0.0', '7.0.0')).toBe('ok');
-    expect(checkUpgrade('7.0.0', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('6.5.0', '7.0.0')).toBe('ok');
+  test('should return "ok" for invalid targetVersion', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 8, minor: 0, patch: 0 } as any)
+      .mockReturnValueOnce(null);
+
+    const result = validateVersionTransition('8.0.0', 'invalid');
+    expect(result).toBe('ok');
   });
 
-  it('upgrade - detects gaps more than one major version apart', () => {
-    expect(checkUpgrade('6.0.0', '8.0.0')).toBe('gap-too-large');
-    expect(checkUpgrade('5.0.0', '7.0.0')).toBe('gap-too-large');
-    expect(checkUpgrade('6.5.0', '8.0.0')).toBe('gap-too-large');
+  test('should return "ok" for prerelease currentVersion', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 8, minor: 0, patch: 0 } as any)
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+    mockedSemver.prerelease.mockReturnValueOnce(['alpha', 1]).mockReturnValueOnce(null);
+
+    const result = validateVersionTransition('8.0.0-alpha.1', '9.0.0');
+    expect(result).toBe('ok');
   });
 
-  describe('downgrade', () => {
-    it('detects major version downgrades', () => {
-      expect(checkUpgrade('7.0.0', '6.0.0')).toBe('downgrade');
-      expect(checkUpgrade('8.0.0', '7.0.0')).toBe('downgrade');
-      expect(checkUpgrade('8.0.0', '6.0.0')).toBe('downgrade');
-    });
+  test('should return "ok" for prerelease targetVersion', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 8, minor: 0, patch: 0 } as any)
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+    mockedSemver.prerelease.mockReturnValueOnce(null).mockReturnValueOnce(['alpha', 1]);
 
-    it('detects minor version downgrades', () => {
-      expect(checkUpgrade('7.2.0', '7.1.0')).toBe('downgrade');
-      expect(checkUpgrade('7.1.0', '7.0.0')).toBe('downgrade');
-      expect(checkUpgrade('8.5.0', '8.4.9')).toBe('downgrade');
-    });
-
-    it('detects patch version downgrades', () => {
-      expect(checkUpgrade('7.1.2', '7.1.1')).toBe('downgrade');
-      expect(checkUpgrade('7.0.1', '7.0.0')).toBe('downgrade');
-      expect(checkUpgrade('8.0.5', '8.0.4')).toBe('downgrade');
-    });
+    const result = validateVersionTransition('8.0.0', '9.0.0-alpha.1');
+    expect(result).toBe('ok');
   });
 
-  it('special - allows any version zero upgrades or downgrades', () => {
-    expect(checkUpgrade('0.1.0', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0', '0.1.0')).toBe('ok');
-    expect(checkUpgrade('0.0.1', '0.0.2')).toBe('ok');
+  test('should return "ok" for version zero currentVersion', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 0, minor: 1, patch: 0 } as any)
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+    mockedSemver.prerelease.mockReturnValue(null);
+
+    const result = validateVersionTransition('0.1.0', '9.0.0');
+    expect(result).toBe('ok');
   });
 
-  it('special - handles upgrades to current CLI version (8.0.0)', () => {
-    // Detects multi-major gaps
-    expect(checkUpgrade('6.0.0', '8.0.0')).toBe('gap-too-large');
-    expect(checkUpgrade('5.0.0', '8.0.0')).toBe('gap-too-large');
+  test('should return "ok" for version zero targetVersion', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 8, minor: 0, patch: 0 } as any)
+      .mockReturnValueOnce({ major: 0, minor: 1, patch: 0 } as any);
+    mockedSemver.prerelease.mockReturnValue(null);
 
-    // Allows single major and same version
-    expect(checkUpgrade('7.0.0', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('8.0.0', '8.0.0')).toBe('ok');
+    const result = validateVersionTransition('8.0.0', '0.1.0');
+    expect(result).toBe('ok');
+  });
 
-    // Allows any prerelease
-    expect(checkUpgrade('6.0.0-canary.1', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0-alpha.0', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0-beta.1', '8.0.0')).toBe('ok');
-    expect(checkUpgrade('6.0.0-rc.0', '8.0.0')).toBe('ok');
+  test('should return "downgrade" when current version is greater than target', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any)
+      .mockReturnValueOnce({ major: 8, minor: 0, patch: 0 } as any);
+    mockedSemver.prerelease.mockReturnValue(null);
+    mockedSemver.gt.mockReturnValue(true);
+
+    const result = validateVersionTransition('9.0.0', '8.0.0');
+    expect(result).toBe('downgrade');
+  });
+
+  test('should return "gap-too-large" when version gap is greater than 1', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 7, minor: 0, patch: 0 } as any)
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+    mockedSemver.prerelease.mockReturnValue(null);
+    mockedSemver.gt.mockReturnValue(false);
+
+    const result = validateVersionTransition('7.0.0', '9.0.0');
+    expect(result).toBe('gap-too-large');
+  });
+
+  test('should return "ok" for valid single major version upgrade', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 8, minor: 0, patch: 0 } as any)
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+    mockedSemver.prerelease.mockReturnValue(null);
+    mockedSemver.gt.mockReturnValue(false);
+
+    const result = validateVersionTransition('8.0.0', '9.0.0');
+    expect(result).toBe('ok');
+  });
+
+  test('should return "ok" for same version', () => {
+    mockedSemver.parse
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any)
+      .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+    mockedSemver.prerelease.mockReturnValue(null);
+    mockedSemver.gt.mockReturnValue(false);
+
+    const result = validateVersionTransition('9.0.0', '9.0.0');
+    expect(result).toBe('ok');
   });
 });
 
 describe('blocker', () => {
   const mockPackageManager = {
-    retrievePackageJson: vi.fn(),
+    getAllDependencies: vi.fn(),
   };
 
-  it('check - returns false if no version found', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({});
-    const result = await blocker.check({ packageManager: mockPackageManager } as any);
-    expect(result).toBe(false);
+  const baseOptions = {
+    packageManager: mockPackageManager,
+    mainConfig: { stories: [] },
+    mainConfigPath: '.storybook/main.ts',
+    configDir: '.storybook',
+  } as any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPackageManager.getAllDependencies.mockReturnValue({});
   });
 
-  it('check - returns false if version check fails', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({});
-    const result = await blocker.check({ packageManager: mockPackageManager } as any);
-    expect(result).toBe(false);
-  });
+  describe('check method', () => {
+    test('should return false when storybook dependency is not found', async () => {
+      mockPackageManager.getAllDependencies.mockReturnValue({});
 
-  it('check - returns version data with reason if upgrade should be blocked', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({
-      dependencies: {
-        '@storybook/react': '6.0.0',
-      },
+      const result = await blocker.check(baseOptions);
+      expect(result).toBe(false);
     });
-    const result = await blocker.check({ packageManager: mockPackageManager } as any);
-    expect(result).toEqual({
-      currentVersion: '6.0.0',
-      reason: 'gap-too-large',
-    });
-  });
 
-  describe('log', () => {
-    it('includes upgrade command for gap-too-large', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
-        currentVersion: '6.0.0',
-        reason: 'gap-too-large',
+    test('should return false when version transition is ok', async () => {
+      mockPackageManager.getAllDependencies.mockReturnValue({
+        storybook: '8.0.0',
       });
-      expect(message).toContain('You can upgrade to version 7 by running:');
-      expect(message).toContain('npx storybook@7 upgrade');
-      expect(message).toContain('Major Version Gap Detected');
+      mockedSemver.parse
+        .mockReturnValueOnce({ major: 8, minor: 0, patch: 0 } as any)
+        .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+      mockedSemver.prerelease.mockReturnValue(null);
+      mockedSemver.gt.mockReturnValue(false);
+
+      const result = await blocker.check(baseOptions);
+      expect(result).toBe(false);
     });
 
-    it('shows downgrade message for downgrade attempts', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
-        currentVersion: '8.0.0',
+    test('should return data when downgrade is detected', async () => {
+      mockPackageManager.getAllDependencies.mockReturnValue({
+        storybook: '10.0.0',
+      });
+      mockedSemver.parse
+        .mockReturnValueOnce({ major: 10, minor: 0, patch: 0 } as any)
+        .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+      mockedSemver.prerelease.mockReturnValue(null);
+      mockedSemver.gt.mockReturnValue(true);
+
+      const result = await blocker.check(baseOptions);
+      expect(result).toEqual({
+        currentVersion: '10.0.0',
         reason: 'downgrade',
       });
-      expect(message).toContain('Your Storybook version (v8.0.0) is newer than the target release');
-      expect(message).toContain('Downgrading is not supported');
-      expect(message).not.toContain('You can upgrade to version');
     });
 
-    it('omits upgrade command for invalid versions', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
-        currentVersion: 'invalid',
+    test('should return data when version gap is too large', async () => {
+      mockPackageManager.getAllDependencies.mockReturnValue({
+        storybook: '7.0.0',
+      });
+      mockedSemver.parse
+        .mockReturnValueOnce({ major: 7, minor: 0, patch: 0 } as any)
+        .mockReturnValueOnce({ major: 9, minor: 0, patch: 0 } as any);
+      mockedSemver.prerelease.mockReturnValue(null);
+      mockedSemver.gt.mockReturnValue(false);
+
+      const result = await blocker.check(baseOptions);
+      expect(result).toEqual({
+        currentVersion: '7.0.0',
         reason: 'gap-too-large',
       });
-      expect(message).not.toContain('You can upgrade to version');
-      expect(message).toContain('Major Version Gap Detected');
-      expect(message).toContain('For more information about upgrading');
+    });
+
+    test('should return false when an error occurs', async () => {
+      mockPackageManager.getAllDependencies.mockImplementation(() => {
+        throw new Error('Test error');
+      });
+
+      const result = await blocker.check(baseOptions);
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('log method', () => {
+    test('should return downgrade message when reason is downgrade', () => {
+      const data = {
+        currentVersion: '10.0.0',
+        reason: 'downgrade' as const,
+      };
+
+      const result = blocker.log(data);
+      expect(result.title).toContain('Downgrade Not Supported');
+      expect(result.message).toContain('v10.0.0');
+      expect(result.message).toContain('v9.0.0');
+      expect(result.message).toContain('Downgrading is not supported');
+    });
+
+    test('should return version gap message with upgrade command when version can be coerced', () => {
+      const data = {
+        currentVersion: '7.0.0',
+        reason: 'gap-too-large' as const,
+      };
+
+      mockedSemver.coerce.mockReturnValue({ version: '7.0.0' } as any);
+      mockedSemver.major.mockReturnValue(7);
+
+      const result = blocker.log(data);
+      expect(result.title).toContain('Major Version Gap Detected');
+      expect(result.message).toContain('v7.0.0');
+      expect(result.message).toContain('v9.0.0');
+      expect(result.message).toContain('upgrade one major version at a time');
+      expect(result.message).toContain('npx storybook@8 upgrade');
     });
   });
 });

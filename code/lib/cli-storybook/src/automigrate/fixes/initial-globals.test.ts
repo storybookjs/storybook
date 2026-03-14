@@ -18,6 +18,8 @@ const check = async (previewContents: string) => {
     mainConfig: {} as any,
     storybookVersion: '8.0',
     previewConfigPath,
+    storiesPaths: [],
+    hasCsfFactoryPreview: false,
   });
 };
 

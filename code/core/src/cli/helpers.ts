@@ -5,22 +5,22 @@ import { join, resolve } from 'node:path';
 import {
   type JsPackageManager,
   type PackageJson,
-  type PackageJsonWithDepsAndDevDeps,
   frameworkToRenderer,
 } from 'storybook/internal/common';
-import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
-import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
+import { logger } from 'storybook/internal/node-logger';
+import {
+  type SupportedFramework,
+  SupportedLanguage,
+  type SupportedRenderer,
+} from 'storybook/internal/types';
+import { Feature } from 'storybook/internal/types';
 
-import { findUpSync } from 'find-up';
 import picocolors from 'picocolors';
-import { coerce, major, satisfies } from 'semver';
+import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs';
-import { CommunityBuilder, CoreBuilder, SupportedLanguage } from './project_types';
-
-const logger = console;
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   const filePath = resolve(jsonPath);
@@ -67,21 +67,17 @@ export const writeFileAsJson = (jsonPath: string, content: unknown) => {
  * ]);
  * ```
  *
- * @param {Object} packageJson The current package.json so we can inspect its contents
- * @returns {Array} Contains the packages and versions that need to be installed
+ * @param packageJson The current package.json so we can inspect its contents
+ * @returns Contains the packages and versions that need to be installed
  */
-export async function getBabelDependencies(
-  packageManager: JsPackageManager,
-  packageJson: PackageJsonWithDepsAndDevDeps
-) {
+export async function getBabelDependencies(packageManager: JsPackageManager) {
   const dependenciesToAdd = [];
   let babelLoaderVersion = '^8.0.0-0';
 
-  const babelCoreVersion =
-    packageJson.dependencies['babel-core'] || packageJson.devDependencies['babel-core'];
+  const babelCoreVersion = packageManager.getDependencyVersion('babel-core');
 
   if (!babelCoreVersion) {
-    if (!packageJson.dependencies['@babel/core'] && !packageJson.devDependencies['@babel/core']) {
+    if (!packageManager.getDependencyVersion('@babel/core')) {
       const babelCoreInstallVersion = await packageManager.getVersion('@babel/core');
       dependenciesToAdd.push(`@babel/core@${babelCoreInstallVersion}`);
     }
@@ -91,12 +87,12 @@ export async function getBabelDependencies(
       babelCoreVersion
     );
     // Babel 6
-    if (satisfies(latestCompatibleBabelVersion, '^6.0.0')) {
+    if (latestCompatibleBabelVersion && satisfies(latestCompatibleBabelVersion, '^6.0.0')) {
       babelLoaderVersion = '^7.0.0';
     }
   }
 
-  if (!packageJson.dependencies['babel-loader'] && !packageJson.devDependencies['babel-loader']) {
+  if (!packageManager.getDependencyVersion('babel-loader')) {
     const babelLoaderInstallVersion = await packageManager.getVersion(
       'babel-loader',
       babelLoaderVersion
@@ -135,37 +131,11 @@ export function copyTemplate(templateRoot: string, destination = '.') {
 
 type CopyTemplateFilesOptions = {
   packageManager: JsPackageManager;
-  templateLocation: SupportedFrameworks | SupportedRenderers;
+  templateLocation: SupportedFramework | SupportedRenderer;
   language: SupportedLanguage;
   commonAssetsDir?: string;
   destination?: string;
-  features: string[];
-};
-
-export const frameworkToDefaultBuilder: Record<
-  SupportedFrameworks,
-  CoreBuilder | CommunityBuilder
-> = {
-  angular: CoreBuilder.Webpack5,
-  ember: CoreBuilder.Webpack5,
-  'html-vite': CoreBuilder.Vite,
-  nextjs: CoreBuilder.Webpack5,
-  nuxt: CoreBuilder.Vite,
-  'nextjs-vite': CoreBuilder.Vite,
-  'preact-vite': CoreBuilder.Vite,
-  qwik: CoreBuilder.Vite,
-  'react-native-web-vite': CoreBuilder.Vite,
-  'react-vite': CoreBuilder.Vite,
-  'react-webpack5': CoreBuilder.Webpack5,
-  'server-webpack5': CoreBuilder.Webpack5,
-  solid: CoreBuilder.Vite,
-  'svelte-vite': CoreBuilder.Vite,
-  sveltekit: CoreBuilder.Vite,
-  'vue3-vite': CoreBuilder.Vite,
-  'web-components-vite': CoreBuilder.Vite,
-  // Only to pass type checking, will never be used
-  'react-rsbuild': CommunityBuilder.Rsbuild,
-  'vue3-rsbuild': CommunityBuilder.Rsbuild,
+  features: Set<Feature>;
 };
 
 /**
@@ -176,7 +146,7 @@ export async function getVersionSafe(packageManager: JsPackageManager, packageNa
   try {
     let version = await packageManager.getInstalledVersion(packageName);
     if (!version) {
-      const deps = await packageManager.getAllDependencies();
+      const deps = packageManager.getAllDependencies();
       const versionSpecifier = deps[packageName];
       version = versionSpecifier ?? '';
     }
@@ -209,6 +179,11 @@ export async function copyTemplateFiles({
   };
   const templatePath = async () => {
     const baseDir = await getRendererDir(packageManager, templateLocation);
+
+    if (!baseDir) {
+      return null;
+    }
+
     const assetsDir = join(baseDir, 'template', 'cli');
 
     const assetsLanguage = join(assetsDir, languageFolderMapping[language]);
@@ -235,19 +210,19 @@ export async function copyTemplateFiles({
   };
 
   const destinationPath = destination ?? (await cliStoriesTargetPath());
-  const filter = (file: string) => features.includes('docs') || !file.endsWith('.mdx');
+  const filter = (file: string) => features.has(Feature.DOCS) || !file.endsWith('.mdx');
   if (commonAssetsDir) {
     await cp(commonAssetsDir, destinationPath, { recursive: true, filter });
   }
-  await cp(await templatePath(), destinationPath, { recursive: true, filter });
+  const tmpPath = await templatePath();
 
-  if (commonAssetsDir && features.includes('docs')) {
-    let rendererType = frameworkToRenderer[templateLocation] || 'react';
+  if (tmpPath) {
+    await cp(tmpPath, destinationPath, { recursive: true, filter });
+  }
 
-    // This is only used for docs links and the docs site uses `vue` for both `vue` & `vue3` renderers
-    if (rendererType === 'vue3') {
-      rendererType = 'vue';
-    }
+  if (commonAssetsDir && features.has(Feature.DOCS)) {
+    const rendererType = frameworkToRenderer[templateLocation] || 'react';
+
     await adjustTemplate(join(destinationPath, 'Configure.mdx'), { renderer: rendererType });
   }
 }
@@ -264,37 +239,14 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
   await writeFile(templatePath, template);
 }
 
-// Given a package.json, finds any official storybook package within it
-// and if it exists, returns the version of that package from the specified package.json
-export function getStorybookVersionSpecifier(packageJson: PackageJsonWithDepsAndDevDeps) {
-  const allDeps = {
-    ...packageJson.dependencies,
-    ...packageJson.devDependencies,
-    ...packageJson.optionalDependencies,
-  };
-  const storybookPackage = Object.keys(allDeps).find((name: string) => {
-    return storybookMonorepoPackages[name as keyof typeof storybookMonorepoPackages];
-  });
-
-  if (!storybookPackage) {
-    throw new Error(`Couldn't find any official storybook packages in package.json`);
-  }
-
-  return allDeps[storybookPackage];
-}
-
-export async function isNxProject() {
-  return findUpSync('nx.json');
-}
-
 export function coerceSemver(version: string) {
   const coercedSemver = coerce(version);
   invariant(coercedSemver != null, `Could not coerce ${version} into a semver.`);
   return coercedSemver;
 }
 
-export async function hasStorybookDependencies(packageManager: JsPackageManager) {
-  const currentPackageDeps = await packageManager.getAllDependencies();
+export function hasStorybookDependencies(packageManager: JsPackageManager) {
+  const currentPackageDeps = packageManager.getAllDependencies();
 
   return Object.keys(currentPackageDeps).some((dep) => dep.includes('storybook'));
 }

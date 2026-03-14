@@ -93,6 +93,7 @@ Type:
   exportName: string;
   importPath: string;
   type: 'story';
+  subtype?: 'story' | 'test';
   rawComponentPath?: string;
   metaId?: string;
   name?: string;
@@ -114,13 +115,15 @@ For each `IndexInput`, the indexer will add this export (from the file found at 
 
 ##### `importPath`
 
-(Required)
-
 Type: `string`
 
-The file to import from, e.g. the [CSF](../csf.mdx) file.
+Default: The original [`fileName`](#filename) passed to the `createIndex` function
+
+The file to import from, e.g. the [CSF](../csf/index.mdx) file.
 
 It is likely that the [`fileName`](#filename) being indexed is not CSF, in which you will need to [transpile it to CSF](#transpiling-to-csf) so that Storybook can read it in the browser.
+
+⚠️ Custom `importPath`s are only supported in Vite-based projects. To use them in Webpack-based projects, you will need to [transpile the source file to CSF](#transpiling-to-csf) and leave `importPath` empty to use the original `fileName`.
 
 ##### `type`
 
@@ -129,6 +132,16 @@ It is likely that the [`fileName`](#filename) being indexed is not CSF, in which
 Type: `'story'`
 
 The type of entry.
+
+##### `subtype`
+
+(⚠️ **Experimental**)
+
+Type: `'story' | 'test'`
+
+Default: `'story'`
+
+The subtype of the story entry when [`type`](#type) is `'story'`. Use this to mark an entry as a [_test_ (experimental)](https://github.com/storybookjs/storybook/discussions/30119). If not specified, defaults to `'story'`.
 
 ##### `rawComponentPath`
 
@@ -164,7 +177,7 @@ Tags for filtering entries in Storybook and its tools.
 
 Type: `string`
 
-Default: Auto-generated from default export of [`importPath`](#importpath)
+Default: Auto-generated from the meta (or default export) of [`importPath`](#importpath)
 
 Determines the location of the entry in the sidebar.
 
@@ -190,7 +203,7 @@ Only use this if you need to override the auto-generated id.
 
 ## Transpiling to CSF
 
-The value of [`importPath`](#importpath) in an [`IndexInput`](#indexinput) must resolve to a [CSF](../csf.mdx) file. Most custom indexers, however, are only necessary because the input is *not* CSF. Therefore, you will likely need to transpile the input to CSF, so that Storybook can read it in the browser and render your stories.
+The value of [`importPath`](#importpath) in an [`IndexInput`](#indexinput) must resolve to a [CSF](../csf/index.mdx) file. Most custom indexers, however, are only necessary because the input is *not* CSF. Therefore, you will likely need to transpile the input to CSF, so that Storybook can read it in the browser and render your stories.
 
 Transpiling the custom source format to CSF is beyond the scope of this documentation. This transpilation is often done at the builder level ([Vite](../../builders/vite.mdx) and/or [Webpack](../../builders/webpack.mdx)), and we recommend using [unplugin](https://github.com/unjs/unplugin) to create plugins for multiple builders.
 
@@ -434,7 +447,8 @@ Some example usages of custom indexers include:
   Update your Storybook configuration (i.e., `.storybook/main.js|ts`) to include the custom indexer.
 
   ```ts title=".storybook/main.js|ts"
-  import type { StorybookConfig } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import type { StorybookConfig } from '@storybook/your-framework';
   import type { Indexer } from 'storybook/internal/types';
 
   const urlIndexer: Indexer = {

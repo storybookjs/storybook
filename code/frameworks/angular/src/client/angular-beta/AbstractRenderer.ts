@@ -1,13 +1,15 @@
-import { ApplicationRef, NgModule } from '@angular/core';
+import type { ApplicationRef, NgModule } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { BehaviorSubject, Subject } from 'rxjs';
+import type { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { stringify } from 'telejson';
 
-import { ICollection, StoryFnAngularReturnType } from '../types';
+import type { ICollection, StoryFnAngularReturnType } from '../types';
 import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { PropertyExtractor } from './utils/PropertyExtractor';
+import { getProvideZonelessChangeDetectionFn } from './utils/Zoneless';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -126,11 +128,12 @@ export abstract class AbstractRenderer {
     ];
 
     if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
-      const { provideExperimentalZonelessChangeDetection } = await import('@angular/core');
-      if (!provideExperimentalZonelessChangeDetection) {
-        throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
+      const provideZonelessChangeDetectionFn = await getProvideZonelessChangeDetectionFn();
+
+      if (!provideZonelessChangeDetectionFn) {
+        throw new Error('Zoneless change detection requires Angular 18 or higher');
       } else {
-        providers.unshift(provideExperimentalZonelessChangeDetection());
+        providers.unshift(provideZonelessChangeDetectionFn());
       }
     }
 

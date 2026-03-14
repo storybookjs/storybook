@@ -9,7 +9,7 @@ export default {
     label: 'Click Me!',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 
@@ -18,7 +18,7 @@ export const Target = {
     label: 'This is just a story to target with the links',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

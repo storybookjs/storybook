@@ -45,6 +45,7 @@ export const TextControl: FC<TextProps> = ({
   if (value === undefined) {
     return (
       <Button
+        ariaLabel={false}
         variant="outline"
         size="medium"
         disabled={readonly}

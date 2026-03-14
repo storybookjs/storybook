@@ -11,7 +11,7 @@ import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants';
 const Wrapper = styled.div(({ theme: { color, typography, background } }) => ({
   textAlign: 'start',
   padding: '11px 15px',
-  fontSize: `${typography.size.s2}px`,
+  fontSize: `${typography.size.s2 - 1}px`,
   fontWeight: typography.weight.regular,
   lineHeight: '1rem',
   background: background.app,

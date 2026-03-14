@@ -22,6 +22,16 @@ import { globalPackages, globalsNameReferenceMap } from './globals';
  * The `runtime.ts` file is used inside the manager's browser code runtime.
  */
 
+const duplicatedKeys = [
+  'storybook/theming',
+  'storybook/theming/create',
+  'storybook/manager-api',
+  'storybook/test',
+  'storybook/actions',
+  'storybook/highlight',
+  'storybook/viewport',
+];
+
 export const globalsModuleInfoMap = globalPackages.reduce(
   (acc, key) => {
     acc[key] = {
@@ -30,6 +40,15 @@ export const globalsModuleInfoMap = globalPackages.reduce(
       namedExports: Exports[key],
       defaultExport: true,
     };
+
+    if (duplicatedKeys.includes(key)) {
+      acc[key.replace('storybook', 'storybook/internal') as typeof key] = {
+        type: 'esm',
+        varName: globalsNameReferenceMap[key],
+        namedExports: Exports[key],
+        defaultExport: true,
+      };
+    }
     return acc;
   },
   {} as Required<Record<keyof typeof globalsNameReferenceMap, Required<ModuleInfo>>>

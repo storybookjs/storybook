@@ -270,7 +270,7 @@ describe('full snapshots', () => {
   });
   it('canvas without story children', () => {
     const input = dedent`
-      import { Canvas } from '@storybook/addon-docs';
+      import { Canvas } from '@storybook/addon-docs/blocks';
 
       <Canvas>
         <h2>Some here</h2>
@@ -279,7 +279,7 @@ describe('full snapshots', () => {
     expect(compileSync(input)).toMatchInlineSnapshot(`
       import {jsx as _jsx} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-      import {Canvas} from '@storybook/addon-docs';
+      import {Canvas} from '@storybook/addon-docs/blocks';
       function _createMdxContent(props) {
         return _jsx(Canvas, {
           children: _jsx("h2", {
@@ -308,7 +308,7 @@ describe('docs-mdx-compiler-plugin', () => {
     expect(
       clean(
         compileSync(dedent`
-        import { Story, Meta, Canvas } from '@storybook/addon-docs';
+        import { Story, Meta, Canvas } from '@storybook/addon-docs/blocks';
         import { Welcome, Button } from '@storybook/angular/demo';
         import * as MyStories from './My.stories';
         import { Other } from './Other.stories';
@@ -327,7 +327,7 @@ describe('docs-mdx-compiler-plugin', () => {
     ).toMatchInlineSnapshot(`
       import {Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-      import {Story, Meta, Canvas} from '@storybook/addon-docs';
+      import {Story, Meta, Canvas} from '@storybook/addon-docs/blocks';
       import {Welcome, Button} from '@storybook/angular/demo';
       import * as MyStories from './My.stories';
       import {Other} from './Other.stories';
@@ -358,7 +358,7 @@ describe('docs-mdx-compiler-plugin', () => {
     expect(
       clean(
         compileSync(dedent`
-        import { Meta } from '@storybook/addon-docs';
+        import { Meta } from '@storybook/addon-docs/blocks';
 
         <Meta title="docs-only" />
 
@@ -370,7 +370,7 @@ describe('docs-mdx-compiler-plugin', () => {
     ).toMatchInlineSnapshot(`
       import {Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-      import {Meta} from '@storybook/addon-docs';
+      import {Meta} from '@storybook/addon-docs/blocks';
       function _createMdxContent(props) {
         const _components = {
           h1: "h1",
@@ -395,7 +395,7 @@ describe('docs-mdx-compiler-plugin', () => {
     expect(
       clean(
         compileSync(dedent`
-        import { Meta } from '@storybook/addon-docs';
+        import { Meta } from '@storybook/addon-docs/blocks';
 
         <Meta title="Addons/Docs/what's in a title?" />
       `)
@@ -403,7 +403,7 @@ describe('docs-mdx-compiler-plugin', () => {
     ).toMatchInlineSnapshot(`
       import {jsx as _jsx} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-      import {Meta} from '@storybook/addon-docs';
+      import {Meta} from '@storybook/addon-docs/blocks';
       function _createMdxContent(props) {
         return _jsx(Meta, {
           title: "Addons/Docs/what's in a title?"
@@ -417,7 +417,7 @@ describe('docs-mdx-compiler-plugin', () => {
       clean(
         compileSync(dedent`
         import { Button } from '@storybook/react/demo';
-        import { Story, Meta } from '@storybook/addon-docs';
+        import { Story, Meta } from '@storybook/addon-docs/blocks';
 
         <Meta title="Button" />
 
@@ -432,7 +432,7 @@ describe('docs-mdx-compiler-plugin', () => {
       import {Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
       import {Button} from '@storybook/react/demo';
-      import {Story, Meta} from '@storybook/addon-docs';
+      import {Story, Meta} from '@storybook/addon-docs/blocks';
       export const two = 2;
       function _createMdxContent(props) {
         const _components = {
@@ -457,7 +457,7 @@ describe('docs-mdx-compiler-plugin', () => {
     expect(
       clean(
         compileSync(dedent`
-        import { Story } from '@storybook/addon-docs';
+        import { Story } from '@storybook/addon-docs/blocks';
 
         # Current story
 
@@ -467,7 +467,7 @@ describe('docs-mdx-compiler-plugin', () => {
     ).toMatchInlineSnapshot(`
       import {Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-      import {Story} from '@storybook/addon-docs';
+      import {Story} from '@storybook/addon-docs/blocks';
       function _createMdxContent(props) {
         const _components = {
           h1: "h1",
@@ -489,7 +489,7 @@ describe('docs-mdx-compiler-plugin', () => {
     expect(
       clean(
         compileSync(dedent`
-        import { Story } from '@storybook/addon-docs';
+        import { Story } from '@storybook/addon-docs/blocks';
 
         # Story reference
 
@@ -499,7 +499,7 @@ describe('docs-mdx-compiler-plugin', () => {
     ).toMatchInlineSnapshot(`
       import {Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-      import {Story} from '@storybook/addon-docs';
+      import {Story} from '@storybook/addon-docs/blocks';
       function _createMdxContent(props) {
         const _components = {
           h1: "h1",
@@ -522,7 +522,7 @@ describe('docs-mdx-compiler-plugin', () => {
       clean(
         compileSync(
           [
-            "import { Meta, Story } from '@storybook/addon-docs';",
+            "import { Meta, Story } from '@storybook/addon-docs/blocks';",
             "import { titleFunction } from '../title-generators';",
             '',
 
@@ -533,7 +533,7 @@ describe('docs-mdx-compiler-plugin', () => {
     ).toMatchInlineSnapshot(`
       import {jsx as _jsx} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-      import {Meta, Story} from '@storybook/addon-docs';
+      import {Meta, Story} from '@storybook/addon-docs/blocks';
       import {titleFunction} from '../title-generators';
       function _createMdxContent(props) {
         return _jsx(Meta, {
@@ -548,7 +548,7 @@ describe('docs-mdx-compiler-plugin', () => {
       expect(
         clean(
           compileSync(dedent`
-          import { Meta } from '@storybook/addon-docs';
+          import { Meta } from '@storybook/addon-docs/blocks';
 
           <Meta />
 
@@ -560,7 +560,7 @@ describe('docs-mdx-compiler-plugin', () => {
       ).toMatchInlineSnapshot(`
         import {Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs} from "react/jsx-runtime";
         import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-        import {Meta} from '@storybook/addon-docs';
+        import {Meta} from '@storybook/addon-docs/blocks';
         function _createMdxContent(props) {
           const _components = {
             h1: "h1",
@@ -587,7 +587,7 @@ describe('docs-mdx-compiler-plugin', () => {
         clean(
           compileSync(dedent`
           import { Button } from '@storybook/react/demo';
-          import { Story, Meta } from '@storybook/addon-docs';
+          import { Story, Meta } from '@storybook/addon-docs/blocks';
 
           <Meta component={Button} />
         `)
@@ -596,7 +596,7 @@ describe('docs-mdx-compiler-plugin', () => {
         import {jsx as _jsx} from "react/jsx-runtime";
         import {useMDXComponents as _provideComponents} from "@mdx-js/react";
         import {Button} from '@storybook/react/demo';
-        import {Story, Meta} from '@storybook/addon-docs';
+        import {Story, Meta} from '@storybook/addon-docs/blocks';
         function _createMdxContent(props) {
           return _jsx(Meta, {
             component: Button
@@ -610,7 +610,7 @@ describe('docs-mdx-compiler-plugin', () => {
     expect(
       clean(
         compileSync(dedent`
-        import { Meta } from '@storybook/addon-docs';
+        import { Meta } from '@storybook/addon-docs/blocks';
 
         <Meta title="Example/Introduction" />
 
@@ -638,7 +638,7 @@ describe('docs-mdx-compiler-plugin', () => {
     ).toMatchInlineSnapshot(`
       import {Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs} from "react/jsx-runtime";
       import {useMDXComponents as _provideComponents} from "@mdx-js/react";
-      import {Meta} from '@storybook/addon-docs';
+      import {Meta} from '@storybook/addon-docs/blocks';
       function _createMdxContent(props) {
         return _jsxs(_Fragment, {
           children: [_jsx(Meta, {

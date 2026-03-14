@@ -15,12 +15,25 @@ export interface GridConfig {
   offsetY?: number;
 }
 
-export type GlobalState = { value: string | undefined; grid: boolean };
+export type GlobalState = { value: string | undefined; grid?: boolean };
 export type GlobalStateUpdate = Partial<GlobalState>;
 
 export interface BackgroundsParameters {
-  [PARAM_KEY]: {
-    /** Remove the addon panel and disable the addon's behavior */
+  /**
+   * Backgrounds configuration
+   *
+   * @see https://storybook.js.org/docs/essentials/backgrounds#parameters
+   */
+  backgrounds?: {
+    /** Default background color */
+    default?: string;
+
+    /**
+     * Removes the tool and disables the feature's behavior. If you wish to turn off this feature
+     * for the entire Storybook, you can set the option in your `main.js|ts` configuration file.
+     *
+     * @see https://storybook.js.org/docs/essentials/backgrounds#disable
+     */
     disable?: boolean;
 
     /** Configuration for the background grid */
@@ -37,5 +50,10 @@ export interface BackgroundsGlobals {
    *
    * @see https://storybook.js.org/docs/essentials/backgrounds#globals
    */
-  [PARAM_KEY]: GlobalState | GlobalState['value'];
+  [PARAM_KEY]?: GlobalState | GlobalState['value'];
+}
+
+export interface BackgroundTypes {
+  parameters: BackgroundsParameters;
+  globals: BackgroundsGlobals;
 }

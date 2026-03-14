@@ -1,8 +1,7 @@
-```js filename=".storybook/preview.js" renderer="react" language="js"
-import React from 'react';
+```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+import * as React from 'react';
 
 import { normal as NavigationNormal } from '../components/Navigation.stories';
-
 import GlobalContainerContext from '../components/lib/GlobalContainerContext';
 
 const context = {
@@ -18,13 +17,13 @@ const AppDecorator = (storyFn) => {
 export default { decorators: [AppDecorator] };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts"
-import React from 'react';
+```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+import * as React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { normal as NavigationNormal } from '../components/Navigation.stories';
-
 import GlobalContainerContext from '../components/lib/GlobalContainerContext';
 
 const context = {
@@ -44,9 +43,8 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="solid" language="js"
+```jsx filename=".storybook/preview.js" renderer="solid" language="js"
 import { normal as NavigationNormal } from '../components/Navigation.stories';
-
 import GlobalContainerContext from '../components/lib/GlobalContainerContext';
 
 const context = {
@@ -61,9 +59,8 @@ const AppDecorator = (storyFn) => {
 export const decorators = [AppDecorator];
 ```
 
-```ts filename=".storybook/preview.ts" renderer="solid" language="ts"
+```tsx filename=".storybook/preview.ts" renderer="solid" language="ts"
 import { normal as NavigationNormal } from '../components/Navigation.stories';
-
 import GlobalContainerContext from '../components/lib/GlobalContainerContext';
 
 const context = {
@@ -81,4 +78,54 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { normal as NavigationNormal } from '../components/Navigation.stories';
+import GlobalContainerContext from '../components/lib/GlobalContainerContext';
+
+const context = {
+  NavigationContainer: NavigationNormal,
+};
+
+const AppDecorator = (storyFn) => {
+  return (
+    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
+  );
+};
+
+export default definePreview({
+  decorators: [AppDecorator],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { normal as NavigationNormal } from '../components/Navigation.stories';
+import GlobalContainerContext from '../components/lib/GlobalContainerContext';
+
+const context = {
+  NavigationContainer: NavigationNormal,
+};
+
+const AppDecorator = (storyFn) => {
+  return (
+    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
+  );
+};
+
+export default definePreview({
+  decorators: [AppDecorator],
+});
 ```

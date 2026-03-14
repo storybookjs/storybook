@@ -1,6 +1,4 @@
-import React, { useMemo } from 'react';
-
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import React from 'react';
 
 import type { Combo, StoriesHash } from 'storybook/manager-api';
 import { Consumer, experimental_useStatusStore } from 'storybook/manager-api';
@@ -32,20 +30,11 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       refs,
     } = state;
 
-    const menu = useMenu(
-      state,
-      api,
-      showToolbar,
-      api.getIsFullscreen(),
-      api.getIsPanelShown(),
-      api.getIsNavShown(),
-      enableShortcuts
-    );
-
     const whatsNewNotificationsEnabled =
       state.whatsNewData?.status === 'SUCCESS' && !state.disableWhatsNewNotifications;
 
     return {
+      api,
       title: name,
       url,
       indexJson: internal_index,
@@ -56,7 +45,9 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       storyId,
       refId,
       viewMode,
-      menu,
+      showToolbar,
+      isPanelShown: api.getIsPanelShown(),
+      isNavShown: api.getIsNavShown(),
       menuHighlighted: whatsNewNotificationsEnabled && api.isWhatsNewUnread(),
       enableShortcuts,
     };
@@ -64,11 +55,18 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
 
   return (
     <Consumer filter={mapper}>
-      {(fromState) => {
+      {({ api, showToolbar, isPanelShown, isNavShown, enableShortcuts, ...state }) => {
+        const menu = useMenu({ api, showToolbar, isPanelShown, isNavShown, enableShortcuts });
         const allStatuses = experimental_useStatusStore();
 
         return (
-          <SidebarComponent {...fromState} allStatuses={allStatuses} onMenuClick={onMenuClick} />
+          <SidebarComponent
+            {...state}
+            menu={menu}
+            onMenuClick={onMenuClick}
+            allStatuses={allStatuses}
+            enableShortcuts={enableShortcuts}
+          />
         );
       }}
     </Consumer>

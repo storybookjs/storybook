@@ -1,30 +1,24 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
-import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
-import type { StoryIndex, Tag } from 'storybook/internal/types';
+import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
+import type { StoryIndex } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
 
-import type { API } from 'storybook/manager-api';
+import { type API, type Combo, Consumer } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { TagsFilterPanel } from './TagsFilterPanel';
 
-const TAGS_FILTER = 'tags-filter';
-
-const BUILT_IN_TAGS_HIDE = new Set([
-  'dev',
-  'docs-only',
-  'test-only',
-  'autodocs',
-  'test',
-  'attached-mdx',
-  'unattached-mdx',
-]);
-
-const Wrapper = styled.div({
-  position: 'relative',
-});
+const StyledButton = styled(Button)<{ $isHighlighted: boolean }>(({ $isHighlighted, theme }) => ({
+  '&:focus-visible': {
+    outlineOffset: 4,
+  },
+  ...($isHighlighted && {
+    background: theme.background.hoverable,
+    color: theme.color.secondary,
+  }),
+}));
 
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
@@ -40,95 +34,110 @@ const TagSelected = styled(Badge)(({ theme }) => ({
   lineHeight: 'px',
   boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
   fontSize: theme.typography.size.s1 - 1,
-  background: theme.color.secondary,
-  color: theme.color.lightest,
+  background: theme.barSelectedColor,
+  color: theme.color.inverseText,
 }));
 
-export interface TagsFilterProps {
+const tagsFilterMapper = ({ api, state }: Combo) => ({
+  api,
+  indexJson: state.internal_index as StoryIndex | undefined,
+  activeFilterCount:
+    (state.includedTagFilters?.length ?? 0) + (state.excludedTagFilters?.length ?? 0),
+  defaultIncludedFilters: state.defaultIncludedTagFilters,
+  defaultExcludedFilters: state.defaultExcludedTagFilters,
+  includedFilters: state.includedTagFilters,
+  excludedFilters: state.excludedTagFilters,
+});
+
+interface TagsFilterInnerProps {
   api: API;
   indexJson: StoryIndex;
-  initialSelectedTags?: Tag[];
-  isDevelopment: boolean;
+  activeFilterCount: number;
+  defaultIncludedFilters: string[];
+  defaultExcludedFilters: string[];
+  includedFilters: string[];
+  excludedFilters: string[];
 }
 
-export const TagsFilter = ({
+const TagsFilterInner = ({
   api,
   indexJson,
-  initialSelectedTags = [],
-  isDevelopment,
-}: TagsFilterProps) => {
-  const [selectedTags, setSelectedTags] = useState(initialSelectedTags);
+  activeFilterCount,
+  defaultIncludedFilters,
+  defaultExcludedFilters,
+  includedFilters,
+  excludedFilters,
+}: TagsFilterInnerProps) => {
   const [expanded, setExpanded] = useState(false);
-  const tagsActive = selectedTags.length > 0;
-
-  useEffect(() => {
-    api.experimental_setFilter(TAGS_FILTER, (item) => {
-      if (selectedTags.length === 0) {
-        return true;
-      }
-
-      return selectedTags.some((tag) => item.tags?.includes(tag));
-    });
-  }, [api, selectedTags]);
-
-  const allTags = Object.values(indexJson.entries).reduce((acc, entry) => {
-    entry.tags?.forEach((tag: Tag) => {
-      if (!BUILT_IN_TAGS_HIDE.has(tag)) {
-        acc.add(tag);
-      }
-    });
-    return acc;
-  }, new Set<Tag>());
-
-  const toggleTag = useCallback(
-    (tag: string) => {
-      if (selectedTags.includes(tag)) {
-        setSelectedTags(selectedTags.filter((t) => t !== tag));
-      } else {
-        setSelectedTags([...selectedTags, tag]);
-      }
-    },
-    [selectedTags, setSelectedTags]
-  );
 
   const handleToggleExpand = useCallback(
     (event: React.SyntheticEvent<Element, Event>): void => {
       event.preventDefault();
       setExpanded(!expanded);
     },
-    [expanded, setExpanded]
+    [expanded]
   );
-
-  // Hide the entire UI if there are no tags and it's a built Storybook
-  if (allTags.size === 0 && !isDevelopment) {
-    return null;
-  }
-
-  const tags = Array.from(allTags);
-  tags.sort();
 
   return (
-    <WithTooltip
+    <PopoverProvider
+      ariaLabel="Tag filters"
       placement="bottom"
-      trigger="click"
       onVisibleChange={setExpanded}
-      tooltip={() => (
+      offset={8}
+      padding={0}
+      popover={() => (
         <TagsFilterPanel
           api={api}
-          allTags={tags}
-          selectedTags={selectedTags}
-          toggleTag={toggleTag}
-          isDevelopment={isDevelopment}
+          indexJson={indexJson}
+          defaultIncludedFilters={defaultIncludedFilters}
+          defaultExcludedFilters={defaultExcludedFilters}
+          includedFilters={includedFilters}
+          excludedFilters={excludedFilters}
         />
       )}
-      closeOnOutsideClick
     >
-      <Wrapper>
-        <IconButton key="tags" title="Tag filters" active={tagsActive} onClick={handleToggleExpand}>
-          <FilterIcon />
-        </IconButton>
-        {selectedTags.length > 0 && <TagSelected />}
-      </Wrapper>
-    </WithTooltip>
+      <StyledButton
+        key="tags"
+        ariaLabel={
+          activeFilterCount
+            ? `${activeFilterCount} active tag ${activeFilterCount !== 1 ? 'filters' : 'filter'}`
+            : 'Tag filters'
+        }
+        ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
+        variant="ghost"
+        padding="small"
+        $isHighlighted={activeFilterCount > 0}
+        onClick={handleToggleExpand}
+      >
+        <FilterIcon />
+        {activeFilterCount > 0 && <TagSelected />}
+      </StyledButton>
+    </PopoverProvider>
   );
 };
+
+export const TagsFilter = () => (
+  <Consumer filter={tagsFilterMapper}>
+    {({
+      api,
+      indexJson,
+      activeFilterCount,
+      defaultIncludedFilters,
+      defaultExcludedFilters,
+      includedFilters,
+      excludedFilters,
+    }) =>
+      indexJson ? (
+        <TagsFilterInner
+          api={api}
+          indexJson={indexJson}
+          activeFilterCount={activeFilterCount}
+          defaultIncludedFilters={defaultIncludedFilters}
+          defaultExcludedFilters={defaultExcludedFilters}
+          includedFilters={includedFilters}
+          excludedFilters={excludedFilters}
+        />
+      ) : null
+    }
+  </Consumer>
+);

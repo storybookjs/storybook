@@ -2,16 +2,14 @@
 import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
-import { ErrorFormatter, Loader, getStoryHref } from 'storybook/internal/components';
+import { ErrorFormatter, Loader } from 'storybook/internal/components';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
+import { getStoryHref } from '../getStoryHref';
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';
-
-const { PREVIEW_URL } = globalThis;
-const BASE_URL = PREVIEW_URL || 'iframe.html';
 
 interface CommonProps {
   story: PreparedStory;
@@ -98,7 +96,7 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
             key="iframe"
             id={`iframe--${story.id}`}
             title={story.name}
-            src={getStoryHref(BASE_URL, story.id, { viewMode: 'story' })}
+            src={getStoryHref(story.id, { viewMode: 'story' })}
             allowFullScreen
             scale={scale}
             style={{
@@ -126,7 +124,9 @@ const Story: FunctionComponent<StoryProps> = (props) => {
     return (
       <ErrorMessage>
         This story mounts inside of play. Set{' '}
-        <a href="https://storybook.js.org/docs/api/doc-blocks/doc-block-story#autoplay">autoplay</a>{' '}
+        <a href="https://storybook.js.org/docs/api/doc-blocks/doc-block-story?ref=ui#autoplay">
+          autoplay
+        </a>{' '}
         to true to view this story.
       </ErrorMessage>
     );

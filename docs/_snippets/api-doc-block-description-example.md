@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -36,6 +36,41 @@ export const Primary: Story = {
 };
 ```
 
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -46,7 +81,7 @@ export const Primary: Story = {
    * Button stories
    * These stories showcase the button
    */
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Button,
     parameters: {
       docs: {
@@ -74,7 +109,7 @@ export const Primary: Story = {
   }} />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Button from './Button.svelte';
 
 /**
@@ -107,7 +142,7 @@ export const Primary = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 /**
@@ -150,7 +185,7 @@ export const Primary = {
    * Button stories
    * These stories showcase the button
    */
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Button,
     parameters: {
       docs: {
@@ -178,7 +213,7 @@ export const Primary = {
   }} />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -217,8 +252,8 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -256,7 +291,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 /**
  * Button stories
  * These stories showcase the button
@@ -288,7 +323,7 @@ export const Primary = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 /**
@@ -323,4 +358,212 @@ export const Primary: Story = {
     },
   },
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  title: 'Button',
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * # Button stories
+ * These stories showcase the button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  title: 'Button',
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
 ```

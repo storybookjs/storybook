@@ -6,11 +6,19 @@ declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' |
 declare var REFS: any;
 declare var VERSIONCHECK: any;
 
+declare var STORYBOOK_WEBSOCKET_TOKEN: string;
+
 declare var STORYBOOK_ADDON_STATE: Record<string, any>;
-declare var STORYBOOK_BUILDER: string | undefined;
-declare var STORYBOOK_FRAMEWORK: string | undefined;
+declare var STORYBOOK_BUILDER: import('./types/modules/builders').SupportedBuilder | undefined;
+declare var STORYBOOK_FRAMEWORK:
+  | import('./types/modules/frameworks').SupportedFramework
+  | undefined;
+declare var STORYBOOK_RENDERER: import('./types/modules/renderers').SupportedRenderer | undefined;
 declare var STORYBOOK_HOOKS_CONTEXT: any;
-declare var STORYBOOK_RENDERER: string | undefined;
+declare var STORYBOOK_CURRENT_TASK_LOG: undefined | null | Array<any>;
+
+declare var STORYBOOK_NETWORK_ADDRESS: string | undefined;
+declare var PREVIEW_URL: string | undefined;
 
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__: any;
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__: any;
@@ -22,12 +30,11 @@ declare var __STORYBOOK_STORY_STORE__: any;
 declare var __STORYBOOK_TEST__: any;
 declare var __STORYBOOK_TEST_SPY_LISTENERS__: Set<any>;
 declare var __STORYBOOK_ACTIONS__: any;
+declare var __STORYBOOK_VITEST_MOCKER__: any;
 
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';
-declare module 'better-opn';
 declare module 'lazy-universal-dotenv';
-declare module 'open';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
 

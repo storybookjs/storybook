@@ -1,31 +1,27 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { paddedLog } from 'storybook/internal/common';
+import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import commentJson from 'comment-json';
 import detectIndent from 'detect-indent';
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import { babelParse, recast, types as t, traverse } from '../babel';
 
-// TODO: @kasperpeulen check how to use the JSPackageManager type from common later
-// Right now there is a mismatch issue with the types because conflicts with baseGenerator.ts
-type JsPackageManager = any;
-
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 
-export const findEslintFile = async () => {
+export const findEslintFile = (instanceDir: string) => {
   const filePrefixes = ['eslint.config', '.eslintrc'];
 
   // Check for unsupported files
   for (const prefix of filePrefixes) {
     for (const ext of UNSUPPORTED_ESLINT_EXTENSIONS) {
-      const file = await findUp(`${prefix}.${ext}`);
+      const file = find.up(`${prefix}.${ext}`, { cwd: instanceDir, last: getProjectRoot() });
       if (file) {
         throw new Error(`Unsupported ESLint config extension: .${ext}`);
       }
@@ -35,7 +31,7 @@ export const findEslintFile = async () => {
   // Find supported ESLint config files
   for (const prefix of filePrefixes) {
     for (const ext of SUPPORTED_ESLINT_EXTENSIONS) {
-      const file = await findUp(`${prefix}.${ext}`);
+      const file = find.up(`${prefix}.${ext}`, { cwd: instanceDir, last: getProjectRoot() });
       if (file) {
         return file;
       }
@@ -59,7 +55,37 @@ function unwrapTSExpression(expr: any): t.Expression | null | undefined {
 export const configureFlatConfig = async (code: string) => {
   const ast = babelParse(code);
 
+  // Bail out if eslint-plugin-storybook is already imported (static or dynamic) to avoid
+  // referencing an undefined variable or duplicating the config spread.
+  // Some configs use dynamic import() expressions (e.g. via eslint-flat-config-utils).
+  let alreadyHasStorybookImport = false;
+  traverse(ast, {
+    ImportDeclaration(path) {
+      if (path.node.source.value === 'eslint-plugin-storybook') {
+        alreadyHasStorybookImport = true;
+        path.stop();
+      }
+    },
+    CallExpression(path) {
+      // Dynamic import: import('eslint-plugin-storybook')
+      // Babel represents this as a CallExpression with callee.type === 'Import'
+      if (
+        t.isImport(path.node.callee) &&
+        path.node.arguments.length > 0 &&
+        t.isStringLiteral(path.node.arguments[0]) &&
+        path.node.arguments[0].value === 'eslint-plugin-storybook'
+      ) {
+        alreadyHasStorybookImport = true;
+        path.stop();
+      }
+    },
+  });
+  if (alreadyHasStorybookImport) {
+    return code;
+  }
+
   let tsEslintLocalName = '';
+  let eslintDefineConfigLocalName = '';
   let eslintConfigExpression: any = null;
 
   /**
@@ -79,6 +105,14 @@ export const configureFlatConfig = async (code: string) => {
         const defaultSpecifier = path.node.specifiers.find((s) => t.isImportDefaultSpecifier(s));
         if (defaultSpecifier) {
           tsEslintLocalName = defaultSpecifier.local.name;
+        }
+      }
+      if (path.node.source.value === 'eslint/config') {
+        const defineConfigSpecifier = path.node.specifiers.find(
+          (s) => t.isImportSpecifier(s) && t.isIdentifier(s.imported, { name: 'defineConfig' })
+        );
+        if (defineConfigSpecifier && t.isImportSpecifier(defineConfigSpecifier)) {
+          eslintDefineConfigLocalName = defineConfigSpecifier.local.name;
         }
       }
     },
@@ -109,7 +143,24 @@ export const configureFlatConfig = async (code: string) => {
         eslintConfigExpression.arguments.push(storybookConfig);
       }
 
-      // Case 3: export default config (resolve to array)
+      // Case 2b: export default defineConfig([...]) from "eslint/config"
+      if (
+        t.isCallExpression(eslintConfigExpression) &&
+        t.isIdentifier(eslintConfigExpression.callee) &&
+        eslintDefineConfigLocalName &&
+        eslintConfigExpression.callee.name === eslintDefineConfigLocalName &&
+        eslintConfigExpression.arguments.length > 0
+      ) {
+        const firstArg = eslintConfigExpression.arguments[0];
+        if (t.isExpression(firstArg)) {
+          const unwrappedArg = unwrapTSExpression(firstArg);
+          if (unwrappedArg && t.isArrayExpression(unwrappedArg)) {
+            unwrappedArg.elements.push(t.spreadElement(storybookConfig));
+          }
+        }
+      }
+
+      // Case 3: export default config (resolve to array or call expression with array)
       if (t.isIdentifier(eslintConfigExpression)) {
         const binding = path.scope.getBinding(eslintConfigExpression.name);
         if (binding && t.isVariableDeclarator(binding.path.node)) {
@@ -117,6 +168,21 @@ export const configureFlatConfig = async (code: string) => {
 
           if (t.isArrayExpression(init)) {
             init.elements.push(t.spreadElement(storybookConfig));
+          } else if (
+            t.isCallExpression(init) &&
+            init.arguments.length > 0 &&
+            t.isIdentifier(init.callee) &&
+            eslintDefineConfigLocalName &&
+            init.callee.name === eslintDefineConfigLocalName
+          ) {
+            // Handle cases like defineConfig([...]) from "eslint/config"
+            const firstArg = init.arguments[0];
+            if (t.isExpression(firstArg)) {
+              const unwrappedArg = unwrapTSExpression(firstArg);
+              if (unwrappedArg && t.isArrayExpression(unwrappedArg)) {
+                unwrappedArg.elements.push(t.spreadElement(storybookConfig));
+              }
+            }
           }
         }
       }
@@ -156,12 +222,12 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
   isFlatConfig: boolean;
 }> {
   let unsupportedExtension = undefined;
-  const allDependencies = await packageManager.getAllDependencies();
-  const packageJson = await packageManager.retrievePackageJson();
+  const allDependencies = packageManager.getAllDependencies();
+  const { packageJson } = packageManager.primaryPackageJson;
   let eslintConfigFile: string | undefined = undefined;
 
   try {
-    eslintConfigFile = await findEslintFile();
+    eslintConfigFile = findEslintFile(packageManager.instanceDir);
   } catch (err) {
     if (err instanceof Error && err.message.includes('Unsupported ESLint')) {
       unsupportedExtension = String(err);
@@ -206,8 +272,8 @@ export async function configureEslintPlugin({
   isFlatConfig: boolean;
 }) {
   if (eslintConfigFile) {
-    paddedLog(`Configuring Storybook ESLint plugin at ${eslintConfigFile}`);
     if (eslintConfigFile.endsWith('json')) {
+      logger.debug(`Detected JSON config at ${eslintConfigFile}`);
       const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
       const eslintConfig = commentJson.parse(eslintFileContents) as {
         extends?: string[];
@@ -227,8 +293,12 @@ export async function configureEslintPlugin({
       await writeFile(eslintConfigFile, commentJson.stringify(eslintConfig, null, spaces));
     } else {
       if (isFlatConfig) {
+        logger.debug(`Detected flat config at ${eslintConfigFile}`);
         const code = await readFile(eslintConfigFile, { encoding: 'utf8' });
         const output = await configureFlatConfig(code);
+        if (output === code) {
+          return;
+        }
         await writeFile(eslintConfigFile, output);
       } else {
         const eslint = await readConfig(eslintConfigFile);
@@ -244,11 +314,11 @@ export async function configureEslintPlugin({
       }
     }
   } else {
-    paddedLog(`Configuring eslint-plugin-storybook in your package.json`);
-    const packageJson = await packageManager.retrievePackageJson();
+    logger.debug('No ESLint config file found, configuring in package.json instead');
+    const { packageJson } = packageManager.primaryPackageJson;
     const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
 
-    await packageManager.writePackageJson({
+    packageManager.writePackageJson({
       ...packageJson,
       eslintConfig: {
         ...packageJson.eslintConfig,
@@ -259,17 +329,15 @@ export async function configureEslintPlugin({
 }
 
 export const suggestESLintPlugin = async (): Promise<boolean> => {
-  const { shouldInstall } = await prompts({
-    type: 'confirm',
-    name: 'shouldInstall',
+  const shouldInstall = await prompt.confirm({
     message: dedent`
         We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${picocolors.yellow(
-          'https://storybook.js.org/docs/9/configure/integration/eslint-plugin'
+          'https://storybook.js.org/docs/configure/integration/eslint-plugin'
         )}
 
         Would you like to install it?
       `,
-    initial: true,
+    initialValue: true,
   });
 
   return shouldInstall;

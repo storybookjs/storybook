@@ -20,4 +20,11 @@ export const defaultShortcuts: State['shortcuts'] = {
   collapseAll: ['ctrl', 'shift', 'ArrowUp'],
   expandAll: ['ctrl', 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
+  openInEditor: ['alt', 'shift', 'E'],
+  openInIsolation: ['alt', 'shift', 'I'],
+  copyStoryLink: ['alt', 'shift', 'L'],
+  goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
+  goToNextLandmark: ['F6'], // hardcoded in react-aria
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: ['alt', 'shift', 'C'],
 };

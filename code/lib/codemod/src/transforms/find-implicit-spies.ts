@@ -1,8 +1,7 @@
+import type { BabelFile } from 'storybook/internal/babel';
+import { core as babel, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
-import type { BabelFile } from '@babel/core';
-import * as babel from '@babel/core';
-import { isIdentifier, isObjectExpression, isObjectProperty } from '@babel/types';
 import type { FileInfo } from 'jscodeshift';
 
 function findImplicitSpies(path: babel.NodePath, file: string, keys: string[]) {
@@ -41,7 +40,7 @@ function getAnnotationKeys(file: BabelFile, storyName: string, annotationName: s
       ) {
         argKeys.push(
           ...right.node.properties.flatMap((value) =>
-            isObjectProperty(value) && isIdentifier(value.key) ? [value.key.name] : []
+            t.isObjectProperty(value) && t.isIdentifier(value.key) ? [value.key.name] : []
           )
         );
       }
@@ -73,7 +72,7 @@ function getAnnotationKeys(file: BabelFile, storyName: string, annotationName: s
       }
       argKeys.push(
         ...argsValue.node.properties.flatMap((value) =>
-          isObjectProperty(value) && isIdentifier(value.key) ? [value.key.name] : []
+          t.isObjectProperty(value) && t.isIdentifier(value.key) ? [value.key.name] : []
         )
       );
     },
@@ -83,9 +82,9 @@ function getAnnotationKeys(file: BabelFile, storyName: string, annotationName: s
 }
 
 const getObjectExpressionKeys = (node: babel.Node | undefined) => {
-  return isObjectExpression(node)
+  return t.isObjectExpression(node)
     ? node.properties.flatMap((value) =>
-        isObjectProperty(value) && isIdentifier(value.key) ? [value.key.name] : []
+        t.isObjectProperty(value) && t.isIdentifier(value.key) ? [value.key.name] : []
       )
     : [];
 };
@@ -106,7 +105,7 @@ export default async function transform(info: FileInfo) {
     ...getObjectExpressionKeys(csf._metaAnnotations.argTypes),
   ];
 
-  Object.entries(csf.stories).forEach(([key, { name }]) => {
+  Object.values(csf.stories).forEach(({ name }) => {
     if (!name) {
       return;
     }

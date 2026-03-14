@@ -1,0 +1,50 @@
+## Test Configuration
+
+This Storybook repository uses Vitest as the test runner. Here are the key commands and configuration:
+
+### Test Scripts
+
+- `yarn test` - Run all tests (from root directory, delegates to `cd code; yarn test`)
+- `yarn test <test-name>` - Run focused tests matching the pattern
+- `yarn test:watch` - Run tests in watch mode
+- `yarn test:watch <test-name>` - Run focused tests in watch mode
+
+### Test Directory Structure
+
+- Tests are located in the `code/` directory
+- Vitest configuration is in `code/vitest.workspace.ts`
+- Test files typically follow the pattern `*.test.ts`, `*.test.tsx`, `*.spec.ts`, or `*.spec.tsx`
+
+### Running Tests in Cursor
+
+1. Use Cmd+Shift+P (or Ctrl+Shift+P) and search for "Tasks: Run Task"
+2. Select from the available test tasks:
+   - "Run All Tests" - Runs all tests
+   - "Run Test (Watch Mode)" - Runs tests in watch mode
+   - "Run Focused Test" - Prompts for test name/pattern to run specific tests
+   - "Run Focused Test (Watch Mode)" - Runs specific tests in watch mode
+
+### Vitest Configuration
+
+- Workspace configuration: `./code/vitest.workspace.ts`
+- Command line: `yarn --cwd code test`
+- Root directory for tests: `./code/`
+
+### Test Execution Context
+
+- Tests run from the `code/` directory
+- Use `NODE_OPTIONS=--max_old_space_size=4096` for memory optimization
+- Supports both watch mode and single-run execution
+
+### Focused Test Patterns
+
+When running focused tests, you can use:
+
+- File names: `Button.test.ts`
+- Test descriptions: `"should render correctly"`
+- Directory patterns: `components/`
+- Vitest patterns: `-t "pattern"` for test name matching
+
+### Test Mocking Rules
+
+Follow the spy mocking rules defined in `.cursor/rules/spy-mocking.mdc` for consistent mocking patterns with Vitest.

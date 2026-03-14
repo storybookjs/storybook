@@ -7,6 +7,7 @@ export const consolidatedPackages = {
   '@storybook/client-logger': 'storybook/internal/client-logger',
   '@storybook/core-common': 'storybook/internal/common',
   '@storybook/core-events': 'storybook/internal/core-events',
+  '@storybook/csf': 'storybook/internal/csf',
   '@storybook/csf-tools': 'storybook/internal/csf-tools',
   '@storybook/docs-tools': 'storybook/internal/docs-tools',
   '@storybook/node-logger': 'storybook/internal/node-logger',

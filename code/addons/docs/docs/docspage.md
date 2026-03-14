@@ -45,15 +45,6 @@ export default {
 };
 ```
 
-And here's how to do the same thing the underlying `storiesOf` API:
-
-```js
-import { storiesOf } from '@storybook/react';
-import { Badge } from './Badge';
-
-storiesOf('Path/to/Badge', module).addParameters({ component: Badge });
-```
-
 If you're coming from the `storiesOf` format, there's [a codemod that adds it for you](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#add-component-parameters).
 
 ## Replacing DocsPage

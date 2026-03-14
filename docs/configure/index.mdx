@@ -1,7 +1,7 @@
 ---
 title: 'Configure Storybook'
 sidebar:
-  order: 8
+  order: 10
   title: Configure
 ---
 
@@ -33,7 +33,7 @@ Storybook's main configuration (i.e., the `main.js|ts`) defines your Storybook p
 | `typescript`          | Configures how Storybook handles [TypeScript files](./integration/typescript.mdx) <br /> `typescript: { check: false, checkOptions: {} }`                                                                                         |
 | `framework`           | Configures Storybook based on a set of [framework-specific](./integration/frameworks.mdx) settings <br /> `framework: { name: '@storybook/svelte-vite', options:{} }`                                                             |
 | `core`                | Configures Storybook's [internal features](../api/main-config/main-config-core.mdx) <br /> `core: { disableTelemetry: true, }`                                                                                                    |
-| `docs`                | Configures Storybook's [auto-generated documentation](../writing-docs/autodocs.mdx)<br /> `docs: { autodocs: 'tag' }`                                                                                                             |
+| `docs`                | Configures Storybook's [auto-generated documentation](../writing-docs/autodocs.mdx)<br /> `docs: { defaultName: 'Documentation' }`                                                                                                             |
 | `features`            | Enables Storybook's [additional features](../api/main-config/main-config-features.mdx)<br /> See table below for a list of available features                                                                                     |
 | `refs`                | Configures [Storybook composition](../sharing/storybook-composition.mdx) <br /> `refs: { example: { title: 'ExampleStorybook', url:'https://your-url.com' } }`                                                                    |
 | `logLevel`            | Configures Storybook's logs in the browser terminal. Useful for debugging <br /> `logLevel: 'debug'`                                                                                                                              |
@@ -99,7 +99,7 @@ You can also adjust your Storybook configuration and implement custom logic to l
 
 Because of the way stories are currently indexed in Storybook, loading stories on demand has a couple of minor limitations at the moment:
 
-* [CSF formats](../api/csf.mdx) from version 1 to version 3 are supported.
+* [CSF formats](../api/csf/index.mdx) from version 1 to version 3 are supported.
 * Custom `storySort` functions are allowed based on a restricted API.
 
 ## Configure story rendering

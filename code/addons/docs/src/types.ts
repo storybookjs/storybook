@@ -1,4 +1,11 @@
+import type { ComponentType } from 'react';
+
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
+
+import type { ThemeVars } from 'storybook/theming';
+
+import type { DocsContainerProps } from './blocks/blocks';
+import type { TocParameters } from './blocks/components';
 
 type StoryBlockParameters = {
   /** Whether a story's play function runs when shown in docs page */
@@ -65,7 +72,7 @@ type CanvasBlockParameters = {
     className?: string;
     disabled?: boolean;
     onClick: () => void;
-    title: string | JSX.Element;
+    title: string | React.JSX.Element;
   }[];
   /** Provide HTML class(es) to the preview element, for custom styling. */
   className?: string;
@@ -78,7 +85,7 @@ type CanvasBlockParameters = {
   /** Specifies which story is rendered */
   of: ModuleExport;
   /** Show story source code */
-  sourceState?: 'hidden' | 'shown';
+  sourceState?: 'hidden' | 'shown' | 'none';
   /**
    * Story configuration
    *
@@ -108,8 +115,6 @@ type SourceBlockParameters = {
   /**
    * The formatting used on source code. Both true and 'dedent' have the same effect of removing any
    * extraneous indentation. Supports all valid prettier parser names.
-   *
-   * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-source#format
    */
   format?: boolean | 'dedent' | string;
   // TODO: We could try to extract types from 'SupportedLanguages' in SyntaxHighlihter, but for now we inline them
@@ -133,7 +138,7 @@ type SourceBlockParameters = {
    */
   of: ModuleExport;
   /** Source code transformations */
-  transform?: (code: string, storyContext: any) => string;
+  transform?: (code: string, storyContext: any) => string | Promise<string>;
   /**
    * Specifies how the source code is rendered.
    *
@@ -162,7 +167,14 @@ export interface DocsParameters {
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-canvas
      */
-    canvas?: CanvasBlockParameters;
+    canvas?: Partial<CanvasBlockParameters>;
+
+    /**
+     * Enable the Code panel.
+     *
+     * @see https://storybook.js.org/docs/writing-docs/code-panel
+     */
+    codePanel?: boolean;
 
     /**
      * Controls block configuration
@@ -170,6 +182,13 @@ export interface DocsParameters {
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-controls
      */
     controls?: ControlsBlockParameters;
+
+    /**
+     * Customize the Docs Container
+     *
+     * @see https://storybook.js.org/docs/writing-docs/autodocs#customize-the-docs-container
+     */
+    container?: ComponentType<DocsContainerProps>;
 
     /**
      * Component/story description when shown in docs page
@@ -186,21 +205,21 @@ export interface DocsParameters {
      *
      * @see https://storybook.js.org/docs/writing-docs/autodocs#write-a-custom-template
      */
-    page?: unknown;
+    page?: ComponentType;
 
     /**
      * Source code configuration when shown in docs page
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-source
      */
-    source?: SourceBlockParameters;
+    source?: Partial<SourceBlockParameters>;
 
     /**
      * Story configuration
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-story
      */
-    story?: StoryBlockParameters;
+    story?: Partial<StoryBlockParameters>;
 
     /**
      * The subtitle displayed when shown in docs page
@@ -210,10 +229,28 @@ export interface DocsParameters {
     subtitle?: string;
 
     /**
+     * Override the default theme
+     *
+     * @see https://storybook.js.org/docs/writing-docs/autodocs#override-the-default-theme
+     */
+    theme?: ThemeVars;
+
+    /**
      * The title displayed when shown in docs page
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-title
      */
     title?: string;
+
+    /**
+     * Configure the table of contents
+     *
+     * @see https://storybook.js.org/docs/writing-docs/autodocs#configure-the-table-of-contents
+     */
+    toc?: true | TocParameters;
   };
+}
+
+export interface DocsTypes {
+  parameters: DocsParameters;
 }

@@ -2,7 +2,7 @@
 //        once sandbox linking is working
 //
 // import { createElement } from 'react';
-// import { Title, Primary } from '@storybook/addon-docs';
+// import { Title, Primary } from '@storybook/addon-docs/blocks';
 //
 // const Override = () =>
 //   createElement('div', { style: { border: '10px solid green', padding: '100px' } }, [
@@ -16,7 +16,7 @@ export default {
   tags: ['autodocs'],
   args: { label: 'Click Me!' },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     docs: { page: Override },
   },
 };

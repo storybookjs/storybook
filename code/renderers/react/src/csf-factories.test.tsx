@@ -3,7 +3,7 @@
 import { describe, it } from 'vitest';
 import { expect, test } from 'vitest';
 
-import type { KeyboardEventHandler, ReactElement, ReactNode } from 'react';
+import type { ComponentType, KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
 import type { Canvas } from 'storybook/internal/csf';
@@ -16,21 +16,15 @@ import type { Mock } from 'storybook/test';
 import { __definePreview } from './preview';
 import type { Decorator } from './public-types';
 
-type ButtonProps = { label: string; disabled: boolean };
+type ButtonProps = { label: string; disabled: boolean; onKeyDown?: () => void };
 const Button: (props: ButtonProps) => ReactElement = () => <></>;
 
-const preview = __definePreview({});
+const preview = __definePreview({
+  addons: [],
+});
 
 test('csf factories', () => {
-  const config = __definePreview({
-    addons: [
-      {
-        decorators: [],
-      },
-    ],
-  });
-
-  const meta = config.meta({ component: Button, args: { disabled: true } });
+  const meta = preview.meta({ component: Button, args: { disabled: true } });
 
   const MyStory = meta.story({
     args: {
@@ -75,7 +69,7 @@ describe('Args can be provided in multiple ways', () => {
         args: { label: 'good' },
       });
       // @ts-expect-error disabled not provided ❌
-      const Basic = meta.story({});
+      const Basic = meta.story();
     }
     {
       const meta = preview.meta({ component: Button });
@@ -92,9 +86,10 @@ describe('Args can be provided in multiple ways', () => {
       args: { label: 'good' },
     });
     const Basic = meta.story({
-      args: {},
       render: () => <div>Hello world</div>,
     });
+
+    const CSF1 = meta.story(() => <div>Hello world</div>);
   });
 
   it('❌ Required args need to be provided when the user uses a non-empty render', () => {
@@ -214,6 +209,56 @@ describe('Story args can be inferred', () => {
       args: { decoratorArg: 0, decoratorArg2: '', label: 'good' },
     });
   });
+
+  it('Component type can be overridden', () => {
+    const meta = preview.meta({
+      component: Button as unknown as ComponentType<
+        Omit<ButtonProps, 'onKeyDown'> & { onKeyDown?: boolean }
+      >,
+      render: ({ onKeyDown, ...args }) => {
+        return <Button {...args} onKeyDown={onKeyDown ? () => {} : undefined} />;
+      },
+      args: { label: 'hello', onKeyDown: false },
+    });
+
+    const Basic = meta.story({
+      args: {
+        disabled: false,
+      },
+    });
+    const WithKeyDown = meta.story({ args: { disabled: false, onKeyDown: true } });
+  });
+
+  it('Correct args are inferred when type is added in renderer', () => {
+    const meta = preview.meta({
+      component: Button,
+      args: { label: 'hello', onKeyDownToggle: false },
+      render: ({ onKeyDownToggle, ...args }: ButtonProps & { onKeyDownToggle?: boolean }) => {
+        return <Button {...args} onKeyDown={onKeyDownToggle ? () => {} : undefined} />;
+      },
+    });
+
+    const Basic = meta.story({ args: { disabled: false } });
+    const WithKeyDown = meta.story({ args: { disabled: false, onKeyDownToggle: true } });
+  });
+
+  it('args can be reused', () => {
+    const meta = preview.meta({
+      component: Button,
+    });
+
+    const Enabled = meta.story({ args: { label: 'hello', disabled: false } });
+    const Disabled = meta.story({ args: { ...Enabled.input.args, disabled: true } });
+  });
+
+  it('stories can be extended', () => {
+    const meta = preview.meta({
+      component: Button,
+    });
+
+    const Enabled = meta.story({ args: { label: 'hello', disabled: false } });
+    const Disabled = Enabled.extend({ args: { disabled: true } });
+  });
 });
 
 it('Components without Props can be used, issue #21768', () => {
@@ -273,6 +318,78 @@ it('Infer mock function given to args in meta.', () => {
       expectTypeOf(canvas).toEqualTypeOf<Canvas>();
       expectTypeOf(args.onClick).toEqualTypeOf<Mock>();
       expectTypeOf(args.onRender).toEqualTypeOf<() => JSX.Element>();
+    },
+  });
+});
+
+describe('Composed getters', () => {
+  type Props = {
+    label: string;
+    onClick: () => void;
+    onRender: () => JSX.Element;
+  };
+  const TestButton = (props: Props) => <></>;
+
+  const meta = preview.meta({
+    component: TestButton,
+    args: { label: 'label', onClick: fn(), onRender: () => <>some jsx</> },
+  });
+
+  it('Composes the play function', async () => {
+    const spy = fn();
+    const Basic = meta.story({
+      play: async ({ args }: { args: Props }) => {
+        spy(args);
+      },
+    });
+
+    await Basic.play({ args: meta.input.args });
+
+    expect(spy).toHaveBeenCalledWith({
+      label: 'label',
+      onClick: expect.any(Function),
+      onRender: expect.any(Function),
+    });
+  });
+
+  it('Composes the run function', async () => {
+    const playSpy = fn();
+    const renderSpy = fn();
+    const Basic = meta.story({
+      play: async ({ args }) => {
+        playSpy(args);
+      },
+      render: () => {
+        renderSpy();
+        return <></>;
+      },
+    });
+
+    await Basic.run();
+
+    expect(playSpy).toHaveBeenCalledWith({
+      label: 'label',
+      onClick: expect.any(Function),
+      onRender: expect.any(Function),
+    });
+
+    expect(renderSpy).toHaveBeenCalled();
+  });
+});
+
+it('meta.input also contains play', () => {
+  const meta = preview.meta({
+    /** Title, component, etc... */
+    play: async ({ canvas }) => {
+      /** Do some common interactions */
+    },
+  });
+
+  const ExtendedInteractionsStory = meta.story({
+    play: async ({ canvas, ...rest }) => {
+      await meta.input.play?.({ canvas, ...rest });
+
+      /** Do some extra interactions */
     },
   });
 });

@@ -16,7 +16,7 @@ import * as CheckboxStories from './Checkbox.stories.svelte';
 ```
 
 <!-- prettier-ignore -->
-```mdx filename="Checkbox.mdx" renderer="svelte" language="mdx" tabTitle="CSF"
+```mdx filename="Checkbox.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
 import { Canvas } from '@storybook/addon-docs/blocks';
 
 import * as CheckboxStories from './Checkbox.stories';

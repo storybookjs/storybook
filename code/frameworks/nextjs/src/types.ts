@@ -19,7 +19,6 @@ type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;
 
 export type FrameworkOptions = ReactOptions & {
   nextConfigPath?: string;
-  image?: Partial<NextImage.ImageProps>;
   builder?: BuilderOptions;
 };
 
@@ -67,9 +66,16 @@ export interface NextJsParameters {
      * Next.js navigation configuration when using `next/navigation`. Please note that it can only
      * be used in components/pages in the app directory.
      */
-    navigation?: NextRouter;
+    navigation?: Partial<NextRouter>;
 
     /** Next.js router configuration */
-    router?: NextRouter;
+    router?: Partial<NextRouter>;
+
+    /** Next.js image props */
+    image?: Partial<NextImage.ImageProps>;
   };
+}
+
+export interface NextJsTypes {
+  parameters: NextJsParameters;
 }

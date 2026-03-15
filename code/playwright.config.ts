@@ -53,7 +53,15 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      // Playwright recommends project dependencies over globalSetup when setup needs runner features
+      // like fixtures, traces, and retries:
+      // https://playwright.dev/docs/test-global-setup-teardown
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+    {
       name: 'chromium',
+      dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
         permissions: ['clipboard-read', 'clipboard-write'],

@@ -111,8 +111,8 @@ yarn nx run-many -t check
 ```bash
 cd code && yarn storybook:ui
 cd code && yarn storybook:ui:build
-cd code && yarn test
-cd code && yarn test:watch
+cd code && yarn test --reporter=agent
+cd code && yarn test:watch --reporter=agent
 cd code && yarn storybook:vitest
 ```
 
@@ -125,7 +125,7 @@ cd code && yarn storybook:vitest
 | Check TypeScript errors quickly | `yarn nx run-many -t check`                                                    |
 | Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
-| Run unit tests                  | `cd code && yarn test`                                                         |
+| Run unit tests                  | `cd code && yarn test --reporter=agent`                                        |
 | Run Storybook Vitest tests      | `cd code && yarn storybook:vitest`                                             |
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
@@ -209,7 +209,7 @@ Common templates:
 
 ## Testing Expectations
 
-- Use `cd code && yarn test` for unit tests
+- Use `cd code && yarn test --reporter=agent` for unit tests
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
@@ -218,7 +218,7 @@ Common templates:
 Watch-mode commands:
 
 ```bash
-cd code && yarn test:watch
+cd code && yarn test:watch --reporter=agent
 yarn affected:test
 cd code && yarn storybook:vitest
 ```
@@ -227,7 +227,7 @@ When writing tests:
 
 - Export functions that need direct tests
 - Test real behavior, not just syntax patterns
-- Use coverage when useful: `yarn vitest run --coverage <test-file>`
+- Use coverage when useful: `yarn vitest run --coverage <test-file> --reporter=agent`
 - Mock external dependencies like file system access and loggers
 
 ## Quality and Logging

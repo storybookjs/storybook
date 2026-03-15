@@ -85,8 +85,8 @@
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",
     "@types/semver": "^7.7.1",
-    "@vitest/browser-playwright": "^4.0.14",
-    "@vitest/runner": "^4.0.14",
+    "@vitest/browser-playwright": "^4.1.0",
+    "@vitest/runner": "^4.1.0",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.43.0",
     "istanbul-lib-report": "^3.0.1",
@@ -102,7 +102,7 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.14"
+    "vitest": "^4.1.0"
   },
   "peerDependencies": {
     "@vitest/browser": "^3.0.0 || ^4.0.0",

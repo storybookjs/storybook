@@ -7729,6 +7729,7 @@ __metadata:
   resolution: "@storybook/addon-vitest@workspace:code/addons/vitest"
   dependencies:
     "@storybook/addon-a11y": "workspace:*"
+    "@storybook/builder-vite": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.1"
     "@types/istanbul-lib-report": "npm:^3.0.3"

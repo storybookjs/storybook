@@ -88,3 +88,45 @@ describe('storybookConfigPlugin', () => {
     expect(config.server.fs.allow).toContain('/test/.storybook');
   });
 });
+
+it('should pass configLoader option to loadConfigFromFile', async () => {
+  const optionsWithConfigLoader: Options = {
+    ...dummyOptions,
+    presets: {
+      apply: async (key: string) =>
+        ({
+          framework: { name: '' },
+          addons: [],
+          core: {
+            builder: {
+              name: '@storybook/builder-vite',
+              options: {
+                configLoader: 'native'
+              }
+            },
+          },
+          options: {},
+        })[key],
+    } as Presets,
+  };
+
+  loadConfigFromFileMock.mockReturnValueOnce(
+    Promise.resolve({
+      config: {},
+      path: '',
+      dependencies: [],
+    })
+  );
+
+  await commonConfig(optionsWithConfigLoader, 'development');
+
+  // Verify loadConfigFromFile was called with configLoader as the 6th argument
+  expect(loadConfigFromFileMock).toHaveBeenCalledWith(
+    expect.objectContaining({ command: 'serve' }),
+    undefined,
+    expect.any(String),
+    undefined,
+    undefined,
+    'native'
+  );
+});

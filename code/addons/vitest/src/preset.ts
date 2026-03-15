@@ -21,6 +21,8 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
+import type { BuilderOptions } from '@storybook/builder-vite';
+
 import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -82,6 +84,10 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     return channel;
   }
 
+  const configLoader =
+    typeof core.builder !== 'string' &&
+    (core.builder?.options?.configLoader as BuilderOptions['configLoader']);
+
   const storyIndexGenerator =
     await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
 
@@ -136,6 +142,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       initEvent: STORE_CHANNEL_EVENT_NAME,
       initArgs: [{ event, eventInfo }],
       options,
+      configLoader: configLoader || undefined,
     });
   });
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
@@ -157,6 +164,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         initEvent: STORE_CHANNEL_EVENT_NAME,
         initArgs: [{ event, eventInfo }],
         options,
+        configLoader: configLoader || undefined,
       });
     }
   });

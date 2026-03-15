@@ -54,6 +54,8 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/react-dom-shim": "workspace:*",
+    "@volar/language-core": "~2.4.28",
+    "@volar/typescript": "~2.4.28",
     "react-docgen": "^8.0.2",
     "react-docgen-typescript": "^2.2.2"
   },

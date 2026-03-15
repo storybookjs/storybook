@@ -5,8 +5,25 @@ import { Tag } from 'storybook/internal/core-server';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
+import { ComponentMetaManager } from './checker';
 import { fsMocks, indexJson } from './fixtures';
 import { manifests } from './generator';
+
+/** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
+type ManifestOptions = Parameters<typeof manifests>[1];
+type ManifestEntries = ManifestOptions['manifestEntries'];
+const createManifestOptions = (
+  manifestEntries: ManifestEntries,
+  options: Partial<ManifestOptions> = {}
+): ManifestOptions => ({ watch: false, manifestEntries, ...options }) as ManifestOptions;
+
+const runManifests = (manifestEntries: ManifestEntries) =>
+  manifests(undefined, createManifestOptions(manifestEntries));
+
+const runManifestsWithOptions = (
+  manifestEntries: ManifestEntries,
+  options: Partial<ManifestOptions> = {}
+) => manifests(undefined, createManifestOptions(manifestEntries, options));
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
@@ -17,8 +34,9 @@ test('manifests generates correct id, name, description and examples ', async ()
   const manifestEntries = Object.values(indexJson.entries).filter(
     (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
-  const result = await manifests(undefined, { manifestEntries } as any);
-  const { meta, ...components } = result?.components ?? {};
+  const result = await runManifests(manifestEntries);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
+  const { meta: _meta, ...components } = result?.components ?? {};
 
   expect(components).toMatchInlineSnapshot(`
     {
@@ -35,6 +53,7 @@ test('manifests generates correct id, name, description and examples ', async ()
           },
           "name": "Button",
           "path": "./src/stories/Button.stories.ts",
+          "reactComponentMeta": undefined,
           "reactDocgen": {
             "actualName": "Button",
             "definedInFile": "./src/stories/Button.tsx",
@@ -112,6 +131,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               },
             },
           },
+          "reactDocgenTypescript": undefined,
           "stories": [
             {
               "description": undefined,
@@ -156,6 +176,7 @@ test('manifests generates correct id, name, description and examples ', async ()
           },
           "name": "Header",
           "path": "./src/stories/Header.stories.ts",
+          "reactComponentMeta": undefined,
           "reactDocgen": {
             "actualName": "",
             "definedInFile": "./src/stories/Header.tsx",
@@ -217,6 +238,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               },
             },
           },
+          "reactDocgenTypescript": undefined,
           "stories": [
             {
               "description": undefined,
@@ -272,7 +294,7 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const manifestEntries = [
+  const manifestEntries: ManifestEntries = [
     {
       type: 'story',
       subtype: 'story',
@@ -286,7 +308,7 @@ async function getManifestForStory(code: string) {
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
 
   return result?.components?.components?.['example-button'];
 }
@@ -329,6 +351,7 @@ test('fall back to index title when no component name', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -350,6 +373,7 @@ test('fall back to index title when no component name', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "description": undefined,
@@ -377,6 +401,7 @@ test('component exported from other file', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -398,6 +423,7 @@ test('component exported from other file', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "error": {
@@ -430,6 +456,7 @@ test('unknown expressions', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -451,6 +478,7 @@ test('unknown expressions', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "error": {
@@ -468,6 +496,178 @@ test('unknown expressions', async () => {
       "summary": undefined,
     }
   `);
+});
+
+test('generator uses reactComponentMeta displayName from batch extraction', async () => {
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component) {
+          entry.component.reactComponentMeta = {
+            displayName: 'Header',
+            exportName: 'default',
+            filePath: '/app/src/stories/Header.tsx',
+            description: '',
+            props: {},
+          };
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } satisfies NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [indexJson.entries['example-header--logged-in']];
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const header = result?.components?.components?.['example-header'];
+
+  expect(
+    header && 'reactComponentMeta' in header ? header.reactComponentMeta?.displayName : undefined
+  ).toBe('Header');
+  expect(batchExtract).toHaveBeenCalled();
+});
+
+test('generator preserves @import override when reactComponentMeta is enabled', async () => {
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component) {
+          entry.component.reactComponentMeta = {
+            displayName: 'Button',
+            exportName: 'Button',
+            filePath: '/app/src/stories/Button.tsx',
+            description: 'Primary UI component for user interaction',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Button } from '@design-system/components/override';"],
+            summary: ['Fast summary'],
+          };
+          entry.component.importOverride =
+            "import { Button } from '@design-system/components/override';";
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } satisfies NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [indexJson.entries['example-button--primary']];
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const button = result?.components?.components?.['example-button'];
+
+  expect(button?.import).toBe('import { Button } from "@design-system/components/override";');
+  expect(button?.jsDocTags.import).toEqual([
+    "import { Button } from '@design-system/components/override';",
+  ]);
+  expect(button?.description).toBe('Primary UI component for user interaction');
+  expect(button?.summary).toBe('Fast summary');
+  expect(batchExtract).toHaveBeenCalled();
+});
+
+test('generator falls back to title-based matching when meta.component aliases a compound member', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Accordion.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import * as Accordion from './accordion';
+
+        const Root = Accordion.Root;
+
+        const meta = {
+          title: 'Example/Accordion',
+          component: Root,
+        } satisfies Meta<typeof Root>;
+        export default meta;
+
+        export const Default = () => <Accordion.Root multiple />;
+      `,
+      ['./src/stories/accordion.tsx']: dedent`
+        import React from 'react';
+
+        type RootProps = {
+          /** Allow multiple items open */
+          multiple?: boolean;
+        };
+
+        const Root = ({ multiple = false }: RootProps) => <div data-multiple={multiple} />;
+
+        export const Accordion = { Root };
+      `,
+    },
+    '/app'
+  );
+
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component?.componentName === 'Accordion.Root') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Accordion.Root',
+            exportName: 'Root',
+            filePath: '/app/src/stories/accordion.tsx',
+            description: '',
+            props: {},
+          };
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } satisfies NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries = [
+    {
+      type: 'story' as const,
+      subtype: 'story' as const,
+      id: 'example-accordion--default',
+      name: 'Default',
+      title: 'Example/Accordion',
+      importPath: './src/stories/Accordion.stories.tsx',
+      componentPath: './src/stories/accordion.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ] satisfies ManifestEntries;
+
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const accordion = result?.components?.components?.['example-accordion'];
+
+  expect(accordion?.error).toBeUndefined();
+  expect(accordion?.name).toBe('Root');
+  expect(accordion?.import).toBe('import { Root } from "some-package";');
+  expect(batchExtract).toHaveBeenCalled();
 });
 
 test('should create component manifest when only attached-mdx docs have manifest tag', async () => {
@@ -516,7 +716,7 @@ test('should create component manifest when only attached-mdx docs have manifest
   // Only docs entry has manifest tag, story does not
   const manifestEntries = [
     {
-      type: 'docs',
+      type: 'docs' as const,
       id: 'example-button--docs',
       name: 'Docs',
       title: 'Example/Button',
@@ -524,9 +724,10 @@ test('should create component manifest when only attached-mdx docs have manifest
       tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
       storiesImports: ['./src/stories/Button.stories.ts'],
     },
-  ];
+  ] satisfies ManifestEntries;
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
   const { meta: _meta, ...components } = result?.components ?? {};
   expect({ components }).toMatchInlineSnapshot(`
     {
@@ -540,6 +741,7 @@ test('should create component manifest when only attached-mdx docs have manifest
             "jsDocTags": {},
             "name": "Button",
             "path": "./src/stories/Button.stories.ts",
+            "reactComponentMeta": undefined,
             "reactDocgen": {
               "actualName": "Button",
               "definedInFile": "./src/stories/Button.tsx",
@@ -568,6 +770,7 @@ test('should create component manifest when only attached-mdx docs have manifest
                 },
               },
             },
+            "reactDocgenTypescript": undefined,
             "stories": [],
             "summary": undefined,
           },
@@ -658,7 +861,7 @@ test('should prefer story entries over attached-mdx docs entries for the same co
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
 
   const component = result?.components?.components?.['example-primary'];
 
@@ -692,13 +895,8 @@ test('stories are populated when meta has no explicit title', async () => {
       `,
       ['./src/stories/Card.tsx']: dedent`
         import React from 'react';
-        export interface CardProps {
-          label: string;
-          size?: 'small' | 'large';
-        }
-
         /** A simple card component */
-        export const Card = ({ label, size }: CardProps) => {
+        export const Card = ({ label, size }) => {
           return <div className={size}>{label}</div>;
         };
       `,
@@ -706,7 +904,7 @@ test('stories are populated when meta has no explicit title', async () => {
     '/app'
   );
 
-  const manifestEntries = [
+  const manifestEntries: ManifestEntries = [
     {
       type: 'story',
       subtype: 'story',
@@ -731,7 +929,7 @@ test('stories are populated when meta has no explicit title', async () => {
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
   const component = result?.components?.components?.['card'];
 
   // When no explicit title is in the meta, stories should still be populated

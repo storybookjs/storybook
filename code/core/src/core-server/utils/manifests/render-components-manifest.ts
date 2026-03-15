@@ -4,6 +4,9 @@ import { groupBy } from 'storybook/internal/common';
 
 import type { ComponentDoc, PropItem } from 'react-docgen-typescript';
 
+// Type-only import to reuse the source-of-truth react-component-meta manifest shape
+// without creating a runtime dependency from core to the React renderer package.
+import type { ComponentDoc as ReactComponentMetaDoc } from '../../../../../renderers/react/src/componentManifest/componentMetaExtractor';
 import type { ComponentManifest, ComponentsManifest } from '../../../types';
 
 /** Minimal docs entry type for rendering in the manifest debugger */
@@ -26,6 +29,9 @@ export interface DocsManifest {
 /** Extended component manifest that may include docs from the docs addon */
 interface ComponentManifestWithDocs extends ComponentManifest {
   docs?: Record<string, DocsManifestEntry>;
+  reactDocgen?: DocgenDoc;
+  reactDocgenTypescript?: RdtComponentDoc;
+  reactComponentMeta?: ReactComponentMetaDoc;
 }
 
 // AI generated manifests/components.html page
@@ -755,10 +761,9 @@ export function renderComponentsManifest(
 }
 
 const esc = (s: unknown) =>
-  String(s ?? '').replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
-  );
+  String(s ?? '').replace(/[&<>"']/g, (c) => {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c;
+  });
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 
 function analyzeComponent(c: ComponentManifestWithDocs) {
@@ -914,26 +919,12 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
       ? `<label for="${slug}-docs" class="badge ${a.docsErrors > 0 ? 'err' : 'ok'} as-toggle">${a.docsErrors > 0 ? `${a.docsErrors}/${a.totalDocs} doc errors` : `${a.totalDocs} ${plural(a.totalDocs, 'doc')}`}</label>`
       : '';
 
-  // Determine which docgen engine produced results (they are now mutually exclusive)
-  const reactDocgen =
-    !a.hasPropTypeError && 'reactDocgen' in c ? (c.reactDocgen as DocgenDoc) : undefined;
-  const reactDocgenTypescriptData =
-    !a.hasPropTypeError && 'reactDocgenTypescript' in c
-      ? (c.reactDocgenTypescript as RdtComponentDoc)
-      : undefined;
-
-  const parsedDocgen = reactDocgen ? parseReactDocgen(reactDocgen) : undefined;
-  const parsedReactDocgenTypescript = reactDocgenTypescriptData
-    ? parseReactDocgenTypescript(reactDocgenTypescriptData)
-    : undefined;
-
-  // Use whichever engine is active
-  const activeParsed = parsedDocgen ?? parsedReactDocgenTypescript;
-  const cardEngine = parsedDocgen
-    ? 'react-docgen'
-    : parsedReactDocgenTypescript
-      ? 'react-docgen-typescript'
-      : '';
+  const {
+    parsed: activeParsed,
+    engine: cardEngine,
+    filePath,
+    exportName,
+  } = getDocgenRenderData(c, a.hasPropTypeError);
   const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
@@ -1029,19 +1020,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
               <span class="ex-name">Prop types <small>(${cardEngine})</small></span>
               <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
             </div>
-            <pre><code>Component: ${
-              reactDocgen?.definedInFile
-                ? esc(path.relative(process.cwd(), reactDocgen.definedInFile))
-                : reactDocgenTypescriptData?.filePath
-                  ? esc(path.relative(process.cwd(), reactDocgenTypescriptData.filePath))
-                  : ''
-            }${
-              reactDocgen?.exportName
-                ? '::' + esc(reactDocgen.exportName)
-                : reactDocgenTypescriptData?.exportName
-                  ? '::' + esc(reactDocgenTypescriptData.exportName)
-                  : ''
-            }</code></pre>
+            <pre><code>Component: ${filePath ? esc(path.relative(process.cwd(), filePath)) : ''}${exportName ? '::' + esc(exportName) : ''}</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>${esc(propsCode)}</code></pre>
           </div>
@@ -1054,7 +1033,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
         <div class="panel panel-stories">
           ${errorStories
             .map(
-              (ex, j) => `
+              (ex) => `
             <div class="note err">
               <div class="row">
                 <span class="ex-name">${esc(ex.name)}</span>
@@ -1148,6 +1127,50 @@ type ParsedDocgen = {
 };
 
 type RdtComponentDoc = ComponentDoc & { exportName?: string };
+type DocgenRenderData = {
+  parsed?: ParsedDocgen;
+  engine?: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+  filePath?: string;
+  exportName?: string;
+};
+
+const getDocgenRenderData = (
+  component: ComponentManifestWithDocs,
+  hasPropTypeError: boolean
+): DocgenRenderData => {
+  if (hasPropTypeError) {
+    return {};
+  }
+
+  if (component.reactDocgen) {
+    return {
+      parsed: parseReactDocgen(component.reactDocgen),
+      engine: 'react-docgen',
+      filePath: component.reactDocgen.definedInFile,
+      exportName: component.reactDocgen.exportName,
+    };
+  }
+
+  if (component.reactDocgenTypescript) {
+    return {
+      parsed: parseReactDocgenTypescript(component.reactDocgenTypescript),
+      engine: 'react-docgen-typescript',
+      filePath: component.reactDocgenTypescript.filePath,
+      exportName: component.reactDocgenTypescript.exportName,
+    };
+  }
+
+  if (component.reactComponentMeta) {
+    return {
+      parsed: parseReactComponentMeta(component.reactComponentMeta),
+      engine: 'react-component-meta',
+      filePath: component.reactComponentMeta.filePath,
+      exportName: component.reactComponentMeta.exportName,
+    };
+  }
+
+  return {};
+};
 
 const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): ParsedDocgen => {
   const props: Record<string, PropItem> = reactDocgenTypescript.props ?? {};
@@ -1159,6 +1182,23 @@ const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): Par
           description: prop.description,
           // RDT uses prop.type.name as a flat string (e.g. "() => void", "{ id: string }")
           // For enums, prefer prop.type.raw which has the full union
+          type: prop.type?.raw ?? prop.type?.name,
+          defaultValue: prop.defaultValue?.value,
+          required: prop.required,
+        },
+      ])
+    ),
+  };
+};
+
+const parseReactComponentMeta = (reactComponentMeta: ReactComponentMetaDoc): ParsedDocgen => {
+  const props = reactComponentMeta.props ?? {};
+  return {
+    props: Object.fromEntries(
+      Object.entries(props).map(([propName, prop]) => [
+        propName,
+        {
+          description: prop.description,
           type: prop.type?.raw ?? prop.type?.name,
           defaultValue: prop.defaultValue?.value,
           required: prop.required,

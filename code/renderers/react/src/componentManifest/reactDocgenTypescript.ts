@@ -5,13 +5,23 @@ import {
   type FileParser,
   type ParserOptions,
   type PropItem,
-  withCompilerOptions,
 } from 'react-docgen-typescript';
-import ts from 'typescript';
+import type ts from 'typescript';
 
-import { cached, findTsconfigPath } from './utils';
+import { asyncCache, findTsconfigPath } from './utils';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
+
+type TypeScriptRuntime = typeof import('typescript');
+type ReactDocgenTypescriptRuntime = typeof import('react-docgen-typescript');
+
+let typeScriptPromise: Promise<TypeScriptRuntime> | undefined;
+let reactDocgenTypescriptPromise: Promise<ReactDocgenTypescriptRuntime> | undefined;
+
+const loadTypeScript = () => (typeScriptPromise ??= import('typescript'));
+
+const loadReactDocgenTypescript = () =>
+  (reactDocgenTypescriptPromise ??= import('react-docgen-typescript'));
 
 /**
  * Auto-detect bulk props contributed by a single non-user source file and filter them out.
@@ -53,22 +63,23 @@ const getLargeNonUserPropSources = (props: Record<string, PropItem>): Set<string
  * the identifier matches the given name, otherwise undefined.
  */
 function findDisplayNameAssignment(
+  typescript: TypeScriptRuntime,
   sourceFile: ts.SourceFile,
   identifierName: string
 ): string | undefined {
   for (const statement of sourceFile.statements) {
-    if (!ts.isExpressionStatement(statement)) {
+    if (!typescript.isExpressionStatement(statement)) {
       continue;
     }
     const expr = statement.expression;
     if (
-      ts.isBinaryExpression(expr) &&
-      expr.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-      ts.isPropertyAccessExpression(expr.left) &&
+      typescript.isBinaryExpression(expr) &&
+      expr.operatorToken.kind === typescript.SyntaxKind.EqualsToken &&
+      typescript.isPropertyAccessExpression(expr.left) &&
       expr.left.name.text === 'displayName' &&
-      ts.isIdentifier(expr.left.expression) &&
+      typescript.isIdentifier(expr.left.expression) &&
       expr.left.expression.text === identifierName &&
-      ts.isStringLiteral(expr.right)
+      typescript.isStringLiteral(expr.right)
     ) {
       return expr.right.text;
     }
@@ -88,7 +99,11 @@ function findDisplayNameAssignment(
  *
  * @see https://github.com/styleguidist/react-docgen-typescript/blob/master/src/parser.ts
  */
-function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): Map<string, string> {
+function getExportNameMap(
+  typescript: TypeScriptRuntime,
+  checker: ts.TypeChecker,
+  sourceFile: ts.SourceFile
+): Map<string, string> {
   const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
   if (!moduleSymbol) {
     return new Map();
@@ -99,7 +114,7 @@ function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): M
 
   for (const exportSymbol of checker.getExportsOfModule(moduleSymbol)) {
     const resolved =
-      exportSymbol.flags & ts.SymbolFlags.Alias
+      exportSymbol.flags & typescript.SymbolFlags.Alias
         ? checker.getAliasedSymbol(exportSymbol)
         : exportSymbol;
 
@@ -135,7 +150,7 @@ function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): M
 
       // If the component has a static .displayName assignment (e.g. Foo.displayName = 'Bar'),
       // RDT uses that value. Map it → export name so we can match it.
-      const displayNameValue = findDisplayNameAssignment(sourceFile, resolvedName);
+      const displayNameValue = findDisplayNameAssignment(typescript, sourceFile, resolvedName);
       if (displayNameValue) {
         result.set(displayNameValue, exportName);
       }
@@ -162,9 +177,14 @@ export function invalidateParser() {
   parser = undefined;
   cachedCompilerOptions = undefined;
   cachedFileNames = undefined;
+  cachedParserOptionsKey = undefined;
 }
 
-function getParser(userOptions?: ParserOptions) {
+async function getParser(userOptions?: ParserOptions) {
+  const [typescript, reactDocgenTypescript] = await Promise.all([
+    loadTypeScript(),
+    loadReactDocgenTypescript(),
+  ]);
   // Rebuild parser if options changed
   const optionsKey = JSON.stringify(userOptions ?? {});
   if (parser && cachedParserOptionsKey !== optionsKey) {
@@ -176,13 +196,17 @@ function getParser(userOptions?: ParserOptions) {
     cachedCompilerOptions = { noErrorTruncation: true, strict: true };
 
     if (configPath) {
-      const { config } = ts.readConfigFile(configPath, ts.sys.readFile);
-      const parsed = ts.parseJsonConfigFileContent(config, ts.sys, dirname(configPath));
+      const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
+      const parsed = typescript.parseJsonConfigFileContent(
+        config,
+        typescript.sys,
+        dirname(configPath)
+      );
       cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
       cachedFileNames = parsed.fileNames;
     }
 
-    const program = ts.createProgram(
+    const program = typescript.createProgram(
       cachedFileNames ?? [],
       cachedCompilerOptions,
       undefined,
@@ -200,11 +224,11 @@ function getParser(userOptions?: ParserOptions) {
 
     parser = {
       program,
-      fileParser: withCompilerOptions(cachedCompilerOptions, parserOptions),
+      fileParser: reactDocgenTypescript.withCompilerOptions(cachedCompilerOptions, parserOptions),
     };
     cachedParserOptionsKey = optionsKey;
   }
-  return parser;
+  return { ...parser, typescript };
 }
 
 /** Find the component doc that matches the given import/component name. */
@@ -236,16 +260,18 @@ export function matchComponentDoc(
  * Parse a component file with react-docgen-typescript. Per-file results are cached via
  * `invalidateCache()`. The underlying TS program is a long-lived singleton.
  */
-export const parseWithReactDocgenTypescript = cached(
-  (filePath: string, userOptions?: ParserOptions): ComponentDocWithExportName[] => {
-    const { program, fileParser } = getParser(userOptions);
+export const parseWithReactDocgenTypescript = asyncCache(
+  async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
+    const { program, fileParser, typescript } = await getParser(userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
     const docs = fileParser.parseWithProgramProvider(filePath, () => program);
     // Map from resolved (original) name → public export name.
     // e.g. for `export { Card as RenamedCard }`: "Card" → "RenamedCard"
-    const exportNameMap = sourceFile ? getExportNameMap(checker, sourceFile) : new Map();
+    const exportNameMap = sourceFile
+      ? getExportNameMap(typescript, checker, sourceFile)
+      : new Map();
 
     return docs.map((doc) => {
       const largeNonUserSources = getLargeNonUserPropSources(doc.props);

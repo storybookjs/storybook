@@ -13,28 +13,23 @@ import {
   matchComponentDoc,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript';
+import type { ComponentRef } from './types';
 import { cachedResolveImport } from './utils';
 
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript';
+export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
+export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgen: ReactDocgenConfig;
   reactDocgenTypescriptOptions: ParserOptions;
 }
 
-// Public component metadata type used across passes
-export type ComponentRef = {
-  componentName: string;
-  localImportName?: string;
-  importId?: string;
-  importOverride?: string;
-  importName?: string;
-  namespace?: string;
-  path?: string;
-  isPackage: boolean;
-  reactDocgen?: ReturnType<typeof getReactDocgen>;
-  reactDocgenTypescript?: ComponentDocWithExportName;
-  reactDocgenTypescriptError?: { name: string; message: string };
+export type { ComponentRef } from './types';
+
+/** Selected component for a story file; `storyPath` is the absolute path on disk. */
+export type StoryRef = {
+  storyPath: string;
+  component?: ComponentRef;
 };
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
@@ -67,41 +62,64 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
  * Notes:
  *
  * - Member expressions like Foo.Bar are supported; namespace imports are represented accordingly.
- * - If react-docgen determines a package import override, it is stored in `importOverride`.
+ * - Other docgen engines may populate `importOverride` eagerly; react-component-meta provides it
+ *   later in ComponentMetaProject from TypeScript JSDoc tag data.
  */
-export const getComponents = ({
+export const getComponents = async ({
   csf,
   storyFilePath,
-  typescriptOptions,
+  typescriptOptions = {},
+  docgenEngine,
 }: {
   csf: CsfFile;
   storyFilePath?: string;
-  typescriptOptions: Partial<TypescriptOptions>;
-}): ComponentRef[] => {
-  const { reactDocgen = 'react-docgen', reactDocgenTypescriptOptions } = typescriptOptions;
-  // For the manifest, false (docgen disabled) defaults to react-docgen
-  const reactDocgenConfig = reactDocgen || 'react-docgen';
+  typescriptOptions?: Partial<TypescriptOptions>;
+  docgenEngine: DocgenEngine;
+}): Promise<ComponentRef[]> => {
+  const { reactDocgenTypescriptOptions } = typescriptOptions;
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
+  /** Minimum JSX nesting depth per component name (1 = outermost JSX element). */
+  const componentDepth = new Map<string, number>();
   const localToImport = new Map<string, { importId: string; importName: string }>();
 
-  // Gather components from all JSX opening elements
+  // Gather components from all JSX opening elements, tracking nesting depth incrementally.
+  let jsxDepth = 0;
   program.traverse({
+    JSXElement: {
+      enter() {
+        jsxDepth++;
+      },
+      exit() {
+        jsxDepth--;
+      },
+    },
     JSXOpeningElement(p) {
       const n = p.node.name;
+      let name: string | undefined;
       if (t.isJSXIdentifier(n)) {
-        const name = n.name;
+        name = n.name;
         if (name && /[A-Z]/.test(name.charAt(0))) {
           componentSet.add(name);
         }
       } else if (t.isJSXMemberExpression(n)) {
-        const jsxNameToString = (name: t.JSXIdentifier | t.JSXMemberExpression): string =>
-          t.isJSXIdentifier(name)
-            ? name.name
-            : `${jsxNameToString(name.object)}.${jsxNameToString(name.property)}`;
-        const full = jsxNameToString(n);
-        componentSet.add(full);
+        const jsxNameToString = (nm: t.JSXIdentifier | t.JSXMemberExpression): string =>
+          t.isJSXIdentifier(nm)
+            ? nm.name
+            : `${jsxNameToString(nm.object)}.${jsxNameToString(nm.property)}`;
+        name = jsxNameToString(n);
+        componentSet.add(name);
+      }
+
+      if (name) {
+        // jsxDepth is already incremented by JSXElement.enter for the current element,
+        // so subtract 1 to get the number of *wrapping* JSX ancestors.
+        const depth = jsxDepth - 1;
+        const existing = componentDepth.get(name);
+        if (existing === undefined || depth < existing) {
+          componentDepth.set(name, depth);
+        }
       }
     },
   });
@@ -158,8 +176,8 @@ export const getComponents = ({
     const binding = program.scope.getBinding(base);
 
     if (!binding) {
-      return false;
-    } // missing binding -> keep (will become null import) // missing binding -> keep (will become null import)
+      return false; // missing binding -> keep (will become null import)
+    }
     const isImportBinding = Boolean(
       binding.path.isImportSpecifier?.() ||
       binding.path.isImportDefaultSpecifier?.() ||
@@ -172,109 +190,128 @@ export const getComponents = ({
     (c) => !isLocallyDefinedWithoutImport(baseIdentifier(c))
   );
 
-  const componentObjs = filteredComponents
-    .map((c) => {
-      const dot = c.indexOf('.');
-      if (dot !== -1) {
-        const ns = c.slice(0, dot);
-        const member = c.slice(dot + 1);
-        const direct = localToImport.get(ns);
-        return !direct
-          ? { componentName: c }
-          : direct.importName === '*'
-            ? {
-                componentName: c,
-                localImportName: ns,
-                importId: direct.importId,
-                importName: member,
-                namespace: ns,
-              }
-            : {
-                componentName: c,
-                localImportName: ns,
-                importId: direct.importId,
-                importName: direct.importName,
-              };
-      }
-      const direct = localToImport.get(c);
-      return direct
-        ? {
-            componentName: c,
-            localImportName: c,
-            importId: direct.importId,
-            importName: direct.importName,
+  const componentObjs = (
+    await Promise.all(
+      filteredComponents.map(async (c) => {
+        const depth = componentDepth.get(c);
+        const dot = c.indexOf('.');
+        const component =
+          dot !== -1
+            ? (() => {
+                const ns = c.slice(0, dot);
+                const mem = c.slice(dot + 1);
+                const direct = localToImport.get(ns);
+                return !direct
+                  ? { componentName: c, member: mem, jsxDepth: depth }
+                  : direct.importName === '*'
+                    ? {
+                        componentName: c,
+                        localImportName: ns,
+                        importId: direct.importId,
+                        importName: mem,
+                        namespace: ns,
+                        member: mem,
+                        jsxDepth: depth,
+                      }
+                    : {
+                        componentName: c,
+                        localImportName: ns,
+                        importId: direct.importId,
+                        importName: direct.importName,
+                        member: mem,
+                        jsxDepth: depth,
+                      };
+              })()
+            : (() => {
+                const direct = localToImport.get(c);
+                return direct
+                  ? {
+                      componentName: c,
+                      localImportName: c,
+                      importId: direct.importId,
+                      importName: direct.importName,
+                      jsxDepth: depth,
+                    }
+                  : { componentName: c, jsxDepth: depth };
+              })();
+
+        let path;
+        let isPackage = false;
+        try {
+          if (component.importId && storyFilePath) {
+            path = cachedResolveImport(matchPath(component.importId, dirname(storyFilePath)), {
+              basedir: dirname(storyFilePath),
+            });
           }
-        : { componentName: c };
-    })
-    .map((component) => {
-      let path;
-      let isPackage = false;
-      try {
-        if (component.importId && storyFilePath) {
-          path = cachedResolveImport(matchPath(component.importId, dirname(storyFilePath)), {
-            basedir: dirname(storyFilePath),
-          });
+        } catch (e) {
+          logger.debug(e);
         }
-      } catch (e) {
-        logger.debug(e);
-      }
 
-      try {
-        if (component.importId && !component.importId.startsWith('.') && storyFilePath) {
-          // throws when it can not be resolved
-          cachedResolveImport(component.importId, { basedir: dirname(storyFilePath) });
-          isPackage = true;
-        }
-      } catch {}
+        try {
+          if (component.importId && !component.importId.startsWith('.') && storyFilePath) {
+            // throws when it can not be resolved
+            cachedResolveImport(component.importId, { basedir: dirname(storyFilePath) });
+            isPackage = true;
+          }
+        } catch {}
 
-      const componentWithPackage = { ...component, isPackage };
+        const componentWithPackage = { ...component, isPackage };
 
-      if (path) {
-        if (reactDocgenConfig === 'react-docgen-typescript') {
-          let reactDocgenTypescript: ComponentDocWithExportName | undefined;
-          let reactDocgenTypescriptError: { name: string; message: string } | undefined;
-          try {
-            reactDocgenTypescript = matchComponentDoc(
-              parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
-              component
-            );
-          } catch (e) {
-            const message = e instanceof Error ? e.message : String(e);
-            logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
-            reactDocgenTypescriptError = {
-              name: 'react-docgen-typescript parse error',
-              message: `File: ${path}\n${message}`,
+        if (path) {
+          if (docgenEngine === 'react-docgen-typescript') {
+            let reactDocgenTypescript: ComponentDocWithExportName | undefined;
+            let reactDocgenTypescriptError: { name: string; message: string } | undefined;
+            try {
+              reactDocgenTypescript = matchComponentDoc(
+                await parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
+                component
+              );
+            } catch (e) {
+              const message = e instanceof Error ? e.message : String(e);
+              logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
+              reactDocgenTypescriptError = {
+                name: 'react-docgen-typescript parse error',
+                message: `File: ${path}\n${message}`,
+              };
+            }
+            const importOverride = reactDocgenTypescript
+              ? getImportTag(reactDocgenTypescript)
+              : undefined;
+
+            return {
+              ...componentWithPackage,
+              path,
+              ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+              ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
+              importOverride,
             };
           }
 
-          // Extract importOverride from RDT's description (same JSDoc parsing as react-docgen)
-          const importOverride = reactDocgenTypescript
-            ? getImportTag(reactDocgenTypescript)
-            : undefined;
+          if (docgenEngine === 'react-docgen') {
+            const reactDocgen = getReactDocgen(path, componentWithPackage);
+            return {
+              ...componentWithPackage,
+              path,
+              reactDocgen,
+              importOverride:
+                reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
+            };
+          }
 
-          return {
-            ...componentWithPackage,
-            path,
-            ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
-            ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
-            importOverride,
-          };
+          if (docgenEngine === 'react-component-meta') {
+            // RCM fills importOverride later in ComponentMetaProject, where the TypeScript checker
+            // is available and we can read the official JSDoc tag data from the resolved symbol.
+            // Step 2 in generator.ts mutates the selected component before Step 3 calls getImports().
+            return {
+              ...componentWithPackage,
+              path,
+            };
+          }
         }
-
-        if (reactDocgenConfig === 'react-docgen') {
-          const reactDocgen = getReactDocgen(path, componentWithPackage);
-          return {
-            ...componentWithPackage,
-            path,
-            reactDocgen,
-            importOverride:
-              reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
-          };
-        }
-      }
-      return componentWithPackage;
-    })
-    .sort((a, b) => a.componentName.localeCompare(b.componentName));
+        return componentWithPackage;
+      })
+    )
+  ).sort((a, b) => a.componentName.localeCompare(b.componentName));
 
   return componentObjs;
 };
@@ -395,7 +432,7 @@ export const getImports = ({
         if (!decl) {
           return undefined;
         }
-        const spec = (decl.specifiers ?? []).find((s) => !isTypeSpecifier(s as any));
+        const spec = (decl.specifiers ?? []).find((s) => !isTypeSpecifier(s));
         if (!spec) {
           return undefined;
         }
@@ -572,21 +609,28 @@ export const getImports = ({
  * @returns An object containing the discovered components and the corresponding import statements.
  * @public
  */
-export function getComponentData({
+export async function getComponentData({
   csf,
   packageName,
   storyFilePath,
-  typescriptOptions = {},
+  typescriptOptions,
+  docgenEngine,
 }: {
   csf: CsfFile;
   packageName?: string;
   storyFilePath?: string;
   typescriptOptions?: Partial<TypescriptOptions>;
-}): {
+  docgenEngine: DocgenEngine;
+}): Promise<{
   components: ComponentRef[];
   imports: string[];
-} {
-  const components = getComponents({ csf, storyFilePath, typescriptOptions });
+}> {
+  const components = await getComponents({
+    csf,
+    storyFilePath,
+    typescriptOptions,
+    docgenEngine,
+  });
   const imports = getImports({ components, packageName });
   return { components, imports };
 }

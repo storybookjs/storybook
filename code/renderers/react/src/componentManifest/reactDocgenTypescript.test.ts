@@ -2,12 +2,15 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { parseWithReactDocgenTypescript } from './reactDocgenTypescript';
+import {
+  type ComponentDocWithExportName,
+  parseWithReactDocgenTypescript,
+} from './reactDocgenTypescript';
 
 const fixture = (name: string) => join(__dirname, '__testfixtures__', name);
 
 // Strip absolute paths so snapshots are portable across machines and CI environments
-function normalize(results: any[]) {
+function normalize(results: ComponentDocWithExportName[]) {
   return JSON.parse(
     JSON.stringify(results, (key, value) => {
       if ((key === 'filePath' || key === 'fileName') && typeof value === 'string') {
@@ -20,9 +23,12 @@ function normalize(results: any[]) {
   );
 }
 
+const parseFixture = async (name: string) =>
+  normalize(await parseWithReactDocgenTypescript(fixture(name)));
+
 describe('parseFile', () => {
   test('Button', { timeout: 30_000 }, () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('Button.ts')))).toMatchInlineSnapshot(`
+    return expect(parseFixture('Button.ts')).resolves.toMatchInlineSnapshot(`
       [
         {
           "description": "",
@@ -77,7 +83,7 @@ describe('parseFile', () => {
   });
 
   test('Arrow', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('Arrow.ts')))).toMatchInlineSnapshot(`
+    return expect(parseFixture('Arrow.ts')).resolves.toMatchInlineSnapshot(`
       [
         {
           "description": "",
@@ -113,8 +119,7 @@ describe('parseFile', () => {
   });
 
   test('DefaultExport', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('DefaultExport.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('DefaultExport.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -169,8 +174,7 @@ describe('parseFile', () => {
   });
 
   test('MultipleExports', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('MultipleExports.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('MultipleExports.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -235,8 +239,7 @@ describe('parseFile', () => {
   });
 
   test('UnionProps', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('UnionProps.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('UnionProps.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -312,8 +315,7 @@ describe('parseFile', () => {
   });
 
   test('FunctionProps', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('FunctionProps.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('FunctionProps.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -368,8 +370,7 @@ describe('parseFile', () => {
   });
 
   test('DefaultValues', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('DefaultValues.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('DefaultValues.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -426,8 +427,7 @@ describe('parseFile', () => {
   });
 
   test('Documented', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('Documented.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('Documented.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "A tooltip component.",
@@ -463,14 +463,11 @@ describe('parseFile', () => {
   });
 
   test('NoComponents', () => {
-    expect(
-      normalize(parseWithReactDocgenTypescript(fixture('NoComponents.ts')))
-    ).toMatchInlineSnapshot(`[]`);
+    return expect(parseFixture('NoComponents.ts')).resolves.toMatchInlineSnapshot(`[]`);
   });
 
   test('ImportedProps (extends + imported types from another file)', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('ImportedProps.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('ImportedProps.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -632,8 +629,7 @@ describe('parseFile', () => {
   });
 
   test('PickOmit (Pick/Omit utility types on imported interfaces)', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('PickOmit.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('PickOmit.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -718,7 +714,7 @@ describe('parseFile', () => {
   });
 
   test('Generic (generic type parameters resolved to concrete types)', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('Generic.ts')))).toMatchInlineSnapshot(`
+    return expect(parseFixture('Generic.ts')).resolves.toMatchInlineSnapshot(`
       [
         {
           "description": "",
@@ -859,8 +855,7 @@ describe('parseFile', () => {
   });
 
   test('ReExport (re-exported components from other files)', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('ReExport.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('ReExport.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -1100,8 +1095,7 @@ describe('parseFile', () => {
   });
 
   test('Intersection (intersection of multiple type aliases)', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('Intersection.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('Intersection.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -1207,8 +1201,8 @@ describe('parseFile', () => {
       `);
   });
 
-  test('DtsComponent (extends React.ButtonHTMLAttributes from .d.ts)', () => {
-    const results = normalize(parseWithReactDocgenTypescript(fixture('DtsComponent.tsx')));
+  test('DtsComponent (extends React.ButtonHTMLAttributes from .d.ts)', async () => {
+    const results = await parseFixture('DtsComponent.tsx');
 
     expect(results).toHaveLength(1);
     expect(results[0].displayName).toBe('HtmlButton');
@@ -1257,8 +1251,7 @@ describe('parseFile', () => {
   });
 
   test('ForwardRef', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('ForwardRef.tsx'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('ForwardRef.tsx')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -1372,8 +1365,8 @@ describe('parseFile', () => {
       `);
   });
 
-  test('RenamedExport (export { Foo as Bar } — displayName differs from exportName)', () => {
-    const result = normalize(parseWithReactDocgenTypescript(fixture('RenamedExport.ts')));
+  test('RenamedExport (export { Foo as Bar } — displayName differs from exportName)', async () => {
+    const result = await parseFixture('RenamedExport.ts');
     expect(result).toMatchInlineSnapshot(`
       [
         {
@@ -1443,8 +1436,8 @@ describe('parseFile', () => {
     expect(result[0].exportName).toBe('NotificationBanner');
   });
 
-  test('DisplayNameOverride (component.displayName set explicitly)', () => {
-    const result = normalize(parseWithReactDocgenTypescript(fixture('DisplayNameOverride.ts')));
+  test('DisplayNameOverride (component.displayName set explicitly)', async () => {
+    const result = await parseFixture('DisplayNameOverride.ts');
     // The export name should be "Modal" (the export alias), not "InternalModal" or "FancyModal"
     expect(result[0].exportName).toBe('Modal');
     expect(result[0].props).toHaveProperty('title');
@@ -1452,8 +1445,7 @@ describe('parseFile', () => {
   });
 
   test('Barrel (export * from barrel index)', () => {
-    expect(normalize(parseWithReactDocgenTypescript(fixture('barrel/index.ts'))))
-      .toMatchInlineSnapshot(`
+    return expect(parseFixture('barrel/index.ts')).resolves.toMatchInlineSnapshot(`
         [
           {
             "description": "",
@@ -1565,5 +1557,32 @@ describe('parseFile', () => {
           },
         ]
       `);
+  });
+
+  test('OptionalNested – rdt output for optional props with nested undefined', async () => {
+    const results = await parseFixture('OptionalNested.ts');
+    const props = results[0]?.props;
+
+    // What does rdt actually produce for these optional props?
+    expect(props.name.type).toMatchInlineSnapshot(`
+      {
+        "name": "string",
+      }
+    `);
+    expect(props.config.type).toMatchInlineSnapshot(`
+      {
+        "name": "Record<string, number>",
+      }
+    `);
+    expect(props.onChange.type).toMatchInlineSnapshot(`
+      {
+        "name": "((value: string) => void)",
+      }
+    `);
+    expect(props.id.type).toMatchInlineSnapshot(`
+      {
+        "name": "number",
+      }
+    `);
   });
 });

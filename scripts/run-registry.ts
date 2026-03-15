@@ -2,6 +2,7 @@ import { exec } from 'node:child_process';
 import { access, mkdir, readFile, rm } from 'node:fs/promises';
 import http from 'node:http';
 import type { Server } from 'node:http';
+import { hostname } from 'node:os';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
@@ -12,7 +13,7 @@ import { parseConfigFile, runServer } from 'verdaccio';
 import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
 import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
-import { killPort } from './utils/port';
+import { isPortUsed, killPort } from './utils/port';
 import { getCodeWorkspaces } from './utils/workspace';
 
 program
@@ -26,6 +27,57 @@ const logger = console;
 const root = resolvePath(__dirname, '..');
 
 const opts = program.opts();
+const registryInstanceId = `${hostname()}:${process.pid}:${Date.now()}`;
+const registryStartedAt = new Date().toISOString();
+
+const getEnvContext = () => ({
+  ci: process.env.CI ?? null,
+  githubRunId: process.env.GITHUB_RUN_ID ?? null,
+  githubRunAttempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
+  githubJob: process.env.GITHUB_JOB ?? null,
+  runnerName: process.env.RUNNER_NAME ?? null,
+  runnerOs: process.env.RUNNER_OS ?? null,
+  hostEnv: process.env.HOSTNAME ?? null,
+  nxCiExecutionId: process.env.NX_CI_EXECUTION_ID ?? null,
+  nxBase: process.env.NX_BASE ?? null,
+  nxHead: process.env.NX_HEAD ?? null,
+});
+
+const getPortState = async () => ({
+  proxyPortUsed: await isPortUsed(6001),
+  verdaccioPortUsed: await isPortUsed(6002),
+});
+
+const serializeError = (error: unknown) =>
+  error instanceof Error
+    ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 6).join('\n') ?? null,
+      }
+    : { message: String(error) };
+
+const logRegistry = (event: string, extra: Record<string, unknown> = {}) => {
+  logger.log(
+    `[run-registry] ${JSON.stringify({
+      event,
+      at: new Date().toISOString(),
+      registryInstanceId,
+      registryStartedAt,
+      pid: process.pid,
+      host: hostname(),
+      cwd: process.cwd(),
+      open: !!opts.open,
+      publish: !!opts.publish,
+      env: getEnvContext(),
+      ...extra,
+    })}`
+  );
+};
+
+const logRegistryWithPorts = async (event: string, extra: Record<string, unknown> = {}) => {
+  logRegistry(event, { ...extra, ports: await getPortState() });
+};
 
 const pathExists = async (p: string) => {
   try {
@@ -36,18 +88,22 @@ const pathExists = async (p: string) => {
   }
 };
 
-type Servers = { close: () => Promise<void> };
+type Servers = { close: () => Promise<void>; reused?: boolean };
+
 const startVerdaccio = async () => {
+  await logRegistryWithPorts('startVerdaccio.begin');
+
   // Kill Verdaccio related processes if they are already running
   await killPort(6001);
   await killPort(6002);
+  await logRegistryWithPorts('startVerdaccio.portsCleared');
 
   const ready = {
     proxy: false,
     verdaccio: false,
   };
   return Promise.race([
-    new Promise((resolve) => {
+    new Promise<Servers>((resolve, reject) => {
       /**
        * The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or
        * the actual npm global registry We do this because tunneling all traffic through verdaccio
@@ -63,6 +119,21 @@ const startVerdaccio = async () => {
        * If you want to access the verdaccio UI, you can do so by visiting http://localhost:6002
        */
       const proxy = http.createServer((req, res) => {
+        if (req.url === '/__registry-meta') {
+          res.writeHead(200, { 'content-type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              registryInstanceId,
+              registryStartedAt,
+              pid: process.pid,
+              host: hostname(),
+              ready,
+              env: getEnvContext(),
+            })
+          );
+          return;
+        }
+
         // if request contains "storybook" redirect to verdaccio
         if (req.url?.includes('storybook') || req.url?.includes('/sb') || req.method === 'PUT') {
           res.writeHead(302, { Location: 'http://localhost:6002' + req.url });
@@ -74,11 +145,16 @@ const startVerdaccio = async () => {
         }
       });
 
+      proxy.on('error', (error) => {
+        logRegistry('startVerdaccio.proxy.error', { error: serializeError(error) });
+        reject(error);
+      });
+
       let verdaccioApp: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
 
       const servers = {
         close: async () => {
-          console.log('🛬 Closing servers running on port 6001 and 6002');
+          await logRegistryWithPorts('startVerdaccio.close.begin');
           await Promise.all([
             new Promise<void>((resolve) => {
               verdaccioApp?.close(() => resolve());
@@ -87,11 +163,13 @@ const startVerdaccio = async () => {
               proxy?.close(() => resolve());
             }),
           ]);
+          await logRegistryWithPorts('startVerdaccio.close.done');
         },
       };
 
       proxy.listen(6001, () => {
         ready.proxy = true;
+        void logRegistryWithPorts('startVerdaccio.proxy.ready', { ready: { ...ready } });
         if (ready.verdaccio) {
           resolve(servers);
         }
@@ -103,20 +181,29 @@ const startVerdaccio = async () => {
       };
 
       // @ts-expect-error (verdaccio's interface is wrong)
-      runServer(config).then((app: Server) => {
-        verdaccioApp = app;
+      runServer(config)
+        .then((app: Server) => {
+          verdaccioApp = app;
 
-        app.listen(6002, () => {
-          ready.verdaccio = true;
-          if (ready.proxy) {
-            resolve(servers);
-          }
+          app.listen(6002, () => {
+            ready.verdaccio = true;
+            void logRegistryWithPorts('startVerdaccio.verdaccio.ready', {
+              ready: { ...ready },
+            });
+            if (ready.proxy) {
+              resolve(servers);
+            }
+          });
+        })
+        .catch((error) => {
+          logRegistry('startVerdaccio.runServer.error', { error: serializeError(error) });
+          reject(error);
         });
-      });
     }),
     new Promise((_, rej) => {
       setTimeout(() => {
         if (!ready.verdaccio || !ready.proxy) {
+          void logRegistryWithPorts('startVerdaccio.timeout', { ready: { ...ready } });
           rej(new Error(`TIMEOUT - verdaccio didn't start within 10s`));
         }
       }, 10000);
@@ -183,6 +270,7 @@ let servers: Servers | undefined;
 
 const run = async () => {
   const verdaccioUrl = `http://localhost:6001`;
+  await logRegistryWithPorts('run.begin');
 
   logger.log(`📐 reading version of storybook`);
   logger.log(`🚛 listing storybook packages`);
@@ -197,6 +285,7 @@ const run = async () => {
   }
 
   logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
+  await logRegistryWithPorts('run.beforeStartVerdaccio');
 
   const [_servers, packages, version] = await Promise.all([
     startVerdaccio(),
@@ -204,10 +293,15 @@ const run = async () => {
     currentVersion(),
   ]);
   servers = _servers;
+  await logRegistryWithPorts('run.afterStartVerdaccio', {
+    packageCount: packages.length,
+    version,
+  });
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
 
   logger.log(`👤 add temp user to verdaccio`);
+  await logRegistry('run.beforeNpmAuth');
   // Use npmAuth helper to authenticate to the local Verdaccio registry
   // This will create a .npmrc file in the root directory
   await npmAuth({
@@ -217,27 +311,33 @@ const run = async () => {
     registry: 'http://localhost:6002',
     outputDir: root,
   });
+  await logRegistry('run.afterNpmAuth');
 
   logger.log(
     `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
   );
 
   if (opts.publish) {
+    await logRegistry('run.beforePublish', { packageCount: packages.length, version });
     try {
       await publish(packages, 'http://localhost:6002');
+      await logRegistry('run.afterPublish', { packageCount: packages.length, version });
     } finally {
       await rm(join(root, '.npmrc'), { force: true });
     }
   }
 
   if (!opts.open) {
+    await logRegistry('run.beforeClose');
     await servers?.close();
     process.exit(0);
   }
+  await logRegistry('run.openAndIdle', { verdaccioUrl });
 };
 
 run().catch(async (e) => {
   try {
+    await logRegistryWithPorts('run.error', { error: serializeError(e) });
     await servers?.close();
   } finally {
     await rm(join(root, '.npmrc'), { force: true });

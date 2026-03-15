@@ -54,6 +54,18 @@ export class VitestManager {
 
   constructor(private testManager: TestManager) {}
 
+  private trackRunningPromise<T>(run: () => Promise<T>) {
+    const runningPromise = run().finally(() => {
+      if (this.runningPromise === runningPromise) {
+        this.runningPromise = null;
+      }
+    });
+
+    this.runningPromise = runningPromise;
+
+    return runningPromise;
+  }
+
   async startVitest({ coverage }: { coverage: boolean }) {
     const { createVitest } = await import('vitest/node');
 
@@ -153,7 +165,7 @@ export class VitestManager {
 
     if (this.vitest) {
       this.vitest.onCancel(() => {
-        // TODO: handle cancellation
+        this.resetGlobalTestNamePattern();
       });
     }
 
@@ -408,7 +420,9 @@ export class VitestManager {
       },
     }));
 
-    await this.vitest!.runTestSpecifications(filteredTestSpecifications, true);
+    await this.trackRunningPromise(() =>
+      this.vitest!.runTestSpecifications(filteredTestSpecifications, true)
+    );
     this.resetGlobalTestNamePattern();
   }
 
@@ -519,7 +533,9 @@ export class VitestManager {
         }));
         await this.vitest!.cancelCurrentRun('keyboard-input');
         await this.runningPromise;
-        await this.vitest!.runTestSpecifications(filteredTestSpecifications, false);
+        await this.trackRunningPromise(() =>
+          this.vitest!.runTestSpecifications(filteredTestSpecifications, false)
+        );
       },
     });
   }

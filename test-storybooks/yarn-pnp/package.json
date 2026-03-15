@@ -60,8 +60,8 @@
     "@storybook/vue3-vite": "^10.1.0-alpha.6",
     "@types/node": "^24.6.0",
     "@vitejs/plugin-vue": "^6.0.1",
-    "@vitest/browser-playwright": "^4.0.7",
-    "@vitest/coverage-v8": "^4.0.7",
+    "@vitest/browser-playwright": "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.0",
     "@vue/tsconfig": "^0.8.1",
     "eslint": "^9.29.0",
     "eslint-plugin-storybook": "9.1.0-alpha.6",
@@ -70,7 +70,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.34.1",
     "vite": "^7.1.7",
-    "vitest": "^4.0.14",
+    "vitest": "^4.1.0",
     "vue-tsc": "^3.1.0"
   },
   "nx": {

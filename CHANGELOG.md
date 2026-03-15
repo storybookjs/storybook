@@ -1,3 +1,7 @@
+## 10.2.20
+
+- Core: Fix event source URL based on refId when multiple iframes share the same origin - [#34105](https://github.com/storybookjs/storybook/pull/34105), thanks @ghengeveld!
+
 ## 10.2.19
 
 - Maintenance: Support vite-plugin-svelte@7 which supports Vite 8 - [#34115](https://github.com/storybookjs/storybook/pull/34115), thanks @valentinpalkovic!

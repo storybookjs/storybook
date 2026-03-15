@@ -7,6 +7,7 @@ import { getNextStoryUID } from './utils/StoryUID';
 
 export class DocsRenderer extends AbstractRenderer {
   public async render(options: {
+    storyId: string;
     storyFnAngular: StoryFnAngularReturnType;
     forced: boolean;
     component: any;
@@ -43,10 +44,11 @@ export class DocsRenderer extends AbstractRenderer {
 
   protected override initAngularRootElement(
     targetDOMNode: HTMLElement,
-    targetSelector: string
+    targetSelector: string,
+    storyId: string
   ): void {
-    super.initAngularRootElement(targetDOMNode, targetSelector);
+    super.initAngularRootElement(targetDOMNode, targetSelector, storyId);
 
-    targetDOMNode.setAttribute(STORY_UID_ATTRIBUTE, getNextStoryUID(targetDOMNode.id));
+    targetDOMNode.setAttribute(STORY_UID_ATTRIBUTE, getNextStoryUID(storyId));
   }
 }

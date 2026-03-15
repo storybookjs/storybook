@@ -63,17 +63,19 @@ export abstract class AbstractRenderer {
    * @param component {Component}
    */
   public async render({
+    storyId,
     storyFnAngular,
     forced,
     component,
     targetDOMNode,
   }: {
+    storyId: string;
     storyFnAngular: StoryFnAngularReturnType;
     forced: boolean;
     component?: any;
     targetDOMNode: HTMLElement;
   }) {
-    const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
+    const targetSelector = this.generateTargetSelectorFromStoryId(storyId);
 
     const newStoryProps$ = new BehaviorSubject<ICollection>(storyFnAngular.props);
 
@@ -100,7 +102,7 @@ export abstract class AbstractRenderer {
     }
     this.storyProps$ = newStoryProps$;
 
-    this.initAngularRootElement(targetDOMNode, targetSelector);
+    this.initAngularRootElement(targetDOMNode, targetSelector, storyId);
 
     const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
     await analyzedMetadata.init();
@@ -188,7 +190,11 @@ export abstract class AbstractRenderer {
   }
 
   /** Adds DOM element that angular will use as bootstrap component. */
-  protected initAngularRootElement(targetDOMNode: HTMLElement, targetSelector: string) {
+  protected initAngularRootElement(
+    targetDOMNode: HTMLElement,
+    targetSelector: string,
+    _storyId: string
+  ) {
     targetDOMNode.innerHTML = '';
     targetDOMNode.appendChild(document.createElement(targetSelector));
   }

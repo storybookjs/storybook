@@ -22,7 +22,7 @@ const vitest = vi.hoisted(() => ({
   init: vi.fn(),
   close: vi.fn(),
   onCancel: vi.fn(),
-  runTestSpecifications: vi.fn(),
+  runTestSpecifications: vi.fn().mockResolvedValue(undefined),
   cancelCurrentRun: vi.fn(),
   globTestSpecifications: vi.fn(),
   getModuleProjects: vi.fn(() => []),
@@ -53,7 +53,9 @@ vi.mock('vitest/node', async (importOriginal) => ({
 const createVitest = mockCreateVitest;
 
 beforeEach(() => {
+  vi.clearAllMocks();
   createVitest.mockResolvedValue(vitest);
+  vitest.runTestSpecifications.mockResolvedValue(undefined);
 });
 
 const mockIndex = {
@@ -420,5 +422,73 @@ describe('TestManager', () => {
     });
 
     expect(createVitest).not.toHaveBeenCalled();
+  });
+
+  it('should wait for the current run to finish before resolving cancel', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const runningTestRun = Promise.withResolvers<void>();
+    vitest.runTestSpecifications.mockReturnValueOnce(runningTestRun.promise);
+
+    const testManager = await TestManager.start(options);
+    const triggerRunPromise = testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'global',
+      },
+    });
+
+    await vi.waitFor(() => {
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests, true);
+    });
+
+    let didCancelResolve = false;
+    const cancelPromise = testManager.handleCancelEvent().then(() => {
+      didCancelResolve = true;
+    });
+
+    await vi.waitFor(() => {
+      expect(vitest.cancelCurrentRun).toHaveBeenCalledWith('keyboard-input');
+    });
+
+    await Promise.resolve();
+    expect(didCancelResolve).toBe(false);
+
+    runningTestRun.resolve();
+
+    await triggerRunPromise;
+    await cancelPromise;
+
+    expect(didCancelResolve).toBe(true);
+  });
+
+  it('should reset the focused test pattern when Vitest cancels a run', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const runningTestRun = Promise.withResolvers<void>();
+    vitest.runTestSpecifications.mockReturnValueOnce(runningTestRun.promise);
+
+    const testManager = await TestManager.start(options);
+    const triggerRunPromise = testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one'],
+        triggeredBy: 'global',
+      },
+    });
+
+    await vi.waitFor(() => {
+      expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One$`));
+    });
+
+    const onCancel = vitest.onCancel.mock.calls[0]?.[0];
+
+    expect(onCancel).toBeTypeOf('function');
+
+    setTestNamePattern.mockClear();
+    onCancel();
+
+    expect(setTestNamePattern).toHaveBeenCalledWith('');
+
+    runningTestRun.resolve();
+    await triggerRunPromise;
   });
 });

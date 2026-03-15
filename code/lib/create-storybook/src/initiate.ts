@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+
 import { ProjectType } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
@@ -131,10 +133,6 @@ const handleCommandFailure = async (logFilePath: string | boolean | undefined): 
   process.exit(1);
 };
 
-// cli command -> ctrl c -> exit 0
-// process.on('SIGINT', () => {
-// })
-
 /** Main initiate function with telemetry wrapper */
 export async function initiate(options: CommandOptions): Promise<void> {
   const initiateResult = await withTelemetry(
@@ -155,6 +153,15 @@ export async function initiate(options: CommandOptions): Promise<void> {
   });
 
   if (initiateResult?.shouldRunDev) {
+    // Workaround for https://github.com/bombshell-dev/clack/issues/408
+    // @clack/core's block() sets stdin to raw mode but intentionally skips restoring it on Windows.
+    // Raw mode causes Ctrl+C to emit \x03 as a character instead of triggering SIGINT, so the
+    // process cannot be interrupted. Explicitly restore stdin to cooked mode before starting the
+    // dev server so that Ctrl+C works as expected.
+    if (process.platform === 'win32' && process.stdin.isTTY && process.stdin.isRaw) {
+      process.stdin.setRawMode(false);
+    }
+
     await runStorybookDev(initiateResult);
   }
 }
@@ -215,11 +222,40 @@ async function runStorybookDev(result: {
     // with packages running in npxs' node_modules
     const [command, ...args] = [...parts];
 
-    await executeCommand({
+    const subprocess = executeCommand({
       command: command,
       args,
       stdio: 'inherit',
     });
+
+    // On Windows, Ctrl+C may not propagate properly through cmd.exe intermediaries
+    // (e.g. npm.cmd). Register explicit signal handlers to kill the entire process
+    // tree and exit cleanly, preventing the terminal from becoming unresponsive.
+    const killSubprocess = () => {
+      if (process.platform === 'win32' && subprocess.pid != null) {
+        // taskkill /T kills the entire process tree rooted at the given PID
+        spawnSync('taskkill', ['/T', '/F', '/PID', String(subprocess.pid)], {
+          stdio: 'ignore',
+        });
+      } else {
+        subprocess.kill();
+      }
+    };
+
+    const onSignal = () => {
+      killSubprocess();
+      process.exit(0);
+    };
+
+    process.once('SIGINT', onSignal);
+    process.once('SIGTERM', onSignal);
+
+    try {
+      await subprocess;
+    } finally {
+      process.off('SIGINT', onSignal);
+      process.off('SIGTERM', onSignal);
+    }
   } catch {
     // Do nothing here, as the command above will spawn a `storybook dev` process which does the error handling already
   }

@@ -335,8 +335,7 @@ const usePresets = (
     if (maxPresetColors === 0 || maxPresetColors === Infinity) {
       return combined;
     }
-    const limit =
-      Number.isInteger(maxPresetColors) && maxPresetColors > 0 ? maxPresetColors : 27;
+    const limit = Number.isInteger(maxPresetColors) && maxPresetColors > 0 ? maxPresetColors : 27;
     return combined.slice(-limit);
   }, [presetColors, selectedColors, maxPresetColors]);
 

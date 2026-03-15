@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { dirname, join, sep } from 'node:path';
 
@@ -6,6 +7,36 @@ import { dts } from 'rollup-plugin-dts';
 import { JsxEmit, ScriptTarget } from 'typescript';
 
 import { getExternal } from './entry-utils';
+
+/**
+ * Build TypeScript `paths` for self-referential imports.
+ *
+ * When multiple dts-processes run in parallel, one process may try to resolve an import like
+ * `storybook/internal/csf` before the dts-process for the `csf` entry has written its output
+ * (`dist/csf/index.d.ts`). TypeScript resolves these via the package.json `types` export condition,
+ * which points to dist files that may not exist yet.
+ *
+ * By mapping these imports to source files via TypeScript `paths`, we eliminate this race
+ * condition: TypeScript resolves types from source instead of dist, regardless of whether other
+ * dts-processes have finished.
+ */
+function getSelfReferencePaths(cwd: string): Record<string, string[]> {
+  const packageJson = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf-8'));
+  const packageName: string = packageJson.name;
+  const paths: Record<string, string[]> = {};
+
+  if (packageJson.exports) {
+    for (const [exportPath, exportValue] of Object.entries(packageJson.exports)) {
+      if (typeof exportValue === 'object' && exportValue !== null && 'code' in exportValue) {
+        const importPath =
+          exportPath === '.' ? packageName : `${packageName}/${exportPath.slice(2)}`;
+        paths[importPath] = [(exportValue as Record<string, string>).code];
+      }
+    }
+  }
+
+  return paths;
+}
 
 async function run() {
   const [entryPoint] = process.argv.slice(2);
@@ -16,6 +47,7 @@ async function run() {
     );
   }
   const { typesExternal: external } = await getExternal(process.cwd());
+  const selfReferencePaths = getSelfReferencePaths(process.cwd());
 
   const dir = dirname(entryPoint).replace('src', 'dist');
   const outputFile = entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
@@ -23,7 +55,10 @@ async function run() {
     input: entryPoint,
     external: (id) => {
       return external.some(
-        (dep) => id === dep || id.startsWith(`${dep}/`) || id.includes(`${sep}node_modules${sep}${dep}${sep}`)
+        (dep) =>
+          id === dep ||
+          id.startsWith(`${dep}/`) ||
+          id.includes(`${sep}node_modules${sep}${dep}${sep}`)
       );
     },
     output: { file: outputFile, format: 'es' },
@@ -44,6 +79,7 @@ async function run() {
           skipLibCheck: true,
           preserveSymlinks: false,
           target: ScriptTarget.ESNext,
+          ...(Object.keys(selfReferencePaths).length > 0 ? { paths: selfReferencePaths } : {}),
         },
       }),
     ],

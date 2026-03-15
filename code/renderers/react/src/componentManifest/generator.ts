@@ -37,7 +37,7 @@ let componentMetaManager: ComponentMetaManager | undefined;
 async function createComponentMetaManager(
   watch: boolean
 ): Promise<ComponentMetaManager | undefined> {
-  if (componentMetaManager) {
+  if (componentMetaManager && watch) {
     return componentMetaManager;
   }
   try {

@@ -16,6 +16,7 @@ export const supportedFrameworks = [
   'react-webpack5',
   'server-webpack5',
   'solid',
+  'stencil',
   'svelte-vite',
   'sveltekit',
   'vue3-rsbuild',
@@ -45,6 +46,7 @@ export const supportedFrameworksPackages = {
   nuxt: '@storybook/vue3-vite',
   qwik: 'storybook-framework-qwik',
   solid: 'storybook-solidjs-vite',
+  stencil: '@stencil/storybook-plugin',
   sveltekit: '@storybook/sveltekit',
   'react-native': '@storybook/react-native',
 } satisfies Record<Framework, string>;
@@ -68,6 +70,7 @@ export const supportedFrameworksNames = {
   nuxt: 'Nuxt',
   qwik: 'Qwik',
   solid: 'Solid',
+  stencil: 'Stencil',
   sveltekit: 'SvelteKit',
   'react-native': 'React Native',
 } satisfies Record<Framework, string>;

@@ -35,6 +35,11 @@
       "code": "./src/playwright.ts",
       "default": "./dist/playwright.js"
     },
+    "./internal/docgen-resolver": {
+      "types": "./dist/internal/docgen-resolver.d.ts",
+      "code": "./src/componentManifest/reactDocgen/docgenResolver.ts",
+      "default": "./dist/internal/docgen-resolver.js"
+    },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {

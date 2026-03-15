@@ -42,6 +42,10 @@ const config: BuildEntries = {
         entryPoint: './src/preset.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./internal/docgen-resolver'],
+        entryPoint: './src/componentManifest/reactDocgen/docgenResolver.ts',
+      },
     ],
   },
 };

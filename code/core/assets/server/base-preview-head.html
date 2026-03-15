@@ -452,6 +452,18 @@
     padding: 2px 5px;
   }
 
+  @media (forced-colors: active) {
+    .sb-argstableBlock-body {
+      box-shadow: none;
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+
+    .sb-argstableBlock-body tr:not(:first-child) {
+      border-top-color: CanvasText;
+    }
+  }
+
   .sb-sr-only,
   .sb-hidden-until-focus:not(:focus) {
     position: absolute;

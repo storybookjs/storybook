@@ -28255,6 +28255,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"std-env@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "std-env@npm:4.0.0"
+  checksum: 10c0/63b1716eae27947adde49e21b7225a0f75fb2c3d410273ae9de8333c07c7d5fc7a0628ae4c8af6b4b49b4274ed46c2bf118ed69b64f1261c9d8213d76ed1c16c
+  languageName: node
+  linkType: hard
+
 "steno@npm:^0.4.1":
   version: 0.4.4
   resolution: "steno@npm:0.4.4"
@@ -28422,6 +28429,7 @@ __metadata:
     sirv: "npm:^2.0.4"
     slash: "npm:^5.0.0"
     source-map: "npm:^0.7.4"
+    std-env: "npm:^4.0.0"
     store2: "npm:^2.14.2"
     strip-ansi: "npm:^7.1.0"
     strip-json-comments: "npm:^5.0.1"

@@ -19,6 +19,7 @@ export interface DocsManifestEntry {
   name: string;
   path: Path;
   title: string;
+  tags?: string[];
   content?: string;
   summary?: string;
   error?: { name: string; message: string };
@@ -61,6 +62,7 @@ export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<Do
       name: entry.name,
       path: entry.importPath,
       title: entry.title,
+      ...(entry.tags && { tags: entry.tags }),
       content,
       ...(summary && { summary }),
     };
@@ -70,6 +72,7 @@ export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<Do
       name: entry.name,
       path: entry.importPath,
       title: entry.title,
+      ...(entry.tags && { tags: entry.tags }),
       error: {
         name: err instanceof Error ? err.name : 'Error',
         message: err instanceof Error ? err.message : String(err),

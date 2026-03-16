@@ -72,7 +72,9 @@ export function pauseAnimations(): CleanupCallback {
       const { animation, playState, currentTime } = previousStates.pop()!;
       try {
         animation.currentTime = currentTime;
-        if (playState === 'running') {
+        if (playState === 'paused') {
+          animation.pause();
+        } else if (playState === 'running') {
           animation.play();
         }
       } catch {}

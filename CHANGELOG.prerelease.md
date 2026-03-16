@@ -1,3 +1,6 @@
+## 10.3.0-beta.0
+
+
 ## 10.3.0-alpha.17
 
 - Core: Correctly fallback to first detected vitest config file - [#33865](https://github.com/storybookjs/storybook/pull/33865), thanks @yannbf!

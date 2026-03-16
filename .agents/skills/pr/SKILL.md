@@ -1,7 +1,6 @@
 ---
 name: pr
 description: Creates a pull request following Storybook conventions. Use when creating PRs, opening pull requests, or submitting changes for review.
-allowed-tools: Bash, Read
 ---
 
 # Create Pull Request

@@ -152,17 +152,7 @@ Common templates:
 
 ### Propagating local changes to an existing sandbox
 
-If a sandbox is already generated and you need to test a code change without regenerating from scratch:
-
-1. Recompile the affected package: `yarn nx compile <package-name>`
-2. Copy the compiled `dist/` into the sandbox's `node_modules/`:
-   ```bash
-   /bin/cp -R code/<path-to-package>/dist/ ../storybook-sandboxes/<template>/node_modules/<npm-package-name>/dist/
-   ```
-3. **Always** delete the sandbox cache: `rm -rf ../storybook-sandboxes/<template>/node_modules/.cache`
-4. Restart the sandbox Storybook
-
-**Important:** Use `/bin/cp` (not bare `cp`) to bypass shell aliases like `cp -i` that prompt for confirmation and block non-interactive execution.
+Use the sandbox-rebuild skill (.agents/skills/sandbox-rebuild) to copy compiled output from a local package into an existing sandbox without regenerating the whole sandbox.
 
 ## How To Work In This Repo
 
@@ -206,6 +196,8 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 - Storybook UI uses port `6006` by default
 - Large compiles may require more Node.js memory
 - Sandbox paths are `../storybook-sandboxes/`, not `./sandbox` or `code/sandbox/`
+- If `scripts:publish` fails with `Error: No process running on port` (from `kill-port`), rerun the sandbox flow or run Storybook directly from the sandbox directory.
+- If running Storybook in a sandbox fails with `EPERM` creating `node_modules/.cache/...`, ensure the sandbox directory is writable (agents may need escalated permissions).
 - Use `--debug` for verbose CLI output
 - Check generated sandbox directories and `.cache/` for build artifacts
 

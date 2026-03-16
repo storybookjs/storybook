@@ -1,1 +1,1 @@
-@../../../.agents/skills/storybook-upgrade/SKILL.md
+.agents/skills/storybook-upgrade/SKILL.md

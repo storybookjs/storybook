@@ -1,7 +1,6 @@
 ---
 name: canary
 description: Triggers a canary release for a Storybook PR. Use when the user wants to publish a canary version, create a pre-release, or test a PR via npm.
-allowed-tools: Bash
 ---
 
 # Publish Canary Release

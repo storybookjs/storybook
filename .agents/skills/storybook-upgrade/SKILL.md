@@ -1,7 +1,6 @@
 ---
 name: storybook-upgrade
 description: Upgrade Storybook to a specific version (canary or release). Use this when upgrading Storybook packages in an external app, reproduction, or test project.
-allowed-tools: Bash
 ---
 
 # Storybook Upgrade

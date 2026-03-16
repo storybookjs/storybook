@@ -1,0 +1,1 @@
+.agents/skills/sandbox-rebuild/SKILL.md

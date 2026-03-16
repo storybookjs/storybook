@@ -1,1 +1,1 @@
-@../../../.agents/skills/github-qa-labels/SKILL.md
+.agents/skills/github-qa-labels/SKILL.md

@@ -1,1 +1,1 @@
-@../../../.agents/skills/pr/SKILL.md
+.agents/skills/pr/SKILL.md

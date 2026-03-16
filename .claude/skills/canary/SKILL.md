@@ -1,1 +1,1 @@
-@../../../.agents/skills/canary/SKILL.md
+.agents/skills/canary/SKILL.md

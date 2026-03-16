@@ -2,11 +2,11 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
-import { Button, type ButtonProps } from './Button';
+import { Button } from './Button';
 
 const meta = preview.meta({
   id: 'button-component',

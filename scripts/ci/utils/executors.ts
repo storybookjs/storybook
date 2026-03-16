@@ -7,7 +7,7 @@ export const executors = {
         environment: {
           NODE_OPTIONS: '--max_old_space_size=6144',
         },
-        image: 'cimg/node:22.15.0-browsers',
+        image: 'cimg/node:22.22.1-browsers',
       },
     ],
     parameters: {
@@ -27,7 +27,7 @@ export const executors = {
         environment: {
           NODE_OPTIONS: '--max_old_space_size=6144',
         },
-        image: 'cimg/node:22.15.0',
+        image: 'cimg/node:22.22.1',
       },
     ],
     parameters: {
@@ -47,7 +47,7 @@ export const executors = {
         environment: {
           NODE_OPTIONS: '--max_old_space_size=6144',
         },
-        image: 'mcr.microsoft.com/playwright:v1.52.0-noble',
+        image: 'mcr.microsoft.com/playwright:v1.58.2-noble',
       },
     ],
     parameters: {

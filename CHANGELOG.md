@@ -1,3 +1,13 @@
+## 10.2.19
+
+- Maintenance: Support vite-plugin-svelte@7 which supports Vite 8 - [#34115](https://github.com/storybookjs/storybook/pull/34115), thanks @valentinpalkovic!
+- Vite: Support Vite 8 - [#33788](https://github.com/storybookjs/storybook/pull/33788), thanks @valentinpalkovic!
+
+## 10.2.18
+
+- Core: Correctly fallback to first detected vitest config file - [#33865](https://github.com/storybookjs/storybook/pull/33865), thanks @yannbf!
+- Core: Fix error reporting in ManagerErrorBoundary - [#33915](https://github.com/storybookjs/storybook/pull/33915), thanks @ghengeveld!
+
 ## 10.2.17
 
 - Next.js: Add support for v16.2 - [#34046](https://github.com/storybookjs/storybook/pull/34046), thanks @valentinpalkovic!

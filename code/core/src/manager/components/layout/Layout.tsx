@@ -1,4 +1,4 @@
-import type { CSSProperties, FC } from 'react';
+import type { CSSProperties } from 'react';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
@@ -6,13 +6,13 @@ import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 import { type API, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants';
 import { Notifications } from '../../container/Notifications';
 import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
-import { Drag } from './Drag';
 import { useLayout } from './LayoutProvider';
 import { MainAreaContainer } from './MainAreaContainer';
 import { PanelContainer } from './PanelContainer';
+import { SidebarContainer } from './SidebarContainer';
 import { useDragging } from './useDragging';
 import { useLandmarkIndicator } from './useLandmarkIndicator';
 
@@ -38,7 +38,6 @@ interface Props {
   slotPages?: React.ReactNode;
   hasTab: boolean;
 }
-const MINIMUM_CONTENT_WIDTH_PX = 100;
 
 const layoutStateIsEqual = (state: ManagerLayoutState, other: ManagerLayoutState) =>
   state.navSize === other.navSize &&
@@ -111,17 +110,21 @@ const useLayoutSyncingState = ({
     managerLayoutState.viewMode !== 'docs';
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
-  const { panelResizerRef, sidebarResizerRef } = useDragging({
-    setState: setInternalDraggingSizeState,
-    isPanelShown,
-    isDesktop,
-  });
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
     ? internalDraggingSizeState
     : managerLayoutState;
 
   const customisedNavSize = api.getNavSizeWithCustomisations?.(navSize) ?? navSize;
   const customisedShowPanel = api.getShowPanelWithCustomisations?.(isPanelShown) ?? isPanelShown;
+
+  const { panelResizerRef, sidebarResizerRef, sidebarMaxWidth, panelMaxSize } = useDragging({
+    setState: setInternalDraggingSizeState,
+    isDesktop,
+    navSize: customisedNavSize,
+    showPanel: customisedShowPanel,
+    rightPanelWidth,
+    panelPosition: managerLayoutState.panelPosition,
+  });
 
   return {
     navSize: customisedNavSize,
@@ -130,10 +133,10 @@ const useLayoutSyncingState = ({
     panelPosition: managerLayoutState.panelPosition,
     panelResizerRef,
     sidebarResizerRef,
+    sidebarMaxWidth,
+    panelMaxSize,
     showPages: isPagesShown,
-    showPanel:
-      customisedShowPanel &&
-      (managerLayoutState.panelPosition === 'right' ? rightPanelWidth > 0 : bottomPanelHeight > 0),
+    showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
   };
 };
@@ -153,6 +156,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     panelPosition,
     panelResizerRef,
     sidebarResizerRef,
+    sidebarMaxWidth,
+    panelMaxSize,
     showPages,
     showPanel,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
@@ -174,8 +179,11 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     >
       <>
         {isDesktop && (
-          <SidebarContainer>
-            <Drag ref={sidebarResizerRef} />
+          <SidebarContainer
+            navSize={navSize}
+            sidebarMaxWidth={sidebarMaxWidth}
+            sidebarResizerRef={sidebarResizerRef}
+          >
             {slots.slotSidebar}
           </SidebarContainer>
         )}
@@ -193,14 +201,15 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           slotPages={slots.slotPages}
         />
 
-        {isDesktop && showPanel && (
+        {isDesktop && (
           <PanelContainer
             bottomPanelHeight={bottomPanelHeight}
             rightPanelWidth={rightPanelWidth}
+            panelMaxSize={panelMaxSize}
             panelResizerRef={panelResizerRef}
             position={panelPosition}
           >
-            {slots.slotPanel}
+            {showPanel && slots.slotPanel}
           </PanelContainer>
         )}
         {isMobile && <Notifications />}
@@ -240,11 +249,4 @@ const LayoutContainer = styled.div<{
                 "sidebar panel   panel"`;
     })(),
   },
-}));
-
-const SidebarContainer = styled.div(({ theme }) => ({
-  backgroundColor: theme.appBg,
-  gridArea: 'sidebar',
-  position: 'relative',
-  borderRight: `1px solid ${theme.appBorderColor}`,
 }));

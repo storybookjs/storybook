@@ -33,13 +33,14 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
 
-const managerContext: any = {
+const managerContext: any = (args: Meta<typeof Sidebar>['args']) => ({
   state: {
     docsOptions: {
       defaultName: 'Docs',
       autodocs: 'tag',
       docsMode: false,
     },
+    internal_index: args?.indexJson,
   },
   api: {
     emit: fn().mockName('api::emit'),
@@ -66,7 +67,7 @@ const managerContext: any = {
     }),
     applyQueryParams: fn().mockName('api::applyQueryParams'),
   },
-};
+});
 
 const meta = {
   component: Sidebar,
@@ -100,8 +101,8 @@ const meta = {
     isDevelopment: true,
   },
   decorators: [
-    (storyFn, { globals, title }) => (
-      <ManagerContext.Provider value={managerContext}>
+    (storyFn, { args, globals, title }) => (
+      <ManagerContext.Provider value={managerContext(args)}>
         <LayoutProvider
           forceDesktop={
             globals.viewport?.value === 'desktop' ||
@@ -134,8 +135,8 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const mobileLayoutDecorator: DecoratorFunction = (storyFn, { globals, title }) => (
-  <ManagerContext.Provider value={managerContext}>
+const mobileLayoutDecorator: DecoratorFunction = (storyFn, { args, globals, title }) => (
+  <ManagerContext.Provider value={managerContext(args)}>
     <LayoutProvider
       forceDesktop={
         globals.viewport?.value === 'desktop' ||

@@ -26,6 +26,7 @@ Type:
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -47,6 +48,7 @@ Type:
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -67,6 +69,7 @@ Type:
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -79,6 +82,8 @@ Enables Storybook's additional features.
 ## `actions`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Actions](../../essentials/actions.mdx) feature.
 
@@ -98,6 +103,8 @@ Filter non-input controls in Angular.
 
 Type: `boolean`
 
+Default: `true`
+
 Filter args with a "target" on the type from the render function.
 
 {/* prettier-ignore-start */}
@@ -109,6 +116,8 @@ Filter args with a "target" on the type from the render function.
 ## `backgrounds`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
 
@@ -129,6 +138,8 @@ Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/
 ## `controls`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Controls](../../essentials/controls.mdx) feature.
 
@@ -178,11 +189,15 @@ Enable the [experimental `.test` method with the CSF Next format](../csf/csf-nex
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Highlight](../../essentials/highlight.mdx) feature.
 
 ## `interactions`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Interactions](../../writing-tests/interaction-testing.mdx#debugging-interaction-tests) feature.
 
@@ -202,22 +217,30 @@ Apply decorators from preview.js before decorators from addons or frameworks. [M
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Measure](../../essentials/measure-and-outline.mdx#measure) feature.
 
 ## `outline`
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Outline](../../essentials/measure-and-outline.mdx#outline) feature.
 
-## `toolbars`
+## `sidebarOnboardingChecklist`
 
 Type: `boolean`
 
-Enable the [Toolbars](../../essentials/toolbars.mdx) feature.
+Default: `true`
+
+Enable the onboarding checklist sidebar widget.
 
 ## `viewport`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Viewport](../../essentials/viewport.mdx) feature.

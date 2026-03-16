@@ -104,8 +104,11 @@ const checkManualTestingSection = (body) => {
   const author = danger.github.pr.user;
   const authorAssociation = danger.github.pr.author_association;
 
-  // Bypass check for OWNER, MEMBER roles (but never for bots e.g. Copilot)
-  if (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') {
+  // Bypass check for OWNER, MEMBER roles (but never for agent bots)
+  if (
+    (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
     return;
   }
 

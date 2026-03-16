@@ -3,8 +3,8 @@
     "nx": {
       "command": "npx",
       "args": [
-        "-y",
-        "nx-mcp@latest"
+        "nx",
+        "mcp"
       ]
     },
     "wallaby": {

@@ -10,6 +10,14 @@
       "inputs": ["default"],
       "configurations": { "production": {} }
     },
+    "lint-js": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn lint:js:cmd" },
+      "cache": true,
+      "inputs": ["default"],
+      "configurations": { "production": {} }
+    },
     "test": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",

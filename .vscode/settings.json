@@ -1,10 +1,10 @@
 {
   "[javascript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "[typescript]": {
@@ -12,7 +12,7 @@
     "editor.formatOnSave": true
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "editor.codeActionsOnSave": {
@@ -52,4 +52,9 @@
   "typescript.tsdk": "./typescript/lib",
   "vitest.workspaceConfig": "./code/vitest.workspace.ts",
   "vitest.rootConfig": "./code/vitest.workspace.ts",
+  "oxc.fmt.configPath": "./vite.config.ts",
+  "editor.formatOnSaveMode": "file",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "explicit"
+  }
 }

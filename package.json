@@ -1,7 +1,6 @@
 {
   "name": "@storybook/root",
   "private": true,
-  "type": "module",
   "workspaces": {
     "packages": [
       "code",
@@ -15,6 +14,7 @@
       "scripts"
     ]
   },
+  "type": "module",
   "scripts": {
     "ci-tests": "cd code; yarn ci-tests",
     "get-report-message": "cd scripts; yarn get-report-message",
@@ -36,6 +36,16 @@
     "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
     "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts",
     "prepare": "vp config"
+  },
+  "devDependencies": {
+    "@nx/workspace": "^22.1.3",
+    "@playwright/test": "^1.58.2",
+    "@types/kill-port": "^2.0.3",
+    "http-server": "^14.1.1",
+    "jiti": "^2.6.1",
+    "kill-port": "^2.0.1",
+    "nx": "^22.1.3",
+    "vite-plus": "catalog:"
   },
   "resolutions": {
     "@babel/runtime": "latest",
@@ -59,16 +69,6 @@
     "typescript": "^5.9.3",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
-  },
-  "devDependencies": {
-    "@nx/workspace": "^22.1.3",
-    "@playwright/test": "^1.58.2",
-    "@types/kill-port": "^2.0.3",
-    "http-server": "^14.1.1",
-    "jiti": "^2.6.1",
-    "kill-port": "^2.0.1",
-    "nx": "^22.1.3",
-    "vite-plus": "catalog:"
   },
   "packageManager": "yarn@4.10.3"
 }

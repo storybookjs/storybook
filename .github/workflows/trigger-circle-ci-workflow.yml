@@ -62,7 +62,7 @@ jobs:
       - name: Trigger Normal tests
         uses: fjogeleit/http-request-action@v1
         with:
-          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
-          method: 'POST'
+          url: "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"
+          method: "POST"
           customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
           data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'

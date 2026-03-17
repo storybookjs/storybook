@@ -10,11 +10,11 @@ permissions:
   pull-requests: read
 engine: copilot
 tools:
-  serena: ['typescript']
+  serena: ["typescript"]
 safe-outputs:
   create-issue:
     expires: 2d
-    title-prefix: '[duplicate-code] '
+    title-prefix: "[duplicate-code] "
     labels: [code-quality, automated-analysis, cookie]
     assignees: copilot
     group: true

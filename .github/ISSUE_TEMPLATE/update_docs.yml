@@ -1,7 +1,7 @@
 name: Update docs ✍️
 description: >-
   Find a mistake in our documentation, or have a suggestion to improve them? Let us know here.
-title: '[Documentation]: '
+title: "[Documentation]: "
 labels:
   - needs triage
   - documentation

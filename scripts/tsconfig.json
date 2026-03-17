@@ -16,8 +16,12 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "strictBindCallApply": true,
-    "lib": ["ESNext"],
-    "types": ["node"],
+    "lib": [
+      "ESNext"
+    ],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true,
@@ -27,6 +31,13 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true
   },
-  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"],
-  "include": ["./**/*", "./.eslintrc.cjs"]
+  "exclude": [
+    "dist",
+    "**/dist",
+    "node_modules",
+    "**/node_modules"
+  ],
+  "include": [
+    "./**/*"
+  ]
 }

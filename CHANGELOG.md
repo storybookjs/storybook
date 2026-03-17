@@ -45,7 +45,7 @@
 
 - Addon-Vitest: Fix postinstall a11y installation - [#33888](https://github.com/storybookjs/storybook/pull/33888), thanks @valentinpalkovic!
 - Manifests: Use correct story name - [#33709](https://github.com/storybookjs/storybook/pull/33709), thanks @JReinhold!
-- Next.js: Handle legacyBehavior prop in Link mock component  - [#33862](https://github.com/storybookjs/storybook/pull/33862), thanks @yatishgoel!
+- Next.js: Handle legacyBehavior prop in Link mock component - [#33862](https://github.com/storybookjs/storybook/pull/33862), thanks @yatishgoel!
 - React: Fix manifest stories empty when meta has no explicit title - [#33878](https://github.com/storybookjs/storybook/pull/33878), thanks @kasperpeulen!
 
 ## 10.2.10
@@ -68,7 +68,7 @@
 
 ## 10.2.7
 
-- CSF: Fix cross-file story imports in csf-factories codemod  - [#33723](https://github.com/storybookjs/storybook/pull/33723), thanks @yatishgoel!
+- CSF: Fix cross-file story imports in csf-factories codemod - [#33723](https://github.com/storybookjs/storybook/pull/33723), thanks @yatishgoel!
 - Core: Fix rendering of View Transitions in Firefox - [#33651](https://github.com/storybookjs/storybook/pull/33651), thanks @ghengeveld!
 - Globals: Repair dynamicTitle: false for user-defined tools - [#33284](https://github.com/storybookjs/storybook/pull/33284), thanks @ia319!
 - Logger: Honor --loglevel for npmlog output - [#33776](https://github.com/storybookjs/storybook/pull/33776), thanks @LouisLau-art!
@@ -132,7 +132,7 @@ Storybook 10.2 contains hundreds of fixes and improvement including:
 - Addon-Docs: Add MDX manifest generation - [#33408](https://github.com/storybookjs/storybook/pull/33408), thanks @copilot-swe-agent!
 - Addon-Docs: Skip `!autodocs` stories when computing primary story - [#32712](https://github.com/storybookjs/storybook/pull/32712), thanks @ia319!
 - Addon-Pseudo States: Fix stylesheet rewrite for `:not()` with parenthesis in inner selector - [#33491](https://github.com/storybookjs/storybook/pull/33491), thanks @ghengeveld!
-- Addon-Vitest: Added timeout for fetching localhost 6006 during global setup.  - [#33232](https://github.com/storybookjs/storybook/pull/33232), thanks @snippy4!
+- Addon-Vitest: Added timeout for fetching localhost 6006 during global setup. - [#33232](https://github.com/storybookjs/storybook/pull/33232), thanks @snippy4!
 - Addon-Vitest: Fallback detecting vitest version in postinstall - [#33415](https://github.com/storybookjs/storybook/pull/33415), thanks @ndelangen!
 - Addon-Vitest: Improve error message in testing widget modal - [#33481](https://github.com/storybookjs/storybook/pull/33481), thanks @yannbf!
 - Addon-Vitest: Improve perf & fix loading incorrect `.env` file - [#33469](https://github.com/storybookjs/storybook/pull/33469), thanks @ndelangen!
@@ -228,7 +228,7 @@ Storybook 10.2 contains hundreds of fixes and improvement including:
 
 ## 10.1.11
 
-- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!
+- React: Fix several CSF factory bugs - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!
 - UI: Fix React error 300 on some addons - [#33381](https://github.com/storybookjs/storybook/pull/33381), thanks @Sidnioulz!
 
 ## 10.1.10
@@ -374,7 +374,6 @@ Finally, it contains two highly-requested experimental features:
 - Upgrade: Satellite compatible with 10.1 prerelease - [#32877](https://github.com/storybookjs/storybook/pull/32877), thanks @ndelangen!
 
 </details>
-
 
 ## 10.0.8
 

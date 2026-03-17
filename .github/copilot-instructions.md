@@ -385,21 +385,21 @@ When adding logging to code, always use the appropriate logger:
 - **Server-side code** (Node.js): Use `logger` from `storybook/internal/node-logger`
 
   ```typescript
-  import { logger } from 'storybook/internal/node-logger';
-  
-  logger.info('Server message');
-  logger.warn('Warning message');
-  logger.error('Error message');
+  import { logger } from "storybook/internal/node-logger";
+
+  logger.info("Server message");
+  logger.warn("Warning message");
+  logger.error("Error message");
   ```
 
 - **Client-side code** (browser): Use `logger` from `storybook/internal/client-logger`
 
   ```typescript
-  import { logger } from 'storybook/internal/client-logger';
-  
-  logger.info('Client message');
-  logger.warn('Warning message');
-  logger.error('Error message');
+  import { logger } from "storybook/internal/client-logger";
+
+  logger.info("Client message");
+  logger.warn("Warning message");
+  logger.error("Error message");
   ```
 
 - **DO NOT** use `console.log`, `console.warn`, or `console.error` directly unless in isolated files where importing loggers would significantly increase bundle size

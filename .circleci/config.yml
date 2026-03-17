@@ -14,7 +14,7 @@ parameters:
     description: The name of the base branch (the target of the PR)
     type: string
   ghPrNumber:
-    default: ''
+    default: ""
     description: The PR number
     type: string
   workflow:
@@ -30,14 +30,14 @@ parameters:
 
 jobs:
   generate-and-run-config:
-    executor: 
+    executor:
       name: node/default
       resource_class: small
     steps:
       - node/install:
           install-yarn: true
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1'
+          clone_options: "--depth 1"
       - run:
           name: Install dependencies
           command: yarn workspaces focus @storybook/scripts

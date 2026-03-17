@@ -4,15 +4,13 @@ import { render } from 'ejs';
 import { format } from 'oxfmt';
 
 import { allTemplates as sandboxTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';
+import { oxfmtOptions } from '../../utils/oxfmt-options';
 import type { GeneratorConfig } from './types';
 
 export async function renderTemplate(templatePath: string, templateData: Record<string, any>) {
   const template = await readFile(templatePath, 'utf8');
 
-  const { code } = await format('template.html', render(template, templateData), {
-    printWidth: 100,
-    singleQuote: true,
-  });
+  const { code } = await format('template.html', render(template, templateData), oxfmtOptions);
   return code;
 }
 

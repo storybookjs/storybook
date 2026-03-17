@@ -47,7 +47,7 @@
     "jiti": "^2.6.1",
     "kill-port": "^2.0.1",
     "nx": "^22.1.3",
-    "oxfmt": "latest"
+    "oxfmt": "^0.41.0"
   },
   "resolutions": {
     "@babel/runtime": "latest",

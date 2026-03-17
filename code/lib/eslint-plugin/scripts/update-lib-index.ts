@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { format } from 'oxfmt';
 
+import { oxfmtOptions } from '../../../../scripts/utils/oxfmt-options';
 import { categoryIds } from './utils/categories';
 import rules from './utils/rules';
 
@@ -53,11 +54,6 @@ export default {
   rules,
 }
 `;
-  const { code } = await format('index.ts', rawContent, {
-    printWidth: 100,
-    singleQuote: true,
-    trailingComma: 'es5',
-    embeddedLanguageFormatting: 'off',
-  });
+  const { code } = await format('index.ts', rawContent, oxfmtOptions);
   await fs.writeFile(path.resolve(__dirname, '../src/index.ts'), code);
 }

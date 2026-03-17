@@ -11,6 +11,7 @@ import * as esbuild from 'esbuild';
 import { format } from 'oxfmt';
 import { dedent } from 'ts-dedent';
 
+import { oxoxfmtOptions } from '../../../scripts/utils/oxfmt-options';
 import { getWorkspace } from '../../../scripts/utils/tools';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../src/shared/constants/environments-support';
 
@@ -46,13 +47,6 @@ async function temporaryFile({ name, extension }: { name?: string; extension?: s
 // read code/frameworks subfolders and generate a list of available frameworks
 // save this list into ./code/core/src/types/frameworks.ts and export it as a union type.
 // The name of the type is `SupportedFrameworks`. Add additionally 'qwik' and `solid` to that list.
-const fmtOptions = {
-  printWidth: 100,
-  singleQuote: true,
-  trailingComma: 'es5' as const,
-  embeddedLanguageFormatting: 'off' as const,
-};
-
 export const generateSourceFiles = async () => {
   await Promise.all([generateFrameworksFile(), generateVersionsFile(), generateExportsFile()]);
 };
@@ -79,7 +73,7 @@ async function generateVersionsFile(): Promise<void> {
       // auto generated file, do not edit
       export default ${versions};
     `,
-    fmtOptions
+    oxfmtOptions
   );
   await writeFile(destination, code);
 }
@@ -120,7 +114,7 @@ async function generateFrameworksFile(): Promise<void> {
         ${communityFrameworks}
       }
     `,
-    fmtOptions
+    oxfmtOptions
   );
   await writeFile(destination, code);
 }
@@ -180,7 +174,7 @@ async function generateExportsFile(): Promise<void> {
 
       export default ${JSON.stringify(data)} as const;
     `,
-    fmtOptions
+    oxfmtOptions
   );
   await writeFile(destination, code);
 }

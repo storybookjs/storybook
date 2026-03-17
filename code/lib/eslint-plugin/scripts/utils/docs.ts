@@ -3,6 +3,7 @@ import { resolve } from 'path';
 
 import { format } from 'oxfmt';
 
+import { oxfmtOptions } from '../../../../../scripts/utils/oxfmt-options';
 import type { TRuleListWithoutName, TRulesList } from '../update-rules-list';
 import { categoryIds } from './categories';
 const readmePath = resolve(
@@ -93,7 +94,7 @@ export const writeRulesListInReadme = async (rulesList: TRulesList[]) => {
   const { code: newReadme } = await format(
     'eslint-plugin.mdx',
     overWriteRulesList(rulesListWithoutName, readme),
-    { printWidth: 100, singleQuote: true, trailingComma: 'es5' }
+    oxfmtOptions
   );
   await writeFile(readmePath, newReadme);
 };
@@ -108,7 +109,7 @@ export const updateRulesDocs = async (rulesList: TRulesList[]) => {
       const { code: updatedDocFile } = await format(
         `${ruleName}.md`,
         overWriteRuleDocs(rule, ruleDocFile),
-        { printWidth: 100, singleQuote: true, trailingComma: 'es5' }
+        oxfmtOptions
       );
 
       await writeFile(ruleDocFilePath, updatedDocFile);

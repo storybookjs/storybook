@@ -6,6 +6,7 @@ import path from 'node:path';
 
 import { format } from 'oxfmt';
 
+import { oxfmtOptions } from '../../../../scripts/utils/oxfmt-options';
 import type { TCategory } from './utils/categories';
 import { categories } from './utils/categories';
 import {
@@ -65,12 +66,11 @@ export async function update() {
   await Promise.all(
     categories.map(async (category) => {
       const filePath = path.join(CONFIG_DIR, `${category.categoryId}.ts`);
-      const { code } = await format(`${category.categoryId}.ts`, formatCategory(category), {
-        printWidth: 100,
-        singleQuote: true,
-        trailingComma: 'es5',
-        embeddedLanguageFormatting: 'off',
-      });
+      const { code } = await format(
+        `${category.categoryId}.ts`,
+        formatCategory(category),
+        oxfmtOptions
+      );
 
       await fs.writeFile(filePath, code);
     })

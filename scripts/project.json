@@ -6,7 +6,7 @@
     "format": {
       "command": "yarn --cwd .. format:check",
       "cache": true,
-      "inputs": ["{workspaceRoot}/**/*"]
+      "inputs": ["{workspaceRoot}/**/*.{js,jsx,ts,tsx,css,html,json}"]
     },
     "check": {
       "dependsOn": [],

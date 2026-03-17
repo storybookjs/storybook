@@ -2,15 +2,20 @@ import { beforeEach, expect, test, vi } from 'vitest';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
 
-import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { fsMocks } from './fixtures';
 import { getImports as buildImports, getComponentData } from './getComponentImports';
+import { setupMemfsMocks } from './memfs-test-setup';
+
+vi.mock('node:fs');
+vi.mock('node:fs/promises');
+vi.mock(import('./utils'), { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('empathic/find', { spy: true });
+vi.mock('tsconfig-paths', { spy: true });
 
 beforeEach(() => {
-  vi.spyOn(process, 'cwd').mockReturnValue('/app');
-  vol.fromJSON(fsMocks, '/app');
+  setupMemfsMocks();
 });
 
 const getImports = async (code: string, packageName?: string, storyFilePath?: string) => {

@@ -5,9 +5,19 @@ import { Tag } from 'storybook/internal/core-server';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { ComponentMetaManager } from './checker';
-import { fsMocks, indexJson } from './fixtures';
+import { ComponentMetaManager } from './componentMeta/ComponentMetaManager';
+import { indexJson } from './fixtures';
 import { manifests } from './generator';
+import { setupMemfsMocks } from './memfs-test-setup';
+
+// Opt into memfs for this file (loads from __mocks__/fs.cjs)
+vi.mock('node:fs');
+vi.mock('node:fs/promises');
+
+vi.mock(import('./utils'), { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('empathic/find', { spy: true });
+vi.mock('tsconfig-paths', { spy: true });
 
 /** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
 type ManifestOptions = Parameters<typeof manifests>[1];
@@ -26,8 +36,7 @@ const runManifestsWithOptions = (
 ) => manifests(undefined, createManifestOptions(manifestEntries, options));
 
 beforeEach(() => {
-  vi.spyOn(process, 'cwd').mockReturnValue('/app');
-  vol.fromJSON(fsMocks, '/app');
+  setupMemfsMocks();
 });
 
 test('manifests generates correct id, name, description and examples ', async () => {

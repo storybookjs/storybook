@@ -3,7 +3,7 @@ import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { API, FileInfo } from 'jscodeshift';
-import prettier from 'prettier';
+import { format } from 'oxfmt';
 
 const deprecatedTypes = [
   'ComponentStory',
@@ -35,12 +35,10 @@ export default async function transform(info: FileInfo, api: API, options: { par
   let output = printCsf(csf).code;
 
   try {
-    output = await prettier.format(output, {
-      ...(await prettier.resolveConfig(info.path)),
-      filepath: info.path,
-    });
+    const result = await format(info.path, output);
+    output = result.code;
   } catch (e) {
-    logger.log(`Failed applying prettier to ${info.path}.`);
+    logger.log(`Failed applying oxfmt to ${info.path}.`);
   }
 
   return output;

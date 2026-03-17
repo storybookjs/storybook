@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findConfigFile, getProjectRoot } from 'storybook/internal/common';
+import { findConfigFile, formatFileContent, getProjectRoot } from 'storybook/internal/common';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
 import type { Options } from 'storybook/internal/types';
 
@@ -27,6 +27,7 @@ describe('get-new-story-file', () => {
       undefined as unknown as ReturnType<typeof findConfigFile>
     );
     vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(formatFileContent).mockImplementation(async (_path, content) => content);
   });
 
   it('should create a new story file (TypeScript)', async () => {

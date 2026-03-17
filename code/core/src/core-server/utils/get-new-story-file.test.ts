@@ -166,7 +166,7 @@ describe('get-new-story-file', () => {
       } as unknown as Options
     );
 
-    expect(storyFileContent).toContain("import { fn } from 'storybook/test';");
+    expect(storyFileContent).toContain('import { fn } from "storybook/test";');
     expect(storyFileContent).toContain('fn()');
     expect(storyFileContent).not.toContain(STORYBOOK_FN_PLACEHOLDER);
   });

@@ -50,6 +50,24 @@ describe('component detection', () => {
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Logo' });
     });
+
+    it('detects function component with overloads', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          interface Props { label: string; size?: string }
+          export function Button(props: Props): React.ReactElement;
+          export function Button({ label, size = 'md' }: Props) {
+            return <button />;
+          }
+        `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        displayName: 'Button',
+        props: { label: { required: true }, size: { required: false } },
+      });
+    });
   });
 
   describe('class components', () => {
@@ -139,6 +157,18 @@ describe('component detection', () => {
       );
       expect(entry.component?.reactComponentMeta).toBeDefined();
     });
+
+    it('detects satisfies expression', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          interface Props { label: string }
+          export const Button = ((props: Props) => <button />) satisfies React.FC<Props>;
+        `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
+    });
   });
 
   describe('default exports', () => {
@@ -221,28 +251,6 @@ describe('component detection', () => {
       );
       expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
-  });
-
-  describe('ambiguous exports', () => {
-    it('accepts uppercase function returning ReactNode-assignable value', async () => {
-      const entry = await extract(
-        'FormatDate',
-        dedent`
-          export function FormatDate(timestamp: number) { return new Date(timestamp).toISOString(); }
-        `
-      );
-      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'FormatDate' });
-    });
-
-    it('accepts function with primitive "props" param returning ReactNode', async () => {
-      const entry = await extract(
-        'ParseProps',
-        dedent`
-          export function ParseProps(props: string) { return JSON.parse(props); }
-        `
-      );
-      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'ParseProps' });
-    });
 
     it('rejects enum-like const object', async () => {
       const entry = await extract(
@@ -258,7 +266,29 @@ describe('component detection', () => {
     });
   });
 
-  describe('multiple component exports', () => {
+  describe('ambiguous exports', () => {
+    it('accepts uppercase function returning ReactNode-assignable value', async () => {
+      const entry = await extract(
+        'FormatDate',
+        dedent`
+          export function FormatDate(timestamp: number) { return new Date(timestamp).toISOString(); }
+        `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'FormatDate' });
+    });
+
+    it('accepts function with primitive props param', async () => {
+      const entry = await extract(
+        'ParseProps',
+        dedent`
+          export function ParseProps(props: string) { return JSON.parse(props); }
+        `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'ParseProps' });
+    });
+  });
+
+  describe('multiple and mixed exports', () => {
     it('detects multiple component exports from a single file', async () => {
       const content = dedent`
         import React from 'react';
@@ -272,9 +302,7 @@ describe('component detection', () => {
       expect(button.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
       expect(icon.component?.reactComponentMeta).toMatchObject({ displayName: 'Icon' });
     });
-  });
 
-  describe('mixed exports', () => {
     it('only detects components among mixed exports', async () => {
       const content = dedent`
         import React from 'react';
@@ -304,38 +332,6 @@ describe('component detection', () => {
         `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
-    });
-  });
-
-  describe('additional patterns', () => {
-    it('detects component wrapped in satisfies expression', async () => {
-      const entry = await extract(
-        'Button',
-        dedent`
-          import React from 'react';
-          interface Props { label: string }
-          export const Button = ((props: Props) => <button />) satisfies React.FC<Props>;
-        `
-      );
-      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
-    });
-
-    it('detects function component with overloads', async () => {
-      const entry = await extract(
-        'Button',
-        dedent`
-          import React from 'react';
-          interface Props { label: string; size?: string }
-          export function Button(props: Props): React.ReactElement;
-          export function Button({ label, size = 'md' }: Props) {
-            return <button />;
-          }
-        `
-      );
-      expect(entry.component?.reactComponentMeta).toMatchObject({
-        displayName: 'Button',
-        props: { label: { required: true }, size: { required: false } },
-      });
     });
   });
 });

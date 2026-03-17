@@ -8,37 +8,43 @@ import ts from 'typescript';
 import { findMatchingComponent } from '../generator';
 import { type StoryRef, getComponents } from '../getComponentImports';
 import { ComponentMetaProject } from './ComponentMetaProject';
-import { cleanup, createTempProject } from './test-helpers';
+import { createTempProject, writeFiles } from './test-helpers';
 
-/** Create a temp TypeScript project from files, run a callback, then dispose and clean up. */
-export async function withProject<T>(
-  files: Record<string, string>,
-  fn: (project: ComponentMetaProject, filePaths: Record<string, string>) => T | Promise<T>
-): Promise<T> {
-  const { projectDir, configPath, filePaths } = createTempProject(files);
-  const parsed = ts.parseJsonSourceFileConfigFileContent(
+/**
+ * Shared LanguageService across all tests — avoids re-parsing @types/react per test. First
+ * getProgram() is ~300ms, subsequent incremental rebuilds are ~5ms.
+ */
+const { projectDir, configPath } = createTempProject({});
+const fsFileSnapshots = new Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>();
+const sharedProject = new ComponentMetaProject(
+  ts,
+  ts.parseJsonSourceFileConfigFileContent(
     ts.readJsonConfigFile(configPath, ts.sys.readFile),
     ts.sys,
     projectDir,
     {},
     configPath
-  );
-  const project = new ComponentMetaProject(ts, parsed, configPath);
-  try {
-    return await fn(project, filePaths);
-  } finally {
-    project.dispose();
-    cleanup(projectDir);
+  ),
+  configPath,
+  fsFileSnapshots
+);
+
+/** Write files into the shared project, invalidate caches, and run a callback. */
+export async function withProject<T>(
+  files: Record<string, string>,
+  fn: (project: ComponentMetaProject, filePaths: Record<string, string>) => T | Promise<T>
+): Promise<T> {
+  const filePaths = writeFiles(projectDir, files);
+  for (const fp of Object.values(filePaths)) {
+    fsFileSnapshots.delete(fp);
   }
+  (sharedProject as any).projectVersion++;
+  return fn(sharedProject, filePaths);
 }
 
 /**
- * Extract props using the full production flow: loadCsf → getComponents → extractPropsFromStories.
- * Returns the full StoryRef so callers can also inspect importOverride, componentJsDocTags, etc.
- *
- * The title is auto-derived from `storyFileName` (e.g. `'jsx/Button.stories.tsx'` → `'Button'`),
- * matching how production derives titles from file paths. This ensures `findMatchingComponent`
- * title-based matching works for stories without `meta.component`.
+ * Full production flow: loadCsf → getComponents → extractPropsFromStories. Title is auto-derived
+ * from the story file name for findMatchingComponent.
  */
 export async function extractFromStory(
   files: Record<string, string>,
@@ -68,12 +74,8 @@ export async function extractFromStory(
 }
 
 /**
- * Convenience wrapper: auto-generates a story file and extracts a single component's props. Uses
- * the full production flow (loadCsf → getComponents → extractPropsFromStories).
- *
- * The generated story has `meta.component` but no JSX, so extraction goes through the fallback path
- * (`resolveFromMetaComponent`). Use `extractFromStory` with explicit JSX in the story to exercise
- * the primary JSX path (`resolvePropsFromStoryFile`).
+ * Convenience wrapper: generates a story with meta.component and extracts props. Goes through the
+ * fallback path (resolveFromMetaComponent, no JSX).
  */
 export async function extract(exportName: string, content: string): Promise<StoryRef> {
   const componentName = exportName === 'default' ? 'Component' : exportName;

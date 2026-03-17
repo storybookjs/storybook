@@ -59,6 +59,7 @@ interface TagsFilterPanelProps {
   excludedFilters: string[];
 }
 
+/* Those tags are hidden in the UI. There's a more general built-in list defined in `shared/constants/tags`. */
 const BUILT_IN_TAGS = new Set([
   'dev',
   'test',
@@ -67,6 +68,7 @@ const BUILT_IN_TAGS = new Set([
   'unattached-mdx',
   'play-fn',
   'test-fn',
+  'manifest',
 ]);
 
 // This equality check works on the basis that there are no duplicates in the arrays.

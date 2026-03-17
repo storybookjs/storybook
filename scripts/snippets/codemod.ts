@@ -14,7 +14,6 @@ import { promises as fs } from 'fs';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { configToCsfFactory } from '../../code/lib/cli-storybook/src/codemod/helpers/config-to-csf-factory';
@@ -69,7 +68,6 @@ export async function runSnippetCodemod({
 
   try {
     // Dynamically import these packages because they are pure ESM modules
-    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
     const files = await globby(slash(glob), {

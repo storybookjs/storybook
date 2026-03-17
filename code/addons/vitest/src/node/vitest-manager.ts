@@ -16,7 +16,6 @@ import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';
 import { escapeRegExp } from 'es-toolkit/string';
 import path, { dirname, join, normalize, resolve } from 'pathe';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { COVERAGE_DIRECTORY } from '../constants';

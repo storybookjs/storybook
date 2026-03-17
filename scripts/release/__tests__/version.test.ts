@@ -3,7 +3,6 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
 import type * as MockedFSPToExtra from '../../../code/__mocks__/fs/promises';

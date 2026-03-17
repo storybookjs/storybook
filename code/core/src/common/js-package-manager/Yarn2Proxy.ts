@@ -8,7 +8,6 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
 import { logger } from '../../node-logger';

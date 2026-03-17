@@ -141,7 +141,6 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     );
     errors.push(...packageJsonErrors);
 
-    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
     const configFiles = await globby([`${configDir}/**/*`]);
 

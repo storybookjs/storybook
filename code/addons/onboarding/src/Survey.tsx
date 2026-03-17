@@ -9,7 +9,6 @@ import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
 const theme = convert();
 
 export default function Survey({ api }: { api: API }) {
-  // eslint-disable-next-line compat/compat
   const userAgent = globalThis?.navigator?.userAgent;
 
   const [isOpen, setIsOpen] = useState(true);

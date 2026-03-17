@@ -6,7 +6,6 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
 

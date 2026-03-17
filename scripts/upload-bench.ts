@@ -1,5 +1,4 @@
 import { BigQuery } from '@google-cloud/bigquery';
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import { join } from 'path';
 

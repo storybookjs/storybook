@@ -1,4 +1,3 @@
-// eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
 import { CLI_COLORS, log } from './logger';

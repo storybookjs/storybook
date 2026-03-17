@@ -1,6 +1,5 @@
 import { createInterface } from 'node:readline';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
 
 /**

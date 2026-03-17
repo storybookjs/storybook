@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { relative } from 'node:path';
 
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import { resolve } from 'path';
 import picocolors from 'picocolors';

@@ -40,7 +40,6 @@ sb.mock('../core/template/stories/test/ModuleMocking.utils.ts');
 sb.mock('../core/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });
 sb.mock('../core/template/stories/test/ModuleAutoMocking.utils.ts');
 sb.mock('../core/template/stories/test/ClearModuleMocksMocking.api.ts', { spy: true });
-/* eslint-disable depend/ban-dependencies */
 sb.mock(import('lodash-es'));
 sb.mock(import('lodash-es/add'));
 sb.mock(import('lodash-es/sum'));

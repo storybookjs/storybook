@@ -4,9 +4,7 @@ import { join, relative } from 'node:path';
 
 import * as ghActions from '@actions/core';
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
 import type { Options as ExecaOptions } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';

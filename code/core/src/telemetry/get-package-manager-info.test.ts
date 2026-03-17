@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand as rawExecaCommand } from 'execa';
 import { detect as rawDetect } from 'package-manager-detector';
 

@@ -177,7 +177,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
 
       logger.debug(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
 
-      // eslint-disable-next-line depend/ban-dependencies
       const { globby } = await import('globby');
       const configFiles = await globby([`${configDir}/**/*`]);
 

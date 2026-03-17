@@ -24,7 +24,6 @@ async function renameInFile(filePath: string, oldText: string, newText: string):
 
 const getDotStorybookReferences = async (searchDir: string) => {
   try {
-    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
     const { readFile } = await import('node:fs/promises');
 
@@ -72,7 +71,6 @@ export const rnstorybookConfig: Fix<Options> = {
     const projectDir = mainConfigPath ? join(mainConfigPath, '..', '..') : process.cwd();
     const storybookDir = join(projectDir, '.storybook');
     const rnStorybookDir = join(projectDir, '.rnstorybook');
-    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
     const requiresFiles = await globby(join(storybookDir, 'storybook.requires.*'));

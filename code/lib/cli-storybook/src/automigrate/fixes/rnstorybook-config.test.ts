@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { globby } from 'globby';
 
 import { makePackageManager } from '../helpers/testing-helpers';

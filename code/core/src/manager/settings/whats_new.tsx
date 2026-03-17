@@ -196,7 +196,6 @@ const WhatsNewScreen: FC = () => {
       url={whatsNewData.url}
       isNotificationsEnabled={isNotificationsEnabled}
       onCopyLink={() => {
-        // eslint-disable-next-line compat/compat
         navigator.clipboard?.writeText(whatsNewData.blogUrl ?? whatsNewData.url);
       }}
       onToggleNotifications={() => {

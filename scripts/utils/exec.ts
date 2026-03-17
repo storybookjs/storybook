@@ -1,4 +1,3 @@
-// eslint-disable-next-line depend/ban-dependencies
 import { type Options, type ResultPromise, execa } from 'execa';
 import picocolors from 'picocolors';
 

@@ -46,7 +46,6 @@ const mockRunOptions = {
 };
 
 const setupGlobby = async (files: string[]) => {
-  // eslint-disable-next-line depend/ban-dependencies
   const { globby } = await import('globby');
   vi.mocked(globby).mockResolvedValueOnce(files);
 };

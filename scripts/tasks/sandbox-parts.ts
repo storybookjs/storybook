@@ -8,7 +8,6 @@ import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { babelParse, types as t } from '../../code/core/src/babel';

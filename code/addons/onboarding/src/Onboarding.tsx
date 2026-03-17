@@ -65,7 +65,6 @@ export default function Onboarding({
     sourceFileName: string;
   } | null>();
 
-  // eslint-disable-next-line compat/compat
   const userAgent = globalThis?.navigator?.userAgent;
 
   const selectStory = useCallback(

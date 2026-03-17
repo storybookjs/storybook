@@ -8,7 +8,6 @@ import { writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
 import { EXISTING_RESOLUTIONS } from './existing-resolutions.js';

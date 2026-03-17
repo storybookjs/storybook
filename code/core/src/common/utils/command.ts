@@ -1,6 +1,5 @@
 import { logger, prompt } from 'storybook/internal/node-logger';
 
-// eslint-disable-next-line depend/ban-dependencies
 import {
   type Options,
   type ResultPromise,

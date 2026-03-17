@@ -3,7 +3,6 @@ import { readFile } from 'node:fs/promises';
 import { babelParse, traverse } from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 
 import { getComponentComplexity } from './component-analyzer';

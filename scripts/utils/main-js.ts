@@ -1,6 +1,5 @@
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { getInterpretedFile } from '../../code/core/src/common/utils/interpret-files';

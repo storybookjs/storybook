@@ -1,6 +1,5 @@
 import { join } from 'node:path';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
 import type { Task } from '../task';

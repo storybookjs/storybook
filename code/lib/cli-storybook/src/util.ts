@@ -10,7 +10,6 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
-// eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';

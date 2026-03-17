@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import { join } from 'path';
 

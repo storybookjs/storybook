@@ -2,7 +2,6 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import pRetry from 'p-retry';
 import picocolors from 'picocolors';

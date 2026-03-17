@@ -1,10 +1,7 @@
 import { global as globalThis } from '@storybook/global';
 
-// eslint-disable-next-line depend/ban-dependencies
 import lodash from 'lodash-es';
-// eslint-disable-next-line depend/ban-dependencies
 import add from 'lodash-es/add';
-// eslint-disable-next-line depend/ban-dependencies
 import sum from 'lodash-es/sum';
 import { expect, mocked } from 'storybook/test';
 

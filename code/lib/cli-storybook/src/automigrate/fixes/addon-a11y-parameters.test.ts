@@ -1,4 +1,3 @@
-/* eslint-disable depend/ban-dependencies */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { addonA11yParameters } from './addon-a11y-parameters';

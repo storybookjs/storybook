@@ -1,10 +1,8 @@
 import { cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import { existsSync } from 'fs';
-// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import { dirname, join, relative } from 'path';
 

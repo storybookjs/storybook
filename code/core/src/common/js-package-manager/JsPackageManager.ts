@@ -5,9 +5,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
 import { type ResultPromise } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
 import { coerce, gt, satisfies } from 'semver';

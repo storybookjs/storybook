@@ -117,7 +117,6 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
     // Scan and transform import statements in source files
     logger.debug('Scanning and updating import statements...');
 
-    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
     const configFiles = await globby([`${configDir}/**/*`]);
     const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];

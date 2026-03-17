@@ -1,4 +1,3 @@
-// eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 

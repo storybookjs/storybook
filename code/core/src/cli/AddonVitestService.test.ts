@@ -8,7 +8,6 @@ import { getProjectRoot } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
 import { SupportedBuilder, SupportedFramework } from '../types';

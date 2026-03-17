@@ -3,9 +3,7 @@ import { resolve } from 'node:path';
 import { once } from 'storybook/internal/node-logger';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 

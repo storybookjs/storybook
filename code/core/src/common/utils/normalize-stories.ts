@@ -5,7 +5,6 @@ import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
 import type { NormalizedStoriesSpecifier, StoriesEntry } from 'storybook/internal/types';
 
 import * as pico from 'picomatch';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { globToRegexp } from './glob-to-regexp';

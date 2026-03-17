@@ -129,7 +129,6 @@ export class Preview<TRenderer extends Renderer> {
       const projectAnnotations = await this.getProjectAnnotationsOrRenderError();
       await this.runBeforeAllHook(projectAnnotations);
       await this.initializeWithProjectAnnotations(projectAnnotations);
-      // eslint-disable-next-line compat/compat
       const userAgent = globalThis?.navigator?.userAgent;
       await this.channel.emit(PREVIEW_INITIALIZED, { userAgent });
     } catch (err) {

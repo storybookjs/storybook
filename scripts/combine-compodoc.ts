@@ -3,9 +3,7 @@
 // then combine the results into one large documentation.json
 import { lstat, readFile, realpath, writeFile } from 'node:fs/promises';
 
-// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import { join, resolve } from 'path';
 

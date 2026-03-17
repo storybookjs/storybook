@@ -157,11 +157,11 @@ test.describe('tags', () => {
         await expect(stories).toHaveCount(1);
 
         // Clear selection
-        await expect(tagFilterPopover.locator('#deselect-all')).toBeVisible();
-        await tagFilterPopover.locator('#deselect-all').click();
+        await expect(page.locator('#deselect-all')).toBeVisible();
+        await page.locator('#deselect-all').click();
 
         // Checkboxes are not selected anymore
-        await expect(tagFilterPopover.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+        await expect(page.locator('input[type="checkbox"]:checked')).toHaveCount(0);
       });
     });
   });

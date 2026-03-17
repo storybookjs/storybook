@@ -630,9 +630,6 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
-    modifications: {
-      extraDependencies: ['@sveltejs/vite-plugin-svelte@7.0.0'],
-    },
     skipTasks: ['e2e-tests', 'bench'],
   },
   'svelte-vite/default-ts': {
@@ -643,11 +640,19 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
-    modifications: {
-      extraDependencies: ['@sveltejs/vite-plugin-svelte@7.0.0'],
-    },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
+  },
+  'svelte-kit/skeleton-ts': {
+    name: 'SvelteKit Latest (Vite | TypeScript)',
+    script:
+      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+    expected: {
+      framework: '@storybook/sveltekit',
+      renderer: '@storybook/svelte',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests', 'bench'],
   },
   'angular-cli/prerelease': {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
@@ -684,20 +689,6 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['bench', 'vitest-integration'],
-  },
-  'svelte-kit/skeleton-ts': {
-    name: 'SvelteKit Latest (Vite | TypeScript)',
-    script:
-      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
-    expected: {
-      framework: '@storybook/sveltekit',
-      renderer: '@storybook/svelte',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      extraDependencies: ['@sveltejs/vite-plugin-svelte@7.0.0'],
-    },
-    skipTasks: ['e2e-tests', 'bench'],
   },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',

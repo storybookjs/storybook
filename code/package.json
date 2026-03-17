@@ -13,16 +13,9 @@
     "url": "https://opencollective.com/storybook"
   },
   "scripts": {
-    "await-serve-storybooks": "wait-on http://localhost:8001",
-    "build": "NODE_ENV=production yarn --cwd ../scripts build-package",
-    "changelog": "pr-log --sloppy --cherry-pick",
-    "changelog:next": "pr-log --sloppy --since-prerelease",
     "check": "NODE_ENV=production yarn --cwd ../scripts check-package",
     "ci-tests": "yarn task --task check --no-link --start-from=install && yarn lint && cd .. && yarn test",
-    "danger": "danger",
     "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
-    "github-release": "github-release-from-changelog",
-    "i": "yarn --cwd .. i",
     "knip": "knip --config ../scripts/knip.config.ts",
     "lint": "yarn lint:js && yarn lint:other",
     "lint:ejs": "ejslint **/*.ejs",

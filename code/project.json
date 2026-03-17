@@ -15,7 +15,7 @@
       "executor": "nx:run-commands",
       "options": { "command": "NODE_OPTIONS=--max_old_space_size=4096 vitest run" },
       "cache": true,
-      "inputs": ["default", "{workspaceRoot}/scripts/**/*"],
+      "inputs": ["default", "{workspaceRoot}/vitest.config.ts"],
       "configurations": { "production": {} }
     },
     "knip": {

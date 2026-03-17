@@ -27,7 +27,11 @@ describe('get-new-story-file', () => {
       undefined as unknown as ReturnType<typeof findConfigFile>
     );
     vi.mocked(existsSync).mockReturnValue(false);
-    vi.mocked(formatFileContent).mockImplementation(async (_path, content) => content);
+    vi.mocked(formatFileContent).mockImplementation(async (filePath, content) => {
+      const { format } = await import('oxfmt');
+      const result = await format(filePath, content, { singleQuote: true });
+      return result.code;
+    });
   });
 
   it('should create a new story file (TypeScript)', async () => {
@@ -167,8 +171,29 @@ describe('get-new-story-file', () => {
       } as unknown as Options
     );
 
-    expect(storyFileContent).toContain('import { fn } from "storybook/test";');
+    expect(storyFileContent).toMatchInlineSnapshot(`
+      "import { fn } from 'storybook/test';
+      import type { Meta, StoryObj } from '@storybook/nextjs';
+
+      import { Page } from './Page';
+
+      const meta = {
+        component: Page,
+      } satisfies Meta<typeof Page>;
+
+      export default meta;
+
+      type Story = StoryObj<typeof meta>;
+
+      export const Default: Story = {
+        args: {
+          onClick: fn(),
+        },
+      };
+      "
+    `);
     expect(storyFileContent).toContain('fn()');
+    expect(storyFileContent).not.toContain(STORYBOOK_FN_PLACEHOLDER);
     expect(storyFileContent).not.toContain(STORYBOOK_FN_PLACEHOLDER);
   });
 
@@ -259,8 +284,8 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import preview from '#.storybook/preview';
-      import { fn } from 'storybook/test';
+      "import { fn } from 'storybook/test';
+      import preview from '#.storybook/preview';
 
       import { Page } from './Page';
 

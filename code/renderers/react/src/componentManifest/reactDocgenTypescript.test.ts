@@ -1,8 +1,14 @@
 import { join } from 'node:path';
 
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { parseWithReactDocgenTypescript } from './reactDocgenTypescript';
+
+// parseWithReactDocgenTypescript uses process.cwd() to find tsconfig.json
+// Ensure it resolves from the react renderer directory regardless of vitest's cwd
+beforeEach(() => {
+  vi.spyOn(process, 'cwd').mockReturnValue(join(__dirname, '..', '..'));
+});
 
 const fixture = (name: string) => join(__dirname, '__testfixtures__', name);
 

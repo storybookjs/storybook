@@ -26,5 +26,4 @@ export const EXISTING_RESOLUTIONS = new Set([
   'serialize-javascript',
   'type-fest',
   'typescript',
-  'vite',
 ]);

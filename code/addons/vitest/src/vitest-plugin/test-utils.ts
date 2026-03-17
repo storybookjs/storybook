@@ -8,13 +8,9 @@ import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/p
 
 import { setViewport } from './viewports';
 
-declare module 'vitest/browser' {
-  interface BrowserCommands {
-    getInitialGlobals: () => Promise<Record<string, any>>;
-  }
-}
-
-const { getInitialGlobals } = server.commands;
+const { getInitialGlobals } = server.commands as typeof server.commands & {
+  getInitialGlobals: () => Promise<Record<string, any>>;
+};
 
 /**
  * Converts a file URL to a file path, handling URL encoding

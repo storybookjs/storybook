@@ -1,5 +1,3 @@
-import { resolve } from 'node:path';
-
 import { defaultExclude, defineProject } from 'vitest/config';
 
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
@@ -23,7 +21,7 @@ if (process.env.INSPECT === 'true') {
 export default defineProject({
   plugins: [
     storybookTest({
-      configDir: resolve(__dirname, '.storybook'),
+      configDir: import.meta.dirname + '/.storybook',
       tags: {
         include: ['vitest'],
       },

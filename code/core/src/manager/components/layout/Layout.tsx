@@ -201,7 +201,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           slotPages={slots.slotPages}
         />
 
-        {isDesktop && (
+        {isDesktop && showPanel && (
           <PanelContainer
             bottomPanelHeight={bottomPanelHeight}
             rightPanelWidth={rightPanelWidth}
@@ -209,7 +209,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             panelResizerRef={panelResizerRef}
             position={panelPosition}
           >
-            {showPanel && slots.slotPanel}
+            {slots.slotPanel}
           </PanelContainer>
         )}
         {isMobile && <Notifications />}

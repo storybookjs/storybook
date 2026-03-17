@@ -3,6 +3,7 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { dedent } from 'ts-dedent';
 import ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports';
@@ -91,12 +92,12 @@ describe('multi-project management', () => {
 
     writeFiles(tempDir, {
       'app/tsconfig.json': tsconfigJSON(),
-      'app/Button.tsx': `
+      'app/Button.tsx': dedent`
         import React from 'react';
         export const Button = (_props: { label: string }) => <button />;
       `,
       'lib/tsconfig.json': tsconfigJSON(),
-      'lib/Card.tsx': `
+      'lib/Card.tsx': dedent`
         import React from 'react';
         export const Card = (_props: { title: string }) => <div />;
       `,
@@ -115,7 +116,7 @@ describe('multi-project management', () => {
     tempDir = createTempDir();
 
     writeFiles(tempDir, {
-      'Button.tsx': `
+      'Button.tsx': dedent`
         import React from 'react';
         export const Button = (_props: { label: string }) => <button />;
       `,
@@ -138,11 +139,11 @@ describe('multi-project management', () => {
 
     const files = writeFiles(tempDir, {
       'tsconfig.json': tsconfigJSON(),
-      'Tag.tsx': `
+      'Tag.tsx': dedent`
         import React from 'react';
         export const Tag = (_props: { text: string }) => <span />;
       `,
-      'Tag.stories.tsx': `
+      'Tag.stories.tsx': dedent`
         import { Tag } from './Tag';
         export default { component: Tag };
       `,
@@ -173,10 +174,10 @@ describe('multi-project management', () => {
     // Modify the file
     fs.writeFileSync(
       tagPath,
+      dedent`
+        import React from 'react';
+        export const Tag = (_props: { text: string; color?: string }) => <span />;
       `
-      import React from 'react';
-      export const Tag = (_props: { text: string; color?: string }) => <span />;
-    `
     );
 
     // Broadcast change via manager (not project directly)
@@ -205,7 +206,7 @@ describe('multi-project management', () => {
 
     const files = writeFiles(tempDir, {
       'tsconfig.json': tsconfigJSON(),
-      'Button.tsx': `
+      'Button.tsx': dedent`
         import React from 'react';
         export const Button = (_props: { label: string }) => <button />;
       `,
@@ -231,7 +232,7 @@ describe('multi-project management', () => {
     tempDir = createTempDir();
 
     writeFiles(tempDir, {
-      'Button.tsx': `
+      'Button.tsx': dedent`
         import React from 'react';
         export const Button = (_props: { label: string }) => <button />;
       `,
@@ -259,20 +260,20 @@ describe('multi-project management', () => {
 
     const files = writeFiles(tempDir, {
       'app/tsconfig.json': tsconfigJSON(),
-      'app/Button.tsx': `
+      'app/Button.tsx': dedent`
         import React from 'react';
         export const Button = (_props: { label: string }) => <button />;
       `,
-      'app/Button.stories.tsx': `
+      'app/Button.stories.tsx': dedent`
         import { Button } from './Button';
         export default { component: Button };
       `,
       'lib/tsconfig.json': tsconfigJSON(),
-      'lib/Card.tsx': `
+      'lib/Card.tsx': dedent`
         import React from 'react';
         export const Card = (_props: { title: string }) => <div />;
       `,
-      'lib/Card.stories.tsx': `
+      'lib/Card.stories.tsx': dedent`
         import { Card } from './Card';
         export default { component: Card };
       `,
@@ -326,7 +327,7 @@ describe('multi-project management', () => {
           composite: true,
         },
       }),
-      'packages/ui/Button.tsx': `
+      'packages/ui/Button.tsx': dedent`
         import React from 'react';
         export const Button = (_props: { label: string }) => <button />;
       `,
@@ -344,11 +345,11 @@ describe('multi-project management', () => {
 
     writeFiles(tempDir, {
       'tsconfig.json': tsconfigJSON(),
-      'Button.tsx': `
+      'Button.tsx': dedent`
         import React from 'react';
         export const Button = (_props: { label: string; disabled?: boolean }) => <button />;
       `,
-      'Button.stories.tsx': `
+      'Button.stories.tsx': dedent`
         import { Button } from './Button';
         const _story = () => <Button label="click me" />;
       `,

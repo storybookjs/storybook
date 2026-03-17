@@ -1,20 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
 import { extract } from './componentMetaExtractor.test-helpers';
 
 describe('prop extraction', () => {
   it('extracts basic prop types', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface ButtonProps {
+          label: string;
+          count: number;
+          disabled?: boolean;
+        }
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface ButtonProps {
-        label: string;
-        count: number;
-        disabled?: boolean;
-      }
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -29,13 +31,13 @@ describe('prop extraction', () => {
   it('extracts string literal union as enum', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props {
+          size: 'small' | 'medium' | 'large';
+        }
+        export const Button = (props: Props) => <button />;
       `
-      import React from 'react';
-      interface Props {
-        size: 'small' | 'medium' | 'large';
-      }
-      export const Button = (props: Props) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -53,13 +55,13 @@ describe('prop extraction', () => {
   it('extracts optional string literal union as enum', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props {
+          size?: 'small' | 'medium' | 'large';
+        }
+        export const Button = (props: Props) => <button />;
       `
-      import React from 'react';
-      interface Props {
-        size?: 'small' | 'medium' | 'large';
-      }
-      export const Button = (props: Props) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -78,16 +80,16 @@ describe('prop extraction', () => {
   it('extracts JSDoc descriptions', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props {
+          /** The button label text */
+          label: string;
+          /** Whether the button is in primary style */
+          primary?: boolean;
+        }
+        export const Button = (props: Props) => <button />;
       `
-      import React from 'react';
-      interface Props {
-        /** The button label text */
-        label: string;
-        /** Whether the button is in primary style */
-        primary?: boolean;
-      }
-      export const Button = (props: Props) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -101,12 +103,12 @@ describe('prop extraction', () => {
   it('extracts component-level JSDoc description', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props { label: string }
+        /** Primary UI component for user interaction */
+        export const Button = (props: Props) => <button />;
       `
-      import React from 'react';
-      interface Props { label: string }
-      /** Primary UI component for user interaction */
-      export const Button = (props: Props) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -117,17 +119,17 @@ describe('prop extraction', () => {
   it('extracts Pick<> props correctly', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface FullProps {
+          id: string;
+          label: string;
+          disabled: boolean;
+          hidden: boolean;
+        }
+        type ButtonProps = Pick<FullProps, 'id' | 'label'>;
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface FullProps {
-        id: string;
-        label: string;
-        disabled: boolean;
-        hidden: boolean;
-      }
-      type ButtonProps = Pick<FullProps, 'id' | 'label'>;
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
 
     expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['id', 'label']);
@@ -136,16 +138,16 @@ describe('prop extraction', () => {
   it('extracts Omit<> props correctly', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface FullProps {
+          id: string;
+          label: string;
+          internal: boolean;
+        }
+        type ButtonProps = Omit<FullProps, 'internal'>;
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface FullProps {
-        id: string;
-        label: string;
-        internal: boolean;
-      }
-      type ButtonProps = Omit<FullProps, 'internal'>;
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
 
     expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['id', 'label']);
@@ -154,14 +156,14 @@ describe('prop extraction', () => {
   it('extracts Partial<> props as all optional', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface FullProps {
+          label: string;
+          count: number;
+        }
+        export const Button = (props: Partial<FullProps>) => <button />;
       `
-      import React from 'react';
-      interface FullProps {
-        label: string;
-        count: number;
-      }
-      export const Button = (props: Partial<FullProps>) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -175,14 +177,14 @@ describe('prop extraction', () => {
   it('extracts Required<> props as all required', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface OptionalProps {
+          label?: string;
+          count?: number;
+        }
+        export const Button = (props: Required<OptionalProps>) => <button />;
       `
-      import React from 'react';
-      interface OptionalProps {
-        label?: string;
-        count?: number;
-      }
-      export const Button = (props: Required<OptionalProps>) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -196,15 +198,15 @@ describe('prop extraction', () => {
   it('extracts extends interface props', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface BaseProps { id: string }
+        interface ButtonProps extends BaseProps {
+          label: string;
+          variant?: 'primary' | 'secondary';
+        }
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface BaseProps { id: string }
-      interface ButtonProps extends BaseProps {
-        label: string;
-        variant?: 'primary' | 'secondary';
-      }
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -219,14 +221,14 @@ describe('prop extraction', () => {
   it('extracts generic component props', async () => {
     const entry = await extract(
       'StringList',
+      dedent`
+        import React from 'react';
+        interface ListProps<T> {
+          items: T[];
+          renderItem: (item: T) => React.ReactNode;
+        }
+        export const StringList = (props: ListProps<string>) => <ul />;
       `
-      import React from 'react';
-      interface ListProps<T> {
-        items: T[];
-        renderItem: (item: T) => React.ReactNode;
-      }
-      export const StringList = (props: ListProps<string>) => <ul />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -240,12 +242,12 @@ describe('prop extraction', () => {
   it('flattens intersection types to all member props', async () => {
     const entry = await extract(
       'Comp',
+      dedent`
+        import React from 'react';
+        interface A { x: string }
+        interface B { y: number }
+        export const Comp = (props: A & B) => <div />;
       `
-      import React from 'react';
-      interface A { x: string }
-      interface B { y: number }
-      export const Comp = (props: A & B) => <div />;
-    `
     );
 
     expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['x', 'y']);
@@ -260,12 +262,12 @@ describe('prop extraction', () => {
   it('flattens complex Pick & Omit combinations', async () => {
     const entry = await extract(
       'Comp',
+      dedent`
+        import React from 'react';
+        interface Full { a: string; b: number; c: boolean; d: string }
+        type Props = Pick<Full, 'a' | 'b' | 'c'> & Omit<{ extra: string; d: number }, 'd'>;
+        export const Comp = (props: Props) => <div />;
       `
-      import React from 'react';
-      interface Full { a: string; b: number; c: boolean; d: string }
-      type Props = Pick<Full, 'a' | 'b' | 'c'> & Omit<{ extra: string; d: number }, 'd'>;
-      export const Comp = (props: Props) => <div />;
-    `
     );
 
     expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual([
@@ -280,14 +282,14 @@ describe('prop extraction', () => {
   it('resolves generic instantiations to concrete prop types', async () => {
     const entry = await extract(
       'NumberList',
+      dedent`
+        import React from 'react';
+        interface ListProps<T> {
+          items: T[];
+          selected?: T;
+        }
+        export const NumberList = (props: ListProps<number>) => <ul />;
       `
-      import React from 'react';
-      interface ListProps<T> {
-        items: T[];
-        selected?: T;
-      }
-      export const NumberList = (props: ListProps<number>) => <ul />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -301,11 +303,11 @@ describe('prop extraction', () => {
   it('extracts number literal union as enum', async () => {
     const entry = await extract(
       'Grid',
+      dedent`
+        import React from 'react';
+        interface Props { columns: 1 | 2 | 3 | 4 }
+        export const Grid = (props: Props) => <div />;
       `
-      import React from 'react';
-      interface Props { columns: 1 | 2 | 3 | 4 }
-      export const Grid = (props: Props) => <div />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -323,11 +325,11 @@ describe('prop extraction', () => {
   it('extracts mixed union (string | number) as type string, not enum', async () => {
     const entry = await extract(
       'Input',
+      dedent`
+        import React from 'react';
+        interface Props { value: string | number }
+        export const Input = (props: Props) => <input />;
       `
-      import React from 'react';
-      interface Props { value: string | number }
-      export const Input = (props: Props) => <input />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -340,23 +342,23 @@ describe('prop extraction', () => {
   it('preserves nested | undefined in optional props with generic types', async () => {
     const entry = await extract(
       'Widget',
+      dedent`
+        import React from 'react';
+        type A = { a: string };
+        type B = { b: number };
+        interface Props {
+          config?: Record<string, number | undefined>;
+          onChange?: (value: string | undefined) => void;
+          label: string;
+          /** function type in a multi-member union - needs parens */
+          handler?: ((x: number) => void) | string;
+          /** intersection in a multi-member union - needs parens */
+          combo?: (A & B) | string;
+          /** boolean union with another type */
+          boolOrStr?: boolean | string;
+        }
+        export const Widget = (props: Props) => <div />;
       `
-      import React from 'react';
-      type A = { a: string };
-      type B = { b: number };
-      interface Props {
-        config?: Record<string, number | undefined>;
-        onChange?: (value: string | undefined) => void;
-        label: string;
-        /** function type in a multi-member union - needs parens */
-        handler?: ((x: number) => void) | string;
-        /** intersection in a multi-member union - needs parens */
-        combo?: (A & B) | string;
-        /** boolean union with another type */
-        boolOrStr?: boolean | string;
-      }
-      export const Widget = (props: Props) => <div />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -374,15 +376,15 @@ describe('prop extraction', () => {
   it('extracts function prop types', async () => {
     const entry = await extract(
       'Form',
+      dedent`
+        import React from 'react';
+        interface Props {
+          onClick: () => void;
+          onChange: (value: string) => void;
+          onSubmit: (event: React.FormEvent) => Promise<void>;
+        }
+        export const Form = (props: Props) => <form />;
       `
-      import React from 'react';
-      interface Props {
-        onClick: () => void;
-        onChange: (value: string) => void;
-        onSubmit: (event: React.FormEvent) => Promise<void>;
-      }
-      export const Form = (props: Props) => <form />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -397,15 +399,15 @@ describe('prop extraction', () => {
   it('extracts complex nested object props', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Theme {
+          colors: { primary: string; secondary: string };
+          spacing: number;
+        }
+        interface Props { theme: Theme; label: string }
+        export const Button = (props: Props) => <button />;
       `
-      import React from 'react';
-      interface Theme {
-        colors: { primary: string; secondary: string };
-        spacing: number;
-      }
-      interface Props { theme: Theme; label: string }
-      export const Button = (props: Props) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -419,15 +421,15 @@ describe('prop extraction', () => {
   it('extracts React.ReactNode and React.ReactElement prop types', async () => {
     const entry = await extract(
       'Card',
+      dedent`
+        import React from 'react';
+        interface Props {
+          children: React.ReactNode;
+          icon: React.ReactElement;
+          header?: React.ReactNode;
+        }
+        export const Card = (props: Props) => <div />;
       `
-      import React from 'react';
-      interface Props {
-        children: React.ReactNode;
-        icon: React.ReactElement;
-        header?: React.ReactNode;
-      }
-      export const Card = (props: Props) => <div />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -442,14 +444,14 @@ describe('prop extraction', () => {
   it('filters out HTML attributes from extends (ButtonHTMLAttributes has >30 props)', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+          variant: 'primary' | 'secondary';
+          label: string;
+        }
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-        variant: 'primary' | 'secondary';
-        label: string;
-      }
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -463,13 +465,13 @@ describe('prop extraction', () => {
   it('keeps HTML attributes from extends when Pick narrows to few props', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        type ButtonProps = Pick<React.ButtonHTMLAttributes<HTMLButtonElement>, 'disabled' | 'type'> & {
+          label: string;
+        };
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      type ButtonProps = Pick<React.ButtonHTMLAttributes<HTMLButtonElement>, 'disabled' | 'type'> & {
-        label: string;
-      };
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
 
     // Under the threshold, HTML attrs are kept
@@ -481,13 +483,13 @@ describe('prop extraction', () => {
   it('extracts forwardRef component props', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props { label: string; variant?: 'a' | 'b' }
+        export const Button = React.forwardRef<HTMLButtonElement, Props>((props, ref) => (
+          <button ref={ref} />
+        ));
       `
-      import React from 'react';
-      interface Props { label: string; variant?: 'a' | 'b' }
-      export const Button = React.forwardRef<HTMLButtonElement, Props>((props, ref) => (
-        <button ref={ref} />
-      ));
-    `
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -506,13 +508,13 @@ describe('prop extraction', () => {
   it('includes ref and key props for forwardRef components', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props { label: string }
+        export const Button = React.forwardRef<HTMLButtonElement, Props>((props, ref) => (
+          <button ref={ref} />
+        ));
       `
-      import React from 'react';
-      interface Props { label: string }
-      export const Button = React.forwardRef<HTMLButtonElement, Props>((props, ref) => (
-        <button ref={ref} />
-      ));
-    `
     );
 
     // ref and key come from React internals, not from the user's Props interface
@@ -527,29 +529,29 @@ describe('prop extraction', () => {
   it('collects all props from discriminated union', async () => {
     const entry = await extract(
       'Slider',
+      dedent`
+        import React from 'react';
+
+        type ControlledProps = {
+          value: number;
+          defaultValue?: never;
+        };
+
+        type UncontrolledProps = {
+          value?: never;
+          defaultValue?: number;
+        };
+
+        type BaseProps = {
+          min?: number;
+          max?: number;
+          step?: number;
+        };
+
+        type Props = BaseProps & (ControlledProps | UncontrolledProps);
+
+        export const Slider: React.FC<Props> = (props) => <div />;
       `
-      import React from 'react';
-
-      type ControlledProps = {
-        value: number;
-        defaultValue?: never;
-      };
-
-      type UncontrolledProps = {
-        value?: never;
-        defaultValue?: number;
-      };
-
-      type BaseProps = {
-        min?: number;
-        max?: number;
-        step?: number;
-      };
-
-      type Props = BaseProps & (ControlledProps | UncontrolledProps);
-
-      export const Slider: React.FC<Props> = (props) => <div />;
-    `
     );
 
     expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual([

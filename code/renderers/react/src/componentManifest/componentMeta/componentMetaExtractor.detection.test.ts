@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
 import { extract, extractFromStory } from './componentMetaExtractor.test-helpers';
 
 describe('component detection', () => {
@@ -7,11 +9,11 @@ describe('component detection', () => {
     it('detects arrow function component', async () => {
       const entry = await extract(
         'Button',
+        dedent`
+          import React from 'react';
+          interface Props { label: string }
+          export const Button = (props: Props) => <button>{props.label}</button>;
         `
-        import React from 'react';
-        interface Props { label: string }
-        export const Button = (props: Props) => <button>{props.label}</button>;
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
@@ -19,10 +21,10 @@ describe('component detection', () => {
     it('detects function declaration component', async () => {
       const entry = await extract(
         'Button',
+        dedent`
+          import React from 'react';
+          export function Button(props: { label: string }) { return <button /> }
         `
-        import React from 'react';
-        export function Button(props: { label: string }) { return <button /> }
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
@@ -30,10 +32,10 @@ describe('component detection', () => {
     it('detects component returning null', async () => {
       const entry = await extract(
         'Empty',
+        dedent`
+          import React from 'react';
+          export const Empty = (props: { show: boolean }) => props.show ? <div /> : null;
         `
-        import React from 'react';
-        export const Empty = (props: { show: boolean }) => props.show ? <div /> : null;
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Empty' });
     });
@@ -41,10 +43,10 @@ describe('component detection', () => {
     it('detects component with no props', async () => {
       const entry = await extract(
         'Logo',
+        dedent`
+          import React from 'react';
+          export const Logo = () => <svg />;
         `
-        import React from 'react';
-        export const Logo = () => <svg />;
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Logo' });
     });
@@ -54,12 +56,12 @@ describe('component detection', () => {
     it('detects class extending React.Component', async () => {
       const entry = await extract(
         'Button',
+        dedent`
+          import React from 'react';
+          export class Button extends React.Component<{ label: string }> {
+            render() { return <button /> }
+          }
         `
-        import React from 'react';
-        export class Button extends React.Component<{ label: string }> {
-          render() { return <button /> }
-        }
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
@@ -67,12 +69,12 @@ describe('component detection', () => {
     it('detects class extending React.PureComponent', async () => {
       const entry = await extract(
         'Button',
+        dedent`
+          import React from 'react';
+          export class Button extends React.PureComponent<{ label: string }> {
+            render() { return <button /> }
+          }
         `
-        import React from 'react';
-        export class Button extends React.PureComponent<{ label: string }> {
-          render() { return <button /> }
-        }
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
@@ -82,11 +84,11 @@ describe('component detection', () => {
     it('detects React.memo', async () => {
       const entry = await extract(
         'Button',
+        dedent`
+          import React from 'react';
+          const Inner = (props: { label: string }) => <button />;
+          export const Button = React.memo(Inner);
         `
-        import React from 'react';
-        const Inner = (props: { label: string }) => <button />;
-        export const Button = React.memo(Inner);
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
@@ -94,12 +96,12 @@ describe('component detection', () => {
     it('detects React.forwardRef', async () => {
       const entry = await extract(
         'Button',
+        dedent`
+          import React from 'react';
+          export const Button = React.forwardRef<HTMLButtonElement, { label: string }>((props, ref) => (
+            <button ref={ref} />
+          ));
         `
-        import React from 'react';
-        export const Button = React.forwardRef<HTMLButtonElement, { label: string }>((props, ref) => (
-          <button ref={ref} />
-        ));
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
@@ -107,12 +109,12 @@ describe('component detection', () => {
     it('detects React.memo(React.forwardRef(...))', async () => {
       const entry = await extract(
         'Button',
+        dedent`
+          import React from 'react';
+          export const Button = React.memo(
+            React.forwardRef<HTMLButtonElement, { label: string }>((props, ref) => <button ref={ref} />)
+          );
         `
-        import React from 'react';
-        export const Button = React.memo(
-          React.forwardRef<HTMLButtonElement, { label: string }>((props, ref) => <button ref={ref} />)
-        );
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
@@ -120,15 +122,18 @@ describe('component detection', () => {
     it('detects React.lazy', async () => {
       const entry = await extractFromStory(
         {
-          'detect/lazy/Target.tsx': `
+          'detect/lazy/Target.tsx': dedent`
             import React from 'react';
             export default (props: {}) => <button />;
           `,
-          'detect/lazy/Lazy.tsx': `
+          'detect/lazy/Lazy.tsx': dedent`
             import React from 'react';
             export const LazyButton = React.lazy(() => import('./Target'));
           `,
-          'detect/lazy/Lazy.stories.tsx': `import { LazyButton } from './Lazy';\nexport default { component: LazyButton };`,
+          'detect/lazy/Lazy.stories.tsx': dedent`
+            import { LazyButton } from './Lazy';
+            export default { component: LazyButton };
+          `,
         },
         'detect/lazy/Lazy.stories.tsx'
       );
@@ -140,11 +145,11 @@ describe('component detection', () => {
     it('detects default exported component', async () => {
       const entry = await extract(
         'default',
+        dedent`
+          import React from 'react';
+          const Button = (props: { label: string }) => <button />;
+          export default Button;
         `
-        import React from 'react';
-        const Button = (props: { label: string }) => <button />;
-        export default Button;
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ exportName: 'default' });
     });
@@ -152,10 +157,10 @@ describe('component detection', () => {
     it('detects inline default export', async () => {
       const entry = await extract(
         'default',
+        dedent`
+          import React from 'react';
+          export default (props: { label: string }) => <button />;
         `
-        import React from 'react';
-        export default (props: { label: string }) => <button />;
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ exportName: 'default' });
     });
@@ -163,10 +168,10 @@ describe('component detection', () => {
     it('detects default export function declaration', async () => {
       const entry = await extract(
         'default',
+        dedent`
+          import React from 'react';
+          export default function Button(props: { label: string }) { return <button /> }
         `
-        import React from 'react';
-        export default function Button(props: { label: string }) { return <button /> }
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ exportName: 'default' });
     });
@@ -196,10 +201,10 @@ describe('component detection', () => {
     it('rejects type-only exports', async () => {
       const entry = await extract(
         'ButtonProps',
+        dedent`
+          export interface ButtonProps { label: string }
+          export type Size = 'small' | 'large';
         `
-        export interface ButtonProps { label: string }
-        export type Size = 'small' | 'large';
-      `
       );
       expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
@@ -207,12 +212,12 @@ describe('component detection', () => {
     it('rejects class not extending Component', async () => {
       const entry = await extract(
         'Store',
+        dedent`
+          export class Store {
+            data = {};
+            get(key: string) { return this.data; }
+          }
         `
-        export class Store {
-          data = {};
-          get(key: string) { return this.data; }
-        }
-      `
       );
       expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
@@ -222,9 +227,9 @@ describe('component detection', () => {
     it('accepts uppercase function returning ReactNode-assignable value', async () => {
       const entry = await extract(
         'FormatDate',
+        dedent`
+          export function FormatDate(timestamp: number) { return new Date(timestamp).toISOString(); }
         `
-        export function FormatDate(timestamp: number) { return new Date(timestamp).toISOString(); }
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'FormatDate' });
     });
@@ -232,9 +237,9 @@ describe('component detection', () => {
     it('accepts function with primitive "props" param returning ReactNode', async () => {
       const entry = await extract(
         'ParseProps',
+        dedent`
+          export function ParseProps(props: string) { return JSON.parse(props); }
         `
-        export function ParseProps(props: string) { return JSON.parse(props); }
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'ParseProps' });
     });
@@ -242,12 +247,12 @@ describe('component detection', () => {
     it('rejects enum-like const object', async () => {
       const entry = await extract(
         'ButtonVariant',
+        dedent`
+          export const ButtonVariant = {
+            Primary: 'primary',
+            Secondary: 'secondary',
+          } as const;
         `
-        export const ButtonVariant = {
-          Primary: 'primary',
-          Secondary: 'secondary',
-        } as const;
-      `
       );
       expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
@@ -255,7 +260,7 @@ describe('component detection', () => {
 
   describe('multiple component exports', () => {
     it('detects multiple component exports from a single file', async () => {
-      const content = `
+      const content = dedent`
         import React from 'react';
         interface ButtonProps { label: string }
         export const Button = (props: ButtonProps) => <button />;
@@ -271,7 +276,7 @@ describe('component detection', () => {
 
   describe('mixed exports', () => {
     it('only detects components among mixed exports', async () => {
-      const content = `
+      const content = dedent`
         import React from 'react';
         export const Button = (props: { label: string }) => <button />;
         export const Config = { key: 'value' };
@@ -291,12 +296,12 @@ describe('component detection', () => {
     it('detects components alongside type exports', async () => {
       const entry = await extract(
         'Button',
+        dedent`
+          import React from 'react';
+          export interface ButtonProps { label: string }
+          export const Button = (props: ButtonProps) => <button />;
+          export type Size = 'small' | 'large';
         `
-        import React from 'react';
-        export interface ButtonProps { label: string }
-        export const Button = (props: ButtonProps) => <button />;
-        export type Size = 'small' | 'large';
-      `
       );
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });

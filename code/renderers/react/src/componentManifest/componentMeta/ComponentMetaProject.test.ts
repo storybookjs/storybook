@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
 import type { StoryRef } from '../getComponentImports';
 import { withProject } from './componentMetaExtractor.test-helpers';
 
@@ -26,7 +28,7 @@ describe('compound component extraction', () => {
   it('extracts props for Accordion.Root, not Item or Trigger', async () => {
     const entries = await extractFromStories(
       {
-        'accordion.tsx': `
+        'accordion.tsx': dedent`
           import React from 'react';
 
           interface RootProps {
@@ -50,7 +52,7 @@ describe('compound component extraction', () => {
 
           export const Accordion = { Root, Item, Trigger };
         `,
-        'accordion.stories.tsx': `
+        'accordion.stories.tsx': dedent`
           import React from 'react';
           import { Accordion } from './accordion';
           export default {};
@@ -86,7 +88,7 @@ describe('compound component extraction', () => {
   it('uses Root description and jsDocTags, not wrapper Accordion', async () => {
     const entries = await extractFromStories(
       {
-        'accordion.tsx': `
+        'accordion.tsx': dedent`
           import React from 'react';
 
           interface RootProps {
@@ -111,7 +113,7 @@ describe('compound component extraction', () => {
            */
           export const Accordion = { Root, Item };
         `,
-        'accordion.stories.tsx': `
+        'accordion.stories.tsx': dedent`
           import React from 'react';
           import { Accordion } from './accordion';
           export default {};
@@ -146,7 +148,7 @@ describe('compound component extraction', () => {
     // Uses withProject directly because this test needs two extraction rounds on the same project.
     await withProject(
       {
-        'button.tsx': `
+        'button.tsx': dedent`
           import React from 'react';
 
           interface ButtonProps {
@@ -184,7 +186,7 @@ describe('compound component extraction', () => {
 
           export default ButtonRoot;
         `,
-        'button.stories.tsx': `
+        'button.stories.tsx': dedent`
           import React from 'react';
           import Button from './button';
           export default { component: Button };
@@ -240,7 +242,7 @@ describe('compound component extraction', () => {
   it('uses Aligner metadata for default-exported Button.Aligner', async () => {
     const entries = await extractFromStories(
       {
-        'button.tsx': `
+        'button.tsx': dedent`
           import React from 'react';
 
           interface ButtonProps {
@@ -271,7 +273,7 @@ describe('compound component extraction', () => {
 
           export default ButtonRoot;
         `,
-        'button.stories.tsx': `
+        'button.stories.tsx': dedent`
           import React from 'react';
           import Button from './button';
           export default { component: Button };
@@ -305,7 +307,7 @@ describe('compound component extraction', () => {
   it('inherits @import from wrapper for compound members', async () => {
     const entries = await extractFromStories(
       {
-        'accordion.tsx': `
+        'accordion.tsx': dedent`
           import React from 'react';
 
           interface RootProps {
@@ -330,7 +332,7 @@ describe('compound component extraction', () => {
            */
           export const Accordion = { Root, Item };
         `,
-        'accordion.stories.tsx': `
+        'accordion.stories.tsx': dedent`
           import React from 'react';
           import { Accordion } from './accordion';
           export default {};
@@ -364,7 +366,7 @@ describe('compound component extraction', () => {
   it('extracts Dialog.Root and Button in the same batch', async () => {
     const entries = await extractFromStories(
       {
-        'dialog.tsx': `
+        'dialog.tsx': dedent`
           import React from 'react';
 
           interface RootProps {
@@ -381,7 +383,7 @@ describe('compound component extraction', () => {
 
           export const Dialog = { Root, Content };
         `,
-        'button.tsx': `
+        'button.tsx': dedent`
           import React from 'react';
           export interface ButtonProps {
             label: string;
@@ -389,13 +391,13 @@ describe('compound component extraction', () => {
           }
           export const Button = (props: ButtonProps) => <button />;
         `,
-        'dialog.stories.tsx': `
+        'dialog.stories.tsx': dedent`
           import React from 'react';
           import { Dialog } from './dialog';
           export default {};
           export const Default = () => <Dialog.Root open><Dialog.Content trapFocus /></Dialog.Root>;
         `,
-        'button.stories.tsx': `
+        'button.stories.tsx': dedent`
           import React from 'react';
           import { Button } from './button';
           export default { component: Button };
@@ -438,7 +440,7 @@ describe('compound component extraction', () => {
   it('extracts description, @import, and @summary from component JSDoc', async () => {
     const entries = await extractFromStories(
       {
-        'button.tsx': `
+        'button.tsx': dedent`
           import React from 'react';
 
           export interface ButtonProps {
@@ -452,7 +454,7 @@ describe('compound component extraction', () => {
            */
           export const Button = ({ label }: ButtonProps) => <button>{label}</button>;
         `,
-        'button.stories.tsx': `
+        'button.stories.tsx': dedent`
           import React from 'react';
           import { Button } from './button';
           export default { component: Button };

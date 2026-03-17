@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
 import { extract } from './componentMetaExtractor.test-helpers';
 
 describe('parent and declaration tracking', () => {
   it('attaches parent type info to props from named interfaces', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface ButtonProps {
+          label: string;
+        }
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface ButtonProps {
-        label: string;
-      }
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -27,10 +29,10 @@ describe('parent and declaration tracking', () => {
   it('attaches declarations with TypeLiteral for inline types', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        export const Button = (props: { label: string }) => <button />;
       `
-      import React from 'react';
-      export const Button = (props: { label: string }) => <button />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -44,12 +46,12 @@ describe('parent and declaration tracking', () => {
   it('resolves parent through intersection type literals', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        type BaseProps = { loading?: boolean };
+        type ButtonProps = { variant?: string } & BaseProps;
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      type BaseProps = { loading?: boolean };
-      type ButtonProps = { variant?: string } & BaseProps;
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -62,16 +64,16 @@ describe('parent and declaration tracking', () => {
   it('resolves parent for forwardRef with polymorphic as-cast', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        type BaseProps = { loading?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>;
+        type ButtonProps = { variant?: string } & BaseProps;
+        type PolymorphicFC<As extends React.ElementType, P> =
+          React.ForwardRefExoticComponent<P & { as?: As } & React.RefAttributes<any>>;
+        export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+          (props, ref) => <button ref={ref} />
+        ) as PolymorphicFC<'button', ButtonProps>;
       `
-      import React from 'react';
-      type BaseProps = { loading?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>;
-      type ButtonProps = { variant?: string } & BaseProps;
-      type PolymorphicFC<As extends React.ElementType, P> =
-        React.ForwardRefExoticComponent<P & { as?: As } & React.RefAttributes<any>>;
-      export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-        (props, ref) => <button ref={ref} />
-      ) as PolymorphicFC<'button', ButtonProps>;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -85,22 +87,22 @@ describe('parent and declaration tracking', () => {
   it('tracks parent through intersection types', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface BaseProps {
+          /** Unique identifier */
+          id: string;
+        }
+        interface StyleProps {
+          /** Custom CSS class */
+          className?: string;
+        }
+        type ButtonProps = BaseProps & StyleProps & {
+          /** The label */
+          label: string;
+        };
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface BaseProps {
-        /** Unique identifier */
-        id: string;
-      }
-      interface StyleProps {
-        /** Custom CSS class */
-        className?: string;
-      }
-      type ButtonProps = BaseProps & StyleProps & {
-        /** The label */
-        label: string;
-      };
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -114,17 +116,17 @@ describe('parent and declaration tracking', () => {
   it('tracks parent through extends', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface BaseProps {
+          /** Unique identifier */
+          id: string;
+        }
+        interface ButtonProps extends BaseProps {
+          label: string;
+        }
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface BaseProps {
-        /** Unique identifier */
-        id: string;
-      }
-      interface ButtonProps extends BaseProps {
-        label: string;
-      }
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -137,13 +139,13 @@ describe('parent and declaration tracking', () => {
   it('tracks declarations from multiple sources', async () => {
     const entry = await extract(
       'Comp',
+      dedent`
+        import React from 'react';
+        interface A { shared: string }
+        interface B { shared: string }
+        type Props = A & B;
+        export const Comp = (props: Props) => <div />;
       `
-      import React from 'react';
-      interface A { shared: string }
-      interface B { shared: string }
-      type Props = A & B;
-      export const Comp = (props: Props) => <div />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -158,14 +160,14 @@ describe('parent and declaration tracking', () => {
   it('filters out HTML attributes when declaration file contributes >30 props', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+          /** Custom variant */
+          variant: 'primary' | 'secondary';
+        }
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-        /** Custom variant */
-        variant: 'primary' | 'secondary';
-      }
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
     expect(Object.keys(entry.component!.reactComponentMeta!.props)).toEqual(['variant']);
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -181,14 +183,14 @@ describe('parent and declaration tracking', () => {
   it('sets source fileName on declarations for >30 filter', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+          /** Custom variant */
+          variant: 'primary' | 'secondary';
+        }
+        export const Button = (props: ButtonProps) => <button />;
       `
-      import React from 'react';
-      interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-        /** Custom variant */
-        variant: 'primary' | 'secondary';
-      }
-      export const Button = (props: ButtonProps) => <button />;
-    `
     );
     // variant survives the filter and has a fileName on its declaration
     expect(entry.component?.reactComponentMeta).toMatchObject({

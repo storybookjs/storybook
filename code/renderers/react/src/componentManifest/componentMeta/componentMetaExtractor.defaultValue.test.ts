@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
 import { extract } from './componentMetaExtractor.test-helpers';
 
 describe('default value extraction', () => {
   it('extracts destructuring defaults from arrow function', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props { size?: string; color?: string; label: string }
+        export const Button = ({ size = 'md', color = 'blue', label }: Props) => <button />;
       `
-      import React from 'react';
-      interface Props { size?: string; color?: string; label: string }
-      export const Button = ({ size = 'md', color = 'blue', label }: Props) => <button />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -24,13 +26,13 @@ describe('default value extraction', () => {
   it('extracts defaults from forwardRef', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props { variant?: string; label: string }
+        export const Button = React.forwardRef<HTMLButtonElement, Props>(
+          ({ variant = 'primary', label }, ref) => <button ref={ref} />
+        );
       `
-      import React from 'react';
-      interface Props { variant?: string; label: string }
-      export const Button = React.forwardRef<HTMLButtonElement, Props>(
-        ({ variant = 'primary', label }, ref) => <button ref={ref} />
-      );
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -43,15 +45,15 @@ describe('default value extraction', () => {
   it('extracts JSDoc @default tags', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props {
+          /** @default 'md' */
+          size?: string;
+          label: string;
+        }
+        export const Button = (props: Props) => <button />;
       `
-      import React from 'react';
-      interface Props {
-        /** @default 'md' */
-        size?: string;
-        label: string;
-      }
-      export const Button = (props: Props) => <button />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -64,14 +66,14 @@ describe('default value extraction', () => {
   it('extracts defaults from body-level destructuring in forwardRef', async () => {
     const entry = await extract(
       'Alert',
+      dedent`
+        import React from 'react';
+        interface Props { color?: string; rounded?: boolean; label: string }
+        export const Alert = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
+          const { color = 'info', rounded = true, label } = props;
+          return <div ref={ref} />;
+        });
       `
-      import React from 'react';
-      interface Props { color?: string; rounded?: boolean; label: string }
-      export const Alert = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
-        const { color = 'info', rounded = true, label } = props;
-        return <div ref={ref} />;
-      });
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -85,15 +87,15 @@ describe('default value extraction', () => {
   it('extracts defaults from helper calls that receive props directly', async () => {
     const entry = await extract(
       'Alert',
+      dedent`
+        import React from 'react';
+        interface Props { color?: string; rounded?: boolean; label: string }
+        const resolveProps = (props: Props) => props;
+        export const Alert = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
+          const { color = 'info', rounded = true, label } = resolveProps(props);
+          return <div ref={ref} />;
+        });
       `
-      import React from 'react';
-      interface Props { color?: string; rounded?: boolean; label: string }
-      const resolveProps = (props: Props) => props;
-      export const Alert = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
-        const { color = 'info', rounded = true, label } = resolveProps(props);
-        return <div ref={ref} />;
-      });
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -107,15 +109,15 @@ describe('default value extraction', () => {
   it('ignores body-level destructuring from unrelated local objects', async () => {
     const entry = await extract(
       'Alert',
+      dedent`
+        import React from 'react';
+        interface Props { color?: string; label: string }
+        const theme = { color: 'danger' };
+        export const Alert = (props: Props) => {
+          const { color = 'danger' } = theme;
+          return <div data-color={color}>{props.label}</div>;
+        };
       `
-      import React from 'react';
-      interface Props { color?: string; label: string }
-      const theme = { color: 'danger' };
-      export const Alert = (props: Props) => {
-        const { color = 'danger' } = theme;
-        return <div data-color={color}>{props.label}</div>;
-      };
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -128,13 +130,13 @@ describe('default value extraction', () => {
   it('resolves identifier references to literal values', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        const DEFAULT_SIZE = 'md';
+        const DEFAULT_COUNT = 42;
+        interface Props { size?: string; count?: number; label: string }
+        export const Button = ({ size = DEFAULT_SIZE, count = DEFAULT_COUNT, label }: Props) => <button />;
       `
-      import React from 'react';
-      const DEFAULT_SIZE = 'md';
-      const DEFAULT_COUNT = 42;
-      interface Props { size?: string; count?: number; label: string }
-      export const Button = ({ size = DEFAULT_SIZE, count = DEFAULT_COUNT, label }: Props) => <button />;
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -148,12 +150,12 @@ describe('default value extraction', () => {
   it('extracts Component.defaultProps expression pattern', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props { size?: string; color?: string; label: string }
+        export const Button = (props: Props) => <button />;
+        Button.defaultProps = { size: 'md', color: 'blue' };
       `
-      import React from 'react';
-      interface Props { size?: string; color?: string; label: string }
-      export const Button = (props: Props) => <button />;
-      Button.defaultProps = { size: 'md', color: 'blue' };
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
@@ -167,14 +169,14 @@ describe('default value extraction', () => {
   it('extracts static defaultProps from class components', async () => {
     const entry = await extract(
       'Button',
+      dedent`
+        import React from 'react';
+        interface Props { size?: string; label: string }
+        export class Button extends React.Component<Props> {
+          static defaultProps = { size: 'md' };
+          render() { return <button />; }
+        }
       `
-      import React from 'react';
-      interface Props { size?: string; label: string }
-      export class Button extends React.Component<Props> {
-        static defaultProps = { size: 'md' };
-        render() { return <button />; }
-      }
-    `
     );
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {

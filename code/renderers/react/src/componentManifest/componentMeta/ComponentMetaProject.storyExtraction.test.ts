@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
 import { extractFromStory } from './componentMetaExtractor.test-helpers';
 
 describe('prop extraction via story JSX', () => {
   it('simple named export', async () => {
     const entry = await extractFromStory(
       {
-        'path1/Button.tsx': `
+        'path1/Button.tsx': dedent`
           import React from 'react';
           interface ButtonProps {
             /** The button label */
@@ -16,7 +18,7 @@ describe('prop extraction via story JSX', () => {
           }
           export const Button = (props: ButtonProps) => <button>{props.label}</button>;
         `,
-        'path1/Button.stories.tsx': `
+        'path1/Button.stories.tsx': dedent`
           import React from 'react';
           import { Button } from './Button';
           export default { component: Button };
@@ -53,7 +55,7 @@ describe('prop extraction via story JSX', () => {
   it('generic component (TypeScript resolves type parameters)', async () => {
     const entry = await extractFromStory(
       {
-        'path1/GenericList.tsx': `
+        'path1/GenericList.tsx': dedent`
           import React from 'react';
           interface ListProps<T> {
             /** The items to render */
@@ -67,7 +69,7 @@ describe('prop extraction via story JSX', () => {
             return <ul>{props.items.map(props.renderItem)}</ul>;
           }
         `,
-        'path1/GenericList.stories.tsx': `
+        'path1/GenericList.stories.tsx': dedent`
           import React from 'react';
           import { GenericList } from './GenericList';
           export default { component: GenericList };
@@ -108,7 +110,7 @@ describe('prop extraction via story JSX', () => {
   it('forwardRef component', async () => {
     const entry = await extractFromStory(
       {
-        'path1/ForwardRefButton.tsx': `
+        'path1/ForwardRefButton.tsx': dedent`
           import React from 'react';
           interface FRButtonProps {
             /** Button text */
@@ -119,7 +121,7 @@ describe('prop extraction via story JSX', () => {
             (props, ref) => <button ref={ref}>{props.text}</button>
           );
         `,
-        'path1/ForwardRefButton.stories.tsx': `
+        'path1/ForwardRefButton.stories.tsx': dedent`
           import React from 'react';
           import { ForwardRefButton } from './ForwardRefButton';
           export default { component: ForwardRefButton };
@@ -161,7 +163,7 @@ describe('prop extraction via story JSX', () => {
   it('memo component', async () => {
     const entry = await extractFromStory(
       {
-        'path1/MemoButton.tsx': `
+        'path1/MemoButton.tsx': dedent`
           import React from 'react';
           interface MemoButtonProps {
             /** The label */
@@ -171,7 +173,7 @@ describe('prop extraction via story JSX', () => {
           const Inner = (props: MemoButtonProps) => <button>{props.label}</button>;
           export const MemoButton = React.memo(Inner);
         `,
-        'path1/MemoButton.stories.tsx': `
+        'path1/MemoButton.stories.tsx': dedent`
           import React from 'react';
           import { MemoButton } from './MemoButton';
           export default { component: MemoButton };
@@ -203,7 +205,7 @@ describe('prop extraction via story JSX', () => {
   it('compound component member (Accordion.Root)', async () => {
     const entry = await extractFromStory(
       {
-        'path1/Compound.tsx': `
+        'path1/Compound.tsx': dedent`
           import React from 'react';
           interface RootProps {
             /** Whether multiple items can be open */
@@ -221,7 +223,7 @@ describe('prop extraction via story JSX', () => {
           const Item = (props: ItemProps) => <div />;
           export const Accordion = { Root, Item };
         `,
-        'path1/Compound.stories.tsx': `
+        'path1/Compound.stories.tsx': dedent`
           import React from 'react';
           import { Accordion } from './Compound';
           export default {};
@@ -258,7 +260,7 @@ describe('prop extraction via story JSX', () => {
   it('namespace import (Popover.Panel)', async () => {
     const entry = await extractFromStory(
       {
-        'path1/NamespaceCompound.tsx': `
+        'path1/NamespaceCompound.tsx': dedent`
           import React from 'react';
           interface PanelProps {
             /** Whether the panel is open */
@@ -275,7 +277,7 @@ describe('prop extraction via story JSX', () => {
           }
           export const Trigger = (props: TriggerProps) => <button />;
         `,
-        'path1/NamespaceCompound.stories.tsx': `
+        'path1/NamespaceCompound.stories.tsx': dedent`
           import React from 'react';
           import * as Popover from './NamespaceCompound';
           export default {};
@@ -313,7 +315,7 @@ describe('prop extraction via story JSX', () => {
   it('default-export attached member (Button.Aligner)', async () => {
     const entry = await extractFromStory(
       {
-        'path1/AttachedMember.tsx': `
+        'path1/AttachedMember.tsx': dedent`
           import React from 'react';
           interface ButtonProps {
             variant?: 'solid' | 'outline';
@@ -338,7 +340,7 @@ describe('prop extraction via story JSX', () => {
 
           export default ButtonRoot;
         `,
-        'path1/AttachedMember.stories.tsx': `
+        'path1/AttachedMember.stories.tsx': dedent`
           import React from 'react';
           import Button from './AttachedMember';
           export default { component: Button };
@@ -371,7 +373,7 @@ describe('prop extraction via story JSX', () => {
   it('default export', async () => {
     const entry = await extractFromStory(
       {
-        'path1/DefaultExport.tsx': `
+        'path1/DefaultExport.tsx': dedent`
           import React from 'react';
           interface HeaderProps {
             /** The title text */
@@ -381,7 +383,7 @@ describe('prop extraction via story JSX', () => {
           const Header = (props: HeaderProps) => <header>{props.title}</header>;
           export default Header;
         `,
-        'path1/DefaultExport.stories.tsx': `
+        'path1/DefaultExport.stories.tsx': dedent`
           import React from 'react';
           import Header from './DefaultExport';
           export default { component: Header };

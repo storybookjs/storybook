@@ -44,7 +44,7 @@
   },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
-      "yarn lint:js:cmd --fix"
+      "yarn lint:js:cmd"
     ],
     "package.json": [
       "yarn lint:package"
@@ -101,7 +101,6 @@
     "esbuild-raw-plugin": "^0.3.1",
     "eslint": "^8.57.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
-    "eslint-config-prettier": "^9.1.2",
     "eslint-import-resolver-typescript": "^3.10.1",
     "eslint-plugin-compat": "^6.0.2",
     "eslint-plugin-depend": "^1.4.0",
@@ -114,7 +113,6 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-local-rules": "portal:./eslint-plugin-local-rules",
     "eslint-plugin-playwright": "^1.8.3",
-    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-storybook": "workspace:*",

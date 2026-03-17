@@ -45,7 +45,7 @@
   },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
-      "yarn lint:js:cmd --fix"
+      "yarn lint:js:cmd"
     ],
     "*.ejs": [
       "yarn --cwd ../scripts ejslint"

@@ -8461,6 +8461,7 @@ __metadata:
     kill-port: "npm:^2.0.1"
     nx: "npm:^22.1.3"
     prettier: "npm:^3.7.1"
+    vitest: "npm:^4.0.14"
   languageName: unknown
   linkType: soft
 

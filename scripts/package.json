@@ -37,8 +37,8 @@
     "release:write-changelog": "jiti ./release/write-changelog.ts",
     "strict-ts": "jiti ./strict-ts.ts",
     "task": "jiti ./task.ts",
-    "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
-    "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
+    "test": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest run --project scripts",
+    "test:watch": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest watch --project scripts",
     "upgrade": "jiti ./task.ts",
     "upload-bench": "jiti ./upload-bench.ts"
   },

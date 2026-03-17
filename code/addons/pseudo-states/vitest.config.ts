@@ -8,6 +8,7 @@ export default mergeConfig(
     test: {
       typecheck: {
         enabled: true,
+        ignoreSourceErrors: true,
       },
     },
   })

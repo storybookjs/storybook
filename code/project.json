@@ -13,9 +13,9 @@
     "test": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn test" },
+      "options": { "command": "NODE_OPTIONS=--max_old_space_size=4096 vitest run" },
       "cache": true,
-      "inputs": ["default"],
+      "inputs": ["default", "{workspaceRoot}/scripts/**/*"],
       "configurations": { "production": {} }
     },
     "knip": {

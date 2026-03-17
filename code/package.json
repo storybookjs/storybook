@@ -19,7 +19,7 @@
     "changelog": "pr-log --sloppy --cherry-pick",
     "changelog:next": "pr-log --sloppy --since-prerelease",
     "check": "NODE_ENV=production yarn --cwd ../scripts check-package",
-    "ci-tests": "yarn task --task check --no-link --start-from=install && yarn lint && yarn test && cd ../scripts && yarn test",
+    "ci-tests": "yarn task --task check --no-link --start-from=install && yarn lint && yarn test",
     "danger": "danger",
     "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
     "github-release": "github-release-from-changelog",
@@ -37,11 +37,11 @@
     "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
     "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=4096\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
     "storybook:ui:chromatic": "chromatic --storybook-build-dir storybook-static --exit-zero-on-changes --exit-once-uploaded",
-    "storybook:vitest": "yarn test:watch --project storybook-ui",
-    "storybook:vitest:inspect": "INSPECT=true yarn test --project storybook-ui",
+    "storybook:vitest": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest watch --project storybook-ui",
+    "storybook:vitest:inspect": "cd .. && INSPECT=true NODE_OPTIONS=--max_old_space_size=4096 vitest run --project storybook-ui",
     "task": "yarn --cwd ../scripts task",
-    "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
-    "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
+    "test": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest run",
+    "test:watch": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
   },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [

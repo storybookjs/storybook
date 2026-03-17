@@ -4,6 +4,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import ts from 'typescript';
 
+import { findMatchingComponent } from '../generator';
 import { type StoryRef, getComponents } from '../getComponentImports';
 import { ComponentMetaProject } from './ComponentMetaProject';
 import { cleanup, createTempProject } from './test-helpers';
@@ -49,10 +50,8 @@ export async function extractFromStory(
       docgenEngine: 'react-component-meta',
     });
 
-    const targetName = options?.componentName ?? csf._meta?.component;
-    const component = targetName
-      ? components.find((c) => c.componentName === targetName)
-      : components[0];
+    const componentName = options?.componentName ?? csf._meta?.component;
+    const component = findMatchingComponent(components, componentName, 'Test');
 
     const entry: StoryRef = { storyPath, component };
     project.extractPropsFromStories([entry]);

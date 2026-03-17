@@ -97,7 +97,7 @@ function selectComponentEntries(manifestEntries: IndexEntry[]) {
   return [...entriesByComponentId.values()];
 }
 
-function findMatchingComponent(
+export function findMatchingComponent(
   components: ComponentRef[],
   componentName: string | undefined,
   title: string

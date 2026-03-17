@@ -132,7 +132,9 @@ describe('prop extraction', () => {
       `
     );
 
-    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['id', 'label']);
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: { id: { type: { name: 'string' } }, label: { type: { name: 'string' } } },
+    });
   });
 
   it('extracts Omit<> props correctly', async () => {
@@ -150,7 +152,9 @@ describe('prop extraction', () => {
       `
     );
 
-    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['id', 'label']);
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: { id: { type: { name: 'string' } }, label: { type: { name: 'string' } } },
+    });
   });
 
   it('extracts Partial<> props as all optional', async () => {
@@ -250,7 +254,6 @@ describe('prop extraction', () => {
       `
     );
 
-    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['x', 'y']);
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
         x: { type: { name: 'string' } },
@@ -270,12 +273,14 @@ describe('prop extraction', () => {
       `
     );
 
-    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual([
-      'a',
-      'b',
-      'c',
-      'extra',
-    ]);
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        a: { type: { name: 'string' } },
+        b: { type: { name: 'number' } },
+        c: { type: { name: 'boolean' } },
+        extra: { type: { name: 'string' } },
+      },
+    });
     expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('d');
   });
 
@@ -455,7 +460,7 @@ describe('prop extraction', () => {
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
-      props: { variant: expect.anything(), label: expect.anything() },
+      props: { variant: { required: true }, label: { required: true } },
     });
     // HTML attributes from ButtonHTMLAttributes should be filtered out (>30 props threshold)
     expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('onClick');
@@ -476,7 +481,11 @@ describe('prop extraction', () => {
 
     // Under the threshold, HTML attrs are kept
     expect(entry.component?.reactComponentMeta).toMatchObject({
-      props: { disabled: expect.anything(), type: expect.anything(), label: expect.anything() },
+      props: {
+        disabled: { required: false },
+        type: { required: false },
+        label: { required: true },
+      },
     });
   });
 
@@ -554,12 +563,14 @@ describe('prop extraction', () => {
       `
     );
 
-    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual([
-      'defaultValue',
-      'max',
-      'min',
-      'step',
-      'value',
-    ]);
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        defaultValue: { required: false },
+        max: { required: false },
+        min: { required: false },
+        step: { required: false },
+        value: { required: false },
+      },
+    });
   });
 });

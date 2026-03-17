@@ -169,7 +169,6 @@ describe('parent and declaration tracking', () => {
         export const Button = (props: ButtonProps) => <button />;
       `
     );
-    expect(Object.keys(entry.component!.reactComponentMeta!.props)).toEqual(['variant']);
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
         variant: {

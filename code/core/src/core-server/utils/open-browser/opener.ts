@@ -156,7 +156,7 @@ function startBrowserProcess(
           'openBrowser.applescript'
         );
 
-        const command = `osascript "${pathToApplescript}" \"`
+        const command = `osascript "${pathToApplescript}" "`
           .concat(encodeURI(url), '" "')
           .concat(
             process.env.OPEN_MATCH_HOST_ONLY === 'true'

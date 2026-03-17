@@ -195,7 +195,7 @@ const hasMount = (play: t.Node | undefined) => {
   return false;
 };
 
-const MODULE_MOCK_REGEX = /^[.\/#].*\.mock($|\.[^.]*$)/i;
+const MODULE_MOCK_REGEX = /^[./#].*\.mock($|\.[^.]*$)/i;
 
 export interface CsfOptions {
   fileName?: string;

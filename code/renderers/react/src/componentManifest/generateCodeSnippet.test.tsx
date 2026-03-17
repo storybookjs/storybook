@@ -217,7 +217,7 @@ test('CSF2 - with args', () => {
     CSF2.args = { foo: 'bar', override: 'value' }
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const CSF2 = () => <Button foo=\"bar\" override=\"overide\">Click me</Button>;"`
+    `"const CSF2 = () => <Button foo="bar" override="overide">Click me</Button>;"`
   );
 });
 

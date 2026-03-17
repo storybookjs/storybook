@@ -158,7 +158,7 @@ function extractJsDocTags(ast: Block, tags?: string[]): ExtractedJsDoc {
 }
 
 function normaliseParamName(name: string): string {
-  return name.replace(/[\.-]$/, '');
+  return name.replace(/[.-]$/, '');
 }
 
 function extractParam(tag: Spec): ExtractedJsDocParam | null {

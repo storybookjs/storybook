@@ -121,7 +121,7 @@ describe('UniversalStore', () => {
         expect(secondStore).toBe(firstStore);
         expect(mockedInstances.set).toHaveBeenCalledOnce();
         expect(console.warn)
-          .toHaveBeenCalledExactlyOnceWith(`UniversalStore with id \"env1:test\" already exists in this environment, re-using existing.
+          .toHaveBeenCalledExactlyOnceWith(`UniversalStore with id "env1:test" already exists in this environment, re-using existing.
 You should reuse the existing instance instead of trying to create a new one.`);
       });
 

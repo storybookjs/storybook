@@ -881,7 +881,7 @@ test('importOverride: default override forces default import (keeps local name)'
   const out = buildImports({ components: patched, packageName: 'my-package' });
   expect(out).toMatchInlineSnapshot(`
     [
-      "import Button from \"@pkg/button\";",
+      "import Button from "@pkg/button";",
     ]
   `);
 });
@@ -908,7 +908,7 @@ test('importOverride: named override aliases imported to local name', () => {
   const out = buildImports({ components: patched, packageName: 'pkg' });
   expect(out).toMatchInlineSnapshot(`
     [
-      "import { DSButton as Button } from \"@pkg/button\";",
+      "import { DSButton as Button } from "@pkg/button";",
     ]
   `);
 });
@@ -933,7 +933,7 @@ test('importOverride: uses namespace override as-is', () => {
   const out = buildImports({ components: patched, packageName: 'pkg' });
   expect(out).toMatchInlineSnapshot(`
     [
-      "import * as UI from \"@pkg/ui\";",
+      "import * as UI from "@pkg/ui";",
     ]
   `);
 });
@@ -958,7 +958,7 @@ test('importOverride: malformed string is ignored and behavior falls back', () =
   const out = buildImports({ components: patched, packageName: 'pkg' });
   expect(out).toMatchInlineSnapshot(`
     [
-      "import { Header } from \"pkg\";",
+      "import { Header } from "pkg";",
     ]
   `);
 });
@@ -989,7 +989,7 @@ test('importOverride: merges multiple components into a single declaration per s
   const out = buildImports({ components: patched, packageName: 'pkg' });
   expect(out).toMatchInlineSnapshot(`
     [
-      "import { DSButton as Button, Header } from \"@ds/ui\";",
+      "import { DSButton as Button, Header } from "@ds/ui";",
     ]
   `);
 });

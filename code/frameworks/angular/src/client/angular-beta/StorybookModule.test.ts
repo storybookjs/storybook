@@ -18,12 +18,12 @@ describe('StorybookModule', () => {
         selector: 'foo',
         template: `
           <p id="input">{{ input }}</p>
-<p id="inputBindingPropertyName">{{ localPropertyName }}</p>
-<p id="setterCallNb">{{ setterCallNb }}</p>
-<p id="localProperty">{{ localProperty }}</p>
-<p id="localFunction">{{ localFunction() }}</p>
-<p id="output" (click)="output.emit('outputEmitted')"></p>
-<p id="outputBindingPropertyName" (click)="localOutput.emit('outputEmitted')"></p>
+          <p id="inputBindingPropertyName">{{ localPropertyName }}</p>
+          <p id="setterCallNb">{{ setterCallNb }}</p>
+          <p id="localProperty">{{ localProperty }}</p>
+          <p id="localFunction">{{ localFunction() }}</p>
+          <p id="output" (click)="output.emit('outputEmitted')"></p>
+          <p id="outputBindingPropertyName" (click)="localOutput.emit('outputEmitted')"></p>
         `,
       })
       class FooComponent {
@@ -297,7 +297,9 @@ describe('StorybookModule', () => {
 
     describe('with component without selector', () => {
       @Component({
-        template: `The content`,
+        template: `
+          The content
+        `,
       })
       class WithoutSelectorComponent {}
 
@@ -334,7 +336,9 @@ describe('StorybookModule', () => {
     it('should keep template with an empty value', async () => {
       @Component({
         selector: 'foo',
-        template: `Should not be displayed`,
+        template: `
+          Should not be displayed
+        `,
       })
       class FooComponent {}
 

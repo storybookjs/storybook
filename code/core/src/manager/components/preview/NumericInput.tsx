@@ -108,7 +108,7 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
   const parseValue = useCallback(
     (value: string) => {
       const [, inputValue, unit = fixedUnit || baseUnit || ''] =
-        value.match(/(-?\d+(?:\.\d+)?)(\%|[a-z]{1,4})?$/) || [];
+        value.match(/(-?\d+(?:\.\d+)?)(%|[a-z]{1,4})?$/) || [];
       const number = Math.max(minValue, Math.min(parseFloat(inputValue), maxValue));
       return { number, unit };
     },

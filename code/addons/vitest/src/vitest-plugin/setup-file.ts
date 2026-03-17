@@ -6,9 +6,7 @@ import { Channel } from 'storybook/internal/channels';
 import { COMPONENT_TESTING_PANEL_ID } from '../constants';
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore - The module is augmented elsewhere but we need to duplicate it to avoid issues in no-link mode.
-  // eslint-disable-next-line no-var
+  // @ts-expect-error - The module is augmented elsewhere but we need to duplicate it to avoid issues in no-link mode.
   var __STORYBOOK_ADDONS_CHANNEL__: Channel;
 }
 

@@ -4,7 +4,8 @@
   import { fn } from 'storybook/test';
 
   // More on how to set up stories at: https://storybook.js.org/docs/writing-stories
-  const { Story } = defineMeta({
+  export default { component: Header }
+const { Story } = defineMeta({
     title: 'Example/Header',
     component: Header,
     // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/writing-docs/autodocs

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Button from './Button.svelte';
+  import type Button from './Button.svelte';
   import type { ComponentProps } from 'svelte';
 
   let { buttonProps }: { buttonProps: ComponentProps<typeof Button> } = $props();

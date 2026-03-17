@@ -86,5 +86,4 @@ export type Control =
   | NumberConfig
   | ObjectConfig
   | OptionsConfig
-  | RangeConfig
   | TextConfig;

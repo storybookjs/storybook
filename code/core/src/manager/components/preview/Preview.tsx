@@ -233,7 +233,7 @@ const Canvas: FC<{
   );
 };
 
-export function filterTabs(panels: Addon_BaseType[], parameters?: Record<string, any> | undefined) {
+export function filterTabs(panels: Addon_BaseType[], parameters?: Record<string, any>) {
   const { previewTabs } = addons.getConfig();
   const parametersTabs = parameters ? parameters.previewTabs : undefined;
 

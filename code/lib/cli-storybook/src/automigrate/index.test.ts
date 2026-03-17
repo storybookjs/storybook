@@ -80,10 +80,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => ({
 // Remove the old prompt mock - now handled in the node-logger mock
 
 class PackageManager implements Partial<JsPackageManager> {
-  async getModulePackageJSON(
-    packageName: string,
-    basePath?: string | undefined
-  ): Promise<PackageJson | null> {
+  async getModulePackageJSON(packageName: string, basePath?: string): Promise<PackageJson | null> {
     return getModulePackageJSON(packageName, basePath);
   }
 }

@@ -12,7 +12,6 @@ export async function loadEnvs(options: { production?: boolean } = {}): Promise<
   const defaultNodeEnv = options.production ? 'production' : 'development';
 
   const baseEnv: Record<string, string> = {
-    // eslint-disable-next-line @typescript-eslint/dot-notation
     NODE_ENV: process.env['NODE_ENV'] || defaultNodeEnv,
     NODE_PATH: process.env['NODE_PATH'] || '',
     STORYBOOK: process.env['STORYBOOK'] || 'true',
@@ -30,7 +29,7 @@ export async function loadEnvs(options: { production?: boolean } = {}): Promise<
       // TODO: it seems wrong that dotenv overrides process.env, but that's how it has always worked
       ...process.env,
       ...dotenv.raw,
-    }).filter(([name]) => /^STORYBOOK_/.test(name))
+    }).filter(([name]) => name.startsWith('STORYBOOK_'))
   );
 
   const raw: Record<string, string> = { ...baseEnv, ...envEntries };

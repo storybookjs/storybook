@@ -19,7 +19,7 @@ export const useLastViewed = (selection: Selection) => {
       return [];
     }
     return items;
-  }, [store]);
+  }, []);
 
   const lastViewedRef = useRef(initialLastViewedStoryIds);
 

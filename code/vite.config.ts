@@ -17,9 +17,9 @@ export default defineConfig({
       correctness: 'warn',
     },
     options: {
-      // Disabled: tsgolint doesn't support baseUrl (https://github.com/oxc-project/tsgolint/issues/351)
-      // typeAware: true,
-      // typeCheck: true,
+      typeAware: true,
+      // TODO: re-enable typeCheck once oxlint-tsgolint supports customConditions
+      typeCheck: false,
       reportUnusedDisableDirectives: 'error',
     },
     rules: {
@@ -270,6 +270,25 @@ export default defineConfig({
           'storybook/no-renderer-packages': 'off',
         },
       },
+      {
+        files: ['**/*.stories.svelte'],
+        rules: {
+          'storybook/story-exports': 'off',
+        },
+      },
+      {
+        files: ['core/template/stories/test/NodeModuleMocking.stories.js'],
+        rules: {
+          'no-restricted-imports': 'off',
+        },
+      },
+      {
+        // Uses new Function() for dynamic ESM import in CJS context (intentional)
+        files: ['frameworks/angular/src/server/framework-preset-angular-ivy.ts'],
+        rules: {
+          'typescript/no-implied-eval': 'off',
+        },
+      },
     ],
     ignorePatterns: [
       'dist',
@@ -289,6 +308,11 @@ export default defineConfig({
       'core/report',
       'sandbox',
       '**/frameworks/angular/template/**',
+      '**/frameworks/angular/src/server/__mocks-ng-workspace__/**',
+      '**/frameworks/angular/src/client/**',
+      'lib/create-storybook/templates/**',
+      '.storybook/bench/bundle-analyzer/**',
+      'lib/cli-storybook/test/default/cli.test.cjs',
     ],
   },
   fmt: {

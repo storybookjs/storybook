@@ -9,7 +9,6 @@ export { DocsRenderer } from './DocsRenderer';
 export type { DocsTypes };
 
 declare module 'mdx/types' {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     type Element = React.JSX.Element;
     type ElementClass = React.JSX.ElementClass;

@@ -194,10 +194,15 @@ export const getComponents = async ({
     await Promise.all(
       filteredComponents.map(async (c) => {
         const depth = componentDepth.get(c);
-        // Handle compound/namespaced components like <Accordion.Root> or <Form.Input>.
-        // The part before the dot is the namespace (local binding), the part after is the
-        // accessed member. We resolve import metadata for the namespace and carry the member
-        // through so downstream extraction can look up the correct sub-component type.
+        // Split compound component names (e.g. "Accordion.Root") on the first dot to separate
+        // the namespace/import binding ("Accordion") from the accessed member ("Root").
+        //
+        // Three cases for compound names (dot !== -1):
+        //   1. No import found for the namespace  → keep componentName + member, no import metadata
+        //   2. Namespace import (`import * as Ns`) → importName = member (the actual export name)
+        //   3. Named import (`import { Accordion }`) → importName = original export, member carried separately
+        //
+        // Simple names (dot === -1) just look up the import binding directly.
         const dot = c.indexOf('.');
         const component =
           dot !== -1

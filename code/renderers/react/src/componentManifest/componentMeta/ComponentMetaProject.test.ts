@@ -3,30 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
 import type { StoryRef } from '../getComponentImports';
-import { withProject } from './componentMetaExtractor.test-helpers';
-
-// ---------------------------------------------------------------------------
-// Local helper: create a project, run extractPropsFromStories, return entries
-// ---------------------------------------------------------------------------
-
-async function extractFromStories(
-  files: Record<string, string>,
-  makeEntries: (filePaths: Record<string, string>) => StoryRef[]
-): Promise<StoryRef[]> {
-  return withProject(files, (project, filePaths) => {
-    const entries = makeEntries(filePaths);
-    project.extractPropsFromStories(entries);
-    return entries;
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Compound component detection via memberAccess
-// ---------------------------------------------------------------------------
+import { extractFromStory, withProject } from './componentMetaExtractor.test-helpers';
 
 describe('compound component extraction', () => {
   it('extracts props for Accordion.Root, not Item or Trigger', async () => {
-    const entries = await extractFromStories(
+    const entry = await extractFromStory(
       {
         'accordion.tsx': dedent`
           import React from 'react';
@@ -59,34 +40,23 @@ describe('compound component extraction', () => {
           export const Default = () => <Accordion.Root multiple><Accordion.Item value="a"><Accordion.Trigger /></Accordion.Item></Accordion.Root>;
         `,
       },
-      (paths) => [
-        {
-          storyPath: paths['accordion.stories.tsx'],
-          component: {
-            componentName: 'Accordion',
-            importId: './accordion',
-            importName: 'Accordion',
-            member: 'Root',
-            path: paths['accordion.tsx'],
-            isPackage: false,
-          },
-        },
-      ]
+      'accordion.stories.tsx',
+      { componentName: 'Accordion.Root' }
     );
 
-    expect(entries[0].component?.reactComponentMeta).toMatchObject({
+    expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
         multiple: { required: false, description: 'Allow multiple items open' },
         defaultValue: expect.anything(),
       },
     });
     // Should NOT have Item or Trigger props
-    expect(entries[0].component?.reactComponentMeta?.props?.value).toBeUndefined();
-    expect(entries[0].component?.reactComponentMeta?.props?.asChild).toBeUndefined();
+    expect(entry.component?.reactComponentMeta?.props?.value).toBeUndefined();
+    expect(entry.component?.reactComponentMeta?.props?.asChild).toBeUndefined();
   });
 
   it('uses Root description and jsDocTags, not wrapper Accordion', async () => {
-    const entries = await extractFromStories(
+    const entry = await extractFromStory(
       {
         'accordion.tsx': dedent`
           import React from 'react';
@@ -120,28 +90,17 @@ describe('compound component extraction', () => {
           export const Default = () => <Accordion.Root />;
         `,
       },
-      (paths) => [
-        {
-          storyPath: paths['accordion.stories.tsx'],
-          component: {
-            componentName: 'Accordion.Root',
-            importId: './accordion',
-            importName: 'Accordion',
-            member: 'Root',
-            path: paths['accordion.tsx'],
-            isPackage: false,
-          },
-        },
-      ]
+      'accordion.stories.tsx',
+      { componentName: 'Accordion.Root' }
     );
 
-    expect(entries[0].component?.reactComponentMeta).toMatchObject({
+    expect(entry.component?.reactComponentMeta).toMatchObject({
       displayName: 'Accordion.Root',
       description: 'Root-specific description',
       jsDocTags: { summary: ['Root summary'] },
       props: { size: { defaultValue: { value: "'md'" } } },
     });
-    expect(entries[0].component?.importOverride).toBeUndefined();
+    expect(entry.component?.importOverride).toBeUndefined();
   });
 
   it('extracts Aligner props when targeting Button.Aligner, Button props otherwise', async () => {
@@ -240,7 +199,7 @@ describe('compound component extraction', () => {
   });
 
   it('uses Aligner metadata for default-exported Button.Aligner', async () => {
-    const entries = await extractFromStories(
+    const entry = await extractFromStory(
       {
         'button.tsx': dedent`
           import React from 'react';
@@ -280,32 +239,21 @@ describe('compound component extraction', () => {
           export const AlignerStory = () => <Button.Aligner />;
         `,
       },
-      (paths) => [
-        {
-          storyPath: paths['button.stories.tsx'],
-          component: {
-            componentName: 'Button.Aligner',
-            importId: './button',
-            importName: 'default',
-            member: 'Aligner',
-            path: paths['button.tsx'],
-            isPackage: false,
-          },
-        },
-      ]
+      'button.stories.tsx',
+      { componentName: 'Button.Aligner' }
     );
 
-    expect(entries[0].component?.reactComponentMeta).toMatchObject({
+    expect(entry.component?.reactComponentMeta).toMatchObject({
       displayName: 'Button.Aligner',
       description: 'Aligner-specific description',
       jsDocTags: { summary: ['Aligner summary'] },
       props: { side: { defaultValue: { value: "'start'" } } },
     });
-    expect(entries[0].component?.importOverride).toBeUndefined();
+    expect(entry.component?.importOverride).toBeUndefined();
   });
 
   it('inherits @import from wrapper for compound members', async () => {
-    const entries = await extractFromStories(
+    const entry = await extractFromStory(
       {
         'accordion.tsx': dedent`
           import React from 'react';
@@ -339,32 +287,22 @@ describe('compound component extraction', () => {
           export const Default = () => <Accordion.Root />;
         `,
       },
-      (paths) => [
-        {
-          storyPath: paths['accordion.stories.tsx'],
-          component: {
-            componentName: 'Accordion.Root',
-            importId: './accordion',
-            importName: 'Accordion',
-            member: 'Root',
-            path: paths['accordion.tsx'],
-            isPackage: false,
-          },
-        },
-      ]
+      'accordion.stories.tsx',
+      { componentName: 'Accordion.Root' }
     );
 
-    expect(entries[0].component?.reactComponentMeta).toMatchObject({
+    expect(entry.component?.reactComponentMeta).toMatchObject({
       description: 'Root-specific description',
       props: { size: { defaultValue: { value: "'md'" } } },
     });
-    expect(entries[0].component?.importOverride).toBe(
+    expect(entry.component?.importOverride).toBe(
       "import { Accordion } from '@design-system/components/accordion';"
     );
   });
 
   it('extracts Dialog.Root and Button in the same batch', async () => {
-    const entries = await extractFromStories(
+    // Uses withProject directly because this test extracts two story files in one batch.
+    await withProject(
       {
         'dialog.tsx': dedent`
           import React from 'react';
@@ -404,41 +342,44 @@ describe('compound component extraction', () => {
           export const Default = () => <Button label="Click" />;
         `,
       },
-      (paths) => [
-        {
-          storyPath: paths['dialog.stories.tsx'],
-          component: {
-            componentName: 'Dialog',
-            importId: './dialog',
-            importName: 'Dialog',
-            member: 'Root',
-            path: paths['dialog.tsx'],
-            isPackage: false,
+      (project, filePaths) => {
+        const entries: StoryRef[] = [
+          {
+            storyPath: filePaths['dialog.stories.tsx'],
+            component: {
+              componentName: 'Dialog',
+              importId: './dialog',
+              importName: 'Dialog',
+              member: 'Root',
+              path: filePaths['dialog.tsx'],
+              isPackage: false,
+            },
           },
-        },
-        {
-          storyPath: paths['button.stories.tsx'],
-          component: {
-            componentName: 'Button',
-            importId: './button',
-            importName: 'Button',
-            path: paths['button.tsx'],
-            isPackage: false,
+          {
+            storyPath: filePaths['button.stories.tsx'],
+            component: {
+              componentName: 'Button',
+              importId: './button',
+              importName: 'Button',
+              path: filePaths['button.tsx'],
+              isPackage: false,
+            },
           },
-        },
-      ]
-    );
+        ];
+        project.extractPropsFromStories(entries);
 
-    expect(entries[0]?.component?.reactComponentMeta).toMatchObject({
-      props: { open: expect.anything(), onOpenChange: expect.anything() },
-    });
-    expect(entries[1]?.component?.reactComponentMeta).toMatchObject({
-      props: { label: expect.anything(), variant: expect.anything() },
-    });
+        expect(entries[0]?.component?.reactComponentMeta).toMatchObject({
+          props: { open: expect.anything(), onOpenChange: expect.anything() },
+        });
+        expect(entries[1]?.component?.reactComponentMeta).toMatchObject({
+          props: { label: expect.anything(), variant: expect.anything() },
+        });
+      }
+    );
   });
 
   it('extracts description, @import, and @summary from component JSDoc', async () => {
-    const entries = await extractFromStories(
+    const entry = await extractFromStory(
       {
         'button.tsx': dedent`
           import React from 'react';
@@ -461,21 +402,10 @@ describe('compound component extraction', () => {
           export const Default = () => <Button label="Click" />;
         `,
       },
-      (paths) => [
-        {
-          storyPath: paths['button.stories.tsx'],
-          component: {
-            componentName: 'Button',
-            importId: './button',
-            importName: 'Button',
-            path: paths['button.tsx'],
-            isPackage: false,
-          },
-        },
-      ]
+      'button.stories.tsx'
     );
 
-    expect(entries[0]?.component).toMatchObject({
+    expect(entry.component).toMatchObject({
       reactComponentMeta: {
         description: 'Primary UI component for user interaction',
       },

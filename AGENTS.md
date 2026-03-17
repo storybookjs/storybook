@@ -111,8 +111,8 @@ yarn nx run-many -t check
 ```bash
 cd code && yarn storybook:ui
 cd code && yarn storybook:ui:build
-cd code && yarn test
-cd code && yarn test:watch
+yarn test
+yarn test:watch
 cd code && yarn storybook:vitest
 ```
 
@@ -125,7 +125,7 @@ cd code && yarn storybook:vitest
 | Check TypeScript errors quickly | `yarn nx run-many -t check`                                                    |
 | Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
-| Run unit tests                  | `cd code && yarn test`                                                         |
+| Run unit tests                  | `yarn test`                                                                    |
 | Run Storybook Vitest tests      | `cd code && yarn storybook:vitest`                                             |
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
@@ -209,7 +209,7 @@ Common templates:
 
 ## Testing Expectations
 
-- Use `cd code && yarn test` for unit tests
+- Use `yarn test` for unit tests
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
@@ -218,8 +218,7 @@ Common templates:
 Watch-mode commands:
 
 ```bash
-cd code && yarn test:watch
-yarn affected:test
+yarn test:watch
 cd code && yarn storybook:vitest
 ```
 

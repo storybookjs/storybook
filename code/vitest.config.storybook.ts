@@ -21,7 +21,6 @@ if (process.env.INSPECT === 'true') {
 export default defineProject({
   plugins: [
     storybookTest({
-      configDir: import.meta.dirname + '/.storybook',
       tags: {
         include: ['vitest'],
       },

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { fn } from 'storybook/test';
+import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
 import { ObjectControl } from './Object';
 
@@ -138,5 +138,88 @@ export const ArraySmallViewport: Story = {
   },
   parameters: {
     chromatic: { viewports: [320] },
+  },
+};
+
+export const JsonEditorValidation: Story = {
+  args: {
+    value: { label: 'value' },
+    onChange: fn(),
+  },
+  play: async ({ args, canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Open the raw JSON editor and verify it is described', async () => {
+      const editAsJsonButton = canvas.getByRole('button', { name: 'Edit object as JSON' });
+
+      await expect(editAsJsonButton).toHaveAttribute('aria-describedby');
+      await fireEvent.click(editAsJsonButton);
+      await expect(canvas.getByLabelText('Edit object as JSON')).toBeInTheDocument();
+    });
+
+    await step('Show a parse error for invalid JSON', async () => {
+      const rawInput = canvas.getByLabelText('Edit object as JSON');
+
+      await fireEvent.change(rawInput, { target: { value: '{"label":' } });
+      await fireEvent.blur(rawInput);
+
+      const parseError = await canvas.findByRole('status');
+      await expect(parseError).toHaveTextContent('Invalid JSON');
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
+      await expect(rawInput).toHaveAttribute(
+        'aria-describedby',
+        parseError.getAttribute('id') ?? ''
+      );
+      await expect(args.onChange).not.toHaveBeenCalled();
+    });
+
+    await step('Clear the parse error after entering valid JSON', async () => {
+      const rawInput = canvas.getByLabelText('Edit object as JSON');
+
+      await fireEvent.change(rawInput, { target: { value: '{"label":"updated"}' } });
+      await fireEvent.blur(rawInput);
+
+      await waitFor(async () => {
+        await expect(canvas.queryByRole('status')).not.toBeInTheDocument();
+      });
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'false');
+      await expect(rawInput).not.toHaveAttribute('aria-describedby');
+      await expect(args.onChange).toHaveBeenCalledWith({ label: 'updated' });
+    });
+  },
+};
+
+export const JsonEditorErrorReset: Story = {
+  args: {
+    value: { label: 'value' },
+    onChange: fn(),
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Create a parse error in the raw JSON editor', async () => {
+      const editAsJsonButton = canvas.getByRole('button', { name: 'Edit object as JSON' });
+      await fireEvent.click(editAsJsonButton);
+
+      const rawInput = canvas.getByLabelText('Edit object as JSON');
+      await fireEvent.change(rawInput, { target: { value: '{"label":' } });
+      await fireEvent.blur(rawInput);
+
+      await expect(await canvas.findByRole('status')).toHaveTextContent('Invalid JSON');
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    await step('Clear stale parse errors after closing and reopening the editor', async () => {
+      const editAsJsonButton = canvas.getByRole('button', { name: 'Edit object as JSON' });
+      await fireEvent.click(editAsJsonButton);
+      await fireEvent.click(canvas.getByRole('button', { name: 'Edit object as JSON' }));
+
+      const rawInput = canvas.getByLabelText('Edit object as JSON');
+      await waitFor(async () => {
+        await expect(canvas.queryByRole('status')).not.toBeInTheDocument();
+      });
+      await expect(rawInput).toHaveAttribute('aria-invalid', 'false');
+      await expect(rawInput).not.toHaveAttribute('aria-describedby');
+    });
   },
 };

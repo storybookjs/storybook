@@ -1,11 +1,10 @@
 import { readFile, writeFile } from 'fs/promises';
 import { resolve } from 'path';
-import { format, resolveConfig } from 'prettier';
+
+import { format } from 'oxfmt';
 
 import type { TRuleListWithoutName, TRulesList } from '../update-rules-list';
 import { categoryIds } from './categories';
-
-const prettierConfig = resolveConfig(__dirname);
 const readmePath = resolve(
   __dirname,
   `../../../../../docs/configure/integration/eslint-plugin.mdx`
@@ -91,13 +90,12 @@ const overWriteRuleDocs = (rule: TRulesList, ruleDocFile: string) => {
 export const writeRulesListInReadme = async (rulesList: TRulesList[]) => {
   const readme = await readFile(readmePath, 'utf8');
   const rulesListWithoutName = rulesList.map((rule) => rule.slice(1)) as TRuleListWithoutName[];
-  const newReadme = await format(overWriteRulesList(rulesListWithoutName, readme), {
-    parser: 'markdown',
-    ...(await prettierConfig),
-  });
-  // Workaround for prettier that keeps replacing {/* xyz */} with {_ xyz _} and that breaks the docs
-  const contentToWrite = newReadme.replaceAll('{/_', '{/*').replaceAll('_/}', '*/}');
-  await writeFile(readmePath, contentToWrite);
+  const { code: newReadme } = await format(
+    'eslint-plugin.mdx',
+    overWriteRulesList(rulesListWithoutName, readme),
+    { printWidth: 100, singleQuote: true, trailingComma: 'es5' }
+  );
+  await writeFile(readmePath, newReadme);
 };
 
 export const updateRulesDocs = async (rulesList: TRulesList[]) => {
@@ -107,10 +105,11 @@ export const updateRulesDocs = async (rulesList: TRulesList[]) => {
       const ruleDocFilePath = resolve(ruleDocsPath, `${ruleName}.md`);
       const ruleDocFile = await readFile(ruleDocFilePath, 'utf8');
 
-      const updatedDocFile = await format(overWriteRuleDocs(rule, ruleDocFile), {
-        parser: 'markdown',
-        ...(await prettierConfig),
-      });
+      const { code: updatedDocFile } = await format(
+        `${ruleName}.md`,
+        overWriteRuleDocs(rule, ruleDocFile),
+        { printWidth: 100, singleQuote: true, trailingComma: 'es5' }
+      );
 
       await writeFile(ruleDocFilePath, updatedDocFile);
     })

@@ -8,7 +8,7 @@
     "editor.formatOnSave": true
   },
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     "editor.formatOnSave": true
   },
   "[typescriptreact]": {
@@ -42,7 +42,6 @@
   "javascript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.quoteStyle": "single",
   "js/ts.implicitProjectConfig.target": "ESNext",
-  "prettier.ignorePath": "./code/.prettierignore",
   "storyExplorer.storybookConfigDir": "./code/.storybook",
   "typescript.format.enable": false,
   "typescript.preferences.importModuleSpecifier": "relative",

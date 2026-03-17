@@ -70,24 +70,22 @@ const STORY_INDEX_PATH = './index.json';
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 
-export const getDefaultTagsFromPreset = memoize(1)(
-  (
-    presets: TagsOptions
-  ): {
-    included: Tag[];
-    excluded: Tag[];
-  } => {
-    const presetEntries = Object.entries(presets);
-    return {
-      included: presetEntries
-        .filter(([, option]) => option.defaultFilterSelection === 'include')
-        .map(([tag]) => tag),
-      excluded: presetEntries
-        .filter(([, option]) => option.defaultFilterSelection === 'exclude')
-        .map(([tag]) => tag),
-    };
-  }
-);
+export const getDefaultTagsFromPreset = memoize(1)((
+  presets: TagsOptions
+): {
+  included: Tag[];
+  excluded: Tag[];
+} => {
+  const presetEntries = Object.entries(presets);
+  return {
+    included: presetEntries
+      .filter(([, option]) => option.defaultFilterSelection === 'include')
+      .map(([tag]) => tag),
+    excluded: presetEntries
+      .filter(([, option]) => option.defaultFilterSelection === 'exclude')
+      .map(([tag]) => tag),
+  };
+});
 
 const computeStaticFilterFn = (tagPresets: TagsOptions) => {
   const staticExcludeTags = Object.entries(tagPresets).reduce(

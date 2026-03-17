@@ -315,8 +315,7 @@ describe('csf-2-to-3', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { StoryFn as CSF2, StoryObj as CSF3, Meta } from '@storybook/react';
-
+        import { Meta, StoryObj as CSF3, StoryFn as CSF2 } from '@storybook/react';
         import { CatProps } from './Cat';
 
         const meta = { title: 'Cat', component: Cat } satisfies Meta<CatProps>;
@@ -375,7 +374,7 @@ describe('csf-2-to-3', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { StoryFn, StoryObj } from '@storybook/react';
+        import { StoryObj, StoryFn } from '@storybook/react';
 
         // some extra whitespace to test
 
@@ -432,7 +431,7 @@ describe('csf-2-to-3', () => {
           export const Default = Template.bind({})
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { Meta, StoryFn } from '@storybook/react';
+        import { StoryFn, Meta } from '@storybook/react';
 
         export default {
           component: Cat,

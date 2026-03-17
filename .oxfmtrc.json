@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "bracketSpacing": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "embeddedLanguageFormatting": "off",
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "*.mdx",
+    "*.md",
+    "*.yml",
+    "*.yaml",
+    ".vscode",
+    ".prettierrc",
+    "docs/",
+    "test-storybooks/",
+    ".serena/",
+    "code/core/src/core-server/presets/common-manager.ts",
+    "code/lib/eslint-plugin/docs/rules/no-stories-of.md"
+  ]
+}

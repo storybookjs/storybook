@@ -5,7 +5,7 @@ module.exports = {
     'plugin:depend/recommended',
     'plugin:eslint-comments/recommended',
     'plugin:import-x/react-native',
-    'plugin:prettier/recommended',
+    'prettier',
     'plugin:react-hooks/recommended',
     'plugin:react/recommended',
     'plugin:jsx-a11y/recommended',
@@ -46,7 +46,6 @@ module.exports = {
     'import-x',
     'json',
     'html',
-    'prettier',
   ],
   rules: {
     'react/no-unescaped-entities': 'off',

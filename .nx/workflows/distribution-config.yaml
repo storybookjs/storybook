@@ -14,7 +14,7 @@ assignment-rules:
       - compile
       - check
       - lint
-      - pretty-docs
+      - format
       - knip
     run-on:
       - agent: linux-js

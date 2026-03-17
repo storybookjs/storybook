@@ -3,10 +3,10 @@
   "tags": ["library"],
   "includedScripts": [],
   "targets": {
-    "pretty-docs": {
-      "command": "yarn docs:prettier:check",
+    "format": {
+      "command": "yarn --cwd .. format:check",
       "cache": true,
-      "inputs": ["{workspaceRoot}/docs/**/*"]
+      "inputs": ["{workspaceRoot}/**/*"]
     },
     "check": {
       "dependsOn": [],

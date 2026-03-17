@@ -88,7 +88,7 @@ test.describe("component testing", () => {
        * We click the link so the modal opens and we can close it.
        * Having it open shortly is enough to have it be in the playwright trace, for debugging purposes.
        */
-      const descriptionButton = page.locator("#testing-module-description a");
+      const descriptionButton = page.locator("#testing-module-description button");
       if (
         await descriptionButton.isVisible({ timeout: 4000 }).catch(() => false)
       ) {
@@ -597,7 +597,7 @@ test.describe("component testing", () => {
 
     // Assert - Tests are running and errors are reported
     const errorLink = page.locator(
-      "#storybook-testing-module #testing-module-description a"
+      "#storybook-testing-module #testing-module-description button"
     );
     await expect(errorLink).toContainText("View full error", {
       timeout: 30000,

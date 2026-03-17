@@ -4,6 +4,11 @@
     "correctness": "warn"
   },
   "plugins": ["typescript", "react", "import", "jsx-a11y"],
+  "jsPlugins": [
+    "eslint-plugin-storybook",
+    "eslint-plugin-playwright",
+    { "name": "local-rules", "specifier": "./scripts/eslint-plugin-local-rules" }
+  ],
   "env": {
     "es6": true,
     "node": true,
@@ -121,6 +126,26 @@
   },
   "overrides": [
     {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "local-rules/no-uncategorized-errors": "warn",
+        "local-rules/storybook-monorepo-imports": "error"
+      }
+    },
+    {
+      "files": ["**/*.test.*", "**/*.spec.*", "**/*.mockdata.*"],
+      "rules": {
+        "local-rules/no-uncategorized-errors": "off",
+        "local-rules/storybook-monorepo-imports": "off"
+      }
+    },
+    {
+      "files": ["code/core/src/preview-errors.ts"],
+      "rules": {
+        "local-rules/no-duplicated-error-codes": "error"
+      }
+    },
+    {
       "files": ["**/frameworks/angular/template/**/*"],
       "rules": {
         "typescript/no-useless-constructor": "off"
@@ -154,6 +179,20 @@
       }
     },
     {
+      "files": ["**/*.stories.{ts,tsx,js,jsx,mjs,cjs}", "**/*.story.{ts,tsx,js,jsx,mjs,cjs}"],
+      "rules": {
+        "storybook/await-interactions": "error",
+        "storybook/context-in-play-function": "error",
+        "storybook/default-exports": "error",
+        "storybook/hierarchy-separator": "warn",
+        "storybook/no-redundant-story-name": "warn",
+        "storybook/prefer-pascal-case": "warn",
+        "storybook/story-exports": "error",
+        "storybook/use-storybook-expect": "error",
+        "storybook/use-storybook-testing-library": "error"
+      }
+    },
+    {
       "files": ["**/*.vue", "**/*.svelte"],
       "rules": {
         "typescript/consistent-type-imports": "off"
@@ -163,6 +202,22 @@
       "files": ["**/template/**/*"],
       "rules": {
         "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["**/e2e-tests/*.ts"],
+      "rules": {
+        "playwright/no-skipped-test": ["warn", { "allowConditional": true }],
+        "playwright/prefer-comparison-matcher": "error",
+        "playwright/prefer-equality-matcher": "error",
+        "playwright/prefer-hooks-on-top": "error",
+        "playwright/prefer-strict-equal": "error",
+        "playwright/prefer-to-be": "error",
+        "playwright/prefer-to-contain": "error",
+        "playwright/prefer-to-have-count": "error",
+        "playwright/prefer-to-have-length": "error",
+        "playwright/require-to-throw-message": "error",
+        "playwright/require-top-level-describe": "error"
       }
     }
   ],

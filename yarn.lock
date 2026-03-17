@@ -8546,6 +8546,7 @@ __metadata:
     "@nx/workspace": "npm:^22.1.3"
     "@playwright/test": "npm:^1.58.2"
     "@types/kill-port": "npm:^2.0.3"
+    eslint-plugin-playwright: "npm:^1.8.3"
     http-server: "npm:^14.1.1"
     husky: "npm:^9.1.7"
     jiti: "npm:^2.6.1"
@@ -15661,6 +15662,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eslint-plugin-playwright@npm:^1.8.3":
+  version: 1.8.3
+  resolution: "eslint-plugin-playwright@npm:1.8.3"
+  dependencies:
+    globals: "npm:^13.23.0"
+  peerDependencies:
+    eslint: ">=8.40.0"
+    eslint-plugin-jest: ">=25"
+  peerDependenciesMeta:
+    eslint-plugin-jest:
+      optional: true
+  checksum: 10c0/41c90ad82d7bfd336b11d88a7dd4aee3832878f3abc5df0c7e988124ac3d4e0ffc7de760f4e986a275bf088da2a360d177e8a48d6b3193dcb5f60b17138cf0fe
+  languageName: node
+  linkType: hard
+
 "eslint-plugin-storybook@workspace:code/lib/eslint-plugin":
   version: 0.0.0-use.local
   resolution: "eslint-plugin-storybook@workspace:code/lib/eslint-plugin"
@@ -17462,7 +17478,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globals@npm:^13.19.0, globals@npm:^13.6.0":
+"globals@npm:^13.19.0, globals@npm:^13.23.0, globals@npm:^13.6.0":
   version: 13.24.0
   resolution: "globals@npm:13.24.0"
   dependencies:

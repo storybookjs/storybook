@@ -29,6 +29,8 @@
     "svelte-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh svelte-kit/skeleton-ts svelte",
     "svelte-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh svelte-kit/skeleton-ts",
     "task": "yarn --cwd=./scripts task",
+    "storybook:vitest": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch --project storybook-ui",
+    "storybook:vitest:inspect": "INSPECT=true NODE_OPTIONS=--max_old_space_size=4096 vitest run --project storybook-ui",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
     "upload-bench": "cd scripts; yarn upload-bench",

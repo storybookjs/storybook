@@ -113,7 +113,7 @@ cd code && yarn storybook:ui
 cd code && yarn storybook:ui:build
 yarn test
 yarn test:watch
-cd code && yarn storybook:vitest
+yarn storybook:vitest
 ```
 
 ### Common task scenarios
@@ -126,7 +126,7 @@ cd code && yarn storybook:vitest
 | Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
 | Run unit tests                  | `yarn test`                                                                    |
-| Run Storybook Vitest tests      | `cd code && yarn storybook:vitest`                                             |
+| Run Storybook Vitest tests      | `yarn storybook:vitest`                                                        |
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
 | Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
@@ -219,7 +219,7 @@ Watch-mode commands:
 
 ```bash
 yarn test:watch
-cd code && yarn storybook:vitest
+yarn storybook:vitest
 ```
 
 When writing tests:

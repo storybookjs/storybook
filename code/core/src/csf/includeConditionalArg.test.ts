@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { includeConditionalArg, testValue } from './includeConditionalArg';
 import type { Conditional } from './story';

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';

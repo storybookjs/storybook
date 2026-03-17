@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 /** @jsxImportSource preact */
 // this file tests TypeScript types — that's why there are no runtime assertions
-import { describe, it } from 'vitest';
+import { describe, it } from 'vite-plus/test';
 
 import { satisfies } from 'storybook/internal/common';
 import type { Args, StoryAnnotations, StrictArgs } from 'storybook/internal/types';

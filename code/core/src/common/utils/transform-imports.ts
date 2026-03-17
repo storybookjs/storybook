@@ -6,7 +6,7 @@ function transformImports(source: string, renamedImports: Record<string, string>
 
   for (const [from, to] of Object.entries(renamedImports)) {
     // Match the package name when it's inside either single or double quotes
-    const regex = new RegExp(`(['"])${from}(\/.*)?\\1`, 'g');
+    const regex = new RegExp(`(['"])${from}(/.*)?\\1`, 'g');
     if (regex.test(transformed)) {
       transformed = transformed.replace(regex, `$1${to}$2$1`);
       hasChanges = true;

@@ -1,7 +1,7 @@
 import path from 'node:path';
 
-import type { MockInstance } from 'vitest';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MockInstance } from 'vite-plus/test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { getStorybookInfo, isCI } from 'storybook/internal/common';
 import {

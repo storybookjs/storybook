@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 
-import { expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vite-plus/test';
 
 import { logger } from 'storybook/internal/node-logger';
 import { type Presets } from 'storybook/internal/types';

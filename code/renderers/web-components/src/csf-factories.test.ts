@@ -1,5 +1,5 @@
 // this file primarily tests TypeScript types with some runtime assertions
-import { describe, expect, it, test } from 'vitest';
+import { describe, expect, it, test } from 'vite-plus/test';
 
 import type { Args } from 'storybook/internal/types';
 
@@ -22,7 +22,9 @@ class MyButton extends LitElement {
 
 class MyComponent extends LitElement {
   render() {
-    return html`<button></button>`;
+    return html`
+      <button></button>
+    `;
   }
 }
 declare global {
@@ -102,10 +104,18 @@ describe('Args can be provided in multiple ways', () => {
       args: { label: 'good' },
     });
     const Basic = meta.story({
-      render: () => html`<div>Hello world</div>`,
+      render: () =>
+        html`
+          <div>Hello world</div>
+        `,
     });
 
-    const CSF1 = meta.story(() => html`<div>Hello world</div>`);
+    const CSF1 = meta.story(
+      () =>
+        html`
+          <div>Hello world</div>
+        `
+    );
   });
 
   it('❌ Required args need to be provided when the user uses a non-empty render', () => {
@@ -118,7 +128,10 @@ describe('Args can be provided in multiple ways', () => {
       args: {
         label: 'good',
       },
-      render: (args) => html`<div>Hello world</div>`,
+      render: (args) =>
+        html`
+          <div>Hello world</div>
+        `,
     });
   });
 });

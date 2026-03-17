@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { mockDataset } from '../components/sidebar/mockdata';
 import { getGroupStatus, getMostCriticalStatusValue } from './status';

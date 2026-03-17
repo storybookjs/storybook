@@ -1,5 +1,5 @@
-import type { MockInstance } from 'vitest';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MockInstance } from 'vite-plus/test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { logger } from 'storybook/internal/client-logger';
 import type { StoryContextForEnhancers } from 'storybook/internal/types';

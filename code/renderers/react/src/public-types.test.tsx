@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 // this file tests Typescript types that's why there are no assertions
-import { describe, it } from 'vitest';
+import { describe, it } from 'vite-plus/test';
 
 import type { KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';

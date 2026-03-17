@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vite-plus/test';
 
 import { fetch } from './fetch';
 import { sendTelemetry } from './telemetry';

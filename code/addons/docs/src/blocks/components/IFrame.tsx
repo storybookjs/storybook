@@ -29,7 +29,6 @@ export class IFrame extends Component<IFrameProps> {
 
   shouldComponentUpdate(nextProps: IFrameProps) {
     const { scale } = nextProps;
-    // eslint-disable-next-line react/destructuring-assignment
     if (scale !== this.props.scale) {
       this.setIframeBodyStyle({
         width: `${scale * 100}%`,

@@ -69,7 +69,7 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
       path: '',
       docsOptions: {},
       state: {} as State,
-      ...(props.initOptions ?? {}),
+      ...props.initOptions,
     });
 
     // Apply module and initial story states.

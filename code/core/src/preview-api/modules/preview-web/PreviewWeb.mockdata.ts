@@ -1,5 +1,5 @@
-import type { Mock, Mocked } from 'vitest';
-import { vi } from 'vitest';
+import type { Mock, Mocked } from 'vite-plus/test';
+import { vi } from 'vite-plus/test';
 
 import {
   DOCS_RENDERED,

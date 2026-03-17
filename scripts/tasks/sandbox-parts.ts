@@ -197,7 +197,7 @@ export const init: Task['run'] = async (
       loglevel: 'debug',
       yes: true,
       ...extra,
-      ...(template.initOptions || {}),
+      ...template.initOptions,
     },
     dryRun,
     debug,

@@ -1,4 +1,4 @@
-import { expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vite-plus/test';
 
 import { Channel } from 'storybook/internal/channels';
 import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from 'storybook/internal/types';

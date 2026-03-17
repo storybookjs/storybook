@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-constraint */
 import type { ReactElement } from 'react';
 import * as React from 'react';
 import type { Root as ReactRoot, RootOptions } from 'react-dom/client';

@@ -1,5 +1,5 @@
 /* eslint-disable depend/ban-dependencies */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { addonA11yParameters } from './addon-a11y-parameters';
 

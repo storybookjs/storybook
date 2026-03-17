@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';

@@ -8,7 +8,7 @@ on:
   pull_request:
     types: [opened, synchronize, labeled, reopened]
   schedule:
-    - cron: '0 23 * * *'
+    - cron: "0 23 * * *"
 
 permissions:
   actions: read
@@ -81,11 +81,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'yarn'
+          cache: "yarn"
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
       - id: nx
-        name: 'Run nx'
+        name: "Run nx"
         run: |
           echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
           yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
@@ -103,24 +103,24 @@ jobs:
             const tag = ${{ toJson(steps.tag.outputs.tag) }} || '';
             const lines = raw.split('\n');
             const failures = [];
-            
+
             for (const [i, line] of lines.entries()) {
               if (!line.includes('✖')) continue;
-            
+
               const task =
                 line.match(/✖\s+([^│]+?)\s{2,}/)?.[1].trim() ||
                 'Unknown Nx task';
-            
+
               const url = lines
                 .slice(i + 1, i + 6)
                 .find(l => l.includes('Task logs:'))
                 ?.match(/Task logs:\s*(https:\/\/cloud\.nx\.app\/logs\/\S+)/)?.[1];
-            
+
               failures.push({ task, url });
             }
-            
+
             const sha = context.payload.pull_request?.head?.sha ?? context.sha;
-            
+
             // Per-task statuses (max 5)
             for (const { task, url } of failures.slice(0, 5)) {
               await github.rest.repos.createCommitStatus({
@@ -133,7 +133,7 @@ jobs:
                 description: 'Your test failed on NX Cloud',
               });
             }
-            
+
             const runMatches = raw.match(/https:\/\/cloud\.nx\.app\/runs\/\S+/g);
             const nxCloudUrl = runMatches ? runMatches[runMatches.length - 1] : undefined;
 

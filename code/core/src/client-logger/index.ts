@@ -98,7 +98,6 @@ export const pretty =
       }
     }
 
-    // eslint-disable-next-line prefer-spread
     logger[type].apply(logger, argArray);
   };
 

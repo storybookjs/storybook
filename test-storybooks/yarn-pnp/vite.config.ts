@@ -1,12 +1,12 @@
-/// <reference types="vitest/config" />
-import { defineConfig } from "vite";
+/// <reference types="vite-plus" />
+import { defineConfig } from "vite-plus";
 import vue from "@vitejs/plugin-vue";
 
 // https://vite.dev/config/
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-import { playwright } from "@vitest/browser-playwright";
+import { playwright } from "vite-plus/test/browser-playwright";
 const dirname =
   typeof __dirname !== "undefined"
     ? __dirname

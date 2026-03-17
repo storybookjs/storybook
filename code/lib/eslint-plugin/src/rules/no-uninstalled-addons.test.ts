@@ -6,7 +6,7 @@
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
-import { vi } from 'vitest';
+import { vi } from 'vite-plus/test';
 
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { sep } from 'path';

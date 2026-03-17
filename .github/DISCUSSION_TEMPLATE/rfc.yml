@@ -1,5 +1,5 @@
-title: '[RFC] '
-labels: ['RFC']
+title: "[RFC] "
+labels: ["RFC"]
 body:
   - type: markdown
     attributes:

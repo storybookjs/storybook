@@ -1,18 +1,18 @@
 {
   "[javascript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "editor.codeActionsOnSave": {
@@ -24,7 +24,14 @@
   "eslint.options": {
     "cache": true,
     "cacheLocation": ".cache/eslint",
-    "extensions": [".js", ".jsx", ".mjs", ".json", ".ts", ".tsx"]
+    "extensions": [
+      ".js",
+      ".jsx",
+      ".mjs",
+      ".json",
+      ".ts",
+      ".tsx"
+    ]
   },
   "eslint.useESLintClass": true,
   "eslint.validate": [
@@ -35,14 +42,16 @@
     "typescript",
     "typescriptreact"
   ],
-  "eslint.workingDirectories": ["./code", "./scripts"],
+  "eslint.workingDirectories": [
+    "./code",
+    "./scripts"
+  ],
   "files.associations": {
     "*.js": "javascriptreact"
   },
   "javascript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.quoteStyle": "single",
   "js/ts.implicitProjectConfig.target": "ESNext",
-  "prettier.ignorePath": "./code/.prettierignore",
   "storyExplorer.storybookConfigDir": "./code/.storybook",
   "typescript.format.enable": false,
   "typescript.preferences.importModuleSpecifier": "relative",
@@ -52,4 +61,9 @@
   "typescript.tsdk": "./typescript/lib",
   "vitest.workspaceConfig": "./code/vitest.workspace.ts",
   "vitest.rootConfig": "./code/vitest.workspace.ts",
+  "oxc.fmt.configPath": "./vite.config.ts",
+  "editor.formatOnSaveMode": "file",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "explicit"
+  }
 }

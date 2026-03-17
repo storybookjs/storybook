@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import * as cliImports from 'storybook/internal/cli';
 import type { PackageJson } from 'storybook/internal/common';

@@ -453,7 +453,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         },
         layoutCustomisations: {
           ...defaultLayoutState.layoutCustomisations,
-          ...(layoutCustomisations ?? {}),
+          ...layoutCustomisations,
         },
         ui: toMerged(defaultLayoutState.ui, pick(options, Object.keys(defaultLayoutState.ui))),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
@@ -515,7 +515,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
       const updatedLayout = {
         ...layout,
-        ...(options.layout || {}),
+        ...options.layout,
         ...pick(options, Object.keys(layout)),
         ...(singleStory && { navSize: 0 }),
       };

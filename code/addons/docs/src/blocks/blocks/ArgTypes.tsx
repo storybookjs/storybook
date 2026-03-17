@@ -1,4 +1,3 @@
-/* eslint-disable react/destructuring-assignment */
 import type { FC } from 'react';
 import React from 'react';
 

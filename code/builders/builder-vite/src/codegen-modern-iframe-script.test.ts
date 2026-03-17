@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { generateModernIframeScriptCodeFromPreviews } from './codegen-modern-iframe-script';
 import { generateAddonSetupCode } from './codegen-set-addon-channel';

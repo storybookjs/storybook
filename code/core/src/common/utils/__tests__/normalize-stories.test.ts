@@ -1,7 +1,7 @@
 /// <reference types="@testing-library/jest-dom" />
 import { sep } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
 

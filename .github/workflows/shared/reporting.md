@@ -5,17 +5,21 @@
 ## Report Structure Guidelines
 
 ### 1. Header Levels
+
 **Use h3 (###) or lower for all headers in your issue report to maintain proper document hierarchy.**
 
 When creating GitHub issues or discussions:
+
 - Use `###` (h3) for main sections (e.g., "### Test Summary")
 - Use `####` (h4) for subsections (e.g., "#### Device-Specific Results")
 - Never use `##` (h2) or `#` (h1) in reports - these are reserved for titles
 
 ### 2. Progressive Disclosure
+
 **Wrap detailed test results in `<details><summary><b>Section Name</b></summary>` tags to improve readability and reduce scrolling.**
 
 Use collapsible sections for:
+
 - Verbose details (full test logs, raw data)
 - Secondary information (minor warnings, extra context)
 - Per-item breakdowns when there are many items
@@ -32,6 +36,7 @@ Always keep critical information visible (summary, critical issues, key metrics)
 ### Design Principles (Airbnb-Inspired)
 
 Reports should:
+
 - **Build trust through clarity**: Most important info immediately visible
 - **Exceed expectations**: Add helpful context like trends, comparisons
 - **Create delight**: Use progressive disclosure to reduce overwhelm
@@ -41,11 +46,13 @@ Reports should:
 
 ```markdown
 ### Summary
+
 - Key metric 1: value
 - Key metric 2: value
 - Status: ✅/⚠️/❌
 
 ### Critical Issues
+
 [Always visible - these are important]
 
 <details>
@@ -63,6 +70,7 @@ Reports should:
 </details>
 
 ### Recommendations
+
 [Actionable next steps - keep visible]
 ```
 

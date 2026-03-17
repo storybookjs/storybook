@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { resolve } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { onlyWindows, skipWindows } from '../../../../../vitest.helpers';
 import { parseStaticDir, prepareNestedSvg } from '../server-statics';

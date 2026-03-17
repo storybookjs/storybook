@@ -273,8 +273,8 @@ export const Viewport = ({
   }, [resize, scale]);
 
   const dimensions = useMemo(() => {
-    const [, nx = '', ux = 'px'] = width.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{1,4})?$/) || [];
-    const [, ny = '', uy = 'px'] = height.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{1,4})?$/) || [];
+    const [, nx = '', ux = 'px'] = width.match(/^(\d+(?:\.\d+)?)(%|[a-z]{1,4})?$/) || [];
+    const [, ny = '', uy = 'px'] = height.match(/^(\d+(?:\.\d+)?)(%|[a-z]{1,4})?$/) || [];
     return {
       frame: {
         width: `calc(${width} * ${scale})`,

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { findConfigFile, getProjectRoot } from 'storybook/internal/common';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';

@@ -1,19 +1,19 @@
-name: 'Setup Node.js and Install Dependencies'
-description: 'Sets up Node.js, caches dependencies, and installs packages for Storybook'
+name: "Setup Node.js and Install Dependencies"
+description: "Sets up Node.js, caches dependencies, and installs packages for Storybook"
 
 inputs:
   install-code-deps:
-    description: 'Whether to install code dependencies in addition to script dependencies'
+    description: "Whether to install code dependencies in addition to script dependencies"
     required: false
-    default: 'false'
+    default: "false"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version-file: '.nvmrc'
+        node-version-file: ".nvmrc"
 
     - name: Update npm to latest
       shell: bash

@@ -1,7 +1,7 @@
 import type { Stats } from 'node:fs';
 import * as fsp from 'node:fs/promises';
 
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vite-plus/test';
 
 import { Feature, SupportedLanguage } from 'storybook/internal/types';
 

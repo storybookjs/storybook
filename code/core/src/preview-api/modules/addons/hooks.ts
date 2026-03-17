@@ -241,7 +241,7 @@ function getHooksContextOrThrow<
   return hooks;
 }
 
-function useHook(name: string, callback: (hook: Hook) => void, deps?: any[] | undefined): Hook {
+function useHook(name: string, callback: (hook: Hook) => void, deps?: any[]): Hook {
   const hooks = getHooksContextOrThrow();
   if (hooks.currentPhase === 'MOUNT') {
     if (deps != null && !Array.isArray(deps)) {

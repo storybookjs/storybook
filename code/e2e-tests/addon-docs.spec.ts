@@ -1,5 +1,3 @@
-/* eslint-disable playwright/no-conditional-expect */
-/* eslint-disable playwright/no-conditional-in-test */
 import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';

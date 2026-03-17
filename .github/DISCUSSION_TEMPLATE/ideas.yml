@@ -26,7 +26,7 @@ body:
     attributes:
       label: Are you able to assist to bring the feature to reality?
       options:
-        - 'no'
+        - "no"
         - yes, I can
     validations:
       required: true

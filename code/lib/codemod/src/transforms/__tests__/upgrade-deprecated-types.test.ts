@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import ansiRegex from 'ansi-regex';
 import type { API } from 'jscodeshift';

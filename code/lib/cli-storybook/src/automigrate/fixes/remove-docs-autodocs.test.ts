@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import type * as fs from 'node:fs/promises';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';

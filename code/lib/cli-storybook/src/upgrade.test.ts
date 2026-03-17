@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import type * as sbcc from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';

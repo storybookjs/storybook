@@ -1,6 +1,6 @@
 import { join, sep } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies

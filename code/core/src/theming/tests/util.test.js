@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { darkenColor as darken, getPreferredColorScheme, lightenColor as lighten } from '../utils';
 

@@ -9,7 +9,7 @@ export const sanitize = (string: string) => {
   return string
     .toLowerCase()
 
-    .replace(/[ ’–—―′¿'`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '-')
+    .replace(/[ ’–—―′¿'`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '-')
     .replace(/-+/g, '-')
     .replace(/^-+/, '')
     .replace(/-+$/, '');

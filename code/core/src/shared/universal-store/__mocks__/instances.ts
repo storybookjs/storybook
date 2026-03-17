@@ -8,7 +8,7 @@
  *
  * The keys must be in the format "environment:instance".
  */
-import { vi } from 'vitest';
+import { vi } from 'vite-plus/test';
 
 import invariant from 'tiny-invariant';
 

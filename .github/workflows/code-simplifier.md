@@ -18,7 +18,7 @@ imports:
 
 safe-outputs:
   create-pull-request:
-    title-prefix: '[code-simplifier] '
+    title-prefix: "[code-simplifier] "
     labels: [refactoring, code-quality, automation]
     reviewers: [copilot]
     expires: 1d

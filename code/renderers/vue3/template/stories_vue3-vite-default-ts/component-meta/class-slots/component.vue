@@ -1,5 +1,5 @@
 <script lang="ts">
-import { VNode } from 'vue';
+import type { VNode } from 'vue';
 
 export default {} as any as new () => {
   $slots: {

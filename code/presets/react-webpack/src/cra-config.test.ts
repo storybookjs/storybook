@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { join, sep } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { getReactScriptsPath } from './cra-config';
 

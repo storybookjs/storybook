@@ -40,9 +40,7 @@ import { prepareContext, prepareStory } from './prepareStory';
 
 // TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
 declare global {
-  // eslint-disable-next-line no-var
   var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
-  // eslint-disable-next-line no-var
   var defaultProjectAnnotations: ProjectAnnotations<any>;
 }
 

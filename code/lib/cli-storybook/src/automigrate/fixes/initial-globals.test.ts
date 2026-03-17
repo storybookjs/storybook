@@ -1,7 +1,7 @@
 import * as fsp from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vite-plus/test';
 
 import { initialGlobals } from './initial-globals';
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { types as t } from 'storybook/internal/babel';
 import { generate, parser } from 'storybook/internal/babel';

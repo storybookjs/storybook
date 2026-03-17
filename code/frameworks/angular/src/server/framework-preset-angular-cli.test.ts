@@ -1,4 +1,4 @@
-import { vi, expect, describe, it, beforeEach } from 'vitest';
+import { vi, expect, describe, it, beforeEach } from 'vite-plus/test';
 
 import { logger } from 'storybook/internal/node-logger';
 

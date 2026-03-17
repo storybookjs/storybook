@@ -7,7 +7,7 @@ import {
   provideAnimations,
   provideNoopAnimations,
 } from '@angular/platform-browser/animations';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import type { NgModuleMetadata } from '../../types';
 import { WithOfficialModule } from '../__testfixtures__/test.module';

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { formatFileContent } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';

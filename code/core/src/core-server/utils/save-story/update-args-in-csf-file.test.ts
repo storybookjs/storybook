@@ -1,11 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vite-plus/test';
 
 import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 
-import { format } from 'prettier';
+import { format } from 'oxfmt';
 
 import { getDiff } from './getDiff';
 import { updateArgsInCsfFile } from './update-args-in-csf-file';
@@ -25,9 +25,7 @@ describe('success', () => {
   test('Typescript Constructs', async () => {
     const newArgs = { bordered: true, initial: 'test1' };
 
-    const before = await format(await readFile(FILES.typescriptConstructs, 'utf-8'), {
-      parser: 'typescript',
-    });
+    const before = (await format('file.ts', await readFile(FILES.typescriptConstructs, 'utf-8'))).code;
     const CSF = await readCsf(FILES.typescriptConstructs, { makeTitle });
 
     const parsed = CSF.parse();
@@ -38,9 +36,7 @@ describe('success', () => {
       updateArgsInCsfFile(node, newArgs);
     });
 
-    const after = await format(printCsf(parsed).code, {
-      parser: 'typescript',
-    });
+    const after = (await format('file.ts', printCsf(parsed).code)).code;
 
     // check if the code was updated at all
     expect(after).not.toBe(before);
@@ -110,9 +106,7 @@ describe('success', () => {
   test('CSF Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };
 
-    const before = await format(await readFile(FILES.csfVariances, 'utf-8'), {
-      parser: 'typescript',
-    });
+    const before = (await format('file.ts', await readFile(FILES.csfVariances, 'utf-8'))).code;
     const CSF = await readCsf(FILES.csfVariances, { makeTitle });
 
     const parsed = CSF.parse();
@@ -123,9 +117,7 @@ describe('success', () => {
       updateArgsInCsfFile(node, newArgs);
     });
 
-    const after = await format(printCsf(parsed).code, {
-      parser: 'typescript',
-    });
+    const after = (await format('file.ts', printCsf(parsed).code)).code;
 
     // check if the code was updated at all
     expect(after).not.toBe(before);
@@ -236,9 +228,7 @@ describe('success', () => {
   test('CSF4 Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };
 
-    const before = await format(await readFile(FILES.csf4Variances, 'utf-8'), {
-      parser: 'typescript',
-    });
+    const before = (await format('file.ts', await readFile(FILES.csf4Variances, 'utf-8'))).code;
     const CSF = await readCsf(FILES.csf4Variances, { makeTitle });
 
     const parsed = CSF.parse();
@@ -249,9 +239,7 @@ describe('success', () => {
       updateArgsInCsfFile(node, newArgs);
     });
 
-    const after = await format(printCsf(parsed).code, {
-      parser: 'typescript',
-    });
+    const after = (await format('file.ts', printCsf(parsed).code)).code;
 
     // check if the code was updated at all
     expect(after).not.toBe(before);
@@ -288,9 +276,7 @@ describe('success', () => {
   test('Export Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };
 
-    const before = await format(await readFile(FILES.exportVariances, 'utf-8'), {
-      parser: 'typescript',
-    });
+    const before = (await format('file.ts', await readFile(FILES.exportVariances, 'utf-8'))).code;
     const CSF = await readCsf(FILES.exportVariances, { makeTitle });
 
     const parsed = CSF.parse();
@@ -304,9 +290,7 @@ describe('success', () => {
       updateArgsInCsfFile(node, newArgs);
     });
 
-    const after = await format(printCsf(parsed).code, {
-      parser: 'typescript',
-    });
+    const after = (await format('file.ts', printCsf(parsed).code)).code;
 
     // check if the code was updated at all
     expect(after).not.toBe(before);
@@ -346,9 +330,7 @@ describe('success', () => {
       myUndefined: undefined,
     };
 
-    const before = await format(await readFile(FILES.dataVariances, 'utf-8'), {
-      parser: 'typescript',
-    });
+    const before = (await format('file.ts', await readFile(FILES.dataVariances, 'utf-8'))).code;
     const CSF = await readCsf(FILES.dataVariances, { makeTitle });
 
     const parsed = CSF.parse();
@@ -362,9 +344,7 @@ describe('success', () => {
       updateArgsInCsfFile(node, newArgs);
     });
 
-    const after = await format(printCsf(parsed).code, {
-      parser: 'typescript',
-    });
+    const after = (await format('file.ts', printCsf(parsed).code)).code;
 
     // check if the code was updated at all
     expect(after).not.toBe(before);

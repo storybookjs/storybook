@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import type { ArgTypes } from 'storybook/internal/types';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vite-plus/test';
 import {
   computesTemplateFromComponent,
   computesTemplateSourceFromComponent,
@@ -47,7 +47,9 @@ describe('angular template decorator', () => {
 
   describe('with component without selector', () => {
     @Component({
-      template: `The content`,
+      template: `
+        The content
+      `,
     })
     class WithoutSelectorComponent {}
 
@@ -319,7 +321,9 @@ describe('angular source decorator', () => {
 
   describe('with component without selector', () => {
     @Component({
-      template: `The content`,
+      template: `
+        The content
+      `,
     })
     class WithoutSelectorComponent {}
 
@@ -687,9 +691,9 @@ describe('angular source decorator', () => {
 
           'a double quoted string with escaped "double quotes"',
 
-          `a string literal with \'escaped single quotes\'`,
+          `a string literal with 'escaped single quotes'`,
 
-          `a string literal with \"escaped double quotes\"`,
+          `a string literal with "escaped double quotes"`,
         ],
       };
 
@@ -723,9 +727,9 @@ describe('angular source decorator', () => {
 
           'a double quoted string with escaped "double quotes"',
 
-          `a string literal with \'escaped single quotes\'`,
+          `a string literal with 'escaped single quotes'`,
 
-          `a string literal with \"escaped double quotes\"`,
+          `a string literal with "escaped double quotes"`,
         ],
       };
       someDataObject.ref = someDataObject;

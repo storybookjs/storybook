@@ -114,7 +114,7 @@ export const getStorybookData = async ({
   logger.debug('Getting Storybook info...');
   const {
     mainConfig,
-    mainConfigPath: mainConfigPath,
+    mainConfigPath,
     configDir: configDirFromScript,
     previewConfigPath,
     versionSpecifier,

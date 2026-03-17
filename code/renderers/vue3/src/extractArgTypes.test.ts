@@ -1,5 +1,5 @@
-import type { Mock } from 'vitest';
-import { beforeEach, describe, expect, it, vi, vitest } from 'vitest';
+import type { Mock } from 'vite-plus/test';
+import { beforeEach, describe, expect, it, vi, vitest } from 'vite-plus/test';
 
 import { extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools';
 

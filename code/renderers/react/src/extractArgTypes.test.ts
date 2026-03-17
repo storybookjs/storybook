@@ -1,6 +1,6 @@
 import { join, resolve } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { normalizeNewlines } from 'storybook/internal/docs-tools';
 import type { Renderer } from 'storybook/internal/types';

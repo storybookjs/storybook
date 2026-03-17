@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { printConfig, printCsf } from 'storybook/internal/csf-tools';
 

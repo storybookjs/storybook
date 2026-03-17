@@ -1,5 +1,5 @@
-import type { Mock } from 'vitest';
-import { describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';

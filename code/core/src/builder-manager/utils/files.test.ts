@@ -1,6 +1,6 @@
 import { platform } from 'node:os';
 
-import { expect, it } from 'vitest';
+import { expect, it } from 'vite-plus/test';
 
 import type { OutputFile } from 'esbuild';
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { onlyWindows, skipWindows } from '../../../../vitest.helpers';
 import { processPreviewAnnotation } from './process-preview-annotation';

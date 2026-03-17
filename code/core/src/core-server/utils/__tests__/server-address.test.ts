@@ -1,6 +1,6 @@
 import os, { type NetworkInterfaceInfoIPv4 } from 'node:os';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { getServerAddresses } from '../server-address';
 

@@ -1,7 +1,7 @@
 import type { Options } from 'storybook/internal/types';
 
 import { createFilter } from '@rollup/pluginutils';
-import type { Plugin } from 'vite';
+import type { Plugin } from 'vite-plus';
 
 import type { CompileOptions } from './compiler';
 import { compile } from './compiler';

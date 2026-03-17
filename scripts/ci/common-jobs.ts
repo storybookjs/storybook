@@ -64,7 +64,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   ],
 }));
 
-export const prettyDocs = defineJob('Prettify docs', () => ({
+export const fmtDocs = defineJob('Format docs', () => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'medium+',
@@ -74,9 +74,9 @@ export const prettyDocs = defineJob('Prettify docs', () => ({
     npm.installScripts(),
     {
       run: {
-        name: 'Prettier',
+        name: 'Format check',
         working_directory: `scripts`,
-        command: 'yarn docs:prettier:check',
+        command: 'yarn docs:fmt:check',
       },
     },
   ],
@@ -180,7 +180,7 @@ export const check = defineJob(
 );
 
 export const lint = defineJob(
-  'EsLint & Prettier validation',
+  'ESLint & Oxfmt validation',
   () => ({
     executor: {
       name: 'sb_node_22_classic',

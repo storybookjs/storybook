@@ -25,7 +25,6 @@
     "lint": "oxlint code/ scripts/",
     "lint:fix": "oxlint --fix code/ scripts/",
     "lint:prettier": "prettier --check code/ scripts/",
-    "lint:prettier:fix": "prettier --write code/ scripts/",
     "nx": "nx",
     "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",

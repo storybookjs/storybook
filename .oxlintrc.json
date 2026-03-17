@@ -9,66 +9,36 @@
     "eslint-plugin-playwright",
     { "name": "local-rules", "specifier": "./scripts/eslint-plugin-local-rules" }
   ],
-  "env": {
-    "es6": true,
-    "node": true,
-    "browser": true
-  },
   "settings": {
-    "react": {
-      "version": "18"
-    }
+    "react": { "version": "18" }
   },
   "rules": {
     "no-unused-vars": "off",
-    "no-use-before-define": "off",
-    "no-redeclare": "off",
-    "no-shadow": "off",
-    "no-console": "off",
     "no-shadow-restricted-names": "off",
     "no-control-regex": "off",
     "no-sparse-arrays": "off",
     "no-useless-escape": "off",
     "no-nonoctal-decimal-escape": "off",
 
-    "typescript/no-require-imports": "off",
     "typescript/no-implied-eval": "error",
-    "typescript/no-explicit-any": "warn",
     "typescript/ban-ts-comment": "error",
-    "typescript/no-unused-vars": "warn",
-    "typescript/no-redeclare": "off",
     "typescript/consistent-type-imports": ["error", { "disallowTypeAnnotations": false }],
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-unused-vars": "warn",
     "typescript/no-empty-object-type": "warn",
     "typescript/no-empty-interface": "warn",
-    "typescript/no-wrapper-object-types": "warn",
     "typescript/no-unsafe-function-type": "warn",
-    "typescript/default-param-last": "off",
     "typescript/triple-slash-reference": "off",
 
-    "react/no-unescaped-entities": "off",
-    "react/react-in-jsx-scope": "off",
-    "react/prop-types": "off",
-    "react/forbid-prop-types": "off",
-    "react/no-unused-prop-types": "off",
-    "react/require-default-props": "off",
-    "react/default-props-match-prop-types": "off",
     "react/jsx-no-undef": "off",
-
-    "react/rules-of-hooks": "off",
     "react/exhaustive-deps": "off",
 
-    "import/no-unresolved": "off",
-    "import/no-extraneous-dependencies": "off",
-    "import/extensions": "off",
-    "import/named": "off",
-    "import/namespace": "off",
     "import/default": "off",
+    "import/namespace": "off",
     "import/no-named-as-default": "warn",
     "import/no-named-as-default-member": "warn",
     "import/no-self-import": "warn",
 
-    "jsx-a11y/no-autofocus": "warn",
-    "jsx-a11y/control-has-associated-label": "off",
     "jsx-a11y/anchor-has-content": "off",
     "jsx-a11y/prefer-tag-over-role": "off",
 
@@ -104,22 +74,10 @@
             "name": "lodash-es",
             "message": "lodash-es is banned. Use es-toolkit or native alternatives."
           },
-          {
-            "name": "chalk",
-            "message": "chalk is banned. Use picocolors instead."
-          },
-          {
-            "name": "qs",
-            "message": "qs is banned. Use URLSearchParams instead."
-          },
-          {
-            "name": "handlebars",
-            "message": "handlebars is banned."
-          },
-          {
-            "name": "fs-extra",
-            "message": "fs-extra is banned. Use node:fs/promises instead."
-          }
+          { "name": "chalk", "message": "chalk is banned. Use picocolors instead." },
+          { "name": "qs", "message": "qs is banned. Use URLSearchParams instead." },
+          { "name": "handlebars", "message": "handlebars is banned." },
+          { "name": "fs-extra", "message": "fs-extra is banned. Use node:fs/promises instead." }
         ]
       }
     ]
@@ -146,36 +104,18 @@
       }
     },
     {
-      "files": ["**/frameworks/angular/template/**/*"],
-      "rules": {
-        "typescript/no-useless-constructor": "off"
-      }
-    },
-    {
       "files": [
-        "*.test.*",
-        "*.spec.*",
         "**/__tests__/**",
         "**/__testfixtures__/**",
         "**/*.test.*",
-        "**/*.test-d.*",
         "**/*.stories.*",
-        "**/*.mockdata.*",
         "**/template/**/*"
       ],
       "rules": {
         "jsx-a11y/click-events-have-key-events": "off",
         "jsx-a11y/no-static-element-interactions": "off",
         "jsx-a11y/iframe-has-title": "off",
-        "jsx-a11y/alt-text": "off",
-        "typescript/no-empty-function": "off",
-        "no-console": "off"
-      }
-    },
-    {
-      "files": ["**/*.d.ts"],
-      "rules": {
-        "no-var": "off"
+        "jsx-a11y/alt-text": "off"
       }
     },
     {
@@ -234,7 +174,6 @@
     }
   ],
   "ignorePatterns": [
-    "node_modules",
     "**/node_modules",
     "**/dist",
     "**/build",

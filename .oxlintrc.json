@@ -35,6 +35,8 @@
     "typescript/consistent-type-imports": ["error", { "disallowTypeAnnotations": false }],
     "typescript/no-empty-object-type": "warn",
     "typescript/no-empty-interface": "warn",
+    "typescript/no-wrapper-object-types": "warn",
+    "typescript/no-unsafe-function-type": "warn",
     "typescript/default-param-last": "off",
     "typescript/triple-slash-reference": "off",
 
@@ -71,19 +73,23 @@
         "paths": [
           {
             "name": "react-aria",
-            "message": "Don't import from react-aria directly, please use the specific submodule like @react-aria/overlays instead"
+            "message": "Don't import from react-aria directly, please use the specific submodule like @react-aria/overlays instead",
+            "allowTypeImports": false
           },
           {
             "name": "react-stately",
-            "message": "Don't import from react-stately directly, please use the specific submodule like @react-stately/overlays instead"
+            "message": "Don't import from react-stately directly, please use the specific submodule like @react-stately/overlays instead",
+            "allowTypeImports": false
           },
           {
             "name": "react-aria-components",
-            "message": "Don't import from react-aria-components root, but use the react-aria-components/patched-dist/ComponentX entrypoints which are optimised for tree-shaking."
+            "message": "Don't import from react-aria-components root, but use the react-aria-components/patched-dist/ComponentX entrypoints which are optimised for tree-shaking.",
+            "allowTypeImports": true
           },
           {
             "name": "es-toolkit",
-            "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking."
+            "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+            "allowTypeImports": true
           },
           {
             "name": "lodash",

@@ -44,6 +44,9 @@
     "*.{js,jsx,mjs,ts,tsx}": [
       "oxlint --fix"
     ],
+    "*.ejs": [
+      "yarn --cwd scripts ejslint"
+    ],
     "*.{css,html,json,md,yml}": [
       "prettier --write"
     ],

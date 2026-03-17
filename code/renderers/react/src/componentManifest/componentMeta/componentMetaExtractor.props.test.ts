@@ -4,7 +4,7 @@ import { extract } from './componentMetaExtractor.test-helpers';
 
 describe('prop extraction', () => {
   it('extracts basic prop types', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -17,13 +17,17 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props.label).toMatchObject({ type: { name: 'string' }, required: true });
-    expect(doc.props.count).toMatchObject({ type: { name: 'number' }, required: true });
-    expect(doc.props.disabled).toMatchObject({ required: false });
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { type: { name: 'string' }, required: true },
+        count: { type: { name: 'number' }, required: true },
+        disabled: { required: false },
+      },
+    });
   });
 
   it('extracts string literal union as enum', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -34,14 +38,20 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props.size.type).toMatchObject({
-      name: 'enum',
-      value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: {
+          type: {
+            name: 'enum',
+            value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+          },
+        },
+      },
     });
   });
 
   it('extracts optional string literal union as enum', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -52,17 +62,21 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props.size).toMatchObject({
-      required: false,
-      type: {
-        name: 'enum',
-        value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: {
+          required: false,
+          type: {
+            name: 'enum',
+            value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+          },
+        },
       },
     });
   });
 
   it('extracts JSDoc descriptions', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -76,14 +90,16 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      label: { description: 'The button label text' },
-      primary: { description: 'Whether the button is in primary style' },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { description: 'The button label text' },
+        primary: { description: 'Whether the button is in primary style' },
+      },
     });
   });
 
   it('extracts component-level JSDoc description', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -93,11 +109,13 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc).toMatchObject({ description: 'Primary UI component for user interaction' });
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      description: 'Primary UI component for user interaction',
+    });
   });
 
   it('extracts Pick<> props correctly', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -112,11 +130,11 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(Object.keys(doc.props).sort()).toEqual(['id', 'label']);
+    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['id', 'label']);
   });
 
   it('extracts Omit<> props correctly', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -130,11 +148,11 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(Object.keys(doc.props).sort()).toEqual(['id', 'label']);
+    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['id', 'label']);
   });
 
   it('extracts Partial<> props as all optional', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -146,14 +164,16 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      label: { required: false },
-      count: { required: false },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { required: false },
+        count: { required: false },
+      },
     });
   });
 
   it('extracts Required<> props as all required', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -165,14 +185,16 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      label: { required: true },
-      count: { required: true },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { required: true },
+        count: { required: true },
+      },
     });
   });
 
   it('extracts extends interface props', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -185,15 +207,17 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      id: { parent: { name: 'BaseProps' } },
-      label: { parent: { name: 'ButtonProps' } },
-      variant: { parent: { name: 'ButtonProps' } },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        id: { parent: { name: 'BaseProps' } },
+        label: { parent: { name: 'ButtonProps' } },
+        variant: { parent: { name: 'ButtonProps' } },
+      },
     });
   });
 
   it('extracts generic component props', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'StringList',
       `
       import React from 'react';
@@ -205,14 +229,16 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      items: { type: { name: 'string[]' } },
-      renderItem: { type: { name: '(item: string) => ReactNode' } },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        items: { type: { name: 'string[]' } },
+        renderItem: { type: { name: '(item: string) => ReactNode' } },
+      },
     });
   });
 
   it('flattens intersection types to all member props', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Comp',
       `
       import React from 'react';
@@ -222,15 +248,17 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(Object.keys(doc.props).sort()).toEqual(['x', 'y']);
-    expect(doc.props).toMatchObject({
-      x: { type: { name: 'string' } },
-      y: { type: { name: 'number' } },
+    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual(['x', 'y']);
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        x: { type: { name: 'string' } },
+        y: { type: { name: 'number' } },
+      },
     });
   });
 
   it('flattens complex Pick & Omit combinations', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Comp',
       `
       import React from 'react';
@@ -240,12 +268,17 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(Object.keys(doc.props).sort()).toEqual(['a', 'b', 'c', 'extra']);
-    expect(doc.props).not.toHaveProperty('d');
+    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual([
+      'a',
+      'b',
+      'c',
+      'extra',
+    ]);
+    expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('d');
   });
 
   it('resolves generic instantiations to concrete prop types', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'NumberList',
       `
       import React from 'react';
@@ -257,14 +290,16 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      items: { type: { name: 'number[]' } },
-      selected: { type: { name: 'number' } },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        items: { type: { name: 'number[]' } },
+        selected: { type: { name: 'number' } },
+      },
     });
   });
 
   it('extracts number literal union as enum', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Grid',
       `
       import React from 'react';
@@ -273,14 +308,20 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props.columns.type).toMatchObject({
-      name: 'enum',
-      value: [{ value: '1' }, { value: '2' }, { value: '3' }, { value: '4' }],
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        columns: {
+          type: {
+            name: 'enum',
+            value: [{ value: '1' }, { value: '2' }, { value: '3' }, { value: '4' }],
+          },
+        },
+      },
     });
   });
 
   it('extracts mixed union (string | number) as type string, not enum', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Input',
       `
       import React from 'react';
@@ -289,11 +330,15 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props.value.type.name).toBe('string | number');
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        value: { type: { name: 'string | number' } },
+      },
+    });
   });
 
   it('preserves nested | undefined in optional props with generic types', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Widget',
       `
       import React from 'react';
@@ -314,18 +359,20 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      config: { type: { name: 'Record<string, number | undefined>' } },
-      onChange: { type: { name: '(value: string | undefined) => void' } },
-      label: { type: { name: 'string' } },
-      handler: { type: { name: 'string | ((x: number) => void) | undefined' } },
-      combo: { type: { name: 'string | (A & B) | undefined' } },
-      boolOrStr: { type: { name: 'string | boolean | undefined' } },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        config: { type: { name: 'Record<string, number | undefined>' } },
+        onChange: { type: { name: '(value: string | undefined) => void' } },
+        label: { type: { name: 'string' } },
+        handler: { type: { name: 'string | ((x: number) => void) | undefined' } },
+        combo: { type: { name: 'string | (A & B) | undefined' } },
+        boolOrStr: { type: { name: 'string | boolean | undefined' } },
+      },
     });
   });
 
   it('extracts function prop types', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Form',
       `
       import React from 'react';
@@ -338,15 +385,17 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      onClick: { type: { name: '() => void' } },
-      onChange: { type: { name: '(value: string) => void' } },
-      onSubmit: { type: { name: '(event: FormEvent<Element>) => Promise<void>' } },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        onClick: { type: { name: '() => void' } },
+        onChange: { type: { name: '(value: string) => void' } },
+        onSubmit: { type: { name: '(event: FormEvent<Element>) => Promise<void>' } },
+      },
     });
   });
 
   it('extracts complex nested object props', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -359,14 +408,16 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      theme: { type: { name: 'Theme' } },
-      label: { type: { name: 'string' } },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        theme: { type: { name: 'Theme' } },
+        label: { type: { name: 'string' } },
+      },
     });
   });
 
   it('extracts React.ReactNode and React.ReactElement prop types', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Card',
       `
       import React from 'react';
@@ -379,15 +430,17 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props).toMatchObject({
-      children: { type: { name: 'ReactNode' } },
-      icon: { type: { name: 'ReactElement<any, string | JSXElementConstructor<any>>' } },
-      header: { type: { name: 'ReactNode' } },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        children: { type: { name: 'ReactNode' } },
+        icon: { type: { name: 'ReactElement<any, string | JSXElementConstructor<any>>' } },
+        header: { type: { name: 'ReactNode' } },
+      },
     });
   });
 
   it('filters out HTML attributes from extends (ButtonHTMLAttributes has >30 props)', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -399,16 +452,16 @@ describe('prop extraction', () => {
     `
     );
 
-    const propNames = Object.keys(doc.props);
-    expect(propNames).toContain('variant');
-    expect(propNames).toContain('label');
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: { variant: expect.anything(), label: expect.anything() },
+    });
     // HTML attributes from ButtonHTMLAttributes should be filtered out (>30 props threshold)
-    expect(propNames).not.toContain('onClick');
-    expect(propNames).not.toContain('className');
+    expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('onClick');
+    expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('className');
   });
 
   it('keeps HTML attributes from extends when Pick narrows to few props', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -420,13 +473,13 @@ describe('prop extraction', () => {
     );
 
     // Under the threshold, HTML attrs are kept
-    expect(doc.props).toHaveProperty('disabled');
-    expect(doc.props).toHaveProperty('type');
-    expect(doc.props).toHaveProperty('label');
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: { disabled: expect.anything(), type: expect.anything(), label: expect.anything() },
+    });
   });
 
   it('extracts forwardRef component props', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -437,15 +490,21 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(doc.props.label).toMatchObject({ type: { name: 'string' }, required: true });
-    expect(doc.props.variant.type).toMatchObject({
-      name: 'enum',
-      value: [{ value: '"a"' }, { value: '"b"' }],
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { type: { name: 'string' }, required: true },
+        variant: {
+          type: {
+            name: 'enum',
+            value: [{ value: '"a"' }, { value: '"b"' }],
+          },
+        },
+      },
     });
   });
 
   it('includes ref and key props for forwardRef components', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -457,14 +516,16 @@ describe('prop extraction', () => {
     );
 
     // ref and key come from React internals, not from the user's Props interface
-    expect(doc.props).toMatchObject({
-      ref: { parent: { name: 'RefAttributes' } },
-      key: { parent: { name: 'Attributes' } },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        ref: { parent: { name: 'RefAttributes' } },
+        key: { parent: { name: 'Attributes' } },
+      },
     });
   });
 
   it('collects all props from discriminated union', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Slider',
       `
       import React from 'react';
@@ -491,6 +552,12 @@ describe('prop extraction', () => {
     `
     );
 
-    expect(Object.keys(doc.props).sort()).toEqual(['defaultValue', 'max', 'min', 'step', 'value']);
+    expect(Object.keys(entry.component!.reactComponentMeta!.props).sort()).toEqual([
+      'defaultValue',
+      'max',
+      'min',
+      'step',
+      'value',
+    ]);
   });
 });

@@ -50,7 +50,7 @@ export function createTempDir(prefix = 'meta-test'): string {
   return dir;
 }
 
-export const DEFAULT_TSCONFIG = {
+const DEFAULT_TSCONFIG = {
   compilerOptions: {
     target: 'ES2020',
     module: 'ESNext',
@@ -79,22 +79,6 @@ export function createTempProject(
   fs.writeFileSync(configPath, JSON.stringify(tsconfig, null, 2));
   const filePaths = writeFiles(projectDir, files);
   return { projectDir, configPath, filePaths };
-}
-
-/**
- * Derive a PascalCase component name from a file path. For `index.ts` files the parent directory
- * name is used instead.
- */
-export function defaultImportName(filePath: string): string {
-  const dir = path.dirname(filePath);
-  const baseName = path.basename(filePath, path.extname(filePath));
-  const rawName = baseName === 'index' ? path.basename(dir) : baseName;
-  const pascalName = rawName
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-  return pascalName || 'Component';
 }
 
 /** Serialize a tsconfig to JSON, optionally merging overrides into `DEFAULT_TSCONFIG`. */

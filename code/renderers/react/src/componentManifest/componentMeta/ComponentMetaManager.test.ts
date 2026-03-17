@@ -165,8 +165,10 @@ describe('multi-project management', () => {
       },
     ];
     project.extractPropsFromStories(entries1);
-    expect(entries1[0].component?.reactComponentMeta?.props.text).toBeDefined();
-    expect(entries1[0].component?.reactComponentMeta?.props.color).toBeUndefined();
+    expect(entries1[0].component?.reactComponentMeta).toMatchObject({
+      props: { text: expect.anything() },
+    });
+    expect(entries1[0].component?.reactComponentMeta?.props?.color).toBeUndefined();
 
     // Modify the file
     fs.writeFileSync(
@@ -193,7 +195,9 @@ describe('multi-project management', () => {
       },
     ];
     project.extractPropsFromStories(entries2);
-    expect(entries2[0].component?.reactComponentMeta?.props.color).toBeDefined();
+    expect(entries2[0].component?.reactComponentMeta).toMatchObject({
+      props: { color: expect.anything() },
+    });
   });
 
   it('handles config change: deleted tsconfig disposes project', () => {
@@ -371,8 +375,7 @@ describe('multi-project management', () => {
     ];
     project.extractPropsFromStories(entries);
 
-    const doc = entries[0].component?.reactComponentMeta;
-    expect(doc).toMatchObject({
+    expect(entries[0].component?.reactComponentMeta).toMatchObject({
       displayName: 'Button',
       props: {
         label: expect.anything(),

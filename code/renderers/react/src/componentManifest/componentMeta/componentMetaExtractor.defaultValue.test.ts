@@ -4,7 +4,7 @@ import { extract } from './componentMetaExtractor.test-helpers';
 
 describe('default value extraction', () => {
   it('extracts destructuring defaults from arrow function', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -12,15 +12,17 @@ describe('default value extraction', () => {
       export const Button = ({ size = 'md', color = 'blue', label }: Props) => <button />;
     `
     );
-    expect(doc.props).toMatchObject({
-      size: { defaultValue: { value: "'md'" } },
-      color: { defaultValue: { value: "'blue'" } },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+        color: { defaultValue: { value: "'blue'" } },
+        label: { defaultValue: null },
+      },
     });
   });
 
   it('extracts defaults from forwardRef', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -30,14 +32,16 @@ describe('default value extraction', () => {
       );
     `
     );
-    expect(doc.props).toMatchObject({
-      variant: { defaultValue: { value: "'primary'" } },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        variant: { defaultValue: { value: "'primary'" } },
+        label: { defaultValue: null },
+      },
     });
   });
 
   it('extracts JSDoc @default tags', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -49,14 +53,16 @@ describe('default value extraction', () => {
       export const Button = (props: Props) => <button />;
     `
     );
-    expect(doc.props).toMatchObject({
-      size: { defaultValue: { value: "'md'" } },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+        label: { defaultValue: null },
+      },
     });
   });
 
   it('extracts defaults from body-level destructuring in forwardRef', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Alert',
       `
       import React from 'react';
@@ -67,15 +73,17 @@ describe('default value extraction', () => {
       });
     `
     );
-    expect(doc.props).toMatchObject({
-      color: { defaultValue: { value: "'info'" } },
-      rounded: { defaultValue: { value: 'true' } },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        color: { defaultValue: { value: "'info'" } },
+        rounded: { defaultValue: { value: 'true' } },
+        label: { defaultValue: null },
+      },
     });
   });
 
   it('extracts defaults from helper calls that receive props directly', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Alert',
       `
       import React from 'react';
@@ -87,15 +95,17 @@ describe('default value extraction', () => {
       });
     `
     );
-    expect(doc.props).toMatchObject({
-      color: { defaultValue: { value: "'info'" } },
-      rounded: { defaultValue: { value: 'true' } },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        color: { defaultValue: { value: "'info'" } },
+        rounded: { defaultValue: { value: 'true' } },
+        label: { defaultValue: null },
+      },
     });
   });
 
   it('ignores body-level destructuring from unrelated local objects', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Alert',
       `
       import React from 'react';
@@ -107,14 +117,16 @@ describe('default value extraction', () => {
       };
     `
     );
-    expect(doc.props).toMatchObject({
-      color: { defaultValue: null },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        color: { defaultValue: null },
+        label: { defaultValue: null },
+      },
     });
   });
 
   it('resolves identifier references to literal values', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -124,15 +136,17 @@ describe('default value extraction', () => {
       export const Button = ({ size = DEFAULT_SIZE, count = DEFAULT_COUNT, label }: Props) => <button />;
     `
     );
-    expect(doc.props).toMatchObject({
-      size: { defaultValue: { value: "'md'" } },
-      count: { defaultValue: { value: '42' } },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+        count: { defaultValue: { value: '42' } },
+        label: { defaultValue: null },
+      },
     });
   });
 
   it('extracts Component.defaultProps expression pattern', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -141,15 +155,17 @@ describe('default value extraction', () => {
       Button.defaultProps = { size: 'md', color: 'blue' };
     `
     );
-    expect(doc.props).toMatchObject({
-      size: { defaultValue: { value: "'md'" } },
-      color: { defaultValue: { value: "'blue'" } },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+        color: { defaultValue: { value: "'blue'" } },
+        label: { defaultValue: null },
+      },
     });
   });
 
   it('extracts static defaultProps from class components', async () => {
-    const doc = await extract(
+    const entry = await extract(
       'Button',
       `
       import React from 'react';
@@ -160,9 +176,11 @@ describe('default value extraction', () => {
       }
     `
     );
-    expect(doc.props).toMatchObject({
-      size: { defaultValue: { value: "'md'" } },
-      label: { defaultValue: null },
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+        label: { defaultValue: null },
+      },
     });
   });
 });

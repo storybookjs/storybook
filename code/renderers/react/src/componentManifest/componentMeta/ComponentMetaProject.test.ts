@@ -72,15 +72,15 @@ describe('compound component extraction', () => {
       ]
     );
 
-    const doc = entries[0].component?.reactComponentMeta;
-    expect(doc).toBeDefined();
-    expect(doc!.props.multiple).toBeDefined();
-    expect(doc!.props.multiple.required).toBe(false);
-    expect(doc!.props.multiple.description).toBe('Allow multiple items open');
-    expect(doc!.props.defaultValue).toBeDefined();
+    expect(entries[0].component?.reactComponentMeta).toMatchObject({
+      props: {
+        multiple: { required: false, description: 'Allow multiple items open' },
+        defaultValue: expect.anything(),
+      },
+    });
     // Should NOT have Item or Trigger props
-    expect(doc!.props.value).toBeUndefined();
-    expect(doc!.props.asChild).toBeUndefined();
+    expect(entries[0].component?.reactComponentMeta?.props?.value).toBeUndefined();
+    expect(entries[0].component?.reactComponentMeta?.props?.asChild).toBeUndefined();
   });
 
   it('uses Root description and jsDocTags, not wrapper Accordion', async () => {
@@ -133,15 +133,13 @@ describe('compound component extraction', () => {
       ]
     );
 
-    const component = entries[0]?.component;
-    const doc = component?.reactComponentMeta;
-
-    expect(doc).toBeDefined();
-    expect(doc?.displayName).toBe('Accordion.Root');
-    expect(doc?.description).toBe('Root-specific description');
-    expect(doc?.jsDocTags).toEqual({ summary: ['Root summary'] });
-    expect(component?.importOverride).toBeUndefined();
-    expect(doc?.props.size.defaultValue).toEqual({ value: "'md'" });
+    expect(entries[0].component?.reactComponentMeta).toMatchObject({
+      displayName: 'Accordion.Root',
+      description: 'Root-specific description',
+      jsDocTags: { summary: ['Root summary'] },
+      props: { size: { defaultValue: { value: "'md'" } } },
+    });
+    expect(entries[0].component?.importOverride).toBeUndefined();
   });
 
   it('extracts Aligner props when targeting Button.Aligner, Button props otherwise', async () => {
@@ -211,11 +209,10 @@ describe('compound component extraction', () => {
         ];
         project.extractPropsFromStories(entries1);
 
-        const doc = entries1[0]?.component?.reactComponentMeta;
-        expect(doc).toBeDefined();
-        expect(doc!.props.side).toBeDefined();
-        // Should NOT have Button's own props
-        expect(doc!.props.variant).toBeUndefined();
+        expect(entries1[0]?.component?.reactComponentMeta).toMatchObject({
+          props: { side: expect.anything() },
+        });
+        expect(entries1[0]?.component?.reactComponentMeta?.props?.variant).toBeUndefined();
 
         // Without memberAccess → find <Button />, get Button's own props
         const entries2: StoryRef[] = [
@@ -232,12 +229,10 @@ describe('compound component extraction', () => {
         ];
         project.extractPropsFromStories(entries2);
 
-        const doc2 = entries2[0]?.component?.reactComponentMeta;
-        expect(doc2).toBeDefined();
-        expect(doc2!.props.variant).toBeDefined();
-        expect(doc2!.props.color).toBeDefined();
-        // Should NOT have Aligner's props
-        expect(doc2!.props.side).toBeUndefined();
+        expect(entries2[0]?.component?.reactComponentMeta).toMatchObject({
+          props: { variant: expect.anything(), color: expect.anything() },
+        });
+        expect(entries2[0]?.component?.reactComponentMeta?.props?.side).toBeUndefined();
       }
     );
   });
@@ -298,15 +293,13 @@ describe('compound component extraction', () => {
       ]
     );
 
-    const component = entries[0]?.component;
-    const doc = component?.reactComponentMeta;
-
-    expect(doc).toBeDefined();
-    expect(doc?.displayName).toBe('Button.Aligner');
-    expect(doc?.description).toBe('Aligner-specific description');
-    expect(doc?.jsDocTags).toEqual({ summary: ['Aligner summary'] });
-    expect(component?.importOverride).toBeUndefined();
-    expect(doc?.props.side.defaultValue).toEqual({ value: "'start'" });
+    expect(entries[0].component?.reactComponentMeta).toMatchObject({
+      displayName: 'Button.Aligner',
+      description: 'Aligner-specific description',
+      jsDocTags: { summary: ['Aligner summary'] },
+      props: { side: { defaultValue: { value: "'start'" } } },
+    });
+    expect(entries[0].component?.importOverride).toBeUndefined();
   });
 
   it('inherits @import from wrapper for compound members', async () => {
@@ -359,13 +352,11 @@ describe('compound component extraction', () => {
       ]
     );
 
-    const component = entries[0]?.component;
-    const doc = component?.reactComponentMeta;
-
-    expect(doc).toBeDefined();
-    expect(doc?.description).toBe('Root-specific description');
-    expect(doc?.props.size.defaultValue).toEqual({ value: "'md'" });
-    expect(component?.importOverride).toBe(
+    expect(entries[0].component?.reactComponentMeta).toMatchObject({
+      description: 'Root-specific description',
+      props: { size: { defaultValue: { value: "'md'" } } },
+    });
+    expect(entries[0].component?.importOverride).toBe(
       "import { Accordion } from '@design-system/components/accordion';"
     );
   });
@@ -436,15 +427,12 @@ describe('compound component extraction', () => {
       ]
     );
 
-    const dialogDoc = entries[0]?.component?.reactComponentMeta;
-    expect(dialogDoc).toBeDefined();
-    expect(dialogDoc!.props.open).toBeDefined();
-    expect(dialogDoc!.props.onOpenChange).toBeDefined();
-
-    const buttonDoc = entries[1]?.component?.reactComponentMeta;
-    expect(buttonDoc).toBeDefined();
-    expect(buttonDoc!.props.label).toBeDefined();
-    expect(buttonDoc!.props.variant).toBeDefined();
+    expect(entries[0]?.component?.reactComponentMeta).toMatchObject({
+      props: { open: expect.anything(), onOpenChange: expect.anything() },
+    });
+    expect(entries[1]?.component?.reactComponentMeta).toMatchObject({
+      props: { label: expect.anything(), variant: expect.anything() },
+    });
   });
 
   it('extracts description, @import, and @summary from component JSDoc', async () => {
@@ -485,17 +473,15 @@ describe('compound component extraction', () => {
       ]
     );
 
-    const component = entries[0]?.component;
-    expect(component?.reactComponentMeta).toBeDefined();
-    expect(component?.reactComponentMeta?.description).toBe(
-      'Primary UI component for user interaction'
-    );
-    expect(component?.componentJsDocTags).toEqual({
-      import: ["import { Button } from '@design-system/components/override';"],
-      summary: ['Fast summary'],
+    expect(entries[0]?.component).toMatchObject({
+      reactComponentMeta: {
+        description: 'Primary UI component for user interaction',
+      },
+      componentJsDocTags: {
+        import: ["import { Button } from '@design-system/components/override';"],
+        summary: ['Fast summary'],
+      },
+      importOverride: "import { Button } from '@design-system/components/override';",
     });
-    expect(component?.importOverride).toBe(
-      "import { Button } from '@design-system/components/override';"
-    );
   });
 });

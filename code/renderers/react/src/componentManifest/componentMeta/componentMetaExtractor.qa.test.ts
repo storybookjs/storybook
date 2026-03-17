@@ -5,7 +5,7 @@ import { extract, extractFromStory } from './componentMetaExtractor.test-helpers
 describe('real-world component patterns', () => {
   describe('ForwardRefExoticComponent from HOC factory (Park UI)', () => {
     it('detects component returned by withProvider HOC', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'Root',
         `
         import React from 'react';
@@ -30,7 +30,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'Root',
         exportName: 'Root',
         props: {
@@ -51,7 +51,7 @@ describe('real-world component patterns', () => {
     });
 
     it('detects component returned by withContext HOC', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'ItemTrigger',
         `
         import React from 'react';
@@ -76,7 +76,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'ItemTrigger',
         exportName: 'ItemTrigger',
         props: {
@@ -124,7 +124,7 @@ describe('real-world component patterns', () => {
       `;
 
       const root = await extract('Root', componentSource);
-      expect(root).toMatchObject({
+      expect(root.component?.reactComponentMeta).toMatchObject({
         displayName: 'Root',
         exportName: 'Root',
         props: {
@@ -137,7 +137,7 @@ describe('real-world component patterns', () => {
       });
 
       const item = await extract('Item', componentSource);
-      expect(item).toMatchObject({
+      expect(item.component?.reactComponentMeta).toMatchObject({
         displayName: 'Item',
         exportName: 'Item',
         props: {
@@ -155,7 +155,7 @@ describe('real-world component patterns', () => {
       });
 
       const itemTrigger = await extract('ItemTrigger', componentSource);
-      expect(itemTrigger).toMatchObject({
+      expect(itemTrigger.component?.reactComponentMeta).toMatchObject({
         displayName: 'ItemTrigger',
         exportName: 'ItemTrigger',
         props: {
@@ -171,7 +171,7 @@ describe('real-world component patterns', () => {
 
   describe('as-cast with marker intersection (Primer)', () => {
     it('detects component after as WithSlotMarker cast', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'default',
         `
         import React from 'react';
@@ -198,7 +198,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'Component',
         exportName: 'default',
         props: {
@@ -227,7 +227,7 @@ describe('real-world component patterns', () => {
 
   describe('as PolymorphicForwardRefComponent (Primer)', () => {
     it('detects component cast to polymorphic forwardRef interface', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'Button',
         `
         import React from 'react';
@@ -262,7 +262,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'Button',
         exportName: 'Button',
         props: {
@@ -289,7 +289,7 @@ describe('real-world component patterns', () => {
     });
 
     it('extracts destructuring defaults from forwardRef with as-cast', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'Stack',
         `
         import React, { forwardRef, type ElementType } from 'react';
@@ -333,7 +333,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'Stack',
         exportName: 'Stack',
         props: {
@@ -379,7 +379,7 @@ describe('real-world component patterns', () => {
 
   describe('Object.assign compound component (Primer)', () => {
     it('detects component from Object.assign compound export', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'default',
         `
         import React from 'react';
@@ -409,7 +409,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'FormControl',
         exportName: 'default',
         props: {
@@ -436,7 +436,7 @@ describe('real-world component patterns', () => {
     });
 
     it('extracts destructuring defaults through Object.assign', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'Stack',
         `
         import React, { forwardRef, type ElementType } from 'react';
@@ -469,7 +469,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'Stack',
         exportName: 'Stack',
         props: {
@@ -565,7 +565,7 @@ describe('real-world component patterns', () => {
 
   describe('empty interface with deep extends (Mantine)', () => {
     it('extracts props from empty interface extending multiple bases', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'TextInput',
         `
         import React from 'react';
@@ -603,7 +603,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'TextInput',
         exportName: 'TextInput',
         props: {
@@ -645,7 +645,7 @@ describe('real-world component patterns', () => {
 
   describe('factory() wrapping forwardRef internally (Mantine)', () => {
     it('detects component from factory HOC', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'Select',
         `
         import React from 'react';
@@ -689,7 +689,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'Select',
         exportName: 'Select',
         props: {
@@ -723,7 +723,7 @@ describe('real-world component patterns', () => {
 
   describe('standard Storybook fixtures', () => {
     it('extracts the standard Storybook Button fixture', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'Button',
         `
         import React from 'react';
@@ -762,7 +762,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         description: 'Primary UI component for user interaction',
         displayName: 'Button',
         exportName: 'Button',
@@ -806,7 +806,7 @@ describe('real-world component patterns', () => {
     });
 
     it('extracts a default-exported component', async () => {
-      const doc = await extract(
+      const entry = await extract(
         'default',
         `
         import React from 'react';
@@ -830,7 +830,7 @@ describe('real-world component patterns', () => {
       `
       );
 
-      expect(doc).toMatchObject({
+      expect(entry.component?.reactComponentMeta).toMatchObject({
         displayName: 'Component',
         exportName: 'default',
         props: {

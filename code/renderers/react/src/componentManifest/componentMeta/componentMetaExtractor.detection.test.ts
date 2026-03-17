@@ -5,80 +5,116 @@ import { extract, extractFromStory } from './componentMetaExtractor.test-helpers
 describe('component detection', () => {
   describe('function components', () => {
     it('detects arrow function component', async () => {
-      await extract('Button', `
+      const entry = await extract(
+        'Button',
+        `
         import React from 'react';
         interface Props { label: string }
         export const Button = (props: Props) => <button>{props.label}</button>;
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
 
     it('detects function declaration component', async () => {
-      await extract('Button', `
+      const entry = await extract(
+        'Button',
+        `
         import React from 'react';
         export function Button(props: { label: string }) { return <button /> }
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
 
     it('detects component returning null', async () => {
-      await extract('Empty', `
+      const entry = await extract(
+        'Empty',
+        `
         import React from 'react';
         export const Empty = (props: { show: boolean }) => props.show ? <div /> : null;
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Empty' });
     });
 
     it('detects component with no props', async () => {
-      await extract('Logo', `
+      const entry = await extract(
+        'Logo',
+        `
         import React from 'react';
         export const Logo = () => <svg />;
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Logo' });
     });
   });
 
   describe('class components', () => {
     it('detects class extending React.Component', async () => {
-      await extract('Button', `
+      const entry = await extract(
+        'Button',
+        `
         import React from 'react';
         export class Button extends React.Component<{ label: string }> {
           render() { return <button /> }
         }
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
 
     it('detects class extending React.PureComponent', async () => {
-      await extract('Button', `
+      const entry = await extract(
+        'Button',
+        `
         import React from 'react';
         export class Button extends React.PureComponent<{ label: string }> {
           render() { return <button /> }
         }
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
   });
 
   describe('wrapped components', () => {
     it('detects React.memo', async () => {
-      await extract('Button', `
+      const entry = await extract(
+        'Button',
+        `
         import React from 'react';
         const Inner = (props: { label: string }) => <button />;
         export const Button = React.memo(Inner);
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
 
     it('detects React.forwardRef', async () => {
-      await extract('Button', `
+      const entry = await extract(
+        'Button',
+        `
         import React from 'react';
         export const Button = React.forwardRef<HTMLButtonElement, { label: string }>((props, ref) => (
           <button ref={ref} />
         ));
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
 
     it('detects React.memo(React.forwardRef(...))', async () => {
-      await extract('Button', `
+      const entry = await extract(
+        'Button',
+        `
         import React from 'react';
         export const Button = React.memo(
           React.forwardRef<HTMLButtonElement, { label: string }>((props, ref) => <button ref={ref} />)
         );
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
 
     it('detects React.lazy', async () => {
@@ -102,96 +138,118 @@ describe('component detection', () => {
 
   describe('default exports', () => {
     it('detects default exported component', async () => {
-      await extract('default', `
+      const entry = await extract(
+        'default',
+        `
         import React from 'react';
         const Button = (props: { label: string }) => <button />;
         export default Button;
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ exportName: 'default' });
     });
 
     it('detects inline default export', async () => {
-      await extract('default', `
+      const entry = await extract(
+        'default',
+        `
         import React from 'react';
         export default (props: { label: string }) => <button />;
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ exportName: 'default' });
     });
 
     it('detects default export function declaration', async () => {
-      await extract('default', `
+      const entry = await extract(
+        'default',
+        `
         import React from 'react';
         export default function Button(props: { label: string }) { return <button /> }
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ exportName: 'default' });
     });
   });
 
   describe('non-components', () => {
     it('rejects plain object', async () => {
-      await expect(
-        extract('Config', `export const Config = { key: 'value' };`, { ext: 'ts' })
-      ).rejects.toThrow();
+      const entry = await extract('Config', `export const Config = { key: 'value' };`);
+      expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
 
     it('rejects string constant', async () => {
-      await expect(
-        extract('Title', `export const Title = 'Hello';`, { ext: 'ts' })
-      ).rejects.toThrow();
+      const entry = await extract('Title', `export const Title = 'Hello';`);
+      expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
 
     it('rejects number constant', async () => {
-      await expect(
-        extract('Count', `export const Count = 42;`, { ext: 'ts' })
-      ).rejects.toThrow();
+      const entry = await extract('Count', `export const Count = 42;`);
+      expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
 
     it('rejects array', async () => {
-      await expect(
-        extract('Items', `export const Items = [1, 2, 3];`, { ext: 'ts' })
-      ).rejects.toThrow();
+      const entry = await extract('Items', `export const Items = [1, 2, 3];`);
+      expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
 
     it('rejects type-only exports', async () => {
-      await expect(
-        extract('ButtonProps', `
-          export interface ButtonProps { label: string }
-          export type Size = 'small' | 'large';
-        `, { ext: 'ts' })
-      ).rejects.toThrow();
+      const entry = await extract(
+        'ButtonProps',
+        `
+        export interface ButtonProps { label: string }
+        export type Size = 'small' | 'large';
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
 
     it('rejects class not extending Component', async () => {
-      await expect(
-        extract('Store', `
-          export class Store {
-            data = {};
-            get(key: string) { return this.data; }
-          }
-        `, { ext: 'ts' })
-      ).rejects.toThrow();
+      const entry = await extract(
+        'Store',
+        `
+        export class Store {
+          data = {};
+          get(key: string) { return this.data; }
+        }
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
   });
 
   describe('ambiguous exports', () => {
     it('accepts uppercase function returning ReactNode-assignable value', async () => {
-      await extract('FormatDate', `
+      const entry = await extract(
+        'FormatDate',
+        `
         export function FormatDate(timestamp: number) { return new Date(timestamp).toISOString(); }
-      `, { ext: 'ts' });
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'FormatDate' });
     });
 
     it('accepts function with primitive "props" param returning ReactNode', async () => {
-      await extract('ParseProps', `
+      const entry = await extract(
+        'ParseProps',
+        `
         export function ParseProps(props: string) { return JSON.parse(props); }
-      `, { ext: 'ts' });
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'ParseProps' });
     });
 
     it('rejects enum-like const object', async () => {
-      await expect(
-        extract('ButtonVariant', `
-          export const ButtonVariant = {
-            Primary: 'primary',
-            Secondary: 'secondary',
-          } as const;
-        `, { ext: 'ts' })
-      ).rejects.toThrow();
+      const entry = await extract(
+        'ButtonVariant',
+        `
+        export const ButtonVariant = {
+          Primary: 'primary',
+          Secondary: 'secondary',
+        } as const;
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toBeUndefined();
     });
   });
 
@@ -206,8 +264,8 @@ describe('component detection', () => {
       `;
       const button = await extract('Button', content);
       const icon = await extract('Icon', content);
-      expect(button.displayName).toBe('Button');
-      expect(icon.displayName).toBe('Icon');
+      expect(button.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
+      expect(icon.component?.reactComponentMeta).toMatchObject({ displayName: 'Icon' });
     });
   });
 
@@ -220,19 +278,27 @@ describe('component detection', () => {
         export const Icon = (props: { name: string }) => <span />;
         export const SIZES = ['small', 'large'] as const;
       `;
-      await extract('Button', content);
-      await expect(extract('Config', content)).rejects.toThrow();
-      await extract('Icon', content);
-      await expect(extract('SIZES', content)).rejects.toThrow();
+      const button = await extract('Button', content);
+      expect(button.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
+      const config = await extract('Config', content);
+      expect(config.component?.reactComponentMeta).toBeUndefined();
+      const icon = await extract('Icon', content);
+      expect(icon.component?.reactComponentMeta).toMatchObject({ displayName: 'Icon' });
+      const sizes = await extract('SIZES', content);
+      expect(sizes.component?.reactComponentMeta).toBeUndefined();
     });
 
     it('detects components alongside type exports', async () => {
-      await extract('Button', `
+      const entry = await extract(
+        'Button',
+        `
         import React from 'react';
         export interface ButtonProps { label: string }
         export const Button = (props: ButtonProps) => <button />;
         export type Size = 'small' | 'large';
-      `);
+      `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
   });
 });

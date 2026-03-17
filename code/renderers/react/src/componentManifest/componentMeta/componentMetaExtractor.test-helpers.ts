@@ -1,5 +1,4 @@
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
 
@@ -7,7 +6,6 @@ import ts from 'typescript';
 
 import { type StoryRef, getComponents } from '../getComponentImports';
 import { ComponentMetaProject } from './ComponentMetaProject';
-import type { ComponentDoc } from './componentMetaExtractor';
 import { cleanup, createTempProject } from './test-helpers';
 
 /** Create a temp TypeScript project from files, run a callback, then dispose and clean up. */
@@ -43,8 +41,7 @@ export async function extractFromStory(
 ): Promise<StoryRef> {
   return withProject(files, async (project, filePaths) => {
     const storyPath = filePaths[storyFileName];
-    const storyContent = fs.readFileSync(storyPath, 'utf-8');
-    const csf = loadCsf(storyContent, { makeTitle: () => 'Test' }).parse();
+    const csf = loadCsf(fs.readFileSync(storyPath, 'utf-8'), { makeTitle: () => 'Test' }).parse();
 
     const components = await getComponents({
       csf,
@@ -64,35 +61,21 @@ export async function extractFromStory(
 }
 
 /**
- * Convenience wrapper: auto-generates a story file and extracts a single component's props.
- * Uses the full production flow (loadCsf → getComponents → extractPropsFromStories).
- * Throws if extraction fails.
+ * Convenience wrapper: auto-generates a story file and extracts a single component's props. Uses
+ * the full production flow (loadCsf → getComponents → extractPropsFromStories).
  */
-export async function extract(
-  exportName: string,
-  content: string,
-  options?: { ext?: string }
-): Promise<ComponentDoc> {
-  const ext = options?.ext ?? 'tsx';
-  const fileName = `test/Component.${ext}`;
-  const baseName = path.basename(fileName, path.extname(fileName));
+export async function extract(exportName: string, content: string): Promise<StoryRef> {
   const componentName = exportName === 'default' ? 'Component' : exportName;
   const importLine =
     exportName === 'default'
-      ? `import ${componentName} from './${baseName}';`
-      : `import { ${exportName} as ${componentName} } from './${baseName}';`;
+      ? `import ${componentName} from './Component';`
+      : `import { ${exportName} as ${componentName} } from './Component';`;
 
-  const entry = await extractFromStory(
+  return extractFromStory(
     {
-      [fileName]: content,
-      [`test/${baseName}.stories.tsx`]: `${importLine}\nexport default { component: ${componentName} };`,
+      'test/Component.tsx': content,
+      'test/Component.stories.tsx': `${importLine}\nexport default { component: ${componentName} };`,
     },
-    `test/${baseName}.stories.tsx`
+    'test/Component.stories.tsx'
   );
-
-  const doc = entry.component?.reactComponentMeta;
-  if (!doc) {
-    throw new Error(`extract() failed: no ComponentDoc returned for export "${exportName}"`);
-  }
-  return doc;
 }

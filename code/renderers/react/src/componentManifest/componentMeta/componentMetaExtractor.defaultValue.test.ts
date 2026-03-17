@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { extract } from './componentMetaExtractor.test-helpers';
 
 describe('default value extraction', () => {
-  it('extracts destructuring defaults from arrow function', () => {
-    const doc = extract(
+  it('extracts destructuring defaults from arrow function', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -19,8 +19,8 @@ describe('default value extraction', () => {
     });
   });
 
-  it('extracts defaults from forwardRef', () => {
-    const doc = extract(
+  it('extracts defaults from forwardRef', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -36,8 +36,8 @@ describe('default value extraction', () => {
     });
   });
 
-  it('extracts JSDoc @default tags', () => {
-    const doc = extract(
+  it('extracts JSDoc @default tags', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -55,8 +55,8 @@ describe('default value extraction', () => {
     });
   });
 
-  it('extracts defaults from body-level destructuring in forwardRef', () => {
-    const doc = extract(
+  it('extracts defaults from body-level destructuring in forwardRef', async () => {
+    const doc = await extract(
       'Alert',
       `
       import React from 'react';
@@ -74,8 +74,8 @@ describe('default value extraction', () => {
     });
   });
 
-  it('extracts defaults from helper calls that receive props directly', () => {
-    const doc = extract(
+  it('extracts defaults from helper calls that receive props directly', async () => {
+    const doc = await extract(
       'Alert',
       `
       import React from 'react';
@@ -94,8 +94,8 @@ describe('default value extraction', () => {
     });
   });
 
-  it('ignores body-level destructuring from unrelated local objects', () => {
-    const doc = extract(
+  it('ignores body-level destructuring from unrelated local objects', async () => {
+    const doc = await extract(
       'Alert',
       `
       import React from 'react';
@@ -113,8 +113,8 @@ describe('default value extraction', () => {
     });
   });
 
-  it('resolves identifier references to literal values', () => {
-    const doc = extract(
+  it('resolves identifier references to literal values', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -131,8 +131,8 @@ describe('default value extraction', () => {
     });
   });
 
-  it('extracts Component.defaultProps expression pattern', () => {
-    const doc = extract(
+  it('extracts Component.defaultProps expression pattern', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -148,8 +148,8 @@ describe('default value extraction', () => {
     });
   });
 
-  it('extracts static defaultProps from class components', () => {
-    const doc = extract(
+  it('extracts static defaultProps from class components', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';

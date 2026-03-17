@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { extract } from './componentMetaExtractor.test-helpers';
 
 describe('parent and declaration tracking', () => {
-  it('attaches parent type info to props from named interfaces', () => {
-    const doc = extract(
+  it('attaches parent type info to props from named interfaces', async () => {
+    const doc = await extract(
       'Button',
       `
         import React from 'react';
@@ -20,8 +20,8 @@ describe('parent and declaration tracking', () => {
     });
   });
 
-  it('attaches declarations with TypeLiteral for inline types', () => {
-    const doc = extract(
+  it('attaches declarations with TypeLiteral for inline types', async () => {
+    const doc = await extract(
       'Button',
       `
         import React from 'react';
@@ -33,8 +33,8 @@ describe('parent and declaration tracking', () => {
     });
   });
 
-  it('resolves parent through intersection type literals', () => {
-    const doc = extract(
+  it('resolves parent through intersection type literals', async () => {
+    const doc = await extract(
       'Button',
       `
         import React from 'react';
@@ -49,8 +49,8 @@ describe('parent and declaration tracking', () => {
     });
   });
 
-  it('resolves parent for forwardRef with polymorphic as-cast', () => {
-    const doc = extract(
+  it('resolves parent for forwardRef with polymorphic as-cast', async () => {
+    const doc = await extract(
       'Button',
       `
         import React from 'react';
@@ -70,8 +70,8 @@ describe('parent and declaration tracking', () => {
     });
   });
 
-  it('tracks parent through intersection types', () => {
-    const doc = extract(
+  it('tracks parent through intersection types', async () => {
+    const doc = await extract(
       'Button',
       `
         import React from 'react';
@@ -97,8 +97,8 @@ describe('parent and declaration tracking', () => {
     });
   });
 
-  it('tracks parent through extends', () => {
-    const doc = extract(
+  it('tracks parent through extends', async () => {
+    const doc = await extract(
       'Button',
       `
         import React from 'react';
@@ -118,8 +118,8 @@ describe('parent and declaration tracking', () => {
     });
   });
 
-  it('tracks declarations from multiple sources', () => {
-    const doc = extract(
+  it('tracks declarations from multiple sources', async () => {
+    const doc = await extract(
       'Comp',
       `
         import React from 'react';
@@ -135,8 +135,8 @@ describe('parent and declaration tracking', () => {
     });
   });
 
-  it('filters out HTML attributes when declaration file contributes >30 props', () => {
-    const doc = extract(
+  it('filters out HTML attributes when declaration file contributes >30 props', async () => {
+    const doc = await extract(
       'Button',
       `
         import React from 'react';
@@ -154,8 +154,8 @@ describe('parent and declaration tracking', () => {
     });
   });
 
-  it('sets source fileName on declarations for >30 filter', () => {
-    const doc = extract(
+  it('sets source fileName on declarations for >30 filter', async () => {
+    const doc = await extract(
       'Button',
       `
         import React from 'react';

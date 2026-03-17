@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { extract } from './componentMetaExtractor.test-helpers';
 
 describe('prop extraction', () => {
-  it('extracts basic prop types', () => {
-    const doc = extract(
+  it('extracts basic prop types', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -22,8 +22,8 @@ describe('prop extraction', () => {
     expect(doc.props.disabled).toMatchObject({ required: false });
   });
 
-  it('extracts string literal union as enum', () => {
-    const doc = extract(
+  it('extracts string literal union as enum', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -40,8 +40,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts optional string literal union as enum', () => {
-    const doc = extract(
+  it('extracts optional string literal union as enum', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -61,8 +61,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts JSDoc descriptions', () => {
-    const doc = extract(
+  it('extracts JSDoc descriptions', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -82,8 +82,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts component-level JSDoc description', () => {
-    const doc = extract(
+  it('extracts component-level JSDoc description', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -96,8 +96,8 @@ describe('prop extraction', () => {
     expect(doc).toMatchObject({ description: 'Primary UI component for user interaction' });
   });
 
-  it('extracts Pick<> props correctly', () => {
-    const doc = extract(
+  it('extracts Pick<> props correctly', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -115,8 +115,8 @@ describe('prop extraction', () => {
     expect(Object.keys(doc.props).sort()).toEqual(['id', 'label']);
   });
 
-  it('extracts Omit<> props correctly', () => {
-    const doc = extract(
+  it('extracts Omit<> props correctly', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -133,8 +133,8 @@ describe('prop extraction', () => {
     expect(Object.keys(doc.props).sort()).toEqual(['id', 'label']);
   });
 
-  it('extracts Partial<> props as all optional', () => {
-    const doc = extract(
+  it('extracts Partial<> props as all optional', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -152,8 +152,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts Required<> props as all required', () => {
-    const doc = extract(
+  it('extracts Required<> props as all required', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -171,8 +171,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts extends interface props', () => {
-    const doc = extract(
+  it('extracts extends interface props', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -192,8 +192,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts generic component props', () => {
-    const doc = extract(
+  it('extracts generic component props', async () => {
+    const doc = await extract(
       'StringList',
       `
       import React from 'react';
@@ -211,8 +211,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('flattens intersection types to all member props', () => {
-    const doc = extract(
+  it('flattens intersection types to all member props', async () => {
+    const doc = await extract(
       'Comp',
       `
       import React from 'react';
@@ -229,8 +229,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('flattens complex Pick & Omit combinations', () => {
-    const doc = extract(
+  it('flattens complex Pick & Omit combinations', async () => {
+    const doc = await extract(
       'Comp',
       `
       import React from 'react';
@@ -244,8 +244,8 @@ describe('prop extraction', () => {
     expect(doc.props).not.toHaveProperty('d');
   });
 
-  it('resolves generic instantiations to concrete prop types', () => {
-    const doc = extract(
+  it('resolves generic instantiations to concrete prop types', async () => {
+    const doc = await extract(
       'NumberList',
       `
       import React from 'react';
@@ -263,8 +263,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts number literal union as enum', () => {
-    const doc = extract(
+  it('extracts number literal union as enum', async () => {
+    const doc = await extract(
       'Grid',
       `
       import React from 'react';
@@ -279,8 +279,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts mixed union (string | number) as type string, not enum', () => {
-    const doc = extract(
+  it('extracts mixed union (string | number) as type string, not enum', async () => {
+    const doc = await extract(
       'Input',
       `
       import React from 'react';
@@ -292,8 +292,8 @@ describe('prop extraction', () => {
     expect(doc.props.value.type.name).toBe('string | number');
   });
 
-  it('preserves nested | undefined in optional props with generic types', () => {
-    const doc = extract(
+  it('preserves nested | undefined in optional props with generic types', async () => {
+    const doc = await extract(
       'Widget',
       `
       import React from 'react';
@@ -324,8 +324,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts function prop types', () => {
-    const doc = extract(
+  it('extracts function prop types', async () => {
+    const doc = await extract(
       'Form',
       `
       import React from 'react';
@@ -345,8 +345,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts complex nested object props', () => {
-    const doc = extract(
+  it('extracts complex nested object props', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -365,8 +365,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('extracts React.ReactNode and React.ReactElement prop types', () => {
-    const doc = extract(
+  it('extracts React.ReactNode and React.ReactElement prop types', async () => {
+    const doc = await extract(
       'Card',
       `
       import React from 'react';
@@ -386,8 +386,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('filters out HTML attributes from extends (ButtonHTMLAttributes has >30 props)', () => {
-    const doc = extract(
+  it('filters out HTML attributes from extends (ButtonHTMLAttributes has >30 props)', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -407,8 +407,8 @@ describe('prop extraction', () => {
     expect(propNames).not.toContain('className');
   });
 
-  it('keeps HTML attributes from extends when Pick narrows to few props', () => {
-    const doc = extract(
+  it('keeps HTML attributes from extends when Pick narrows to few props', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -425,8 +425,8 @@ describe('prop extraction', () => {
     expect(doc.props).toHaveProperty('label');
   });
 
-  it('extracts forwardRef component props', () => {
-    const doc = extract(
+  it('extracts forwardRef component props', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -444,8 +444,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('includes ref and key props for forwardRef components', () => {
-    const doc = extract(
+  it('includes ref and key props for forwardRef components', async () => {
+    const doc = await extract(
       'Button',
       `
       import React from 'react';
@@ -463,8 +463,8 @@ describe('prop extraction', () => {
     });
   });
 
-  it('collects all props from discriminated union', () => {
-    const doc = extract(
+  it('collects all props from discriminated union', async () => {
+    const doc = await extract(
       'Slider',
       `
       import React from 'react';

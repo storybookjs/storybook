@@ -2,11 +2,6 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import ts from 'typescript';
-
-/** Real `ts.sys` — unaffected by memfs mocks. */
-export const sys = ts.sys;
-
 /** Resolve the real node_modules directory (may be hoisted to the workspace root). */
 const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');
 
@@ -38,7 +33,7 @@ export function writeFiles(baseDir: string, files: Record<string, string>): Reco
   for (const [name, content] of Object.entries(files)) {
     const filePath = path.join(baseDir, name);
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    sys.writeFile(filePath, content);
+    fs.writeFileSync(filePath, content);
     filePaths[name] = filePath;
   }
   return filePaths;
@@ -50,7 +45,7 @@ export function createTempDir(prefix = 'meta-test'): string {
     os.tmpdir(),
     `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
   );
-  sys.createDirectory(dir);
+  fs.mkdirSync(dir, { recursive: true });
   copyNodeModules(dir);
   return dir;
 }
@@ -81,7 +76,7 @@ export function createTempProject(
 } {
   const projectDir = createTempDir('prop-ls-test');
   const configPath = path.join(projectDir, 'tsconfig.json');
-  sys.writeFile(configPath, JSON.stringify(tsconfig, null, 2));
+  fs.writeFileSync(configPath, JSON.stringify(tsconfig, null, 2));
   const filePaths = writeFiles(projectDir, files);
   return { projectDir, configPath, filePaths };
 }

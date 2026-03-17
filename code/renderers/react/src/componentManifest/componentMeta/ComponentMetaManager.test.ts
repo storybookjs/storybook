@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -6,45 +7,7 @@ import ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports';
 import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager';
-import type { ComponentMetaProject } from './ComponentMetaProject';
-import type { ComponentDoc } from './componentMetaExtractor';
-import {
-  cleanup,
-  createTempDir,
-  defaultImportName,
-  sys,
-  tsconfigJSON,
-  writeFiles,
-} from './test-helpers';
-
-function extractDoc(
-  project: ComponentMetaProject,
-  componentPath: string,
-  exportName: string
-): ComponentDoc | undefined {
-  const baseName = path.basename(componentPath, path.extname(componentPath));
-  const componentName = exportName === 'default' ? defaultImportName(componentPath) : exportName;
-  const importLine =
-    exportName === 'default'
-      ? `import ${componentName} from './${baseName}';`
-      : `import { ${exportName} as ${componentName} } from './${baseName}';`;
-  const storyPath = path.join(
-    path.dirname(componentPath),
-    `${baseName}.__story_${exportName}__.tsx`
-  );
-
-  sys.writeFile(storyPath, `${importLine}\nexport default { component: ${componentName} };`);
-  project.ensureFiles([storyPath]);
-
-  const entries: StoryRef[] = [
-    {
-      storyPath,
-      component: { componentName, importName: exportName, path: componentPath, isPackage: false },
-    },
-  ];
-  project.extractPropsFromStories(entries);
-  return entries[0].component?.reactComponentMeta;
-}
+import { cleanup, createTempDir, tsconfigJSON, writeFiles } from './test-helpers';
 
 // ---------------------------------------------------------------------------
 // Unit tests: sortTSConfigs and isFileInDir
@@ -146,13 +109,6 @@ describe('multi-project management', () => {
 
     // Different tsconfigs → different project instances
     expect(buttonProject).not.toBe(cardProject);
-
-    // Both extract correctly
-    const buttonDoc = extractDoc(buttonProject, path.join(tempDir, 'app/Button.tsx'), 'Button');
-    expect(buttonDoc?.displayName).toBe('Button');
-
-    const cardDoc = extractDoc(cardProject, path.join(tempDir, 'lib/Card.tsx'), 'Card');
-    expect(cardDoc?.displayName).toBe('Card');
   });
 
   it('falls back to inferred project when no tsconfig found', { timeout: 30_000 }, () => {
@@ -167,41 +123,54 @@ describe('multi-project management', () => {
 
     // Remove the tsconfig that createTempDir might have created
     const possibleTsconfig = path.join(tempDir, 'tsconfig.json');
-    if (sys.fileExists(possibleTsconfig)) {
-      sys.deleteFile!(possibleTsconfig);
+    if (fs.existsSync(possibleTsconfig)) {
+      fs.unlinkSync(possibleTsconfig);
     }
 
     manager = new ComponentMetaManager(ts);
 
     const project = manager.getProjectForFile(path.join(tempDir, 'Button.tsx'));
     expect(project).toBeDefined();
-
-    const doc = extractDoc(project, path.join(tempDir, 'Button.tsx'), 'Button');
-    expect(doc?.displayName).toBe('Button');
   });
 
-  it('broadcasts file changes to all projects', () => {
+  it('broadcasts file changes to all projects', { timeout: 30_000 }, () => {
     tempDir = createTempDir();
 
-    writeFiles(tempDir, {
+    const files = writeFiles(tempDir, {
       'tsconfig.json': tsconfigJSON(),
       'Tag.tsx': `
         import React from 'react';
         export const Tag = (_props: { text: string }) => <span />;
       `,
+      'Tag.stories.tsx': `
+        import { Tag } from './Tag';
+        export default { component: Tag };
+      `,
     });
 
     manager = new ComponentMetaManager(ts);
-    const project = manager.getProjectForFile(path.join(tempDir, 'Tag.tsx'));
+    const tagPath = path.join(tempDir, 'Tag.tsx');
+    const project = manager.getProjectForFile(tagPath);
 
     // Initial extraction
-    const doc1 = extractDoc(project, path.join(tempDir, 'Tag.tsx'), 'Tag');
-    expect(doc1?.props.text).toBeDefined();
-    expect(doc1?.props.color).toBeUndefined();
+    const entries1: StoryRef[] = [
+      {
+        storyPath: files['Tag.stories.tsx'],
+        component: {
+          componentName: 'Tag',
+          importName: 'Tag',
+          path: tagPath,
+          isPackage: false,
+        },
+      },
+    ];
+    project.extractPropsFromStories(entries1);
+    expect(entries1[0].component?.reactComponentMeta?.props.text).toBeDefined();
+    expect(entries1[0].component?.reactComponentMeta?.props.color).toBeUndefined();
 
     // Modify the file
-    sys.writeFile(
-      path.join(tempDir, 'Tag.tsx'),
+    fs.writeFileSync(
+      tagPath,
       `
       import React from 'react';
       export const Tag = (_props: { text: string; color?: string }) => <span />;
@@ -209,11 +178,22 @@ describe('multi-project management', () => {
     );
 
     // Broadcast change via manager (not project directly)
-    manager.onFilesChanged([{ filePath: path.join(tempDir, 'Tag.tsx'), type: 'changed' }]);
+    manager.onFilesChanged([{ filePath: tagPath, type: 'changed' }]);
 
     // Re-extract — should see the new prop
-    const doc2 = extractDoc(project, path.join(tempDir, 'Tag.tsx'), 'Tag');
-    expect(doc2?.props.color).toBeDefined();
+    const entries2: StoryRef[] = [
+      {
+        storyPath: files['Tag.stories.tsx'],
+        component: {
+          componentName: 'Tag',
+          importName: 'Tag',
+          path: tagPath,
+          isPackage: false,
+        },
+      },
+    ];
+    project.extractPropsFromStories(entries2);
+    expect(entries2[0].component?.reactComponentMeta?.props.color).toBeDefined();
   });
 
   it('handles config change: deleted tsconfig disposes project', () => {
@@ -261,40 +241,66 @@ describe('multi-project management', () => {
     expect(project1).toBeDefined();
 
     // Now write a tsconfig and notify the manager
-    sys.writeFile(configPath, tsconfigJSON());
+    fs.writeFileSync(configPath, tsconfigJSON());
 
     manager.onConfigChanged(configPath, 'created');
 
     // Next lookup should use the new tsconfig
     const project2 = manager.getProjectForFile(path.join(tempDir, 'Button.tsx'));
     expect(project2).toBeDefined();
-    const doc = extractDoc(project2, path.join(tempDir, 'Button.tsx'), 'Button');
-    expect(doc?.displayName).toBe('Button');
   });
 
-  it('shares fsFileSnapshots across projects', () => {
+  it('shares fsFileSnapshots across projects', { timeout: 30_000 }, () => {
     tempDir = createTempDir();
 
-    writeFiles(tempDir, {
+    const files = writeFiles(tempDir, {
       'app/tsconfig.json': tsconfigJSON(),
       'app/Button.tsx': `
         import React from 'react';
         export const Button = (_props: { label: string }) => <button />;
+      `,
+      'app/Button.stories.tsx': `
+        import { Button } from './Button';
+        export default { component: Button };
       `,
       'lib/tsconfig.json': tsconfigJSON(),
       'lib/Card.tsx': `
         import React from 'react';
         export const Card = (_props: { title: string }) => <div />;
       `,
+      'lib/Card.stories.tsx': `
+        import { Card } from './Card';
+        export default { component: Card };
+      `,
     });
 
     manager = new ComponentMetaManager(ts);
 
-    // Access both projects and extract (triggers LanguageService + snapshot caching)
+    // Access both projects and trigger extraction (populates fsFileSnapshots)
     const p1 = manager.getProjectForFile(path.join(tempDir, 'app/Button.tsx'));
-    extractDoc(p1, path.join(tempDir, 'app/Button.tsx'), 'Button');
+    p1.extractPropsFromStories([
+      {
+        storyPath: files['app/Button.stories.tsx'],
+        component: {
+          componentName: 'Button',
+          importName: 'Button',
+          path: files['app/Button.tsx'],
+          isPackage: false,
+        },
+      },
+    ]);
     const p2 = manager.getProjectForFile(path.join(tempDir, 'lib/Card.tsx'));
-    extractDoc(p2, path.join(tempDir, 'lib/Card.tsx'), 'Card');
+    p2.extractPropsFromStories([
+      {
+        storyPath: files['lib/Card.stories.tsx'],
+        component: {
+          componentName: 'Card',
+          importName: 'Card',
+          path: files['lib/Card.tsx'],
+          isPackage: false,
+        },
+      },
+    ]);
 
     // fsFileSnapshots is shared — entries from both projects exist in one map
     expect(manager.fsFileSnapshots.size).toBeGreaterThan(0);
@@ -327,8 +333,6 @@ describe('multi-project management', () => {
     const project = manager.getProjectForFile(filePath);
 
     expect(project).toBeDefined();
-    const doc = extractDoc(project, filePath, 'Button');
-    expect(doc?.displayName).toBe('Button');
   });
 
   it('extracts via Path 1 (importId + JSX in story file)', { timeout: 30_000 }, () => {

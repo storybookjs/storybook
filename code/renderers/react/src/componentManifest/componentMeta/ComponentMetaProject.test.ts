@@ -7,10 +7,10 @@ import { withProject } from './componentMetaExtractor.test-helpers';
 // Local helper: create a project, run extractPropsFromStories, return entries
 // ---------------------------------------------------------------------------
 
-function extractFromStories(
+async function extractFromStories(
   files: Record<string, string>,
   makeEntries: (filePaths: Record<string, string>) => StoryRef[]
-): StoryRef[] {
+): Promise<StoryRef[]> {
   return withProject(files, (project, filePaths) => {
     const entries = makeEntries(filePaths);
     project.extractPropsFromStories(entries);
@@ -23,8 +23,8 @@ function extractFromStories(
 // ---------------------------------------------------------------------------
 
 describe('compound component extraction', () => {
-  it('extracts props for Accordion.Root, not Item or Trigger', () => {
-    const entries = extractFromStories(
+  it('extracts props for Accordion.Root, not Item or Trigger', async () => {
+    const entries = await extractFromStories(
       {
         'accordion.tsx': `
           import React from 'react';
@@ -83,8 +83,8 @@ describe('compound component extraction', () => {
     expect(doc!.props.asChild).toBeUndefined();
   });
 
-  it('uses Root description and jsDocTags, not wrapper Accordion', () => {
-    const entries = extractFromStories(
+  it('uses Root description and jsDocTags, not wrapper Accordion', async () => {
+    const entries = await extractFromStories(
       {
         'accordion.tsx': `
           import React from 'react';
@@ -144,9 +144,9 @@ describe('compound component extraction', () => {
     expect(doc?.props.size.defaultValue).toEqual({ value: "'md'" });
   });
 
-  it('extracts Aligner props when targeting Button.Aligner, Button props otherwise', () => {
+  it('extracts Aligner props when targeting Button.Aligner, Button props otherwise', async () => {
     // Uses withProject directly because this test needs two extraction rounds on the same project.
-    withProject(
+    await withProject(
       {
         'button.tsx': `
           import React from 'react';
@@ -242,8 +242,8 @@ describe('compound component extraction', () => {
     );
   });
 
-  it('uses Aligner metadata for default-exported Button.Aligner', () => {
-    const entries = extractFromStories(
+  it('uses Aligner metadata for default-exported Button.Aligner', async () => {
+    const entries = await extractFromStories(
       {
         'button.tsx': `
           import React from 'react';
@@ -309,8 +309,8 @@ describe('compound component extraction', () => {
     expect(doc?.props.side.defaultValue).toEqual({ value: "'start'" });
   });
 
-  it('inherits @import from wrapper for compound members', () => {
-    const entries = extractFromStories(
+  it('inherits @import from wrapper for compound members', async () => {
+    const entries = await extractFromStories(
       {
         'accordion.tsx': `
           import React from 'react';
@@ -370,8 +370,8 @@ describe('compound component extraction', () => {
     );
   });
 
-  it('extracts Dialog.Root and Button in the same batch', () => {
-    const entries = extractFromStories(
+  it('extracts Dialog.Root and Button in the same batch', async () => {
+    const entries = await extractFromStories(
       {
         'dialog.tsx': `
           import React from 'react';
@@ -447,8 +447,8 @@ describe('compound component extraction', () => {
     expect(buttonDoc!.props.variant).toBeDefined();
   });
 
-  it('extracts description, @import, and @summary from component JSDoc', () => {
-    const entries = extractFromStories(
+  it('extracts description, @import, and @summary from component JSDoc', async () => {
+    const entries = await extractFromStories(
       {
         'button.tsx': `
           import React from 'react';

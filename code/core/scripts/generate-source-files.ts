@@ -11,7 +11,7 @@ import * as esbuild from 'esbuild';
 import { format } from 'oxfmt';
 import { dedent } from 'ts-dedent';
 
-import { oxoxfmtOptions } from '../../../scripts/utils/oxfmt-options';
+import { oxfmtOptions } from '../../../scripts/utils/oxfmt-options';
 import { getWorkspace } from '../../../scripts/utils/tools';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../src/shared/constants/environments-support';
 

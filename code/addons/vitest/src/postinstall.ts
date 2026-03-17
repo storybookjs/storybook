@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
+import os from 'node:os';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import { AddonVitestService } from 'storybook/internal/cli';
@@ -165,9 +166,17 @@ export default async function postInstall(options: PostinstallOptions) {
         useRemotePkg: !!options.skipInstall,
       });
     } else {
+      const platform = os.platform();
+      const useWithDeps = platform === 'darwin' || platform === 'win32';
+      const manualCommand = useWithDeps
+        ? 'npx playwright install chromium --with-deps'
+        : 'npx playwright install chromium';
+      const linuxNote = !useWithDeps
+        ? '\n        Note: add --with-deps to the command above if you are on Debian or Ubuntu.'
+        : '';
       logger.warn(dedent`
         Playwright browser binaries installation skipped. Please run the following command manually later:
-        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
+        ${CLI_COLORS.cta(manualCommand)}${linuxNote}
       `);
     }
   }

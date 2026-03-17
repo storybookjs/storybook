@@ -681,7 +681,7 @@ Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 
 
 #### Link isButton is deprecated
 
-Link now renders automatically as a HTML `button`, with keyboard focus support, when no `href` is provided. The `isButton` prop continues to enforce rendering with a `button` role in Storybook 10, but will be removed in Storybook 11.
+Link now renders automatically as an HTML `button`, with keyboard focus support, when no `href` is provided. The `isButton` prop continues to enforce rendering with a `button` role in Storybook 10, but will be removed in Storybook 11.
 
 ## From version 9.x to 10.0.0
 

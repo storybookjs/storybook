@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vite-plus/test';
 
 import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 
-import { format } from 'prettier';
+import { format } from 'oxfmt';
 
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name';
 import { getDiff } from './getDiff';
@@ -21,9 +21,7 @@ const FILES = {
 
 describe('success', () => {
   test('CSF Variances', async () => {
-    const before = await format(await readFile(FILES.csfVariances, 'utf-8'), {
-      parser: 'typescript',
-    });
+    const before = (await format('file.ts', await readFile(FILES.csfVariances, 'utf-8'))).code;
     const CSF = await readCsf(FILES.csfVariances, { makeTitle });
 
     const parsed = CSF.parse();
@@ -33,9 +31,7 @@ describe('success', () => {
       duplicateStoryWithNewName(parsed, name, name + 'Duplicated');
     });
 
-    const after = await format(printCsf(parsed).code, {
-      parser: 'typescript',
-    });
+    const after = (await format('file.ts', printCsf(parsed).code)).code;
 
     // check if the code was updated at all
     expect(after).not.toBe(before);
@@ -78,9 +74,7 @@ describe('success', () => {
     `);
   });
   test('CSF4 Variances', async () => {
-    const before = await format(await readFile(FILES.csf4Variances, 'utf-8'), {
-      parser: 'typescript',
-    });
+    const before = (await format('file.ts', await readFile(FILES.csf4Variances, 'utf-8'))).code;
     const CSF = await readCsf(FILES.csf4Variances, { makeTitle });
 
     const parsed = CSF.parse();
@@ -90,9 +84,7 @@ describe('success', () => {
       duplicateStoryWithNewName(parsed, name, name + 'Duplicated');
     });
 
-    const after = await format(printCsf(parsed).code, {
-      parser: 'typescript',
-    });
+    const after = (await format('file.ts', printCsf(parsed).code)).code;
 
     // check if the code was updated at all
     expect(after).not.toBe(before);
@@ -120,9 +112,7 @@ describe('success', () => {
     }
   });
   test('Typescript Constructs', async () => {
-    const before = await format(await readFile(FILES.typescriptConstructs, 'utf-8'), {
-      parser: 'typescript',
-    });
+    const before = (await format('file.ts', await readFile(FILES.typescriptConstructs, 'utf-8'))).code;
     const CSF = await readCsf(FILES.typescriptConstructs, { makeTitle });
 
     const parsed = CSF.parse();
@@ -132,9 +122,7 @@ describe('success', () => {
       duplicateStoryWithNewName(parsed, name, name + 'Duplicated');
     });
 
-    const after = await format(printCsf(parsed).code, {
-      parser: 'typescript',
-    });
+    const after = (await format('file.ts', printCsf(parsed).code)).code;
 
     // check if the code was updated at all
     expect(after).not.toBe(before);

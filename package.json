@@ -1,19 +1,18 @@
 {
   "name": "@storybook/root",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "code",
-      "code/addons/*",
-      "code/builders/*",
-      "code/core",
-      "code/frameworks/*",
-      "code/lib/*",
-      "code/presets/*",
-      "code/renderers/*",
-      "scripts"
-    ]
-  },
+  "workspaces": [
+    "code",
+    "code/addons/*",
+    "code/builders/*",
+    "code/core",
+    "code/frameworks/*",
+    "code/lib/*",
+    "code/presets/*",
+    "code/renderers/*",
+    "scripts",
+    "docs"
+  ],
   "type": "module",
   "scripts": {
     "ci-tests": "cd code; yarn ci-tests",
@@ -23,7 +22,7 @@
     "knip": "cd code; yarn knip",
     "lint": "cd code; yarn lint",
     "nx": "nx",
-    "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
+    "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:fmt:write",
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
     "svelte-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh svelte-kit/skeleton-ts",
     "svelte-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh svelte-kit/skeleton-ts svelte",

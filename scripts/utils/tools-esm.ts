@@ -1,3 +1,1 @@
-import * as prettier from 'prettier';
-
-export { prettier };
+// This file intentionally left empty - prettier was previously re-exported here.

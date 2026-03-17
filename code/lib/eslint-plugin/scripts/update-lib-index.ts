@@ -5,11 +5,9 @@ This script updates `src/index.js` file from rule's meta data.
 */
 import fs from 'fs/promises';
 import path from 'path';
-import type { Options } from 'prettier';
-import { format } from 'prettier';
 
-// @ts-expect-error this file has no types
-import prettierConfig from '../../../../prettier.config.mjs';
+import { format } from 'oxfmt';
+
 import { categoryIds } from './utils/categories';
 import rules from './utils/rules';
 
@@ -56,9 +54,6 @@ export default {
   rules,
 }
 `;
-  const content = await format(rawContent, {
-    parser: 'typescript',
-    ...(prettierConfig as Options),
-  });
+  const content = (await format('index.ts', rawContent)).code;
   await fs.writeFile(path.resolve(__dirname, '../src/index.ts'), content);
 }

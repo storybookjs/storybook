@@ -11,11 +11,10 @@ export default defineConfig({
       "code",
       "scripts",
       // TODO: assess whether we can enable linting for these directories
-      "docs",
       "test-storybooks",
     ],
   },
   fmt: {
-    ignorePatterns: ["dist", "node_modules", "code", "scripts", "docs", "test-storybooks"],
+    ignorePatterns: ["dist", "node_modules", "code", "scripts", "test-storybooks"],
   },
 });

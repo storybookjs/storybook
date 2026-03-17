@@ -4,11 +4,8 @@ This script updates `lib/configs/flat/*.js` files from rule's meta data.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { Options } from 'prettier';
-import { format } from 'prettier';
+import { format } from 'oxfmt';
 
-// @ts-expect-error this file has no types
-import prettierConfig from '../../../../prettier.config.mjs';
 import type { TCategory } from './utils/categories';
 import { categories } from './utils/categories';
 import {
@@ -81,10 +78,7 @@ export async function update() {
   await Promise.all(
     categories.map(async (category) => {
       const filePath = path.join(FLAT_CONFIG_DIR, `${category.categoryId}.ts`);
-      const content = await format(formatCategory(category), {
-        parser: 'typescript',
-        ...(prettierConfig as Options),
-      });
+      const content = (await format(`${category.categoryId}.ts`, formatCategory(category))).code;
 
       await fs.writeFile(filePath, content);
     })

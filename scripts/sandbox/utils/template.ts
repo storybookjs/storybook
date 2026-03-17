@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { render } from 'ejs';
-import prettier from 'prettier';
+import { format } from 'oxfmt';
 
 import { allTemplates as sandboxTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';
 import type { GeneratorConfig } from './types';
@@ -9,16 +9,7 @@ import type { GeneratorConfig } from './types';
 export async function renderTemplate(templatePath: string, templateData: Record<string, any>) {
   const template = await readFile(templatePath, 'utf8');
 
-  const output = (
-    await prettier.format(render(template, templateData), {
-      parser: 'html',
-    })
-  )
-    // overly complicated regex replacements to fix prettier's bad formatting
-    .replace(new RegExp('</li>\\n\\n', 'g'), '</li>\n')
-    .replace(new RegExp('<a\\n', 'g'), '<a')
-    .replace(new RegExp('node"\\n>', 'g'), 'node=">')
-    .replace(new RegExp('/\\n</a>/', 'g'), '</a>');
+  const output = (await format('template.html', render(template, templateData))).code;
   return output;
 }
 

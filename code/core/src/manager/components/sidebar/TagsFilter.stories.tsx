@@ -207,9 +207,9 @@ export const ResetToDefaults: Story = {
     const resetButton = await screen.findByRole('button', { name: 'Reset filters' });
 
     expect(resetButton).toBeInTheDocument();
-    expect(resetButton).not.toBeDisabled();
+    expect(resetButton).not.toHaveAttribute('aria-disabled', 'true');
     resetButton.click();
-    await waitFor(() => expect(resetButton).toBeDisabled());
+    await waitFor(() => expect(resetButton).toHaveAttribute('aria-disabled', 'true'));
   },
 } satisfies Story;
 

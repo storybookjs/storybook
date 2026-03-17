@@ -8,6 +8,7 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 
 Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
+- **Base branch**: `next` (all PRs should target `next`, not `main`)
 - **Node.js**: `22.21.1` (see `.nvmrc`)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner

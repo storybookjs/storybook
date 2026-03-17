@@ -8547,6 +8547,7 @@ __metadata:
     "@playwright/test": "npm:^1.58.2"
     "@types/kill-port": "npm:^2.0.3"
     eslint-plugin-playwright: "npm:^1.8.3"
+    eslint-plugin-storybook: "workspace:*"
     http-server: "npm:^14.1.1"
     husky: "npm:^9.1.7"
     jiti: "npm:^2.6.1"
@@ -8555,6 +8556,7 @@ __metadata:
     nx: "npm:^22.1.3"
     oxlint: "npm:^1.0.0"
     prettier: "npm:^3.7.1"
+    sort-package-json: "npm:^3.5.0"
   languageName: unknown
   linkType: soft
 
@@ -15677,7 +15679,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-storybook@workspace:code/lib/eslint-plugin":
+"eslint-plugin-storybook@workspace:*, eslint-plugin-storybook@workspace:code/lib/eslint-plugin":
   version: 0.0.0-use.local
   resolution: "eslint-plugin-storybook@workspace:code/lib/eslint-plugin"
   dependencies:

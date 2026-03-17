@@ -179,7 +179,7 @@ export const check = defineJob(
 );
 
 export const lint = defineJob(
-  'EsLint & Prettier validation',
+  'Oxlint & Prettier validation',
   () => ({
     executor: {
       name: 'sb_node_22_classic',
@@ -189,23 +189,14 @@ export const lint = defineJob(
       ...workflow.restoreLinux(),
       {
         run: {
-          name: 'Lint code JS',
-          working_directory: `code`,
-          command: 'yarn lint:js',
-        },
-      },
-      {
-        run: {
-          name: 'Lint code Other',
-          working_directory: `code`,
-          command: 'yarn lint:other',
-        },
-      },
-      {
-        run: {
-          name: 'Lint scripts',
-          working_directory: `scripts`,
+          name: 'Lint',
           command: 'yarn lint',
+        },
+      },
+      {
+        run: {
+          name: 'Prettier',
+          command: 'yarn lint:prettier',
         },
       },
     ],

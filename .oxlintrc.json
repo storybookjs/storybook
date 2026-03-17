@@ -54,8 +54,8 @@
     "react/default-props-match-prop-types": "off",
     "react/jsx-no-undef": "off",
 
-    "react-hooks/rules-of-hooks": "off",
-    "react-hooks/exhaustive-deps": "off",
+    "react/rules-of-hooks": "off",
+    "react/exhaustive-deps": "off",
 
     "import/no-unresolved": "off",
     "import/no-extraneous-dependencies": "off",
@@ -133,7 +133,7 @@
       }
     },
     {
-      "files": ["**/*.test.*", "**/*.spec.*", "**/*.mockdata.*"],
+      "files": ["**/*.test.*", "**/*.spec.*", "**/*.mockdata.*", "**/*.compat.*"],
       "rules": {
         "local-rules/no-uncategorized-errors": "off",
         "local-rules/storybook-monorepo-imports": "off"
@@ -190,6 +190,18 @@
         "storybook/story-exports": "error",
         "storybook/use-storybook-expect": "error",
         "storybook/use-storybook-testing-library": "error"
+      }
+    },
+    {
+      "files": ["**/core/**/*.stories.*", "**/core/**/*.story.*"],
+      "rules": {
+        "storybook/use-storybook-expect": "off"
+      }
+    },
+    {
+      "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
+      "rules": {
+        "storybook/no-renderer-packages": "off"
       }
     },
     {

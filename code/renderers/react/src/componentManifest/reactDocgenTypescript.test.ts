@@ -1,11 +1,21 @@
 import { join } from 'node:path';
 
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+
+import { loadConfig } from 'tsconfig-paths';
 
 import {
   type ComponentDocWithExportName,
+  invalidateParser,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript';
+
+vi.mock('tsconfig-paths', { spy: true });
+
+beforeEach(() => {
+  invalidateParser();
+  vi.mocked(loadConfig).mockImplementation(() => ({ resultType: 'failed' as const, message: '' }));
+});
 
 const fixture = (name: string) => join(__dirname, '__testfixtures__', name);
 

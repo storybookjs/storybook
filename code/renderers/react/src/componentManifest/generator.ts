@@ -12,8 +12,8 @@ import {
 
 import path from 'pathe';
 
-import { ComponentMetaManager } from './checker';
-import type { ComponentDoc } from './componentMetaExtractor';
+import { ComponentMetaManager } from './componentMeta/ComponentMetaManager';
+import type { ComponentDoc } from './componentMeta/componentMetaExtractor';
 import { getCodeSnippet } from './generateCodeSnippet';
 import {
   type ComponentRef,
@@ -127,10 +127,18 @@ function findMatchingComponent(
     return matches[0];
   }
 
-  // Prefer the outermost component (shallowest JSX nesting depth)
-  return matches.reduce((best, cur) =>
-    (cur.jsxDepth ?? Infinity) < (best.jsxDepth ?? Infinity) ? cur : best
-  );
+  // Prefer the outermost component (shallowest JSX nesting depth).
+  // jsxDepth 0 means top-level JSX — can't get shallower, so pick it immediately.
+  let best = matches[0];
+  for (const cur of matches) {
+    if (cur.jsxDepth === 0) {
+      return cur;
+    }
+    if ((cur.jsxDepth ?? Infinity) < (best.jsxDepth ?? Infinity)) {
+      best = cur;
+    }
+  }
+  return best;
 }
 
 function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {

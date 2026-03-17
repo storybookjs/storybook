@@ -16,7 +16,7 @@ export type ComponentRef = {
   jsxDepth?: number;
   reactDocgen?: ReturnType<typeof import('./reactDocgen').getReactDocgen>;
   reactDocgenTypescript?: import('./reactDocgenTypescript').ComponentDocWithExportName;
-  reactComponentMeta?: import('./componentMetaExtractor').ComponentDoc;
+  reactComponentMeta?: import('./componentMeta/componentMetaExtractor').ComponentDoc;
   reactDocgenTypescriptError?: { name: string; message: string };
 };
 

@@ -194,6 +194,10 @@ export const getComponents = async ({
     await Promise.all(
       filteredComponents.map(async (c) => {
         const depth = componentDepth.get(c);
+        // Handle compound/namespaced components like <Accordion.Root> or <Form.Input>.
+        // The part before the dot is the namespace (local binding), the part after is the
+        // accessed member. We resolve import metadata for the namespace and carry the member
+        // through so downstream extraction can look up the correct sub-component type.
         const dot = c.indexOf('.');
         const component =
           dot !== -1

@@ -6,7 +6,7 @@ import type { ComponentDoc, PropItem } from 'react-docgen-typescript';
 
 // Type-only import to reuse the source-of-truth react-component-meta manifest shape
 // without creating a runtime dependency from core to the React renderer package.
-import type { ComponentDoc as ReactComponentMetaDoc } from '../../../../../renderers/react/src/componentManifest/componentMetaExtractor';
+import type { ComponentDoc as ReactComponentMetaDoc } from '../../../../../renderers/react/src/componentManifest/componentMeta/componentMetaExtractor';
 import type { ComponentManifest, ComponentsManifest } from '../../../types';
 
 /** Minimal docs entry type for rendering in the manifest debugger */

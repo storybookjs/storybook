@@ -25,13 +25,12 @@
     "github-release": "github-release-from-changelog",
     "i": "yarn --cwd .. i",
     "knip": "knip --config ../scripts/knip.config.ts",
-    "lint": "yarn lint:js && yarn lint:other",
+    "lint": "yarn lint:js && yarn lint:fmt",
     "lint:ejs": "ejslint **/*.ejs",
+    "lint:fmt": "oxfmt",
     "lint:js": "yarn lint:js:cmd . --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
-    "lint:other": "yarn lint:prettier '**/*.{css,html,json,md,yml}'",
     "lint:package": "yarn --cwd ../scripts lint:package",
-    "lint:prettier": "prettier --write",
     "local-registry": "yarn --cwd ../scripts local-registry",
     "publish-sandboxes": "yarn --cwd ../scripts publish",
     "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
@@ -44,14 +43,16 @@
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
   },
   "lint-staged": {
-    "*.{html,js,json,jsx,mjs,ts,tsx}": [
+    "*.{js,jsx,mjs,ts,tsx}": [
+      "oxfmt",
+      "yarn lint:js:cmd"
+    ],
+    "*.{html,json}": [
+      "oxfmt",
       "yarn lint:js:cmd"
     ],
     "*.ejs": [
       "yarn --cwd ../scripts ejslint"
-    ],
-    "*.{css,html,json,md,yml}": [
-      "yarn lint:prettier"
     ],
     "package.json": [
       "yarn lint:package"
@@ -148,6 +149,9 @@
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^4.0.14",
     "wait-on": "^8.0.3"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.41.0"
   },
   "dependenciesMeta": {
     "ejs": {

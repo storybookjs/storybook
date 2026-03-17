@@ -97,7 +97,7 @@ interface CardProps extends ComponentProps<typeof CardContent> {
 
 export const Card = Object.assign(
   forwardRef<HTMLDivElement, CardProps>(function Card(
-    { outlineAnimation = 'none', outlineColor, outlineAttrs: outlineAttrs = {}, ...props },
+    { outlineAnimation = 'none', outlineColor, outlineAttrs = {}, ...props },
     ref
   ) {
     return (

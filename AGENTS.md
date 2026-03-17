@@ -100,8 +100,9 @@ yarn nx compile <package-name>
 ### Lint and typecheck
 
 ```bash
-yarn lint
-yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix
+yarn lint                          # oxlint on code/ and scripts/
+yarn lint:fix                      # oxlint with auto-fix
+yarn lint:prettier                 # prettier check
 yarn task check
 yarn nx run-many -t check
 ```
@@ -235,7 +236,7 @@ When writing tests:
 After changing files:
 
 1. Format with `yarn prettier --write <file>`
-2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
+2. Lint with `yarn lint:fix` (runs oxlint with auto-fix on code/ and scripts/)
 3. Run relevant tests before submitting a PR
 
 Use Storybook loggers instead of raw `console.*` in normal code paths:

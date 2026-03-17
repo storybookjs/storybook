@@ -19,19 +19,13 @@
     "changelog": "pr-log --sloppy --cherry-pick",
     "changelog:next": "pr-log --sloppy --since-prerelease",
     "check": "NODE_ENV=production yarn --cwd ../scripts check-package",
-    "ci-tests": "yarn task --task check --no-link --start-from=install && yarn lint && yarn test && cd ../scripts && yarn test",
+    "ci-tests": "yarn task --task check --no-link --start-from=install && yarn --cwd .. lint && yarn test && cd ../scripts && yarn test",
     "danger": "danger",
     "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
     "github-release": "github-release-from-changelog",
     "i": "yarn --cwd .. i",
     "knip": "knip --config ../scripts/knip.config.ts",
-    "lint": "yarn lint:js && yarn lint:other",
-    "lint:ejs": "ejslint **/*.ejs",
-    "lint:js": "yarn lint:js:cmd . --quiet",
-    "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
-    "lint:other": "yarn lint:prettier '**/*.{css,html,json,md,yml}'",
     "lint:package": "yarn --cwd ../scripts lint:package",
-    "lint:prettier": "prettier --write",
     "local-registry": "yarn --cwd ../scripts local-registry",
     "publish-sandboxes": "yarn --cwd ../scripts publish",
     "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
@@ -42,20 +36,6 @@
     "task": "yarn --cwd ../scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
-  },
-  "lint-staged": {
-    "*.{html,js,json,jsx,mjs,ts,tsx}": [
-      "yarn lint:js:cmd --fix"
-    ],
-    "*.ejs": [
-      "yarn --cwd ../scripts ejslint"
-    ],
-    "*.{css,html,json,md,yml}": [
-      "yarn lint:prettier"
-    ],
-    "package.json": [
-      "yarn lint:package"
-    ]
   },
   "browserslist": [
     "chrome >= 131",
@@ -121,16 +101,13 @@
     "@vitest/coverage-v8": "^4.0.14",
     "chromatic": "^13.3.4",
     "create-storybook": "workspace:*",
-    "cross-env": "^7.0.3",
     "danger": "^13.0.4",
     "es-toolkit": "^1.43.0",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "esbuild-loader": "^4.3.0",
-    "eslint": "^8.57.1",
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
     "knip": "^5.70.2",
-    "lint-staged": "^16.2.7",
     "mock-require": "^3.0.3",
     "prettier": "^3.7.1",
     "process": "^0.11.10",

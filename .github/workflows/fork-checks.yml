@@ -40,7 +40,7 @@ jobs:
           install-code-deps: true
 
       - name: prettier
-        run: cd code && yarn lint:prettier --check .
+        run: yarn lint:prettier
 
   test:
     strategy:

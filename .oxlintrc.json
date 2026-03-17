@@ -1,0 +1,189 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "warn"
+  },
+  "plugins": ["typescript", "react", "import", "jsx-a11y"],
+  "env": {
+    "es6": true,
+    "node": true,
+    "browser": true
+  },
+  "settings": {
+    "react": {
+      "version": "18"
+    }
+  },
+  "rules": {
+    "no-unused-vars": "off",
+    "no-use-before-define": "off",
+    "no-redeclare": "off",
+    "no-shadow": "off",
+    "no-console": "off",
+    "no-shadow-restricted-names": "off",
+    "no-control-regex": "off",
+    "no-sparse-arrays": "off",
+    "no-useless-escape": "off",
+    "no-nonoctal-decimal-escape": "off",
+
+    "typescript/no-require-imports": "off",
+    "typescript/no-implied-eval": "error",
+    "typescript/no-explicit-any": "warn",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-unused-vars": "warn",
+    "typescript/no-redeclare": "off",
+    "typescript/consistent-type-imports": ["error", { "disallowTypeAnnotations": false }],
+    "typescript/no-empty-object-type": "warn",
+    "typescript/no-empty-interface": "warn",
+    "typescript/default-param-last": "off",
+    "typescript/triple-slash-reference": "off",
+
+    "react/no-unescaped-entities": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off",
+    "react/forbid-prop-types": "off",
+    "react/no-unused-prop-types": "off",
+    "react/require-default-props": "off",
+    "react/default-props-match-prop-types": "off",
+    "react/jsx-no-undef": "off",
+
+    "react-hooks/rules-of-hooks": "off",
+    "react-hooks/exhaustive-deps": "off",
+
+    "import/no-unresolved": "off",
+    "import/no-extraneous-dependencies": "off",
+    "import/extensions": "off",
+    "import/named": "off",
+    "import/namespace": "off",
+    "import/default": "off",
+    "import/no-named-as-default": "warn",
+    "import/no-named-as-default-member": "warn",
+    "import/no-self-import": "warn",
+
+    "jsx-a11y/no-autofocus": "warn",
+    "jsx-a11y/control-has-associated-label": "off",
+    "jsx-a11y/anchor-has-content": "off",
+    "jsx-a11y/prefer-tag-over-role": "off",
+
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react-aria",
+            "message": "Don't import from react-aria directly, please use the specific submodule like @react-aria/overlays instead"
+          },
+          {
+            "name": "react-stately",
+            "message": "Don't import from react-stately directly, please use the specific submodule like @react-stately/overlays instead"
+          },
+          {
+            "name": "react-aria-components",
+            "message": "Don't import from react-aria-components root, but use the react-aria-components/patched-dist/ComponentX entrypoints which are optimised for tree-shaking."
+          },
+          {
+            "name": "es-toolkit",
+            "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking."
+          },
+          {
+            "name": "lodash",
+            "message": "lodash is banned. Use es-toolkit or native alternatives."
+          },
+          {
+            "name": "lodash-es",
+            "message": "lodash-es is banned. Use es-toolkit or native alternatives."
+          },
+          {
+            "name": "chalk",
+            "message": "chalk is banned. Use picocolors instead."
+          },
+          {
+            "name": "qs",
+            "message": "qs is banned. Use URLSearchParams instead."
+          },
+          {
+            "name": "handlebars",
+            "message": "handlebars is banned."
+          },
+          {
+            "name": "fs-extra",
+            "message": "fs-extra is banned. Use node:fs/promises instead."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["**/frameworks/angular/template/**/*"],
+      "rules": {
+        "typescript/no-useless-constructor": "off"
+      }
+    },
+    {
+      "files": [
+        "*.test.*",
+        "*.spec.*",
+        "**/__tests__/**",
+        "**/__testfixtures__/**",
+        "**/*.test.*",
+        "**/*.test-d.*",
+        "**/*.stories.*",
+        "**/*.mockdata.*",
+        "**/template/**/*"
+      ],
+      "rules": {
+        "jsx-a11y/click-events-have-key-events": "off",
+        "jsx-a11y/no-static-element-interactions": "off",
+        "jsx-a11y/iframe-has-title": "off",
+        "jsx-a11y/alt-text": "off",
+        "typescript/no-empty-function": "off",
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["**/*.d.ts"],
+      "rules": {
+        "no-var": "off"
+      }
+    },
+    {
+      "files": ["**/*.vue", "**/*.svelte"],
+      "rules": {
+        "typescript/consistent-type-imports": "off"
+      }
+    },
+    {
+      "files": ["**/template/**/*"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/coverage",
+    "docs",
+    "sandbox",
+    "repros",
+    "test-storybooks",
+    "storybook-static",
+    "built-storybooks",
+    "code/lib/codemod/src/transforms/__testfixtures__",
+    "code/core/assets",
+    "code/core/report",
+    "code/core/src/core-server/utils/__search-files-tests__",
+    "code/core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
+    "code/lib/cli-storybook/test",
+    "scripts/storage",
+    "scripts/repros-generator",
+    "*.bundle.js",
+    "*.js.map",
+    ".yarn",
+    ".cache",
+    ".nx"
+  ]
+}

@@ -1,3 +1,8 @@
+## 10.3.0-beta.1
+
+- Addon-Docs: Add React as optimizeDeps entry - [#34176](https://github.com/storybookjs/storybook/pull/34176), thanks @valentinpalkovic!
+- CLI: Avoid hanging of postinstall during init - [#34175](https://github.com/storybookjs/storybook/pull/34175), thanks @valentinpalkovic!
+
 ## 10.3.0-beta.0
 
 - Test: Fix clearing mocks in Vitest [#34078](https://github.com/storybookjs/storybook/pull/34078)

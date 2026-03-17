@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extract } from './componentMetaExtractor.test-helpers';
+import { extract, extractFromStory } from './componentMetaExtractor.test-helpers';
 
 describe('prop extraction', () => {
   it('extracts basic prop types', async () => {
@@ -570,6 +570,382 @@ describe('prop extraction', () => {
         min: { required: false },
         step: { required: false },
         value: { required: false },
+      },
+    });
+  });
+
+  it('forces optional when union variant lacks a prop entirely', async () => {
+    const entry = await extract(
+      'Alert',
+      dedent`
+        import React from 'react';
+        type SuccessProps = { kind: 'success'; message: string; retryable?: never };
+        type ErrorProps = { kind: 'error'; message: string; retryable: boolean };
+        type Props = SuccessProps | ErrorProps;
+        export const Alert: React.FC<Props> = (props) => <div />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        kind: { required: true },
+        message: { required: true },
+        retryable: { required: false },
+      },
+    });
+  });
+
+  it('serializes tuple types', async () => {
+    const entry = await extract(
+      'Coord',
+      dedent`
+        import React from 'react';
+        interface Props { point: [number, number]; label: string }
+        export const Coord = (props: Props) => <div />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        point: { type: { name: '[number, number]' } },
+        label: { type: { name: 'string' } },
+      },
+    });
+  });
+
+  it('serializes Record utility type', async () => {
+    const entry = await extract(
+      'Grid',
+      dedent`
+        import React from 'react';
+        interface Props { cells: Record<string, number>; id: string }
+        export const Grid = (props: Props) => <div />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        cells: { type: { name: 'Record<string, number>' } },
+        id: { type: { name: 'string' } },
+      },
+    });
+  });
+
+  it('serializes template literal type', async () => {
+    const entry = await extract(
+      'Token',
+      dedent`
+        import React from 'react';
+        type Color = 'red' | 'blue';
+        interface Props { token: \`color-\${Color}\` }
+        export const Token = (props: Props) => <span />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        token: {
+          type: {
+            name: 'enum',
+            value: [{ value: '"color-red"' }, { value: '"color-blue"' }],
+          },
+        },
+      },
+    });
+  });
+
+  it('serializes indexed access type', async () => {
+    const entry = await extract(
+      'Comp',
+      dedent`
+        import React from 'react';
+        interface Config { theme: { color: string; size: number } }
+        interface Props { theme: Config['theme'] }
+        export const Comp = (props: Props) => <div />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        theme: { type: { name: '{ color: string; size: number; }' } },
+      },
+    });
+  });
+
+  it('collapses true | false to boolean', async () => {
+    const entry = await extract(
+      'Toggle',
+      dedent`
+        import React from 'react';
+        interface Props { on: true | false }
+        export const Toggle = (props: Props) => <button />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        on: { type: { name: 'boolean' } },
+      },
+    });
+  });
+
+  it('serializes type alias wrapping interface', async () => {
+    const entry = await extract(
+      'Comp',
+      dedent`
+        import React from 'react';
+        interface BaseProps { label: string; count: number }
+        type Props = BaseProps;
+        export const Comp = (props: Props) => <div />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { type: { name: 'string' }, required: true },
+        count: { type: { name: 'number' }, required: true },
+      },
+    });
+  });
+
+  it('serializes mapped type', async () => {
+    const entry = await extract(
+      'Comp',
+      dedent`
+        import React from 'react';
+        type Flags<T extends string> = { [K in T]: boolean };
+        type Props = Flags<'a' | 'b'>;
+        export const Comp = (props: Props) => <div />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        a: { type: { name: 'boolean' }, required: true },
+        b: { type: { name: 'boolean' }, required: true },
+      },
+    });
+  });
+
+  it('serializes conditional type in prop', async () => {
+    const entry = await extract(
+      'Comp',
+      dedent`
+        import React from 'react';
+        type IsString<T> = T extends string ? true : false;
+        interface Props { check: IsString<'hello'>; other: IsString<42> }
+        export const Comp = (props: Props) => <div />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        check: { type: { name: 'true' } },
+        other: { type: { name: 'false' } },
+      },
+    });
+  });
+
+  it('extracts props without meta.component (JSX + title matching)', async () => {
+    const entry = await extractFromStory(
+      {
+        'jsx/Button.stories.tsx': dedent`
+          import { Button } from './Button';
+          export default {};
+          export const Primary = () => <Button label="Click" />;
+        `,
+        'jsx/Button.tsx': dedent`
+          import React from 'react';
+          interface ButtonProps {
+            /** The label */
+            label: string;
+            variant?: 'primary' | 'secondary';
+          }
+          export const Button = (props: ButtonProps) => <button />;
+        `,
+      },
+      'jsx/Button.stories.tsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      displayName: 'Button',
+      props: {
+        label: {
+          description: 'The label',
+          type: { name: 'string' },
+          required: true,
+        },
+        variant: {
+          type: {
+            name: 'enum',
+            value: [{ value: '"primary"' }, { value: '"secondary"' }],
+          },
+          required: false,
+        },
+      },
+    });
+  });
+
+  it('extracts default import without meta.component', async () => {
+    const entry = await extractFromStory(
+      {
+        'jsx/Widget.stories.tsx': dedent`
+          import Widget from './Widget';
+          export default {};
+          export const Default = () => <Widget title="Hello" />;
+        `,
+        'jsx/Widget.tsx': dedent`
+          import React from 'react';
+          interface Props { title: string; active?: boolean }
+          const Widget = (props: Props) => <div />;
+          export default Widget;
+        `,
+      },
+      'jsx/Widget.stories.tsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      displayName: 'Widget',
+      props: {
+        title: { type: { name: 'string' }, required: true },
+        active: { required: false },
+      },
+    });
+  });
+
+  it('extracts { default as X } import without meta.component', async () => {
+    const entry = await extractFromStory(
+      {
+        'jsx/Panel.stories.tsx': dedent`
+          import { default as Panel } from './Panel';
+          export default {};
+          export const Open = () => <Panel title="Details" open />;
+        `,
+        'jsx/Panel.tsx': dedent`
+          import React from 'react';
+          interface Props { title: string; open?: boolean }
+          export default (props: Props) => <div />;
+        `,
+      },
+      'jsx/Panel.stories.tsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        title: { type: { name: 'string' }, required: true },
+        open: { required: false },
+      },
+    });
+  });
+
+  it('extracts namespace import without meta.component', async () => {
+    const entry = await extractFromStory(
+      {
+        'jsx/ns/Accordion.stories.tsx': dedent`
+          import * as Accordion from './Accordion';
+          export default {};
+          export const Basic = () => <Accordion.Root multiple />;
+        `,
+        'jsx/ns/Accordion.tsx': dedent`
+          import React from 'react';
+          interface RootProps { multiple?: boolean; defaultValue?: string }
+          export const Root = (props: RootProps) => <div />;
+        `,
+      },
+      'jsx/ns/Accordion.stories.tsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        multiple: { required: false },
+        defaultValue: { type: { name: 'string' } },
+      },
+    });
+  });
+
+  it('extracts satisfies expression component', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        interface Props { label: string; size?: 'sm' | 'md' }
+        export const Button = ((props: Props) => <button />) satisfies React.FC<Props>;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { type: { name: 'string' }, required: true },
+        size: {
+          type: {
+            name: 'enum',
+            value: [{ value: '"sm"' }, { value: '"md"' }],
+          },
+        },
+      },
+    });
+  });
+
+  it('extracts Readonly<> props', async () => {
+    const entry = await extract(
+      'Display',
+      dedent`
+        import React from 'react';
+        interface Props { value: string; count: number }
+        export const Display = (props: Readonly<Props>) => <div />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        value: { type: { name: 'string' }, required: true },
+        count: { type: { name: 'number' }, required: true },
+      },
+    });
+  });
+
+  it('extracts array prop types', async () => {
+    const entry = await extract(
+      'List',
+      dedent`
+        import React from 'react';
+        interface Props {
+          items: string[];
+          matrix: number[][];
+          nodes: Array<React.ReactNode>;
+        }
+        export const List = (props: Props) => <ul />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        items: { type: { name: 'string[]' } },
+        matrix: { type: { name: 'number[][]' } },
+        nodes: { type: { name: 'ReactNode[]' } },
+      },
+    });
+  });
+
+  it('extracts enum type as enum', async () => {
+    const entry = await extract(
+      'Badge',
+      dedent`
+        import React from 'react';
+        enum Status { Active = 'active', Inactive = 'inactive', Pending = 'pending' }
+        interface Props { status: Status }
+        export const Badge = (props: Props) => <span />;
+      `
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        status: {
+          type: {
+            name: 'enum',
+            value: [{ value: '"active"' }, { value: '"inactive"' }, { value: '"pending"' }],
+          },
+        },
       },
     });
   });

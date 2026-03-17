@@ -172,36 +172,16 @@ describe('parent and declaration tracking', () => {
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
         variant: {
-          parent: { name: 'ButtonProps' },
-          declarations: [{ name: 'ButtonProps' }],
-        },
-      },
-    });
-  });
-
-  it('sets source fileName on declarations for >30 filter', async () => {
-    const entry = await extract(
-      'Button',
-      dedent`
-        import React from 'react';
-        interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-          /** Custom variant */
-          variant: 'primary' | 'secondary';
-        }
-        export const Button = (props: ButtonProps) => <button />;
-      `
-    );
-    // variant survives the filter and has a fileName on its declaration
-    expect(entry.component?.reactComponentMeta).toMatchObject({
-      props: {
-        variant: {
-          parent: { fileName: expect.any(String) },
-          declarations: [{ fileName: expect.any(String) }],
+          parent: { name: 'ButtonProps', fileName: expect.any(String) },
+          declarations: [{ name: 'ButtonProps', fileName: expect.any(String) }],
         },
       },
     });
     // HTML attributes from ButtonHTMLAttributes are filtered out (>30 props)
-    expect(entry.component?.reactComponentMeta?.props?.onClick).toBeUndefined();
-    expect(entry.component?.reactComponentMeta?.props?.className).toBeUndefined();
+    const propNames = Object.keys(entry.component?.reactComponentMeta?.props ?? {});
+    expect(propNames).toContain('variant');
+    expect(propNames).not.toContain('onClick');
+    expect(propNames).not.toContain('className');
+    expect(propNames).not.toContain('disabled');
   });
 });

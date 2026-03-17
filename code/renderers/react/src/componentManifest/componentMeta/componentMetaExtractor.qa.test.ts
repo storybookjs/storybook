@@ -723,6 +723,255 @@ describe('real-world component patterns', () => {
     });
   });
 
+  describe('without meta.component — compound and namespace patterns', () => {
+    it('extracts compound component <Accordion.Root /> via title match', async () => {
+      const entry = await extractFromStory(
+        {
+          'jsx-compound/Accordion.stories.tsx': dedent`
+            import * as Accordion from './Accordion';
+            export default {};
+            export const Basic = () => (
+              <Accordion.Root multiple>
+                <Accordion.Item value="first" />
+              </Accordion.Root>
+            );
+          `,
+          'jsx-compound/Accordion.tsx': dedent`
+            import React from 'react';
+            interface RootProps {
+              /** Allow multiple open */
+              multiple?: boolean;
+              defaultValue?: string;
+            }
+            export const Root = (props: RootProps) => <div />;
+
+            interface ItemProps {
+              value: string;
+              disabled?: boolean;
+            }
+            export const Item = (props: ItemProps) => <div />;
+          `,
+        },
+        'jsx-compound/Accordion.stories.tsx'
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        props: {
+          multiple: {
+            description: 'Allow multiple open',
+            required: false,
+          },
+          defaultValue: { type: { name: 'string' } },
+        },
+      });
+    });
+
+    it('extracts generic component through JSX without meta.component', async () => {
+      const entry = await extractFromStory(
+        {
+          'jsx-generic/Select.stories.tsx': dedent`
+            import { Select } from './Select';
+            export default {};
+            export const Default = () => <Select options={['a', 'b']} value="a" />;
+          `,
+          'jsx-generic/Select.tsx': dedent`
+            import React from 'react';
+            interface SelectProps<T extends string = string> {
+              /** Available options */
+              options: T[];
+              /** Selected value */
+              value?: T;
+              onChange?: (value: T) => void;
+            }
+            export function Select<T extends string = string>(props: SelectProps<T>) {
+              return <select />;
+            }
+          `,
+        },
+        'jsx-generic/Select.stories.tsx'
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        props: {
+          options: {
+            description: 'Available options',
+            required: true,
+          },
+          value: {
+            description: 'Selected value',
+            required: false,
+          },
+          onChange: { required: false },
+        },
+      });
+    });
+
+    it('extracts JsxOpeningElement (not self-closing) without meta.component', async () => {
+      const entry = await extractFromStory(
+        {
+          'jsx-children/Card.stories.tsx': dedent`
+            import { Card } from './Card';
+            export default {};
+            export const WithChildren = () => <Card title="Hello">content</Card>;
+          `,
+          'jsx-children/Card.tsx': dedent`
+            import React from 'react';
+            interface CardProps {
+              /** Card title */
+              title: string;
+              children?: React.ReactNode;
+            }
+            export const Card = (props: CardProps) => <div />;
+          `,
+        },
+        'jsx-children/Card.stories.tsx'
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        props: {
+          title: { description: 'Card title', type: { name: 'string' }, required: true },
+          children: { type: { name: 'ReactNode' }, required: false },
+        },
+      });
+    });
+  });
+
+  describe('JSDoc tag edge cases', () => {
+    it('extracts multiple tags of the same name', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          /**
+           * @see https://example.com/design
+           * @see https://example.com/api
+           */
+          export const Button = (props: { label: string }) => <button />;
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        jsDocTags: {
+          see: ['https://example.com/design', 'https://example.com/api'],
+        },
+      });
+    });
+
+    it('extracts @deprecated tag', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          /** @deprecated Use NewButton instead */
+          export const Button = (props: { label: string }) => <button />;
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        jsDocTags: {
+          deprecated: ['Use NewButton instead'],
+        },
+      });
+    });
+
+    it('extracts @import from component JSDoc', async () => {
+      const entry = await extractFromStory(
+        {
+          'qa/jsdoc-import/Button.tsx': dedent`
+            import React from 'react';
+            /** @import import { Button } from '@acme/ui'; */
+            export const Button = (props: { label: string }) => <button />;
+          `,
+          'qa/jsdoc-import/Button.stories.tsx': dedent`
+            import { Button } from './Button';
+            export default { component: Button };
+          `,
+        },
+        'qa/jsdoc-import/Button.stories.tsx'
+      );
+
+      expect(entry.component?.reactComponentMeta?.jsDocTags).toMatchObject({
+        import: ["import { Button } from '@acme/ui';"],
+      });
+    });
+  });
+
+  describe('stories without meta.component (title-based matching)', () => {
+    it('extracts props via title match when meta.component is absent', async () => {
+      const entry = await extractFromStory(
+        {
+          'no-meta/Button.stories.tsx': dedent`
+            import { Button } from './Button';
+            export default {};
+            export const Primary = () => <Button label="Click" />;
+          `,
+          'no-meta/Button.tsx': dedent`
+            import React from 'react';
+            interface ButtonProps {
+              /** Button label */
+              label: string;
+              variant?: 'primary' | 'secondary';
+            }
+            export const Button = (props: ButtonProps) => <button />;
+          `,
+        },
+        'no-meta/Button.stories.tsx'
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        displayName: 'Button',
+        props: {
+          label: {
+            description: 'Button label',
+            type: { name: 'string' },
+            required: true,
+          },
+          variant: {
+            type: {
+              name: 'enum',
+              value: [{ value: '"primary"' }, { value: '"secondary"' }],
+            },
+            required: false,
+          },
+        },
+      });
+    });
+
+    it('picks outermost component when multiple JSX elements match title', async () => {
+      const entry = await extractFromStory(
+        {
+          'no-meta-depth/Card.stories.tsx': dedent`
+            import { Card } from './Card';
+            import { Badge } from './Badge';
+            export default {};
+            export const WithBadge = () => (
+              <Card title="Hello">
+                <Badge count={3} />
+              </Card>
+            );
+          `,
+          'no-meta-depth/Card.tsx': dedent`
+            import React from 'react';
+            interface CardProps { title: string }
+            export const Card = (props: CardProps) => <div />;
+          `,
+          'no-meta-depth/Badge.tsx': dedent`
+            import React from 'react';
+            interface BadgeProps { count: number }
+            export const Badge = (props: BadgeProps) => <span />;
+          `,
+        },
+        'no-meta-depth/Card.stories.tsx'
+      );
+
+      // Card matches the title and is the outermost component
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        displayName: 'Card',
+        props: { title: { type: { name: 'string' } } },
+      });
+    });
+  });
+
   describe('standard Storybook fixtures', () => {
     it('extracts the standard Storybook Button fixture', async () => {
       const entry = await extract(

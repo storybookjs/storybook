@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
 
@@ -34,6 +35,10 @@ export async function withProject<T>(
 /**
  * Extract props using the full production flow: loadCsf → getComponents → extractPropsFromStories.
  * Returns the full StoryRef so callers can also inspect importOverride, componentJsDocTags, etc.
+ *
+ * The title is auto-derived from `storyFileName` (e.g. `'jsx/Button.stories.tsx'` → `'Button'`),
+ * matching how production derives titles from file paths. This ensures `findMatchingComponent`
+ * title-based matching works for stories without `meta.component`.
  */
 export async function extractFromStory(
   files: Record<string, string>,
@@ -42,7 +47,10 @@ export async function extractFromStory(
 ): Promise<StoryRef> {
   return withProject(files, async (project, filePaths) => {
     const storyPath = filePaths[storyFileName];
-    const csf = loadCsf(fs.readFileSync(storyPath, 'utf-8'), { makeTitle: () => 'Test' }).parse();
+    const title = path.basename(storyFileName).replace(/\.stories\.\w+$/, '');
+    const csf = loadCsf(fs.readFileSync(storyPath, 'utf-8'), {
+      makeTitle: () => title,
+    }).parse();
 
     const components = await getComponents({
       csf,
@@ -51,7 +59,7 @@ export async function extractFromStory(
     });
 
     const componentName = options?.componentName ?? csf._meta?.component;
-    const component = findMatchingComponent(components, componentName, 'Test');
+    const component = findMatchingComponent(components, componentName, title);
 
     const entry: StoryRef = { storyPath, component };
     project.extractPropsFromStories([entry]);
@@ -62,6 +70,10 @@ export async function extractFromStory(
 /**
  * Convenience wrapper: auto-generates a story file and extracts a single component's props. Uses
  * the full production flow (loadCsf → getComponents → extractPropsFromStories).
+ *
+ * The generated story has `meta.component` but no JSX, so extraction goes through the fallback path
+ * (`resolveFromMetaComponent`). Use `extractFromStory` with explicit JSX in the story to exercise
+ * the primary JSX path (`resolvePropsFromStoryFile`).
  */
 export async function extract(exportName: string, content: string): Promise<StoryRef> {
   const componentName = exportName === 'default' ? 'Component' : exportName;

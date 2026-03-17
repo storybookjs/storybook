@@ -185,4 +185,193 @@ describe('default value extraction', () => {
       },
     });
   });
+
+  it('extracts @defaultValue tag (alias for @default)', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        interface Props {
+          /** @defaultValue 'primary' */
+          variant?: string;
+          label: string;
+        }
+        export const Button = (props: Props) => <button />;
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        variant: { defaultValue: { value: "'primary'" } },
+        label: { defaultValue: null },
+      },
+    });
+  });
+
+  it('extracts negative number defaults', async () => {
+    const entry = await extract(
+      'Slider',
+      dedent`
+        import React from 'react';
+        interface Props { min?: number; offset?: number }
+        export const Slider = ({ min = -100, offset = -1 }: Props) => <input />;
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        min: { defaultValue: { value: '-100' } },
+        offset: { defaultValue: { value: '-1' } },
+      },
+    });
+  });
+
+  it('extracts null defaults', async () => {
+    const entry = await extract(
+      'Select',
+      dedent`
+        import React from 'react';
+        interface Props { value?: string | null; label: string }
+        export const Select = ({ value = null, label }: Props) => <select />;
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        value: { defaultValue: { value: 'null' } },
+        label: { defaultValue: null },
+      },
+    });
+  });
+
+  it('extracts enum member as default value', async () => {
+    const entry = await extract(
+      'Badge',
+      dedent`
+        import React from 'react';
+        enum Status { Active = 'active', Inactive = 'inactive' }
+        interface Props { status?: Status }
+        export const Badge = ({ status = Status.Active }: Props) => <span />;
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        status: { defaultValue: { value: "'active'" } },
+      },
+    });
+  });
+
+  it('extracts shorthand property in defaultProps', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        const size = 'md';
+        interface Props { size?: string; label: string }
+        export const Button = (props: Props) => <button />;
+        Button.defaultProps = { size };
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+        label: { defaultValue: null },
+      },
+    });
+  });
+
+  it('extracts body-level destructuring through ternary', async () => {
+    const entry = await extract(
+      'Alert',
+      dedent`
+        import React from 'react';
+        interface Props { color?: string; label: string }
+        export const Alert = (props: Props) => {
+          const isValid = true;
+          const { color = 'info', label } = isValid ? props : props;
+          return <div />;
+        };
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        color: { defaultValue: { value: "'info'" } },
+        label: { defaultValue: null },
+      },
+    });
+  });
+
+  it('extracts body-level destructuring through nullish coalescing', async () => {
+    const entry = await extract(
+      'Alert',
+      dedent`
+        import React from 'react';
+        interface Props { color?: string; label: string }
+        const fallback: Props = { color: 'red', label: '' };
+        export const Alert = (props: Props) => {
+          const { color = 'info', label } = props ?? fallback;
+          return <div />;
+        };
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        color: { defaultValue: { value: "'info'" } },
+        label: { defaultValue: null },
+      },
+    });
+  });
+
+  it('prefers destructuring defaults over JSDoc @default', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        interface Props {
+          /** @default 'lg' */
+          size?: string;
+        }
+        export const Button = ({ size = 'md' }: Props) => <button />;
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+      },
+    });
+  });
+
+  it('prefers destructuring defaults over defaultProps', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        interface Props { size?: string }
+        export const Button = ({ size = 'md' }: Props) => <button />;
+        Button.defaultProps = { size: 'lg' };
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+      },
+    });
+  });
+
+  it('extracts defaults from overloaded function component', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        interface Props { size?: string; label: string }
+        export function Button(props: Props): React.ReactElement;
+        export function Button({ size = 'md', label }: Props) {
+          return <button />;
+        }
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        size: { defaultValue: { value: "'md'" } },
+        label: { defaultValue: null },
+      },
+    });
+  });
 });

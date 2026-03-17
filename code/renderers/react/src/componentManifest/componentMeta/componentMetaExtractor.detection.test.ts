@@ -306,4 +306,36 @@ describe('component detection', () => {
       expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
     });
   });
+
+  describe('additional patterns', () => {
+    it('detects component wrapped in satisfies expression', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          interface Props { label: string }
+          export const Button = ((props: Props) => <button />) satisfies React.FC<Props>;
+        `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
+    });
+
+    it('detects function component with overloads', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          interface Props { label: string; size?: string }
+          export function Button(props: Props): React.ReactElement;
+          export function Button({ label, size = 'md' }: Props) {
+            return <button />;
+          }
+        `
+      );
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        displayName: 'Button',
+        props: { label: { required: true }, size: { required: false } },
+      });
+    });
+  });
 });

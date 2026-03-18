@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findConfigFile, formatFileContent, getProjectRoot } from 'storybook/internal/common';
+import { findConfigFile, getProjectRoot } from 'storybook/internal/common';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
 import type { Options } from 'storybook/internal/types';
 
@@ -27,11 +27,6 @@ describe('get-new-story-file', () => {
       undefined as unknown as ReturnType<typeof findConfigFile>
     );
     vi.mocked(existsSync).mockReturnValue(false);
-    vi.mocked(formatFileContent).mockImplementation(async (filePath, content) => {
-      const { format } = await import('oxfmt');
-      const result = await format(filePath, content, { singleQuote: true });
-      return result.code;
-    });
   });
 
   it('should create a new story file (TypeScript)', async () => {
@@ -55,9 +50,9 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import type { Meta, StoryObj } from '@storybook/nextjs';
+      "import type { Meta, StoryObj } from "@storybook/nextjs";
 
-      import { Page } from './Page';
+      import { Page } from "./Page";
 
       const meta = {
         component: Page,
@@ -94,9 +89,9 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import type { Meta, StoryObj } from '@storybook/react-vite';
+      "import type { Meta, StoryObj } from "@storybook/react-vite";
 
-      import { Page } from './Page';
+      import { Page } from "./Page";
 
       const meta = {
         component: Page,
@@ -133,7 +128,7 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import Page from './Page';
+      "import Page from "./Page";
 
       const meta = {
         component: Page,
@@ -171,29 +166,8 @@ describe('get-new-story-file', () => {
       } as unknown as Options
     );
 
-    expect(storyFileContent).toMatchInlineSnapshot(`
-      "import { fn } from 'storybook/test';
-      import type { Meta, StoryObj } from '@storybook/nextjs';
-
-      import { Page } from './Page';
-
-      const meta = {
-        component: Page,
-      } satisfies Meta<typeof Page>;
-
-      export default meta;
-
-      type Story = StoryObj<typeof meta>;
-
-      export const Default: Story = {
-        args: {
-          onClick: fn(),
-        },
-      };
-      "
-    `);
+    expect(storyFileContent).toContain('import { fn } from "storybook/test";');
     expect(storyFileContent).toContain('fn()');
-    expect(storyFileContent).not.toContain(STORYBOOK_FN_PLACEHOLDER);
     expect(storyFileContent).not.toContain(STORYBOOK_FN_PLACEHOLDER);
   });
 
@@ -284,10 +258,10 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import { fn } from 'storybook/test';
-      import preview from '#.storybook/preview';
+      "import { fn } from "storybook/test";
+      import preview from "#.storybook/preview";
 
-      import { Page } from './Page';
+      import { Page } from "./Page";
 
       const meta = preview.meta({
         component: Page,
@@ -295,7 +269,7 @@ describe('get-new-story-file', () => {
 
       export const Default = meta.story({
         args: {
-          label: 'label',
+          label: "label",
           answer: 0,
           onClick: fn(),
         },

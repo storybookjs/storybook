@@ -21,8 +21,8 @@ export const groupBy = <K extends PropertyKey, T>(
 };
 
 /**
- * Assertion helper that throws if the condition is falsy.
- * Supports lazy evaluation of the message string.
+ * Assertion helper that throws if the condition is falsy. Supports lazy evaluation of the message
+ * string.
  */
 export function invariant(
   condition: unknown,
@@ -38,26 +38,31 @@ export function invariant(
 let memoStore: WeakMap<(...args: any[]) => any, Map<string, unknown>> = new WeakMap();
 
 /**
- * Generic memoization helper for synchronous functions.
- * Caches by a derived string key from the function arguments.
+ * Generic memoization helper for synchronous functions. Caches by a derived string key from the
+ * function arguments.
  */
 export const cached = <A extends unknown[], R>(
   fn: (...args: A) => R,
-  opts: { key?: (...args: A) => string; name?: string } = {}
+  opts: { key?: (...args: A) => string | undefined; name?: string } = {}
 ): ((...args: A) => R) => {
-  const keyOf: (...args: A) => string =
+  const keyOf: (...args: A) => string | undefined =
     opts.key ??
     ((...args: A) => {
       try {
         return JSON.stringify(args);
       } catch {
-        return String(args[0]);
+        return undefined;
       }
     });
 
   return (...args: A) => {
-    const k = keyOf(...args);
     const name = fn.name || opts.name || 'anonymous';
+    const k = keyOf(...args);
+
+    if (k === undefined) {
+      logger.verbose(`[cache] bypass ${name} (unserializable key)`);
+      return fn(...args);
+    }
 
     let store = memoStore.get(fn);
     if (!store) {

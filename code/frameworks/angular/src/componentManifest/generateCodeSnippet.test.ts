@@ -3,11 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { types as t } from 'storybook/internal/babel';
 
 import type { Directive } from '../client/compodoc-types';
-import {
-  extractArgsNode,
-  generateAngularSnippet,
-  mergeArgsFromAst,
-} from './generateCodeSnippet';
+import { extractArgsNode, generateAngularSnippet, mergeArgsFromAst } from './generateCodeSnippet';
 
 // Helper: create a Compodoc component/directive fixture
 const makeComponent = (overrides: Record<string, any> = {}): Directive =>
@@ -27,13 +23,9 @@ const makeComponent = (overrides: Record<string, any> = {}): Directive =>
   }) as any;
 
 // Helper: build a simple AST ObjectExpression from key-value pairs
-function buildObjectExpression(
-  props: Record<string, t.Expression>
-): t.ObjectExpression {
+function buildObjectExpression(props: Record<string, t.Expression>): t.ObjectExpression {
   return t.objectExpression(
-    Object.entries(props).map(([key, value]) =>
-      t.objectProperty(t.identifier(key), value)
-    )
+    Object.entries(props).map(([key, value]) => t.objectProperty(t.identifier(key), value))
   );
 }
 
@@ -210,24 +202,18 @@ describe('generateAngularSnippet', () => {
     expect(result).toMatch(/^<app-button .+><\/app-button>$/);
   });
 
-  it('should skip undefined values', () => {
+  it('should emit identifier placehoder for undefined values', () => {
     const component = makeComponent();
-    const result = generateAngularSnippet(
-      { label: 'Hello', primary: undefined },
-      component
-    );
+    const result = generateAngularSnippet({ label: 'Hello', primary: undefined }, component);
     expect(result).toContain(`[label]="'Hello'"`);
-    expect(result).not.toContain('primary');
+    expect(result).toContain('[primary]="primary"');
   });
 
   it('should handle object values as serialized bindings', () => {
     const component = makeComponent({
       inputsClass: [{ name: 'config', type: 'object', optional: true }],
     });
-    const result = generateAngularSnippet(
-      { config: { key: 'value' } },
-      component
-    );
+    const result = generateAngularSnippet({ config: { key: 'value' } }, component);
     expect(result).toContain('[config]=');
     expect(result).toContain('key');
   });

@@ -14,6 +14,7 @@ import * as types from '@babel/types';
 import * as recast from 'recast';
 
 export * from './babelParse';
+export { unwrapTSExpression, resolveExpression } from './expression-resolver';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)
 const traverse = (bt.default || bt) as typeof bt;

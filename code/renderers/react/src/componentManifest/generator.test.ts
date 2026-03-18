@@ -534,14 +534,16 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
       }
       return config;
     },
-  } satisfies NonNullable<ManifestOptions['presets']>;
+  } as NonNullable<ManifestOptions['presets']>;
 
   const manifestEntries: ManifestEntries = [indexJson.entries['example-header--logged-in']];
   const result = await runManifestsWithOptions(manifestEntries, { presets });
   const header = result?.components?.components?.['example-header'];
 
   expect(
-    header && 'reactComponentMeta' in header ? header.reactComponentMeta?.displayName : undefined
+    header && 'reactComponentMeta' in header
+      ? (header as any).reactComponentMeta?.displayName
+      : undefined
   ).toBe('Header');
   expect(batchExtract).toHaveBeenCalled();
 });
@@ -579,7 +581,7 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
       }
       return config;
     },
-  } satisfies NonNullable<ManifestOptions['presets']>;
+  } as NonNullable<ManifestOptions['presets']>;
 
   const manifestEntries: ManifestEntries = [indexJson.entries['example-button--primary']];
   const result = await runManifestsWithOptions(manifestEntries, { presets });
@@ -654,7 +656,7 @@ test('generator falls back to title-based matching when meta.component aliases a
       }
       return config;
     },
-  } satisfies NonNullable<ManifestOptions['presets']>;
+  } as NonNullable<ManifestOptions['presets']>;
 
   const manifestEntries = [
     {
@@ -844,9 +846,9 @@ test('should prefer story entries over attached-mdx docs entries for the same co
     '/app'
   );
 
-  const manifestEntries = [
+  const manifestEntries: ManifestEntries = [
     {
-      type: 'docs',
+      type: 'docs' as const,
       id: 'example-primary--docs',
       name: 'Docs',
       title: 'Example/Primary',
@@ -858,8 +860,8 @@ test('should prefer story entries over attached-mdx docs entries for the same co
       ],
     },
     {
-      type: 'story',
-      subtype: 'story',
+      type: 'story' as const,
+      subtype: 'story' as const,
       id: 'example-primary--default',
       name: 'Default',
       title: 'Example/Primary',

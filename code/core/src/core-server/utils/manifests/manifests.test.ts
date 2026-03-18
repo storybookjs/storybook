@@ -211,7 +211,9 @@ describe('manifests', () => {
         .mock.calls.find((call) => call[0] === 'experimental_manifests');
 
       expect(manifestsPresetCall).toBeDefined();
-      const manifestEntriesArg = manifestsPresetCall?.[2]?.manifestEntries ?? [];
+      const manifestEntriesArg =
+        (manifestsPresetCall?.[2] as { manifestEntries?: Array<{ id: string }> })
+          ?.manifestEntries ?? [];
 
       // Should include both story and docs entries with manifest tag
       expect(manifestEntriesArg).toHaveLength(2);
@@ -224,13 +226,13 @@ describe('manifests', () => {
   });
 
   describe('registerManifests', () => {
-    let mockApp: Pick<Polka, 'get'>;
+    let mockApp: Polka;
     let mockGet: ReturnType<typeof vi.fn>;
     let mockPresets: Presets;
 
     beforeEach(() => {
       mockGet = vi.fn();
-      mockApp = { get: mockGet };
+      mockApp = { get: mockGet } as unknown as Polka;
       mockPresets = setupMockPresets();
     });
 
@@ -250,7 +252,7 @@ describe('manifests', () => {
           custom: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'custom' } };
@@ -268,7 +270,7 @@ describe('manifests', () => {
           existing: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'nonexistent' } };
@@ -283,7 +285,7 @@ describe('manifests', () => {
       it('should return 404 when manifests object is empty', async () => {
         mockManifests = {};
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'any' } };
@@ -299,7 +301,7 @@ describe('manifests', () => {
         const error = new Error('Preset failed');
         vi.mocked(mockPresets.apply).mockRejectedValue(error);
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'custom' } };
@@ -316,7 +318,7 @@ describe('manifests', () => {
         const errorString = 'Something went wrong';
         vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'custom' } };
@@ -332,7 +334,7 @@ describe('manifests', () => {
       it('should handle when presets.apply returns null/undefined', async () => {
         mockManifests = null;
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'custom' } };
@@ -363,7 +365,7 @@ describe('manifests', () => {
           components: componentsManifest,
         };
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -384,7 +386,7 @@ describe('manifests', () => {
           other: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -402,7 +404,7 @@ describe('manifests', () => {
       it('should return 404 when manifests is empty', async () => {
         mockManifests = {};
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -421,7 +423,7 @@ describe('manifests', () => {
         error.stack = 'Error: Rendering failed\n  at test.ts:123';
         vi.mocked(mockPresets.apply).mockRejectedValue(error);
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -440,7 +442,7 @@ describe('manifests', () => {
         const errorString = 'Something went wrong';
         vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
 
-        registerManifests({ app: mockApp as Polka, presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};

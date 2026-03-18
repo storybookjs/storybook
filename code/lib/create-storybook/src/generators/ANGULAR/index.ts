@@ -116,10 +116,12 @@ export default defineGeneratorModule({
         : '@angular/platform-browser-dynamic',
     ];
 
+    const nodeMajorVersion = parseInt(process.versions.node.split('.')[0], 10);
+
     return {
       extraPackages: [
         ...extraAngularDeps,
-        '@types/node',
+        `@types/node@^${nodeMajorVersion}`,
         ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
       ],
       addScripts: false, // Handled above based on project count

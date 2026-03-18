@@ -16,6 +16,10 @@ import { focusableUIElements } from './layout';
 
 const { navigator, document } = global;
 
+function wasFocusInElement(element: HTMLElement | null) {
+  return document.activeElement && element?.contains(document.activeElement);
+}
+
 export const isMacLike = () =>
   navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
 export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');
@@ -359,13 +363,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
         case 'togglePanel': {
           const wasPanelShown = fullAPI.getIsPanelShown();
-          const panelElement = document.getElementById(focusableUIElements.storyPanelRoot);
-          const wasFocusInPanel =
-            panelElement && document.activeElement && panelElement.contains(document.activeElement);
+          const panelElement = document.getElementById(focusableUIElements.addonPanel);
 
           fullAPI.togglePanel();
 
-          if (wasPanelShown && wasFocusInPanel) {
+          if (wasPanelShown && wasFocusInElement(panelElement)) {
             // poll: true always returns a Promise.
             (
               fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel, {
@@ -384,11 +386,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         case 'toggleNav': {
           const wasNavShown = fullAPI.getIsNavShown();
           const sidebarElement = document.getElementById(focusableUIElements.sidebarRegion);
-          const wasFocusInSidebar = sidebarElement?.contains(document?.activeElement);
 
           fullAPI.toggleNav();
 
-          if (wasNavShown && wasFocusInSidebar) {
+          if (wasNavShown && wasFocusInElement(sidebarElement)) {
             // poll: true always returns a Promise.
             (
               fullAPI.focusOnUIElement(focusableUIElements.showSidebar, {

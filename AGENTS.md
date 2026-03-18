@@ -6,8 +6,9 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 
 ## Repository Overview
 
-Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`.
+Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
+- **Base branch**: `next` (all PRs should target `next`, not `main`)
 - **Node.js**: `22.21.1` (see `.nvmrc`)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
@@ -111,9 +112,9 @@ yarn nx run-many -t check
 ```bash
 cd code && yarn storybook:ui
 cd code && yarn storybook:ui:build
-cd code && yarn test
-cd code && yarn test:watch
-cd code && yarn storybook:vitest
+yarn test
+yarn test:watch
+yarn storybook:vitest
 ```
 
 ### Common task scenarios
@@ -125,8 +126,8 @@ cd code && yarn storybook:vitest
 | Check TypeScript errors quickly | `yarn nx run-many -t check`                                                    |
 | Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
-| Run unit tests                  | `cd code && yarn test`                                                         |
-| Run Storybook Vitest tests      | `cd code && yarn storybook:vitest`                                             |
+| Run unit tests                  | `yarn test`                                                                    |
+| Run Storybook Vitest tests      | `yarn storybook:vitest`                                                        |
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
 | Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
@@ -209,7 +210,7 @@ Common templates:
 
 ## Testing Expectations
 
-- Use `cd code && yarn test` for unit tests
+- Use `yarn test` for unit tests
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
@@ -218,9 +219,8 @@ Common templates:
 Watch-mode commands:
 
 ```bash
-cd code && yarn test:watch
-yarn affected:test
-cd code && yarn storybook:vitest
+yarn test:watch
+yarn storybook:vitest
 ```
 
 When writing tests:

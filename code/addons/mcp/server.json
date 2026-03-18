@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.storybookjs/addon-mcp",
+  "title": "Storybook MCP Addon",
+  "description": "Help agents automatically write and test stories for your UI components.",
+  "repository": {
+    "url": "https://github.com/storybookjs/mcp",
+    "source": "github",
+    "subfolder": "packages/addon-mcp"
+  },
+  "version": "0.4.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@storybook/addon-mcp",
+      "version": "0.4.1",
+      "transport": {
+        "type": "streamable-http"
+      }
+    }
+  ]
+}

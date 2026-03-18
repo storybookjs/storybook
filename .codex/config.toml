@@ -1,6 +1,3 @@
-[mcp_servers."nx-mcp"]
+[mcp_servers."nx"]
 command = "npx"
-args = ["nx", "mcp", "--no-minimal"]
-cwd = "."
-startup_timeout_sec = 20
-tool_timeout_sec = 120
+args = ["nx-mcp@latest"]

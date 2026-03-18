@@ -84,7 +84,7 @@ test.describe("component testing", () => {
   test.afterEach(async ({ page }) => {
     await page.click("body");
     try {
-      const descriptionButton = page.locator("#testing-module-description a");
+      const descriptionButton = page.locator("#testing-module-description button");
       if (
         await descriptionButton.isVisible({ timeout: 4000 }).catch(() => false)
       ) {
@@ -593,7 +593,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and errors are reported
-    const errorLink = page.locator("#testing-module-description a");
+    const errorLink = page.locator("#testing-module-description button");
     await expect(errorLink).toContainText("View full error", {
       timeout: 30000,
     });

@@ -36,8 +36,8 @@ function normalize(results: ComponentDocWithExportName[]) {
 const parseFixture = async (name: string) =>
   normalize(await parseWithReactDocgenTypescript(fixture(name)));
 
-describe('parseFile', () => {
-  test('Button', { timeout: 30_000 }, () => {
+describe('parseFile', { timeout: 30_000 }, () => {
+  test('Button', () => {
     return expect(parseFixture('Button.ts')).resolves.toMatchInlineSnapshot(`
       [
         {

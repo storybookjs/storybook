@@ -205,3 +205,103 @@ test('manifests merges existing manifests', async () => {
   // And add components
   expect(result).toHaveProperty('components');
 });
+
+test('should prefer story entries over attached-mdx docs entries for the same component id', async () => {
+  fileSystem['/app/package.json'] = JSON.stringify({ name: 'some-package' });
+  fileSystem['/app/src/Primary/Primary.stories.ts'] = dedent`
+    import type { Meta, StoryObj } from '@storybook/angular';
+    import { PrimaryComponent } from './Primary.component';
+
+    const meta: Meta<PrimaryComponent> = {
+      title: 'Example/Primary',
+      component: PrimaryComponent,
+    };
+    export default meta;
+
+    export const Default: StoryObj = {};
+  `;
+  fileSystem['/app/src/Primary/Primary.component.ts'] = dedent`
+    import { Component, Input } from '@angular/core';
+
+    @Component({
+      selector: 'app-primary',
+      template: '<div>{{title}}</div>',
+    })
+    export class PrimaryComponent {
+      @Input() title!: string;
+    }
+  `;
+  fileSystem['/app/src/OtherFile/OtherFile.stories.ts'] = dedent`
+    import type { Meta, StoryObj } from '@storybook/angular';
+    import { OtherFileComponent } from './OtherFile.component';
+
+    const meta: Meta<OtherFileComponent> = {
+      title: 'Example/Other File',
+      component: OtherFileComponent,
+    };
+    export default meta;
+
+    export const Default: StoryObj = {};
+  `;
+  fileSystem['/app/src/OtherFile/OtherFile.component.ts'] = dedent`
+    import { Component, Input } from '@angular/core';
+
+    @Component({
+      selector: 'app-other-file',
+      template: '<button>{{label}}</button>',
+    })
+    export class OtherFileComponent {
+      @Input() label!: string;
+    }
+  `;
+
+  const manifestEntries = [
+    {
+      type: 'docs',
+      id: 'example-primary--docs',
+      name: 'Docs',
+      title: 'Example/Primary',
+      importPath: './src/Primary/Primary.mdx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
+      storiesImports: ['./src/OtherFile/OtherFile.stories.ts', './src/Primary/Primary.stories.ts'],
+    },
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'example-primary--default',
+      name: 'Default',
+      title: 'Example/Primary',
+      importPath: './src/Primary/Primary.stories.ts',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const compodoc = JSON.parse(fileSystem['/app/documentation.json']);
+  compodoc.components.push(
+    {
+      name: 'PrimaryComponent',
+      file: 'src/Primary/Primary.component.ts',
+      selector: 'app-primary',
+    },
+    {
+      name: 'OtherFileComponent',
+      file: 'src/OtherFile/OtherFile.component.ts',
+      selector: 'app-other-file',
+    }
+  );
+  fileSystem['/app/documentation.json'] = JSON.stringify(compodoc);
+
+  const result = await manifests(undefined, { manifestEntries } as any);
+  const component = result?.components?.components?.['example-primary'];
+
+  expect(component?.name).toBe('PrimaryComponent');
+  expect(component?.path).toBe('./src/Primary/Primary.stories.ts');
+  expect(component?.stories).toMatchObject([
+    {
+      id: 'example-primary--default',
+      name: 'Default',
+    },
+  ]);
+  expect(component?.stories[0]?.snippet).toContain('app-primary');
+});

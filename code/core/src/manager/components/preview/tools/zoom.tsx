@@ -102,6 +102,7 @@ export const Zoom = memo<{
                 value={`${Math.round(value * 100)}%`}
                 minValue={1}
                 maxValue={800}
+                shiftStep={10}
                 setValue={(value: string) => {
                   const zoomLevel = parseInt(value, 10) / 100;
                   if (!Number.isNaN(zoomLevel)) {

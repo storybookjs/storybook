@@ -1,3 +1,5 @@
+import { global } from '@storybook/global';
+
 import type { StoreAPI } from 'store2';
 import store from 'store2';
 
@@ -7,10 +9,39 @@ import type { State } from './root';
 // setting up the store, overriding set and get to use telejson
 storeSetup(store._);
 
-export const STORAGE_KEY = '@storybook/manager/store';
+const STORAGE_KEY_BASE = '@storybook/manager/store';
+
+/**
+ * Build the storage key, scoped per Storybook instance when possible. The STORYBOOK_INSTANCE_ID
+ * global is injected by the builder from a hash of configDir, which ensures each Storybook project
+ * uses its own localStorage namespace.
+ */
+function buildStorageKey(): string {
+  try {
+    const instanceId = global.STORYBOOK_INSTANCE_ID;
+    if (instanceId) {
+      return `${STORAGE_KEY_BASE}/${instanceId}`;
+    }
+  } catch {
+    // Ignore - fall back to the base key
+  }
+  return STORAGE_KEY_BASE;
+}
+
+export const STORAGE_KEY = buildStorageKey();
 
 function get(storage: StoreAPI) {
-  const data = storage.get(STORAGE_KEY);
+  let data = storage.get(STORAGE_KEY);
+
+  // Migration: if no data exists under the instance-specific key, try the old shared key.
+  // This is a one-time migration that preserves existing settings when upgrading.
+  if (!data && STORAGE_KEY !== STORAGE_KEY_BASE) {
+    data = storage.get(STORAGE_KEY_BASE);
+    if (data) {
+      storage.set(STORAGE_KEY, data);
+    }
+  }
+
   return data || {};
 }
 

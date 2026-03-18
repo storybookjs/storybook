@@ -888,6 +888,46 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     );
   };
 
+  /**
+   * Purge tag filters that don't match any entries in the current unfiltered index. Built-in
+   * filters (like _docs, _play, _test) are always kept because they filter on entry metadata, not
+   * tags.
+   */
+  const purgeStaleTagFilters = async () => {
+    const state = store.getState();
+    const { internal_index, includedTagFilters, excludedTagFilters } = state;
+
+    if (!internal_index || !includedTagFilters || !excludedTagFilters) {
+      return;
+    }
+
+    // Collect all tags present across every entry in the unfiltered index
+    const allTags = new Set<string>();
+    for (const entry of Object.values(internal_index.entries)) {
+      entry.tags?.forEach((tag: string) => allTags.add(tag));
+    }
+
+    // Keep a tag if it is a built-in filter key or actually appears in the index
+    const isValidTag = (tag: Tag) => Object.hasOwn(BUILT_IN_FILTERS, tag) || allTags.has(tag);
+
+    const validIncluded = includedTagFilters.filter(isValidTag);
+    const validExcluded = excludedTagFilters.filter(isValidTag);
+
+    const includedChanged = validIncluded.length !== includedTagFilters.length;
+    const excludedChanged = validExcluded.length !== excludedTagFilters.length;
+
+    if (includedChanged || excludedChanged) {
+      await store.setState(
+        {
+          includedTagFilters: validIncluded,
+          excludedTagFilters: validExcluded,
+        },
+        { persistence: 'permanent' }
+      );
+      recomputeFilters();
+    }
+  };
+
   // On initial load, the local iframe will select the first story (or other "selection specifier")
   // and emit STORY_SPECIFIED with the id. We need to ensure we respond to this change.
   provider.channel?.on(
@@ -1158,6 +1198,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       provider.channel?.on(STORY_INDEX_INVALIDATED, () => api.fetchIndex());
 
       await api.fetchIndex();
+
+      // After the first index load, purge any stale tag filters that don't match
+      // any entries in the unfiltered index. This prevents leftover filters from
+      // another Storybook instance (or a previous project state) from hiding all
+      // sidebar entries.
+      purgeStaleTagFilters();
     },
   };
 };

@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import {
   extractFrameworkPackageName,
   frameworkPackages,
@@ -26,6 +28,15 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   globals.STORYBOOK_FRAMEWORK = framework;
   globals.STORYBOOK_RENDERER = renderer;
   globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
+
+  // Compute a unique instance ID from the configDir so the manager can scope localStorage
+  // keys per Storybook instance. This prevents shared state across multiple projects.
+  if (options.configDir) {
+    globals.STORYBOOK_INSTANCE_ID = createHash('sha256')
+      .update(options.configDir)
+      .digest('hex')
+      .slice(0, 12);
+  }
 
   return globals;
 };

@@ -1672,4 +1672,127 @@ describe('stories API', () => {
       `);
     });
   });
+
+  describe('purgeStaleTagFilters', () => {
+    it('removes user tag filters that do not match any entries in the index', async () => {
+      const entriesWithTags = {
+        'a--1': {
+          type: 'story' as const,
+          subtype: 'story' as const,
+          title: 'a',
+          name: '1',
+          id: 'a--1',
+          importPath: './a.ts',
+          tags: ['dev', 'existing-tag'],
+        },
+      };
+
+      fetch.mockReturnValue(
+        Promise.resolve({
+          status: 200,
+          ok: true,
+          json: () => ({ v: 5, entries: entriesWithTags }),
+        } as any as Response)
+      );
+
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          // Simulate leftover stale tag from another SB instance
+          includedTagFilters: ['existing-tag', 'stale-tag-from-other-project'],
+          excludedTagFilters: ['another-stale-tag'],
+        } as any,
+      });
+      const { init } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await init!();
+      await wait(16);
+
+      const { includedTagFilters, excludedTagFilters } = store.getState();
+      expect(includedTagFilters).toEqual(['existing-tag']);
+      expect(excludedTagFilters).toEqual([]);
+    });
+
+    it('keeps built-in filter tags even if they do not appear in entry tags', async () => {
+      const entriesWithTags = {
+        'a--1': {
+          type: 'story' as const,
+          subtype: 'story' as const,
+          title: 'a',
+          name: '1',
+          id: 'a--1',
+          importPath: './a.ts',
+          tags: ['dev'],
+        },
+      };
+
+      fetch.mockReturnValue(
+        Promise.resolve({
+          status: 200,
+          ok: true,
+          json: () => ({ v: 5, entries: entriesWithTags }),
+        } as any as Response)
+      );
+
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          // _docs and _play are built-in filters and should be kept
+          includedTagFilters: ['_docs', '_play'],
+          excludedTagFilters: ['_test', 'stale-tag'],
+        } as any,
+      });
+      const { init } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await init!();
+      await wait(16);
+
+      const { includedTagFilters, excludedTagFilters } = store.getState();
+      expect(includedTagFilters).toEqual(['_docs', '_play']);
+      expect(excludedTagFilters).toEqual(['_test']);
+    });
+
+    it('does not update state if all tag filters are valid', async () => {
+      const entriesWithTags = {
+        'a--1': {
+          type: 'story' as const,
+          subtype: 'story' as const,
+          title: 'a',
+          name: '1',
+          id: 'a--1',
+          importPath: './a.ts',
+          tags: ['dev', 'my-tag'],
+        },
+      };
+
+      fetch.mockReturnValue(
+        Promise.resolve({
+          status: 200,
+          ok: true,
+          json: () => ({ v: 5, entries: entriesWithTags }),
+        } as any as Response)
+      );
+
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          includedTagFilters: ['my-tag'],
+          excludedTagFilters: ['_docs'],
+        } as any,
+      });
+      const { init } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      const stateBeforeInit = store.getState();
+      await init!();
+      await wait(16);
+
+      // setState should have been called for setIndex but not for purging tag filters
+      const setStateCalls = (store.setState as any).mock.calls;
+      const tagFilterUpdates = setStateCalls.filter(
+        (call: any[]) =>
+          call[0] && 'includedTagFilters' in call[0] && 'excludedTagFilters' in call[0]
+      );
+      expect(tagFilterUpdates).toHaveLength(0);
+    });
+  });
 });

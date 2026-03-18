@@ -20,6 +20,10 @@ vi.mock('store2', () => ({
 }));
 
 describe('store', () => {
+  it('uses the base storage key when STORYBOOK_INSTANCE_ID is not set', () => {
+    expect(STORAGE_KEY).toBe('@storybook/manager/store');
+  });
+
   it('sensibly combines local+session storage for initial state', () => {
     store2.session.get.mockReturnValueOnce({ foo: 'bar', combined: { a: 'b' } });
     store2.local.get.mockReturnValueOnce({ foo: 'baz', another: 'value', combined: { c: 'd' } });

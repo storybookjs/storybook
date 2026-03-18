@@ -13,23 +13,10 @@ storeSetup(store._);
 const STORAGE_KEY_BASE = '@storybook/manager/store';
 
 /**
- * Build the storage key, scoped per Storybook instance when possible. The STORYBOOK_INSTANCE_ID
- * global is injected by the builder from getAnonymousProjectId() (a Git-derived project hash). When
- * unavailable, we use 'anonymous' to keep new data separate from the legacy shared key.
+ * Storage key scoped per Storybook instance via `STORYBOOK_INSTANCE_ID` (a Git-derived project
+ * hash).
  */
-function buildStorageKey(): string {
-  try {
-    const instanceId = global.STORYBOOK_INSTANCE_ID;
-    if (instanceId) {
-      return `${STORAGE_KEY_BASE}/${instanceId}`;
-    }
-  } catch {
-    // In edge cases (e.g. restricted globals), fall back to anonymous
-  }
-  return `${STORAGE_KEY_BASE}/anonymous`;
-}
-
-export const STORAGE_KEY = buildStorageKey();
+export const STORAGE_KEY = `${STORAGE_KEY_BASE}/${global.STORYBOOK_INSTANCE_ID || 'anonymous'}`;
 
 /**
  * Key used to store the Storybook version alongside persisted data. This allows future migration

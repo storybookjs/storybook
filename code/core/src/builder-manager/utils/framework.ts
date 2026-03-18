@@ -28,9 +28,10 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   globals.STORYBOOK_RENDERER = renderer;
   globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
 
-  // Derive a stable, anonymous project ID from Git info (remote URL + working directory) so the
-  // manager can scope localStorage keys per Storybook instance. Falls back to 'anonymous' when
-  // Git info is unavailable (e.g. in non-Git projects or CI without Git).
+  /**
+   * Anonymous project ID derived from Git info, falls back to `anonymous` when it can't be
+   * computed.
+   */
   globals.STORYBOOK_INSTANCE_ID = getAnonymousProjectId() ?? 'anonymous';
 
   return globals;

@@ -901,17 +901,16 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       return;
     }
 
-    // Collect all tags present across every entry in the unfiltered index
-    const allTags = new Set<string>();
+    const allExistingTags = new Set<string>();
     for (const entry of Object.values(internal_index.entries)) {
-      entry.tags?.forEach((tag: string) => allTags.add(tag));
+      entry.tags?.forEach((tag: string) => allExistingTags.add(tag));
     }
 
-    // Keep a tag if it is a built-in filter key or actually appears in the index
-    const isValidTag = (tag: Tag) => Object.hasOwn(BUILT_IN_FILTERS, tag) || allTags.has(tag);
+    const isExistingTag = (tag: Tag) =>
+      Object.hasOwn(BUILT_IN_FILTERS, tag) || allExistingTags.has(tag);
 
-    const validIncluded = includedTagFilters.filter(isValidTag);
-    const validExcluded = excludedTagFilters.filter(isValidTag);
+    const validIncluded = includedTagFilters.filter(isExistingTag);
+    const validExcluded = excludedTagFilters.filter(isExistingTag);
 
     const includedChanged = validIncluded.length !== includedTagFilters.length;
     const excludedChanged = validExcluded.length !== excludedTagFilters.length;

@@ -270,8 +270,11 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   const webpackCompilation = new Promise<Stats>((succeed, fail) => {
     if (options.watch) {
       let isFirstBuild = true;
+      let rebuildStartTime = startTime;
       logger.info('Watching for changes...');
       compiler.watch(config.watchOptions || {}, (error, stats) => {
+        const currentRebuildStart = rebuildStartTime;
+        rebuildStartTime = process.hrtime();
         if (error) {
           logger.error(error.message);
           if (isFirstBuild) {
@@ -308,7 +311,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
           isFirstBuild = false;
           succeed(stats);
         } else {
-          logger.info(`Rebuild completed in ${printDuration(startTime)}`);
+          logger.info(`Rebuild completed in ${printDuration(currentRebuildStart)}`);
         }
         logger.info('Watching for changes...');
       });
@@ -320,7 +323,13 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
         }
 
         if (!stats) {
-          throw new WebpackMissingStatsError();
+          compiler.close((closeErr) => {
+            if (closeErr) {
+              return fail(new WebpackInvocationError({ error: closeErr }));
+            }
+            return fail(new WebpackMissingStatsError());
+          });
+          return;
         }
 
         const { warnings, errors } = getWebpackStats({ config, stats });

@@ -94,7 +94,7 @@ export async function build(options: Options) {
   if (options.watch) {
     finalConfig.build = {
       ...finalConfig.build,
-      watch: {},
+      watch: finalConfig.build?.watch ?? {},
     };
   }
 

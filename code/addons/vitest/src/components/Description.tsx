@@ -50,18 +50,14 @@ export function Description({
         : `Testing... ${finishedTestCount}/${totalTestCount}`;
   } else if (!entryId && testProviderState === 'test-provider-state:crashed') {
     description = setModalOpen ? (
-      <LinkComponent isButton onClick={() => setModalOpen(true)}>
-        View full error
-      </LinkComponent>
+      <LinkComponent onClick={() => setModalOpen(true)}>View full error</LinkComponent>
     ) : (
       'Crashed'
     );
   } else if (!entryId && unhandledErrors.length > 0) {
     const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`;
     description = setModalOpen ? (
-      <LinkComponent isButton onClick={() => setModalOpen(true)}>
-        {unhandledErrorDescription}
-      </LinkComponent>
+      <LinkComponent onClick={() => setModalOpen(true)}>{unhandledErrorDescription}</LinkComponent>
     ) : (
       unhandledErrorDescription
     );

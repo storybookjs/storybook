@@ -92,13 +92,15 @@ export function renderComponentsManifest(
         : `<a class="filter-pill ok" data-k="docs" href="#filter-docs">${totals.docs} ${plural(totals.docs, 'doc')} ok</a>`
       : '';
 
-  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
+  const grid = entries
+    .map(([key, c], idx) => renderComponentCard(key, c, `${idx}`, manifest))
+    .join('');
   const docsGrid = docsEntries.map(([key, d], idx) => renderDocCard(key, d, `doc-${idx}`)).join('');
 
   const errorGroups = Object.entries(
     groupBy(
       entries.map(([, it]) => it).filter((it) => it.error),
-      (manifest) => manifest.error?.name ?? 'Error'
+      (m) => m.error?.name ?? 'Error'
     )
   ).sort(([, a], [, b]) => b.length - a.length);
 
@@ -107,7 +109,7 @@ export function renderComponentsManifest(
       const id = error.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const headerText = `${esc(error)}`;
       const cards = grouped
-        .map((manifest, id) => renderComponentCard(manifest.id, manifest, `error-${id}`))
+        .map((m, id) => renderComponentCard(m.id, m, `error-${id}`, manifest))
         .join('');
       return `
         <section class="group">
@@ -884,7 +886,12 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 </article>`;
 }
 
-function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
+function renderComponentCard(
+  key: string,
+  c: ComponentManifestWithDocs,
+  id: string,
+  manifest?: ComponentsManifest | undefined
+) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
   const allStories = c.stories ?? [];
@@ -921,10 +928,11 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
 
   const {
     parsed: activeParsed,
-    engine: cardEngine,
+    engine,
     filePath,
     exportName,
   } = getDocgenRenderData(c, a.hasPropTypeError);
+  const cardEngine = manifest?.meta?.docgen ?? engine;
   const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0

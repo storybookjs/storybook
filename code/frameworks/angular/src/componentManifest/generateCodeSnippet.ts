@@ -3,8 +3,8 @@ import { types as t } from 'storybook/internal/babel';
 import type { Component, Directive, Property } from '../client/compodoc-types';
 
 /**
- * Extract the `args` AST node from a CSF meta or story ObjectExpression.
- * Returns the ObjectExpression node for `args`, or undefined.
+ * Extract the `args` AST node from a CSF meta or story ObjectExpression. Returns the
+ * ObjectExpression node for `args`, or undefined.
  */
 export function extractArgsNode(
   node: t.ObjectExpression | undefined
@@ -21,9 +21,9 @@ export function extractArgsNode(
 }
 
 /**
- * Convert an AST ObjectExpression into a plain Record<string, unknown>.
- * Only handles literal values (strings, numbers, booleans, null, arrays, nested objects).
- * Non-literal values (identifiers, functions, etc.) produce the key name as placeholder.
+ * Convert an AST ObjectExpression into a plain Record<string, unknown>. Only handles literal values
+ * (strings, numbers, booleans, null, arrays, nested objects). Non-literal values (identifiers,
+ * functions, etc.) produce the key name as placeholder.
  */
 function astObjectToRecord(node: t.ObjectExpression): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -40,10 +40,7 @@ function astObjectToRecord(node: t.ObjectExpression): Record<string, unknown> {
   return result;
 }
 
-/**
- * Convert a single AST node to a JavaScript value.
- * Returns undefined for unresolvable expressions.
- */
+/** Convert a single AST node to a JavaScript value. Returns undefined for unresolvable expressions. */
 function astNodeToValue(node: t.Node): unknown {
   if (t.isStringLiteral(node)) {
     return node.value;
@@ -74,9 +71,7 @@ function astNodeToValue(node: t.Node): unknown {
   return undefined;
 }
 
-/**
- * Extract the property key name from an ObjectProperty node.
- */
+/** Extract the property key name from an ObjectProperty node. */
 function keyOf(prop: t.ObjectProperty | t.ObjectMethod): string | undefined {
   if (t.isIdentifier(prop.key)) {
     return prop.key.name;
@@ -87,9 +82,7 @@ function keyOf(prop: t.ObjectProperty | t.ObjectMethod): string | undefined {
   return undefined;
 }
 
-/**
- * Merge meta-level and story-level args AST nodes into a single record.
- */
+/** Merge meta-level and story-level args AST nodes into a single record. */
 export function mergeArgsFromAst(
   metaNode: t.ObjectExpression | undefined,
   storyAnnotations: Record<string, t.Node> | undefined
@@ -109,13 +102,13 @@ export function mergeArgsFromAst(
  * Generate an Angular template snippet for a given story.
  *
  * Approach:
+ *
  * 1. Extract the selector from the Compodoc component data
  * 2. Use the merged args (meta + story) from the CSF AST
  * 3. Build Angular template bindings ([input], (output))
  *
- * @example
- * // Output:
- * <app-button [label]="'Click me'" [primary]="true" (onClick)="onClick($event)"></app-button>
+ * @example // Output: <app-button [label]="'Click me'" [primary]="true"
+ * (onClick)="onClick($event)"></app-button>
  */
 export function generateAngularSnippet(
   args: Record<string, unknown> | undefined,
@@ -138,12 +131,8 @@ export function generateAngularSnippet(
   }
 
   // Build a Set of input and output names from Compodoc data
-  const inputNames = new Set(
-    (componentData.inputsClass || []).map((p: Property) => p.name)
-  );
-  const outputNames = new Set(
-    (componentData.outputsClass || []).map((p: Property) => p.name)
-  );
+  const inputNames = new Set((componentData.inputsClass || []).map((p: Property) => p.name));
+  const outputNames = new Set((componentData.outputsClass || []).map((p: Property) => p.name));
 
   const bindings: string[] = [];
 
@@ -152,7 +141,7 @@ export function generateAngularSnippet(
       continue;
     }
 
-    if (outputNames.has(key) || typeof value === 'function') {
+    if (outputNames.has(key)) {
       // Event binding
       bindings.push(`(${key})="${key}($event)"`);
     } else if (inputNames.has(key) || !outputNames.has(key)) {
@@ -168,9 +157,9 @@ export function generateAngularSnippet(
 /**
  * Format a single Angular property binding.
  *
- * - string → [name]="'value'"
- * - boolean/number → [name]="value"
- * - object → [name]="serialized"
+ * - String → [name]="'value'"
+ * - Boolean/number → [name]="value"
+ * - Object → [name]="serialized"
  */
 function formatAngularBinding(name: string, value: unknown): string {
   if (typeof value === 'string') {

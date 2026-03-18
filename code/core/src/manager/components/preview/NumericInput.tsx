@@ -74,10 +74,7 @@ interface NumericInputProps extends Omit<ComponentProps<typeof Form.Input>, 'val
   setValue: (value: string) => void;
   minValue?: number;
   maxValue?: number;
-  /** Base step value increase */
   step?: number;
-  /** Step value increase when shift key is pressed */
-  shiftStep?: number;
   unit?: string;
   baseUnit?: string;
 }
@@ -92,7 +89,6 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
     minValue = -Infinity,
     maxValue = Infinity,
     step = 1,
-    shiftStep = step,
     unit: fixedUnit,
     baseUnit = fixedUnit,
     className,
@@ -169,7 +165,7 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
 
       const { number, unit } = parseValue(inputValue);
       if (!Number.isNaN(number)) {
-        const delta = e.shiftKey ? shiftStep : step;
+        const delta = e.shiftKey ? step * 10 : step;
         updateValue(`${e.key === 'ArrowUp' ? number + delta : number - delta}${unit}`);
         setInputSelection();
       }
@@ -180,7 +176,7 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
       input.addEventListener('keydown', handleKeyDown);
       return () => input.removeEventListener('keydown', handleKeyDown);
     }
-  }, [inputValue, parseValue, setInputSelection, shiftStep, step, updateValue]);
+  }, [inputValue, parseValue, setInputSelection, step, updateValue]);
 
   return (
     <Wrapper after={after} before={before} className={className} style={style}>

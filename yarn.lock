@@ -8678,6 +8678,7 @@ __metadata:
     node-gyp: "npm:^12.1.0"
     npm-registry-client: "npm:^8.6.0"
     ora: "npm:^5.4.1"
+    oxfmt: "npm:^0.41.0"
     p-limit: "npm:^7.2.0"
     p-retry: "npm:^7.1.0"
     picocolors: "npm:^1.1.0"

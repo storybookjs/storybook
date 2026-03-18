@@ -6,9 +6,19 @@ import { formatFileContent } from 'storybook/internal/common';
 
 import { configToCsfFactory } from './config-to-csf-factory';
 
-vi.mock('storybook/internal/common', { spy: true });
-vi.mocked(formatFileContent).mockImplementation(async (_path, content) => content);
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
+import { formatFileContent } from 'storybook/internal/common';
+
+import { configToCsfFactory } from './config-to-csf-factory';
+
+vi.mock('storybook/internal/common', { spy: true });
+
+beforeEach(() => {
+  vi.mocked(formatFileContent).mockImplementation(async (_path, content) => content);
+});
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
   test: () => true,

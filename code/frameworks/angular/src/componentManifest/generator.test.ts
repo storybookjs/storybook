@@ -35,7 +35,9 @@ const { manifests } = await import('./generator');
 
 beforeEach(() => {
   // Clear the in-memory filesystem
-  Object.keys(fileSystem).forEach((k) => delete fileSystem[k]);
+  Object.keys(fileSystem).forEach((k) => {
+    delete fileSystem[k];
+  });
   // Populate with default mocks
   populateFs(fsMocks, '/app');
   vi.spyOn(process, 'cwd').mockReturnValue('/app');

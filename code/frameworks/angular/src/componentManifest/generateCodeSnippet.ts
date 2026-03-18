@@ -137,6 +137,10 @@ export function generateAngularSnippet(
   const bindings: string[] = [];
 
   for (const [key, value] of Object.entries(args)) {
+    if (value === undefined) {
+      continue;
+    }
+
     if (outputNames.has(key)) {
       // Event binding
       bindings.push(`(${key})="${key}($event)"`);

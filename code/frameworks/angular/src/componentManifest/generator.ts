@@ -22,7 +22,7 @@ import {
 import { generateAngularSnippet, mergeArgsFromAst } from './generateCodeSnippet';
 import { buildComponentImport } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
-import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
+import { cachedFindUp, cachedReadFileSync, invalidateCache } from './utils';
 
 type ComponentOrDirective = Component | Directive;
 
@@ -32,10 +32,11 @@ interface AngularComponentManifest extends ComponentManifest {
   compodocData?: ComponentOrDirective;
 }
 
-/**
- * Find the nearest package.json and return its `name` field.
- */
-function getPackageInfo(componentPath: string | undefined, fallbackPath: string): string | undefined {
+/** Find the nearest package.json and return its `name` field. */
+function getPackageInfo(
+  componentPath: string | undefined,
+  fallbackPath: string
+): string | undefined {
   const nearestPkg = cachedFindUp('package.json', {
     cwd: path.dirname(componentPath ?? fallbackPath),
   });
@@ -49,9 +50,7 @@ function getPackageInfo(componentPath: string | undefined, fallbackPath: string)
   }
 }
 
-/**
- * Extract stories from a parsed CSF file, generating Angular template snippets.
- */
+/** Extract stories from a parsed CSF file, generating Angular template snippets. */
 function extractStories(
   csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
   componentData: ComponentOrDirective | undefined,
@@ -85,19 +84,17 @@ function extractStories(
           summary: tags.summary?.[0],
         };
       } catch (e) {
-        invariant(e instanceof Error);
+        const error = e instanceof Error ? e : new Error(String(e));
         return {
           id: story.id,
           name: story.name ?? storyNameFromExport(storyExport),
-          error: { name: e.name, message: e.message },
+          error: { name: error.name, message: error.message },
         };
       }
     });
 }
 
-/**
- * Extract component-level description from CSF meta and/or Compodoc data.
- */
+/** Extract component-level description from CSF meta and/or Compodoc data. */
 function extractComponentDescription(
   csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
   compodocDescription: string | undefined
@@ -114,9 +111,9 @@ function extractComponentDescription(
 /**
  * Main manifest generator for Angular.
  *
- * Implements the `experimental_manifests` preset property.
- * Reads Compodoc's `documentation.json` to extract component metadata,
- * then iterates over tagged IndexEntries to build ComponentManifest objects.
+ * Implements the `experimental_manifests` preset property. Reads Compodoc's `documentation.json` to
+ * extract component metadata, then iterates over tagged IndexEntries to build ComponentManifest
+ * objects.
  */
 export const manifests: PresetPropertyFn<
   'experimental_manifests',
@@ -167,10 +164,7 @@ export const manifests: PresetPropertyFn<
   const components = entriesByUniqueComponent
     .map((entry): AngularComponentManifest | undefined => {
       try {
-        const storyFilePath =
-          entry.type === 'story'
-            ? entry.importPath
-            : entry.storiesImports[0];
+        const storyFilePath = entry.type === 'story' ? entry.importPath : entry.storiesImports[0];
 
         const absoluteImportPath = path.join(workspaceRoot, storyFilePath);
         const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
@@ -224,7 +218,8 @@ export const manifests: PresetPropertyFn<
           const error = componentName
             ? {
                 name: 'Component not found in Compodoc',
-                message: `Component "${componentName}" was not found in the Compodoc documentation.json. ` +
+                message:
+                  `Component "${componentName}" was not found in the Compodoc documentation.json. ` +
                   `Make sure Compodoc has been run and the component is included in the tsconfig used by Compodoc.`,
               }
             : {
@@ -255,7 +250,7 @@ export const manifests: PresetPropertyFn<
     .filter((component): component is AngularComponentManifest => component !== undefined);
 
   const durationMs = Math.round(performance.now() - startTime);
-  
+
   return {
     ...existingManifests,
     components: {

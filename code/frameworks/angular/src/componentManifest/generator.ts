@@ -205,7 +205,12 @@ export const manifests: PresetPropertyFn<
         const componentFilePath = componentData
           ? getComponentFilePath(componentData as ComponentOrDirective)
           : undefined;
-        const packageName = getPackageInfo(componentFilePath, absoluteImportPath);
+        const storyPackageName = getPackageInfo(undefined, absoluteImportPath);
+        const componentPackageName = getPackageInfo(componentFilePath, absoluteImportPath);
+        const packageName =
+          componentPackageName && componentPackageName !== storyPackageName
+            ? componentPackageName
+            : undefined;
         const importStatement = componentData
           ? buildComponentImport(componentData as ComponentOrDirective, storyFilePath, packageName)
           : '';

@@ -99,7 +99,7 @@ export function JsonNodeAccordion({
         {name} :
       </Trigger>
       <Region
-        role="region"
+        role="group"
         id={ids.region}
         aria-labelledby={ids.trigger}
         className="rejt-accordion-region"

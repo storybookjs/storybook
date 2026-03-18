@@ -13,6 +13,7 @@ import { dev } from '../cli/dev';
 import { globalSettings } from '../cli/globalSettings';
 
 addToGlobalContext('cliVersion', version);
+process.env.STORYBOOK = 'true';
 
 /**
  * Core CLI for Storybook.

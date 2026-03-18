@@ -37,15 +37,10 @@
     "release:write-changelog": "jiti ./release/write-changelog.ts",
     "strict-ts": "jiti ./strict-ts.ts",
     "task": "jiti ./task.ts",
-    "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
-    "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
+    "test": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest run --project scripts",
+    "test:watch": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest watch --project scripts",
     "upgrade": "jiti ./task.ts",
     "upload-bench": "jiti ./upload-bench.ts"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "yarn lint-staged"
-    }
   },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
@@ -63,7 +58,7 @@
     "@octokit/request": "^8.4.1",
     "@polka/parse": "^1.0.0-next.28",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
     "@trivago/prettier-plugin-sort-imports": "^6.0.0",
@@ -87,7 +82,7 @@
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/experimental-utils": "^5.62.0",
     "@typescript-eslint/parser": "^8.48.0",
-    "@vitest/coverage-v8": "^4.0.14",
+    "@vitest/coverage-v8": "^4.1.0",
     "ansi-regex": "^6.0.1",
     "chromatic": "^13.3.4",
     "codecov": "^3.8.1",
@@ -130,7 +125,6 @@
     "glob": "^10.5.0",
     "globby": "^14.1.0",
     "http-server": "^14.1.1",
-    "husky": "^4.3.7",
     "jiti": "^2.6.1",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
@@ -144,8 +138,8 @@
     "p-limit": "^7.2.0",
     "p-retry": "^7.1.0",
     "picocolors": "^1.1.0",
-    "playwright": "1.52.0",
-    "playwright-core": "1.52.0",
+    "playwright": "1.58.2",
+    "playwright-core": "1.58.2",
     "polka": "^1.0.0-next.28",
     "prettier": "^3.7.1",
     "prettier-plugin-brace-style": "^0.8.1",
@@ -176,7 +170,7 @@
     "type-fest": "~2.19",
     "typescript": "^5.9.3",
     "uuid": "^9.0.1",
-    "vitest": "^4.0.14",
+    "vitest": "^4.1.0",
     "wait-on": "^8.0.3",
     "window-size": "^1.1.1",
     "yaml": "^2.8.1",

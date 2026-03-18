@@ -3,15 +3,21 @@ import React from 'react';
 
 import { DiscordIcon, SidebarIcon } from '@storybook/icons';
 
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import { action } from 'storybook/actions';
+import { expect, fn } from 'storybook/test';
 
 import { Link } from './link';
 
 const onClick = action('onClick');
 
-export default {
+const meta = {
   component: Link,
-};
+} satisfies Meta<typeof Link>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const CancelWOnClick = {
   args: {
@@ -20,7 +26,7 @@ export const CancelWOnClick = {
     children: 'Try clicking with different mouse buttons and modifier keys (shift/ctrl/alt/cmd)',
   },
   name: 'Cancel w/ onClick',
-};
+} satisfies Story;
 
 export const CancelWHref = {
   args: {
@@ -28,7 +34,7 @@ export const CancelWHref = {
     children: 'Link',
   },
   name: 'Cancel w/ href',
-};
+} satisfies Story;
 
 export const NoCancelWOnClick = {
   args: {
@@ -37,7 +43,7 @@ export const NoCancelWOnClick = {
     onClick,
   },
   name: 'No-cancel w/ onClick',
-};
+} satisfies Story;
 
 export const NoCancelWHref = {
   args: {
@@ -45,7 +51,22 @@ export const NoCancelWHref = {
     children: 'Link',
   },
   name: 'No-cancel w/ href',
-};
+} satisfies Story;
+
+export const ButtonLink = {
+  args: {
+    children: 'Click me',
+    onClick: fn(),
+  },
+  name: 'Link-styled button',
+  play: async ({ args, canvas }) => {
+    const link = canvas.getByRole('button', { name: 'Click me' });
+    link.focus();
+    expect(link).toHaveFocus();
+    link.click();
+    expect(args.onClick).toHaveBeenCalled();
+  },
+} satisfies Story;
 
 export const StyledLinks = {
   render: (args: ComponentProps<typeof Link>) => (
@@ -93,4 +114,4 @@ export const StyledLinks = {
     </div>
   ),
   name: 'Styled links',
-};
+} satisfies Story;

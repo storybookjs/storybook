@@ -27,7 +27,12 @@ function update(storage: StoreAPI, patch: Patch) {
 type GetState = () => State;
 type SetState = (a: any, b: any) => any;
 
-interface Upstream {
+export interface Upstream {
+  /**
+   * Whether to allow persistence of state to local/sessionStorage. This is used to disable
+   * persistence in Storybook's own tests. True by default.
+   */
+  allowPersistence?: boolean;
   getState: GetState;
   setState: SetState;
 }
@@ -46,11 +51,12 @@ type CallbackOrOptions = CallBack | Options;
 // Our store piggybacks off the internal React state of the Context Provider
 // It has been augmented to persist state to local/sessionStorage
 export default class Store {
+  upstreamPersistence: boolean;
   upstreamGetState: GetState;
-
   upstreamSetState: SetState;
 
-  constructor({ setState, getState }: Upstream) {
+  constructor({ allowPersistence, setState, getState }: Upstream) {
+    this.upstreamPersistence = allowPersistence ?? true;
     this.upstreamSetState = setState;
     this.upstreamGetState = getState;
   }
@@ -108,7 +114,7 @@ export default class Store {
       });
     });
 
-    if (persistence !== 'none') {
+    if (persistence !== 'none' && this.upstreamPersistence) {
       const storage = persistence === 'session' ? store.session : store.local;
       await update(storage, delta);
     }

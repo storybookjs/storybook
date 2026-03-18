@@ -486,4 +486,49 @@ describe('getStoryHrefs', () => {
     expect(managerHref).toEqual('/index.html?path=/story/test--story');
     expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
   });
+
+  it('correctly links when hosted at a subpath without trailing slash', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/design-system', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/design-system?path=/story/test--story');
+    expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('correctly links when hosted at a subpath with trailing slash', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/design-system/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/design-system/?path=/story/test--story');
+    expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('correctly links when hosted at a subpath with index.html', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/design-system/index.html', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/design-system/index.html?path=/story/test--story');
+    expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
+  });
 });

@@ -13,7 +13,7 @@
  * Why: We want Danger to run as fast as possible in CI without installing dependencies or running
  * build processes.
  */
-import { danger, fail } from 'danger';
+import { danger, fail, warn } from 'danger';
 
 /**
  * Returns the intersection of two arrays
@@ -104,8 +104,11 @@ const checkManualTestingSection = (body) => {
   const author = danger.github.pr.user;
   const authorAssociation = danger.github.pr.author_association;
 
-  // Bypass check for OWNER, MEMBER roles (but never for bots e.g. Copilot)
-  if (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') {
+  // Bypass check for OWNER, MEMBER roles (but never for agent bots)
+  if (
+    (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
     return;
   }
 
@@ -144,6 +147,32 @@ const checkManualTestingSection = (body) => {
     );
   }
 };
+
+const checkTargetBranch = () => {
+  const targetBranch = danger.github.pr.base.ref;
+  const author = danger.github.pr.user;
+  const authorAssociation = danger.github.pr.author_association;
+
+  // Only check for non-team members (not OWNER, MEMBER) and skip GitHub Actions bot
+  if (
+    ['OWNER', 'MEMBER'].includes(authorAssociation) ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
+    return;
+  }
+
+  if (targetBranch === 'main' || targetBranch.includes('release')) {
+    fail(
+      `This PR targets \`${targetBranch}\`, but it should target \`next\`. Please update the base branch of your PR.`
+    );
+  } else if (targetBranch !== 'next') {
+    warn(
+      `This PR targets \`${targetBranch}\`. The default branch for contributions is \`next\`. Please make sure you are targeting the correct branch.`
+    );
+  }
+};
+
+checkTargetBranch();
 
 if (prLogConfig) {
   checkRequiredLabels(labels.map((l) => l.name));

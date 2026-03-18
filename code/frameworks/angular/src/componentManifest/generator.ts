@@ -232,12 +232,14 @@ export const manifests: PresetPropertyFn<
 
         return base;
       } catch (e) {
+        const storyFilePath =
+          entry.type === 'story' ? entry.importPath : (entry.storiesImports[0] ?? entry.importPath);
         const id = entry.id.split('--')[0];
         const title = entry.title.split('/').at(-1)?.replaceAll(/\s+/g, '') ?? '';
         return {
           id,
           name: title,
-          path: entry.importPath,
+          path: storyFilePath,
           stories: [],
           jsDocTags: {},
           error: {

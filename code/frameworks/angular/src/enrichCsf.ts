@@ -9,17 +9,18 @@ import { generateAngularSnippet, mergeArgsFromAst } from './componentManifest/ge
 /**
  * Enriches CSF files with Angular template source code snippets.
  *
- * Implements the `experimental_enrichCsf` preset property.
- * For each story, generates an Angular template snippet and injects it
- * into `Story.parameters.docs.source.code`.
+ * Implements the `experimental_enrichCsf` preset property. For each story, generates an Angular
+ * template snippet and injects it into `Story.parameters.docs.source.code`.
  */
 export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (input, options) => {
   const features = await options.presets.apply('features');
-  if (!features.experimentalCodeExamples) {
-    return;
+  if (!features?.experimentalCodeExamples) {
+    return input;
   }
 
   return async (csf: CsfFile, csfSource: CsfFile) => {
+    await input?.(csf, csfSource);
+
     const compodocJson = loadCompodocJson(process.cwd());
     if (!compodocJson) {
       return;
@@ -40,10 +41,7 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
 
       try {
         // Merge meta and story args from AST nodes
-        const args = mergeArgsFromAst(
-          csfSource._metaNode,
-          csfSource._storyAnnotations[key]
-        );
+        const args = mergeArgsFromAst(csfSource._metaNode, csfSource._storyAnnotations[key]);
 
         snippet = generateAngularSnippet(
           Object.keys(args).length > 0 ? args : undefined,

@@ -1,0 +1,13 @@
+{
+  "name": "Storybook",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "EditorConfig.EditorConfig",
+        "unifiedjs.vscode-mdx",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  }
+}

@@ -175,6 +175,7 @@ const A = styled.a<LinkStylesProps>(
           background: 'none',
           padding: 0,
           fontSize: 'inherit',
+          lineHeight: 'inherit',
 
           '&:focus-visible': {
             outline: `2px solid ${theme.color.secondary}`,

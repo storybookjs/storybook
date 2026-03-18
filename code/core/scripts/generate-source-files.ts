@@ -71,7 +71,8 @@ async function generateVersionsFile(): Promise<void> {
     dedent`
       // auto generated file, do not edit
       export default ${versions};
-    `
+    `,
+    { singleQuote: true }
   );
 
   await writeFile(destination, formatted);
@@ -112,7 +113,8 @@ async function generateFrameworksFile(): Promise<void> {
         // COMMUNITY
         ${communityFrameworks}
       }
-    `
+    `,
+    { singleQuote: true }
   );
 
   await writeFile(destination, formatted);
@@ -172,7 +174,8 @@ async function generateExportsFile(): Promise<void> {
       // the manager builder needs to know which dependencies are 'globalized' in the ui
 
       export default ${JSON.stringify(data)} as const;
-    `
+    `,
+    { singleQuote: true }
   );
 
   await writeFile(destination, formatted);

@@ -8,6 +8,7 @@
   "sortPackageJson": false,
   "ignorePatterns": [
     "*.mdx",
+    "*.md",
     "*.bundle.js",
     "*.js.map",
     ".yarn",
@@ -28,7 +29,6 @@
     "core/src/core-server/utils/__search-files-tests__",
     "core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
     "lib/codemod/src/transforms/__testfixtures__",
-    "lib/eslint-plugin/docs/rules/no-stories-of.md",
     "**/frameworks/angular/template/**"
   ]
 }

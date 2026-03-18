@@ -53,6 +53,6 @@ export default {
   rules,
 }
 `;
-  const { code: content } = await format('index.ts', rawContent);
+  const { code: content } = await format('index.ts', rawContent, { singleQuote: true });
   await fs.writeFile(path.resolve(__dirname, '../src/index.ts'), content);
 }

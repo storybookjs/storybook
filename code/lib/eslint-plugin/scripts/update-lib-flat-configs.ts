@@ -77,7 +77,11 @@ export async function update() {
   await Promise.all(
     categories.map(async (category) => {
       const filePath = path.join(FLAT_CONFIG_DIR, `${category.categoryId}.ts`);
-      const { code: content } = await format(`${category.categoryId}.ts`, formatCategory(category));
+      const { code: content } = await format(
+        `${category.categoryId}.ts`,
+        formatCategory(category),
+        { singleQuote: true }
+      );
 
       await fs.writeFile(filePath, content);
     })

@@ -146,6 +146,7 @@ command('dev')
 command('build')
   .option('-o, --output-dir <dir-name>', 'Directory where to store built files')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option('-w, --watch', 'Watch for changes and rebuild automatically')
   .option('--quiet', 'Suppress verbose build output')
   .option('--debug-webpack', 'Display final webpack configurations for debugging purposes')
   .option(
@@ -188,7 +189,9 @@ command('build')
       process.exit(1);
     });
 
-    logger.outro('Storybook build completed successfully');
+    if (!options.watch) {
+      logger.outro('Storybook build completed successfully');
+    }
   });
 
 command('index')

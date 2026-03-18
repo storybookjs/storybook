@@ -172,7 +172,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     logConfig('Preview webpack config', await previewBuilder.getConfig(fullOptions));
   }
 
-  if (options.ignorePreview) {
+  if (options.watch) {
+    logger.info('Building preview in watch mode..');
+  } else if (options.ignorePreview) {
     logger.info(`Not building preview`);
   } else {
     logger.info('Building preview..');

@@ -91,6 +91,13 @@ export async function build(options: Options) {
 
   finalConfig.customLogger ??= await createViteLogger();
 
+  if (options.watch) {
+    finalConfig.build = {
+      ...finalConfig.build,
+      watch: {},
+    };
+  }
+
   await viteBuild(finalConfig);
 
   const statsPlugin = findPlugin(

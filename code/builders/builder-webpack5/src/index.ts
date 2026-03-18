@@ -268,36 +268,82 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   }
 
   const webpackCompilation = new Promise<Stats>((succeed, fail) => {
-    compiler.run((error, stats) => {
-      if (error) {
-        compiler.close(() => fail(new WebpackInvocationError({ error })));
-        return;
-      }
-
-      if (!stats) {
-        throw new WebpackMissingStatsError();
-      }
-
-      const { warnings, errors } = getWebpackStats({ config, stats });
-
-      if (warnings.length > 0) {
-        warnings?.forEach((e) => logger.warn(e.message));
-      }
-
-      if (errors.length > 0) {
-        errors.forEach((e) => logger.error(e.message));
-        compiler.close(() => fail(new WebpackCompilationError({ errors })));
-        return;
-      }
-
-      compiler.close((closeErr) => {
-        if (closeErr) {
-          return fail(new WebpackInvocationError({ error: closeErr }));
+    if (options.watch) {
+      let isFirstBuild = true;
+      logger.info('Watching for changes...');
+      compiler.watch(config.watchOptions || {}, (error, stats) => {
+        if (error) {
+          logger.error(error.message);
+          if (isFirstBuild) {
+            isFirstBuild = false;
+            fail(new WebpackInvocationError({ error }));
+          }
+          return;
         }
 
-        return succeed(stats as Stats);
+        if (!stats) {
+          if (isFirstBuild) {
+            isFirstBuild = false;
+            fail(new WebpackMissingStatsError());
+          }
+          return;
+        }
+
+        const { warnings, errors } = getWebpackStats({ config, stats });
+
+        if (warnings.length > 0) {
+          warnings?.forEach((e) => logger.warn(e.message));
+        }
+
+        if (errors.length > 0) {
+          errors.forEach((e) => logger.error(e.message));
+          if (isFirstBuild) {
+            isFirstBuild = false;
+            fail(new WebpackCompilationError({ errors }));
+          }
+          return;
+        }
+
+        if (isFirstBuild) {
+          isFirstBuild = false;
+          succeed(stats);
+        } else {
+          logger.info(`Rebuild completed in ${printDuration(startTime)}`);
+        }
+        logger.info('Watching for changes...');
       });
-    });
+    } else {
+      compiler.run((error, stats) => {
+        if (error) {
+          compiler.close(() => fail(new WebpackInvocationError({ error })));
+          return;
+        }
+
+        if (!stats) {
+          throw new WebpackMissingStatsError();
+        }
+
+        const { warnings, errors } = getWebpackStats({ config, stats });
+
+        if (warnings.length > 0) {
+          warnings?.forEach((e) => logger.warn(e.message));
+        }
+
+        if (errors.length > 0) {
+          errors.forEach((e) => logger.error(e.message));
+          compiler.close(() => fail(new WebpackCompilationError({ errors })));
+          return;
+        }
+
+        compiler.close((closeErr) => {
+          if (closeErr) {
+            return fail(new WebpackInvocationError({ error: closeErr }));
+          }
+
+          return succeed(stats as Stats);
+        });
+      });
+    }
   });
 
   const previewResolvedDir = join(corePath, 'dist/preview');

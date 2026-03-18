@@ -1,3 +1,15 @@
+# v5.0.12 (Wed Mar 18 2026)
+
+#### ⚠️ Pushed to `main`
+
+- Prepare for 10.3 release ([@Sidnioulz](https://github.com/Sidnioulz))
+
+#### Authors: 1
+
+- Steve Dodier-Lazaro ([@Sidnioulz](https://github.com/Sidnioulz))
+
+---
+
 # v5.0.11 (Fri Feb 13 2026)
 
 #### 🐛 Bug Fix

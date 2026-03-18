@@ -150,8 +150,10 @@ export default defineGeneratorModule({
         : '@angular/platform-browser-dynamic',
     ];
 
+    const nodeMajorVersion = parseInt(process.versions.node.split('.')[0], 10);
+
     const extraPackages = [
-      '@types/node',
+      `@types/node@^${nodeMajorVersion}`,
       ...extraAngularDeps,
       ...(isVite
         ? [

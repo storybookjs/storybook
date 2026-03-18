@@ -31,6 +31,7 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
 
   // Compute a unique instance ID from the configDir so the manager can scope localStorage
   // keys per Storybook instance. This prevents shared state across multiple projects.
+  // 12 hex characters (48 bits of entropy) is more than sufficient for uniqueness.
   if (options.configDir) {
     globals.STORYBOOK_INSTANCE_ID = createHash('sha256')
       .update(options.configDir)

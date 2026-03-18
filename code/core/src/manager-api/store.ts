@@ -23,7 +23,7 @@ function buildStorageKey(): string {
       return `${STORAGE_KEY_BASE}/${instanceId}`;
     }
   } catch {
-    // Ignore - fall back to the base key
+    // In edge cases (e.g. restricted globals), fall back to the shared base key
   }
   return STORAGE_KEY_BASE;
 }

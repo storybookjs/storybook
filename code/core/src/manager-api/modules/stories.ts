@@ -1203,7 +1203,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       // any entries in the unfiltered index. This prevents leftover filters from
       // another Storybook instance (or a previous project state) from hiding all
       // sidebar entries.
-      purgeStaleTagFilters();
+      await purgeStaleTagFilters();
     },
   };
 };

@@ -137,16 +137,12 @@ export function generateAngularSnippet(
   const bindings: string[] = [];
 
   for (const [key, value] of Object.entries(args)) {
-    if (value === undefined) {
-      continue;
-    }
-
     if (outputNames.has(key)) {
       // Event binding
       bindings.push(`(${key})="${key}($event)"`);
     } else if (inputNames.has(key) || !outputNames.has(key)) {
       // Property binding
-      bindings.push(formatAngularBinding(key, value));
+      bindings.push(formatAngularBinding(key, value === undefined ? key : value));
     }
   }
 

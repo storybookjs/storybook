@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from 'react';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   STORY_CHANGED,
@@ -143,6 +143,16 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     setState((prev) => ({ ...prev, ui: { ...prev.ui, highlighted: !prev.ui.highlighted } }));
   }, [setState]);
 
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current !== null) {
+        clearTimeout(statusTimerRef.current);
+      }
+    };
+  }, []);
+
   const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
     const initialValue = new Map();
     // Check if the a11ySelection param is a valid format before parsing it
@@ -202,7 +212,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       if (storyId === id) {
         setState((prev) => ({ ...prev, status: 'ran', results: axeResults }));
 
-        setTimeout(() => {
+        if (statusTimerRef.current !== null) {
+          clearTimeout(statusTimerRef.current);
+        }
+        statusTimerRef.current = setTimeout(() => {
+          statusTimerRef.current = null;
           setState((prev) => {
             if (prev.status === 'ran') {
               return { ...prev, status: 'ready' };

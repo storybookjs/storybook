@@ -23,7 +23,7 @@ export const testRunnerBuild: Task & { port: number } = {
     const flags = [
       `--url http://localhost:${port}`,
       '--junit',
-      '--maxWorkers=2',
+      '--maxWorkers=1',
       '--failOnConsole',
       '--index-json',
     ];

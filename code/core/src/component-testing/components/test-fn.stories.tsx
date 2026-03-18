@@ -96,7 +96,7 @@ TestFunctionTypes.test(
   },
   async ({ canvas }) => {
     const button = canvas.getByText('Arg from story');
-    await expect(button).toBeEnabled();
+    await expect(button).not.toHaveAttribute('aria-disabled', 'true');
   }
 );
 
@@ -106,7 +106,7 @@ export const ExtendedStorySinglePlayExample = TestFunctionTypes.extend({
   },
   play: async ({ canvas }) => {
     const button = canvas.getByText('Arg from extended story');
-    await expect(button).toBeEnabled();
+    await expect(button).not.toHaveAttribute('aria-disabled', 'true');
   },
 });
 
@@ -120,7 +120,7 @@ ExtendedStorySingleTestExample.test(
   'this is a very long test name to explain that this story test should guarantee that the args have been extended correctly',
   async ({ canvas }) => {
     const button = canvas.getByText('Arg from extended story');
-    await expect(button).toBeEnabled();
+    await expect(button).not.toHaveAttribute('aria-disabled', 'true');
   }
 );
 

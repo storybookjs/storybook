@@ -182,6 +182,14 @@ describe('VersionService', () => {
 
       expect(integration).toBe('@tanstack/start');
     });
+
+    it('should detect vike new command', () => {
+      const ancestry = [{ command: 'pnpm create vike@latest --- --react --storybook' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBe('vike');
+    });
   });
 
   describe('getVersionInfo', () => {

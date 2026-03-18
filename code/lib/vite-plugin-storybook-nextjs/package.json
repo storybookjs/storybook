@@ -103,7 +103,8 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "pnpm": {
     "overrides": {

@@ -12,14 +12,24 @@ import type {
 
 const cachedCompodocJsonByRoot = new Map<string, CompodocJson>();
 
+function isCompodocJson(value: unknown): value is CompodocJson {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    ['components', 'directives', 'pipes', 'injectables', 'classes'].every((key) =>
+      Array.isArray((value as Record<string, unknown>)[key])
+    )
+  );
+}
+
 /**
  * Load the Compodoc documentation.json from disk (server-side).
  *
- * Unlike the runtime flow which uses `setCompodocJson()` on the client,
- * the manifest generator runs at build-time and reads the file directly.
+ * Unlike the runtime flow which uses `setCompodocJson()` on the client, the manifest generator runs
+ * at build-time and reads the file directly.
  *
- * The builder (start-storybook / build-storybook) executes Compodoc **before**
- * the Storybook build, so `documentation.json` is available when the manifest is generated.
+ * The builder (start-storybook / build-storybook) executes Compodoc **before** the Storybook build,
+ * so `documentation.json` is available when the manifest is generated.
  *
  * By default, `runCompodoc()` writes to `{workspaceRoot}/documentation.json`.
  */
@@ -36,7 +46,10 @@ export function loadCompodocJson(workspaceRoot: string): CompodocJson | null {
 
   try {
     const raw = fs.readFileSync(docPath, 'utf-8');
-    const parsed = JSON.parse(raw) as CompodocJson;
+    const parsed = JSON.parse(raw);
+    if (!isCompodocJson(parsed)) {
+      return null;
+    }
     cachedCompodocJsonByRoot.set(workspaceRoot, parsed);
     return parsed;
   } catch {
@@ -52,8 +65,8 @@ export function invalidateCompodocCache(): void {
 /**
  * Find a component/directive/pipe/injectable/class in the Compodoc JSON by name.
  *
- * This mirrors the logic of `findComponentByName` in `client/compodoc.ts`
- * but operates on a JSON object passed as argument (server-side).
+ * This mirrors the logic of `findComponentByName` in `client/compodoc.ts` but operates on a JSON
+ * object passed as argument (server-side).
  */
 export function findComponentInCompodoc(
   name: string,
@@ -69,8 +82,8 @@ export function findComponentInCompodoc(
 }
 
 /**
- * Extract the raw description from Compodoc component data.
- * Prefers `rawdescription` (plain text) over `description` (may contain HTML).
+ * Extract the raw description from Compodoc component data. Prefers `rawdescription` (plain text)
+ * over `description` (may contain HTML).
  */
 export function extractDescription(
   componentData: Component | Directive | Pipe | Injectable | Class | undefined
@@ -82,11 +95,9 @@ export function extractDescription(
 }
 
 /**
- * Extract the source file path from a Compodoc component entry.
- * Compodoc stores this in the `file` field on components/directives.
+ * Extract the source file path from a Compodoc component entry. Compodoc stores this in the `file`
+ * field on components/directives.
  */
-export function getComponentFilePath(
-  componentData: Component | Directive
-): string | undefined {
+export function getComponentFilePath(componentData: Component | Directive): string | undefined {
   return (componentData as any).file;
 }

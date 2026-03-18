@@ -1,6 +1,6 @@
 {
   "name": "Storybook",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:4-22-trixie",
   "customizations": {
     "vscode": {
       "extensions": [

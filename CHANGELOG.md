@@ -1,3 +1,6 @@
+## 10.3.0
+
+
 ## 10.2.19
 
 - Maintenance: Support vite-plugin-svelte@7 which supports Vite 8 - [#34115](https://github.com/storybookjs/storybook/pull/34115), thanks @valentinpalkovic!

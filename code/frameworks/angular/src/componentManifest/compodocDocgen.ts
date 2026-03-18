@@ -10,7 +10,7 @@ import type {
   Pipe,
 } from '../client/compodoc-types';
 
-let cachedCompodocJson: CompodocJson | null = null;
+const cachedCompodocJsonByRoot = new Map<string, CompodocJson>();
 
 /**
  * Load the Compodoc documentation.json from disk (server-side).
@@ -24,8 +24,9 @@ let cachedCompodocJson: CompodocJson | null = null;
  * By default, `runCompodoc()` writes to `{workspaceRoot}/documentation.json`.
  */
 export function loadCompodocJson(workspaceRoot: string): CompodocJson | null {
-  if (cachedCompodocJson) {
-    return cachedCompodocJson;
+  const cached = cachedCompodocJsonByRoot.get(workspaceRoot);
+  if (cached) {
+    return cached;
   }
 
   const docPath = path.join(workspaceRoot, 'documentation.json');
@@ -35,8 +36,9 @@ export function loadCompodocJson(workspaceRoot: string): CompodocJson | null {
 
   try {
     const raw = fs.readFileSync(docPath, 'utf-8');
-    cachedCompodocJson = JSON.parse(raw) as CompodocJson;
-    return cachedCompodocJson;
+    const parsed = JSON.parse(raw) as CompodocJson;
+    cachedCompodocJsonByRoot.set(workspaceRoot, parsed);
+    return parsed;
   } catch {
     return null;
   }
@@ -44,7 +46,7 @@ export function loadCompodocJson(workspaceRoot: string): CompodocJson | null {
 
 /** Invalidate the in-memory Compodoc JSON cache (e.g. between rebuilds). */
 export function invalidateCompodocCache(): void {
-  cachedCompodocJson = null;
+  cachedCompodocJsonByRoot.clear();
 }
 
 /**

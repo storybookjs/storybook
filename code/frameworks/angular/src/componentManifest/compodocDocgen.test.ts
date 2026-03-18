@@ -145,6 +145,16 @@ describe('loadCompodocJson', () => {
     loadCompodocJson('/my/workspace');
     expect(fs.readFileSync).toHaveBeenCalledTimes(2);
   });
+
+  it('should cache by workspace root', () => {
+    loadCompodocJson('/my/workspace1');
+    loadCompodocJson('/my/workspace2');
+    expect(fs.readFileSync).toHaveBeenCalledTimes(2);
+
+    loadCompodocJson('/my/workspace1');
+    loadCompodocJson('/my/workspace2');
+    expect(fs.readFileSync).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('findComponentInCompodoc', () => {

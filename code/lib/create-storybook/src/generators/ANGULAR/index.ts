@@ -151,6 +151,7 @@ export default defineGeneratorModule({
     ];
 
     const extraPackages = [
+      '@types/node',
       ...extraAngularDeps,
       ...(isVite
         ? [

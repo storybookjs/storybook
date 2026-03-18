@@ -35,8 +35,9 @@ declare var __STORYBOOK_ADDONS_CHANNEL__: any;
 declare var __STORYBOOK_TYPES__: any;
 declare var STORYBOOK_RENDERER: string | undefined;
 /**
- * A short hash derived from the Storybook config directory path. Used to scope localStorage keys
- * per Storybook instance so that persistence is not shared across different projects.
+ * A stable, anonymous project identifier derived from Git info (remote URL + working directory
+ * path). Used to scope localStorage keys per Storybook instance so that persistence is not shared
+ * across different projects. Falls back to 'anonymous' when Git info is unavailable.
  */
 declare var STORYBOOK_INSTANCE_ID: string | undefined;
 declare var sendTelemetryError: (error: any) => void;

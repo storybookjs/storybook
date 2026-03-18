@@ -1,11 +1,10 @@
-import { createHash } from 'node:crypto';
-
 import {
   extractFrameworkPackageName,
   frameworkPackages,
   frameworkToRenderer,
   getFrameworkName,
 } from 'storybook/internal/common';
+import { getAnonymousProjectId } from 'storybook/internal/telemetry';
 import { type Options, SupportedBuilder } from 'storybook/internal/types';
 
 export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
@@ -29,15 +28,10 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   globals.STORYBOOK_RENDERER = renderer;
   globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
 
-  // Compute a unique instance ID from the configDir so the manager can scope localStorage
-  // keys per Storybook instance. This prevents shared state across multiple projects.
-  // 12 hex characters (48 bits of entropy) is more than sufficient for uniqueness.
-  if (options.configDir) {
-    globals.STORYBOOK_INSTANCE_ID = createHash('sha256')
-      .update(options.configDir)
-      .digest('hex')
-      .slice(0, 12);
-  }
+  // Derive a stable, anonymous project ID from Git info (remote URL + working directory) so the
+  // manager can scope localStorage keys per Storybook instance. Falls back to 'anonymous' when
+  // Git info is unavailable (e.g. in non-Git projects or CI without Git).
+  globals.STORYBOOK_INSTANCE_ID = getAnonymousProjectId() ?? 'anonymous';
 
   return globals;
 };

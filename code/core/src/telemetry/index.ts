@@ -8,6 +8,8 @@ import type { EventType, Options, Payload, TelemetryData } from './types';
 
 export { oneWayHash } from './one-way-hash';
 
+export { getAnonymousProjectId } from './anonymous-id';
+
 export * from './storybook-metadata';
 
 export * from './types';

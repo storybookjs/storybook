@@ -5,6 +5,7 @@ import store from 'store2';
 
 import storeSetup from './lib/store-setup';
 import type { State } from './root';
+import { version as currentVersion } from './version';
 
 // setting up the store, overriding set and get to use telejson
 storeSetup(store._);
@@ -13,8 +14,8 @@ const STORAGE_KEY_BASE = '@storybook/manager/store';
 
 /**
  * Build the storage key, scoped per Storybook instance when possible. The STORYBOOK_INSTANCE_ID
- * global is injected by the builder from a hash of configDir, which ensures each Storybook project
- * uses its own localStorage namespace.
+ * global is injected by the builder from getAnonymousProjectId() (a Git-derived project hash). When
+ * unavailable, we use 'anonymous' to keep new data separate from the legacy shared key.
  */
 function buildStorageKey(): string {
   try {
@@ -23,25 +24,25 @@ function buildStorageKey(): string {
       return `${STORAGE_KEY_BASE}/${instanceId}`;
     }
   } catch {
-    // In edge cases (e.g. restricted globals), fall back to the shared base key
+    // In edge cases (e.g. restricted globals), fall back to anonymous
   }
-  return STORAGE_KEY_BASE;
+  return `${STORAGE_KEY_BASE}/anonymous`;
 }
 
 export const STORAGE_KEY = buildStorageKey();
 
+/**
+ * Key used to store the Storybook version alongside persisted data. This allows future migration
+ * logic to be version-aware when the storage format changes.
+ */
+const VERSION_KEY = `${STORAGE_KEY}/__version__`;
+
+function persistVersion(storage: StoreAPI) {
+  storage.set(VERSION_KEY, currentVersion);
+}
+
 function get(storage: StoreAPI) {
-  let data = storage.get(STORAGE_KEY);
-
-  // Migration: if no data exists under the instance-specific key, try the old shared key.
-  // This is a one-time migration that preserves existing settings when upgrading.
-  if (!data && STORAGE_KEY !== STORAGE_KEY_BASE) {
-    data = storage.get(STORAGE_KEY_BASE);
-    if (data) {
-      storage.set(STORAGE_KEY, data);
-    }
-  }
-
+  const data = storage.get(STORAGE_KEY);
   return data || {};
 }
 
@@ -98,7 +99,12 @@ export default class Store {
     // We don't only merge at the very top level (the same way as React setState)
     // when you set keys, so it makes sense to do the same in combining the two storage modes
     // Really, you shouldn't store the same key in both places
-    return { ...base, ...get(store.local), ...get(store.session) };
+    const initialState = { ...base, ...get(store.local), ...get(store.session) };
+
+    // Record the current version in localStorage so future migrations can be version-aware
+    persistVersion(store.local);
+
+    return initialState;
   }
 
   getState() {

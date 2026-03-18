@@ -1706,11 +1706,12 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await init!();
-      await wait(16);
 
-      const { includedTagFilters, excludedTagFilters } = store.getState();
-      expect(includedTagFilters).toEqual(['existing-tag']);
-      expect(excludedTagFilters).toEqual([]);
+      await vi.waitFor(() => {
+        const { includedTagFilters, excludedTagFilters } = store.getState();
+        expect(includedTagFilters).toEqual(['existing-tag']);
+        expect(excludedTagFilters).toEqual([]);
+      });
     });
 
     it('keeps built-in filter tags even if they do not appear in entry tags', async () => {
@@ -1745,11 +1746,12 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await init!();
-      await wait(16);
 
-      const { includedTagFilters, excludedTagFilters } = store.getState();
-      expect(includedTagFilters).toEqual(['_docs', '_play']);
-      expect(excludedTagFilters).toEqual(['_test']);
+      await vi.waitFor(() => {
+        const { includedTagFilters, excludedTagFilters } = store.getState();
+        expect(includedTagFilters).toEqual(['_docs', '_play']);
+        expect(excludedTagFilters).toEqual(['_test']);
+      });
     });
 
     it('does not update state if all tag filters are valid', async () => {
@@ -1782,9 +1784,7 @@ describe('stories API', () => {
       const { init } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      const stateBeforeInit = store.getState();
       await init!();
-      await wait(16);
 
       // setState should have been called for setIndex but not for purging tag filters
       const setStateCalls = (store.setState as any).mock.calls;

@@ -19,9 +19,21 @@ vi.mock('store2', () => ({
   },
 }));
 
+vi.mock('../version', () => ({ version: '0.0.0-test' }));
+
 describe('store', () => {
-  it('uses the base storage key when STORYBOOK_INSTANCE_ID is not set', () => {
-    expect(STORAGE_KEY).toBe('@storybook/manager/store');
+  it('falls back to anonymous storage key when STORYBOOK_INSTANCE_ID is not set', () => {
+    expect(STORAGE_KEY).toBe('@storybook/manager/store/anonymous');
+  });
+
+  it('persists the current version in localStorage on getInitialState', () => {
+    store2.session.get.mockReturnValueOnce({});
+    store2.local.get.mockReturnValueOnce({});
+
+    const s = new Store({});
+    s.getInitialState();
+
+    expect(store2.local.set).toHaveBeenCalledWith(`${STORAGE_KEY}/__version__`, '0.0.0-test');
   });
 
   it('sensibly combines local+session storage for initial state', () => {

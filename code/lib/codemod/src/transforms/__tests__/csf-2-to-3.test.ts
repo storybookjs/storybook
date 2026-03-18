@@ -30,7 +30,7 @@ describe('csf-2-to-3', () => {
           export const B = (args) => <Button {...args} />;
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat" };
+        export default { title: 'Cat' };
         export const A = () => <Cat />;
         export const B = {
           render: (args) => <Button {...args} />,
@@ -49,11 +49,11 @@ describe('csf-2-to-3', () => {
           A.play = () => {};
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat" };
+        export default { title: 'Cat' };
 
         export const A = {
           render: () => <Cat />,
-          name: "foo",
+          name: 'foo',
           parameters: { bar: 2 },
           play: () => {},
         };
@@ -72,7 +72,7 @@ describe('csf-2-to-3', () => {
           const C = (args) => <Cherry {...args} />;
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "components/Fruit", includeStories: ["A"] };
+        export default { title: 'components/Fruit', includeStories: ['A'] };
 
         export const A = {
           render: (args) => <Apple {...args} />,
@@ -106,7 +106,7 @@ describe('csf-2-to-3', () => {
           export const B = (args) => <Banana {...args} />;
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat", component: Cat };
+        export default { title: 'Cat', component: Cat };
         export const A = {};
         export const B = {
           render: (args) => <Banana {...args} />,
@@ -124,7 +124,7 @@ describe('csf-2-to-3', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat", component: Cat };
+        export default { title: 'Cat', component: Cat };
 
         export const A = {
           render: (args) => <Cat {...args} />,
@@ -141,7 +141,7 @@ describe('csf-2-to-3', () => {
           A.args = { isPrimary: false };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat" };
+        export default { title: 'Cat' };
         const Template = (args) => <Cat {...args} />;
 
         export const A = {
@@ -171,7 +171,7 @@ describe('csf-2-to-3', () => {
           D.args = { bla: false };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat" };
+        export default { title: 'Cat' };
         const Template = (args) => <Cat {...args} />;
 
         export const A = {
@@ -212,7 +212,7 @@ describe('csf-2-to-3', () => {
           B.args = { isPrimary: true };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat", component: Cat };
+        export default { title: 'Cat', component: Cat };
 
         export const A = {
           args: { isPrimary: false },
@@ -238,7 +238,7 @@ describe('csf-2-to-3', () => {
           C.parameters = { foo: 2 };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat", component: Cat };
+        export default { title: 'Cat', component: Cat };
 
         export const A = {};
         export const B = () => <Cat name="frisky" />;
@@ -260,7 +260,7 @@ describe('csf-2-to-3', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        export default { title: "Cat" };
+        export default { title: 'Cat' };
 
         export const A = {
           render: (args) => <Cat {...args} />,
@@ -315,21 +315,21 @@ describe('csf-2-to-3', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { Meta, StoryObj as CSF3, StoryFn as CSF2 } from "@storybook/react";
-        import { CatProps } from "./Cat";
+        import { Meta, StoryObj as CSF3, StoryFn as CSF2 } from '@storybook/react';
+        import { CatProps } from './Cat';
 
-        const meta = { title: "Cat", component: Cat } satisfies Meta<CatProps>;
+        const meta = { title: 'Cat', component: Cat } satisfies Meta<CatProps>;
         export default meta;
 
         export const A: CSF2<CatProps> = () => <Cat />;
 
         export const B: CSF3<CatProps> = {
-          args: { name: "already csf3" },
+          args: { name: 'already csf3' },
         };
 
         export const C: CSF3<CatProps> = {
           args: {
-            name: "Fluffy",
+            name: 'Fluffy',
           },
         };
       `);
@@ -374,17 +374,17 @@ describe('csf-2-to-3', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { StoryObj, StoryFn } from "@storybook/react";
+        import { StoryObj, StoryFn } from '@storybook/react';
 
         // some extra whitespace to test
 
         export default {
-          title: "Cat",
+          title: 'Cat',
           component: Cat,
         } as Meta<CatProps>;
 
         export const A: StoryObj<CatProps> = {
-          args: { name: "Fluffy" },
+          args: { name: 'Fluffy' },
         };
 
         export const B: any = {
@@ -395,23 +395,23 @@ describe('csf-2-to-3', () => {
 
         export const D: StoryObj<CatProps> = {
           args: {
-            name: "Fluffy",
+            name: 'Fluffy',
           },
         };
 
         export const E: StoryObj<Cat> = {
-          args: { name: "Fluffy" },
+          args: { name: 'Fluffy' },
         };
 
         export const F: StoryObj = {
           args: {
-            name: "Fluffy",
+            name: 'Fluffy',
           },
         };
 
         export const G: StoryObj<typeof Cat> = {
           args: {
-            name: "Fluffy",
+            name: 'Fluffy',
           },
         };
       `);
@@ -431,7 +431,7 @@ describe('csf-2-to-3', () => {
           export const Default = Template.bind({})
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { StoryFn, Meta } from "@storybook/react";
+        import { StoryFn, Meta } from '@storybook/react';
 
         export default {
           component: Cat,

@@ -104,11 +104,11 @@ import { action } from 'storybook/actions';
 
 #### `action`
 
-Type: `(name?: string, options?: { limit?: number }) => void`
+Type: `(name?: string, options?: ActionOptions) => void`
 
 Allows you to create an action that appears in the actions panel of the Storybook UI when clicked. The action function takes an optional name parameter, which is used to identify the action in the UI.
 
-You can optionally pass an options object to control how events are stored in the panel.
+You can optionally pass an options object to control how events are stored in the panel. Supported fields include `limit`, `depth`, and `clearOnStoryChange` (plus serializer-related options from `telejson`).
 
 ##### `options.limit`
 

@@ -11,6 +11,15 @@ const makeAction = (id: string, args: any[], limit = 50): ActionDisplay => ({
 });
 
 describe('applyActionToList', () => {
+  it('returns an empty list when limit is zero', () => {
+    const first = makeAction('1', [1], 0);
+    const second = makeAction('2', [2], 0);
+
+    const next = applyActionToList(applyActionToList([], first), second);
+
+    expect(next).toEqual([]);
+  });
+
   it('keeps the most recent actions when the limit is reached', () => {
     const limit = 2;
     const first = makeAction('1', [1], limit);

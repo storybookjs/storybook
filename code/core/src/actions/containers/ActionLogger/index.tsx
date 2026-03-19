@@ -29,6 +29,9 @@ export const applyActionToList = (
   action: ActionDisplay
 ): ActionDisplay[] => {
   const limit = action.options.limit ?? Number.POSITIVE_INFINITY;
+  if (limit <= 0) {
+    return [];
+  }
   const previous = prevActions.length ? prevActions[prevActions.length - 1] : null;
 
   if (previous && safeDeepEqual(previous.data, action.data)) {

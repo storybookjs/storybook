@@ -96,7 +96,7 @@ describe('AddonConfigurationCommand', () => {
       expect(addonVitestPostinstall).toHaveBeenCalledWith({
         packageManager: 'npm',
         configDir: '.storybook',
-        yes: false,
+        yes: true,
         skipInstall: true,
         skipDependencyManagement: true,
         logger,
@@ -122,7 +122,7 @@ describe('AddonConfigurationCommand', () => {
       expect(addonA11yPostinstall).toHaveBeenCalledWith({
         packageManager: 'npm',
         configDir: '.storybook',
-        yes: false,
+        yes: true,
         skipInstall: true,
         skipDependencyManagement: true,
         logger,
@@ -144,7 +144,7 @@ describe('AddonConfigurationCommand', () => {
       expect(postinstallAddon).toHaveBeenCalledWith('@storybook/addon-docs', {
         packageManager: 'npm',
         configDir: '.storybook',
-        yes: false,
+        yes: true,
         skipInstall: true,
         skipDependencyManagement: true,
         logger,
@@ -324,7 +324,7 @@ describe('executeAddonConfiguration', () => {
   it('should create command and execute with provided parameters', async () => {
     const result = await executeAddonConfiguration({
       packageManager: mockPackageManager,
-      options: { packageManager: PackageManagerName.NPM, yes: false, disableTelemetry: true },
+      options: { packageManager: PackageManagerName.NPM, disableTelemetry: true },
       addons: [],
       configDir: '.storybook',
     });
@@ -335,7 +335,7 @@ describe('executeAddonConfiguration', () => {
   it('should execute addon configuration through helper function', async () => {
     const result = await executeAddonConfiguration({
       packageManager: mockPackageManager,
-      options: { packageManager: PackageManagerName.NPM, yes: true, disableTelemetry: false },
+      options: { packageManager: PackageManagerName.NPM, disableTelemetry: false },
       addons: ['@storybook/addon-a11y'],
       configDir: '.storybook',
     });

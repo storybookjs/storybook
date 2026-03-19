@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 
 import { Button, ScrollArea } from 'storybook/internal/components';
-import type { API_LoadedRefData, StoryIndex, TagsOptions } from 'storybook/internal/types';
+import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -10,6 +10,7 @@ import { PlusIcon } from '@storybook/icons';
 import { type State, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { focusableUIElements } from '../../../manager-api/modules/layout';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { useLandmark } from '../../hooks/useLandmark';
 import { useLayout } from '../layout/LayoutProvider';
@@ -130,16 +131,6 @@ export const Sidebar = React.memo(function Sidebar({
   const api = useStorybookApi();
   const { viewMode } = api.getUrlState();
 
-  const tagPresets = useMemo(
-    () =>
-      Object.entries(global.TAGS_OPTIONS ?? {}).reduce((acc, entry) => {
-        const [tag, option] = entry;
-        acc[tag] = option;
-        return acc;
-      }, {} as TagsOptions),
-    []
-  );
-
   const headerRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
     { 'aria-labelledby': 'global-site-h1', role: 'banner' },
@@ -150,7 +141,12 @@ export const Sidebar = React.memo(function Sidebar({
   const skipLinkHref = isPagesShown ? '#main-content-wrapper' : '#storybook-preview-wrapper';
 
   return (
-    <Container className="container sidebar-container" ref={headerRef} {...landmarkProps}>
+    <Container
+      className="container sidebar-container"
+      id={focusableUIElements.sidebarRegion}
+      ref={headerRef}
+      {...landmarkProps}
+    >
       <h1 id="global-site-h1" className="sb-sr-only">
         Storybook
       </h1>
@@ -194,9 +190,7 @@ export const Sidebar = React.memo(function Sidebar({
                 </>
               )
             }
-            searchFieldContent={
-              indexJson && <TagsFilter api={api} indexJson={indexJson} tagPresets={tagPresets} />
-            }
+            searchFieldContent={<TagsFilter />}
             {...lastViewedProps}
           >
             {({

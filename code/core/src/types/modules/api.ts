@@ -5,7 +5,12 @@ import type { State } from '../../manager-api';
 import type { RenderData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { Addon_RenderOptions } from './addons';
-import type { API_FilterFunction, API_HashEntry, API_IndexHash } from './api-stories';
+import type {
+  API_FilterFunction,
+  API_HashEntry,
+  API_IndexHash,
+  API_PreparedIndexEntry,
+} from './api-stories';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi';
 import type { DocsOptions } from './core-common';
 import type { StoryIndex } from './indexer';
@@ -68,6 +73,8 @@ export interface API_UIOptions {
   theme?: ThemeVars;
   selectedPanel?: string;
 }
+
+export type FilterFunction = (entry: API_PreparedIndexEntry, excluded?: boolean) => boolean;
 
 export interface API_Layout {
   initialActive: API_ActiveTabsType;

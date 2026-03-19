@@ -17,7 +17,7 @@ import { stringify } from 'picoquery';
 
 import merge from '../lib/merge';
 import type { ModuleArgs, ModuleFn } from '../lib/types';
-import { defaultLayoutState } from './layout';
+import { DEFAULT_BOTTOM_PANEL_HEIGHT, DEFAULT_NAV_SIZE, DEFAULT_RIGHT_PANEL_WIDTH } from './layout';
 
 export interface SubState {
   customQueryParams: QueryParams;
@@ -87,14 +87,14 @@ const initialUrlSupport = ({
     bottomPanelHeight = 0;
     rightPanelWidth = 0;
   } else if (parseBoolean(full) === false) {
-    navSize = defaultLayoutState.layout.navSize;
-    bottomPanelHeight = defaultLayoutState.layout.bottomPanelHeight;
-    rightPanelWidth = defaultLayoutState.layout.rightPanelWidth;
+    navSize = DEFAULT_NAV_SIZE;
+    bottomPanelHeight = DEFAULT_BOTTOM_PANEL_HEIGHT;
+    rightPanelWidth = DEFAULT_RIGHT_PANEL_WIDTH;
   }
   // set sizes based on nav
   if (!singleStory) {
     if (parseBoolean(nav) === true) {
-      navSize = defaultLayoutState.layout.navSize;
+      navSize = DEFAULT_NAV_SIZE;
     }
     if (parseBoolean(nav) === false) {
       navSize = 0;

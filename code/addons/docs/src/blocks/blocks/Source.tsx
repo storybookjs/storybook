@@ -2,6 +2,7 @@ import type { ComponentProps } from 'react';
 import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { Args, ModuleExport, StoryId } from 'storybook/internal/types';
 
 import type { SourceCodeProps } from '../components/Source';
@@ -41,6 +42,8 @@ export type SourceProps = SourceParameters & {
   /** Internal prop to control if a story re-renders on args updates */
   __forceInitialArgs?: boolean;
 };
+
+const EMPTY_SOURCE_CONTEXT: SourceContextProps = { sources: {} };
 
 const getStorySource = (
   storyId: StoryId,
@@ -100,7 +103,7 @@ type PureSourceProps = ComponentProps<typeof PureSource>;
 
 export const useSourceProps = (
   props: SourceProps,
-  docsContext: DocsContextProps<any>,
+  docsContext: DocsContextProps,
   sourceContext: SourceContextProps
 ): PureSourceProps => {
   const { of } = props;
@@ -135,7 +138,7 @@ export const useSourceProps = (
   });
 
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
@@ -171,11 +174,22 @@ export const useSourceProps = (
  * Story source doc block renders source code if provided, or the source for a story if `storyId` is
  * provided, or the source for the current story if nothing is provided.
  */
-const SourceImpl = (props: SourceProps) => {
+const SourceWithStorySnippet = (props: SourceProps) => {
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
   const sourceProps = useSourceProps(props, docsContext, sourceContext);
   return <PureSource {...sourceProps} />;
+};
+
+const SourceWithCode = (props: SourceProps) => {
+  const docsContext = useContext(DocsContext);
+  const sourceProps = useSourceProps(props, docsContext, EMPTY_SOURCE_CONTEXT);
+  return <PureSource {...sourceProps} />;
+};
+
+const SourceImpl = (props: SourceProps) => {
+  const { code } = props;
+  return code ? <SourceWithCode {...props} /> : <SourceWithStorySnippet {...props} />;
 };
 
 export const Source = withMdxComponentOverride('Source', SourceImpl);

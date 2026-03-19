@@ -362,6 +362,17 @@ export class UnknownArgTypesError extends StorybookError {
   }
 }
 
+export class InvalidBlockOfPropError extends StorybookError {
+  constructor() {
+    super({
+      name: 'InvalidBlockOfPropError',
+      category: Category.BLOCKS,
+      code: 1,
+      message: 'Unexpected `of={undefined}`, did you mistype a CSF file reference?',
+    });
+  }
+}
+
 export class UnsupportedViewportDimensionError extends StorybookError {
   constructor(public data: { dimension: string; value: string }) {
     super({

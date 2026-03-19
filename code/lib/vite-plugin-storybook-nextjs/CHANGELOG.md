@@ -1,5 +1,11 @@
 ## 3.1.12
 
+## 3.2.4
+
+### Patch Changes
+
+- [#111](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/111) [`e1ddc79`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/e1ddc790fbb67bc958a0361a567ce1689cd86d33) Thanks [@yannbf](https://github.com/yannbf)! - support Storybook 10.4 alpha
+
 ## 3.2.3
 
 ### Patch Changes

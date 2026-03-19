@@ -1,21 +1,19 @@
-import React, { Component } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
 import { dequal as deepEqual } from 'dequal';
 import type { API } from 'storybook/manager-api';
+import { useParameter } from 'storybook/manager-api';
 
 import { ActionLogger as ActionLoggerComponent } from '../../components/ActionLogger';
-import { CLEAR_ID, EVENT_ID } from '../../constants';
+import { CLEAR_ID, EVENT_ID, PARAM_KEY } from '../../constants';
 import type { ActionDisplay } from '../../models';
+import type { ActionsParameters } from '../../types';
 
 interface ActionLoggerProps {
   active: boolean;
   api: API;
-}
-
-interface ActionLoggerState {
-  actions: ActionDisplay[];
 }
 
 const safeDeepEqual = (a: any, b: any): boolean => {
@@ -26,69 +24,54 @@ const safeDeepEqual = (a: any, b: any): boolean => {
   }
 };
 
-export default class ActionLogger extends Component<ActionLoggerProps, ActionLoggerState> {
-  private mounted: boolean;
+export default function ActionLogger({ active, api }: ActionLoggerProps) {
+  const [actions, setActions] = useState<ActionDisplay[]>([]);
+  const parameter = useParameter<ActionsParameters['actions']>(PARAM_KEY);
+  const expandLevel = parameter?.expandLevel ?? 1;
 
-  constructor(props: ActionLoggerProps) {
-    super(props);
+  const clearActions = useCallback(() => {
+    api.emit(CLEAR_ID);
+    setActions([]);
+  }, [api]);
 
-    this.mounted = false;
-
-    this.state = { actions: [] };
-  }
-
-  override componentDidMount() {
-    this.mounted = true;
-    const { api } = this.props;
-
-    api.on(EVENT_ID, this.addAction);
-    api.on(STORY_CHANGED, this.handleStoryChange);
-  }
-
-  override componentWillUnmount() {
-    this.mounted = false;
-    const { api } = this.props;
-
-    api.off(STORY_CHANGED, this.handleStoryChange);
-    api.off(EVENT_ID, this.addAction);
-  }
-
-  handleStoryChange = () => {
-    const { actions } = this.state;
-    if (actions.length > 0 && actions[0].options.clearOnStoryChange) {
-      this.clearActions();
-    }
-  };
-
-  addAction = (action: ActionDisplay) => {
-    this.setState((prevState: ActionLoggerState) => {
-      const actions = [...prevState.actions];
-      const previous = actions.length && actions[actions.length - 1];
+  const addAction = useCallback((action: ActionDisplay) => {
+    setActions((prevActions) => {
+      const newActions = [...prevActions];
+      const previous = newActions.length && newActions[newActions.length - 1];
       if (previous && safeDeepEqual(previous.data, action.data)) {
         previous.count++;
       } else {
         action.count = 1;
-        actions.push(action);
+        newActions.push(action);
       }
-      return { actions: actions.slice(0, action.options.limit) };
+      return newActions.slice(0, action.options.limit);
     });
-  };
+  }, []);
 
-  clearActions = () => {
-    const { api } = this.props;
+  const handleStoryChange = useCallback(() => {
+    if (actions.length > 0 && actions[0].options.clearOnStoryChange) {
+      clearActions();
+    }
+  }, [actions, clearActions]);
 
-    // clear number of actions
-    api.emit(CLEAR_ID);
-    this.setState({ actions: [] });
-  };
+  useEffect(() => {
+    api.on(EVENT_ID, addAction);
+    api.on(STORY_CHANGED, handleStoryChange);
 
-  override render() {
-    const { actions = [] } = this.state;
-    const { active } = this.props;
-    const props = {
-      actions,
-      onClear: this.clearActions,
+    return () => {
+      api.off(EVENT_ID, addAction);
+      api.off(STORY_CHANGED, handleStoryChange);
     };
-    return active ? <ActionLoggerComponent {...props} /> : null;
-  }
+  }, [api, addAction, handleStoryChange]);
+
+  const props = useMemo(
+    () => ({
+      actions,
+      expandLevel,
+      onClear: clearActions,
+    }),
+    [actions, expandLevel, clearActions]
+  );
+
+  return active ? <ActionLoggerComponent {...props} /> : null;
 }

@@ -171,6 +171,20 @@ const __vitest_current_es_module__ = {
 }
 const __vitest_mocked_module__ = globalThis[${globalThisAccessor}].mockObject(__vitest_current_es_module__, "${mockType}")
 `;
+
+  // Register module mock spies in the global registry so that clearAllMocks/resetAllMocks/
+  // restoreAllMocks from storybook/test can find and clear them. This is needed because the
+  // module mocker may use a different @vitest/spy instance than the one bundled with storybook/test.
+  const spyRegistration = `
+if (!globalThis.__STORYBOOK_MODULE_MOCK_SPIES__) { globalThis.__STORYBOOK_MODULE_MOCK_SPIES__ = new Set(); }
+for (const __vitest_key__ of Object.keys(__vitest_mocked_module__)) {
+  const __vitest_val__ = __vitest_mocked_module__[__vitest_key__];
+  if (__vitest_val__ && typeof __vitest_val__ === "function" && __vitest_val__._isMockFunction === true) {
+    globalThis.__STORYBOOK_MODULE_MOCK_SPIES__.add(__vitest_val__);
+  }
+}
+`;
+
   const assigning = allSpecifiers
     .map(({ name }, index) => {
       return `const __vitest_mocked_${index}__ = __vitest_mocked_module__["${name}"]`;
@@ -187,6 +201,6 @@ export {
 ${redeclarations}
 }
 `;
-  m.append(moduleObject + assigning + specifiersExports);
+  m.append(moduleObject + spyRegistration + assigning + specifiersExports);
   return m;
 }

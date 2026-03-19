@@ -17,6 +17,7 @@ on:
 env:
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
   CLEANUP_SANDBOX_NODE_MODULES: 'true'
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
 defaults:
   run:

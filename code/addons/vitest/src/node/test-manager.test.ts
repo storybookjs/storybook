@@ -44,8 +44,7 @@ const vitest = vi.hoisted(() => ({
 
 const mockCreateVitest = vi.fn();
 
-vi.mock('vitest/node', async (importOriginal) => ({
-  ...(await importOriginal()),
+vi.mock('vitest/node', () => ({
   createVitest: mockCreateVitest,
 }));
 

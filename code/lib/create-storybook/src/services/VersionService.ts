@@ -64,6 +64,10 @@ export class VersionService {
       if (ancestor.command?.includes('@tanstack/start')) {
         return '@tanstack/start';
       }
+      // Check for vike
+      if (ancestor.command?.includes('vike')) {
+        return 'vike';
+      }
     }
     return undefined;
   }

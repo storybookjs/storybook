@@ -1,9 +1,9 @@
-import type { Interpolation } from 'storybook/theming';
+import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
 import { withMargin, withReset } from '../lib/common';
 
-const listCommon: Interpolation = {
+const listCommon = {
   paddingLeft: 30,
   '& :first-of-type': {
     marginTop: 0,
@@ -13,6 +13,9 @@ const listCommon: Interpolation = {
   },
 };
 
-export const OL = styled.ol(withReset, withMargin, listCommon, {
+export const OL = styled.ol(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
+  ...withMargin,
+  ...listCommon,
   listStyle: 'decimal',
-});
+}));

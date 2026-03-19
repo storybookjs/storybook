@@ -1956,6 +1956,31 @@ describe('StoryIndexGenerator', () => {
           }
         `);
       });
+
+      it('puts the Meta of stories file first in storiesImports even when it is not the last import', async () => {
+        const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/*.stories.(js|ts)',
+          options
+        );
+
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './complex/MetaOfImportOrder.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([csfSpecifier, docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        const docsEntry = storyIndex.entries['a--metaofimportorder'];
+
+        expect(docsEntry).toMatchObject({
+          type: 'docs',
+          title: 'A',
+          importPath: './complex/MetaOfImportOrder.mdx',
+          storiesImports: ['./src/A.stories.js', './src/B.stories.ts'],
+        });
+      });
     });
 
     describe('errors', () => {

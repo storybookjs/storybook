@@ -158,11 +158,9 @@ export const Zoom = memo<{
         ariaLabel="Change zoom level"
         pressed={value !== INITIAL_ZOOM_LEVEL}
         onKeyDown={(e) => {
-          if (e.key === 'ArrowDown') {
-            zoomBy(e.getModifierState('Shift') ? -0.1 : -0.01);
-            e.preventDefault();
-          } else if (e.key === 'ArrowUp') {
-            zoomBy(e.getModifierState('Shift') ? 0.1 : 0.01);
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            const delta = e.shiftKey ? 0.1 : 0.01;
+            zoomBy(e.key === 'ArrowUp' ? delta : -delta);
             e.preventDefault();
           } else if (e.key === 'PageDown') {
             zoomOut();

@@ -258,8 +258,8 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import preview from '#.storybook/preview';
-      import { fn } from 'storybook/test';
+      "import { fn } from 'storybook/test';
+      import preview from '#.storybook/preview';
 
       import { Page } from './Page';
 

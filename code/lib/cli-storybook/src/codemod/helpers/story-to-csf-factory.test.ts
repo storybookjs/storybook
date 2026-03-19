@@ -39,7 +39,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         const meta = preview.meta({ title: 'Component' });
         export const A = meta.story();
       `);
@@ -59,7 +58,10 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         // @ts-check
-        /** @license MIT Copyright 2024 */
+        /**
+         * @license MIT
+         * Copyright 2024
+         */
         import preview from '#.storybook/preview';
 
         const meta = preview.meta({ title: 'Component' });
@@ -93,7 +95,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         const componentMeta = preview.meta({ title: 'Component' });
         export const A = componentMeta.story();
       `);
@@ -111,7 +112,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         const componentMeta = preview.meta({ title: 'Component' });
         export const A = componentMeta.story({
           args: { primary: true },
@@ -133,7 +133,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview, { decorators } from '#.storybook/preview';
-
         const componentMeta = preview.meta({ title: 'Component' });
         export const A = componentMeta.story({
           args: { primary: true },
@@ -155,7 +154,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import previewConfig from '#.storybook/preview';
-
         const componentMeta = previewConfig.meta({ title: 'Component' });
         export const A = componentMeta.story({
           args: { primary: true },
@@ -177,7 +175,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import storybookPreview from '#.storybook/preview';
-
         const componentMeta = storybookPreview.meta({ title: 'Component' });
         const preview = {};
         export const A = componentMeta.story({
@@ -270,7 +267,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         const myMeta = preview.meta({ title: 'Component', args: {} });
 
         const metaProperties = {
@@ -325,7 +321,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import * as BaseStories from './Button.stories';
         import { Primary as ImportedPrimary } from './Card.stories';
 
@@ -444,7 +439,6 @@ describe('stories codemod', () => {
           )
         ).resolves.toMatchInlineSnapshot(`
           import preview, { extra } from '#.storybook/preview';
-
           const meta = preview.meta({});
           export const A = meta.story();
         `);
@@ -466,7 +460,6 @@ describe('stories codemod', () => {
           )
         ).resolves.toMatchInlineSnapshot(`
           import preview, { extra } from '../../preview';
-
           const meta = preview.meta({});
           export const A = meta.story();
         `);
@@ -484,7 +477,6 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         const meta = preview.meta({ title: 'Component' });
         export const CSF1Story = meta.story(() => <div>Hello</div>);
       `);
@@ -505,7 +497,6 @@ describe('stories codemod', () => {
     it('meta satisfies syntax', async () => {
       await expect(transform(inlineMetaSatisfies)).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({ title: 'Component', component: Component });
@@ -529,7 +520,6 @@ describe('stories codemod', () => {
     it('meta as syntax', async () => {
       await expect(transform(inlineMetaAs)).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({ title: 'Component', component: Component });
@@ -553,7 +543,6 @@ describe('stories codemod', () => {
     it('meta satisfies syntax', async () => {
       await expect(transform(metaSatisfies)).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({ title: 'Component', component: Component });
@@ -578,7 +567,6 @@ describe('stories codemod', () => {
     it('meta type syntax', async () => {
       await expect(transform(metaTypeDef)).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({ title: 'Component', component: Component });
@@ -603,7 +591,6 @@ describe('stories codemod', () => {
     it('meta as syntax', async () => {
       await expect(transform(metaAs)).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({ title: 'Component', component: Component });
@@ -628,7 +615,6 @@ describe('stories codemod', () => {
     it('story satisfies syntax', async () => {
       await expect(transform(storySatisfies)).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({ title: 'Component', component: Component });
@@ -653,7 +639,6 @@ describe('stories codemod', () => {
     it('story as syntax', async () => {
       await expect(transform(storyAs)).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({ title: 'Component', component: Component });
@@ -692,7 +677,6 @@ describe('stories codemod', () => {
         )
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
-
         import { ComponentProps } from './Component';
 
         const meta = preview.meta({});
@@ -762,10 +746,8 @@ describe('stories codemod', () => {
           export const A = {};
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { Meta } from '@storybook/react';
-
         import preview from '#.storybook/preview';
-
+        import { Meta } from '@storybook/react';
         import { Button } from './Button';
 
         type ThisShouldNotBeRemoved = Meta<typeof Button>;

@@ -84,8 +84,7 @@ For some project setups, the `add` command may be unable to automate the addon a
 1. Make sure Vite and Vitest are configured in your project.
 1. Configure Vitest to use [browser mode](https://vitest.dev/guide/browser/).
 1. Install the addon, `@storybook/addon-vitest`, in your project and [register it in your Storybook configuration](../../../addons/install-addons.mdx#manual-installation).
-1. Create a test setup file, `.storybook/vitest.setup.ts`. You can use the [example setup file](#example-vitest-setup) as a guide.
-1. Adjust your Vitest configuration to include the plugin and reference the setup file. You can use the [example configuration files](#example-configuration-files) as a guide.
+1. Adjust your Vitest configuration to include the plugin. You can use the [example configuration files](#example-configuration-files) as a guide.
    - For projects with existing Vitest tests, we recommend using a separate [test project](https://vitest.dev/guide/projects) if you're using Vitest ≥ 4.0 and a [workspace file](https://v3.vitest.dev/config/#workspace) if you're using Vitest 3.x to define separate configurations for your Storybook tests and other tests. You can run them in isolation or together, depending on your needs.
 
 </details>
@@ -93,18 +92,6 @@ For some project setups, the `add` command may be unable to automate the addon a
 ### Example configuration files
 
 When the addon is set up automatically, it will create or adjust your Vitest configuration files for you. If you're setting up manually, you can use the following examples as a reference when configuring your project.
-
-<details id="example-vitest-setup">
-  <summary>Example Vitest setup file</summary>
-
- Storybook stories contain configuration defined in `.storybook/preview.js|ts`. To ensure that configuration is available to your tests, you can apply it in a Vitest setup file. Here's an example of how to do that:
-
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="addon-vitest-set-project-annotations-simple.md" />
-
-  {/* prettier-ignore-end */}
-</details>
 
 <details id="example-vitest-config">
   <summary>Example Vitest config file</summary>

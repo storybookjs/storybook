@@ -150,7 +150,7 @@ export const JsonEditorValidation: Story = {
     const canvas = within(canvasElement);
 
     await step('Open the raw JSON editor and verify it is described', async () => {
-      const editAsJsonButton = canvas.getByRole('button', { name: 'Edit object as JSON' });
+      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
 
       await expect(editAsJsonButton).toHaveAttribute('aria-describedby');
       await fireEvent.click(editAsJsonButton);
@@ -198,7 +198,7 @@ export const JsonEditorErrorReset: Story = {
     const canvas = within(canvasElement);
 
     await step('Create a parse error in the raw JSON editor', async () => {
-      const editAsJsonButton = canvas.getByRole('button', { name: 'Edit object as JSON' });
+      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
       await fireEvent.click(editAsJsonButton);
 
       const rawInput = canvas.getByLabelText('Edit object as JSON');
@@ -210,9 +210,9 @@ export const JsonEditorErrorReset: Story = {
     });
 
     await step('Clear stale parse errors after closing and reopening the editor', async () => {
-      const editAsJsonButton = canvas.getByRole('button', { name: 'Edit object as JSON' });
+      const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
       await fireEvent.click(editAsJsonButton);
-      await fireEvent.click(canvas.getByRole('button', { name: 'Edit object as JSON' }));
+      await fireEvent.click(canvas.getByRole('switch', { name: 'Edit object as JSON' }));
 
       const rawInput = canvas.getByLabelText('Edit object as JSON');
       await waitFor(async () => {

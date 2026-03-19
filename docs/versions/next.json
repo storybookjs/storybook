@@ -1,1 +1,1 @@
-{"version":"10.4.0-alpha.0","info":{"plain":""}}
+{"version":"10.4.0-alpha.1","info":{"plain":"- Docs: Ensure unique control id attributes across multiple Controls blocks - [#34021](https://github.com/storybookjs/storybook/pull/34021), thanks @TheSeydiCharyyev!"}}

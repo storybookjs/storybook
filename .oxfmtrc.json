@@ -1,0 +1,26 @@
+{
+  "printWidth": 100,
+  "tabWidth": 2,
+  "bracketSpacing": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "arrowParens": "always",
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "code",
+    "test-storybooks",
+    "node_modules",
+    ".yarn",
+    ".nx",
+    ".vscode",
+    ".github",
+    "*.md",
+    "*.mdx",
+    "*.yml",
+    "*.yaml",
+    "docs/versions",
+    "CHANGELOG*",
+    "MIGRATION*",
+    "CONTRIBUTING*"
+  ]
+}

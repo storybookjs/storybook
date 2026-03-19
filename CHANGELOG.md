@@ -1,3 +1,8 @@
+## 10.3.1
+
+- CLI: Use npm info to fetch versions in repro command - [#34214](https://github.com/storybookjs/storybook/pull/34214), thanks @yannbf!
+- Core: Prevent story-local viewport from persisting in URL - [#34153](https://github.com/storybookjs/storybook/pull/34153), thanks @ghengeveld!
+
 ## 10.3.0
 
 _> Improved developer experience, AI-assisting tools, and broader ecosystem support_

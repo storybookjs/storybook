@@ -1,1 +1,1 @@
-{"version":"10.3.0","info":{"plain":""}}
+{"version":"10.3.1","info":{"plain":"- CLI: Use npm info to fetch versions in repro command - [#34214](https://github.com/storybookjs/storybook/pull/34214), thanks @yannbf!\n- Core: Prevent story-local viewport from persisting in URL - [#34153](https://github.com/storybookjs/storybook/pull/34153), thanks @ghengeveld!"}}

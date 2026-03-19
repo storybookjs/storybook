@@ -28,6 +28,10 @@ const StaticSource = memo(function StaticSource() {
   return <Source code={`<some>html</some>`} />;
 });
 
+const EmptyStaticSource = memo(function EmptyStaticSource() {
+  return <Source code="" />;
+});
+
 const StorySource = memo(function StorySource() {
   return <Source />;
 });
@@ -89,6 +93,42 @@ describe('Source', () => {
     );
 
     expect(pureSourceSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats an empty code prop as static code and does not rerender on snippet updates', () => {
+    const docsContext = createMockDocsContext();
+
+    const { rerender } = render(
+      <DocsContext.Provider value={docsContext}>
+        <SourceContext.Provider value={{ sources: {} }}>
+          <EmptyStaticSource />
+        </SourceContext.Provider>
+      </DocsContext.Provider>
+    );
+
+    expect(pureSourceSpy).toHaveBeenCalledTimes(1);
+    expect(pureSourceSpy).toHaveBeenLastCalledWith(expect.objectContaining({ code: '' }));
+
+    rerender(
+      <DocsContext.Provider value={docsContext}>
+        <SourceContext.Provider
+          value={{
+            sources: {
+              'story--id': {
+                [argsHash({})]: {
+                  code: 'const emitted = "source";',
+                },
+              },
+            },
+          }}
+        >
+          <EmptyStaticSource />
+        </SourceContext.Provider>
+      </DocsContext.Provider>
+    );
+
+    expect(pureSourceSpy).toHaveBeenCalledTimes(1);
+    expect(pureSourceSpy).toHaveBeenLastCalledWith(expect.objectContaining({ code: '' }));
   });
 
   it('keeps rerendering attached source blocks when snippets update', () => {

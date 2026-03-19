@@ -147,11 +147,11 @@ export const useSourceProps = (
   const language = props.language ?? sourceParameters.language ?? 'jsx';
   const dark = props.dark ?? sourceParameters.dark ?? false;
 
-  if (!props.code && !story) {
+  if (props.code === undefined && !story) {
     return { error: SourceError.SOURCE_UNAVAILABLE };
   }
 
-  if (props.code) {
+  if (props.code !== undefined) {
     return {
       code: props.code,
       format,
@@ -188,8 +188,8 @@ const SourceWithCode = (props: SourceProps) => {
 };
 
 const SourceImpl = (props: SourceProps) => {
-  const { code } = props;
-  return code ? <SourceWithCode {...props} /> : <SourceWithStorySnippet {...props} />;
+  const hasCodeProp = props.code !== undefined;
+  return hasCodeProp ? <SourceWithCode {...props} /> : <SourceWithStorySnippet {...props} />;
 };
 
 export const Source = withMdxComponentOverride('Source', SourceImpl);

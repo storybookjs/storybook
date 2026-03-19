@@ -2,7 +2,7 @@ export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs'],
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     docs: { toc: {} },
   },
 };

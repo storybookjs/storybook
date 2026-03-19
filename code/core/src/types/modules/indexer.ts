@@ -73,6 +73,11 @@ export interface BaseIndexEntry {
 }
 export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';
+  subtype: 'story' | 'test';
+  componentPath?: string;
+  exportName?: string;
+  parent?: StoryId; // exists only on tests
+  parentName?: StoryName; // exists only on tests
 };
 
 export type DocsIndexEntry = BaseIndexEntry & {
@@ -85,6 +90,7 @@ export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
 export interface IndexInputStats {
   loaders?: boolean;
   play?: boolean;
+  tests?: boolean;
   render?: boolean;
   storyFn?: boolean;
   mount?: boolean;
@@ -97,8 +103,8 @@ export interface IndexInputStats {
 
 /** The base input for indexing a story or docs entry. */
 export type BaseIndexInput = {
-  /** The file to import from e.g. the story file. */
-  importPath: Path;
+  /** The file to import from e.g. the story file. Defaults to the fileName arg passed to createIndex */
+  importPath?: Path;
   /** The raw path/package of the file that provides meta.component, if one exists */
   rawComponentPath?: Path;
   /** The name of the export to import. */
@@ -130,6 +136,9 @@ export type BaseIndexInput = {
 /** The input for indexing a story entry. */
 export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
+  subtype?: 'story' | 'test';
+  parent?: StoryId; // exists only on tests
+  parentName?: StoryName; // exists only on tests
 };
 
 /** The input for indexing a docs entry. */
@@ -141,7 +150,7 @@ export type DocsIndexInput = BaseIndexInput & {
 
 export type IndexInput = StoryIndexInput | DocsIndexInput;
 
-export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags'> {
+export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags' | 'subtype'> {
   kind: ComponentTitle;
   story: StoryName;
   parameters: Parameters;

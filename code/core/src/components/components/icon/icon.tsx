@@ -29,6 +29,7 @@ export interface IconsProps extends ComponentProps<typeof Svg> {
   __suppressDeprecationWarning?: boolean;
 }
 
+// TODO: Remove in SB11
 /**
  * @deprecated No longer used, will be removed in Storybook 9.0 Please use the `@storybook/icons`
  *   package instead.
@@ -66,6 +67,7 @@ export interface SymbolsProps {
   icons?: IconType[];
 }
 
+// TODO: Remove in SB11
 /**
  * @deprecated No longer used, will be removed in Storybook 9.0 Please use the `@storybook/icons`
  *   package instead.

@@ -1,5 +1,7 @@
 import type { AnchorHTMLAttributes, MouseEvent } from 'react';
-import React from 'react';
+import React, { forwardRef } from 'react';
+
+import { deprecate } from 'storybook/internal/client-logger';
 
 import { ChevronRightIcon } from '@storybook/icons';
 
@@ -102,10 +104,10 @@ const A = styled.a<LinkStylesProps>(
   ({ theme, secondary, tertiary }) => {
     let colors;
     if (secondary) {
-      colors = [theme.textMutedColor, theme.color.dark, theme.color.darker];
+      colors = [theme.textMutedColor, theme.color.secondary, theme.color.secondary];
     }
     if (tertiary) {
-      colors = [theme.color.dark, theme.color.darkest, theme.textMutedColor];
+      colors = [theme.color.dark, theme.color.secondary, theme.color.secondary];
     }
 
     return colors
@@ -165,14 +167,22 @@ const A = styled.a<LinkStylesProps>(
           },
         }
       : {},
-  ({ isButton }) =>
+  ({ isButton, theme }) =>
     isButton
       ? {
           border: 0,
-          borderRadius: 0,
+          borderRadius: theme.input.borderRadius,
           background: 'none',
           padding: 0,
           fontSize: 'inherit',
+          lineHeight: 'inherit',
+
+          '&:focus-visible': {
+            outline: `2px solid ${theme.color.secondary}`,
+            outlineOffset: 2,
+            // Should ensure focus outline gets drawn above next sibling
+            zIndex: '1',
+          },
         }
       : {}
 );
@@ -185,24 +195,43 @@ export interface LinkProps extends LinkInnerProps, LinkStylesProps, AProps {
   href?: string;
 }
 
-export const Link = ({
-  cancel = true,
-  children,
-  onClick = undefined,
-  withArrow = false,
-  containsIcon = false,
-  className = undefined,
-  style = undefined,
-  ...rest
-}: LinkProps) => (
-  <A
-    {...rest}
-    onClick={onClick && cancel ? (e) => cancelled(e, onClick) : onClick}
-    className={className}
-  >
-    <LinkInner withArrow={withArrow} containsIcon={containsIcon}>
-      {children}
-      {withArrow && <ChevronRightIcon />}
-    </LinkInner>
-  </A>
+export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
+  (
+    {
+      cancel = true,
+      children,
+      onClick = undefined,
+      withArrow = false,
+      containsIcon = false,
+      className = undefined,
+      isButton = undefined,
+      href,
+      ...rest
+    },
+    ref
+  ) => {
+    if (isButton !== undefined) {
+      deprecate(
+        'Link: `isButton` is deprecated and will be removed in Storybook 11. Links without a `href` are automatically rendered as buttons.'
+      );
+    }
+
+    return (
+      <A
+        as={href ? 'a' : 'button'}
+        href={href}
+        {...rest}
+        ref={ref}
+        isButton={!href || isButton === true}
+        onClick={onClick && cancel ? (e) => cancelled(e, onClick) : onClick}
+        className={className}
+      >
+        <LinkInner withArrow={withArrow} containsIcon={containsIcon}>
+          {children}
+          {withArrow && <ChevronRightIcon />}
+        </LinkInner>
+      </A>
+    );
+  }
 );
+Link.displayName = 'Link';

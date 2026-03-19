@@ -16,6 +16,7 @@ on:
 env:
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
   CLEANUP_SANDBOX_NODE_MODULES: 'true'
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
 defaults:
   run:
@@ -24,8 +25,26 @@ defaults:
 jobs:
   generate-next:
     name: Generate to next
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
+      - name: Remove unnecessary files to release disk space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo rm -rf \
+            /opt/ghc \
+            /opt/google/chrome \
+            /opt/microsoft/msedge \
+            /opt/microsoft/powershell \
+            /usr/lib/mono \
+            /usr/local/julia* \
+            /usr/local/lib/android \
+            /usr/local/share/chromium \
+            /usr/local/share/powershell \
+            /usr/local/share/powershell \
+            /usr/share/dotnet \
+            /usr/share/swift
+
       - uses: actions/checkout@v4
         with:
           ref: next
@@ -68,7 +87,7 @@ jobs:
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-        uses: Ilshidur/action-discord@master
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
         with:
           args: |
             The generation of some or all sandboxes on the **next** branch has failed.
@@ -76,8 +95,25 @@ jobs:
 
   generate-main:
     name: Generate to main
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
+      - name: Remove unnecessary files to release disk space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo rm -rf \
+            /opt/ghc \
+            /opt/google/chrome \
+            /opt/microsoft/msedge \
+            /opt/microsoft/powershell \
+            /usr/lib/mono \
+            /usr/local/julia* \
+            /usr/local/lib/android \
+            /usr/local/share/chromium \
+            /usr/local/share/powershell \
+            /usr/local/share/powershell \
+            /usr/share/dotnet \
+            /usr/share/swift
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -120,7 +156,7 @@ jobs:
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-        uses: Ilshidur/action-discord@master
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
         with:
           args: |
             The generation of some or all sandboxes on the **main** branch has failed.

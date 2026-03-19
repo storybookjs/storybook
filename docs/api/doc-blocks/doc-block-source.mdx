@@ -131,30 +131,7 @@ Default: `parameters.docs.source.transform`
 An async function to dynamically transform the source before being rendered, based on the original source and any story context necessary. The returned string is displayed as-is.
 If both [`code`](#code) and `transform` are specified, `transform` will be ignored.
 
-{/* prettier-ignore-start */}
-
-```js title=".storybook/preview.js|ts|jsx|tsx"
-export default {
-  parameters: {
-    docs: {
-      source: {
-        transform: async (source) => {
-          const prettier = await import('prettier/standalone');
-          const prettierPluginBabel = await import('prettier/plugins/babel');
-          const prettierPluginEstree = await import('prettier/plugins/estree');
-
-          return prettier.format(source, {
-            parser: 'babel',
-            plugins: [prettierPluginBabel, prettierPluginEstree],
-          });
-        },
-      },
-    },
-  },
-};
-```
-
-{/* prettier-ignore-end */}
+<CodeSnippets path="parameters-docs-source-transform-in-preview.md" />
 
 This example shows how to use Prettier to format all source code snippets in your documentation. The transform function is applied globally through the preview configuration, ensuring consistent code formatting across all stories.
 

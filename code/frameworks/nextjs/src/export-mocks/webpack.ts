@@ -7,6 +7,7 @@ const mapping = {
   'next/navigation': '@storybook/nextjs/navigation.mock',
   'next/router': '@storybook/nextjs/router.mock',
   'next/cache': '@storybook/nextjs/cache.mock',
+  'next/link': '@storybook/nextjs/link.mock',
   ...getCompatibilityAliases(),
 };
 

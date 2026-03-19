@@ -1,4 +1,4 @@
-import type { SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedRenderer } from 'storybook/internal/types';
 
 import { GenericParser } from './generic-parser';
 import type { Parser } from './types';
@@ -9,7 +9,7 @@ import type { Parser } from './types';
  * @param renderer The renderer to get the parser for
  * @returns The parser for the renderer
  */
-export function getParser(renderer: SupportedRenderers | null): Parser {
+export function getParser(renderer: SupportedRenderer | null): Parser {
   switch (renderer) {
     default:
       return new GenericParser();

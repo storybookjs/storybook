@@ -1,9 +1,4 @@
-import { existsSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
-import { relative } from 'node:path';
-
 import type { Channel } from 'storybook/internal/channels';
-import { getStoryId } from 'storybook/internal/common';
 import type {
   CreateNewStoryErrorPayload,
   CreateNewStoryRequestPayload,
@@ -18,7 +13,7 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { getNewStoryFile } from '../utils/get-new-story-file';
+import { generateStoryFile } from '../utils/generate-story';
 
 export function initCreateNewStoryChannel(
   channel: Channel,
@@ -29,46 +24,16 @@ export function initCreateNewStoryChannel(
   channel.on(
     CREATE_NEW_STORYFILE_REQUEST,
     async (data: RequestData<CreateNewStoryRequestPayload>) => {
-      try {
-        const { storyFilePath, exportedStoryName, storyFileContent } = await getNewStoryFile(
-          data.payload,
-          options
-        );
+      const result = await generateStoryFile(data.payload, options);
 
-        const relativeStoryFilePath = relative(process.cwd(), storyFilePath);
-
-        const { storyId, kind } = await getStoryId({ storyFilePath, exportedStoryName }, options);
-
-        if (existsSync(storyFilePath)) {
-          channel.emit(CREATE_NEW_STORYFILE_RESPONSE, {
-            success: false,
-            id: data.id,
-            payload: {
-              type: 'STORY_FILE_EXISTS',
-              kind,
-            },
-            error: `A story file already exists at ${relativeStoryFilePath}`,
-          } satisfies ResponseData<CreateNewStoryResponsePayload, CreateNewStoryErrorPayload>);
-
-          if (!coreOptions.disableTelemetry) {
-            telemetry('create-new-story-file', {
-              success: false,
-              error: 'STORY_FILE_EXISTS',
-            });
-          }
-
-          return;
-        }
-
-        await writeFile(storyFilePath, storyFileContent, 'utf-8');
-
+      if (result.success) {
         channel.emit(CREATE_NEW_STORYFILE_RESPONSE, {
           success: true,
           id: data.id,
           payload: {
-            storyId,
-            storyFilePath: relative(process.cwd(), storyFilePath),
-            exportedStoryName,
+            storyId: result.storyId!,
+            storyFilePath: result.storyFilePath!,
+            exportedStoryName: result.exportedStoryName!,
           },
           error: null,
         } satisfies ResponseData<CreateNewStoryResponsePayload>);
@@ -78,17 +43,24 @@ export function initCreateNewStoryChannel(
             success: true,
           });
         }
-      } catch (e: any) {
+      } else {
         channel.emit(CREATE_NEW_STORYFILE_RESPONSE, {
           success: false,
           id: data.id,
-          error: e?.message,
-        } satisfies ResponseData<CreateNewStoryResponsePayload>);
+          payload:
+            result.errorType === 'STORY_FILE_EXISTS'
+              ? {
+                  type: 'STORY_FILE_EXISTS',
+                  kind: result.kind!,
+                }
+              : undefined,
+          error: result.error || 'Unknown error occurred',
+        } satisfies ResponseData<CreateNewStoryResponsePayload, CreateNewStoryErrorPayload>);
 
         if (!coreOptions.disableTelemetry) {
           await telemetry('create-new-story-file', {
             success: false,
-            error: e,
+            error: result.errorType || result.error,
           });
         }
       }

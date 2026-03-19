@@ -4,3 +4,4 @@ export * from './getStorySortParameter';
 export * from './enrichCsf';
 export { babelParse } from 'storybook/internal/babel';
 export { vitestTransform } from './vitest-plugin/transformer';
+export { componentTransform } from './vitest-plugin/component-transformer';

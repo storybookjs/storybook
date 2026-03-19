@@ -65,7 +65,7 @@ ruleTester.run('no-renderer-packages', rule, {
           data: {
             rendererPackage: '@storybook/react',
             suggestions:
-              '@storybook/nextjs, @storybook/react-vite, @storybook/react-webpack5, @storybook/react-native-web-vite, @storybook/experimental-nextjs-vite',
+              '@storybook/nextjs, @storybook/react-vite, @storybook/nextjs-vite, @storybook/react-webpack5, @storybook/react-native-web-vite',
           },
           type: AST_NODE_TYPES.ImportDeclaration,
         },

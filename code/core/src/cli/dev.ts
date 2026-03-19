@@ -13,15 +13,14 @@ function printError(error: any) {
     if ((error as any).error) {
       logger.error((error as any).error);
     } else if ((error as any).stats && (error as any).stats.compilation.errors) {
-      (error as any).stats.compilation.errors.forEach((e: any) => logger.plain(e));
+      (error as any).stats.compilation.errors.forEach((e: any) => logger.log(e));
     } else {
       logger.error(error as any);
     }
   } else if (error.compilation?.errors) {
-    error.compilation.errors.forEach((e: any) => logger.plain(e));
+    error.compilation.errors.forEach((e: any) => logger.log(e));
   }
 
-  logger.line();
   logger.warn(
     error.close
       ? dedent`
@@ -33,7 +32,6 @@ function printError(error: any) {
           You may need to refresh the browser.
         `
   );
-  logger.line();
 }
 
 export const dev = async (cliOptions: CLIOptions) => {

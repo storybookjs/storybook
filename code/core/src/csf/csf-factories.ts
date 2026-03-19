@@ -1,14 +1,16 @@
-import type { AddonTypes, PlayFunction, StoryContext } from 'storybook/internal/csf';
+import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
-  Args,
   ComponentAnnotations,
   ComposedStoryFn,
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
+  TestFunction,
 } from 'storybook/internal/types';
+
+import type { SetOptional } from 'type-fest';
 
 import {
   combineParameters,
@@ -17,6 +19,8 @@ import {
   normalizeArrays,
   normalizeProjectAnnotations,
 } from '../preview-api/index';
+import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
+import { Tag } from '../shared/constants/tags';
 import { getCoreAnnotations } from './core-annotations';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
@@ -24,9 +28,14 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
-  meta<TArgs extends Args, TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs>>(
+  meta<
+    TArgs,
+    TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
+  >(
     input: TInput
   ): Meta<TRenderer & { args: TArgs }, TInput>;
+
+  type<T>(): Preview<TRenderer & T>;
 }
 
 export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
@@ -50,6 +59,9 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       );
       return composed;
     },
+    type() {
+      return this;
+    },
     meta(meta) {
       // @ts-expect-error hard
       return defineMeta(meta, this);
@@ -59,8 +71,9 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
   return preview;
 }
 
-export interface PreviewAddon<in TExtraContext extends AddonTypes = AddonTypes>
-  extends ProjectAnnotations<Renderer> {}
+export interface PreviewAddon<
+  in TExtraContext extends AddonTypes = AddonTypes,
+> extends ProjectAnnotations<Renderer> {}
 
 export function definePreviewAddon<TExtraContext extends AddonTypes = AddonTypes>(
   preview: ProjectAnnotations<Renderer>
@@ -74,13 +87,13 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
 
 export interface Meta<
   TRenderer extends Renderer,
-  TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
+  TMetaInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
     TRenderer,
     TRenderer['args']
   >,
 > {
   readonly _tag: 'Meta';
-  input: TInput;
+  input: TMetaInput;
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
 
@@ -88,7 +101,13 @@ export interface Meta<
     input?: () => TRenderer['storyResult']
   ): Story<TRenderer, { render: () => TRenderer['storyResult'] }>;
 
-  story<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
+  story<
+    TInput extends StoryAnnotations<
+      TRenderer,
+      TRenderer['args'],
+      SetOptional<TRenderer['args'], keyof TRenderer['args'] & keyof TMetaInput['args']>
+    >,
+  >(
     input?: TInput
   ): Story<TRenderer, TInput>;
 }
@@ -106,11 +125,8 @@ function defineMeta<
 >(input: TInput, preview: Preview<TRenderer>): Meta<TRenderer, TInput> {
   return {
     _tag: 'Meta',
-    input,
+    input: { ...input, parameters: { ...input.parameters, csfFactory: true } },
     preview,
-    get composed(): never {
-      throw new Error('Not implemented');
-    },
     // @ts-expect-error hard
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
@@ -137,13 +153,21 @@ export interface Story<
     name: string;
   };
   meta: Meta<TRenderer>;
-  __compose: () => ComposedStoryFn<TRenderer>;
   play: TInput['play'];
-  run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
+  run: (
+    context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>,
+    testName?: string
+  ) => Promise<void>;
 
   extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input: TInput
   ): Story<TRenderer, TInput>;
+  test(name: string, fn: TestFunction<TRenderer>): void;
+  test(
+    name: string,
+    annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
+    fn: TestFunction<TRenderer>
+  ): void;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -155,7 +179,6 @@ function defineStory<
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
   let composed: ComposedStoryFn<TRenderer>;
-
   const compose = () => {
     if (!composed) {
       composed = composeStory(
@@ -167,11 +190,16 @@ function defineStory<
     }
     return composed;
   };
+
+  const __children: Story<TRenderer>[] = [];
+
   return {
     _tag: 'Story',
     input,
     meta,
+    // @ts-expect-error this is a private property used only once in renderers/react/src/preview
     __compose: compose,
+    __children,
     get composed() {
       const composed = compose();
       const { args, argTypes, parameters, id, tags, globals, storyName: name } = composed;
@@ -180,15 +208,46 @@ function defineStory<
     get play() {
       return input.play ?? meta.input?.play ?? (async () => {});
     },
-    get run() {
-      return compose().run ?? (async () => {});
+    async run(context) {
+      await compose().run(context);
+    },
+    test(
+      name: string,
+      overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
+      testFn?: TestFunction<TRenderer, TRenderer['args']>
+    ): void {
+      const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
+      const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
+
+      const play =
+        mountDestructured(this.play) || mountDestructured(testFunction)
+          ? // mount needs to be explicitly destructured
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            async ({ mount, context }: StoryContext<TRenderer>) => {
+              await this.play?.(context);
+              await testFunction(context);
+            }
+          : async (context: StoryContext<TRenderer>) => {
+              await this.play?.(context);
+              await testFunction(context);
+            };
+
+      const test = this.extend({
+        ...annotations,
+        name,
+        tags: [Tag.TEST_FN, `!${Tag.AUTODOCS}`, ...(annotations.tags ?? [])],
+        play,
+      });
+      __children.push(test);
+
+      return test as unknown as void;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
         {
           ...this.input,
           ...input,
-          args: { ...this.input.args, ...input.args },
+          args: { ...(this.input.args || {}), ...input.args },
           argTypes: combineParameters(this.input.argTypes, input.argTypes),
           afterEach: [
             ...normalizeArrays(this.input?.afterEach ?? []),
@@ -214,4 +273,13 @@ function defineStory<
       );
     },
   };
+}
+
+export function getStoryChildren<TRenderer extends Renderer>(
+  story: Story<TRenderer>
+): Story<TRenderer>[] {
+  if ('__children' in story) {
+    return story.__children as Story<TRenderer>[];
+  }
+  return [];
 }

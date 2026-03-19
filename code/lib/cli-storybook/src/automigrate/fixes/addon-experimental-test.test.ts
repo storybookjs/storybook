@@ -90,6 +90,7 @@ const checkAddonExperimentalTest = async ({
     storybookVersion,
     mainConfig: mainConfig as any,
     storiesPaths: [],
+    hasCsfFactoryPreview: false,
   });
 };
 

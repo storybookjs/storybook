@@ -34,8 +34,10 @@ import type {
   API_RootEntry,
   API_StateMerger,
   API_StoryEntry,
+  API_TestEntry,
   ArgTypes,
   Args,
+  GlobalTypes,
   Globals,
   Parameters,
   StoryId,
@@ -66,6 +68,7 @@ import type { Options } from './store';
 import Store from './store';
 
 export * from './lib/request-response';
+export * from './lib/platform';
 export * from './lib/shortcut';
 
 const { ActiveTabs } = layout;
@@ -103,6 +106,7 @@ export type API = addons.SubAPI &
   version.SubAPI &
   url.SubAPI &
   whatsnew.SubAPI &
+  openInEditor.SubAPI &
   Other;
 
 interface Other {
@@ -484,11 +488,11 @@ export function useGlobals(): [
   return [api.getGlobals(), api.updateGlobals, api.getStoryGlobals(), api.getUserGlobals()];
 }
 
-export function useGlobalTypes(): ArgTypes {
+export function useGlobalTypes(): GlobalTypes {
   return useStorybookApi().getGlobalTypes();
 }
 
-function useCurrentStory(): API_StoryEntry | API_DocsEntry {
+function useCurrentStory(): API_StoryEntry | API_TestEntry | API_DocsEntry {
   const { getCurrentStoryData } = useStorybookApi();
 
   return getCurrentStoryData();

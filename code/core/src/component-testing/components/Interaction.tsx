@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
@@ -99,13 +99,9 @@ const RowActions = styled.div({
   padding: 6,
 });
 
-export const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
+const StyledButton = styled(Button)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 3px',
-}));
-
-const Note = styled(TooltipNote)(({ theme }) => ({
-  fontFamily: theme.typography.fonts.base,
 }));
 
 const RowMessage = styled('div')(({ theme }) => ({
@@ -133,7 +129,7 @@ const ErrorExplainer = styled.p(({ theme }) => ({
   textWrap: 'balance',
 }));
 
-export const Exception = ({ exception }: { exception: Call['exception'] }) => {
+const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();
   if (!exception) {
     return null;
@@ -226,17 +222,15 @@ export const Interaction = ({
         </RowLabel>
         <RowActions>
           {(childCallIds?.length ?? 0) > 0 && (
-            <WithTooltip
-              hasChrome={false}
-              tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}
+            <StyledButton
+              padding="small"
+              variant="ghost"
+              onClick={toggleCollapsed}
+              ariaLabel={`${isCollapsed ? 'Show' : 'Hide'} steps`}
             >
-              <StyledIconButton
-                onClick={toggleCollapsed}
-                aria-label={isCollapsed ? 'Expand interaction' : 'Collapse interaction'}
-              >
-                {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
-              </StyledIconButton>
-            </WithTooltip>
+              {/* FIXME: accordion pattern */}
+              {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
+            </StyledButton>
           )}
         </RowActions>
       </RowHeader>

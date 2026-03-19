@@ -1,8 +1,8 @@
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const wrapForPnp = (packageName) =>
-  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+  dirname(fileURLToPath(import.meta.resolve(`${packageName}/package.json`)));
 
 const config = {
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],

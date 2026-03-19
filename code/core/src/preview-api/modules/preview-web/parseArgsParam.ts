@@ -114,7 +114,7 @@ export const parseArgsParam = (argsString: string): Args => {
     once.warn(dedent`
       Omitted potentially unsafe URL args.
 
-      More info: https://storybook.js.org/docs/writing-stories/args#setting-args-through-the-url?ref=error
+      More info: https://storybook.js.org/docs/writing-stories/args?ref=error#setting-args-through-the-url
     `);
     return acc;
   }, {} as Args);

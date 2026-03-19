@@ -6,7 +6,7 @@ const BadComponent = () => badOutput;
 export default {
   component: BadComponent,
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
   tags: ['!test', '!vitest'],
 };

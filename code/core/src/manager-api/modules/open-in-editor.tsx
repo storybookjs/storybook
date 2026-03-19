@@ -9,8 +9,6 @@ import type { API_Notification } from 'storybook/internal/types';
 
 import { FailedIcon } from '@storybook/icons';
 
-import { color } from 'storybook/theming';
-
 import type { ModuleFn } from '../lib/types';
 
 export interface SubState {
@@ -57,6 +55,7 @@ export const init: ModuleFn = ({ provider, fullAPI }) => {
     api,
     state,
     init: async () => {
+      const { color } = await import('../../theming');
       provider.channel?.on(OPEN_IN_EDITOR_RESPONSE, (payload: OpenInEditorResponsePayload) => {
         if (payload.error !== null) {
           fullAPI.addNotification({

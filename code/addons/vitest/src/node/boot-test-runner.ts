@@ -2,14 +2,13 @@ import { type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
+import { executeNodeCommand } from 'storybook/internal/common';
 import {
   internal_universalStatusStore,
   internal_universalTestProviderStore,
 } from 'storybook/internal/core-server';
 import type { EventInfo, Options } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execaNode } from 'execa';
 import { normalize } from 'pathe';
 
 import { importMetaResolve } from '../../../../core/src/shared/utils/module';
@@ -77,15 +76,18 @@ const bootTestRunner = async ({
 
   const startChildProcess = () =>
     new Promise<void>((resolve, reject) => {
-      child = execaNode(vitestModulePath, {
-        env: {
-          VITEST: 'true',
-          TEST: 'true',
-          VITEST_CHILD_PROCESS: 'true',
-          NODE_ENV: process.env.NODE_ENV ?? 'test',
-          STORYBOOK_CONFIG_DIR: normalize(options.configDir),
+      child = executeNodeCommand({
+        scriptPath: vitestModulePath,
+        options: {
+          env: {
+            VITEST: 'true',
+            TEST: 'true',
+            VITEST_CHILD_PROCESS: 'true',
+            NODE_ENV: process.env.NODE_ENV ?? 'test',
+            STORYBOOK_CONFIG_DIR: normalize(options.configDir),
+          },
+          extendEnv: true,
         },
-        extendEnv: true,
       });
       stderr = [];
 

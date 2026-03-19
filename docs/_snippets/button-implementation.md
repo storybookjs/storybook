@@ -1,4 +1,4 @@
-```ts filename="Button.component.ts" renderer="angular" language="ts"
+```ts filename="button.component.ts" renderer="angular" language="ts"
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({

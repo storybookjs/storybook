@@ -78,7 +78,8 @@ export async function waitForAnimations(signal?: AbortSignal) {
             .flatMap((el) => el?.getAnimations?.() || [])
             .filter((a) => a.playState === 'running' && !isInfiniteAnimation(a));
           if (runningAnimations.length > 0) {
-            await Promise.all(runningAnimations.map((a) => a.finished));
+            // Treat any errors (e.g. AbortError) from `finished` as also finished, even though not successfully so
+            await Promise.allSettled(runningAnimations.map(async (a) => a.finished));
             await checkAnimationsFinished();
           }
         };

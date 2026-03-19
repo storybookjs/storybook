@@ -7,8 +7,9 @@ import { Description } from './Description';
 import { Subheading } from './Subheading';
 import type { DocsStoryProps } from './types';
 import { useOf } from './useOf';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
-export const DocsStory: FC<DocsStoryProps> = ({
+const DocsStoryImpl: FC<DocsStoryProps> = ({
   of,
   expanded = true,
   withToolbar: withToolbarProp = false,
@@ -21,7 +22,7 @@ export const DocsStory: FC<DocsStoryProps> = ({
   const withToolbar = story.parameters.docs?.canvas?.withToolbar ?? withToolbarProp;
 
   return (
-    <Anchor storyId={story.id}>
+    <Anchor storyId={__primary ? `primary--${story.id}` : story.id}>
       {expanded && (
         <>
           <Subheading>{story.name}</Subheading>
@@ -37,3 +38,5 @@ export const DocsStory: FC<DocsStoryProps> = ({
     </Anchor>
   );
 };
+
+export const DocsStory = withMdxComponentOverride('DocsStory', DocsStoryImpl);

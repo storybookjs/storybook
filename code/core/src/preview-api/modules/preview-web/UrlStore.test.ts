@@ -72,6 +72,24 @@ describe('UrlStore', () => {
         viewMode: 'story',
       });
     });
+    it('should handle viewMode=story', () => {
+      document.location.search = '?id=story--id&viewMode=story';
+      expect(getSelectionSpecifierFromPath()).toEqual({
+        storySpecifier: 'story--id',
+        viewMode: 'story',
+      });
+    });
+    it('should handle viewMode=docs', () => {
+      document.location.search = '?id=story--id&viewMode=docs';
+      expect(getSelectionSpecifierFromPath()).toEqual({
+        storySpecifier: 'story--id',
+        viewMode: 'docs',
+      });
+    });
+    it('should ignore unsupported viewModes', () => {
+      document.location.search = '?id=about&viewMode=somethingelse';
+      expect(getSelectionSpecifierFromPath()).toEqual(null);
+    });
     it('should handle id queries with *', () => {
       document.location.search = '?id=*';
       expect(getSelectionSpecifierFromPath()).toEqual({

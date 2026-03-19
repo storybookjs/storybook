@@ -26,11 +26,15 @@ const LayoutContext = createContext<LayoutContextType>({
   isMobile: false,
 });
 
-export const LayoutProvider: FC<PropsWithChildren> = ({ children }) => {
+export const LayoutProvider: FC<
+  PropsWithChildren & {
+    forceDesktop?: boolean;
+  }
+> = ({ children, forceDesktop }) => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobileAboutOpen, setMobileAboutOpen] = useState(false);
   const [isMobilePanelOpen, setMobilePanelOpen] = useState(false);
-  const isDesktop = useMediaQuery(`(min-width: ${BREAKPOINT}px)`);
+  const isDesktop = forceDesktop ?? useMediaQuery(`(min-width: ${BREAKPOINT}px)`);
   const isMobile = !isDesktop;
 
   const contextValue = useMemo(

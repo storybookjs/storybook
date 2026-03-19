@@ -15,9 +15,10 @@ setProjectAnnotations([
     // https://vitest.dev/guide/browser/interactivity-api.html
     loaders: async (context) => {
       if (globalThis.__vitest_browser__) {
-        const vitest = await import('@vitest/browser/context');
+        const vitest = await import('vitest/browser');
         const { userEvent: browserEvent } = vitest;
-        context.userEvent = browserEvent.setup();
+        // Unfortunately the types of userEvent don't match so we cast it
+        context.userEvent = (browserEvent as unknown as typeof storybookEvent).setup();
         context.expect = vitestExpect;
       } else {
         context.userEvent = storybookEvent.setup();

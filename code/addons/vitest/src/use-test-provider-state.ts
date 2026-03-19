@@ -63,7 +63,6 @@ export const useTestProvider = (
   const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
   const [storeState, setStoreState] = experimental_useUniversalStore(store);
 
-  // this follows the same behavior for the green border around the whole testing module in TestingModule.tsx
   const [isSettingsUpdated, setIsSettingsUpdated] = useState(false);
   const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {

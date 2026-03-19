@@ -1,6 +1,6 @@
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
@@ -12,6 +12,7 @@ import Fuse from 'fuse.js';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useLandmark } from '../../hooks/useLandmark';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status';
 import { scrollIntoView, searchItem } from '../../utils/tree';
 import { useLayout } from '../layout/LayoutProvider';
@@ -74,8 +75,9 @@ const SearchField = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => (
   borderRadius: theme.appBorderRadius + 2,
 
   '&:has(input:focus), &:has(input:active)': {
-    boxShadow: `${theme.color.secondary} 0 0 0 1px inset`,
     background: theme.background.app,
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
   },
 }));
 
@@ -311,6 +313,9 @@ export const Search = React.memo<SearchProps>(function Search({
   );
   const { isMobile } = useLayout();
 
+  const searchLandmarkRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark({ role: 'search' }, searchLandmarkRef);
+
   return (
     // @ts-expect-error (non strict)
     <Downshift<DownshiftItem>
@@ -327,13 +332,13 @@ export const Search = React.memo<SearchProps>(function Search({
         openMenu,
         closeMenu,
         inputValue,
-        clearSelection,
         getInputProps,
         getItemProps,
         getLabelProps,
         getMenuProps,
         getRootProps,
         highlightedIndex,
+        reset,
       }) => {
         const input = inputValue ? inputValue.trim() : '';
         let results: DownshiftItem[] = input ? getResults(input) : [];
@@ -387,7 +392,7 @@ export const Search = React.memo<SearchProps>(function Search({
         return (
           <>
             <ScreenReaderLabel {...labelProps}>Search for components</ScreenReaderLabel>
-            <SearchBar>
+            <SearchBar ref={searchLandmarkRef} {...landmarkProps}>
               <SearchField
                 {...getRootProps({ refKey: '' }, { suppressRefError: true })}
                 isMobile={isMobile}
@@ -409,10 +414,19 @@ export const Search = React.memo<SearchProps>(function Search({
                   </FocusKey>
                 )}
                 <Actions>
-                  {isOpen && (
-                    <IconButton onClick={() => clearSelection()}>
+                  {input && (
+                    <Button
+                      padding="small"
+                      variant="ghost"
+                      ariaLabel="Clear search"
+                      onClick={() => {
+                        reset({ inputValue: '' });
+                        closeMenu();
+                        inputRef.current?.focus();
+                      }}
+                    >
                       <CloseIcon />
-                    </IconButton>
+                    </Button>
                   )}
                   {searchFieldContent}
                 </Actions>
@@ -423,7 +437,9 @@ export const Search = React.memo<SearchProps>(function Search({
               {children({
                 query: input,
                 results,
-                isBrowsing: !isOpen && document.activeElement !== inputRef.current,
+                isNavVisible: !isOpen && document.activeElement !== inputRef.current,
+                isNavReachable: !isOpen || input.length === 0,
+                isSearchResultRendered: isOpen,
                 closeMenu,
                 getMenuProps,
                 getItemProps,

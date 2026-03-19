@@ -5,8 +5,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
+import { Tag } from '../../../shared/constants/tags';
 import type { StoryIndexGeneratorOptions } from '../StoryIndexGenerator';
-import { AUTODOCS_TAG, StoryIndexGenerator } from '../StoryIndexGenerator';
+import { StoryIndexGenerator } from '../StoryIndexGenerator';
 
 vi.mock('storybook/internal/node-logger');
 
@@ -32,6 +33,7 @@ describe('story extraction', () => {
             // properties identical to the auto-generated ones, eg. 'StoryOne' -> 'Story One'
             {
               type: 'story',
+              subtype: 'story',
               importPath: fileName,
               exportName: 'StoryOne',
               name: 'Story One',
@@ -43,6 +45,7 @@ describe('story extraction', () => {
             // properties different from the auto-generated ones, eg. 'StoryOne' -> 'Another Story Name'
             {
               type: 'story',
+              subtype: 'story',
               importPath: fileName,
               exportName: 'StoryOne',
               name: 'Another Story Name',
@@ -71,6 +74,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -87,6 +91,7 @@ describe('story extraction', () => {
             "id": "some-fully-custom-id",
             "importPath": "./src/A.stories.js",
             "name": "Another Story Name",
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -114,6 +119,7 @@ describe('story extraction', () => {
               exportName: 'StoryOne',
               importPath: fileName,
               type: 'story',
+              subtype: 'story',
             },
           ],
         },
@@ -135,6 +141,7 @@ describe('story extraction', () => {
             "id": "f--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
             "name": "Story One",
+            "subtype": "story",
             "tags": [],
             "title": "F",
             "type": "story",
@@ -164,6 +171,7 @@ describe('story extraction', () => {
               tags: ['story-tag-from-indexer'],
               importPath: fileName,
               type: 'story',
+              subtype: 'story',
             },
           ],
         },
@@ -185,6 +193,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -216,6 +225,7 @@ describe('story extraction', () => {
               tags: ['story-tag-from-indexer'],
               importPath: fileName,
               type: 'story',
+              subtype: 'story',
             },
           ],
         },
@@ -237,6 +247,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -268,6 +279,7 @@ describe('story extraction', () => {
               tags: ['story-tag-from-indexer'],
               importPath: fileName,
               type: 'story',
+              subtype: 'story',
             },
             // exportName + custom title (ignoring custom name) -> id
             {
@@ -277,6 +289,7 @@ describe('story extraction', () => {
               tags: ['story-tag-from-indexer'],
               importPath: fileName,
               type: 'story',
+              subtype: 'story',
             },
             // exportName + custom metaId (ignoring custom title and name) -> id
             {
@@ -286,6 +299,7 @@ describe('story extraction', () => {
               tags: ['story-tag-from-indexer'],
               importPath: fileName,
               type: 'story',
+              subtype: 'story',
             },
           ],
         },
@@ -307,6 +321,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -323,6 +338,7 @@ describe('story extraction', () => {
             "id": "custom-title--story-two",
             "importPath": "./src/A.stories.js",
             "name": "Custom Name For Second Story",
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -339,6 +355,7 @@ describe('story extraction', () => {
             "id": "custom-meta-id--story-three",
             "importPath": "./src/A.stories.js",
             "name": "Story Three",
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -367,6 +384,7 @@ describe('story extraction', () => {
               tags: ['story-tag-from-indexer'],
               importPath: fileName,
               type: 'story',
+              subtype: 'story',
             },
           ],
         },
@@ -388,6 +406,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -401,7 +420,7 @@ describe('story extraction', () => {
   });
 });
 describe('docs entries from story extraction', () => {
-  it(`adds docs entry when autodocs is "tag" and an entry has the "${AUTODOCS_TAG}" tag`, async () => {
+  it(`adds docs entry when autodocs is "tag" and an entry has the "${Tag.AUTODOCS}" tag`, async () => {
     const relativePath = './src/A.stories.js';
     const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
@@ -418,9 +437,10 @@ describe('docs entries from story extraction', () => {
               __id: 'a--story-one',
               name: 'Story One',
               title: 'A',
-              tags: [AUTODOCS_TAG, 'story-tag-from-indexer'],
+              tags: [Tag.AUTODOCS, 'story-tag-from-indexer'],
               importPath: fileName,
               type: 'story',
+              subtype: 'story',
             },
           ],
         },
@@ -454,6 +474,7 @@ describe('docs entries from story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "autodocs",
               "story-tag-from-indexer",

@@ -40,6 +40,7 @@ describe('react-native-config fix', () => {
           mainConfig: mockMainConfig,
           storybookVersion: '8.0.0',
           storiesPaths: [],
+          hasCsfFactoryPreview: false,
         })
       ).resolves.toBeNull();
     });
@@ -60,6 +61,7 @@ describe('react-native-config fix', () => {
           mainConfig: mockMainConfig,
           storybookVersion: '8.0.0',
           storiesPaths: [],
+          hasCsfFactoryPreview: false,
         })
       ).resolves.toBeNull();
     });
@@ -79,6 +81,7 @@ describe('react-native-config fix', () => {
           mainConfig: mockMainConfig,
           storybookVersion: '8.0.0',
           storiesPaths: [],
+          hasCsfFactoryPreview: false,
         })
       ).resolves.toBeNull();
     });
@@ -99,6 +102,7 @@ describe('react-native-config fix', () => {
         mainConfig: mockMainConfig,
         storybookVersion: '8.0.0',
         storiesPaths: [],
+        hasCsfFactoryPreview: false,
       });
 
       expect(result).toBeNull();
@@ -122,6 +126,7 @@ describe('react-native-config fix', () => {
         mainConfig: mockMainConfig,
         storybookVersion: '8.0.0',
         storiesPaths: [],
+        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({

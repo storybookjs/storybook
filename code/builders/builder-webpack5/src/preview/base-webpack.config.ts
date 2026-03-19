@@ -25,7 +25,7 @@ export async function createDefaultWebpackConfig(
 
   let cssLoaders = {};
   if (!hasPostcssAddon) {
-    logger.info(`=> Using implicit CSS loaders`);
+    logger.info(`Using implicit CSS loaders`);
     cssLoaders = {
       test: /\.css$/,
       sideEffects: true,
@@ -49,6 +49,12 @@ export async function createDefaultWebpackConfig(
 
   return {
     ...storybookBaseConfig,
+    // TODO: Implement the clearing functionality of StyledConsoleLogger so that we can use it for webpack
+    // The issue currently is that the status line is not cleared when the webpack compiler is run,
+    // which causes the status line to be printed multiple times.
+    // infrastructureLogging: {
+    //   console: new StyledConsoleLogger({ prefix: 'Webpack', color: 'bgBlue' }),
+    // },
     module: {
       ...storybookBaseConfig.module,
       rules: [

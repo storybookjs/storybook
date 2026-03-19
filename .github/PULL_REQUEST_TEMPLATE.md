@@ -27,7 +27,8 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 
 #### Manual testing
 
-_This section is mandatory for all contributions. If you believe no manual test is necessary, please state so explicitly. Thanks!_
+> [!CAUTION]
+> This section is mandatory for all contributions. If you believe no manual test is necessary, please state so explicitly. Thanks!
 
 <!-- Please include the steps to test your changes here. For example:
 
@@ -70,7 +71,7 @@ _This section is mandatory for all contributions. If you believe no manual test 
 
 This PR does not have a canary release associated. You can request a canary release of this pull request by mentioning the `@storybookjs/core` team here.
 
-_core team members can create a canary release [here](https://github.com/storybookjs/storybook/actions/workflows/canary-release-pr.yml) or locally with `gh workflow run --repo storybookjs/storybook canary-release-pr.yml --field pr=<PR_NUMBER>`_
+_core team members can create a canary release [here](https://github.com/storybookjs/storybook/actions/workflows/publish.yml) or locally with `gh workflow run --repo storybookjs/storybook publish.yml --field pr=<PR_NUMBER>`_
 
 <!-- CANARY_RELEASE_SECTION -->
 

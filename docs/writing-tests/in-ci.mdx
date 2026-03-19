@@ -6,7 +6,7 @@ sidebar:
   title: In CI
 ---
 
-The [Vitest addon](./integrations/vitest-addon.mdx) is great for automating your UI tests within Storybook. To have full confidence in your work, backed by tests, you need to run those automated tests in your continuous integration (CI) environment.
+The [Vitest addon](./integrations/vitest-addon/index.mdx) is great for automating your UI tests within Storybook. To have full confidence in your work, backed by tests, you need to run those automated tests in your continuous integration (CI) environment.
 
 Thankfully, that’s quite easy!
 
@@ -58,7 +58,7 @@ jobs:
     container:
       # Make sure to grab the latest version of the Playwright image
       # https://playwright.dev/docs/docker#pull-the-image
-      image: mcr.microsoft.com/playwright:v1.52.0-noble
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
     steps:
       - uses: actions/checkout@v4
       
@@ -98,7 +98,7 @@ Test:
   stage: UI_Tests
   # Make sure to grab the latest version of the Playwright image
   # https://playwright.dev/docs/docker#pull-the-image
-  image: mcr.microsoft.com/playwright:v1.52.0-noble
+  image: mcr.microsoft.com/playwright:v1.58.2-noble
   script:
     - npm run test-storybook
 ```
@@ -125,7 +125,7 @@ pipelines:
               name: "Run Tests"
               # Make sure to grab the latest version of the Playwright image
               # https://playwright.dev/docs/docker#pull-the-image
-              image: mcr.microsoft.com/playwright:v1.52.0-noble
+              image: mcr.microsoft.com/playwright:v1.58.2-noble
               caches:
                 - npm
                 - node
@@ -149,7 +149,7 @@ executors:
     docker:
       # Make sure to grab the latest version of the Playwright image
       # https://playwright.dev/docs/docker#pull-the-image
-      - image: mcr.microsoft.com/playwright:v1.52.0-noble
+      - image: mcr.microsoft.com/playwright:v1.58.2-noble
     working_directory: ~/repo
 
 jobs:
@@ -222,7 +222,7 @@ pipeline {
            * Make sure to grab the latest version of the Playwright image
            * https://playwright.dev/docs/docker#pull-the-image
            */
-          image 'mcr.microsoft.com/playwright:v1.52.0-noble'
+          image 'mcr.microsoft.com/playwright:v1.58.2-noble'
           reuseNode true
         }
       }
@@ -257,7 +257,7 @@ stages:
         displayName: "Storybook tests"
         # Make sure to grab the latest version of the Playwright image
         # https://playwright.dev/docs/docker#pull-the-image
-        container: mcr.microsoft.com/playwright:v1.52.0-noble
+        container: mcr.microsoft.com/playwright:v1.58.2-noble
         variables:
           npm_config_cache: $(Pipeline.Workspace)/.npm
         steps:
@@ -308,7 +308,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.52.0-noble
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
 +   # 👇 Only run on successful deployments
 +   if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
     steps:
@@ -329,25 +329,13 @@ jobs:
 +         SB_URL: '${{ github.event.deployment_status.environment_url }}'
 ```
 
-Finally, we update the plugin configuration to use that environment variable in the [`storybookUrl` plugin option](./integrations/vitest-addon.mdx#storybookurl).
+Finally, we update the plugin configuration to use that environment variable in the [`storybookUrl` plugin option](./integrations/vitest-addon/index.mdx#storybookurl).
 
-```diff title="vitest.workspace.ts"
-export default defineWorkspace([
-  // ...
-  {
-    // ...
-    {
-      plugins: [
-        storybookTest({
-          // ...
-+         // 👇 Use the environment variable you passed
-+         storybookUrl: process.env.SB_URL
-        }),
-      ],
-    },
-  },
-])
-```
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="vitest-plugin-vitest-debug-option-ci.md" />
+
+{/* prettier-ignore-end */}
 
 Now, when a test fails in CI, the printed story URL will point to the published Storybook, making debugging that failure a breeze!
 
@@ -459,7 +447,7 @@ The workflow would then look like:
 
 **More testing resources**
 
-* [Vitest addon](./integrations/vitest-addon.mdx) for running tests in Storybook
+* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
 * [Interaction testing](./interaction-testing.mdx) for user behavior simulation
 * [Accessibility testing](./accessibility-testing.mdx) for accessibility
 * [Visual testing](./visual-testing.mdx) for appearance

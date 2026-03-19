@@ -15,6 +15,7 @@ import { global } from '@storybook/global';
 
 import type { UserEventObject } from 'storybook/test';
 
+import { Tag } from '../../../../shared/constants/tags';
 import { HooksContext, addons } from '../../addons';
 import { UNTARGETED } from '../args';
 import { composeConfigs } from './composeConfigs';
@@ -88,7 +89,7 @@ describe('prepareStory', () => {
         { render }
       );
 
-      expect(tags).toEqual(['dev', 'test', 'component-1', 'component-2', 'story-1', 'story-2']);
+      expect(tags).toEqual([Tag.DEV, Tag.TEST, 'component-1', 'component-2', 'story-1', 'story-2']);
     });
 
     it('component tags work if story are unset', () => {
@@ -102,13 +103,13 @@ describe('prepareStory', () => {
         { render }
       );
 
-      expect(tags).toEqual(['dev', 'test', 'component-1', 'component-2']);
+      expect(tags).toEqual([Tag.DEV, Tag.TEST, 'component-1', 'component-2']);
     });
 
     it('sets a value even if annotations do not have tags', () => {
       const { tags } = prepareStory({ id, name, moduleExport }, { id, title }, { render });
 
-      expect(tags).toEqual(['dev', 'test']);
+      expect(tags).toEqual([Tag.DEV, Tag.TEST]);
     });
   });
 
@@ -581,7 +582,7 @@ describe('prepareStory', () => {
           moduleExport,
         },
         { id, title },
-        { render: vi.fn<any>() }
+        { render: vi.fn() as any }
       );
 
       const context = prepareContext({ args: { one: 1 }, globals: {}, ...story });
@@ -601,7 +602,7 @@ describe('prepareStory', () => {
           moduleExport,
         },
         { id, title },
-        { render: vi.fn<any>() }
+        { render: vi.fn() as any }
       );
 
       const context = prepareContext({

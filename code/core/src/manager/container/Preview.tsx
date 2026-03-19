@@ -22,8 +22,8 @@ import { zoomTool } from '../components/preview/tools/zoom';
 import type { PreviewProps } from '../components/preview/utils/types';
 
 const defaultTabs = [createCanvasTab()];
-const defaultTools = [menuTool, remountTool, zoomTool];
-const defaultToolsExtra = [addonsTool, fullScreenTool, shareTool, openInEditorTool];
+const defaultTools = [menuTool, remountTool];
+const defaultToolsExtra = [zoomTool, addonsTool, fullScreenTool, shareTool, openInEditorTool];
 
 const emptyTabsList: Addon_BaseType[] = [];
 

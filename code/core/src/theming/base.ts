@@ -1,9 +1,7 @@
-import { transparentize } from 'polished';
-
 export const color = {
   // Official color palette
   primary: '#FF4785', // coral
-  secondary: '#029CFD', // ocean
+  secondary: '#006DEB', // ocean
   tertiary: '#FAFBFC',
   ancillary: '#22a699',
 
@@ -17,30 +15,30 @@ export const color = {
 
   // Monochrome
   lightest: '#FFFFFF',
-  lighter: '#F7FAFC',
-  light: '#EEF3F6',
-  mediumlight: '#ECF4F9',
-  medium: '#D9E8F2',
-  mediumdark: '#73828C',
-  dark: '#5C6870',
-  darker: '#454E54',
-  darkest: '#2E3438',
+  lighter: '#F6F9FC',
+  light: '#EEF2F6',
+  mediumlight: '#ECF2F9',
+  medium: '#D9E5F2',
+  mediumdark: '#737F8C',
+  dark: '#5C6570',
+  darker: '#454C54',
+  darkest: '#2E3338',
 
   // For borders
-  border: 'hsla(203, 50%, 30%, 0.15)',
+  border: 'hsl(212 50% 30% / 0.15)',
 
   // Status
   positive: '#66BF3C',
-  negative: '#FF4400',
   warning: '#E69D00',
+  negative: '#FF4400',
   critical: '#FFFFFF',
 
   // Text
-  defaultText: '#2E3438',
+  defaultText: '#2E3338',
   inverseText: '#FFFFFF',
-  positiveText: '#448028',
-  negativeText: '#D43900',
-  warningText: '#A15C20',
+  positiveText: '#427C27',
+  warningText: '#955B1E',
+  negativeText: '#C23400',
 };
 
 export const background = {
@@ -49,13 +47,13 @@ export const background = {
   content: color.lightest,
   preview: color.lightest,
   gridCellSize: 10,
-  hoverable: transparentize(0.9, color.secondary), // hover state for items in a list
+  hoverable: '#DBECFF',
 
   // Notification, error, and warning backgrounds
-  positive: '#E1FFD4',
-  negative: '#FEDED2',
-  warning: '#FFF5CF',
-  critical: '#FF4400',
+  positive: '#F1FFEB',
+  warning: '#FFF9EB',
+  negative: '#FFF0EB',
+  critical: '#D13800',
 };
 
 export const typography = {
@@ -100,5 +98,70 @@ export const typography = {
     l2: 40,
     l3: 48,
     code: 90,
+  },
+};
+
+export const tokens = {
+  light: {
+    fgColor: {
+      default: color.darkest,
+      muted: color.dark,
+      accent: color.secondary,
+      inverse: color.lightest,
+      // TODO: add 'disabled'
+      positive: '#427C27',
+      warning: '#7A4100',
+      negative: '#C23400',
+      critical: '#FFFFFF',
+    },
+    bgColor: {
+      default: color.lightest,
+      muted: background.app,
+      // TODO: add 'accent'? white or blue?
+      positive: '#F1FFEB',
+      warning: '#FFF7EB',
+      negative: '#FFF0EB',
+      critical: '#D13800',
+    },
+    borderColor: {
+      default: color.border,
+      muted: 'hsl(0 0% 0% / 0.1)',
+      inverse: 'hsl(0 0% 100% / 0.1)',
+      positive: '#BFE7AC',
+      warning: '#FFCE85',
+      negative: '#FFC3AD',
+      critical: 'hsl(16 100% 100% / 0)',
+    },
+  },
+  dark: {
+    fgColor: {
+      default: '#C9CCCF',
+      muted: '#95999D',
+      accent: '#479DFF',
+      inverse: '#1B1C1D',
+      // TODO: add 'disabled'
+      positive: '#86CE64',
+      warning: '#FFAD33',
+      negative: '#FF6933',
+      critical: '#FF6933',
+    },
+    bgColor: {
+      default: '#222325',
+      muted: '#1B1C1D',
+      // TODO: add 'accent'? white or blue?
+      positive: 'hsl(101 100% 100% / 0)',
+      warning: 'hsl(101 100% 100% / 0)',
+      negative: 'hsl(101 100% 100% / 0)',
+      critical: 'hsl(101 100% 100% / 0)',
+    },
+    borderColor: {
+      default: 'hsl(0 0% 100% / 0.1)',
+      muted: 'hsl(0 0% 100% / 0.5)',
+      inverse: 'hsl(0 0% 0% / 0.1)',
+      positive: 'hsl(101 52% 64% / 0.15)',
+      warning: 'hsl(36 100% 64% / 0.15)',
+      negative: 'hsl(16 100% 64% / 0.15)',
+      critical: '#FF6933',
+    },
   },
 };

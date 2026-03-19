@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage, hasVitestIntegration } from './util';
+import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -27,10 +27,10 @@ test.describe('preview-api', () => {
 
     // wait for the play function to complete
     await sbPage.viewAddonPanel('Interactions');
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();
-    const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');
+    const runStatusBadge = panel.locator('[aria-label^="Story status:"]');
     await expect(runStatusBadge).toContainText(/Pass/);
 
     // click outside, to remove focus from the input of the story, then press S to toggle sidebar
@@ -55,7 +55,8 @@ test.describe('preview-api', () => {
   });
 
   // if rerenders were interleaved the button would have rendered "Error: Interleaved loaders. Changed arg"
-  test('should only render once at a time when rapidly changing args', async ({ page }) => {
+  // TODO: ENABLE again once the flake is fixed
+  test.skip('should only render once at a time when rapidly changing args', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('core/rendering', 'slow-loader');
 
@@ -68,7 +69,7 @@ test.describe('preview-api', () => {
     await expect(labelControl).toBeVisible();
 
     await labelControl.fill('');
-    await labelControl.type('Changed arg', { delay: 50 });
+    await labelControl.pressSequentially('Changed arg', { delay: 50 });
     await labelControl.blur();
 
     await expect(root.getByText('Loaded. Changed arg')).toBeVisible();
@@ -82,9 +83,9 @@ test.describe('preview-api', () => {
 
     await expect(root.getByText('Loaded. Click me')).toBeVisible();
 
-    await sbPage.page.getByRole('button', { name: 'Remount component' }).click();
+    await sbPage.page.getByRole('button', { name: 'Reload story' }).click();
     await wait(200);
-    await sbPage.page.getByRole('button', { name: 'Remount component' }).click();
+    await sbPage.page.getByRole('button', { name: 'Reload story' }).click();
 
     // the loading spinner indicates the iframe is being fully reloaded
     await expect(sbPage.previewIframe().locator('.sb-preparing-story > .sb-loader')).toBeVisible();

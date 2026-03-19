@@ -18,7 +18,6 @@ const config: StorybookConfig = {
       },
     },
     '@storybook/addon-essentials',
-    '@storybook/addon-jest',
     '@storybook/addon-a11y',
   ],
   core: {

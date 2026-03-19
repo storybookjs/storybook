@@ -14,7 +14,6 @@ scripts/repros-generator
 *.js.map
 *.d.ts
 examples/ember-cli/.storybook/preview-head.html
-examples/official-storybook/tests/addon-jest.test.js
 ember-output
 .yarn
 !.remarkrc.js

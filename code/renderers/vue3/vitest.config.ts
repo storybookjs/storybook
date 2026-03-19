@@ -2,7 +2,7 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 
 import vue from '@vitejs/plugin-vue';
 
-import { vitestCommonConfig } from '../../vitest.workspace';
+import { vitestCommonConfig } from '../../vitest.shared';
 
 export default mergeConfig(
   vitestCommonConfig,

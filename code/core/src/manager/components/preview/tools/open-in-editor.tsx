@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -36,18 +36,19 @@ export const openInEditorTool: Addon_BaseType = {
           return null;
         }
         return (
-          <IconButton
+          <Button
             key="open-in-editor"
             onClick={() =>
               api.openInEditor({
                 file: importPath,
               })
             }
-            title="Open in editor"
-            aria-label="Open in editor"
+            ariaLabel="Open in editor"
+            padding="small"
+            variant="ghost"
           >
             <EditorIcon />
-          </IconButton>
+          </Button>
         );
       }}
     </Consumer>

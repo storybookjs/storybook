@@ -14,7 +14,7 @@ export default {
       });
     },
   ],
-  parameters: { chromatic: { disable: true } },
+  parameters: { chromatic: { disableSnapshot: true } },
 };
 
 export const Inheritance = {
@@ -25,7 +25,7 @@ export const Inheritance = {
       tags: ['story-one'],
     });
   },
-  parameters: { chromatic: { disable: false } },
+  parameters: { chromatic: { disableSnapshot: false } },
 };
 
 export const Dev = {

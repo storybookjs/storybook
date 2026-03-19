@@ -88,23 +88,41 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 }
 
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const thirdPartyFrameworks = ['qwik', 'solid', 'nuxt', 'react-rsbuild', 'vue3-rsbuild'];
+  const thirdPartyFrameworks = [
+    'html-rsbuild',
+    'nuxt',
+    'qwik',
+    'react-rsbuild',
+    'solid',
+    'vue3-rsbuild',
+    'web-components-rsbuild',
+  ];
   const destination = join(CORE_ROOT_DIR, 'src', 'types', 'modules', 'frameworks.ts');
   const frameworksDirectory = join(CODE_DIR, 'frameworks');
 
   const readFrameworks = (await readdir(frameworksDirectory)).filter((framework) =>
     existsSync(join(frameworksDirectory, framework, 'package.json'))
   );
-  const frameworks = [...readFrameworks.sort(), ...thirdPartyFrameworks]
-    .map((framework) => `'${framework}'`)
-    .join(' | ');
+
+  const formatFramework = (framework: string) => {
+    const typedName = framework.replace(/-/g, '_').toUpperCase();
+    return `${typedName} = '${framework}'`;
+  };
+
+  const coreFrameworks = readFrameworks.sort().map(formatFramework).join(',\n');
+  const communityFrameworks = thirdPartyFrameworks.sort().map(formatFramework).join(',\n');
 
   await writeFile(
     destination,
     await prettier.format(
       dedent`
         // auto generated file, do not edit
-        export type SupportedFrameworks = ${frameworks};
+        export enum SupportedFramework {
+          // CORE
+          ${coreFrameworks},
+          // COMMUNITY
+          ${communityFrameworks}
+        }
       `,
       {
         ...prettierConfig,

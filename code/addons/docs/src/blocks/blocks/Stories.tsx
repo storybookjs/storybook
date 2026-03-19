@@ -1,11 +1,14 @@
 import type { FC, ReactElement } from 'react';
 import React, { useContext } from 'react';
 
+import { Tag } from 'storybook/internal/preview-api';
+
 import { styled } from 'storybook/theming';
 
 import { DocsContext } from './DocsContext';
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface StoriesProps {
   title?: ReactElement | string;
@@ -28,7 +31,7 @@ const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
   },
 }));
 
-export const Stories: FC<StoriesProps> = ({ title = 'Stories', includePrimary = true }) => {
+const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = true }) => {
   const { componentStories, projectAnnotations, getStoryContext } = useContext(DocsContext);
 
   let stories = componentStories();
@@ -43,11 +46,11 @@ export const Stories: FC<StoriesProps> = ({ title = 'Stories', includePrimary = 
   // The new behavior here is that if NONE of the stories in the autodocs page are tagged
   // with 'autodocs', we show all stories. If ANY of the stories have autodocs then we use
   // the new behavior.
-  const hasAutodocsTaggedStory = stories.some((story) => story.tags?.includes('autodocs'));
+  const hasAutodocsTaggedStory = stories.some((story) => story.tags?.includes(Tag.AUTODOCS));
   if (hasAutodocsTaggedStory) {
     // Don't show stories where mount is used in docs.
     // As the play function is not running in docs, and when mount is used, the mounting is happening in play itself.
-    stories = stories.filter((story) => story.tags?.includes('autodocs') && !story.usesMount);
+    stories = stories.filter((story) => story.tags?.includes(Tag.AUTODOCS) && !story.usesMount);
   }
 
   if (!includePrimary) {
@@ -67,3 +70,5 @@ export const Stories: FC<StoriesProps> = ({ title = 'Stories', includePrimary = 
     </>
   );
 };
+
+export const Stories = withMdxComponentOverride('Stories', StoriesImpl);

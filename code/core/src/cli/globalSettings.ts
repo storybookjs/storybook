@@ -5,9 +5,18 @@ import { dirname, join } from 'node:path';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
+import { invariant } from '../common/utils/utils';
+
 const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
 
 const VERSION = 1;
+
+const statusValue = z
+  .strictObject({
+    status: z.enum(['open', 'accepted', 'done', 'skipped']).optional(),
+    mutedAt: z.number().optional(),
+  })
+  .optional();
 
 const userSettingSchema = z.object({
   version: z.number(),
@@ -15,6 +24,37 @@ const userSettingSchema = z.object({
   // (we can remove keys once they are deprecated)
   userSince: z.number().optional(),
   init: z.object({ skipOnboarding: z.boolean().optional() }).optional(),
+  checklist: z
+    .object({
+      items: z
+        .object({
+          accessibilityTests: statusValue,
+          autodocs: statusValue,
+          ciTests: statusValue,
+          controls: statusValue,
+          coverage: statusValue,
+          guidedTour: statusValue,
+          installA11y: statusValue,
+          installChromatic: statusValue,
+          installDocs: statusValue,
+          installVitest: statusValue,
+          mdxDocs: statusValue,
+          moreComponents: statusValue,
+          moreStories: statusValue,
+          onboardingSurvey: statusValue,
+          organizeStories: statusValue,
+          publishStorybook: statusValue,
+          renderComponent: statusValue,
+          runTests: statusValue,
+          viewports: statusValue,
+          visualTests: statusValue,
+          whatsNewStorybook10: statusValue,
+          writeInteractions: statusValue,
+        })
+        .optional(),
+      widget: z.object({ disable: z.boolean().optional() }).optional(),
+    })
+    .optional(),
 });
 
 let settings: Settings | undefined;
@@ -66,6 +106,7 @@ export class Settings {
 
   /** Save settings to the file */
   async save(): Promise<void> {
+    invariant(this.filePath, 'No file path to save settings to');
     try {
       await fs.mkdir(dirname(this.filePath), { recursive: true });
       await fs.writeFile(this.filePath, JSON.stringify(this.value, null, 2));

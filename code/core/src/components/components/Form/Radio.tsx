@@ -1,38 +1,41 @@
 import React from 'react';
 
-import { color, styled } from 'storybook/internal/theming';
+import { color, styled } from 'storybook/theming';
 
-const Input = styled.input({
+const Input = styled.input(({ theme }) => ({
   appearance: 'none',
-  display: 'grid',
-  placeContent: 'center',
-  width: 16,
-  height: 16,
-  flexShrink: 0,
-  margin: -1,
-  border: `1px solid ${color.border}`,
+  backgroundColor: theme.input.background,
+  border: `1px solid ${theme.base === 'dark' ? 'hsl(0 0 100 / 0.4)' : 'hsl(0 0 0 / 0.44)'}`,
   borderRadius: 8,
-  backgroundColor: 'white',
+  display: 'grid',
+  flexShrink: 0,
+  height: 16,
+  margin: -1,
+  placeContent: 'center',
   transition: 'background-color 0.1s',
+  width: 16,
 
   '&:enabled': {
     cursor: 'pointer',
   },
   '&:disabled': {
-    backgroundColor: color.medium,
+    backgroundColor: 'transparent',
+    borderColor: theme.input.border,
   },
   '&:disabled:checked': {
-    backgroundColor: color.mediumdark,
+    backgroundColor: theme.base === 'dark' ? color.dark : theme.color.mediumdark,
+    borderColor: theme.base === 'dark' ? color.dark : theme.color.mediumdark,
   },
   '&:checked': {
     backgroundColor: color.secondary,
-    boxShadow: `inset 0 0 0 2px white`,
+    borderColor: color.secondary,
+    boxShadow: `inset 0 0 0 2px ${theme.input.background}`,
   },
   '&:enabled:focus-visible': {
-    outline: `1px solid ${color.secondary}`,
-    outlineOffset: 1,
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
   },
-});
+}));
 
 export const Radio = (props: React.InputHTMLAttributes<HTMLInputElement>) => {
   return <Input {...props} type="radio" />;

@@ -15,13 +15,13 @@ function createMockedStore(contextName: string) {
   ] as const;
 }
 
-export const [page, setPage] = createMockedStore('page-ctx');
-export const [navigating, setNavigating] = createMockedStore('navigating-ctx');
-const [updated, setUpdated] = createMockedStore('updated-ctx');
+export const [page, setAppStoresPage] = createMockedStore('page-ctx');
+export const [navigating, setAppStoresNavigating] = createMockedStore('navigating-ctx');
+const [updated, setAppStoresUpdated] = createMockedStore('updated-ctx');
 
 (updated as any).check = () => {};
 
-export { updated, setUpdated };
+export { updated, setAppStoresUpdated };
 
 export function getStores() {
   return {

@@ -6,6 +6,7 @@ import { runCommand } from '../generate';
 
 interface SetupYarnOptions {
   cwd: string;
+  // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   pnp?: boolean;
   version?: 'berry' | 'classic';
 }

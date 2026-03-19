@@ -68,6 +68,8 @@ const playStatusMap: Record<
   aborted: 'aborted',
 };
 
+const terminalStatuses: PlayStatus[] = ['completed', 'errored', 'aborted'];
+
 const storyStatusMap: Record<CallStates, StatusValue> = {
   [CallStates.DONE]: 'status-value:success',
   [CallStates.ERROR]: 'status-value:error',
@@ -237,7 +239,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       if (global.IntersectionObserver) {
         observer = new global.IntersectionObserver(
           ([end]: any) => setScrollTarget(end.isIntersecting ? undefined : end.target),
-          { root: global.document.querySelector('#panel-tab-content') }
+          { root: global.document.querySelector('#storybook-panel-root [role="tabpanel"]') }
         );
 
         if (endRef.current) {
@@ -247,7 +249,8 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       return () => observer?.disconnect();
     }, []);
 
-    const lastRenderId = useRef<number>(0);
+    const lastStoryId = useRef<string>(undefined);
+    const latestRenderId = useRef<number>(0);
     const emit = useChannel(
       {
         [EVENTS.CALL]: setCall,
@@ -261,14 +264,27 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
-          if (event.newPhase === 'preparing' || event.newPhase === 'loading') {
-            // A render cycle may not actually make it to the rendering phase.
+          if (
+            lastStoryId.current === event.storyId &&
+            ['preparing', 'loading'].includes(event.newPhase)
+          ) {
+            // A rerender cycle may not actually make it to the rendering phase.
             // We don't want to update any state until it does.
             return;
           }
 
-          lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
-          if (lastRenderId.current !== event.renderId) {
+          // Update lastRenderId and lastStoryId. When we switch stories, lastRenderId's
+          // value might decrease if our users have mocked Date.now() via addons or
+          // manually in their code, so we must reset it.
+          if (lastStoryId.current === event.storyId) {
+            latestRenderId.current = Math.max(latestRenderId.current, event.renderId || 0);
+          } else {
+            latestRenderId.current = event.renderId || 0;
+            lastStoryId.current = event.storyId;
+          }
+
+          // Bail out if concurrent renders are ongoing for the same story (only keep the latest one).
+          if (latestRenderId.current !== event.renderId) {
             return;
           }
 
@@ -288,7 +304,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           } else {
             set((state) => {
               const status =
-                event.newPhase in playStatusMap
+                event.newPhase in playStatusMap && !terminalStatuses.includes(state.status)
                   ? playStatusMap[event.newPhase as keyof typeof playStatusMap]
                   : state.status;
               return getPanelState(

@@ -12,10 +12,10 @@ import type {
   StrictArgs,
 } from 'storybook/internal/types';
 
-import type { ComponentProps, ComponentType, SvelteComponent } from 'svelte';
+import type { Component, ComponentProps } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
 
-import type { Svelte5ComponentType, SvelteRenderer } from './types';
+import type { SvelteRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 
@@ -24,22 +24,20 @@ export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/
  *
  * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
  */
-export type Meta<CmpOrArgs = Args> = CmpOrArgs extends
-  | SvelteComponent<infer Props>
-  | Svelte5ComponentType<infer Props>
-  ? ComponentAnnotations<SvelteRenderer<CmpOrArgs>, Props>
-  : ComponentAnnotations<SvelteRenderer, CmpOrArgs>;
+export type Meta<CmpOrArgs = Args> =
+  CmpOrArgs extends Component<infer Props>
+    ? ComponentAnnotations<SvelteRenderer<CmpOrArgs>, Props>
+    : ComponentAnnotations<SvelteRenderer, CmpOrArgs>;
 
 /**
  * Story function that represents a CSFv2 component example.
  *
  * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
-export type StoryFn<TCmpOrArgs = Args> = TCmpOrArgs extends
-  | SvelteComponent<infer Props>
-  | Svelte5ComponentType<infer Props>
-  ? AnnotatedStoryFn<SvelteRenderer, Props>
-  : AnnotatedStoryFn<SvelteRenderer, TCmpOrArgs>;
+export type StoryFn<TCmpOrArgs = Args> =
+  TCmpOrArgs extends Component<infer Props>
+    ? AnnotatedStoryFn<SvelteRenderer, Props>
+    : AnnotatedStoryFn<SvelteRenderer, TCmpOrArgs>;
 
 /**
  * Story object that represents a CSFv3 component example.
@@ -48,32 +46,20 @@ export type StoryFn<TCmpOrArgs = Args> = TCmpOrArgs extends
  */
 export type StoryObj<MetaOrCmpOrArgs = Args> = MetaOrCmpOrArgs extends {
   render?: ArgsStoryFn<SvelteRenderer, any>;
-  component: infer Comp; // We cannot use "extends ComponentType | Svelte5ComponentType" here, because TypeScript for some reason then refuses to ever enter the true branch
+  component: infer Comp; // We cannot use "extends Component" here, because TypeScript for some reason then refuses to ever enter the true branch
   args?: infer DefaultArgs;
 }
   ? Simplify<
-      ComponentProps<
-        Comp extends ComponentType<infer Component>
-          ? Component
-          : Comp extends Svelte5ComponentType
-            ? Comp
-            : never
-      > &
+      ComponentProps<Comp extends Component<any, any, any> ? Comp : never> &
         ArgsFromMeta<SvelteRenderer, MetaOrCmpOrArgs>
     > extends infer TArgs
     ? StoryAnnotations<
-        SvelteRenderer<
-          Comp extends ComponentType<infer Component>
-            ? Component
-            : Comp extends Svelte5ComponentType
-              ? Comp
-              : never
-        >,
+        SvelteRenderer<Comp extends Component<any, any, any> ? Comp : never>,
         TArgs,
         SetOptional<TArgs, Extract<keyof TArgs, keyof DefaultArgs>>
       >
     : never
-  : MetaOrCmpOrArgs extends SvelteComponent | Svelte5ComponentType
+  : MetaOrCmpOrArgs extends Component<any, any, any>
     ? StoryAnnotations<SvelteRenderer<MetaOrCmpOrArgs>, ComponentProps<MetaOrCmpOrArgs>>
     : StoryAnnotations<SvelteRenderer, MetaOrCmpOrArgs>;
 

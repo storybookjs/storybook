@@ -10,11 +10,11 @@ import picocolors from 'picocolors';
 export async function outputStats(directory: string, previewStats?: any, managerStats?: any) {
   if (previewStats) {
     const filePath = await writeStats(directory, 'preview', previewStats as Stats);
-    logger.info(`=> preview stats written to ${picocolors.cyan(filePath)}`);
+    logger.info(`Preview stats written to ${picocolors.cyan(filePath)}`);
   }
   if (managerStats) {
     const filePath = await writeStats(directory, 'manager', managerStats as Stats);
-    logger.info(`=> manager stats written to ${picocolors.cyan(filePath)}`);
+    logger.info(`Manager stats written to ${picocolors.cyan(filePath)}`);
   }
 }
 

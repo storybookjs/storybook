@@ -1,5 +1,4 @@
 import { cp } from 'node:fs/promises';
-import { dirname, join, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
@@ -13,6 +12,7 @@ import type { Builder, Options } from 'storybook/internal/types';
 
 import { checkWebpackVersion } from '@storybook/core-webpack';
 
+import { dirname, join, parse } from 'pathe';
 import prettyTime from 'pretty-hrtime';
 import sirv from 'sirv';
 import type { Configuration, Stats, StatsOptions } from 'webpack';

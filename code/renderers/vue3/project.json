@@ -1,17 +1,12 @@
 {
   "name": "vue3",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {
-    "build": {},
+    "compile": {},
     "check": {
-      "command": "echo '\"nx check vue3\" can only run with the parameter \"-c production\", we need to expand code/storybook/storybook/scripts/prepare/check.ts'",
-      "configurations": {
-        "production": {
-          "cwd": "{projectRoot}",
-          "command": "yarn check"
-        }
-      }
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "vue-tsc --noEmit" }
     }
-  }
+  },
+  "tags": ["library"]
 }

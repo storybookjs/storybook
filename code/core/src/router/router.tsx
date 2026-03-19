@@ -142,3 +142,4 @@ export { Route, Match };
 
 export const LocationProvider: typeof R.BrowserRouter = (...args) => R.BrowserRouter(...args);
 export const BaseLocationProvider: typeof R.Router = (...args) => R.Router(...args);
+export const MemoryRouter: typeof R.MemoryRouter = (...args) => R.MemoryRouter(...args);

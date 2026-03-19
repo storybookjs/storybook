@@ -27,6 +27,10 @@ const sanitizeSafe = (string: string, part: string) => {
 export const toId = (kind: string, name?: string) =>
   `${sanitizeSafe(kind, 'kind')}${name ? `--${sanitizeSafe(name, 'name')}` : ''}`;
 
+/** Generate a storybook test ID from a story ID and test name. */
+export const toTestId = (parentId: string, testName: string) =>
+  `${parentId}:${sanitizeSafe(testName, 'test')}`;
+
 /** Transform a CSF named export into a readable story name */
 export const storyNameFromExport = (key: string) => toStartCaseStr(key);
 

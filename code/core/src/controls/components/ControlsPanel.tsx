@@ -10,6 +10,7 @@ import {
   useArgs,
   useGlobals,
   useParameter,
+  useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -29,13 +30,16 @@ const clean = (obj: { [key: string]: any }) =>
     {} as typeof obj
   );
 
-const AddonWrapper = styled.div({
-  display: 'grid',
-  gridTemplateRows: '1fr 39px',
+const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, theme }) => ({
   height: '100%',
   maxHeight: '100vh',
-  overflowY: 'auto',
-});
+  paddingBottom: showSaveFromUI ? 41 : 0,
+  backgroundColor: theme.background.content,
+
+  table: {
+    backgroundColor: theme.background.app,
+  },
+}));
 
 interface ControlsParameters {
   sort?: SortType;
@@ -50,6 +54,7 @@ interface ControlsPanelProps {
 }
 
 export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) => {
+  const api = useStorybookApi();
   const [isLoading, setIsLoading] = useState(true);
   const [args, updateArgs, resetArgs, initialArgs] = useArgs();
   const [globals] = useGlobals();
@@ -61,6 +66,7 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
     disableSaveFromUI = false,
   } = useParameter<ControlsParameters>(PARAM_KEY, {});
   const { path, previewInitialized } = useStorybookState();
+  const storyData = api.getCurrentStoryData();
 
   // If the story is prepared, then show the args table
   // and reset the loading states
@@ -88,8 +94,16 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
     [args, initialArgs]
   );
 
+  const showSaveFromUI =
+    hasControls &&
+    storyData.type === 'story' &&
+    storyData.subtype !== 'test' &&
+    hasUpdatedArgs &&
+    global.CONFIG_TYPE === 'DEVELOPMENT' &&
+    disableSaveFromUI !== true;
+
   return (
-    <AddonWrapper>
+    <AddonWrapper showSaveFromUI={showSaveFromUI}>
       <ArgsTable
         key={path} // resets state when switching stories
         compact={!expanded && hasControls}
@@ -102,10 +116,7 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
         sort={sort}
         isLoading={isLoading}
       />
-      {hasControls &&
-        hasUpdatedArgs &&
-        global.CONFIG_TYPE === 'DEVELOPMENT' &&
-        disableSaveFromUI !== true && <SaveStory {...{ resetArgs, saveStory, createStory }} />}
+      {showSaveFromUI && <SaveStory {...{ resetArgs, saveStory, createStory }} />}
     </AddonWrapper>
   );
 };

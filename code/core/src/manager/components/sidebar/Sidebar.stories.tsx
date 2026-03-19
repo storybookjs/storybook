@@ -1,17 +1,22 @@
 import React from 'react';
 
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type { DecoratorFunction, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { internal_fullStatusStore } from '../../manager-stores.mock';
+import { initialState } from '../../../shared/checklist-store/checklistData.state';
+import {
+  internal_fullStatusStore,
+  internal_universalChecklistStore,
+} from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
-import { IconSymbols } from './IconSymbols';
 import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
@@ -28,26 +33,32 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
 
-const managerContext: any = {
+const managerContext: any = (args: Meta<typeof Sidebar>['args']) => ({
   state: {
     docsOptions: {
       defaultName: 'Docs',
       autodocs: 'tag',
       docsMode: false,
     },
+    internal_index: args?.indexJson,
   },
   api: {
     emit: fn().mockName('api::emit'),
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
     getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
       'api::getShortcutKeys'
     ),
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
+    navigate: fn().mockName('api::navigate'),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
+    getIsNavShown: () => true,
     getUrlState: () => ({
       queryParams: {},
       path: '',
@@ -56,7 +67,7 @@ const managerContext: any = {
     }),
     applyQueryParams: fn().mockName('api::applyQueryParams'),
   },
-};
+});
 
 const meta = {
   component: Sidebar,
@@ -76,6 +87,7 @@ const meta = {
           title: 'dummy',
           importPath: './dummy.stories.js',
           type: 'story',
+          subtype: 'story',
           tags: ['A', 'B', 'C', 'dev'],
         },
       },
@@ -89,10 +101,15 @@ const meta = {
     isDevelopment: true,
   },
   decorators: [
-    (storyFn) => (
-      <ManagerContext.Provider value={managerContext}>
-        <LayoutProvider>
-          <IconSymbols />
+    (storyFn, { args, globals, title }) => (
+      <ManagerContext.Provider value={managerContext(args)}>
+        <LayoutProvider
+          forceDesktop={
+            globals.viewport?.value === 'desktop' ||
+            globals.viewport?.value === undefined ||
+            title.endsWith('scrolled')
+          }
+        >
           {storyFn()}
         </LayoutProvider>
       </ManagerContext.Provider>
@@ -101,12 +118,36 @@ const meta = {
   globals: { sb_theme: 'side-by-side' },
   beforeEach: () => {
     internal_fullStatusStore.unset();
+    internal_universalChecklistStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
+    });
   },
 } satisfies Meta<typeof Sidebar>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+
+const mobileLayoutDecorator: DecoratorFunction = (storyFn, { args, globals, title }) => (
+  <ManagerContext.Provider value={managerContext(args)}>
+    <LayoutProvider
+      forceDesktop={
+        globals.viewport?.value === 'desktop' ||
+        globals.viewport?.value === undefined ||
+        title.endsWith('scrolled')
+      }
+    >
+      {storyFn()}
+    </LayoutProvider>
+  </ManagerContext.Provider>
+);
 
 const refs: Record<string, RefType> = {
   optimized: {
@@ -140,12 +181,49 @@ const refsEmpty = {
   },
 };
 
-export const Simple: Story = {};
+const waitForChecklistWidget = async () => {
+  await waitFor(
+    () =>
+      expect(document.getElementById('storybook-checklist-widget')?.checkVisibility()).toBe(true),
+    { timeout: 5000 }
+  );
+  await wait(300); // wait for expand animation
+};
+
+export const Simple: Story = {
+  play: waitForChecklistWidget,
+};
 
 export const SimpleInProduction: Story = {
   args: {
     showCreateStoryButton: false,
   },
+  beforeEach: () => {
+    const configType = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'PRODUCTION';
+    return () => {
+      global.CONFIG_TYPE = configType;
+    };
+  },
+};
+
+export const SimpleNoChecklist: Story = {
+  args: {
+    showCreateStoryButton: false,
+  },
+  beforeEach: () => {
+    const features = global.FEATURES;
+    global.FEATURES = { ...features, sidebarOnboardingChecklist: false };
+    return () => {
+      global.FEATURES = features;
+    };
+  },
+};
+
+export const Mobile: Story = {
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+  play: waitForChecklistWidget,
 };
 
 export const Loading: Story = {
@@ -155,22 +233,49 @@ export const Loading: Story = {
   },
 };
 
+export const LoadingMobile: Story = {
+  args: Loading.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+};
+
 export const Empty: Story = {
   args: {
     index: {},
   },
+  play: waitForChecklistWidget,
+};
+
+export const EmptyMobile: Story = {
+  args: Empty.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+  play: waitForChecklistWidget,
+};
+
+export const EmptyIndex: Story = {
+  args: {
+    index: {},
+    indexJson: {
+      entries: {},
+      v: 6,
+    },
+  },
+  play: waitForChecklistWidget,
 };
 
 export const IndexError: Story = {
   args: {
     indexError,
   },
+  play: waitForChecklistWidget,
 };
 
 export const WithRefs: Story = {
   args: {
     refs,
   },
+  play: waitForChecklistWidget,
 };
 
 export const WithRefsNarrow: Story = {
@@ -188,7 +293,7 @@ export const WithRefsNarrow: Story = {
         narrow: {
           name: 'narrow',
           styles: {
-            width: '400px',
+            width: '230px',
             height: '800px',
           },
         },
@@ -197,7 +302,7 @@ export const WithRefsNarrow: Story = {
     chromatic: {
       modes: {
         narrow: {
-          viewport: 400,
+          viewport: 230,
         },
       },
     },
@@ -207,6 +312,14 @@ export const WithRefsNarrow: Story = {
       value: 'narrow',
     },
   },
+  play: waitForChecklistWidget,
+};
+
+export const WithRefsMobile: Story = {
+  args: WithRefs.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+  play: waitForChecklistWidget,
 };
 
 export const LoadingWithRefs: Story = {
@@ -223,11 +336,18 @@ export const LoadingWithRefError: Story = {
   },
 };
 
+export const LoadingWithRefErrorMobile: Story = {
+  args: LoadingWithRefError.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+};
+
 export const WithRefEmpty: Story = {
   args: {
     ...Empty.args,
     refs: refsEmpty,
   },
+  play: waitForChecklistWidget,
 };
 
 export const StatusesCollapsed: Story = {
@@ -261,6 +381,7 @@ export const StatusesCollapsed: Story = {
       return acc;
     }, {} as StatusesByStoryIdAndTypeId),
   },
+  play: waitForChecklistWidget,
 };
 
 export const StatusesOpen: Story = {
@@ -292,6 +413,7 @@ export const StatusesOpen: Story = {
       } satisfies StatusesByStoryIdAndTypeId;
     }, {} as StatusesByStoryIdAndTypeId),
   },
+  play: waitForChecklistWidget,
 };
 
 export const Searching: Story = {
@@ -306,7 +428,7 @@ export const Searching: Story = {
     ),
   ],
   play: async ({ canvasElement, step }) => {
-    await step('wait 2000ms', () => wait(2000));
+    await waitForChecklistWidget();
     const canvas = await within(canvasElement);
     const search = await canvas.findByPlaceholderText('Find components');
     userEvent.clear(search);
@@ -385,6 +507,7 @@ export const Scrolled: Story = {
     );
   },
   play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
     const canvas = await within(canvasElement);
     const scrollable = await canvasElement.querySelector('[data-radix-scroll-area-viewport]');
     await step('expand component', async () => {

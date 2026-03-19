@@ -9,7 +9,6 @@ import {
 } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import boxen, { type Options } from 'boxen';
 import * as walk from 'empathic/walk';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
@@ -47,6 +46,7 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly latestCLIVersionOnNPM: string;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
+  readonly hasCsfFactoryPreview: boolean;
 }
 
 /** Result when project collection fails */
@@ -72,39 +72,12 @@ interface VersionModifier {
 // CONSTANTS
 // ============================================================================
 
-/** Default boxen styling for messages */
-const DEFAULT_BOXEN_STYLE: Options = {
-  borderStyle: 'round',
-  padding: 1,
-  borderColor: '#F1618C',
-} as const;
-
 /** Glob pattern for finding Storybook directories */
 const STORYBOOK_DIR_PATTERN = ['**/.storybook', '**/.rnstorybook'];
-
-/** Default fallback version when none is found */
-const DEFAULT_FALLBACK_VERSION = '0.0.0';
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
-
-/**
- * Creates a styled boxed message for console output
- *
- * @example
- *
- * ```typescript
- * const message = printBoxedMessage('Hello World!');
- * console.log(message);
- * ```
- *
- * @param message - The message to display in the box
- * @param style - Optional styling options for the box
- * @returns Formatted boxed message string
- */
-export const printBoxedMessage = (message: string, style?: Options): string =>
-  boxen(message, { ...DEFAULT_BOXEN_STYLE, ...style });
 
 /**
  * Type guard to check if a result is a success result
@@ -318,15 +291,16 @@ const processProject = async ({
       packageManager,
       previewConfigPath,
       storiesPaths,
-      storybookVersion: beforeVersion,
+      versionInstalled,
+      hasCsfFactoryPreview,
     } = await getStorybookData({ configDir });
 
     // Validate version and upgrade compatibility
-    logger.debug(`${name} - Validating before version... ${beforeVersion}`);
-    validateVersion(beforeVersion);
-    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(beforeVersion);
+    logger.debug(`${name} - Validating before version... ${versionInstalled}`);
+    validateVersion(versionInstalled);
+    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(versionInstalled);
     logger.debug(`${name} - Validating upgrade compatibility...`);
-    validateUpgradeCompatibility(currentCLIVersion, beforeVersion, isCanary);
+    validateUpgradeCompatibility(currentCLIVersion, versionInstalled, isCanary);
 
     // Get version information from NPM
     logger.debug(`${name} - Fetching NPM version information...`);
@@ -340,7 +314,7 @@ const processProject = async ({
     const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
     const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
     const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
-    const isUpgrade = lt(beforeVersion, currentCLIVersion);
+    const isUpgrade = lt(versionInstalled, currentCLIVersion);
 
     // Check for blockers
     let autoblockerCheckResults: AutoblockerResult<unknown>[] | null = null;
@@ -369,13 +343,14 @@ const processProject = async ({
       isCLIPrerelease,
       isCLIExactLatest,
       isUpgrade,
-      beforeVersion,
+      beforeVersion: versionInstalled,
       currentCLIVersion,
       latestCLIVersionOnNPM: latestCLIVersionOnNPM!,
       isCLIExactPrerelease,
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
+      hasCsfFactoryPreview,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     logger.debug(String(error));

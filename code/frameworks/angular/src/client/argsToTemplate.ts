@@ -66,8 +66,12 @@ export function argsToTemplate<A extends Record<string, any>>(
   return Object.entries(args)
     .filter(([key]) => args[key] !== undefined)
     .filter(([key]) => {
-      if (includeSet) return includeSet.has(key);
-      if (excludeSet) return !excludeSet.has(key);
+      if (includeSet) {
+        return includeSet.has(key);
+      }
+      if (excludeSet) {
+        return !excludeSet.has(key);
+      }
       return true;
     })
     .map(([key, value]) =>

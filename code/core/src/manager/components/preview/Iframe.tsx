@@ -11,11 +11,10 @@ const StyledIframe = styled.iframe(({ theme }) => ({
   boxSizing: 'content-box',
   height: '100%',
   width: '100%',
-  border: '0 none',
+  border: 'none',
   transition: 'background-position 0s, visibility 0s',
   backgroundPosition: '-1px -1px, -1px -1px, -1px -1px, -1px -1px',
   margin: `auto`,
-  boxShadow: '0 0 100px 100vw rgba(0,0,0,0.5)',
 }));
 
 export interface IFrameProps {

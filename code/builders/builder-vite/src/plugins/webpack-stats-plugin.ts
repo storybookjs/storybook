@@ -3,6 +3,7 @@ import { relative } from 'node:path';
 
 import type { BuilderStats } from 'storybook/internal/types';
 
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import type { Plugin } from 'vite';
 
@@ -51,8 +52,8 @@ function isUserCode(moduleName: string) {
 
   return Boolean(
     !moduleName.startsWith('vite/') &&
-      !moduleName.startsWith('\0') &&
-      moduleName !== 'react/jsx-runtime'
+    !moduleName.startsWith('\0') &&
+    moduleName !== 'react/jsx-runtime'
   );
 }
 

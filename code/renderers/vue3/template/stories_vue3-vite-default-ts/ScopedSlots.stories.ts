@@ -1,4 +1,3 @@
-import type { Channel } from 'storybook/internal/channels';
 import {
   RESET_STORY_ARGS,
   STORY_ARGS_UPDATED,
@@ -14,7 +13,7 @@ import MySlotComponent from './MySlotComponent.vue';
 
 declare global {
   // eslint-disable-next-line no-var
-  var __STORYBOOK_ADDONS_CHANNEL__: Channel;
+  var __STORYBOOK_ADDONS_CHANNEL__: any;
 }
 
 const meta = {

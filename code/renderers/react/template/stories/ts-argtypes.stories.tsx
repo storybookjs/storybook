@@ -6,7 +6,7 @@ import type { StoryObj } from '@storybook/react';
 
 import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
-import { mapValues } from 'es-toolkit/compat';
+import { mapValues } from 'es-toolkit/object';
 import { inferControls } from 'storybook/preview-api';
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 

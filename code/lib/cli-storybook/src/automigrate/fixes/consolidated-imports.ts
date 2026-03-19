@@ -147,7 +147,18 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
 
     const importErrors = await transformImportFiles(
       [...storiesPaths, ...configFiles].filter(Boolean) as string[],
-      consolidatedPackages,
+      {
+        ...consolidatedPackages,
+        'storybook/internal/manager-api': 'storybook/manager-api',
+        'storybook/internal/preview-api': 'storybook/preview-api',
+        'storybook/internal/theming': 'storybook/theming',
+        'storybook/internal/theming/create': 'storybook/theming/create',
+        'storybook/internal/test': 'storybook/test',
+        'storybook/internal/actions': 'storybook/internal/actions',
+        'storybook/internal/actions/decorator': 'storybook/internal/actions/decorator',
+        'storybook/internal/highlight': 'storybook/internal/highlight',
+        'storybook/internal/viewport': 'storybook/internal/viewport',
+      },
       !!dryRun
     );
 

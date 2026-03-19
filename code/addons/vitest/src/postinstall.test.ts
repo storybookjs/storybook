@@ -1,0 +1,43 @@
+import { describe, expect, it } from 'vitest';
+
+import { isConfigAlreadySetup } from './postinstall';
+
+describe('postinstall helpers', () => {
+  it('detects a fully configured Vitest config with addon plugin', () => {
+    const config = `
+      import { defineConfig } from 'vitest/config';
+      import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+
+      export default defineConfig({
+        test: {
+          projects: [
+            {
+              extends: true,
+              plugins: [storybookTest({ configDir: '.storybook' })],
+            },
+          ],
+        },
+      });
+    `;
+
+    expect(isConfigAlreadySetup('/project/vitest.config.ts', config)).toBe(true);
+  });
+
+  it('returns false when storybookTest plugin is not used', () => {
+    const config = `
+      import { defineConfig } from 'vitest/config';
+
+      export default defineConfig({
+        test: {
+          projects: [
+            {
+              extends: true,
+            },
+          ],
+        },
+      });
+    `;
+
+    expect(isConfigAlreadySetup('/project/vitest.config.ts', config)).toBe(false);
+  });
+});

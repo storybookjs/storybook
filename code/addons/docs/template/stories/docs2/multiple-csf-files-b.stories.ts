@@ -6,7 +6,7 @@ export default {
     content: '<p>paragraph</p>',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

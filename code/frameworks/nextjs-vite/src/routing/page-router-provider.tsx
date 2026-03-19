@@ -8,7 +8,7 @@ import React from 'react';
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
 import { getRouter } from '@storybook/nextjs-vite/router.mock';
 
-import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
+import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime.js';
 
 export const PageRouterProvider: React.FC<PropsWithChildren> = ({ children }) => (
   <RouterContext.Provider value={getRouter()}>{children}</RouterContext.Provider>

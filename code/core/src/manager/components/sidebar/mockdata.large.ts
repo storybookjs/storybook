@@ -36,6 +36,7 @@ export const index = {
     depth: 1,
     parent: 'images',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'images--brand': {
@@ -49,6 +50,7 @@ export const index = {
     depth: 1,
     parent: 'images',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'images--colored-icons': {
@@ -62,6 +64,7 @@ export const index = {
     depth: 1,
     parent: 'images',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'images--logos': {
@@ -75,6 +78,7 @@ export const index = {
     depth: 1,
     parent: 'images',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'images--shapes': {
@@ -88,6 +92,7 @@ export const index = {
     depth: 1,
     parent: 'images',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'images--thumbnails': {
@@ -101,6 +106,7 @@ export const index = {
     depth: 1,
     parent: 'images',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'images--payment': {
@@ -114,6 +120,7 @@ export const index = {
     depth: 1,
     parent: 'images',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   emails: {
@@ -162,6 +169,7 @@ export const index = {
     depth: 2,
     parent: 'emails-buildnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-buildnotification--without-email': {
@@ -175,6 +183,7 @@ export const index = {
     depth: 2,
     parent: 'emails-buildnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-buildnotification--with-error': {
@@ -188,6 +197,7 @@ export const index = {
     depth: 2,
     parent: 'emails-buildnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-commentnotification': {
@@ -216,6 +226,7 @@ export const index = {
     depth: 2,
     parent: 'emails-commentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-commentnotification--new-discussion-no-diff': {
@@ -229,6 +240,7 @@ export const index = {
     depth: 2,
     parent: 'emails-commentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-commentnotification--new-discussion-no-snapshot': {
@@ -242,6 +254,7 @@ export const index = {
     depth: 2,
     parent: 'emails-commentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-commentnotification--new-discussion-no-pr': {
@@ -255,6 +268,7 @@ export const index = {
     depth: 2,
     parent: 'emails-commentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-commentnotification--new-reply': {
@@ -268,6 +282,7 @@ export const index = {
     depth: 2,
     parent: 'emails-commentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-commentnotification--resolution': {
@@ -281,6 +296,7 @@ export const index = {
     depth: 2,
     parent: 'emails-commentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-paymentnotification': {
@@ -307,6 +323,7 @@ export const index = {
     depth: 2,
     parent: 'emails-paymentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-paymentnotification--trial-ended': {
@@ -320,6 +337,7 @@ export const index = {
     depth: 2,
     parent: 'emails-paymentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-paymentnotification--payment-failed': {
@@ -333,6 +351,7 @@ export const index = {
     depth: 2,
     parent: 'emails-paymentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-paymentnotification--payment-due': {
@@ -346,6 +365,7 @@ export const index = {
     depth: 2,
     parent: 'emails-paymentnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-reviewnotification': {
@@ -376,6 +396,7 @@ export const index = {
     depth: 2,
     parent: 'emails-reviewnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-reviewnotification--approval-with-pending-reviews': {
@@ -389,6 +410,7 @@ export const index = {
     depth: 2,
     parent: 'emails-reviewnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-reviewnotification--approval-with-pending-review': {
@@ -402,6 +424,7 @@ export const index = {
     depth: 2,
     parent: 'emails-reviewnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-reviewnotification--approval-git-lab': {
@@ -415,6 +438,7 @@ export const index = {
     depth: 2,
     parent: 'emails-reviewnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-reviewnotification--requesting-review': {
@@ -428,6 +452,7 @@ export const index = {
     depth: 2,
     parent: 'emails-reviewnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-reviewnotification--requesting-review-small-diff-count': {
@@ -441,6 +466,7 @@ export const index = {
     depth: 2,
     parent: 'emails-reviewnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-reviewnotification--requesting-review-with-errors': {
@@ -454,6 +480,7 @@ export const index = {
     depth: 2,
     parent: 'emails-reviewnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-reviewnotification--requesting-review-only-errors': {
@@ -467,6 +494,7 @@ export const index = {
     depth: 2,
     parent: 'emails-reviewnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-snapshotnotification': {
@@ -491,6 +519,7 @@ export const index = {
     depth: 2,
     parent: 'emails-snapshotnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'emails-snapshotnotification--limit-reached': {
@@ -504,6 +533,7 @@ export const index = {
     depth: 2,
     parent: 'emails-snapshotnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   tooltip: {
@@ -532,6 +562,7 @@ export const index = {
     depth: 2,
     parent: 'tooltip-tooltipbuildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'tooltip-tooltipbuildlist--no-commit': {
@@ -545,6 +576,7 @@ export const index = {
     depth: 2,
     parent: 'tooltip-tooltipbuildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'tooltip-tooltipselect': {
@@ -566,6 +598,7 @@ export const index = {
     depth: 2,
     parent: 'tooltip-tooltipselect',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components': {
@@ -700,6 +733,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-accountmenu',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-accountmenu--saml-user': {
@@ -713,6 +747,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-accountmenu',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem': {
@@ -746,6 +781,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--loading': {
@@ -759,6 +795,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--passed': {
@@ -772,6 +809,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--failed': {
@@ -785,6 +823,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--unreviewed': {
@@ -798,6 +837,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--in-progress': {
@@ -811,6 +851,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--from-agent-passed': {
@@ -824,6 +865,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--timed-out': {
@@ -837,6 +879,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--errored': {
@@ -850,6 +893,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--no-account-name': {
@@ -863,6 +907,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activityitem--long-account-name': {
@@ -876,6 +921,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activitylist': {
@@ -902,6 +948,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activitylist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activitylist--full': {
@@ -915,6 +962,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activitylist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activitylist--full-no-account-name': {
@@ -928,6 +976,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activitylist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-activitylist--empty': {
@@ -941,6 +990,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-activitylist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appowneritem': {
@@ -971,6 +1021,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appowneritem--user-active': {
@@ -984,6 +1035,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appowneritem--org': {
@@ -997,6 +1049,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appowneritem--org-active': {
@@ -1010,6 +1063,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appowneritem--org-no-avatar': {
@@ -1023,6 +1077,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appowneritem--org-no-avatar-active': {
@@ -1036,6 +1091,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appowneritem--shared-with-you': {
@@ -1049,6 +1105,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appowneritem--shared-with-you-active': {
@@ -1062,6 +1119,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appownerlist': {
@@ -1092,6 +1150,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appownerlist--shared-with-you-selected': {
@@ -1105,6 +1164,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appownerlist--org-selected': {
@@ -1118,6 +1178,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appownerlist--org-selected-saml': {
@@ -1131,6 +1192,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appownerlist--org-selected-adding-pure': {
@@ -1144,6 +1206,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appownerlist--org-selected-adding-pure-no-accounts': {
@@ -1157,6 +1220,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appownerlist--org-selected-adding-pure-refreshing': {
@@ -1170,6 +1234,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-appownerlist--org-selected-adding-pure-bitbucket': {
@@ -1183,6 +1248,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-appownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-aspectratiopreserver': {
@@ -1204,6 +1270,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-aspectratiopreserver',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-asynctextaction': {
@@ -1230,6 +1297,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-asynctextaction',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-asynctextaction--loading': {
@@ -1243,6 +1311,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-asynctextaction',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-asynctextaction--loading-with-loading-message': {
@@ -1256,6 +1325,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-asynctextaction',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-asynctextaction--loading-left-placement': {
@@ -1269,6 +1339,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-asynctextaction',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-badgecount': {
@@ -1295,6 +1366,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-badgecount',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-badgecount--positive': {
@@ -1308,6 +1380,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-badgecount',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-badgecount--negative': {
@@ -1321,6 +1394,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-badgecount',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-badgecount--warning': {
@@ -1334,6 +1408,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-badgecount',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-banner': {
@@ -1359,6 +1434,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-banner',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-banner--positive': {
@@ -1372,6 +1448,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-banner',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-banner--negative': {
@@ -1385,6 +1462,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-banner',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-baselinehistory': {
@@ -1415,6 +1493,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-baselinehistory',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-baselinehistory--new-story': {
@@ -1428,6 +1507,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-baselinehistory',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-baselinehistory--typical': {
@@ -1441,6 +1521,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-baselinehistory',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-baselinehistory--baseline-was-accepted': {
@@ -1454,6 +1535,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-baselinehistory',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-baselinehistory--second-build': {
@@ -1467,6 +1549,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-baselinehistory',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-baselinehistory--third-build': {
@@ -1480,6 +1563,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-baselinehistory',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-baselinehistory--most-recent-ancestor': {
@@ -1493,6 +1577,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-baselinehistory',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-baselinehistory--in-tooltip-smaller': {
@@ -1506,6 +1591,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-baselinehistory',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans': {
@@ -1537,6 +1623,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans--is-subscribed-changing-plan': {
@@ -1550,6 +1637,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans--free': {
@@ -1563,6 +1651,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans--trial': {
@@ -1576,6 +1665,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans--in-trial-plan-chosen': {
@@ -1589,6 +1679,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans--open-source-paying-for-plan': {
@@ -1602,6 +1693,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans--open-source-paying-for-plan-changing-plan': {
@@ -1615,6 +1707,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans--open-source-free-account': {
@@ -1628,6 +1721,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-billingplans--open-source-plan-chosen': {
@@ -1641,6 +1735,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-billingplans',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-branchpicker': {
@@ -1662,6 +1757,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-branchpicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-breadcrumb': {
@@ -1687,6 +1783,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-breadcrumb',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-breadcrumb--root': {
@@ -1700,6 +1797,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-breadcrumb',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-breadcrumb--many-breadcrumbs': {
@@ -1713,6 +1811,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-breadcrumb',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist': {
@@ -1755,6 +1854,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlist--full': {
@@ -1768,6 +1868,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlist--full-prefixed': {
@@ -1781,6 +1882,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlist--empty': {
@@ -1794,6 +1896,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlist--filtering-results': {
@@ -1807,6 +1910,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlist--filtering-no-results': {
@@ -1820,6 +1924,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlistheader': {
@@ -1848,6 +1953,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlistheader--default': {
@@ -1861,6 +1967,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlistheader--with-actions': {
@@ -1874,6 +1981,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlistheader--is-searching': {
@@ -1887,6 +1995,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlistheader--is-searching-no-results': {
@@ -1900,6 +2009,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-buildcomponentlistheader--navigating-with-breadcrumb': {
@@ -1913,6 +2023,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-buildcomponentlistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem': {
@@ -1944,6 +2055,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem--loading': {
@@ -1957,6 +2069,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem--empty': {
@@ -1970,6 +2083,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem--single': {
@@ -1983,6 +2097,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem--fewer': {
@@ -1996,6 +2111,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem--full': {
@@ -2009,6 +2125,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem--full-snapshotting': {
@@ -2022,6 +2139,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem--full-errored': {
@@ -2035,6 +2153,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-groupitem--complex': {
@@ -2048,6 +2167,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-groupitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-polymorphiclist': {
@@ -2073,6 +2193,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-polymorphiclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-polymorphiclist--complex': {
@@ -2086,6 +2207,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-polymorphiclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-polymorphiclist--loading': {
@@ -2099,6 +2221,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-polymorphiclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-rootitem': {
@@ -2123,6 +2246,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-rootitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildcomponentlist-rootitem--complex': {
@@ -2136,6 +2260,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-buildcomponentlist-rootitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem': {
@@ -2169,6 +2294,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--loading': {
@@ -2182,6 +2308,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--passed': {
@@ -2195,6 +2322,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--failed': {
@@ -2208,6 +2336,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--unreviewed': {
@@ -2221,6 +2350,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--in-progress': {
@@ -2234,6 +2364,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--from-agent-passed': {
@@ -2247,6 +2378,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--timed-out': {
@@ -2260,6 +2392,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--errored': {
@@ -2273,6 +2406,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--publish-only': {
@@ -2286,6 +2420,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-builditem--upgrade': {
@@ -2299,6 +2434,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-builditem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildlist': {
@@ -2326,6 +2462,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildlist--full': {
@@ -2339,6 +2476,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildlist--has-next-page': {
@@ -2352,6 +2490,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildlist--empty': {
@@ -2365,6 +2504,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildlist--error': {
@@ -2378,6 +2518,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight': {
@@ -2415,6 +2556,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--in-progress': {
@@ -2428,6 +2570,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--in-progress-rep-only': {
@@ -2441,6 +2584,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--in-progress-rep-only-limited': {
@@ -2454,6 +2598,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--pending': {
@@ -2467,6 +2612,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--passed-limited': {
@@ -2480,6 +2626,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--passed': {
@@ -2493,6 +2640,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--denied': {
@@ -2506,6 +2654,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--accepted': {
@@ -2519,6 +2668,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--timed-out': {
@@ -2532,6 +2682,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--timed-out-rep-only': {
@@ -2545,6 +2696,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--timed-out-rep-only-limited': {
@@ -2558,6 +2710,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--build-error': {
@@ -2571,6 +2724,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--build-error-rep-only': {
@@ -2584,6 +2738,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buildstatuslight--build-error-rep-only-limited': {
@@ -2597,6 +2752,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buildstatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-button': {
@@ -2618,6 +2774,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-button',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buttonmulti': {
@@ -2639,6 +2796,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buttonmulti',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buttontoggle': {
@@ -2666,6 +2824,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buttontoggle',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buttontoggle--outline-three-buttons-small': {
@@ -2679,6 +2838,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buttontoggle',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buttontoggle--pill-w-text': {
@@ -2692,6 +2852,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buttontoggle',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buttontoggle--pill-w-image': {
@@ -2705,6 +2866,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buttontoggle',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-buttontoggle--tab': {
@@ -2718,6 +2880,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-buttontoggle',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas': {
@@ -2764,6 +2927,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--default-w-label-link': {
@@ -2777,6 +2941,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--pure-w-label-link-at-top': {
@@ -2790,6 +2955,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--pure-w-label-link-not-at-top': {
@@ -2803,6 +2969,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--default-w-label-link-baseline-tooltip': {
@@ -2816,6 +2983,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--default-w-figure-link': {
@@ -2829,6 +2997,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--default-w-diff-figure': {
@@ -2842,6 +3011,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--default-w-diff-figure-horizontally-larger': {
@@ -2855,6 +3025,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--default-w-diff-figure-vertically-larger': {
@@ -2868,6 +3039,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--default-w-diff-figure-larger-both-ways': {
@@ -2881,6 +3053,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--loading': {
@@ -2894,6 +3067,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--in-progress': {
@@ -2907,6 +3081,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--snapshot-error': {
@@ -2920,6 +3095,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--ignored-regions-hidden': {
@@ -2933,6 +3109,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--ignored-regions-shown': {
@@ -2946,6 +3123,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--ignored-regions-shown-w-diff-figure': {
@@ -2959,6 +3137,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--interactive-url-w-interactive-mode': {
@@ -2972,6 +3151,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--interactive-url-w-interactive-mode-bad-url': {
@@ -2985,6 +3165,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--interactive-url-w-interactive-mode-bad-spec': {
@@ -2998,6 +3179,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--interactive-url-wo-interactive-mode': {
@@ -3011,6 +3193,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--pure-interactive-url-connection-problem': {
@@ -3024,6 +3207,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--tall-thin-image': {
@@ -3037,6 +3221,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--tall-thin-image-w-ignored-regions': {
@@ -3050,6 +3235,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-canvas--wide-short-image': {
@@ -3063,6 +3249,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-canvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal': {
@@ -3098,6 +3285,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--small-loading': {
@@ -3111,6 +3299,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--small-default': {
@@ -3124,6 +3313,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--small-positive': {
@@ -3137,6 +3327,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--small-negative': {
@@ -3150,6 +3341,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--small-warning': {
@@ -3163,6 +3355,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--small-neutral': {
@@ -3176,6 +3369,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--small-selectable': {
@@ -3189,6 +3383,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--large-loading': {
@@ -3202,6 +3397,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--large-default': {
@@ -3215,6 +3411,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--large-link': {
@@ -3228,6 +3425,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--large-singular': {
@@ -3241,6 +3439,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cardinal--large-plural': {
@@ -3254,6 +3453,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cardinal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-checkbox': {
@@ -3280,6 +3480,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-checkbox',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-checkbox--unchecked': {
@@ -3293,6 +3494,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-checkbox',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-checkbox--checked': {
@@ -3306,6 +3508,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-checkbox',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-checkbox--primary': {
@@ -3319,6 +3522,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-checkbox',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cieyebrow': {
@@ -3346,6 +3550,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cieyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cieyebrow--github': {
@@ -3359,6 +3564,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cieyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cieyebrow--bitbucket': {
@@ -3372,6 +3578,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cieyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cieyebrow--gitlab': {
@@ -3385,6 +3592,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cieyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-cieyebrow--dismissed': {
@@ -3398,6 +3606,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-cieyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-clipboard': {
@@ -3422,6 +3631,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-clipboard',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-clipboard--with-feedback': {
@@ -3435,6 +3645,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-clipboard',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-clipboardcode': {
@@ -3459,6 +3670,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-clipboardcode',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-clipboardcode--wrapped': {
@@ -3472,6 +3684,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-clipboardcode',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-clipboardicon': {
@@ -3493,6 +3706,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-clipboardicon',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-clipboardinput': {
@@ -3517,6 +3731,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-clipboardinput',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-clipboardinput--clipped': {
@@ -3530,6 +3745,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-clipboardinput',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment': {
@@ -3581,6 +3797,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-addcomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-addcomment--initial-value': {
@@ -3594,6 +3811,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-addcomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-addcomment--with-form-open': {
@@ -3607,6 +3825,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-addcomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-addcomment--with-form-open-loading': {
@@ -3620,6 +3839,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-addcomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-addcomment--form-pure-with-value': {
@@ -3633,6 +3853,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-addcomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-addcomment--form-pure-with-value-loading': {
@@ -3646,6 +3867,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-addcomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-addcomment--form-pure-with-error': {
@@ -3659,6 +3881,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-addcomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-comment': {
@@ -3685,6 +3908,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-comment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-comment--with-link': {
@@ -3698,6 +3922,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-comment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-comment--collapsed': {
@@ -3711,6 +3936,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-comment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-comment--collapsed-truncated': {
@@ -3724,6 +3950,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-comment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentdate': {
@@ -3748,6 +3975,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentdate',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentdate--with-build': {
@@ -3761,6 +3989,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentdate',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentformmanager': {
@@ -3786,6 +4015,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentformmanager',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentformmanager--pure-form-visible': {
@@ -3799,6 +4029,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentformmanager',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentformmanager--pure-form-not-visible': {
@@ -3812,6 +4043,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentformmanager',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentheading': {
@@ -3833,6 +4065,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentheading',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentlist': {
@@ -3857,6 +4090,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentlist--cannot-comment': {
@@ -3870,6 +4104,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commenttextarea': {
@@ -3894,6 +4129,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commenttextarea',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commenttextarea--with-value': {
@@ -3907,6 +4143,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commenttextarea',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentthread': {
@@ -3932,6 +4169,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentthread--pure-expanded': {
@@ -3945,6 +4183,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-commentthread--pure-expanded-w-list': {
@@ -3958,6 +4197,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-commentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-deletecomment': {
@@ -3983,6 +4223,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-deletecomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-deletecomment--can-delete-with-children': {
@@ -3996,6 +4237,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-deletecomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-deletecomment--cannot-delete': {
@@ -4009,6 +4251,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-deletecomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread': {
@@ -4045,6 +4288,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--active': {
@@ -4058,6 +4302,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--active-non-owner': {
@@ -4071,6 +4316,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--resolved-logged-out': {
@@ -4084,6 +4330,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--resolved': {
@@ -4097,6 +4344,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--header-not-commentable': {
@@ -4110,6 +4358,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--header-resolved-owner': {
@@ -4123,6 +4372,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--header-resolved-non-owner': {
@@ -4136,6 +4386,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--header-resolved-logged-out': {
@@ -4149,6 +4400,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--header-active-owner': {
@@ -4162,6 +4414,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--header-active-non-owner': {
@@ -4175,6 +4428,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--collapsed': {
@@ -4188,6 +4442,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--collapsed-mutating': {
@@ -4201,6 +4456,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-inlinecommentthread--collapsed-mutating-logged-out': {
@@ -4214,6 +4470,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-inlinecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-replytocomment': {
@@ -4241,6 +4498,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-replytocomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-replytocomment--initial-value': {
@@ -4254,6 +4512,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-replytocomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-replytocomment--base-with-form-open': {
@@ -4267,6 +4526,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-replytocomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-replytocomment--form-pure-with-value': {
@@ -4280,6 +4540,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-replytocomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-replytocomment--form-pure-with-error': {
@@ -4293,6 +4554,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-replytocomment',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-resolvecommentthreadbutton': {
@@ -4317,6 +4579,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-resolvecommentthreadbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-resolvecommentthreadbutton--with-text': {
@@ -4330,6 +4593,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-resolvecommentthreadbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-undoresolvecommentthreadbutton': {
@@ -4357,6 +4621,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-undoresolvecommentthreadbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-undoresolvecommentthreadbutton--can-undo-loading-large': {
@@ -4370,6 +4635,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-undoresolvecommentthreadbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-undoresolvecommentthreadbutton--cannot-undo-large': {
@@ -4383,6 +4649,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-undoresolvecommentthreadbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-undoresolvecommentthreadbutton--can-undo-small': {
@@ -4396,6 +4663,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-undoresolvecommentthreadbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-comment-undoresolvecommentthreadbutton--cannot-undo-small': {
@@ -4409,6 +4677,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-comment-undoresolvecommentthreadbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentbranchlist': {
@@ -4433,6 +4702,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentbranchlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentbranchlist--feature': {
@@ -4446,6 +4716,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentbranchlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentbuildlist': {
@@ -4470,6 +4741,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentbuildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentbuildlist--historical': {
@@ -4483,6 +4755,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentbuildlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentbuildspicker': {
@@ -4509,6 +4782,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentbuildspicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentbuildspicker--interactive': {
@@ -4522,6 +4796,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentbuildspicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentbuildspicker--feature-selected': {
@@ -4535,6 +4810,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentbuildspicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentbuildspicker--hide-branches': {
@@ -4548,6 +4824,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentbuildspicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem': {
@@ -4579,6 +4856,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem--various-image-sizes': {
@@ -4592,6 +4870,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem--loading': {
@@ -4605,6 +4884,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem--in-progress': {
@@ -4618,6 +4898,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem--errored': {
@@ -4631,6 +4912,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem--no-capture': {
@@ -4644,6 +4926,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem--first-run-using-baseline-images': {
@@ -4657,6 +4940,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem--unchanged-using-baseline-images': {
@@ -4670,6 +4954,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentitem--unchanged-not-using-baseline-images': {
@@ -4683,6 +4968,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentlist': {
@@ -4708,6 +4994,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentlist--full': {
@@ -4721,6 +5008,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentlist--empty': {
@@ -4734,6 +5022,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage': {
@@ -4766,6 +5055,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--various-image-sizes': {
@@ -4779,6 +5069,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--in-progress': {
@@ -4792,6 +5083,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--with-error': {
@@ -4805,6 +5097,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--first-run-using-baseline-images': {
@@ -4818,6 +5111,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--unchanged-using-baseline-images': {
@@ -4831,6 +5125,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--unchanged-not-using-baseline-images': {
@@ -4844,6 +5139,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--no-capture': {
@@ -4857,6 +5153,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--image': {
@@ -4870,6 +5167,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-componentrepresentationimage--long-name': {
@@ -4883,6 +5181,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-componentrepresentationimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-creditcardform': {
@@ -4911,6 +5210,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-creditcardform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-creditcardform--default-billing-fails': {
@@ -4924,6 +5224,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-creditcardform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-creditcardform--pure-submitting': {
@@ -4937,6 +5238,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-creditcardform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-creditcardform--pure-errored': {
@@ -4950,6 +5252,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-creditcardform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-creditcardform--with-billing-email': {
@@ -4963,6 +5266,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-creditcardform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-creditcardform--custom-label-and-cta': {
@@ -4976,6 +5280,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-creditcardform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-dateformatter': {
@@ -4997,6 +5302,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-dateformatter',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage': {
@@ -5034,6 +5340,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--loading': {
@@ -5047,6 +5354,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-diff': {
@@ -5060,6 +5368,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-strobe-diff': {
@@ -5073,6 +5382,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-focus-diff': {
@@ -5086,6 +5396,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-focus-strobe-diff': {
@@ -5099,6 +5410,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-bigger-diff': {
@@ -5112,6 +5424,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-horizontally-bigger-diff': {
@@ -5125,6 +5438,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-vertically-bigger-diff': {
@@ -5138,6 +5452,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--responsive': {
@@ -5151,6 +5466,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--responsive-centered': {
@@ -5164,6 +5480,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-scaled-diff': {
@@ -5177,6 +5494,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-scaled-overflow-diff': {
@@ -5190,6 +5508,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-link': {
@@ -5203,6 +5522,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-diffimage--with-link-wrapper': {
@@ -5216,6 +5536,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-diffimage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-difftoggles': {
@@ -5243,6 +5564,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-difftoggles',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-difftoggles--diff': {
@@ -5256,6 +5578,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-difftoggles',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-difftoggles--diff-strobe': {
@@ -5269,6 +5592,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-difftoggles',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-difftoggles--diff-focus': {
@@ -5282,6 +5606,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-difftoggles',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-difftoggles--diff-focus-strobe': {
@@ -5295,6 +5620,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-difftoggles',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-emptymessage': {
@@ -5321,6 +5647,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-emptymessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-emptymessage--default': {
@@ -5334,6 +5661,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-emptymessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-emptymessage--custom': {
@@ -5347,6 +5675,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-emptymessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-emptymessage--custom-noun': {
@@ -5360,6 +5689,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-emptymessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-eyebrow': {
@@ -5386,6 +5716,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-eyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-eyebrow--positive': {
@@ -5399,6 +5730,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-eyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-eyebrow--warning': {
@@ -5412,6 +5744,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-eyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-eyebrow--negative': {
@@ -5425,6 +5758,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-eyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-eyebrowonboarding': {
@@ -5446,6 +5780,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-eyebrowonboarding',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-flexcenter': {
@@ -5471,6 +5806,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-flexcenter',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-flexcenter--22': {
@@ -5484,6 +5820,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-flexcenter',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-flexcenter--23': {
@@ -5497,6 +5834,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-flexcenter',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-form': {
@@ -5518,6 +5856,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-form',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header': {
@@ -5554,6 +5893,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-app': {
@@ -5567,6 +5907,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-app-saml-user': {
@@ -5580,6 +5921,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-app-shared-with-you': {
@@ -5593,6 +5935,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-app-shared-with-admin': {
@@ -5606,6 +5949,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-app-shared-with-you-open-source': {
@@ -5619,6 +5963,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-linked-account': {
@@ -5632,6 +5977,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-personal-account': {
@@ -5645,6 +5991,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-shared-with-you-app-owner': {
@@ -5658,6 +6005,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-no-app-owner-or-app': {
@@ -5671,6 +6019,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--logged-in-no-app-owner-onboarding': {
@@ -5684,6 +6033,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--not-logged-in-can-login': {
@@ -5697,6 +6047,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--not-logged-in-can-not-login': {
@@ -5710,6 +6061,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-header--long-name': {
@@ -5723,6 +6075,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-header',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-heading': {
@@ -5748,6 +6101,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-heading',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-heading--default': {
@@ -5761,6 +6115,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-heading',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-heading--no-subtitle': {
@@ -5774,6 +6129,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-heading',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-ignoredregions': {
@@ -5795,6 +6151,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-ignoredregions',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile': {
@@ -5827,6 +6184,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--default': {
@@ -5840,6 +6198,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--long-text': {
@@ -5853,6 +6212,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--no-label': {
@@ -5866,6 +6226,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--no-description': {
@@ -5879,6 +6240,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--as-link': {
@@ -5892,6 +6254,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--as-button': {
@@ -5905,6 +6268,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--with-image': {
@@ -5918,6 +6282,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--with-background': {
@@ -5931,6 +6296,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-imagetile--with-border': {
@@ -5944,6 +6310,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-imagetile',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-interstitial': {
@@ -5970,6 +6337,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-interstitial',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-interstitial--bar': {
@@ -5983,6 +6351,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-interstitial',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-interstitial--ring': {
@@ -5996,6 +6365,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-interstitial',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-interstitial--icon': {
@@ -6009,6 +6379,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-interstitial',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-inviteeyebrow': {
@@ -6033,6 +6404,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-inviteeyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-inviteeyebrow--linked': {
@@ -6046,6 +6418,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-inviteeyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isactiveelement': {
@@ -6070,6 +6443,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isactiveelement',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isactiveelement--not-active': {
@@ -6083,6 +6457,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isactiveelement',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe': {
@@ -6114,6 +6489,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe--hidden': {
@@ -6127,6 +6503,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe--storybook-34': {
@@ -6140,6 +6517,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe--storybook-40': {
@@ -6153,6 +6531,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe--storybook-5': {
@@ -6166,6 +6545,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe--storybook-5-legacy-package': {
@@ -6179,6 +6559,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe--storybook-5-error': {
@@ -6192,6 +6573,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe--storybook-6': {
@@ -6205,6 +6587,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-isolatorframe--invalid-spec': {
@@ -6218,6 +6601,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-isolatorframe',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-linklist': {
@@ -6246,6 +6630,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-linklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-linklist--loading': {
@@ -6259,6 +6644,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-linklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-linklist--full': {
@@ -6272,6 +6658,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-linklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-linklist--paginated': {
@@ -6285,6 +6672,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-linklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-linklist--empty-w-custom-noun': {
@@ -6298,6 +6686,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-linklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-linklist--empty': {
@@ -6311,6 +6700,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-linklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-linktabs': {
@@ -6332,6 +6722,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-linktabs',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-listheading': {
@@ -6353,6 +6744,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-listheading',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview': {
@@ -6387,6 +6779,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--storybook-34-preloading': {
@@ -6400,6 +6793,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--storybook-40-preloading': {
@@ -6413,6 +6807,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--storybook-5-visible': {
@@ -6426,6 +6821,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--storybook-5-error-visible': {
@@ -6439,6 +6835,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--storybook-34-visible': {
@@ -6452,6 +6849,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--storybook-40-visible': {
@@ -6465,6 +6863,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--pure-downloading': {
@@ -6478,6 +6877,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--pure-connecting': {
@@ -6491,6 +6891,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--pure-connected': {
@@ -6504,6 +6905,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--staging': {
@@ -6517,6 +6919,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-liveview--production': {
@@ -6530,6 +6933,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-liveview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-mailinglistsubscribeform': {
@@ -6554,6 +6958,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-mailinglistsubscribeform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-mailinglistsubscribeform--opt-in': {
@@ -6567,6 +6972,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-mailinglistsubscribeform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-newappform': {
@@ -6595,6 +7001,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-newappform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-newappform--default-personal-creating': {
@@ -6608,6 +7015,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-newappform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-newappform--default-personal-unlinked': {
@@ -6621,6 +7029,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-newappform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-newappform--default-organization': {
@@ -6634,6 +7043,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-newappform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-newappform--default-github-failure': {
@@ -6647,6 +7057,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-newappform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-newappform--compact-personal-unlinked': {
@@ -6660,6 +7071,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-newappform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-notifications': {
@@ -6694,6 +7106,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-notifications-notification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-notifications-notifications': {
@@ -6715,6 +7128,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-notifications-notifications',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-notifications-reviewsyncfailednotification': {
@@ -6736,6 +7150,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-notifications-reviewsyncfailednotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-notifications-syncingnotification': {
@@ -6757,6 +7172,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-components-notifications-syncingnotification',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pageheader': {
@@ -6782,6 +7198,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pageheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pageheader--loading': {
@@ -6795,6 +7212,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pageheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pageheader--long': {
@@ -6808,6 +7226,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pageheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pagetitlebar': {
@@ -6833,6 +7252,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pagetitlebar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pagetitlebar--with-actions': {
@@ -6846,6 +7266,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pagetitlebar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pagetitlebar--with-children-and-actions': {
@@ -6859,6 +7280,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pagetitlebar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pagination': {
@@ -6880,6 +7302,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pagination',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pagination--next': {
@@ -6893,6 +7316,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pagination',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectcta': {
@@ -6914,6 +7338,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectcta',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectmodal': {
@@ -6944,6 +7369,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectmodal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectmodal--pre-subscribed': {
@@ -6957,6 +7383,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectmodal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectmodal--exceeded-threshold': {
@@ -6970,6 +7397,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectmodal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectmodal--free': {
@@ -6983,6 +7411,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectmodal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectmodal--in-trial': {
@@ -6996,6 +7425,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectmodal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectmodal--trial-ending': {
@@ -7009,6 +7439,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectmodal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectmodal--payment-failed': {
@@ -7022,6 +7453,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectmodal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymentcollectmodal--payment-required': {
@@ -7035,6 +7467,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymentcollectmodal',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymenteyebrow': {
@@ -7061,6 +7494,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymenteyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymenteyebrow--payment-failed': {
@@ -7074,6 +7508,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymenteyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymenteyebrow--payment-required': {
@@ -7087,6 +7522,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymenteyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-paymenteyebrow--exceeded-threshold': {
@@ -7100,6 +7536,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-paymenteyebrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-progressbar': {
@@ -7129,6 +7566,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-progressbar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-progressbar--short': {
@@ -7142,6 +7580,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-progressbar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-progressbar--inprogress-25': {
@@ -7155,6 +7594,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-progressbar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-progressbar--inprogress-50': {
@@ -7168,6 +7608,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-progressbar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-progressbar--inprogress-tooltip': {
@@ -7181,6 +7622,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-progressbar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-progressbar--reviewing-partial': {
@@ -7194,6 +7636,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-progressbar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-progressbar--reviewing-complete': {
@@ -7207,6 +7650,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-progressbar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectitem': {
@@ -7236,6 +7680,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectitem--loading': {
@@ -7249,6 +7694,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectitem--app-screen-loading-see-1196': {
@@ -7262,6 +7708,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectitem--default': {
@@ -7275,6 +7722,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectitem--default-no-account-name': {
@@ -7288,6 +7736,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectitem--default-few-users': {
@@ -7301,6 +7750,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectitem--in-setup': {
@@ -7314,6 +7764,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectlist': {
@@ -7339,6 +7790,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectlist--full': {
@@ -7352,6 +7804,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-projectlist--full-no-account-name': {
@@ -7365,6 +7818,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-projectlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestitem': {
@@ -7395,6 +7849,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestitem--loading': {
@@ -7408,6 +7863,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestitem--unbuilt': {
@@ -7421,6 +7877,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestitem--building': {
@@ -7434,6 +7891,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestitem--passed': {
@@ -7447,6 +7905,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestitem--pending': {
@@ -7460,6 +7919,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestitem--errored-diffs': {
@@ -7473,6 +7933,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestitem--errored-build-closed': {
@@ -7486,6 +7947,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestlist': {
@@ -7514,6 +7976,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestlist--full': {
@@ -7527,6 +7990,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestlist--full-ui-review-disabled': {
@@ -7540,6 +8004,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestlist--empty': {
@@ -7553,6 +8018,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestlist--empty-branch': {
@@ -7566,6 +8032,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequestlist--error': {
@@ -7579,6 +8046,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequestlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight': {
@@ -7622,6 +8090,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--passed': {
@@ -7635,6 +8104,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--no-builds': {
@@ -7648,6 +8118,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--checklist': {
@@ -7661,6 +8132,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--errored-diffs': {
@@ -7674,6 +8146,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--errored-diffs-and-checklist': {
@@ -7687,6 +8160,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--build-in-progress': {
@@ -7700,6 +8174,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--comparison-in-progress': {
@@ -7713,6 +8188,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--build-error': {
@@ -7726,6 +8202,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--comparison-error': {
@@ -7739,6 +8216,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--paused': {
@@ -7752,6 +8230,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--payment-required': {
@@ -7765,6 +8244,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--publish-only': {
@@ -7778,6 +8258,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--publish-only-build-in-progress': {
@@ -7791,6 +8272,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--publish-only-build-error': {
@@ -7804,6 +8286,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--ui-review-disabled': {
@@ -7817,6 +8300,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--ui-review-disabled-build-in-progress': {
@@ -7830,6 +8314,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--ui-review-disabled-build-error': {
@@ -7843,6 +8328,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--ui-review-disabled-publish-only': {
@@ -7856,6 +8342,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--ui-review-disabled-paused': {
@@ -7869,6 +8356,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-pullrequeststatuslight--tiny': {
@@ -7882,6 +8370,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-pullrequeststatuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-questiontooltip': {
@@ -7906,6 +8395,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-questiontooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-questiontooltip--start-open': {
@@ -7919,6 +8409,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-questiontooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-radar': {
@@ -7940,6 +8431,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-radar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-radio': {
@@ -7966,6 +8458,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-radio',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-radio--unchecked': {
@@ -7979,6 +8472,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-radio',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-radio--checked': {
@@ -7992,6 +8486,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-radio',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-radio--primary': {
@@ -8005,6 +8500,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-radio',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-rawspeclist': {
@@ -8030,6 +8526,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-rawspeclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-rawspeclist--default': {
@@ -8043,6 +8540,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-rawspeclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-rawspeclist--empty': {
@@ -8056,6 +8554,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-rawspeclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositoryitem': {
@@ -8077,6 +8576,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositoryitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorylist': {
@@ -8103,6 +8603,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorylist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorylist--personal-bitbucket': {
@@ -8116,6 +8617,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorylist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorylist--empty': {
@@ -8129,6 +8631,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorylist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorylist--empty-bitbucket': {
@@ -8142,6 +8645,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorylist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositoryowneritem': {
@@ -8166,6 +8670,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositoryowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositoryowneritem--org': {
@@ -8179,6 +8684,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositoryowneritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositoryownerlist': {
@@ -8203,6 +8709,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositoryownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositoryownerlist--org-selected': {
@@ -8216,6 +8723,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositoryownerlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorypicker': {
@@ -8243,6 +8751,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorypicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorypicker--personal': {
@@ -8256,6 +8765,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorypicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorypicker--personal-w-no-apps': {
@@ -8269,6 +8779,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorypicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorypicker--organization': {
@@ -8282,6 +8793,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorypicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-repositorypicker--organization-w-no-apps': {
@@ -8295,6 +8807,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-repositorypicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-scrollintoview': {
@@ -8319,6 +8832,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-scrollintoview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-scrollintoview--w-out-scroll-into-view': {
@@ -8332,6 +8846,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-scrollintoview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-section': {
@@ -8360,6 +8875,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-section',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-section--with-children': {
@@ -8373,6 +8889,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-section',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-section--with-callout': {
@@ -8386,6 +8903,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-section',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-section--multiple-sections-nochrome': {
@@ -8399,6 +8917,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-section',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-section--blank': {
@@ -8412,6 +8931,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-section',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-section--loading': {
@@ -8425,6 +8945,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-section',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-sharetooltipmessage': {
@@ -8449,6 +8970,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-sharetooltipmessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-sharetooltipmessage--linked': {
@@ -8462,6 +8984,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-sharetooltipmessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-sidebarnav': {
@@ -8488,6 +9011,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-sidebarnav',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-sidebarnav--account': {
@@ -8501,6 +9025,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-sidebarnav',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-sidebarnav--project': {
@@ -8514,6 +9039,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-sidebarnav',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-sidebarnav--project-setup': {
@@ -8527,6 +9053,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-sidebarnav',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshoterror': {
@@ -8551,6 +9078,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshoterror',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshoterror--with-metadata': {
@@ -8564,6 +9092,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshoterror',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshoterrormessage': {
@@ -8591,6 +9120,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshoterrormessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshoterrormessage--navigation-timeout': {
@@ -8604,6 +9134,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshoterrormessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshoterrormessage--no-js': {
@@ -8617,6 +9148,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshoterrormessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshoterrormessage--failed-js': {
@@ -8630,6 +9162,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshoterrormessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshoterrormessage--story-missing': {
@@ -8643,6 +9176,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshoterrormessage',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshotsizechanged': {
@@ -8669,6 +9203,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshotsizechanged',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshotsizechanged--width-decreased': {
@@ -8682,6 +9217,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshotsizechanged',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshotsizechanged--height-increased': {
@@ -8695,6 +9231,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshotsizechanged',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-snapshotsizechanged--height-decreased': {
@@ -8708,6 +9245,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-snapshotsizechanged',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specitem': {
@@ -8737,6 +9275,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specitem--loading': {
@@ -8750,6 +9289,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specitem--needs-review': {
@@ -8763,6 +9303,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specitem--default': {
@@ -8776,6 +9317,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specitem--long-name': {
@@ -8789,6 +9331,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specitem--selected': {
@@ -8802,6 +9345,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specitem--w-ignored-selectors': {
@@ -8815,6 +9359,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-speclist': {
@@ -8840,6 +9385,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-speclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-speclist--full': {
@@ -8853,6 +9399,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-speclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-speclist--empty': {
@@ -8866,6 +9413,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-speclist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specname': {
@@ -8892,6 +9440,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specname',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specname--basic-is-link': {
@@ -8905,6 +9454,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specname',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specname--unnamed': {
@@ -8918,6 +9468,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specname',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-specname--with-build-number': {
@@ -8931,6 +9482,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-specname',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-startchat': {
@@ -8952,6 +9504,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-startchat',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-startchat--custom': {
@@ -8965,6 +9518,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-startchat',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight': {
@@ -8999,6 +9553,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--positive': {
@@ -9012,6 +9567,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--negative': {
@@ -9025,6 +9581,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--warning': {
@@ -9038,6 +9595,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--loading': {
@@ -9051,6 +9609,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--disabled': {
@@ -9064,6 +9623,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--progress': {
@@ -9077,6 +9637,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--error': {
@@ -9090,6 +9651,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--tiny': {
@@ -9103,6 +9665,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--small': {
@@ -9116,6 +9679,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--medium': {
@@ -9129,6 +9693,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statuslight--large': {
@@ -9142,6 +9707,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statuslight',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statustooltip': {
@@ -9168,6 +9734,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statustooltip--with-message': {
@@ -9181,6 +9748,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statustooltip--single-link': {
@@ -9194,6 +9762,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-statustooltip--multiple-links': {
@@ -9207,6 +9776,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-statustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-subheader': {
@@ -9233,6 +9803,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-subheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-subheader--loading': {
@@ -9246,6 +9817,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-subheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-subheader--full': {
@@ -9259,6 +9831,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-subheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-subheader--left': {
@@ -9272,6 +9845,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-subheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-table': {
@@ -9300,6 +9874,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-table',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-table--loading': {
@@ -9313,6 +9888,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-table',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-table--empty': {
@@ -9326,6 +9902,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-table',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-table--full': {
@@ -9339,6 +9916,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-table',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-table--with-drawers': {
@@ -9352,6 +9930,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-table',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-table--without-headings': {
@@ -9365,6 +9944,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-table',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-tabledrawer': {
@@ -9386,6 +9966,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-tabledrawer',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-tooltipignore': {
@@ -9407,6 +9988,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-tooltipignore',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-useritem': {
@@ -9433,6 +10015,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-useritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-useritem--loading': {
@@ -9446,6 +10029,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-useritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-useritem--no-link': {
@@ -9459,6 +10043,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-useritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-useritem--link': {
@@ -9472,6 +10057,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-useritem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-userlist': {
@@ -9500,6 +10086,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-userlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-userlist--loading': {
@@ -9513,6 +10100,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-userlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-userlist--full-w-links': {
@@ -9526,6 +10114,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-userlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-userlist--full-no-links': {
@@ -9539,6 +10128,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-userlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-userlist--paginated-no-links': {
@@ -9552,6 +10142,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-userlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-userlist--empty': {
@@ -9565,6 +10156,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-userlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-video': {
@@ -9586,6 +10178,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-video',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-warning': {
@@ -9614,6 +10207,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-warning',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-warning--with-icon': {
@@ -9627,6 +10221,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-warning',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-warning--with-action': {
@@ -9640,6 +10235,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-warning',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-warning--with-icon-action': {
@@ -9653,6 +10249,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-warning',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-warning--stacked-multiple-items': {
@@ -9666,6 +10263,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-warning',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-warning--stacked-single-item': {
@@ -9679,6 +10277,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-warning',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-components-wobbler': {
@@ -9700,6 +10299,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-components-wobbler',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-containers': {
@@ -9732,6 +10332,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-containers-appbuildspaginated',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-containers-appbuildspaginated--has-next-page': {
@@ -9745,6 +10346,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-containers-appbuildspaginated',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-containers-appbuildspaginated--error': {
@@ -9758,6 +10360,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-containers-appbuildspaginated',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-containers-componentbuildspicker': {
@@ -9783,6 +10386,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-containers-componentbuildspicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-containers-componentbuildspicker--app': {
@@ -9796,6 +10400,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-containers-componentbuildspicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-containers-componentbuildspicker--component': {
@@ -9809,6 +10414,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-containers-componentbuildspicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts': {
@@ -9854,6 +10460,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-account',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-account--projects': {
@@ -9867,6 +10474,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-account',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-account--projects-personal-account': {
@@ -9880,6 +10488,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-account',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-account--projects-personal-account-saml': {
@@ -9893,6 +10502,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-account',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-account--projects-shared-with-you': {
@@ -9906,6 +10516,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-account',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-account--projects-saml-account-owner': {
@@ -9919,6 +10530,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-account',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-account--projects-saml-account-not-owner': {
@@ -9932,6 +10544,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-account',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-account--billing': {
@@ -9945,6 +10558,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-account',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app': {
@@ -9978,6 +10592,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--builds': {
@@ -9991,6 +10606,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--builds-shared-with-you': {
@@ -10004,6 +10620,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--setup': {
@@ -10017,6 +10634,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--builds-with-branch': {
@@ -10030,6 +10648,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--components': {
@@ -10043,6 +10662,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--no-ci': {
@@ -10056,6 +10676,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--no-ci-100-builds': {
@@ -10069,6 +10690,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--not-logged-in': {
@@ -10082,6 +10704,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--admin': {
@@ -10095,6 +10718,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-app--gerrit': {
@@ -10108,6 +10732,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-app',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-interstitial': {
@@ -10129,6 +10754,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-interstitial',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-marketing': {
@@ -10155,6 +10781,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-marketing',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-marketing--logged-in': {
@@ -10168,6 +10795,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-marketing',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-marketing--maintenance-mode': {
@@ -10181,6 +10809,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-marketing',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-marketing--dark-hero': {
@@ -10194,6 +10823,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-marketing',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-onboarding': {
@@ -10220,6 +10850,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-onboarding',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-onboarding--logged-out': {
@@ -10233,6 +10864,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-onboarding',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-onboarding--logged-in': {
@@ -10246,6 +10878,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-onboarding',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-onboarding--logged-in-with-app': {
@@ -10259,6 +10892,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-onboarding',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page': {
@@ -10290,6 +10924,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page--logged-in-has-app-owner': {
@@ -10303,6 +10938,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page--logged-in-has-app-owner-personal': {
@@ -10316,6 +10952,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page--logged-in-has-exceeded-threshold': {
@@ -10329,6 +10966,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page--logged-in-has-app': {
@@ -10342,6 +10980,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page--logged-in-has-app-shared-with-you': {
@@ -10355,6 +10994,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page--not-logged-in': {
@@ -10368,6 +11008,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page--with-eyebrow': {
@@ -10381,6 +11022,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-page--tall-eyebrow': {
@@ -10394,6 +11036,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-page',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-setup': {
@@ -10422,6 +11065,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-setup',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-setup--loading-onboarding': {
@@ -10435,6 +11079,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-setup',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-setup--basic': {
@@ -10448,6 +11093,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-setup',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-setup--basic-onboarding': {
@@ -10461,6 +11107,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-setup',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-setup--basic-read-only': {
@@ -10474,6 +11121,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-setup',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-layouts-setup--basic-admin': {
@@ -10487,6 +11135,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-layouts-setup',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens': {
@@ -10554,6 +11203,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--personal': {
@@ -10567,6 +11217,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--personal-modal-open': {
@@ -10580,6 +11231,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--personal-saml-user': {
@@ -10593,6 +11245,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--personal-saml-user-modal-open': {
@@ -10606,6 +11259,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--organization': {
@@ -10619,6 +11273,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--organization-modal-open': {
@@ -10632,6 +11287,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--saml-account': {
@@ -10645,6 +11301,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--saml-account-modal-open': {
@@ -10658,6 +11315,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--shared-with-you': {
@@ -10671,6 +11329,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--no-projects-personal-account': {
@@ -10684,6 +11343,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--personal-account-creating-first-app': {
@@ -10697,6 +11357,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--no-projects-shared-with-you-app-owner': {
@@ -10710,6 +11371,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--no-projects-linked-account': {
@@ -10723,6 +11385,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-appsscreen--no-projects-saml-account': {
@@ -10736,6 +11399,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-appsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen': {
@@ -10783,6 +11447,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--pre-subscribed': {
@@ -10796,6 +11461,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--free': {
@@ -10809,6 +11475,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--free-with-bonus': {
@@ -10822,6 +11489,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--free-with-bonus-in-past': {
@@ -10835,6 +11503,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--free-over-limit': {
@@ -10848,6 +11517,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--paid-plan-over-limit': {
@@ -10861,6 +11531,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--trial': {
@@ -10874,6 +11545,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--trial-ending': {
@@ -10887,6 +11559,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed': {
@@ -10900,6 +11573,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-still-in-trial': {
@@ -10913,6 +11587,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-still-in-trial-over-limit': {
@@ -10926,6 +11601,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-custom-plan': {
@@ -10939,6 +11615,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-custom-plan-usage-limits': {
@@ -10952,6 +11629,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-custom-plan-usage-limits-exceeded-threshold': {
@@ -10965,6 +11643,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-open-source-plan-free': {
@@ -10978,6 +11657,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-open-source-plan-free-exceeded-threshold': {
@@ -10991,6 +11671,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-open-source-plan-paid': {
@@ -11004,6 +11685,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-invoice-failed': {
@@ -11017,6 +11699,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-payment-required': {
@@ -11030,6 +11713,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--subscribed-slow-builds-no-parallelization-saving': {
@@ -11043,6 +11727,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--pure-subscribed-change-plan-drawer-open': {
@@ -11056,6 +11741,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen--pure-subscribed-email-drawer-open': {
@@ -11069,6 +11755,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-billingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen-billingemailform': {
@@ -11094,6 +11781,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-billingscreen-billingemailform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen-billingemailform--pure-default': {
@@ -11107,6 +11795,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-billingscreen-billingemailform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen-billingemailform--submitting': {
@@ -11120,6 +11809,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-billingscreen-billingemailform',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen-invoicelist': {
@@ -11147,6 +11837,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-billingscreen-invoicelist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen-invoicelist--full-first-invoice-not-finalized': {
@@ -11160,6 +11851,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-billingscreen-invoicelist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen-invoicelist--full-payment-failed': {
@@ -11173,6 +11865,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-billingscreen-invoicelist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen-invoicelist--trial': {
@@ -11186,6 +11879,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-billingscreen-invoicelist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-billingscreen-invoicelist--free': {
@@ -11199,6 +11893,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-billingscreen-invoicelist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build': {
@@ -11245,6 +11940,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildcomponents--simple': {
@@ -11258,6 +11954,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildcomponents--passed': {
@@ -11271,6 +11968,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildcomponents--failed': {
@@ -11284,6 +11982,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildcomponents--in-progress': {
@@ -11297,6 +11996,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildheader': {
@@ -11327,6 +12027,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildheader--automatic': {
@@ -11340,6 +12041,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildheader--passed': {
@@ -11353,6 +12055,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildheader--denied': {
@@ -11366,6 +12069,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildheader--failed': {
@@ -11379,6 +12083,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildheader--errored': {
@@ -11392,6 +12097,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildheader--timed-out': {
@@ -11405,6 +12111,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildheader--in-progress': {
@@ -11418,6 +12125,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen': {
@@ -11460,6 +12168,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--unreviewed': {
@@ -11473,6 +12182,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--passed': {
@@ -11486,6 +12196,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--paused': {
@@ -11499,6 +12210,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--disabled': {
@@ -11512,6 +12224,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--denied': {
@@ -11525,6 +12238,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--component-errors': {
@@ -11538,6 +12252,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--build-error': {
@@ -11551,6 +12266,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--build-timeout': {
@@ -11564,6 +12280,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--build-in-progress': {
@@ -11577,6 +12294,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--tunnelled-build': {
@@ -11590,6 +12308,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--newer-build': {
@@ -11603,6 +12322,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--upgrade-build-with-newer-build': {
@@ -11616,6 +12336,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--upgrade-build-no-newer-build': {
@@ -11629,6 +12350,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--no-ancestor': {
@@ -11642,6 +12364,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--no-ancestor-newer-build': {
@@ -11655,6 +12378,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--multiple-ancestors': {
@@ -11668,6 +12392,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--onboarding': {
@@ -11681,6 +12406,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--onboarding-no-tests': {
@@ -11694,6 +12420,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildscreen--no-snapshots-remaining': {
@@ -11707,6 +12434,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary': {
@@ -11741,6 +12469,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary--default': {
@@ -11754,6 +12483,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary--tests-paused': {
@@ -11767,6 +12497,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary--tests-disabled': {
@@ -11780,6 +12511,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary--single-pull-request': {
@@ -11793,6 +12525,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary--multiple-pull-requests': {
@@ -11806,6 +12539,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary--build-error': {
@@ -11819,6 +12553,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary--build-timeout': {
@@ -11832,6 +12567,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-buildsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-ancestors': {
@@ -11858,6 +12594,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-ancestors',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-ancestors--none': {
@@ -11871,6 +12608,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-ancestors',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-ancestors--one': {
@@ -11884,6 +12622,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-ancestors',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-ancestors--multiple': {
@@ -11897,6 +12636,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-ancestors',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-commit': {
@@ -11921,6 +12661,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-commit',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-commit--default': {
@@ -11934,6 +12675,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-commit',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-pullrequests': {
@@ -11962,6 +12704,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-pullrequests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-pullrequests--none': {
@@ -11975,6 +12718,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-pullrequests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-pullrequests--one': {
@@ -11988,6 +12732,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-pullrequests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-pullrequests--multiple': {
@@ -12001,6 +12746,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-pullrequests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-pullrequests--gitlab': {
@@ -12014,6 +12760,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-pullrequests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-pullrequests--missing-app-installation': {
@@ -12027,6 +12774,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-pullrequests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests': {
@@ -12063,6 +12811,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--default': {
@@ -12076,6 +12825,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--currently-paused': {
@@ -12089,6 +12839,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--currently-paused-payment-required': {
@@ -12102,6 +12853,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--currently-paused-no-subscription': {
@@ -12115,6 +12867,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--currently-paused-org': {
@@ -12128,6 +12881,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--paused-in-the-past': {
@@ -12141,6 +12895,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--currently-disabled': {
@@ -12154,6 +12909,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--currently-disabled-no-savings': {
@@ -12167,6 +12923,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--currently-disabled-read-only': {
@@ -12180,6 +12937,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--disabled-in-the-past': {
@@ -12193,6 +12951,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--one-browser': {
@@ -12206,6 +12965,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--two-browsers': {
@@ -12219,6 +12979,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-buildsummary-tests--all-browsers': {
@@ -12232,6 +12993,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-build-buildsummary-tests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow': {
@@ -12269,6 +13031,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pending-single-spec': {
@@ -12282,6 +13045,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pending-multiple-stories-per-spec': {
@@ -12295,6 +13059,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pending-mixed': {
@@ -12308,6 +13073,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pending-unreviewable': {
@@ -12321,6 +13087,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pending-reviewing-build': {
@@ -12334,6 +13101,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pending-reviewing-component': {
@@ -12347,6 +13115,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pending-reviewing-spec': {
@@ -12360,6 +13129,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pending-reviewing-snapshot': {
@@ -12373,6 +13143,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pure-pending-expanded': {
@@ -12386,6 +13157,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pure-pending-unexpanded': {
@@ -12399,6 +13171,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--accepted': {
@@ -12412,6 +13185,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--denied': {
@@ -12425,6 +13199,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--reviewed-many-reviewers': {
@@ -12438,6 +13213,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-componentrow--pure-unexpanded-reviewed-many-reviewers': {
@@ -12451,6 +13227,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-componentrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-rowexpander': {
@@ -12475,6 +13252,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-rowexpander',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-rowexpander--collapsed': {
@@ -12488,6 +13266,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-rowexpander',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow': {
@@ -12525,6 +13304,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--pending-unreviewable': {
@@ -12538,6 +13318,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--pending-accepting': {
@@ -12551,6 +13332,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--pending-denying': {
@@ -12564,6 +13346,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--pending-spec-reviewing': {
@@ -12577,6 +13360,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--accepted': {
@@ -12590,6 +13374,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--accepted-undoing': {
@@ -12603,6 +13388,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--denied': {
@@ -12616,6 +13402,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--denied-undoing': {
@@ -12629,6 +13416,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--new': {
@@ -12642,6 +13430,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--failed': {
@@ -12655,6 +13444,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--in-progress': {
@@ -12668,6 +13458,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--pending-indented-1': {
@@ -12681,6 +13472,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--pending-indented-1-for-snapshot': {
@@ -12694,6 +13486,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotrow--pending-indented-2': {
@@ -12707,6 +13500,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable': {
@@ -12740,6 +13534,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--changes-single-snaphot-only': {
@@ -12753,6 +13548,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--changes-multiple-components': {
@@ -12766,6 +13562,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--changes-multiple-snapshots-per-spec': {
@@ -12779,6 +13576,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--changes-mixed': {
@@ -12792,6 +13590,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--changes-unreviewable': {
@@ -12805,6 +13604,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--changes-review-failed': {
@@ -12818,6 +13618,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--changes-review-passed': {
@@ -12831,6 +13632,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--new-stories': {
@@ -12844,6 +13646,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--new-stories-in-progress': {
@@ -12857,6 +13660,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-snapshotstable--errors': {
@@ -12870,6 +13674,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-snapshotstable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow': {
@@ -12903,6 +13708,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--pending-reviewing-component': {
@@ -12916,6 +13722,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--pending-reviewing-spec': {
@@ -12929,6 +13736,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--pending-reviewing-snapshot': {
@@ -12942,6 +13750,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--pending-single-snapshot': {
@@ -12955,6 +13764,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--pending-unreviewable': {
@@ -12968,6 +13778,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--pure-pending-expanded': {
@@ -12981,6 +13792,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--pure-pending-unexpanded': {
@@ -12994,6 +13806,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--accepted': {
@@ -13007,6 +13820,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--denied': {
@@ -13020,6 +13834,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-specrow--reviewed-many-reviewers': {
@@ -13033,6 +13848,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-specrow',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary': {
@@ -13078,6 +13894,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--no-changes': {
@@ -13091,6 +13908,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--all-accepted': {
@@ -13104,6 +13922,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--some-denied': {
@@ -13117,6 +13936,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--reviewing': {
@@ -13130,6 +13950,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--reviewing-multiple-baselines': {
@@ -13143,6 +13964,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--reviewing-paginated': {
@@ -13156,6 +13978,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--reviewing-new-stories': {
@@ -13169,6 +13992,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--reviewing-readonly': {
@@ -13182,6 +14006,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--not-reviewable': {
@@ -13195,6 +14020,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--first-build': {
@@ -13208,6 +14034,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--first-cross-browser-build': {
@@ -13221,6 +14048,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--upgrade-build': {
@@ -13234,6 +14062,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--upgraded-build': {
@@ -13247,6 +14076,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--single-component-error': {
@@ -13260,6 +14090,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--multiple-component-errors': {
@@ -13273,6 +14104,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--only-component-errors': {
@@ -13286,6 +14118,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--build-in-progress': {
@@ -13299,6 +14132,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--build-timeout': {
@@ -13312,6 +14146,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--build-error': {
@@ -13325,6 +14160,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--pure-reviewing-build': {
@@ -13338,6 +14174,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--pure-reviewing-component': {
@@ -13351,6 +14188,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-build-testsummary--pure-paginating': {
@@ -13364,6 +14202,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-build-testsummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-buildsscreen': {
@@ -13391,6 +14230,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-buildsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-buildsscreen--simple': {
@@ -13404,6 +14244,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-buildsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-buildsscreen--simple-shared-with-you': {
@@ -13417,6 +14258,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-buildsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-buildsscreen--simple-ci-explainer': {
@@ -13430,6 +14272,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-buildsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-buildsscreen--simple-branch-selected': {
@@ -13443,6 +14286,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-buildsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component': {
@@ -13491,6 +14335,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--empty': {
@@ -13504,6 +14349,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--in-progress': {
@@ -13517,6 +14363,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--in-progress-interactive': {
@@ -13530,6 +14377,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--snapshot-error': {
@@ -13543,6 +14391,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--snapshot-error-interactive': {
@@ -13556,6 +14405,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--snapshot-failed': {
@@ -13569,6 +14419,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--snapshot-did-not-capture': {
@@ -13582,6 +14433,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--pending-non-interactive': {
@@ -13595,6 +14447,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--pending-non-interactive-ignored-regions': {
@@ -13608,6 +14461,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcanvas--pending-interactive': {
@@ -13621,6 +14475,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcanvas',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments': {
@@ -13655,6 +14510,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--without-comments-comments-disabled': {
@@ -13668,6 +14524,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--without-comments-logged-out': {
@@ -13681,6 +14538,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-resolved': {
@@ -13694,6 +14552,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-resolved-logged-out': {
@@ -13707,6 +14566,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-active': {
@@ -13720,6 +14580,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-active-non-owner': {
@@ -13733,6 +14594,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-active-logged-out': {
@@ -13746,6 +14608,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-combined': {
@@ -13759,6 +14622,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-combined-comments-disabled': {
@@ -13772,6 +14636,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-combined-logged-out': {
@@ -13785,6 +14650,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcomments--with-comments-comments-disabled': {
@@ -13798,6 +14664,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread': {
@@ -13830,6 +14697,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--active-unreviewable': {
@@ -13843,6 +14711,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--active-logged-out': {
@@ -13856,6 +14725,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--resolved': {
@@ -13869,6 +14739,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--resolved-expanded': {
@@ -13882,6 +14753,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--resolved-expanded-non-owner': {
@@ -13895,6 +14767,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--resolved-unreviewable': {
@@ -13908,6 +14781,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--resolved-unreviewable-expanded': {
@@ -13921,6 +14795,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--resolved-logged-out': {
@@ -13934,6 +14809,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentcommentthread--resolved-logged-out-expanded': {
@@ -13947,6 +14823,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentcommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentheader': {
@@ -13972,6 +14849,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentheader--default': {
@@ -13985,6 +14863,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentheader--long-name': {
@@ -13998,6 +14877,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen': {
@@ -14043,6 +14923,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--in-progress': {
@@ -14056,6 +14937,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--in-progress-canvas': {
@@ -14069,6 +14951,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-not-logged-in': {
@@ -14082,6 +14965,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-not-all-snapshots-not-logged-in': {
@@ -14095,6 +14979,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default': {
@@ -14108,6 +14993,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--comments': {
@@ -14121,6 +15007,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-canvas': {
@@ -14134,6 +15021,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-not-all-snapshots': {
@@ -14147,6 +15035,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-docs': {
@@ -14160,6 +15049,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-no-docs': {
@@ -14173,6 +15063,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-explainer-eyebrow': {
@@ -14186,6 +15077,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--cross-browser-no-browser-selected': {
@@ -14199,6 +15091,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--cross-browser-browser-selected': {
@@ -14212,6 +15105,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-one-viewport-from-default': {
@@ -14225,6 +15119,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-from-snapshot': {
@@ -14238,6 +15133,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-from-build': {
@@ -14251,6 +15147,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--default-from-library': {
@@ -14264,6 +15161,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--story-selected': {
@@ -14277,6 +15175,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--story-and-viewport-selected': {
@@ -14290,6 +15189,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--story-selected-with-ignored-regions': {
@@ -14303,6 +15203,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--errored-story-snapshot': {
@@ -14316,6 +15217,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentscreen--errored-story-canvas': {
@@ -14329,6 +15231,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentsidebar': {
@@ -14354,6 +15257,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentsidebar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentsidebar--default': {
@@ -14367,6 +15271,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentsidebar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-component-componentsidebar--not-logged-in': {
@@ -14380,6 +15285,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-component-componentsidebar',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-componentsscreen': {
@@ -14415,6 +15321,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-componentsscreen-componentsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-componentsscreen-componentsscreen--default-unlinked-click-share-dropdown': {
@@ -14428,6 +15335,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-componentsscreen-componentsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-componentsscreen-componentsscreen--default-linked-click-share-dropdown': {
@@ -14441,6 +15349,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-componentsscreen-componentsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-componentsscreen-componentsscreen--default-explainer-eyebrow': {
@@ -14454,6 +15363,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-componentsscreen-componentsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-componentsscreen-componentsscreen--in-group': {
@@ -14467,6 +15377,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-componentsscreen-componentsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-error': {
@@ -14507,6 +15418,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-error-errorscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-error-errorscreen--status-code-logged-out': {
@@ -14520,6 +15432,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-error-errorscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-error-errorscreen--not-found': {
@@ -14533,6 +15446,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-error-errorscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-error-errorscreen--no-access': {
@@ -14546,6 +15460,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-error-errorscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-error-errorscreen--no-access-logged-out': {
@@ -14559,6 +15474,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-error-errorscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-error-errorscreen--error': {
@@ -14572,6 +15488,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-error-errorscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-error-noaccessscreen': {
@@ -14593,6 +15510,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-error-noaccessscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-error-notfoundscreen': {
@@ -14614,6 +15532,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-error-notfoundscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-installgithubappsuccessscreen': {
@@ -14635,6 +15554,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-installgithubappsuccessscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-installwebhookscreen': {
@@ -14660,6 +15580,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-installwebhookscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-installwebhookscreen--bitbucket': {
@@ -14673,6 +15594,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-installwebhookscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-installwebhookscreen--gitlab': {
@@ -14686,6 +15608,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-installwebhookscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-joinbetascreen': {
@@ -14707,6 +15630,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-joinbetascreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-loadingscreen': {
@@ -14728,6 +15652,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-loadingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-loginscreen': {
@@ -14755,6 +15680,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-loginscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-loginscreen--default': {
@@ -14768,6 +15694,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-loginscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-loginscreen--default-logged-in': {
@@ -14781,6 +15708,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-loginscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-loginscreen--subdomain': {
@@ -14794,6 +15722,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-loginscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-loginscreen-loginbuttons': {
@@ -14819,6 +15748,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-loginscreen-loginbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-loginscreen-loginbuttons--is-loading': {
@@ -14832,6 +15762,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-loginscreen-loginbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-loginscreen-loginbuttons--saml': {
@@ -14845,6 +15776,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-loginscreen-loginbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen': {
@@ -14887,6 +15819,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-browserpicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-browserpicker--browser-upgrade': {
@@ -14900,6 +15833,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-browserpicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-browserpicker--adding': {
@@ -14913,6 +15847,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-browserpicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-browserpicker--added': {
@@ -14926,6 +15861,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-browserpicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-browserpicker--removing': {
@@ -14939,6 +15875,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-browserpicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-browserpicker--removed': {
@@ -14952,6 +15889,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-browserpicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations': {
@@ -15033,6 +15971,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations--interactive': {
@@ -15085,6 +16024,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations--unset': {
@@ -15221,6 +16161,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations--expanded': {
@@ -15357,6 +16298,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations--filled': {
@@ -15493,6 +16435,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations--filled-overflow': {
@@ -15633,6 +16576,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations--saving': {
@@ -15769,6 +16713,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations--set': {
@@ -15905,6 +16850,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-integrations--set-overflow': {
@@ -16045,6 +16991,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-managescreen': {
@@ -16075,6 +17022,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-managescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-managescreen--unlinked-one-user': {
@@ -16088,6 +17036,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-managescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-managescreen--unlinked-one-user-no-invite-url': {
@@ -16101,6 +17050,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-managescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-managescreen--unlinked-one-user-no-invite-url-saml': {
@@ -16114,6 +17064,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-managescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-managescreen--unlinked-multiple-users': {
@@ -16127,6 +17078,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-managescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-managescreen--unlinked-cross-browser': {
@@ -16140,6 +17092,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-managescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-managescreen--linked': {
@@ -16153,6 +17106,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-managescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-managescreen--linked-refreshing': {
@@ -16166,6 +17120,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-managescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview': {
@@ -16202,6 +17157,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--enabled': {
@@ -16215,6 +17171,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--enabled-updating': {
@@ -16228,6 +17185,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--just-enabled': {
@@ -16241,6 +17199,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--enabled-exceeded-threshold': {
@@ -16254,6 +17213,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--enabled-payment-required': {
@@ -16267,6 +17227,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--disabled': {
@@ -16280,6 +17241,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--disabled-updating': {
@@ -16293,6 +17255,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--just-disabled': {
@@ -16306,6 +17269,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--just-disabled-paused': {
@@ -16319,6 +17283,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--disabled-exceeded-threshold': {
@@ -16332,6 +17297,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--disabled-exceeded-threshold-org': {
@@ -16345,6 +17311,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--disabled-payment-required': {
@@ -16358,6 +17325,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-uireview--unlinked': {
@@ -16371,6 +17339,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-uireview',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests': {
@@ -16412,6 +17381,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--enabled': {
@@ -16425,6 +17395,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--enabled-updating': {
@@ -16438,6 +17409,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--just-enabled': {
@@ -16451,6 +17423,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--just-enabled-two-browsers': {
@@ -16464,6 +17437,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--just-enabled-three-browsers': {
@@ -16477,6 +17451,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--enabled-no-snapshots': {
@@ -16490,6 +17465,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--enabled-payment-required': {
@@ -16503,6 +17479,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--disabled-has-snapshots': {
@@ -16516,6 +17493,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--disabled-updating': {
@@ -16529,6 +17507,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--disabled-no-snapshots': {
@@ -16542,6 +17521,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--disabled-no-snapshots-org': {
@@ -16555,6 +17535,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--disabled-payment-required': {
@@ -16568,6 +17549,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--capture-stack-upgrade-available': {
@@ -16581,6 +17563,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--capture-stack-upgrading': {
@@ -16594,6 +17577,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--capture-stack-just-upgraded': {
@@ -16607,6 +17591,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--capture-stack-downgrade-available': {
@@ -16620,6 +17605,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--capture-stack-downgrading': {
@@ -16633,6 +17619,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-managescreen-visualtests--capture-stack-just-downgraded': {
@@ -16646,6 +17633,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-managescreen-visualtests',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing': {
@@ -16697,6 +17685,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-articles',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-companyscreen': {
@@ -16729,6 +17718,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-companyscreen-aboutscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-companyscreen-jobsscreen': {
@@ -16750,6 +17740,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-companyscreen-jobsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen': {
@@ -16789,6 +17780,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparelayout',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparelayout--arc': {
@@ -16802,6 +17794,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparelayout',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparelayout--rect': {
@@ -16815,6 +17808,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparelayout',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparelayout--tetrisl': {
@@ -16828,6 +17822,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparelayout',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparelayout--tetriss': {
@@ -16841,6 +17836,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparelayout',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparelayout--tetrist': {
@@ -16854,6 +17850,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparelayout',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen': {
@@ -16886,6 +17883,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--jest-image-snapshot': {
@@ -16899,6 +17897,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--backstop-js': {
@@ -16912,6 +17911,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--percy': {
@@ -16925,6 +17925,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--screener': {
@@ -16938,6 +17939,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--applitools': {
@@ -16951,6 +17953,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--visual-testing': {
@@ -16964,6 +17967,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--deploy-storybook': {
@@ -16977,6 +17981,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--netlify': {
@@ -16990,6 +17995,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-comparescreen-comparescreen--vercel': {
@@ -17003,6 +18009,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-comparescreen-comparescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-cta': {
@@ -17024,6 +18031,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-cta',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-faq': {
@@ -17045,6 +18053,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-faq',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-feature': {
@@ -17069,6 +18078,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-feature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-feature--w-children': {
@@ -17082,6 +18092,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-feature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featurecallout': {
@@ -17103,6 +18114,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-featurecallout',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens': {
@@ -17142,6 +18154,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample': {
@@ -17169,6 +18182,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample--did-activate-docs': {
@@ -17182,6 +18196,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample--pure-snapshot': {
@@ -17195,6 +18210,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample--pure-snapshot-ff': {
@@ -17208,6 +18224,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample--pure-docs': {
@@ -17221,6 +18238,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-documentanimation': {
@@ -17245,6 +18263,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-documentanimation',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-documentanimation--cutoff': {
@@ -17258,6 +18277,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-documentanimation',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-documentscreenhero': {
@@ -17282,6 +18302,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-documentscreenhero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-documentscreen-documentscreenhero--maintenance-mode': {
@@ -17295,6 +18316,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-documentscreen-documentscreenhero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-featuresscreenshero': {
@@ -17316,6 +18338,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-featuresscreens-featuresscreenshero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-publishscreen': {
@@ -17342,6 +18365,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-featuresscreens-publishscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-publishscreen-feedbackanimation': {
@@ -17367,6 +18391,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-publishscreen-feedbackanimation',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-publishscreen-feedbackanimation--no-animation': {
@@ -17380,6 +18405,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-publishscreen-feedbackanimation',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-publishscreen-feedbackanimation--cutoff': {
@@ -17393,6 +18419,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-publishscreen-feedbackanimation',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-publishscreen-publishscreenhero': {
@@ -17417,6 +18444,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-publishscreen-publishscreenhero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-publishscreen-publishscreenhero--maintenance-mode': {
@@ -17430,6 +18458,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-publishscreen-publishscreenhero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-publishscreen-review': {
@@ -17451,6 +18480,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-publishscreen-review',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-testscreen': {
@@ -17477,6 +18507,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-featuresscreens-testscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-testscreen-pinpointbugsanimation': {
@@ -17502,6 +18533,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-testscreen-pinpointbugsanimation',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-testscreen-pinpointbugsanimation--paused': {
@@ -17515,6 +18547,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-testscreen-pinpointbugsanimation',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-testscreen-pinpointbugsanimation--cutoff': {
@@ -17528,6 +18561,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-testscreen-pinpointbugsanimation',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-testscreen-snapshotexample': {
@@ -17549,6 +18583,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-testscreen-snapshotexample',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-testscreen-testscreenhero': {
@@ -17573,6 +18608,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-testscreen-testscreenhero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-featuresscreens-testscreen-testscreenhero--maintenance-mode': {
@@ -17586,6 +18622,7 @@ export const index = {
     depth: 5,
     parent: 'webapp-screens-marketing-featuresscreens-testscreen-testscreenhero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-hero': {
@@ -17612,6 +18649,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-hero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-hero--bottom-animation': {
@@ -17625,6 +18663,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-hero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-hero--bottom-animation-inverted': {
@@ -17638,6 +18677,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-hero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-hero--maintenance-mode': {
@@ -17651,6 +18691,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-hero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-integrations': {
@@ -17672,6 +18713,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-integrations',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-landingscreen': {
@@ -17709,6 +18751,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-landingscreen-automatedworkflows',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-landingscreen-automatedworkflows--paused': {
@@ -17722,6 +18765,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-landingscreen-automatedworkflows',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-landingscreen-landingscreen': {
@@ -17747,6 +18791,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-landingscreen-landingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-landingscreen-landingscreen--not-logged-in-maintenance-mode': {
@@ -17760,6 +18805,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-landingscreen-landingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-landingscreen-landingscreen--logged-in': {
@@ -17773,6 +18819,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-landingscreen-landingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-landingscreen-landingscreenhero': {
@@ -17797,6 +18844,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-landingscreen-landingscreenhero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-landingscreen-landingscreenhero--maintenance-mode': {
@@ -17810,6 +18858,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-landingscreen-landingscreenhero',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-landingscreen-notables': {
@@ -17831,6 +18880,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-landingscreen-notables',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-marketingfooter': {
@@ -17852,6 +18902,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-marketingfooter',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-marketingheader': {
@@ -17880,6 +18931,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-marketingheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-marketingheader--logged-in': {
@@ -17893,6 +18945,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-marketingheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-marketingheader--not-logged-in-maintenance-mode': {
@@ -17906,6 +18959,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-marketingheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-marketingheader--logged-in-maintenance-mode': {
@@ -17919,6 +18973,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-marketingheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-marketingheader--inverse-logged-in': {
@@ -17932,6 +18987,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-marketingheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-marketingheader--inverse-not-logged-in': {
@@ -17945,6 +19001,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-marketingheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-marketingpagetitle': {
@@ -17966,6 +19023,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-marketingpagetitle',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-personascreens': {
@@ -18001,6 +19059,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-personascreens-designsystemsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-personascreens-digitalagenciesscreen': {
@@ -18022,6 +19081,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-personascreens-digitalagenciesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-personascreens-frontendteamsscreen': {
@@ -18043,6 +19103,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-personascreens-frontendteamsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-personascreens-personaheader': {
@@ -18064,6 +19125,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-personascreens-personaheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-personascreens-storybookusersscreen': {
@@ -18085,6 +19147,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-personascreens-storybookusersscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-pricingscreen': {
@@ -18119,6 +19182,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-pricingscreen-faqpricing',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-pricingscreen-prices': {
@@ -18143,6 +19207,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-pricingscreen-prices',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-pricingscreen-prices--not-logged-in': {
@@ -18156,6 +19221,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-pricingscreen-prices',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-pricingscreen-pricingfeatures': {
@@ -18177,6 +19243,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-pricingscreen-pricingfeatures',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-pricingscreen-pricingscreen': {
@@ -18201,6 +19268,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-pricingscreen-pricingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-pricingscreen-pricingscreen--not-logged-in': {
@@ -18214,6 +19282,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-marketing-pricingscreen-pricingscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-socialproof': {
@@ -18235,6 +19304,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-socialproof',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-testimonial': {
@@ -18259,6 +19329,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-testimonial',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-testimonial--compact': {
@@ -18272,6 +19343,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-testimonial',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-testimonials': {
@@ -18293,6 +19365,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-testimonials',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-valueprop': {
@@ -18314,6 +19387,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-valueprop',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-workflows': {
@@ -18339,6 +19413,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-workflows',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-workflows--test': {
@@ -18352,6 +19427,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-workflows',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-marketing-workflows--document': {
@@ -18365,6 +19441,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-marketing-workflows',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-notificationsscreen': {
@@ -18391,6 +19468,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-notificationsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-notificationsscreen--default': {
@@ -18404,6 +19482,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-notificationsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-notificationsscreen--empty': {
@@ -18417,6 +19496,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-notificationsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-notificationsscreen--without-an-email-link': {
@@ -18430,6 +19510,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-notificationsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding': {
@@ -18470,6 +19551,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-chooserepository',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-chooserepository--default': {
@@ -18483,6 +19565,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-chooserepository',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-chooserepository--default-refreshing': {
@@ -18496,6 +19579,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-chooserepository',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-chooserepository--default-bitbucket': {
@@ -18509,6 +19593,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-chooserepository',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-createproject': {
@@ -18530,6 +19615,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-createproject',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-onboardingscreen-clickable': {
@@ -18555,6 +19641,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-onboardingscreen-clickable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-onboardingscreen-clickable--default': {
@@ -18568,6 +19655,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-onboardingscreen-clickable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-onboardingscreen-clickable--saml': {
@@ -18581,6 +19669,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-onboardingscreen-clickable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-projecttypepicker': {
@@ -18606,6 +19695,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-projecttypepicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-projecttypepicker--bitbucket': {
@@ -18619,6 +19709,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-projecttypepicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-projecttypepicker--gitlab': {
@@ -18632,6 +19723,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-projecttypepicker',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-setupprojectflow-clickable': {
@@ -18658,6 +19750,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-setupprojectflow-clickable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-setupprojectflow-clickable--onboarding': {
@@ -18671,6 +19764,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-setupprojectflow-clickable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-setupprojectflow-clickable--onboarding-saml-user': {
@@ -18684,6 +19778,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-setupprojectflow-clickable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-onboarding-setupprojectflow-clickable--add-project': {
@@ -18697,6 +19792,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-onboarding-setupprojectflow-clickable',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-preferencesupdatedscreen': {
@@ -18718,6 +19814,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-preferencesupdatedscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest': {
@@ -18789,6 +19886,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activity--no-builds': {
@@ -18802,6 +19900,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activity--simple': {
@@ -18815,6 +19914,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activity--ui-review-disabled': {
@@ -18828,6 +19928,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activity--ui-review-disabled-no-reviewers': {
@@ -18841,6 +19942,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activity--reviews': {
@@ -18854,6 +19956,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activity--in-progress-build': {
@@ -18867,6 +19970,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activity--comments': {
@@ -18880,6 +19984,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activityitem': {
@@ -18904,6 +20009,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-activityitem--loading': {
@@ -18917,6 +20023,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-activityitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity': {
@@ -18951,6 +20058,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--no-capture': {
@@ -18964,6 +20072,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--in-progress': {
@@ -18977,6 +20086,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--timed-out': {
@@ -18990,6 +20100,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--error': {
@@ -19003,6 +20114,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--failed': {
@@ -19016,6 +20128,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--passed': {
@@ -19029,6 +20142,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--pending': {
@@ -19042,6 +20156,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--accepted': {
@@ -19055,6 +20170,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--denied': {
@@ -19068,6 +20184,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--limited': {
@@ -19081,6 +20198,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-buildactivity--publish-only': {
@@ -19094,6 +20212,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-buildactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity': {
@@ -19134,6 +20253,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--active-truncated-text': {
@@ -19147,6 +20267,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--active-diff-thread': {
@@ -19160,6 +20281,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--active-short-height': {
@@ -19173,6 +20295,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--active-non-owner': {
@@ -19186,6 +20309,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--active-logged-out': {
@@ -19199,6 +20323,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--resolved': {
@@ -19212,6 +20337,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--resolved-diff-thread': {
@@ -19225,6 +20351,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--resolved-mutating': {
@@ -19238,6 +20365,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--resolved-expanded': {
@@ -19251,6 +20379,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--resolved-expanded-mutating': {
@@ -19264,6 +20393,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--resolved-logged-out': {
@@ -19277,6 +20407,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--resolved-logged-out-expanded': {
@@ -19290,6 +20421,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--outdated': {
@@ -19303,6 +20435,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--outdated-non-owner': {
@@ -19316,6 +20449,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--outdated-logged-out': {
@@ -19329,6 +20463,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--outdated-collapsed': {
@@ -19342,6 +20477,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-commentthreadactivity--outdated-tooltip': {
@@ -19355,6 +20491,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-commentthreadactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-reviewactivity': {
@@ -19383,6 +20520,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-reviewactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-reviewactivity--assigned-other': {
@@ -19396,6 +20534,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-reviewactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-reviewactivity--approved': {
@@ -19409,6 +20548,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-reviewactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-reviewactivity--unapproved': {
@@ -19422,6 +20562,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-reviewactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-reviewactivity--unassigned-self': {
@@ -19435,6 +20576,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-reviewactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-activity-reviewactivity--unassigned-other': {
@@ -19448,6 +20590,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-activity-reviewactivity',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-buildstatustooltip': {
@@ -19478,6 +20621,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-buildstatustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-buildstatustooltip--build-in-progress': {
@@ -19491,6 +20635,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-buildstatustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-buildstatustooltip--build-in-progress-tests-disabled': {
@@ -19504,6 +20649,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-buildstatustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-buildstatustooltip--paused': {
@@ -19517,6 +20663,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-buildstatustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-buildstatustooltip--errored-build': {
@@ -19530,6 +20677,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-buildstatustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-buildstatustooltip--errored-snapshots': {
@@ -19543,6 +20691,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-buildstatustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-buildstatustooltip--denied-snapshots': {
@@ -19556,6 +20705,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-buildstatustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-buildstatustooltip--pending-snapshots': {
@@ -19569,6 +20719,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-buildstatustooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist': {
@@ -19640,6 +20791,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--no-checks': {
@@ -19653,6 +20805,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-passing': {
@@ -19666,6 +20819,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--pending-reviews': {
@@ -19679,6 +20833,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--active-comment-threads': {
@@ -19692,6 +20847,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--visual-changes': {
@@ -19705,6 +20861,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--build-error': {
@@ -19718,6 +20875,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--build-in-progress': {
@@ -19731,6 +20889,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--comparison-in-progress': {
@@ -19744,6 +20903,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--no-comparison': {
@@ -19757,6 +20917,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--diff-errors': {
@@ -19770,6 +20931,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--paused-exceeded-threshold': {
@@ -19783,6 +20945,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--paused-exceeded-threshold-org': {
@@ -19796,6 +20959,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--paused-exceeded-threshold-no-plan-access': {
@@ -19809,6 +20973,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--paused-exceeded-threshold-in-progress-build': {
@@ -19822,6 +20987,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--paused-exceeded-threshold-error-build': {
@@ -19835,6 +21001,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--paused-payment-required': {
@@ -19848,6 +21015,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--was-paused-now-resumed': {
@@ -19861,6 +21029,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests': {
@@ -19874,6 +21043,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests-exceeded-threshold': {
@@ -19887,6 +21057,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests-was-paused-now-resumed': {
@@ -19900,6 +21071,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests-ui-review-disabled': {
@@ -19913,6 +21085,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests-ui-review-disabled-publish-only': {
@@ -19926,6 +21099,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests-build-error': {
@@ -19939,6 +21113,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests-build-in-progress': {
@@ -19952,6 +21127,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests-comparison-in-progress': {
@@ -19965,6 +21141,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--all-tests-no-reviewers': {
@@ -19978,6 +21155,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--logged-out': {
@@ -19991,6 +21169,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--logged-out-no-reviewers': {
@@ -20004,6 +21183,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklist--pure-selecting-reviewers': {
@@ -20017,6 +21197,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthread': {
@@ -20042,6 +21223,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthread--logged-out': {
@@ -20055,6 +21237,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthread--pure-resolving': {
@@ -20068,6 +21251,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthreads': {
@@ -20096,6 +21280,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthreads',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthreads--multiple-constrained': {
@@ -20109,6 +21294,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthreads',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthreads--multiple': {
@@ -20122,6 +21308,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthreads',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthreads--multiple-logged-out': {
@@ -20135,6 +21322,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthreads',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthreads--multiple-git-lab': {
@@ -20148,6 +21336,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthreads',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistactivecommentthreads--pure-resolving-all': {
@@ -20161,6 +21350,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistactivecommentthreads',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistbuilderrors': {
@@ -20182,6 +21372,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistbuilderrors',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklisterroreddiffs': {
@@ -20207,6 +21398,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklisterroreddiffs',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklisterroreddiffs--multiple': {
@@ -20220,6 +21412,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklisterroreddiffs',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklisterroreddiffs--multiple-git-lab': {
@@ -20233,6 +21426,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklisterroreddiffs',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader': {
@@ -20266,6 +21460,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--all-passing': {
@@ -20279,6 +21474,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--publish-only': {
@@ -20292,6 +21488,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--with-warnings': {
@@ -20305,6 +21502,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--with-warnings-git-lab': {
@@ -20318,6 +21516,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--with-errors': {
@@ -20331,6 +21530,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--with-build-errors': {
@@ -20344,6 +21544,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--build-in-progress': {
@@ -20357,6 +21558,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--comparison-in-progress': {
@@ -20370,6 +21572,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--ui-review-disabled': {
@@ -20383,6 +21586,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistheader--with-build-errors-ui-review-disabled': {
@@ -20396,6 +21600,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistitemheader': {
@@ -20420,6 +21625,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistitemheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistitemheader--with-action': {
@@ -20433,6 +21639,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistitemheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistpendingreviews': {
@@ -20461,6 +21668,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistpendingreviews',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistpendingreviews--multiple': {
@@ -20474,6 +21682,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistpendingreviews',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistpendingreviews--multiple-approving': {
@@ -20487,6 +21696,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistpendingreviews',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistpendingreviews--multiple-unassigning': {
@@ -20500,6 +21710,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistpendingreviews',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistpendingreviews--multiple-logged-out': {
@@ -20513,6 +21724,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistpendingreviews',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistpendingreviews--multiple-git-lab': {
@@ -20526,6 +21738,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistpendingreviews',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistspeccolumn': {
@@ -20551,6 +21764,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistspeccolumn',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistspeccolumn--default-spec': {
@@ -20564,6 +21778,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistspeccolumn',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistspeccolumn--low-data-spec': {
@@ -20577,6 +21792,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistspeccolumn',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistvisualchanges': {
@@ -20604,6 +21820,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistvisualchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistvisualchanges--single-tall-image': {
@@ -20617,6 +21834,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistvisualchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistvisualchanges--multiple': {
@@ -20630,6 +21848,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistvisualchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistvisualchanges--approving': {
@@ -20643,6 +21862,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistvisualchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-checklist-checklistvisualchanges--logged-out': {
@@ -20656,6 +21876,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-checklist-checklistvisualchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features': {
@@ -20691,6 +21912,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uireviewfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uireviewfeature--logged-out': {
@@ -20704,6 +21926,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uireviewfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature': {
@@ -20743,6 +21966,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--in-progress': {
@@ -20756,6 +21980,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--accepted': {
@@ -20769,6 +21994,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--pending': {
@@ -20782,6 +22008,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--denied': {
@@ -20795,6 +22022,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--failed': {
@@ -20808,6 +22036,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--errored': {
@@ -20821,6 +22050,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--timed-out': {
@@ -20834,6 +22064,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--paused': {
@@ -20847,6 +22078,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--paused-payment-required': {
@@ -20860,6 +22092,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--paused-organization': {
@@ -20873,6 +22106,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--paused-organization-no-plan': {
@@ -20886,6 +22120,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--ui-tests-disabled-for-build-enabled-on-app':
@@ -20900,6 +22135,7 @@ export const index = {
       depth: 4,
       parent: 'webapp-screens-pullrequest-features-uitestsfeature',
       type: 'story',
+      subtype: 'story',
       prepared: true,
     },
   'webapp-screens-pullrequest-features-uitestsfeature--ui-tests-paused-for-build-enabled-on-app': {
@@ -20913,6 +22149,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--disabled': {
@@ -20926,6 +22163,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--disabled-read-only': {
@@ -20939,6 +22177,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-features-uitestsfeature--disabled-low-spec-count': {
@@ -20952,6 +22191,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-pullrequest-features-uitestsfeature',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-nocomparison': {
@@ -20982,6 +22222,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-nocomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-nocomparison--no-merge-base-build': {
@@ -20995,6 +22236,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-nocomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-nocomparison--head-build-in-progress': {
@@ -21008,6 +22250,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-nocomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-nocomparison--patch-build-in-progress': {
@@ -21021,6 +22264,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-nocomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-nocomparison--publish-only-head-build': {
@@ -21034,6 +22278,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-nocomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-nocomparison--publish-only-merge-base': {
@@ -21047,6 +22292,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-nocomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-nocomparison--head-build-errored': {
@@ -21060,6 +22306,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-nocomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-nocomparison--patch-build-errored': {
@@ -21073,6 +22320,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-nocomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecomments': {
@@ -21100,6 +22348,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecomments--no-thread-new-story': {
@@ -21113,6 +22362,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecomments--no-thread-removed-story': {
@@ -21126,6 +22376,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecomments--active-thread': {
@@ -21139,6 +22390,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecomments--resolved-thread': {
@@ -21152,6 +22404,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecommentthread': {
@@ -21178,6 +22431,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecommentthread--w-user': {
@@ -21191,6 +22445,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecommentthread--pure-w-user': {
@@ -21204,6 +22459,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangecommentthread--pure-w-user-collapsed': {
@@ -21217,6 +22473,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangecommentthread',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem': {
@@ -21255,6 +22512,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--added': {
@@ -21268,6 +22526,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--added-logged-out': {
@@ -21281,6 +22540,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--added-w-active-comment-thread': {
@@ -21294,6 +22554,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--removed': {
@@ -21307,6 +22568,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--visually-different': {
@@ -21320,6 +22582,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--visually-different-after-upgrade': {
@@ -21333,6 +22596,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--scaled': {
@@ -21346,6 +22610,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--size-changed': {
@@ -21359,6 +22624,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--errored': {
@@ -21372,6 +22638,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--fixed': {
@@ -21385,6 +22652,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--no-diff': {
@@ -21398,6 +22666,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--diff': {
@@ -21411,6 +22680,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--diff-strobe': {
@@ -21424,6 +22694,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--diff-focus': {
@@ -21437,6 +22708,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchangeitem--diff-focus-strobe': {
@@ -21450,6 +22722,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchangeitem',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges': {
@@ -21484,6 +22757,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--ui-review-disabled': {
@@ -21497,6 +22771,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--ui-review-disabled-logged-out': {
@@ -21510,6 +22785,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--ui-review-paused': {
@@ -21523,6 +22799,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--ui-review-paused-logged-out': {
@@ -21536,6 +22813,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--ui-review-blocked': {
@@ -21549,6 +22827,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--ui-review-blocked-logged-out': {
@@ -21562,6 +22841,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--loading': {
@@ -21575,6 +22855,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--build-in-progress-80-complete': {
@@ -21588,6 +22869,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--comparison-in-progress-20-complete': {
@@ -21601,6 +22883,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--empty': {
@@ -21614,6 +22897,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchanges--unsupported': {
@@ -21627,6 +22911,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchanges',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip': {
@@ -21666,6 +22951,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--passing-ui-review-disabled': {
@@ -21679,6 +22965,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--passing-no-changes': {
@@ -21692,6 +22979,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--passing-no-changes-in-progress': {
@@ -21705,6 +22993,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--representative-only-build': {
@@ -21718,6 +23007,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--representative-only-build-resumed': {
@@ -21731,6 +23021,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--representative-only-build-in-progress': {
@@ -21744,6 +23035,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--representative-only-build-error': {
@@ -21757,6 +23049,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--pending-incomplete-setup': {
@@ -21770,6 +23063,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--awaiting-activity': {
@@ -21783,6 +23077,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--pending-visual-changes': {
@@ -21796,6 +23091,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--pending-reviews': {
@@ -21809,6 +23105,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--active-comment-threads': {
@@ -21822,6 +23119,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--errored-diffs': {
@@ -21835,6 +23133,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--all-tests': {
@@ -21848,6 +23147,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--build-error': {
@@ -21861,6 +23161,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestchecktooltip--git-lab': {
@@ -21874,6 +23175,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestchecktooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestcomponents': {
@@ -21902,6 +23204,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestcomponents--simple': {
@@ -21915,6 +23218,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestcomponents--passed': {
@@ -21928,6 +23232,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestcomponents--failed': {
@@ -21941,6 +23246,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestcomponents--in-progress': {
@@ -21954,6 +23260,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestcomponents--empty': {
@@ -21967,6 +23274,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestcomponents',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestexplainer': {
@@ -21988,6 +23296,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestexplainer',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestheader': {
@@ -22016,6 +23325,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestheader--open-unbuilt': {
@@ -22029,6 +23339,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestheader--open-building': {
@@ -22042,6 +23353,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestheader--merged-passed': {
@@ -22055,6 +23367,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestheader--open-pending': {
@@ -22068,6 +23381,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestheader--errored-closed': {
@@ -22081,6 +23395,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestparticipants': {
@@ -22105,6 +23420,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestparticipants',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestparticipants--default': {
@@ -22118,6 +23434,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestparticipants',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers': {
@@ -22153,6 +23470,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--stateful': {
@@ -22166,6 +23484,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--unreviewed': {
@@ -22179,6 +23498,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--unreviewed-limited': {
@@ -22192,6 +23512,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--assigning': {
@@ -22205,6 +23526,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--assigned-tooltip': {
@@ -22218,6 +23540,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--assigned': {
@@ -22231,6 +23554,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--ui-review-disabled-assigned': {
@@ -22244,6 +23568,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--paused': {
@@ -22257,6 +23582,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--approved': {
@@ -22270,6 +23596,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--ui-review-disabled-approved': {
@@ -22283,6 +23610,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--unreviewed-anonymous': {
@@ -22296,6 +23624,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestreviewers--ui-review-disabled-unreviewed-anonymous': {
@@ -22309,6 +23638,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen': {
@@ -22346,6 +23676,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--no-builds': {
@@ -22359,6 +23690,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--activity': {
@@ -22372,6 +23704,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--activity-no-merge-base-build': {
@@ -22385,6 +23718,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--loading-reviews-approving': {
@@ -22398,6 +23732,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--loading-reviews-unapproving': {
@@ -22411,6 +23746,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--explainer': {
@@ -22424,6 +23760,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--comments': {
@@ -22437,6 +23774,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--components': {
@@ -22450,6 +23788,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--ui-changes': {
@@ -22463,6 +23802,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--ui-changes-loading-diffs': {
@@ -22476,6 +23816,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--ui-changes-build-in-progress': {
@@ -22489,6 +23830,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--ui-changes-comparison-in-progress': {
@@ -22502,6 +23844,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--ui-changes-no-changes': {
@@ -22515,6 +23858,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-pullrequestscreen--ui-changes-with-errors': {
@@ -22528,6 +23872,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-pullrequestscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-reviewbutton': {
@@ -22556,6 +23901,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-reviewbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-reviewbutton--assigned': {
@@ -22569,6 +23915,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-reviewbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-reviewbutton--approving': {
@@ -22582,6 +23929,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-reviewbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-reviewbutton--approved': {
@@ -22595,6 +23943,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-reviewbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-reviewbutton--retracting': {
@@ -22608,6 +23957,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-reviewbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-reviewbutton--actions-story': {
@@ -22621,6 +23971,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-reviewbutton',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-selectreviewers': {
@@ -22647,6 +23998,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-selectreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-selectreviewers--changing-reviewers': {
@@ -22660,6 +24012,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-selectreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-selectreviewers--many-collaborators-long-name': {
@@ -22673,6 +24026,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-selectreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequest-selectreviewers--no-collaborators-found': {
@@ -22686,6 +24040,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-pullrequest-selectreviewers',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequestsscreen': {
@@ -22712,6 +24067,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-pullrequestsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequestsscreen--git-hub-p-rs': {
@@ -22725,6 +24081,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-pullrequestsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequestsscreen--git-lab-m-rs': {
@@ -22738,6 +24095,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-pullrequestsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-pullrequestsscreen--explainer': {
@@ -22751,6 +24109,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-pullrequestsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-settingsscreen': {
@@ -22777,6 +24136,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-settingsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-settingsscreen--default': {
@@ -22790,6 +24150,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-settingsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-settingsscreen--default-refreshing-membership': {
@@ -22803,6 +24164,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-settingsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-settingsscreen--unlinked': {
@@ -22816,6 +24178,7 @@ export const index = {
     depth: 2,
     parent: 'webapp-screens-settingsscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup': {
@@ -22868,6 +24231,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-catchchangesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-catchchangesscreen--default': {
@@ -22881,6 +24245,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-catchchangesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-catchchangesscreen--default-onboarding': {
@@ -22894,6 +24259,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-catchchangesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-catchchangesscreen--no-changes-warning': {
@@ -22907,6 +24273,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-catchchangesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-changesspottedscreen': {
@@ -22932,6 +24299,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-changesspottedscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-changesspottedscreen--default': {
@@ -22945,6 +24313,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-changesspottedscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-changesspottedscreen--default-onboarding': {
@@ -22958,6 +24327,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-changesspottedscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-changessummary': {
@@ -22982,6 +24352,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-changessummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-changessummary--default': {
@@ -22995,6 +24366,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-changessummary',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-instructions': {
@@ -23020,6 +24392,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-instructions',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-instructions--default': {
@@ -23033,6 +24406,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-instructions',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-catchchanges-instructions--no-changes-warning': {
@@ -23046,6 +24420,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-catchchanges-instructions',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook': {
@@ -23085,6 +24460,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-builderrorlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-builderrorlist--default': {
@@ -23098,6 +24474,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-builderrorlist',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-confirmationsuccess': {
@@ -23125,6 +24502,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-confirmationsuccess',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-confirmationsuccess--default': {
@@ -23138,6 +24516,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-confirmationsuccess',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-confirmationsuccess--scroll': {
@@ -23151,6 +24530,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-confirmationsuccess',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-confirmationsuccess--small': {
@@ -23164,6 +24544,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-confirmationsuccess',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-confirmationsuccess--small-scroll': {
@@ -23177,6 +24558,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-confirmationsuccess',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-instructions': {
@@ -23202,6 +24584,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-instructions',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-instructions--default': {
@@ -23215,6 +24598,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-instructions',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-instructions--retry': {
@@ -23228,6 +24612,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-instructions',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishfailedscreen': {
@@ -23254,6 +24639,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishfailedscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishfailedscreen--default': {
@@ -23267,6 +24653,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishfailedscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishfailedscreen--default-onboarding': {
@@ -23280,6 +24667,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishfailedscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishfailedscreen--infrastructure-error': {
@@ -23293,6 +24681,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishfailedscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishstorybookscreen': {
@@ -23318,6 +24707,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishstorybookscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishstorybookscreen--default': {
@@ -23331,6 +24721,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishstorybookscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishstorybookscreen--default-onboarding': {
@@ -23344,6 +24735,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishstorybookscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishsuccessscreen': {
@@ -23369,6 +24761,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishsuccessscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishsuccessscreen--default': {
@@ -23382,6 +24775,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishsuccessscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-publishstorybook-publishsuccessscreen--default-onboarding': {
@@ -23395,6 +24789,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-publishstorybook-publishsuccessscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges': {
@@ -23432,6 +24827,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-comparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-comparison--default': {
@@ -23445,6 +24841,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-comparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-comparisoncomments': {
@@ -23469,6 +24866,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-comparisoncomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-comparisoncomments--default': {
@@ -23482,6 +24880,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-comparisoncomments',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-feedbackscreen': {
@@ -23507,6 +24906,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-feedbackscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-feedbackscreen--default': {
@@ -23520,6 +24920,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-feedbackscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-feedbackscreen--default-onboarding': {
@@ -23533,6 +24934,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-feedbackscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-verifychangesscreen': {
@@ -23559,6 +24961,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-verifychangesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-verifychangesscreen--default': {
@@ -23572,6 +24975,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-verifychangesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-verifychangesscreen--default-onboarding': {
@@ -23585,6 +24989,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-verifychangesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-verifychanges-verifychangesscreen--mutating': {
@@ -23598,6 +25003,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-verifychanges-verifychangesscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-wrapup': {
@@ -23634,6 +25040,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-wrapup-mergechecksscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-wrapup-mergechecksscreen--default': {
@@ -23647,6 +25054,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-wrapup-mergechecksscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-wrapup-mergechecksscreen--default-onboarding': {
@@ -23660,6 +25068,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-wrapup-mergechecksscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-wrapup-setupcompletescreen': {
@@ -23685,6 +25094,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-wrapup-setupcompletescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-wrapup-setupcompletescreen--default': {
@@ -23698,6 +25108,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-wrapup-setupcompletescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-setup-wrapup-setupcompletescreen--default-onboarding': {
@@ -23711,6 +25122,7 @@ export const index = {
     depth: 4,
     parent: 'webapp-screens-setup-wrapup-setupcompletescreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot': {
@@ -23747,6 +25159,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-capturewarningtooltip',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons': {
@@ -23785,6 +25198,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--failed': {
@@ -23798,6 +25212,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--unreviewed': {
@@ -23811,6 +25226,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--unreviewed-accepting': {
@@ -23824,6 +25240,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--unreviewed-denying': {
@@ -23837,6 +25254,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--accepted': {
@@ -23850,6 +25268,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--accepted-undoing': {
@@ -23863,6 +25282,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--auto-accepted-first-build': {
@@ -23876,6 +25296,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--denied': {
@@ -23889,6 +25310,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--denied-undoing': {
@@ -23902,6 +25324,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--unreviewable-no-descendant': {
@@ -23915,6 +25338,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--unreviewable-with-descendant': {
@@ -23928,6 +25352,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--read-only-logged-in': {
@@ -23941,6 +25366,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--read-only-not-logged-in': {
@@ -23954,6 +25380,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--error': {
@@ -23967,6 +25394,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-reviewbuttons--error-last': {
@@ -23980,6 +25408,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-reviewbuttons',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison': {
@@ -24032,6 +25461,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up': {
@@ -24045,6 +25475,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-pure-diff-visible': {
@@ -24058,6 +25489,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-pure-diff-visible-diff-strobe': {
@@ -24071,6 +25503,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-pure-diff-visible-diff-focus': {
@@ -24084,6 +25517,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-pure-diff-visible-diff-focus-and-strobe': {
@@ -24097,6 +25531,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-pure-diff-invisible': {
@@ -24110,6 +25545,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-pure-diff-invisible-diff-focus-diff-strobe': {
@@ -24123,6 +25559,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-diff-version-1': {
@@ -24136,6 +25573,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-ignoring': {
@@ -24149,6 +25587,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--2-up-diff-bigger': {
@@ -24162,6 +25601,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up': {
@@ -24175,6 +25615,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-header-offset': {
@@ -24188,6 +25629,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-diff-visible': {
@@ -24201,6 +25643,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-diff-visible-diff-strobe': {
@@ -24214,6 +25657,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-diff-visible-diff-focus': {
@@ -24227,6 +25671,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-diff-visible-diff-focus-and-strobe': {
@@ -24240,6 +25685,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-diff-invisible': {
@@ -24253,6 +25699,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-switching-diff-visible': {
@@ -24266,6 +25713,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-switching-diff-visible-diff-strobe': {
@@ -24279,6 +25727,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-switching-diff-visible-diff-focus': {
@@ -24292,6 +25741,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-switching-diff-visible-diff-focus-and-strobe':
@@ -24306,6 +25756,7 @@ export const index = {
       depth: 3,
       parent: 'webapp-screens-snapshot-snapshotcomparison',
       type: 'story',
+      subtype: 'story',
       prepared: true,
     },
   'webapp-screens-snapshot-snapshotcomparison--1-up-pure-switching-diff-invisible': {
@@ -24319,6 +25770,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-diff-version-1': {
@@ -24332,6 +25784,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-diff-bigger': {
@@ -24345,6 +25798,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--1-up-ignoring': {
@@ -24358,6 +25812,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--no-baseline': {
@@ -24371,6 +25826,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--no-baseline-in-progress': {
@@ -24384,6 +25840,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--no-baseline-ignoring': {
@@ -24397,6 +25854,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotcomparison--failed': {
@@ -24410,6 +25868,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotcomparison',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader': {
@@ -24450,6 +25909,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--pending': {
@@ -24463,6 +25923,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--pending-viewport-default': {
@@ -24476,6 +25937,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--pending-first': {
@@ -24489,6 +25951,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--pending-last': {
@@ -24502,6 +25965,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--pending-no-baseline': {
@@ -24515,6 +25979,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--pending-has-ignored-selectors': {
@@ -24528,6 +25993,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--pending-has-ignored-selectors-showing': {
@@ -24541,6 +26007,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--accepted': {
@@ -24554,6 +26021,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--auto-accepted-first-build': {
@@ -24567,6 +26035,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--denied': {
@@ -24580,6 +26049,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--unreviewable-with-descendant': {
@@ -24593,6 +26063,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--read-only-logged-in': {
@@ -24606,6 +26077,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--read-only-not-logged-in': {
@@ -24619,6 +26091,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--in-progress': {
@@ -24632,6 +26105,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--failed': {
@@ -24645,6 +26119,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--error': {
@@ -24658,6 +26133,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotheader--error-last': {
@@ -24671,6 +26147,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotheader',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshothtmldiff': {
@@ -24701,6 +26178,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshothtmldiff',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshothtmldiff--loading-baseline': {
@@ -24714,6 +26192,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshothtmldiff',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshothtmldiff--default': {
@@ -24727,6 +26206,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshothtmldiff',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshothtmldiff--long-lines': {
@@ -24740,6 +26220,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshothtmldiff',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshothtmldiff--too-large-issue-1885': {
@@ -24753,6 +26234,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshothtmldiff',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshothtmldiff--large-after-pretty-print-issue-1885-b': {
@@ -24766,6 +26248,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshothtmldiff',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshothtmldiff--too-large-html': {
@@ -24779,6 +26262,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshothtmldiff',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshothtmldiff--too-large-diff': {
@@ -24792,6 +26276,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshothtmldiff',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen': {
@@ -24843,6 +26328,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--pending-metadata-loading': {
@@ -24856,6 +26342,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--pending': {
@@ -24869,6 +26356,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--pending-multi-browser': {
@@ -24882,6 +26370,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--pending-multi-browser-one-unchanged': {
@@ -24895,6 +26384,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--pending-new-browser': {
@@ -24908,6 +26398,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--baseline-upgraded': {
@@ -24921,6 +26412,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--pending-tall': {
@@ -24934,6 +26426,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--pending-has-ignored': {
@@ -24947,6 +26440,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--pending-no-baseline-new-specs': {
@@ -24960,6 +26454,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--in-progress-no-baseline': {
@@ -24973,6 +26468,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--in-progress-no-baseline-one-complete': {
@@ -24986,6 +26482,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--disabled-because-of-newer-build': {
@@ -24999,6 +26496,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--read-only-logged-in': {
@@ -25012,6 +26510,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--read-only-not-logged-in': {
@@ -25025,6 +26524,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--failed': {
@@ -25038,6 +26538,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--failed-cross-browser-one-complete': {
@@ -25051,6 +26552,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error': {
@@ -25064,6 +26566,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-cross-browser-same': {
@@ -25077,6 +26580,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-cross-browser-different': {
@@ -25090,6 +26594,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-image-too-large': {
@@ -25103,6 +26608,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-navigation-timeout': {
@@ -25116,6 +26622,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-navigation-timeout-cross-browser': {
@@ -25129,6 +26636,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-no-js': {
@@ -25142,6 +26650,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-failed-js': {
@@ -25155,6 +26664,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-story-missing': {
@@ -25168,6 +26678,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--error-metadata-loading': {
@@ -25181,6 +26692,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--timeout-warning': {
@@ -25194,6 +26706,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
   'webapp-screens-snapshot-snapshotscreen--certificate-warning': {
@@ -25207,6 +26720,7 @@ export const index = {
     depth: 3,
     parent: 'webapp-screens-snapshot-snapshotscreen',
     type: 'story',
+    subtype: 'story',
     prepared: true,
   },
 } as Dataset;

@@ -4,8 +4,7 @@ import type {
   WebRenderer,
 } from 'storybook/internal/types';
 
-import type { Provider } from '@angular/core';
-import type { ApplicationConfig } from '@angular/platform-browser';
+import type { ApplicationConfig, Provider } from '@angular/core';
 
 export interface NgModuleMetadata {
   /** List of components, directives, and pipes that belong to your component. */

@@ -1,4 +1,4 @@
-```ts filename="Example.stories.ts" renderer="web-components" language="ts"
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 export const ShadowDOMExample: Story = {
   async play({ canvas }) {
     // 👇 Will find an element even if it's within a shadow root
@@ -7,11 +7,29 @@ export const ShadowDOMExample: Story = {
 };
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js"
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export const ShadowDOMExample = {
   async play({ canvas }) {
     // 👇 Will find an element even if it's within a shadow root
     const button = await canvas.findByShadowRole('button', { name: /Reset/i });
   },
 };
+```
+
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+export const ShadowDOMExample = meta.story({
+  async play({ canvas }) {
+    // 👇 Will find an element even if it's within a shadow root
+    const button = await canvas.findByShadowRole('button', { name: /Reset/i });
+  },
+});
+```
+
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+export const ShadowDOMExample = meta.story({
+  async play({ canvas }) {
+    // 👇 Will find an element even if it's within a shadow root
+    const button = await canvas.findByShadowRole('button', { name: /Reset/i });
+  },
+});
 ```

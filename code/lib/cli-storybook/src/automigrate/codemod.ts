@@ -5,6 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { promises as fs } from 'fs';
 import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 export const maxConcurrentTasks = Math.max(1, os.cpus().length - 1);
@@ -31,7 +32,7 @@ export interface FileInfo {
  * ```
  */
 export async function runCodemod(
-  globPattern: string = '**/*.stories.*',
+  globPattern = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
   transform: (source: FileInfo, ...rest: any) => Promise<string>,
   { dryRun = false, skipFormatting = false }: { dryRun?: boolean; skipFormatting?: boolean } = {}
 ) {

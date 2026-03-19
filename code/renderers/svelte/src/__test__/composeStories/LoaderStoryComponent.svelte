@@ -1,12 +1,13 @@
-<script>
-  export let mockFn;
-  export let loaded;
+<script lang="ts">
+  let {
+    mockFn,
+    loaded,
+  }: {
+    mockFn: (arg: string) => string;
+    loaded: { value: string };
+  } = $props();
 
-  let data;
-  
-  $: if (mockFn && loaded) {
-    data = mockFn('render');
-  }
+  let data = $derived(mockFn && loaded && mockFn('render'));
 </script>
 
 <div>

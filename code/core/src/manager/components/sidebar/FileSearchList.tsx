@@ -1,12 +1,17 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 
-import { TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
 import type {
   CreateNewStoryRequestPayload,
   FileComponentSearchResponsePayload,
 } from 'storybook/internal/core-events';
 
-import { ChevronDownIcon, ChevronRightIcon, ComponentIcon } from '@storybook/icons';
+import {
+  BookmarkHollowIcon,
+  ChevronSmallDownIcon,
+  ChevronSmallRightIcon,
+  ComponentIcon,
+} from '@storybook/icons';
 
 import type { VirtualItem } from '@tanstack/react-virtual';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -24,6 +29,7 @@ import {
   FileListItemExport,
   FileListItemExportName,
   FileListItemExportNameContent,
+  FileListItemExportNameContentWithExport,
   FileListItemLabel,
   FileListItemPath,
   FileListLi,
@@ -40,16 +46,14 @@ export interface NewStoryPayload extends CreateNewStoryRequestPayload {
   selectedItemId: string | number;
 }
 
-const ChevronRightIconStyled = styled(ChevronRightIcon)(({ theme }) => ({
-  display: 'none',
-  alignSelf: 'center',
-  color: theme.color.mediumdark,
+const TreeExpandIconStyled = styled(ChevronSmallRightIcon)(({ theme }) => ({
+  color: theme.textMutedColor,
+  marginTop: 2,
 }));
 
-const ChevronDownIconStyled = styled(ChevronDownIcon)(({ theme }) => ({
-  display: 'none',
-  alignSelf: 'center',
-  color: theme.color.mediumdark,
+const TreeCollapseIconStyled = styled(ChevronSmallDownIcon)(({ theme }) => ({
+  color: theme.textMutedColor,
+  marginTop: 2,
 }));
 
 interface FileSearchListProps {
@@ -170,9 +174,17 @@ export const FileSearchList = memo(function FileSearchList({
   );
 
   const ListItem = useCallback(
-    ({ virtualItem, selected, searchResult }: FileItemContentProps) => {
+    ({
+      virtualItem,
+      selected,
+      searchResult,
+      noExports,
+    }: FileItemContentProps & { noExports: boolean }) => {
       const itemError = errorItemId === searchResult.filepath;
       const itemSelected = selected === virtualItem.index;
+      const tooltip = noExports
+        ? "We can't evaluate exports for this file. Automatic story creation is disabled."
+        : undefined;
 
       return (
         <FileListItem
@@ -180,26 +192,34 @@ export const FileSearchList = memo(function FileSearchList({
           aria-controls={`file-list-export-${virtualItem.index}`}
           id={`file-list-item-wrapper-${virtualItem.index}`}
         >
-          <FileListItemContentWrapper
-            className="file-list-item"
-            selected={itemSelected}
-            error={itemError}
-            disabled={
-              searchResult.exportedComponents === null ||
-              searchResult.exportedComponents?.length === 0
-            }
+          <TooltipProvider
+            tooltip={tooltip ? <TooltipNote note={tooltip} /> : undefined}
+            placement="top-start"
+            delayHide={100}
+            delayShow={200}
           >
-            <FileListIconWrapper error={itemError}>
-              <ComponentIcon />
-            </FileListIconWrapper>
-            <FileListItemContent>
-              <FileListItemLabel error={itemError}>
-                {searchResult.filepath.split('/').at(-1)}
-              </FileListItemLabel>
-              <FileListItemPath>{searchResult.filepath}</FileListItemPath>
-            </FileListItemContent>
-            {itemSelected ? <ChevronDownIconStyled /> : <ChevronRightIconStyled />}
-          </FileListItemContentWrapper>
+            <FileListItemContentWrapper
+              className="file-list-item"
+              selected={itemSelected}
+              error={itemError}
+              disabled={noExports}
+            >
+              {itemSelected ? (
+                <TreeCollapseIconStyled size={14} />
+              ) : (
+                <TreeExpandIconStyled size={14} />
+              )}
+              <FileListIconWrapper error={itemError}>
+                <ComponentIcon />
+              </FileListIconWrapper>
+              <FileListItemContent>
+                <FileListItemLabel error={itemError}>
+                  {searchResult.filepath.split('/').at(-1)}
+                </FileListItemLabel>
+                <FileListItemPath>{searchResult.filepath}</FileListItemPath>
+              </FileListItemContent>
+            </FileListItemContentWrapper>
+          </TooltipProvider>
           {/* @ts-expect-error (non strict) */}
           {searchResult?.exportedComponents?.length > 1 && itemSelected && (
             <FileListExport
@@ -249,19 +269,20 @@ export const FileSearchList = memo(function FileSearchList({
                     }}
                   >
                     <FileListItemExportName>
-                      <ComponentIcon />
+                      <BookmarkHollowIcon />
                       {component.default ? (
                         <>
-                          <FileListItemExportNameContent>
+                          <FileListItemExportNameContentWithExport>
                             {searchResult.filepath.split('/').at(-1)?.split('.')?.at(0)}
-                          </FileListItemExportNameContent>
+                          </FileListItemExportNameContentWithExport>
                           <DefaultExport>Default export</DefaultExport>
                         </>
                       ) : (
-                        component.name
+                        <FileListItemExportNameContent>
+                          {component.name}
+                        </FileListItemExportNameContent>
                       )}
                     </FileListItemExportName>
-                    <ChevronRightIconStyled />
                   </FileListItemExport>
                 );
               })}
@@ -336,38 +357,14 @@ export const FileSearchList = memo(function FileSearchList({
                   }}
                   tabIndex={0}
                 >
-                  {noExports ? (
-                    <WithTooltip
-                      {...itemProps}
-                      style={{ width: '100%' }}
-                      hasChrome={false}
-                      closeOnOutsideClick={true}
-                      tooltip={
-                        <TooltipNote
-                          // @ts-expect-error (non strict)
-                          note={
-                            noExports
-                              ? "We can't evaluate exports for this file. You can't create a story for it automatically"
-                              : null
-                          }
-                        />
-                      }
-                    >
-                      <ListItem
-                        searchResult={searchResult}
-                        selected={selectedItem}
-                        virtualItem={virtualItem}
-                      />
-                    </WithTooltip>
-                  ) : (
-                    <ListItem
-                      {...itemProps}
-                      key={virtualItem.index}
-                      searchResult={searchResult}
-                      selected={selectedItem}
-                      virtualItem={virtualItem}
-                    />
-                  )}
+                  <ListItem
+                    {...itemProps}
+                    key={virtualItem.index}
+                    searchResult={searchResult}
+                    selected={selectedItem}
+                    virtualItem={virtualItem}
+                    noExports={noExports}
+                  />
                 </FileListLi>
               );
             })}

@@ -15,6 +15,7 @@ describe('buildIndex', () => {
             "id": "my-component-a--story-one",
             "importPath": "./core/src/core-server/utils/__mockdata__/docs-id-generation/A.stories.jsx",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "dev",
               "test",
@@ -43,6 +44,7 @@ describe('buildIndex', () => {
             "id": "my-component-b--story-one",
             "importPath": "./core/src/core-server/utils/__mockdata__/docs-id-generation/B.stories.jsx",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "dev",
               "test",

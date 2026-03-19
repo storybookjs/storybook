@@ -5,7 +5,7 @@ import type {
   StorybookConfig as StorybookConfigBase,
 } from '@storybook/react-vite';
 
-import type { BabelOptions, Options as ReactOptions } from 'vite-plugin-rnw';
+import type { RnwOptions } from 'vite-plugin-rnw';
 
 export type FrameworkOptions = FrameworkOptionsBase & {
   /**
@@ -16,7 +16,7 @@ export type FrameworkOptions = FrameworkOptionsBase & {
    * @example {modulesToTranspile: ['my-library']}
    */
   modulesToTranspile?: string[];
-  pluginReactOptions?: Omit<ReactOptions, 'babel'> & { babel?: BabelOptions };
+  pluginReactOptions?: RnwOptions;
   /**
    * @deprecated These options will be ignored. Use `pluginReactOptions` now for everything and
    *   override includes in order to transpile node_modules pluginBabelOptions will be removed in

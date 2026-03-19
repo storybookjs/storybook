@@ -3,9 +3,14 @@ on:
   schedule:
     - cron: "30 1 * * *"
 
+permissions:
+  issues: write # to close and label issues (actions/stale)
+  pull-requests: write # to mark stale pull requests (actions/stale)
+
 jobs:
   stale:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'storybookjs'
     steps:
       - uses: actions/stale@v9
         with:

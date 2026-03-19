@@ -3,8 +3,12 @@ import { runTelemetryOperation } from './run-telemetry-operation';
 
 export const getPortableStoriesFileCountUncached = async (path?: string) => {
   try {
-    const command = `git grep -l composeStor` + (path ? ` -- ${path}` : '');
-    return await execCommandCountLines(command);
+    return await execCommandCountLines('git', [
+      'grep',
+      '-l',
+      'composeStor',
+      ...(path ? ['--', path] : []),
+    ]);
   } catch (err: any) {
     // exit code 1 if no matches are found
     return err.exitCode === 1 ? 0 : undefined;

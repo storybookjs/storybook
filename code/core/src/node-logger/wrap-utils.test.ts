@@ -80,7 +80,10 @@ describe('wrap-utils', () => {
 
   describe('wrapTextForClack', () => {
     beforeEach(() => {
-      vi.mocked(execaSync).mockImplementation((cmd: string, args: any) => {
+      // Note: execaSync mock is not actually used by the implementation
+      // which reads process.env directly, but kept for compatibility
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(execaSync).mockImplementation((_cmd: string | URL, args: any) => {
         if (args && args[0] === '$TERM_PROGRAM') {
           return {
             stdout: 'iTerm.app',
@@ -93,7 +96,7 @@ describe('wrap-utils', () => {
         }
         return {
           stdout: '',
-        };
+        } as any;
       });
     });
 
@@ -340,8 +343,10 @@ describe('wrap-utils', () => {
 
   describe('protectUrls', () => {
     beforeEach(() => {
-      // Mock execaSync for supportsHyperlinks detection
-      vi.mocked(execaSync).mockImplementation((cmd: string, args: any) => {
+      // Note: execaSync mock is not actually used by the implementation
+      // which reads process.env directly, but kept for compatibility
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(execaSync).mockImplementation((_cmd: string | URL, args: any) => {
         if (args && args[0] === '$TERM_PROGRAM') {
           return {
             stdout: 'iTerm.app',
@@ -354,7 +359,7 @@ describe('wrap-utils', () => {
         }
         return {
           stdout: '',
-        };
+        } as any;
       });
     });
 
@@ -498,23 +503,28 @@ describe('wrap-utils', () => {
     });
 
     it('should not modify text when terminal does not support hyperlinks', () => {
-      // Mock execaSync to return unsupported terminal
-      vi.mocked(execaSync).mockImplementation((cmd, args: any) => {
-        if (args && args[0] === '$TERM_PROGRAM') {
-          return {
-            stdout: 'Apple_Terminal',
-          } as any;
-        }
-        return {
-          stdout: '',
-        };
-      });
+      // Mock process.env to return unsupported terminal
+      const originalEnv = process.env.TERM_PROGRAM;
+      const originalVersion = process.env.TERM_PROGRAM_VERSION;
+
+      process.env.TERM_PROGRAM = 'Apple_Terminal';
+      delete process.env.TERM_PROGRAM_VERSION;
 
       const text = 'Visit https://example.com for info';
       const result = protectUrls(text);
 
       expect(result).toBe(text);
       expect(result).not.toContain('\u001b]8;;');
+
+      // Restore original env
+      if (originalEnv) {
+        process.env.TERM_PROGRAM = originalEnv;
+      } else {
+        delete process.env.TERM_PROGRAM;
+      }
+      if (originalVersion) {
+        process.env.TERM_PROGRAM_VERSION = originalVersion;
+      }
     });
 
     it('should handle complex URLs with ports and authentication', () => {

@@ -8,13 +8,13 @@
 
 ## Rule Details
 
-This rule checks if all addons registered in `.storybook/main.js` are properly listed in the root `package.json` of your project.
+This rule checks if all addons registered in `.storybook/main.js|ts` are properly listed in the root `package.json` of your project.
 
-For instance, if the `@storybook/addon-links` is in the `.storybook/main.js` but is not listed in the `package.json` of the project, this rule will notify the user to add the addon to the `package.json` and install it.
+For instance, if the `@storybook/addon-links` is in the `.storybook/main.js|ts` file but is not listed in the project's `package.json`, this rule will notify the user to install it.
 
-As an important side note, this rule will check for the `package.json` in the **root level** of your project. You can customize the location of the `package.json` by [setting the `packageJsonLocation` option](#configure).
+As an important side note, this rule checks for the `package.json` file at the **root level** of your project. You can customize the location of the `package.json` by [setting the `packageJsonLocation` option](#configure).
 
-Another very important side note: your ESLint config must allow the linting of the `.storybook` folder. By default, ESLint ignores all dot-files so this folder will be ignored. In order to allow this rule to lint the `.storybook/main.js` file, it's important to configure ESLint to lint this file. This can be achieved by writing something like:
+Another very important side note: your ESLint config must allow linting the `.storybook` folder. By default, ESLint ignores all dot-files, so this folder will be ignored. To allow this rule to lint the `.storybook/main.js` file, it's essential to configure ESLint to lint this file. This can be achieved by writing something like:
 
 ```
 // Inside your .eslintignore file
@@ -30,8 +30,7 @@ Examples of **incorrect** code for this rule:
 module.exports = {
   addons: [
     '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@storybook/addon-interactions', // <-- this addon is not listed in the package.json
+    '@storybook/addon-a11y', // <-- this addon is not listed in the package.json
   ],
 }
 
@@ -39,7 +38,7 @@ module.exports = {
 {
   "devDependencies": {
     "@storybook/addon-links": "0.0.1",
-    "@storybook/addon-essentials": "0.0.1",
+    "@storybook/addon-a11y": "0.0.1",
   }
 }
 ```
@@ -51,8 +50,7 @@ Examples of **correct** code for this rule:
 module.exports = {
   addons: [
     '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
+    '@storybook/addon-a11y',
   ],
 }
 
@@ -60,8 +58,7 @@ module.exports = {
 {
   "devDependencies": {
     "@storybook/addon-links": "0.0.1",
-    "@storybook/addon-essentials": "0.0.1",
-    "@storybook/addon-interactions": "0.0.1"
+    "@storybook/addon-a11y": "0.0.1"
   }
 }
 ```
@@ -80,11 +77,11 @@ module.exports = {
 };
 ```
 
-Note that the path must be relative to where ESLint runs from, which is usually relative to the root of the project.
+Note that the path must be relative to the location from which ESLint runs, which is typically the root of the project.
 
 #### `ignore`
 
-You can also ignore certain addons by providing an ignore array in the options:
+You can also ignore specific addons by providing an ignore array in the options:
 
 ```js
 module.exports = {
@@ -100,9 +97,9 @@ module.exports = {
 };
 ```
 
-### What if I use a different storybook config directory?
+### What if I use a different Storybook config directory?
 
-Some Storybook folders use a different name for their config directory other than `.storybook`. This rule will not be applied there by default. If you have a custom location for your storybook config directory, then you must add an override in your `.eslintrc.js` file, defining your config directory:
+Some Storybook folders use a different name for their config directory other than `.storybook`. This rule will not be applied there by default. If you have a custom location for your Storybook config directory, then you must add an override in your `.eslintrc.js` file, defining your config directory:
 
 ```js
 {
@@ -119,7 +116,7 @@ Some Storybook folders use a different name for their config directory other tha
 
 ## When Not To Use It
 
-This rule is very handy to be used because if the user tries to start storybook but has forgotten to install the plugin, storybook will throw very weird errors that will give no clue to the user to what's going wrong. To prevent that, this rule should be always on.
+This rule is convenient to use because if the user tries to start Storybook but has forgotten to install the plugin, Storybook will throw very unusual errors that provide no clue to the user about what's going wrong. To prevent that, this rule should always be on.
 
 ## Further Reading
 

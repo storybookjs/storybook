@@ -154,11 +154,13 @@ export const JsonEditorValidation: Story = {
 
       await expect(editAsJsonButton).toHaveAttribute('aria-describedby');
       await fireEvent.click(editAsJsonButton);
-      await expect(canvas.getByLabelText('Edit object as JSON')).toBeInTheDocument();
+      await expect(
+        canvas.getByRole('textbox', { name: 'Edit object as JSON' })
+      ).toBeInTheDocument();
     });
 
     await step('Show a parse error for invalid JSON', async () => {
-      const rawInput = canvas.getByLabelText('Edit object as JSON');
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
 
       await fireEvent.change(rawInput, { target: { value: '{"label":' } });
       await fireEvent.blur(rawInput);
@@ -174,7 +176,7 @@ export const JsonEditorValidation: Story = {
     });
 
     await step('Clear the parse error after entering valid JSON', async () => {
-      const rawInput = canvas.getByLabelText('Edit object as JSON');
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
 
       await fireEvent.change(rawInput, { target: { value: '{"label":"updated"}' } });
       await fireEvent.blur(rawInput);
@@ -201,7 +203,7 @@ export const JsonEditorErrorReset: Story = {
       const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
       await fireEvent.click(editAsJsonButton);
 
-      const rawInput = canvas.getByLabelText('Edit object as JSON');
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
       await fireEvent.change(rawInput, { target: { value: '{"label":' } });
       await fireEvent.blur(rawInput);
 
@@ -214,7 +216,7 @@ export const JsonEditorErrorReset: Story = {
       await fireEvent.click(editAsJsonButton);
       await fireEvent.click(canvas.getByRole('switch', { name: 'Edit object as JSON' }));
 
-      const rawInput = canvas.getByLabelText('Edit object as JSON');
+      const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
       await waitFor(async () => {
         await expect(canvas.queryByRole('status')).not.toBeInTheDocument();
       });

@@ -179,6 +179,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const theme = useTheme();
   const controlId = getControlId(name);
   const jsonErrorId = `${controlId}-error`;
+  const rawToggleDescriptionId = `${controlId}-toggle-description`;
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
@@ -269,21 +270,26 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   return (
     <Wrapper>
       {isObjectOrArray && (
-        <RawButton
-          disabled={readonly}
-          pressed={showRaw}
-          ariaLabel={`Edit ${name} as JSON`}
-          ariaDescription="Toggle between the structured object editor and the raw JSON editor."
-          onClick={(e: SyntheticEvent) => {
-            e.preventDefault();
-            setShowRaw((isRaw) => !isRaw);
-          }}
-          variant="ghost"
-          padding="small"
-          size="small"
-        >
-          <EditIcon />
-        </RawButton>
+        <>
+          <RawButton
+            disabled={readonly}
+            pressed={showRaw}
+            ariaLabel={`Edit ${name} as JSON`}
+            aria-describedby={rawToggleDescriptionId}
+            onClick={(e: SyntheticEvent) => {
+              e.preventDefault();
+              setShowRaw((isRaw) => !isRaw);
+            }}
+            variant="ghost"
+            padding="small"
+            size="small"
+          >
+            <EditIcon />
+          </RawButton>
+          <span id={rawToggleDescriptionId} className="sb-sr-only">
+            Toggle between the structured object editor and the raw JSON editor.
+          </span>
+        </>
       )}
       {!showRaw ? (
         <JsonTree

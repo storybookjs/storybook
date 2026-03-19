@@ -69,6 +69,7 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
   const hasScrolledToSelected = useRef(false);
 
   const [showScrollButtons, setShowScrollButtons] = useState(false);
+  const showScrollButtonsRef = useRef(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -82,9 +83,10 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
 
     const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
     const availableWidth =
-      container.clientWidth - (showScrollButtons ? SCROLL_BUTTON_WIDTH * 2 : 0);
+      container.clientWidth - (showScrollButtonsRef.current ? SCROLL_BUTTON_WIDTH * 2 : 0);
 
     const needsScrolling = scrollWidth > availableWidth;
+    showScrollButtonsRef.current = needsScrolling;
     setShowScrollButtons(needsScrolling);
 
     if (needsScrolling) {
@@ -94,11 +96,7 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
       setCanScrollLeft(false);
       setCanScrollRight(false);
     }
-  }, [showScrollButtons]);
-
-  const throttledUpdateScrollState = useCallback(() => {
-    updateScrollState();
-  }, [updateScrollState]);
+  }, []);
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -106,26 +104,26 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
       return;
     }
 
-    scrollContainer.addEventListener('scroll', throttledUpdateScrollState, { passive: true });
+    scrollContainer.addEventListener('scroll', updateScrollState, { passive: true });
 
     // SSR safety: ResizeObserver may not exist in all environments
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver(throttledUpdateScrollState);
+      resizeObserver = new ResizeObserver(updateScrollState);
       resizeObserver.observe(scrollContainer);
     }
 
     // Initial update - delay to ensure DOM is ready
-    const timeoutId = setTimeout(throttledUpdateScrollState, 0);
+    const timeoutId = setTimeout(updateScrollState, 0);
 
     return () => {
       clearTimeout(timeoutId);
-      scrollContainer.removeEventListener('scroll', throttledUpdateScrollState);
+      scrollContainer.removeEventListener('scroll', updateScrollState);
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
     };
-  }, [throttledUpdateScrollState]);
+  }, [updateScrollState]);
 
   const scrollTabIntoView = useCallback((tab: HTMLElement) => {
     const scrollContainer = scrollContainerRef.current;
@@ -154,13 +152,12 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
       const target = e.target as HTMLElement;
       if (target.role === 'tab') {
         scrollTabIntoView(target);
-        requestAnimationFrame(() => updateScrollState());
       }
     };
 
     scrollContainer.addEventListener('focusin', handleFocusIn);
     return () => scrollContainer.removeEventListener('focusin', handleFocusIn);
-  }, [scrollTabIntoView, updateScrollState]);
+  }, [scrollTabIntoView]);
 
   // Scroll the selected tab into view on initial render
   useEffect(() => {

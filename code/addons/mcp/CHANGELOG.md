@@ -1,5 +1,11 @@
 # @storybook/addon-mcp
 
+## 0.4.2
+
+### Patch Changes
+
+- [#202](https://github.com/storybookjs/mcp/pull/202) [`9d19fae`](https://github.com/storybookjs/mcp/commit/9d19fae499557d2e5393fbeadd1bdda1d664f5dd) Thanks [@shilman](https://github.com/shilman)! - Add MCP registry metadata for `@storybook/addon-mcp`.
+
 ## 0.4.1
 
 ### Patch Changes

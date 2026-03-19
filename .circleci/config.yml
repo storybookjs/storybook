@@ -29,26 +29,10 @@ parameters:
     type: enum
 
 jobs:
-  generate-and-run-config:
+  ribbit:
     executor: 
       name: node/default
       resource_class: small
     steps:
-      - node/install:
-          install-yarn: true
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1'
-      - run:
-          name: Install dependencies
-          command: yarn workspaces focus @storybook/scripts
-      - run:
-          name: Generate config
-          command: |
-            yarn dlx jiti ./scripts/ci/main.ts --workflow=<< pipeline.parameters.workflow >>
-      - continuation/continue:
-          configuration_path: .circleci/config.generated.yml
-workflows:
-  setup:
-    jobs:
-      - generate-and-run-config
-    when: pipeline.parameters.workflow != "skipped"
+      - ribbit:
+          echo "ribbit"

@@ -70,6 +70,7 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
     }
     return (
       <PureArgsTable
+        storyId={story.id}
         rows={filteredArgTypes as any}
         sort={sort}
         args={args}
@@ -102,6 +103,7 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
       globals={globals}
       updateArgs={updateArgs}
       resetArgs={resetArgs}
+      storyId={story.id}
     />
   );
 };

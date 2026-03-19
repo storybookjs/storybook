@@ -83,7 +83,7 @@ jobs:
           git config --global user.name "storybook-bot"
           git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
           git add .
-          git commit -m "Bump version from $CURRENT_VERSION to $DEFERRED_NEXT_VERSION [skip ci]" || true
+          git commit -m "Bump version from $CURRENT_VERSION to $DEFERRED_NEXT_VERSION [skip ci]" --no-verify --allow-empty
           git push origin "$REF_NAME"
 
       - name: Get current version
@@ -181,7 +181,7 @@ jobs:
           git pull
           git checkout origin/main ./CHANGELOG.md
           git add ./CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for v$CURRENT_VERSION [skip ci]" || true
+          git commit -m "Update CHANGELOG.md for v$CURRENT_VERSION [skip ci]" --no-verify --allow-empty
           git push origin next
 
       # Sync the next.json version file to the main branch so it gets deployed to the docs site

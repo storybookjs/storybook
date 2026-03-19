@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises';
+import os from 'node:os';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,6 +15,7 @@ import { SupportedBuilder, SupportedFramework } from '../types';
 import { AddonVitestService } from './AddonVitestService';
 
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('node:os', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('empathic/find', { spy: true });
@@ -391,7 +393,7 @@ describe('AddonVitestService', () => {
       vi.mocked(logger.warn).mockImplementation(() => {});
       // Mock getPackageCommand to return a string
       vi.mocked(mockPackageManager.getPackageCommand).mockReturnValue(
-        'npx playwright install chromium --with-deps'
+        'npx playwright install chromium'
       );
     });
 
@@ -416,25 +418,127 @@ describe('AddonVitestService', () => {
     });
 
     it('should execute playwright install command', async () => {
-      type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
-      let commandFactory: ChildProcessFactory | ChildProcessFactory[];
-      vi.mocked(prompt.confirm).mockResolvedValue(true);
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
-        async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
-          commandFactory = Array.isArray(factory) ? factory[0] : factory;
-          // Simulate the child process completion
-          commandFactory();
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            // Simulate the child process completion
+            commandFactory();
+          }
+        );
+
+        await service.installPlaywright();
+
+        expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+          args: ['playwright', 'install', 'chromium'],
+          signal: undefined,
+          stdio: ['inherit', 'pipe', 'pipe'],
+        });
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI;
         }
-      );
-
-      await service.installPlaywright();
-
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
-        args: ['playwright', 'install', 'chromium', '--with-deps'],
-        signal: undefined,
-        stdio: ['inherit', 'pipe', 'pipe'],
-      });
+      }
     });
+
+    it('should warn about missing system dependencies after install on Linux', async () => {
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            const commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            commandFactory();
+          }
+        );
+
+        const { result } = await service.installPlaywright();
+
+        expect(result).toBe('installed');
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('installed without system dependencies')
+        );
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('run Storybook Test from the Storybook UI')
+        );
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI;
+        }
+      }
+    });
+
+    it('should execute playwright install command with --with-deps in CI', async () => {
+      const originalCI = process.env.CI;
+      process.env.CI = 'true';
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            commandFactory();
+          }
+        );
+
+        await service.installPlaywright();
+
+        expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+          args: ['playwright', 'install', 'chromium', '--with-deps'],
+          signal: undefined,
+          stdio: ['inherit', 'pipe', 'pipe'],
+        });
+      } finally {
+        if (originalCI === undefined) {
+          delete process.env.CI;
+        } else {
+          process.env.CI = originalCI;
+        }
+      }
+    });
+
+    it.each(['darwin', 'win32'] as const)(
+      'should execute playwright install command with --with-deps on %s',
+      async (platform) => {
+        const originalCI = process.env.CI;
+        delete process.env.CI;
+        vi.mocked(os.platform).mockReturnValue(platform);
+        try {
+          type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+          let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+          vi.mocked(prompt.confirm).mockResolvedValue(true);
+          vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+            async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+              commandFactory = Array.isArray(factory) ? factory[0] : factory;
+              commandFactory();
+            }
+          );
+
+          await service.installPlaywright();
+
+          expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+            args: ['playwright', 'install', 'chromium', '--with-deps'],
+            signal: undefined,
+            stdio: ['inherit', 'pipe', 'pipe'],
+          });
+        } finally {
+          if (originalCI !== undefined) {
+            process.env.CI = originalCI;
+          }
+        }
+      }
+    );
 
     it('should capture error stack when installation fails', async () => {
       const error = new Error('Installation failed');

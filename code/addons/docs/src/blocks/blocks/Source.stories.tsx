@@ -78,8 +78,8 @@ const BenchmarkControls = ({
   onUpdate,
   onRunBenchmark,
 }: {
-  countRef: React.RefObject<HTMLOutputElement | null>;
-  resultRef: React.RefObject<HTMLElement | null>;
+  countRef: React.RefObject<HTMLOutputElement>;
+  resultRef: React.RefObject<HTMLSpanElement>;
   onUpdate: () => void;
   onRunBenchmark: () => void;
 }) => (

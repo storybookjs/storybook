@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.3.0-alpha.13",
+  "version": "10.4.0-alpha.0",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -320,6 +320,7 @@
     "get-npm-tarball-url": "^2.1.0",
     "glob": "^10.5.0",
     "globby": "^14.1.0",
+    "host-validation-middleware": "^0.1.2",
     "jiti": "^2.6.1",
     "js-yaml": "^4.1.0",
     "jsdoc-type-pratt-parser": "^4.0.0",
@@ -356,6 +357,7 @@
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "source-map": "^0.7.4",
+    "std-env": "^4.0.0",
     "store2": "^2.14.2",
     "strip-ansi": "^7.1.0",
     "strip-json-comments": "^5.0.1",

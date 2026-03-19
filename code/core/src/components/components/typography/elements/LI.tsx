@@ -3,7 +3,8 @@ import { styled } from 'storybook/theming';
 
 import { codeCommon, withReset } from '../lib/common';
 
-export const LI = styled.li(withReset, ({ theme }) => ({
+export const LI = styled.li(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
   fontSize: theme.typography.size.s2,
   color: theme.color.defaultText,
   lineHeight: '24px',

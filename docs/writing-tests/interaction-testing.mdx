@@ -128,7 +128,7 @@ The `expect` utility here combines the methods available in [Vitest’s `expect`
 | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | [`toBeInTheDocument()`](https://github.com/testing-library/jest-dom#tobeinthedocument) | Checks if the element is in the DOM<br />`await expect(<element>).toBeInTheDocument()`                                               |
 | [`toBeVisible()`](https://github.com/testing-library/jest-dom#tobevisible)             | Checks if the element is visible to the user<br />`await expect(<element>).toBeVisible()`                                            |
-| [`toBeDisabled()`](https://github.com/testing-library/jest-dom#tobedisabled)           | Checks if an element is disabled<br />`await expect(<element>).toBeDisabled()`                                                       |
+| [`toHaveAttribute()`](https://github.com/testing-library/jest-dom#tohaveattribute)     | Checks if an element has an attribute<br />`await expect(<element>).toHaveAttribute('aria-disabled', 'true')`                                                       |
 | [`toHaveBeenCalled()`](https://vitest.dev/api/expect.html#tohavebeencalled)            | Checks that a spied function was called<br />`await expect(<function-spy>).toHaveBeenCalled()`                                       |
 | [`toHaveBeenCalledWith()`](https://vitest.dev/api/expect.html#tohavebeencalledwith)    | Checks that a spied function was called with specific parameters<br />`await expect(<function-spy>).toHaveBeenCalledWith('example')` |
 

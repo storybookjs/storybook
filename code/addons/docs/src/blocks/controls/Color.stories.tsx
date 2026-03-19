@@ -110,7 +110,10 @@ export const WithInvalidMaxPresetColors: Story = {
       { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
       { color: 'hsl(101, 52%, 49%)', title: 'Green' },
     ],
-  },
+    presetColors: Array.from({ length: 40 }, (_, i) => {
+      const hue = Math.round((i / 40) * 360);
+      return { color: `hsl(${hue}, 70%, 50%)`, title: `Color ${i + 1}` };
+    }),
 };
 
 export const StartOpen: Story = {

@@ -23,7 +23,6 @@ export const EXISTING_RESOLUTIONS = new Set([
   'playwright',
   'playwright-core',
   'react',
-  'serialize-javascript',
   'type-fest',
   'typescript',
 ]);

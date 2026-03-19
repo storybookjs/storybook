@@ -578,6 +578,101 @@ test('should create component manifest when only attached-mdx docs have manifest
   `);
 });
 
+test('should prefer story entries over attached-mdx docs entries for the same component id', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/Primary/Primary.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { Primary } from './Primary';
+
+        const meta = {
+          title: 'Example/Primary',
+          component: Primary,
+        } satisfies Meta<typeof Primary>;
+        export default meta;
+
+        export const Default = () => <Primary title="Primary title" />;
+      `,
+      ['./src/Primary/Primary.tsx']: dedent`
+        import React from 'react';
+
+        export interface PrimaryProps {
+          title: string;
+        }
+
+        /** Primary component description */
+        export const Primary = ({ title }: PrimaryProps) => <div>{title}</div>;
+      `,
+      ['./src/OtherFile/OtherFile.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { OtherFile } from './OtherFile';
+
+        const meta = {
+          title: 'Example/Other File',
+          component: OtherFile,
+        } satisfies Meta<typeof OtherFile>;
+        export default meta;
+
+        export const Default = () => <OtherFile label="Other file label" />;
+      `,
+      ['./src/OtherFile/OtherFile.tsx']: dedent`
+        import React from 'react';
+
+        export interface OtherFileProps {
+          label: string;
+        }
+
+        /** Other file component description */
+        export const OtherFile = ({ label }: OtherFileProps) => (
+          <button type="button">{label}</button>
+        );
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries = [
+    {
+      type: 'docs',
+      id: 'example-primary--docs',
+      name: 'Docs',
+      title: 'Example/Primary',
+      importPath: './src/Primary/Primary.mdx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
+      storiesImports: [
+        './src/OtherFile/OtherFile.stories.tsx',
+        './src/Primary/Primary.stories.tsx',
+      ],
+    },
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'example-primary--default',
+      name: 'Default',
+      title: 'Example/Primary',
+      importPath: './src/Primary/Primary.stories.tsx',
+      componentPath: './src/Primary/Primary.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const result = await manifests(undefined, { manifestEntries } as any);
+
+  const component = result?.components?.components?.['example-primary'];
+
+  expect(component?.name).toBe('Primary');
+  expect(component?.path).toBe('./src/Primary/Primary.stories.tsx');
+  expect(component?.stories).toMatchObject([
+    {
+      id: 'example-primary--default',
+      name: 'Default',
+    },
+  ]);
+  expect(component?.stories[0]?.snippet).toContain('<Primary');
+});
+
 test('stories are populated when meta has no explicit title', async () => {
   vol.fromJSON(
     {

@@ -137,7 +137,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
               </ErrorDisplay>
             }
           >
-            <Link isButton>
+            <Link>
               View error <ChevronDownIcon />
             </Link>
           </PopoverProvider>{' '}

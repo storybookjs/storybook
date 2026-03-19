@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
-import type { PackageManagerName } from 'storybook/internal/common';
+import { PackageManagerName } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   isCI,
@@ -42,10 +42,10 @@ export const sandbox = async ({
   let selectedConfig: Template | undefined = TEMPLATES[filterValue as TemplateKey];
   let templateId: Choice | null = selectedConfig ? (filterValue as TemplateKey) : null;
 
-  const { packageManager: pkgMgr } = options;
-
+  // Always use npm to fetch versions, as other package manager commands may fail when running in
+  // non-project directories (e.g. parent sandbox directory). We just need to use npm info for this use case.
   const packageManager = JsPackageManagerFactory.getPackageManager({
-    force: pkgMgr,
+    force: PackageManagerName.NPM,
   });
   const latestVersion = (await packageManager.latestVersion('storybook'))!;
   const nextVersion = (await packageManager.latestVersion('storybook@next')) ?? '0.0.0';

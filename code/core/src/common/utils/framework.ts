@@ -26,6 +26,7 @@ export const frameworkToRenderer: Record<
   [SupportedFramework.WEB_COMPONENTS_RSBUILD]: SupportedRenderer.WEB_COMPONENTS,
   [SupportedFramework.REACT_NATIVE_WEB_VITE]: SupportedRenderer.REACT,
   [SupportedFramework.NUXT]: SupportedRenderer.VUE3,
+  [SupportedFramework.STENCIL]: SupportedRenderer.STENCIL,
 
   // renderers
   [SupportedRenderer.HTML]: SupportedRenderer.HTML,
@@ -61,4 +62,5 @@ export const frameworkToBuilder: Record<SupportedFramework, SupportedBuilder> = 
   [SupportedFramework.VUE3_RSBUILD]: SupportedBuilder.RSBUILD,
   [SupportedFramework.HTML_RSBUILD]: SupportedBuilder.RSBUILD,
   [SupportedFramework.WEB_COMPONENTS_RSBUILD]: SupportedBuilder.RSBUILD,
+  [SupportedFramework.STENCIL]: SupportedBuilder.VITE,
 };

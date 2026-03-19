@@ -18,8 +18,9 @@ test('manifests generates correct id, name, description and examples ', async ()
     (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
   const result = await manifests(undefined, { manifestEntries } as any);
+  const { meta, ...components } = result?.components ?? {};
 
-  expect(result?.components).toMatchInlineSnapshot(`
+  expect(components).toMatchInlineSnapshot(`
     {
       "components": {
         "example-button": {
@@ -525,7 +526,9 @@ test('should create component manifest when only attached-mdx docs have manifest
     },
   ];
 
-  expect(await manifests(undefined, { manifestEntries } as any)).toMatchInlineSnapshot(`
+  const result = await manifests(undefined, { manifestEntries } as any);
+  const { meta: _meta, ...components } = result?.components ?? {};
+  expect({ components }).toMatchInlineSnapshot(`
     {
       "components": {
         "components": {
@@ -572,6 +575,184 @@ test('should create component manifest when only attached-mdx docs have manifest
         "v": 0,
       },
     }
+  `);
+});
+
+test('should prefer story entries over attached-mdx docs entries for the same component id', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/Primary/Primary.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { Primary } from './Primary';
+
+        const meta = {
+          title: 'Example/Primary',
+          component: Primary,
+        } satisfies Meta<typeof Primary>;
+        export default meta;
+
+        export const Default = () => <Primary title="Primary title" />;
+      `,
+      ['./src/Primary/Primary.tsx']: dedent`
+        import React from 'react';
+
+        export interface PrimaryProps {
+          title: string;
+        }
+
+        /** Primary component description */
+        export const Primary = ({ title }: PrimaryProps) => <div>{title}</div>;
+      `,
+      ['./src/OtherFile/OtherFile.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { OtherFile } from './OtherFile';
+
+        const meta = {
+          title: 'Example/Other File',
+          component: OtherFile,
+        } satisfies Meta<typeof OtherFile>;
+        export default meta;
+
+        export const Default = () => <OtherFile label="Other file label" />;
+      `,
+      ['./src/OtherFile/OtherFile.tsx']: dedent`
+        import React from 'react';
+
+        export interface OtherFileProps {
+          label: string;
+        }
+
+        /** Other file component description */
+        export const OtherFile = ({ label }: OtherFileProps) => (
+          <button type="button">{label}</button>
+        );
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries = [
+    {
+      type: 'docs',
+      id: 'example-primary--docs',
+      name: 'Docs',
+      title: 'Example/Primary',
+      importPath: './src/Primary/Primary.mdx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
+      storiesImports: [
+        './src/OtherFile/OtherFile.stories.tsx',
+        './src/Primary/Primary.stories.tsx',
+      ],
+    },
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'example-primary--default',
+      name: 'Default',
+      title: 'Example/Primary',
+      importPath: './src/Primary/Primary.stories.tsx',
+      componentPath: './src/Primary/Primary.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const result = await manifests(undefined, { manifestEntries } as any);
+
+  const component = result?.components?.components?.['example-primary'];
+
+  expect(component?.name).toBe('Primary');
+  expect(component?.path).toBe('./src/Primary/Primary.stories.tsx');
+  expect(component?.stories).toMatchObject([
+    {
+      id: 'example-primary--default',
+      name: 'Default',
+    },
+  ]);
+  expect(component?.stories[0]?.snippet).toContain('<Primary');
+});
+
+test('stories are populated when meta has no explicit title', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Card.stories.ts']: dedent`
+        import type { Meta, StoryObj } from '@storybook/react';
+        import { Card } from './Card';
+
+        const meta: Meta<typeof Card> = {
+          component: Card,
+        };
+        export default meta;
+        type Story = StoryObj<typeof meta>;
+
+        export const Default: Story = { args: { label: 'Click me' } };
+        export const Large: Story = { args: { label: 'Big button', size: 'large' } };
+      `,
+      ['./src/stories/Card.tsx']: dedent`
+        import React from 'react';
+        export interface CardProps {
+          label: string;
+          size?: 'small' | 'large';
+        }
+
+        /** A simple card component */
+        export const Card = ({ label, size }: CardProps) => {
+          return <div className={size}>{label}</div>;
+        };
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'card--default',
+      name: 'Default',
+      title: 'Card',
+      importPath: './src/stories/Card.stories.ts',
+      componentPath: './src/stories/Card.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'card--large',
+      name: 'Large',
+      title: 'Card',
+      importPath: './src/stories/Card.stories.ts',
+      componentPath: './src/stories/Card.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Large',
+    },
+  ];
+
+  const result = await manifests(undefined, { manifestEntries } as any);
+  const component = result?.components?.components?.['card'];
+
+  // When no explicit title is in the meta, stories should still be populated
+  // because the generator should use the index entry's title as fallback
+  expect(component?.stories).toMatchInlineSnapshot(`
+    [
+      {
+        "description": undefined,
+        "id": "card--default",
+        "name": "Default",
+        "snippet": "const Default = () => <Card label="Click me" />;",
+        "summary": undefined,
+      },
+      {
+        "description": undefined,
+        "id": "card--large",
+        "name": "Large",
+        "snippet": "const Large = () => <Card label="Big button" size="large" />;",
+        "summary": undefined,
+      },
+    ]
   `);
 });
 

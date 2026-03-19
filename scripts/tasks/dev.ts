@@ -1,4 +1,3 @@
-import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
 import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
@@ -21,7 +20,12 @@ export const dev: Task = {
   dependsOn: ['sandbox'],
   async ready({ key }) {
     const port = getDevPort(key);
-    return (await detectFreePort(port)) !== port;
+    try {
+      await fetch(`http://localhost:${port}/iframe.html`, { signal: AbortSignal.timeout(1000) });
+      return true;
+    } catch {
+      return false;
+    }
   },
   async run({ sandboxDir, key, selectedTask }, { dryRun, debug }) {
     const controller = new AbortController();

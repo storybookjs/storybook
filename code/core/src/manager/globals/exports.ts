@@ -380,6 +380,7 @@ export default {
     'jsx',
     'keyframes',
     'lighten',
+    'srOnlyStyles',
     'styled',
     'themes',
     'tokens',

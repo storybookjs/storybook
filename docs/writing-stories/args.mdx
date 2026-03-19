@@ -145,6 +145,12 @@ Args specified through the URL will extend and override any default values of ar
   <CodeSnippets path="page-story-args-within-story.md" />
 
   {/* prettier-ignore-end */}
+
+  <Callout variant="warning">
+
+    If you're using Storybook's hooks API in the story's render function, **do not** mix them with React's hooks such as `useState`, `useEffect`, or `useRef`. This is because side effects and re-rendering triggered by React's hooks do not run through Storybook's hook context, which can cause an error on re-render. To manage state and side effects within a story, you must use Storybook's equivalent hooks, such as `useState`, `useEffect`, and `useRef` from `storybook/preview-api`.
+  
+  </Callout>
 </IfRenderer>
 
 ## Mapping to complex arg values

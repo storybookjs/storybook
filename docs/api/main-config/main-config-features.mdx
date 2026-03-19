@@ -16,14 +16,17 @@ Type:
   actions?: boolean;
   argTypeTargetsV7?: boolean;
   backgrounds?: boolean;
+  componentsManifest?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
+  experimentalCodeExamples?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -45,6 +48,7 @@ Type:
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -65,6 +69,7 @@ Type:
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -77,6 +82,8 @@ Enables Storybook's additional features.
 ## `actions`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Actions](../../essentials/actions.mdx) feature.
 
@@ -96,6 +103,8 @@ Filter non-input controls in Angular.
 
 Type: `boolean`
 
+Default: `true`
+
 Filter args with a "target" on the type from the render function.
 
 {/* prettier-ignore-start */}
@@ -108,11 +117,29 @@ Filter args with a "target" on the type from the render function.
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
+
+<If renderer="react">
+
+## `componentsManifest`
+
+Type: `boolean`
+
+Default: `true`
+
+Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/mcp/overview.mdx).
+
+<CodeSnippets path="main-config-features-components-manifest.md" />
+
+</If>
 
 ## `controls`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Controls](../../essentials/controls.mdx) feature.
 
@@ -129,6 +156,18 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 {/* prettier-ignore-end */}
 
 <If renderer="react">
+
+## `experimentalCodeExamples`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Enable the new code example generation method for React components (as seen in the story previews in an [autodocs](../../writing-docs/autodocs.mdx) page).
+
+Unlike the current implementation, this method reads the actual stories source file, which is faster to generate, more readable, and more accurate. However, they are not dynamic: they won't update if you change values in the Controls table.
+
+<CodeSnippets path="main-config-features-experimental-code-examples.md" />
 
 ## `experimentalTestSyntax`
 
@@ -150,11 +189,15 @@ Enable the [experimental `.test` method with the CSF Next format](../csf/csf-nex
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Highlight](../../essentials/highlight.mdx) feature.
 
 ## `interactions`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Interactions](../../writing-tests/interaction-testing.mdx#debugging-interaction-tests) feature.
 
@@ -174,22 +217,30 @@ Apply decorators from preview.js before decorators from addons or frameworks. [M
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Measure](../../essentials/measure-and-outline.mdx#measure) feature.
 
 ## `outline`
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Outline](../../essentials/measure-and-outline.mdx#outline) feature.
 
-## `toolbars`
+## `sidebarOnboardingChecklist`
 
 Type: `boolean`
 
-Enable the [Toolbars](../../essentials/toolbars.mdx) feature.
+Default: `true`
+
+Enable the onboarding checklist sidebar widget.
 
 ## `viewport`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Viewport](../../essentials/viewport.mdx) feature.

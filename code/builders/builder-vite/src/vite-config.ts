@@ -60,6 +60,12 @@ export async function commonConfig(
   const sbConfig: InlineConfig = {
     configFile: false,
     plugins: await pluginConfig(options),
+    root: projectRoot,
+    // Allow storybook deployed as subfolder. See https://github.com/storybookjs/builder-vite/issues/238
+    base: './',
+    ...(options.cacheKey
+      ? { cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey) }
+      : {}),
     // Pass build.target option from user's vite config
     build: {
       target: buildProperty?.target,
@@ -72,28 +78,11 @@ export async function commonConfig(
 }
 
 export async function pluginConfig(options: Options) {
-  const projectRoot = resolve(options.configDir, '..');
-
   const plugins = [
     // Shared core plugins (resolve conditions, envPrefix, fs.allow, externals, env vars, etc.)
     ...(await corePlugins([], options)),
     await storybookExternalGlobalsPlugin(options),
     await csfPlugin(options),
-    // Builder-specific: root, base, and cacheDir
-    {
-      name: 'storybook:builder-vite-config',
-      enforce: 'pre' as const,
-      config() {
-        return {
-          root: projectRoot,
-          // Allow storybook deployed as subfolder. See https://github.com/storybookjs/builder-vite/issues/238
-          base: './',
-          ...(options.cacheKey
-            ? { cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey) }
-            : {}),
-        };
-      },
-    },
     // Entry plugin: virtual modules for stories, addon setup, and main app entry
     ...(await storybookEntryPlugin(options)),
     // Builder-specific: webpack-compatible stats for turbosnap/chromatic

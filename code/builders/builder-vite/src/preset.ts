@@ -10,6 +10,8 @@ import { storybookSanitizeEnvs } from './plugins/storybook-runtime-plugin';
 import { viteInjectMockerRuntime } from './plugins/vite-inject-mocker/plugin';
 import { viteMockPlugin } from './plugins/vite-mock/plugin';
 
+export const optimizeViteDeps: string[] = ['storybook/internal/preview/runtime'];
+
 /**
  * Preset that provides the core Storybook Vite plugins shared between `@storybook/builder-vite` and
  * `@storybook/addon-vitest`.

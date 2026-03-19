@@ -2,7 +2,6 @@ import { recast } from 'storybook/internal/babel';
 import { Tag } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
   type ComponentManifest,
@@ -10,17 +9,53 @@ import {
   type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
-import { getComponents, getImports } from './getComponentImports';
+import { type TypescriptOptions, getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
 import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
+  reactDocgenTypescript?: ComponentDocWithExportName;
+}
+
+function selectComponentEntries(manifestEntries: IndexEntry[]) {
+  const entriesByComponentId = new Map<string, IndexEntry>();
+
+  manifestEntries
+    .filter(
+      (entry) =>
+        (entry.type === 'story' && entry.subtype === 'story') ||
+        // Attached docs entries are the only docs entries that can contribute to a
+        // component manifest, because they point back to a story file through storiesImports.
+        (entry.type === 'docs' &&
+          entry.tags?.includes(Tag.ATTACHED_MDX) &&
+          entry.storiesImports.length > 0)
+    )
+    .forEach((entry) => {
+      const componentId = entry.id.split('--')[0];
+      const existingEntry = entriesByComponentId.get(componentId);
+
+      if (!existingEntry) {
+        // Keep the first eligible entry as a fallback so docs-only manifest coverage
+        // continues to work when no story entry for that component carries the manifest tag.
+        entriesByComponentId.set(componentId, entry);
+        return;
+      }
+
+      if (existingEntry.type === 'docs' && entry.type === 'story') {
+        // When both entries exist for the same component id, the story entry is authoritative.
+        // Attached docs may list unrelated stories first in storiesImports, so using the story
+        // entry avoids resolving the manifest from the wrong file.
+        entriesByComponentId.set(componentId, entry);
+      }
+    });
+
+  return [...entriesByComponentId.values()];
 }
 
 function findMatchingComponent(
@@ -88,7 +123,7 @@ function extractStories(
 
 function extractComponentDescription(
   csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
-  docgen: DocObj | undefined
+  docgen: { description?: string } | undefined
 ) {
   const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
   const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
@@ -103,23 +138,17 @@ export const manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[] }
-> = async (existingManifests = {}, { manifestEntries }) => {
+> = async (existingManifests = {}, options) => {
+  const { manifestEntries, presets } = options;
+  const typescriptOptions =
+    (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
+
   invalidateCache();
+  invalidateParser();
 
-  const startPerformance = performance.now();
+  const startTime = performance.now();
 
-  const entriesByUniqueComponent = uniqBy(
-    manifestEntries.filter(
-      (entry) =>
-        (entry.type === 'story' && entry.subtype === 'story') ||
-        // addon-docs will add docs entries to these manifest entries afterwards
-        // Docs entries have importPath pointing to MDX file, but storiesImports[0] points to the story file
-        (entry.type === 'docs' &&
-          entry.tags?.includes(Tag.ATTACHED_MDX) &&
-          entry.storiesImports.length > 0)
-    ),
-    (entry) => entry.id.split('--')[0]
-  );
+  const entriesByUniqueComponent = selectComponentEntries(manifestEntries);
 
   const components = entriesByUniqueComponent
     .map((entry): ReactComponentManifest | undefined => {
@@ -130,13 +159,17 @@ export const manifests: PresetPropertyFn<
             (entry as DocsIndexEntry).storiesImports[0];
       const absoluteImportPath = path.join(process.cwd(), storyFilePath);
       const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
-      const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
+      const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
 
       const componentName = csf._meta?.component;
       const id = entry.id.split('--')[0];
       const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-      const allComponents = getComponents({ csf, storyFilePath: absoluteImportPath });
+      const allComponents = getComponents({
+        csf,
+        storyFilePath: absoluteImportPath,
+        typescriptOptions,
+      });
       const component = findMatchingComponent(
         allComponents,
         componentName,
@@ -160,7 +193,9 @@ export const manifests: PresetPropertyFn<
         jsDocTags: {},
       } satisfies Partial<ComponentManifest>;
 
-      if (!component?.reactDocgen) {
+      const hasDocgen = component?.reactDocgen || component?.reactDocgenTypescript;
+
+      if (!hasDocgen) {
         const error = !csf._meta?.component
           ? {
               name: 'No component found',
@@ -183,29 +218,44 @@ export const manifests: PresetPropertyFn<
         };
       }
 
+      // Extract description from whichever engine is active
       const docgenResult = component.reactDocgen;
-      const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
-      const { description, summary, jsDocTags } = extractComponentDescription(csf, docgen);
+      const docgen = docgenResult?.type === 'success' ? docgenResult.data : undefined;
+      const reactDocgenTypescriptDoc = component.reactDocgenTypescript;
+
+      // Use react-docgen description if available, fall back to RDT description
+      const docgenDescription = docgen?.description ?? reactDocgenTypescriptDoc?.description;
+      const { description, summary, jsDocTags } = extractComponentDescription(
+        csf,
+        docgenDescription ? { description: docgenDescription } : undefined
+      );
 
       return {
         ...base,
         description,
         summary,
         import: imports,
-        reactDocgen: docgen,
+        ...(docgen ? { reactDocgen: docgen } : {}),
+        ...(reactDocgenTypescriptDoc ? { reactDocgenTypescript: reactDocgenTypescriptDoc } : {}),
         jsDocTags,
-        error: docgenResult.type === 'error' ? docgenResult.error : undefined,
+        error:
+          (docgenResult?.type === 'error' ? docgenResult.error : undefined) ??
+          component.reactDocgenTypescriptError,
       };
     })
     .filter((component) => component !== undefined);
 
-  logger.verbose(`Component manifest generation took ${performance.now() - startPerformance}ms`);
+  const durationMs = Math.round(performance.now() - startTime);
 
   return {
     ...existingManifests,
     components: {
       v: 0,
       components: Object.fromEntries(components.map((component) => [component.id, component])),
+      meta: {
+        docgen: typescriptOptions.reactDocgen ?? 'react-docgen',
+        durationMs,
+      },
     },
   };
 };

@@ -1,10 +1,11 @@
 import type { Channel } from 'storybook/internal/channels';
 import { DOCS_RENDERED } from 'storybook/internal/core-events';
 import type { Renderer, StoryId } from 'storybook/internal/types';
-import type { CSFFile, ModuleExports } from 'storybook/internal/types';
+import type { CSFFile, ModuleExports, PreparedStory } from 'storybook/internal/types';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { RenderContextCallbacks } from 'storybook/internal/types';
 
+import { Tag } from '../../../../shared/constants/tags';
 import type { StoryStore } from '../../store';
 import { DocsContext } from '../docs-context/DocsContext';
 import type { DocsContextProps } from '../docs-context/DocsContextProps';
@@ -46,6 +47,10 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
 
   public csfFiles?: CSFFile<TRenderer>[];
 
+  public attachedCsfFile?: CSFFile<TRenderer>;
+
+  public attachedStory?: PreparedStory<TRenderer>;
+
   constructor(
     protected channel: Channel,
     protected store: StoryStore<TRenderer>,
@@ -70,6 +75,20 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
 
     this.csfFiles = csfFiles;
     this.exports = entryExports;
+    this.attachedCsfFile = undefined;
+    this.attachedStory = undefined;
+
+    if (this.entry.tags?.includes(Tag.ATTACHED_MDX)) {
+      this.attachedCsfFile = csfFiles[0];
+
+      const primaryStoryId = this.attachedCsfFile && Object.keys(this.attachedCsfFile.stories)[0];
+      if (this.attachedCsfFile && primaryStoryId) {
+        this.attachedStory = this.store.storyFromCSFFile({
+          storyId: primaryStoryId,
+          csfFile: this.attachedCsfFile,
+        });
+      }
+    }
 
     this.preparing = false;
   }
@@ -87,14 +106,18 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
       throw new Error('Cannot render docs before preparing');
     }
 
-    // NOTE we do *not* attach any CSF file yet. We wait for `referenceMeta(..., true)`
-    // ie the CSF file is attached via `<Meta of={} />`
-    return new DocsContext<TRenderer>(
+    const docsContext = new DocsContext<TRenderer>(
       this.channel,
       this.store,
       renderStoryToElement,
       this.csfFiles
     );
+
+    if (this.attachedCsfFile) {
+      docsContext.attachCSFFile(this.attachedCsfFile);
+    }
+
+    return docsContext;
   }
 
   async renderToElement(
@@ -108,15 +131,16 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
     const docsContext = this.docsContext(renderStoryToElement);
 
     const { docs } = this.store.projectAnnotations.parameters ?? ({} as { docs: any });
+    const baseDocsParameter = this.attachedStory?.parameters?.docs ?? docs;
 
-    if (!docs) {
+    if (!baseDocsParameter) {
       throw new Error(
         `Cannot render a story in viewMode=docs if \`@storybook/addon-docs\` is not installed`
       );
     }
 
-    const docsParameter = { ...docs, page: this.exports.default };
-    const renderer = await docs.renderer();
+    const docsParameter = { ...baseDocsParameter, page: this.exports.default };
+    const renderer = await baseDocsParameter.renderer();
     const { render } = renderer as { render: DocsRenderFunction<TRenderer> };
     const renderDocs = async () => {
       try {

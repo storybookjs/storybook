@@ -46,6 +46,9 @@ const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
         outline: 'none',
       },
     },
+    'input:disabled': {
+      background: 'transparent',
+    },
     'input + div': {
       paddingInline: 0,
       fontSize: 'inherit',
@@ -53,6 +56,10 @@ const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
     '&:has(input:focus-visible)': {
       outline: `2px solid ${theme.color.secondary}`,
       outlineOffset: -2,
+    },
+    '&:has(input:disabled)': {
+      background: theme.base === 'light' ? theme.color.lighter : theme.input.background,
+      cursor: 'not-allowed',
     },
     ...(after && { paddingRight: 2 }),
     ...(before && { paddingLeft: 2 }),
@@ -67,6 +74,7 @@ interface NumericInputProps extends Omit<ComponentProps<typeof Form.Input>, 'val
   setValue: (value: string) => void;
   minValue?: number;
   maxValue?: number;
+  step?: number;
   unit?: string;
   baseUnit?: string;
 }
@@ -80,6 +88,7 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
     setValue,
     minValue = -Infinity,
     maxValue = Infinity,
+    step = 1,
     unit: fixedUnit,
     baseUnit = fixedUnit,
     className,
@@ -156,7 +165,8 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
 
       const { number, unit } = parseValue(inputValue);
       if (!Number.isNaN(number)) {
-        updateValue(`${e.key === 'ArrowUp' ? number + 1 : number - 1}${unit}`);
+        const delta = e.shiftKey ? step * 10 : step;
+        updateValue(`${e.key === 'ArrowUp' ? number + delta : number - delta}${unit}`);
         setInputSelection();
       }
     };
@@ -166,7 +176,7 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
       input.addEventListener('keydown', handleKeyDown);
       return () => input.removeEventListener('keydown', handleKeyDown);
     }
-  }, [inputValue, parseValue, updateValue, setInputSelection]);
+  }, [inputValue, parseValue, setInputSelection, step, updateValue]);
 
   return (
     <Wrapper after={after} before={before} className={className} style={style}>

@@ -88,7 +88,7 @@ test.describe("component testing", () => {
        * We click the link so the modal opens and we can close it.
        * Having it open shortly is enough to have it be in the playwright trace, for debugging purposes.
        */
-      const descriptionButton = page.locator("#testing-module-description a");
+      const descriptionButton = page.locator("#testing-module-description button");
       if (
         await descriptionButton.isVisible({ timeout: 4000 }).catch(() => false)
       ) {
@@ -237,12 +237,12 @@ test.describe("component testing", () => {
     const watchModeButton = await page.getByRole("switch", {
       name: "Watch mode",
     });
-    await expect(runTestsButton).toBeEnabled();
-    await expect(watchModeButton).toBeEnabled();
+    await expect(runTestsButton).not.toHaveAttribute("aria-disabled", "true");
+    await expect(watchModeButton).not.toHaveAttribute("aria-disabled", "true");
 
     await runTestsButton.click();
 
-    await expect(watchModeButton).toBeDisabled();
+    await expect(watchModeButton).toHaveAttribute("aria-disabled", "true");
 
     // Wait for test results to appear
     await expect(page.locator("#testing-module-description")).toHaveText(
@@ -250,8 +250,8 @@ test.describe("component testing", () => {
       { timeout: 30000 }
     );
 
-    await expect(runTestsButton).toBeEnabled();
-    await expect(watchModeButton).toBeEnabled();
+    await expect(runTestsButton).not.toHaveAttribute("aria-disabled", "true");
+    await expect(watchModeButton).not.toHaveAttribute("aria-disabled", "true");
 
     const errorFilter = page.getByLabel(
       /Filter main navigation to show \d+ tests with errors/
@@ -597,7 +597,7 @@ test.describe("component testing", () => {
 
     // Assert - Tests are running and errors are reported
     const errorLink = page.locator(
-      "#storybook-testing-module #testing-module-description a"
+      "#storybook-testing-module #testing-module-description button"
     );
     await expect(errorLink).toContainText("View full error", {
       timeout: 30000,

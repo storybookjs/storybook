@@ -15,7 +15,7 @@ Current version: 10.2.x (as of March 2026)
 - **Monorepo Tool**: NX (with `--no-cloud` flag required to avoid NX Cloud login issues)
 - **Test Runner**: Vitest (primary), Playwright (E2E)
 - **Linting**: ESLint 8
-- **Formatting**: Prettier 3.7+
+- **Formatting**: Oxfmt
 - **Bundlers**: Vite 7, Webpack 5, esbuild
 - **UI Libraries**: React 18, react-aria (use specific submodules, not root imports)
 - **Build System**: Custom build via `jiti ./scripts/build/build-package.ts`

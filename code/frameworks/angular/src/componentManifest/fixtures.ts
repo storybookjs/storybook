@@ -4,9 +4,7 @@ import { dedent } from 'ts-dedent';
 
 import type { CompodocJson } from '../client/compodoc-types';
 
-/**
- * Compodoc documentation.json fixture for Angular component tests.
- */
+/** Compodoc documentation.json fixture for Angular component tests. */
 export const sampleCompodocJson: CompodocJson = {
   components: [
     {
@@ -15,7 +13,7 @@ export const sampleCompodocJson: CompodocJson = {
       selector: 'app-button',
       description: '<p>Primary UI component for user interaction</p>',
       rawdescription:
-        'Primary UI component for user interaction\n@import import { ButtonComponent } from \'@design-system/components/override\';',
+        "Primary UI component for user interaction\n@import import { ButtonComponent } from '@design-system/components/override';",
       inputsClass: [
         {
           name: 'label',
@@ -196,7 +194,7 @@ export const indexJson = {
       importPath: './src/stories/header.stories.ts',
       type: 'docs',
       tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS],
-      storiesImports: [],
+      storiesImports: [] as string[],
     },
     'example-header--logged-in': {
       type: 'story',

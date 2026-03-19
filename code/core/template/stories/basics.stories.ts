@@ -2,6 +2,9 @@ import { global as globalThis } from '@storybook/global';
 
 import { action } from 'storybook/actions';
 
+const optionLimitAction = action('onClick', { limit: 3 });
+let optionLimitSequence = 0;
+
 export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   args: {
@@ -87,6 +90,12 @@ export const OptionPersist = {
 };
 export const OptionDepth = {
   args: { onClick: action('onClick', { depth: 2 }) },
+};
+export const OptionLimit = {
+  args: {
+    onClick: () => optionLimitAction({ seq: optionLimitSequence++ }),
+    label: 'Click me repeatedly (limit: 3)',
+  },
 };
 
 export const Disabled = {

@@ -104,9 +104,19 @@ import { action } from 'storybook/actions';
 
 #### `action`
 
-Type: `(name?: string) => void`
+Type: `(name?: string, options?: { limit?: number }) => void`
 
 Allows you to create an action that appears in the actions panel of the Storybook UI when clicked. The action function takes an optional name parameter, which is used to identify the action in the UI.
+
+You can optionally pass an options object to control how events are stored in the panel.
+
+##### `options.limit`
+
+Type: `number`
+
+Default: `50`
+
+Maximum number of entries retained in the Actions panel for this action. Once the limit is reached, Storybook keeps the **most recent** entries and drops older ones.
 
 {/* prettier-ignore-start */}
 

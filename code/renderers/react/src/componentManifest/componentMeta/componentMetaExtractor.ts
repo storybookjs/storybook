@@ -57,7 +57,6 @@ export interface ComponentDoc {
   filePath: string;
   description: string;
   jsDocTags?: Record<string, string[]>;
-  extends?: string[];
   props: Record<string, PropItem>;
 }
 
@@ -547,89 +546,6 @@ function getAllDeclarationParents(
   }
 
   return parents.length > 0 ? parents : undefined;
-}
-
-function getPropsTypeDeclarations(typescript: typeof ts, type: ts.Type) {
-  const declarations = new Set<ts.Declaration>();
-  const symbols = [type.aliasSymbol, type.getSymbol?.()].filter(
-    (symbol): symbol is ts.Symbol => symbol !== undefined
-  );
-
-  for (const symbol of symbols) {
-    for (const declaration of symbol.getDeclarations() ?? []) {
-      if (
-        typescript.isInterfaceDeclaration(declaration) ||
-        typescript.isTypeAliasDeclaration(declaration)
-      ) {
-        declarations.add(declaration);
-      }
-    }
-  }
-
-  return [...declarations];
-}
-
-function collectInheritedTypeNodes(
-  typescript: typeof ts,
-  declaration: ts.InterfaceDeclaration | ts.TypeAliasDeclaration
-): ts.TypeNode[] {
-  if (typescript.isInterfaceDeclaration(declaration)) {
-    return (
-      declaration.heritageClauses
-        ?.filter((clause) => clause.token === typescript.SyntaxKind.ExtendsKeyword)
-        .flatMap((clause) => clause.types) ?? []
-    );
-  }
-
-  const result: ts.TypeNode[] = [];
-
-  const visit = (node: ts.TypeNode): void => {
-    if (typescript.isParenthesizedTypeNode(node)) {
-      visit(node.type);
-      return;
-    }
-
-    if (typescript.isIntersectionTypeNode(node)) {
-      node.types.forEach(visit);
-      return;
-    }
-
-    if (typescript.isTypeReferenceNode(node)) {
-      result.push(node);
-      return;
-    }
-  };
-
-  visit(declaration.type);
-  return result;
-}
-
-function collectExtendsForFilteredProps(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
-  propsType: ts.Type,
-  excludedPropNames: Set<string>
-): string[] | undefined {
-  if (excludedPropNames.size === 0) {
-    return undefined;
-  }
-
-  const extendsTypes = new Set<string>();
-
-  for (const declaration of getPropsTypeDeclarations(typescript, propsType)) {
-    for (const typeNode of collectInheritedTypeNodes(typescript, declaration)) {
-      const inheritedType = checker.getTypeFromTypeNode(typeNode);
-      const inheritedPropNames = new Set(
-        inheritedType.getApparentProperties().map((prop) => prop.getName())
-      );
-
-      if ([...excludedPropNames].some((propName) => inheritedPropNames.has(propName))) {
-        extendsTypes.add(typeNode.getText());
-      }
-    }
-  }
-
-  return extendsTypes.size > 0 ? [...extendsTypes] : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -1446,7 +1362,6 @@ export function serializeComponentDoc(
     allProperties = propsType.getApparentProperties();
   }
   const excluded = getBulkSourceExclusions(allProperties);
-  const extendsTypes = collectExtendsForFilteredProps(typescript, checker, propsType, excluded);
 
   // Collect defaults: destructuring > defaultProps > JSDoc (in extractPropItem)
   const defaultsMap = extractDestructuringDefaults(typescript, resolved, checker);
@@ -1516,7 +1431,6 @@ export function serializeComponentDoc(
     filePath,
     description,
     jsDocTags,
-    extends: extendsTypes,
     props,
   };
 }

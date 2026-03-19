@@ -563,35 +563,7 @@ describe('prop extraction', () => {
       );
 
       expect(entry.component?.reactComponentMeta).toMatchObject({
-        extends: ['React.ButtonHTMLAttributes<HTMLButtonElement>'],
         props: { variant: { required: true }, label: { required: true } },
-      });
-      expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('onClick');
-      expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('className');
-    });
-
-    it('reports extends for bulk-filtered intersection members', async () => {
-      const entry = await extract(
-        'Button',
-        dedent`
-          import React from 'react';
-          type BaseProps = { loading?: boolean };
-          type ButtonProps = BaseProps &
-            React.ButtonHTMLAttributes<HTMLButtonElement> & {
-              variant: 'primary' | 'secondary';
-              label: string;
-            };
-          export const Button = (props: ButtonProps) => <button />;
-        `
-      );
-
-      expect(entry.component?.reactComponentMeta).toMatchObject({
-        extends: ['React.ButtonHTMLAttributes<HTMLButtonElement>'],
-        props: {
-          loading: { required: false },
-          variant: { required: true },
-          label: { required: true },
-        },
       });
       expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('onClick');
       expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('className');
@@ -616,7 +588,6 @@ describe('prop extraction', () => {
           label: { required: true },
         },
       });
-      expect(entry.component?.reactComponentMeta?.extends).toBeUndefined();
     });
   });
 

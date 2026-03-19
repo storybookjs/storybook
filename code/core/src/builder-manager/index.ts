@@ -53,7 +53,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     ? [...managerEntriesFromPresets, configDirManagerEntry]
     : managerEntriesFromPresets;
 
-  return {
+  const baseConfig: Awaited<ReturnType<ManagerBuilder['getConfig']>> = {
     entryPoints: await wrapManagerEntries(entryPoints, options.cacheKey),
     outdir: join(options.outputDir || './', 'sb-addons'),
     format: 'iife',
@@ -118,6 +118,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       module: '{}',
     },
   };
+  return options.presets.apply('managerBuildFinal', baseConfig, options);
 };
 
 export const executor = {

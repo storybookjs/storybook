@@ -82,6 +82,7 @@ export interface Presets {
   apply(extension: 'env', config?: {}, args?: any): Promise<any>;
   apply(extension: 'stories', config?: [], args?: any): Promise<StoriesEntry[]>;
   apply(extension: 'managerEntries', config: [], args?: any): Promise<string[]>;
+  apply(extension: 'managerBuildFinal', config?: any, args?: any): Promise<any>;
   apply(extension: 'refs', config?: [], args?: any): Promise<StorybookConfigRaw['refs']>;
   apply(
     extension: 'core',
@@ -543,6 +544,8 @@ export interface StorybookConfigRaw {
 
   swc?: any;
 
+  managerBuildFinal?: any;
+
   env?: Record<string, string>;
 
   // We cannot use a particular Babel type here because we need to support a variety of versions
@@ -669,6 +672,20 @@ export interface StorybookConfig {
    * which is the existing head content, and return a modified string.
    */
   managerHead?: PresetValue<StorybookConfigRaw['managerHead']>;
+
+  /**
+   * Customize the esbuild config used to build the Storybook manager.
+   * Must return the (modified) config.
+   *
+   * @example
+   * ```ts
+   * managerBuildFinal: (config) => ({
+   *   ...config,
+   *   conditions: ['@app/src', ...config.conditions],
+   * })
+   * ```
+   */
+  managerBuildFinal?: PresetValue<StorybookConfigRaw['managerBuildFinal']>;
 
   /** Configure non-standard tag behaviors */
   tags?: PresetValue<StorybookConfigRaw['tags']>;

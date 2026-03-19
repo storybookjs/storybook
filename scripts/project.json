@@ -22,14 +22,6 @@
       "inputs": ["default"],
       "configurations": { "production": {} }
     },
-    "test": {
-      "dependsOn": [{ "projects": ["core"], "target": "compile" }],
-      "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn test" },
-      "cache": true,
-      "inputs": ["default", "all-production"],
-      "configurations": { "production": {} }
-    },
     "run-registry": {},
     "publish": {}
   }

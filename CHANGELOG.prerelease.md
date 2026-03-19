@@ -1,3 +1,15 @@
+## 10.4.0-alpha.0
+
+
+## 10.3.0-beta.3
+
+- Addon-Vitest: Handle additional vitest config export patterns in postinstall - [#34106](https://github.com/storybookjs/storybook/pull/34106), thanks @copilot-swe-agent!
+- CLI: Add vike CLI metadata - [#34189](https://github.com/storybookjs/storybook/pull/34189), thanks @yannbf!
+- Maintenance: Revert pull request #33930 HMR events - [#34190](https://github.com/storybookjs/storybook/pull/34190), thanks @yannbf!
+- UI: Ensure Link without href is keyboard-reachable - [#34163](https://github.com/storybookjs/storybook/pull/34163), thanks @Sidnioulz!
+- UI: Zoom faster when pressing shift - [#34185](https://github.com/storybookjs/storybook/pull/34185), thanks @Sidnioulz!
+- Vite: Add mock entries to optimizeDeps.entries - [#34167](https://github.com/storybookjs/storybook/pull/34167), thanks @valentinpalkovic!
+
 ## 10.3.0-beta.2
 
 - UI: Hide addon panel Drag on pages without a panel - [#34162](https://github.com/storybookjs/storybook/pull/34162), thanks @Sidnioulz!

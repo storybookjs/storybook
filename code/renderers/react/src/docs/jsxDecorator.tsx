@@ -58,6 +58,14 @@ function simplifyNodeForStringify(node: ReactNode): ReactNode {
       acc[cur] = simplifyNodeForStringify(node.props[cur]);
       return acc;
     }, {});
+    // React stores `key` on the element itself, not in `props`. The library
+    // react-element-to-jsx-string reads element.key, but it calls
+    // React.Children.toArray internally which prefixes user-specified keys
+    // with ".$", causing them to be treated as auto-generated and omitted.
+    // By copying key into props here we ensure it survives that transformation.
+    if (node.key !== null) {
+      props.key = node.key;
+    }
     return {
       ...node,
       props,

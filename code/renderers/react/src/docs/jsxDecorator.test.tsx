@@ -71,6 +71,42 @@ describe('renderJsx', () => {
       </div>
     `);
   });
+  it('key prop on children is preserved in generated source', () => {
+    const Item: FC<PropsWithChildren<{ title: string }>> = ({ title, children }) => (
+      <div title={title}>{children}</div>
+    );
+    const Wrapper: FC<PropsWithChildren> = ({ children }) => <div>{children}</div>;
+    expect(
+      renderJsx(
+        <Wrapper>
+          {[
+            <Item key="item1" title="First">
+              content
+            </Item>,
+            <Item key="item2" title="Second">
+              content
+            </Item>,
+          ]}
+        </Wrapper>,
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      <Wrapper>
+        <Item
+          key="item1"
+          title="First"
+        >
+          content
+        </Item>
+        <Item
+          key="item2"
+          title="Second"
+        >
+          content
+        </Item>
+      </Wrapper>
+    `);
+  });
   it('large objects', () => {
     const obj = Array.from({ length: 20 }).reduce((acc, _, i) => {
       // @ts-expect-error (Converted from ts-ignore)

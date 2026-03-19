@@ -62,7 +62,7 @@ export const sandbox = async ({
       This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
       You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
       ${picocolors.bold('npx storybook@latest sandbox')}
-      
+
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
     longInitTime: picocolors.yellow(
@@ -201,7 +201,7 @@ export const sandbox = async ({
       const gitPath = `storybookjs/sandboxes/tree/${branch}/${templateId}/${downloadType}`;
       // create `templateDestination` first
       await mkdir(templateDestination, { recursive: true });
-      spawnSync('npx', ['gitpick@4.12.4', gitPath, templateDestination, '-o'], {
+      spawnSync('npx', ['-y', 'gitpick@4.12.4', gitPath, templateDestination, '-o'], {
         stdio: 'inherit',
       });
       // throw an error if templateDestination is an empty directory

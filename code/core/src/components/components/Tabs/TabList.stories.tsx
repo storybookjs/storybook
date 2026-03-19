@@ -207,7 +207,19 @@ export const ArrowKeyScrollsOverflowingTabs = meta.story({
     expect(focusedTab).toBeTruthy();
 
     // Verify the focused tab is within the visible scroll area
-    const scrollContainer = canvasElement.querySelector('[style*="overflow"]') ?? canvasElement;
+    // Walk up from the tablist to find the actual scrollable container (styled-components
+    // apply overflow via class, not inline style, so [style*="overflow"] won't match).
+    const tablist = canvasElement.querySelector('[role="tablist"]');
+    let scrollContainer: Element = canvasElement;
+    let node = tablist?.parentElement;
+    while (node) {
+      const overflow = getComputedStyle(node).overflowX;
+      if (overflow === 'auto' || overflow === 'scroll') {
+        scrollContainer = node;
+        break;
+      }
+      node = node.parentElement;
+    }
     const containerRect = scrollContainer.getBoundingClientRect();
     const tabRect = focusedTab.getBoundingClientRect();
     expect(tabRect.right).toBeLessThanOrEqual(containerRect.right + 1);

@@ -150,7 +150,7 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
 
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
-      if (target.role === 'tab') {
+      if (target.getAttribute('role') === 'tab') {
         scrollTabIntoView(target);
       }
     };
@@ -175,8 +175,8 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
       if (selectedTab) {
         scrollTabIntoView(selectedTab);
         updateScrollState();
-        hasScrolledToSelected.current = true;
       }
+      hasScrolledToSelected.current = true;
     }, 0);
 
     return () => clearTimeout(timeoutId);

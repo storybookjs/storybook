@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
 
 import * as babel from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -106,7 +107,10 @@ export class AddonVitestService {
   /**
    * Install Playwright browser binaries for @storybook/addon-vitest
    *
-   * Installs Chromium with dependencies via `npx playwright install chromium --with-deps`
+   * Installs Chromium via `npx playwright install chromium`. In CI environments and on
+   * macOS/Windows (officially supported platforms), also installs system-level browser dependencies
+   * via `--with-deps`. On other platforms (e.g. Linux), `--with-deps` is omitted to avoid requiring
+   * `sudo` — system packages are typically managed by the distro package manager.
    *
    * @param packageManager - The package manager to use for installation
    * @param prompt - The prompt instance for displaying progress
@@ -123,7 +127,11 @@ export class AddonVitestService {
   ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
-    const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
+    const platform = os.platform();
+    const useWithDeps = !!process.env.CI || platform === 'darwin' || platform === 'win32';
+    const playwrightCommand = useWithDeps
+      ? ['playwright', 'install', 'chromium', '--with-deps']
+      : ['playwright', 'install', 'chromium'];
     const playwrightCommandString = this.packageManager.getPackageCommand(playwrightCommand);
 
     let result: 'installed' | 'skipped' | 'aborted' | 'failed';
@@ -168,6 +176,14 @@ export class AddonVitestService {
           result = 'aborted';
         } else {
           result = 'installed';
+          if (!useWithDeps) {
+            logger.warn(dedent`
+              Playwright was installed without system dependencies. Depending on your operating system, you may need to install additional libraries for Playwright to work correctly.
+              To check for missing dependencies, run Storybook Test from the Storybook UI — it will report any libraries that need to be installed.
+              On MacOS, Windows, Debian and Ubuntu, you can install system dependencies manually by running:
+              ${CLI_COLORS.cta(this.packageManager.getPackageCommand(['playwright', 'install', 'chromium', '--with-deps']))}
+            `);
+          }
         }
       } else {
         logger.warn('Playwright installation skipped');

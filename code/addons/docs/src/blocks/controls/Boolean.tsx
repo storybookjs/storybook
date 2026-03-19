@@ -135,6 +135,7 @@ export type BooleanProps = ControlProps<BooleanValue> & BooleanConfig;
  */
 export const BooleanControl: FC<BooleanProps> = ({
   name,
+  storyId,
   value,
   onChange,
   onBlur,
@@ -149,7 +150,7 @@ export const BooleanControl: FC<BooleanProps> = ({
         ariaLabel={false}
         variant="outline"
         size="medium"
-        id={getControlSetterButtonId(name)}
+        id={getControlSetterButtonId(name, storyId)}
         onClick={onSetFalse}
         disabled={readonly}
       >
@@ -157,7 +158,7 @@ export const BooleanControl: FC<BooleanProps> = ({
       </Button>
     );
   }
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, storyId);
 
   const parsedValue = typeof value === 'string' ? parse(value) : value;
 

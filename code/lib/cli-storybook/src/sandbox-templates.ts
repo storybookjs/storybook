@@ -96,6 +96,11 @@ export type Template = {
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
   };
+  /** Additional CI steps in case this template has special needs during CI. */
+  extraCiSteps?: {
+    // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
+    ensureMinNodeVersion?: boolean;
+  };
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
     builder?: SupportedBuilder;
@@ -638,6 +643,17 @@ export const baseTemplates = {
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
   },
+  'svelte-kit/skeleton-ts': {
+    name: 'SvelteKit Latest (Vite | TypeScript)',
+    script:
+      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+    expected: {
+      framework: '@storybook/sveltekit',
+      renderer: '@storybook/svelte',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   'angular-cli/prerelease': {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
     script:
@@ -645,6 +661,9 @@ export const baseTemplates = {
     modifications: {
       // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
       useCsfFactory: true,
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -661,23 +680,15 @@ export const baseTemplates = {
       extraDependencies: ['@angular/forms@latest'],
       useCsfFactory: true,
     },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
     expected: {
       framework: '@storybook/angular',
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['bench', 'vitest-integration'],
-  },
-  'svelte-kit/skeleton-ts': {
-    name: 'SvelteKit Latest (Vite | TypeScript)',
-    script:
-      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
-    expected: {
-      framework: '@storybook/sveltekit',
-      renderer: '@storybook/svelte',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests', 'bench'],
   },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',

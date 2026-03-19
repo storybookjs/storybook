@@ -21,6 +21,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
     ...mod,
     getAddonNames: vi.fn(),
     removeAddon: vi.fn(),
+    formatFileContent: vi.fn((_path: string, content: string) => content),
   };
 });
 
@@ -205,37 +206,34 @@ describe('transformPreviewFile', () => {
   it('should add spyOn import and remove addon-console import', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export default {};
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-
-    export default {
-      beforeEach: function beforeEach() {
-        spyOn(console, 'log').mockName('console.log');
-        spyOn(console, 'warn').mockName('console.warn');
-        spyOn(console, 'error').mockName('console.error');
-        spyOn(console, 'info').mockName('console.info');
-        spyOn(console, 'debug').mockName('console.debug');
-        spyOn(console, 'trace').mockName('console.trace');
-        spyOn(console, 'count').mockName('console.count');
-        spyOn(console, 'dir').mockName('console.dir');
-        spyOn(console, 'assert').mockName('console.assert');
-      },
-    };
-
-`;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export default {
+        beforeEach: function beforeEach() {
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
+        }
+      };"
+    `);
   });
 
   it('should add console spies to beforeEach function', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export default {
         beforeEach: () => {
           // existing code
@@ -243,96 +241,87 @@ describe('transformPreviewFile', () => {
       };
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-    
-    export default {
-      beforeEach: () => {
-        spyOn(console, 'log').mockName('console.log');
-        spyOn(console, 'warn').mockName('console.warn');
-        spyOn(console, 'error').mockName('console.error');
-        spyOn(console, 'info').mockName('console.info');
-        spyOn(console, 'debug').mockName('console.debug');
-        spyOn(console, 'trace').mockName('console.trace');
-        spyOn(console, 'count').mockName('console.count');
-        spyOn(console, 'dir').mockName('console.dir');
-        spyOn(console, 'assert').mockName('console.assert');
-      },
-    };
-
-    `;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export default {
+        beforeEach: () => {
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
+        }
+      };"
+    `);
   });
 
   it('should create beforeEach function if it does not exist', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export default {};
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-
-    export default {
-      beforeEach: function beforeEach() {
-        spyOn(console, 'log').mockName('console.log');
-        spyOn(console, 'warn').mockName('console.warn');
-        spyOn(console, 'error').mockName('console.error');
-        spyOn(console, 'info').mockName('console.info');
-        spyOn(console, 'debug').mockName('console.debug');
-        spyOn(console, 'trace').mockName('console.trace');
-        spyOn(console, 'count').mockName('console.count');
-        spyOn(console, 'dir').mockName('console.dir');
-        spyOn(console, 'assert').mockName('console.assert');
-      },
-    };
-
-`;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export default {
+        beforeEach: function beforeEach() {
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
+        }
+      };"
+    `);
   });
 
   it('should handle arrow function beforeEach with expression body', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export default {
         beforeEach: () => someFunction()
       };
     `;
 
-    const target = dedent`
-      import { spyOn } from 'storybook/test';
+    const result = await transformPreviewFile(source, '.storybook/preview.ts');
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
 
       export default {
         beforeEach: () => {
-          spyOn(console, 'log').mockName('console.log');
-          spyOn(console, 'warn').mockName('console.warn');
-          spyOn(console, 'error').mockName('console.error');
-          spyOn(console, 'info').mockName('console.info');
-          spyOn(console, 'debug').mockName('console.debug');
-          spyOn(console, 'trace').mockName('console.trace');
-          spyOn(console, 'count').mockName('console.count');
-          spyOn(console, 'dir').mockName('console.dir');
-          spyOn(console, 'assert').mockName('console.assert');
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
           return someFunction();
-        },
-      };
-
-    `;
-
-    const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+        }
+      };"
+    `);
   });
 
   it('should handle arrow function beforeEach with block body', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export default {
         beforeEach: () => {
           // existing setup
@@ -341,35 +330,32 @@ describe('transformPreviewFile', () => {
       };
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-
-    export default {
-      beforeEach: () => {
-        // existing setup
-        setupTest();
-        spyOn(console, 'log').mockName('console.log');
-        spyOn(console, 'warn').mockName('console.warn');
-        spyOn(console, 'error').mockName('console.error');
-        spyOn(console, 'info').mockName('console.info');
-        spyOn(console, 'debug').mockName('console.debug');
-        spyOn(console, 'trace').mockName('console.trace');
-        spyOn(console, 'count').mockName('console.count');
-        spyOn(console, 'dir').mockName('console.dir');
-        spyOn(console, 'assert').mockName('console.assert');
-      },
-    };
-
-`;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export default {
+        beforeEach: () => {
+          // existing setup
+          setupTest();
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
+        }
+      };"
+    `);
   });
 
   it('should handle beforeEach function', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export default {
         beforeEach: function() {
           // existing code
@@ -378,35 +364,32 @@ describe('transformPreviewFile', () => {
       };
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-
-    export default {
-      beforeEach: function () {
-        // existing code
-        setupSomething();
-        spyOn(console, 'log').mockName('console.log');
-        spyOn(console, 'warn').mockName('console.warn');
-        spyOn(console, 'error').mockName('console.error');
-        spyOn(console, 'info').mockName('console.info');
-        spyOn(console, 'debug').mockName('console.debug');
-        spyOn(console, 'trace').mockName('console.trace');
-        spyOn(console, 'count').mockName('console.count');
-        spyOn(console, 'dir').mockName('console.dir');
-        spyOn(console, 'assert').mockName('console.assert');
-      },
-    };
-
-`;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export default {
+        beforeEach: function() {
+          // existing code
+          setupSomething();
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
+        }
+      };"
+    `);
   });
 
   it('should handle existing beforeEach function declaration', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export default {
         beforeEach: function beforeEach() {
           // existing setup
@@ -415,96 +398,87 @@ describe('transformPreviewFile', () => {
       };
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-
-    export default {
-      beforeEach: function beforeEach() {
-        // existing setup
-        initializeTest();
-        spyOn(console, 'log').mockName('console.log');
-        spyOn(console, 'warn').mockName('console.warn');
-        spyOn(console, 'error').mockName('console.error');
-        spyOn(console, 'info').mockName('console.info');
-        spyOn(console, 'debug').mockName('console.debug');
-        spyOn(console, 'trace').mockName('console.trace');
-        spyOn(console, 'count').mockName('console.count');
-        spyOn(console, 'dir').mockName('console.dir');
-        spyOn(console, 'assert').mockName('console.assert');
-      },
-    };
-
-`;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export default {
+        beforeEach: function beforeEach() {
+          // existing setup
+          initializeTest();
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
+        }
+      };"
+    `);
   });
 
   it('should preserve existing spyOn import if present', async () => {
     const source = dedent`
       import { spyOn } from "storybook/test";
       import "@storybook/addon-console";
-      
+
       export default {};
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-
-    export default {
-      beforeEach: function beforeEach() {
-        spyOn(console, 'log').mockName('console.log');
-        spyOn(console, 'warn').mockName('console.warn');
-        spyOn(console, 'error').mockName('console.error');
-        spyOn(console, 'info').mockName('console.info');
-        spyOn(console, 'debug').mockName('console.debug');
-        spyOn(console, 'trace').mockName('console.trace');
-        spyOn(console, 'count').mockName('console.count');
-        spyOn(console, 'dir').mockName('console.dir');
-        spyOn(console, 'assert').mockName('console.assert');
-      },
-    };
-
-`;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export default {
+        beforeEach: function beforeEach() {
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
+        }
+      };"
+    `);
   });
 
   it('should create named export for beforeEach when no default export exists', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export const parameters = {};
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-
-    export const parameters = {};
-
-    export const beforeEach = function beforeEach() {
-      spyOn(console, 'log').mockName('console.log');
-      spyOn(console, 'warn').mockName('console.warn');
-      spyOn(console, 'error').mockName('console.error');
-      spyOn(console, 'info').mockName('console.info');
-      spyOn(console, 'debug').mockName('console.debug');
-      spyOn(console, 'trace').mockName('console.trace');
-      spyOn(console, 'count').mockName('console.count');
-      spyOn(console, 'dir').mockName('console.dir');
-      spyOn(console, 'assert').mockName('console.assert');
-    };
-
-`;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export const parameters = {};
+
+      export const beforeEach = function beforeEach() {
+        spyOn(console, "log").mockName("console.log");
+        spyOn(console, "warn").mockName("console.warn");
+        spyOn(console, "error").mockName("console.error");
+        spyOn(console, "info").mockName("console.info");
+        spyOn(console, "debug").mockName("console.debug");
+        spyOn(console, "trace").mockName("console.trace");
+        spyOn(console, "count").mockName("console.count");
+        spyOn(console, "dir").mockName("console.dir");
+        spyOn(console, "assert").mockName("console.assert");
+      };"
+    `);
   });
 
   it('should add beforeEach to default export object when no beforeEach exists', async () => {
     const source = dedent`
       import "@storybook/addon-console";
-      
+
       export default {
         parameters: {
           layout: 'centered'
@@ -512,30 +486,27 @@ describe('transformPreviewFile', () => {
       };
     `;
 
-    const target = dedent`
-    import { spyOn } from 'storybook/test';
-
-    export default {
-      parameters: {
-        layout: 'centered',
-      },
-
-      beforeEach: function beforeEach() {
-        spyOn(console, 'log').mockName('console.log');
-        spyOn(console, 'warn').mockName('console.warn');
-        spyOn(console, 'error').mockName('console.error');
-        spyOn(console, 'info').mockName('console.info');
-        spyOn(console, 'debug').mockName('console.debug');
-        spyOn(console, 'trace').mockName('console.trace');
-        spyOn(console, 'count').mockName('console.count');
-        spyOn(console, 'dir').mockName('console.dir');
-        spyOn(console, 'assert').mockName('console.assert');
-      },
-    };
-
-    `;
-
     const result = await transformPreviewFile(source, '.storybook/preview.ts');
-    expect(result).toBe(target);
+    expect(result).toMatchInlineSnapshot(`
+      "import { spyOn } from "storybook/test";
+
+      export default {
+        parameters: {
+          layout: 'centered'
+        },
+
+        beforeEach: function beforeEach() {
+          spyOn(console, "log").mockName("console.log");
+          spyOn(console, "warn").mockName("console.warn");
+          spyOn(console, "error").mockName("console.error");
+          spyOn(console, "info").mockName("console.info");
+          spyOn(console, "debug").mockName("console.debug");
+          spyOn(console, "trace").mockName("console.trace");
+          spyOn(console, "count").mockName("console.count");
+          spyOn(console, "dir").mockName("console.dir");
+          spyOn(console, "assert").mockName("console.assert");
+        }
+      };"
+    `);
   });
 });

@@ -19,7 +19,7 @@ export interface WebpackConfiguration {
   module?: ModuleConfig;
   resolve?: ResolveConfig;
   optimization?: any;
-  devtool?: string | false | { type: "all" | "javascript" | "css"; use: string | false }[];
+  devtool?: false | string;
 }
 
 export type BuilderOptions = {

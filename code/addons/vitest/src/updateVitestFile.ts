@@ -75,9 +75,6 @@ const mergeProperties = (
   }
 };
 
-// isDefineConfigLike, getConfigObjectFromMergeArg, getEffectiveMergeConfigCall, and
-// getTargetConfigObject are imported from 'storybook/internal/babel' (vitest-config-helpers)
-
 /**
  * Resolves the value of a `test` ObjectProperty to an ObjectExpression. Handles both inline objects
  * and shorthand identifier references, e.g.: `{ test: { ... } }` → returns the inline

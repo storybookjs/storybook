@@ -672,7 +672,7 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should accept plain export default {} (now supported)', async () => {
+    it('should accept plain export default {}', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
         .mockReturnValueOnce('vitest.config.ts'); // config
@@ -844,7 +844,6 @@ export default defineConfig(() => ({ test: {} }))`
       expect(result.compatible).toBe(true);
     });
 
-    // Real-life pattern: xmtp-js — const vitestConfig = {...}; mergeConfig(vite, vitestConfig)
     it('should accept mergeConfig with external vitestConfig variable', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
@@ -860,7 +859,6 @@ export default defineConfig(() => ({ test: {} }))`
       expect(result.compatible).toBe(true);
     });
 
-    // Real-life pattern: lynx-stack — const config = mergeConfig(...); export default config
     it('should accept const config = mergeConfig(...); export default config pattern', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
@@ -879,7 +877,6 @@ export default defineConfig(() => ({ test: {} }))`
       expect(result.compatible).toBe(true);
     });
 
-    // Real-life pattern: meilisearch-js-plugins — defineProject
     it('should accept defineProject({}) pattern', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace

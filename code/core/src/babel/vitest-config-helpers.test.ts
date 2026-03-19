@@ -144,7 +144,6 @@ describe('canUpdateVitestConfigFile', () => {
     ).toBe(true);
   });
 
-  // Real-life example: xmtp-js (constant vitestConfig)
   it('returns true for mergeConfig with external vitestConfig variable', () => {
     expect(
       canUpdateVitestConfigFile(

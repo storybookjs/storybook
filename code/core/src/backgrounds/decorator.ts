@@ -24,6 +24,7 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
     options = DEFAULT_BACKGROUNDS,
     disable,
     grid = defaultGrid,
+    showGrid: defaultShowGrid = false,
   } = (parameters[PARAM_KEY] || {}) as NonNullable<BackgroundsParameters['backgrounds']>;
   const data = globals[PARAM_KEY] || {};
   const backgroundName: string | undefined = typeof data === 'string' ? data : data?.value;
@@ -31,7 +32,7 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const item = backgroundName ? options[backgroundName] : undefined;
   const value = typeof item === 'string' ? item : item?.value || 'transparent';
 
-  const showGrid = typeof data === 'string' ? false : data.grid || false;
+  const showGrid = typeof data === 'string' ? defaultShowGrid : (data.grid ?? defaultShowGrid);
   const shownBackground = !!item && !disable;
 
   const backgroundSelector =

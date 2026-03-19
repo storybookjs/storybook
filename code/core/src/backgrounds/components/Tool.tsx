@@ -14,14 +14,14 @@ export const BackgroundTool = memo(function BackgroundSelector() {
   const config = useParameter<BackgroundsParameters['backgrounds']>(KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
 
-  const { options = DEFAULT_BACKGROUNDS, disable = true } = config || {};
+  const { options = DEFAULT_BACKGROUNDS, disable = true, showGrid: defaultShowGrid = false } = config || {};
   if (disable) {
     return null;
   }
 
   const data = globals[KEY] || {};
   const backgroundName: string = data.value;
-  const isGridActive = data.grid || false;
+  const isGridActive = data.grid ?? defaultShowGrid;
 
   const item = options[backgroundName];
   const isLocked = !!storyGlobals?.[KEY];

@@ -39,6 +39,14 @@ export interface BackgroundsParameters {
     /** Configuration for the background grid */
     grid?: GridConfig;
 
+    /**
+     * Show the background grid by default.
+     * The user can still toggle it off via the toolbar button.
+     *
+     * @default false
+     */
+    showGrid?: boolean;
+
     /** Available background colors */
     options?: BackgroundMap;
   };

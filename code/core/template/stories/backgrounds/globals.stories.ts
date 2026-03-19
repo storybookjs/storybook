@@ -102,3 +102,11 @@ export const GridOffset = {
     backgrounds: { grid: true, value: 'light' },
   },
 };
+
+export const ShowGridByDefault = {
+  parameters: {
+    backgrounds: {
+      showGrid: true,
+    },
+  },
+};

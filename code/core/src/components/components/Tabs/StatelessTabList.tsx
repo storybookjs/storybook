@@ -66,6 +66,7 @@ export interface StatelessTabListProps {
 export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToSelected = useRef(false);
 
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -126,6 +127,64 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
     };
   }, [throttledUpdateScrollState]);
 
+  const scrollTabIntoView = useCallback((tab: HTMLElement) => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const tabRect = tab.getBoundingClientRect();
+
+    if (tabRect.left < containerRect.left) {
+      scrollContainer.scrollLeft -= containerRect.left - tabRect.left;
+    } else if (tabRect.right > containerRect.right) {
+      scrollContainer.scrollLeft += tabRect.right - containerRect.right;
+    }
+  }, []);
+
+  // Auto-scroll focused tab into view when navigating with arrow keys
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer || typeof window === 'undefined') {
+      return;
+    }
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.role === 'tab') {
+        scrollTabIntoView(target);
+        requestAnimationFrame(() => updateScrollState());
+      }
+    };
+
+    scrollContainer.addEventListener('focusin', handleFocusIn);
+    return () => scrollContainer.removeEventListener('focusin', handleFocusIn);
+  }, [scrollTabIntoView, updateScrollState]);
+
+  // Scroll the selected tab into view on initial render
+  useEffect(() => {
+    if (hasScrolledToSelected.current) {
+      return;
+    }
+
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer || typeof window === 'undefined') {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      const selectedTab = scrollContainer.querySelector('[data-selected]') as HTMLElement | null;
+      if (selectedTab) {
+        scrollTabIntoView(selectedTab);
+        updateScrollState();
+        hasScrolledToSelected.current = true;
+      }
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [scrollTabIntoView, updateScrollState]);
+
   const scroll = useCallback((direction: 'backward' | 'forward') => {
     const scrollContainer = scrollContainerRef.current;
     const container = containerRef.current;
@@ -160,7 +219,6 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
             ariaLabel="Scroll backward"
             disabled={!canScrollLeft}
             onClick={scrollBackward}
-            tabIndex={-1}
           >
             <ChevronSmallLeftIcon />
           </ScrollButton>
@@ -178,7 +236,6 @@ export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest 
             ariaLabel="Scroll forward"
             disabled={!canScrollRight}
             onClick={scrollForward}
-            tabIndex={-1}
           >
             <ChevronSmallRightIcon />
           </ScrollButton>

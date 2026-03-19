@@ -1,22 +1,48 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.storybookjs/addon-mcp",
-  "title": "Storybook MCP Addon",
-  "description": "Help agents automatically write and test stories for your UI components.",
-  "repository": {
-    "url": "https://github.com/storybookjs/mcp",
-    "source": "github",
-    "subfolder": "packages/addon-mcp"
-  },
-  "version": "0.4.1",
-  "packages": [
-    {
-      "registryType": "npm",
-      "identifier": "@storybook/addon-mcp",
-      "version": "0.4.1",
-      "transport": {
-        "type": "streamable-http"
-      }
-    }
-  ]
+	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+	"name": "io.github.storybookjs/addon-mcp",
+	"title": "Storybook MCP Addon",
+	"description": "Help agents automatically write and test stories for your UI components.",
+	"websiteUrl": "https://storybook.js.org/docs/ai/mcp/overview",
+	"icons": [
+		{
+			"src": "https://raw.githubusercontent.com/storybookjs/brand/main/icon/icon-storybook-default.svg",
+			"mimeType": "image/svg+xml",
+			"sizes": ["any"],
+			"theme": "light"
+		},
+		{
+			"src": "https://raw.githubusercontent.com/storybookjs/brand/main/icon/icon-storybook-inverse.svg",
+			"mimeType": "image/svg+xml",
+			"sizes": ["any"],
+			"theme": "dark"
+		}
+	],
+	"repository": {
+		"url": "https://github.com/storybookjs/mcp",
+		"source": "github",
+		"id": "1042284426",
+		"subfolder": "packages/addon-mcp"
+	},
+	"version": "0.4.1",
+	"packages": [
+		{
+			"registryType": "npm",
+			"identifier": "@storybook/addon-mcp",
+			"version": "0.4.1",
+			"transport": {
+				"type": "streamable-http",
+				"url": "http://localhost:{--port}/mcp"
+			},
+			"packageArguments": [
+				{
+					"type": "named",
+					"name": "--port",
+					"description": "Port of the Storybook dev server exposing the MCP endpoint.",
+					"default": "6006",
+					"format": "number"
+				}
+			]
+		}
+	]
 }

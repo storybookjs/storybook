@@ -1,3 +1,0 @@
-[mcp_servers."nx"]
-command = "npx"
-args = ["nx-mcp@latest"]

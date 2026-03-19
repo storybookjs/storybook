@@ -10,12 +10,12 @@ interface IBProps {
 }
 
 /** A component */
-const A = (props: IAProps): JSX.Element => {
+const A = (props: IAProps): React.JSX.Element => {
   return <>Hi {props.aProperty}</>;
 };
 
 /** B component */
-const B = (props: IBProps): JSX.Element => {
+const B = (props: IBProps): React.JSX.Element => {
   return <>Hi {props.bProperty}</>;
 };
 

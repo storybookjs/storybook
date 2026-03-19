@@ -24,15 +24,7 @@ const preview = __definePreview({
 });
 
 test('csf factories', () => {
-  const config = __definePreview({
-    addons: [
-      {
-        decorators: [],
-      },
-    ],
-  });
-
-  const meta = config.meta({ component: Button, args: { disabled: true } });
+  const meta = preview.meta({ component: Button, args: { disabled: true } });
 
   const MyStory = meta.story({
     args: {
@@ -77,7 +69,7 @@ describe('Args can be provided in multiple ways', () => {
         args: { label: 'good' },
       });
       // @ts-expect-error disabled not provided ❌
-      const Basic = meta.story({});
+      const Basic = meta.story();
     }
     {
       const meta = preview.meta({ component: Button });
@@ -382,5 +374,22 @@ describe('Composed getters', () => {
     });
 
     expect(renderSpy).toHaveBeenCalled();
+  });
+});
+
+it('meta.input also contains play', () => {
+  const meta = preview.meta({
+    /** Title, component, etc... */
+    play: async ({ canvas }) => {
+      /** Do some common interactions */
+    },
+  });
+
+  const ExtendedInteractionsStory = meta.story({
+    play: async ({ canvas, ...rest }) => {
+      await meta.input.play?.({ canvas, ...rest });
+
+      /** Do some extra interactions */
+    },
   });
 });

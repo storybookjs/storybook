@@ -9,7 +9,7 @@ const meta = {
     backgroundColor: { control: 'color' },
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 } satisfies Meta<typeof Button>;
 
@@ -24,6 +24,54 @@ export const Primary: Story = {
 };
 
 export const Secondary: Story = {
+  tags: ['autodocs'],
+  args: {
+    label: 'Button',
+  },
+  globals: {
+    backgrounds: {
+      grid: true,
+    },
+  },
+};
+
+export const ForcedBgLight: Story = {
+  tags: ['autodocs'],
+  args: {
+    label: 'Button',
+  },
+  globals: {
+    backgrounds: {
+      value: 'light',
+    },
+  },
+};
+
+export const ForcedBgDark: Story = {
+  tags: ['autodocs'],
+  args: {
+    label: 'Button',
+  },
+  globals: {
+    backgrounds: {
+      value: 'dark',
+    },
+  },
+};
+
+export const ForcedBgBlue: Story = {
+  tags: ['autodocs'],
+  args: {
+    label: 'Button',
+  },
+  globals: {
+    backgrounds: {
+      value: 'blue',
+    },
+  },
+};
+
+export const LastStory: Story = {
   tags: ['autodocs'],
   args: {
     label: 'Button',

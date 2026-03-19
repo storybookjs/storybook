@@ -7,6 +7,9 @@ const meta = {
   parameters: {
     layout: 'fullscreen',
     docsStyles: true,
+    chromatic: {
+      delay: 2000,
+    },
   },
 } satisfies Meta<typeof Stories>;
 

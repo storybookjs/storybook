@@ -158,8 +158,8 @@ export const getIncompatiblePackagesSummary = (
 
     summaryMessage.push(
       '\nPlease consider updating your packages or contacting the maintainers for compatibility details.',
-      '\nFor more on Storybook 9 compatibility, see the linked GitHub issue:',
-      'https://github.com/storybookjs/storybook/issues/30944'
+      '\nFor more details on compatibility guidance, see:',
+      'https://github.com/storybookjs/storybook/issues/32836'
     );
 
     if (incompatiblePackages.some((dep) => dep.availableCoreUpdate)) {

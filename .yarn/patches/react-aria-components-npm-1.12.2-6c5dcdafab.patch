@@ -1,0 +1,171 @@
+diff --git a/dist/Button.mjs b/dist/Button.mjs
+index cbc78bd98aa1b40634ff878b3039fd4aac636ce6..e5c8a179cf967d4a2e918535a3e23dcb1e53dd1d 100644
+--- a/dist/Button.mjs
++++ b/dist/Button.mjs
+@@ -1,9 +1,11 @@
+ import {useContextProps as $64fa3d84918910a7$export$29f1550f4b0d4415, useRenderProps as $64fa3d84918910a7$export$4d86445c2cf5e3} from "./utils.mjs";
+ import {ProgressBarContext as $0393f8ab869a0f1a$export$e9f3bf65a26ce129} from "./ProgressBar.mjs";
+ import {announce as $fM325$announce} from "@react-aria/live-announcer";
+-import {useButton as $fM325$useButton, useFocusRing as $fM325$useFocusRing, useHover as $fM325$useHover, useId as $fM325$useId, mergeProps as $fM325$mergeProps} from "react-aria";
++import {useButton as $fM325$useButton} from "@react-aria/button";
++import {useFocusRing as $fM325$useFocusRing} from "@react-aria/focus";
++import {useHover as $fM325$useHover} from "@react-aria/interactions";
++import {useId as $fM325$useId, mergeProps as $fM325$mergeProps, filterDOMProps as $fM325$filterDOMProps} from "@react-aria/utils";
+ import {createHideableComponent as $fM325$createHideableComponent} from "@react-aria/collections";
+-import {filterDOMProps as $fM325$filterDOMProps} from "@react-aria/utils";
+ import $fM325$react, {createContext as $fM325$createContext, useRef as $fM325$useRef, useEffect as $fM325$useEffect} from "react";
+ 
+ /*
+diff --git a/dist/Dialog.mjs b/dist/Dialog.mjs
+index 58e616de102c40d6bc70d329fbf5115b48d114a8..4df96fc4ce7720caba20ea0b43fe1a8fa1a82f0b 100644
+--- a/dist/Dialog.mjs
++++ b/dist/Dialog.mjs
+@@ -3,9 +3,12 @@ import {DEFAULT_SLOT as $64fa3d84918910a7$export$c62b8e45d58ddad9, Provider as $
+ import {HeadingContext as $4e85f108e88277b8$export$d688439359537581} from "./RSPContexts.mjs";
+ import {PopoverContext as $07b14b47974efb58$export$9b9a0cd73afb7ca4} from "./Popover.mjs";
+ import {RootMenuTriggerStateContext as $3674c52c6b3c5bce$export$795aec4671cbae19} from "./Menu.mjs";
+-import {useOverlayTrigger as $6IYYA$useOverlayTrigger, useId as $6IYYA$useId, useDialog as $6IYYA$useDialog} from "react-aria";
++// import {useOverlayTrigger as $6IYYA$useOverlayTrigger, useId as $6IYYA$useId, useDialog as $6IYYA$useDialog} from "react-aria";
++import {useOverlayTrigger as $6IYYA$useOverlayTrigger} from "@react-aria/overlays";
++import {useDialog as $6IYYA$useDialog} from "@react-aria/dialog";
++import {useId as $6IYYA$useId} from "@react-aria/utils";
+ import {useResizeObserver as $6IYYA$useResizeObserver, filterDOMProps as $6IYYA$filterDOMProps, mergeProps as $6IYYA$mergeProps} from "@react-aria/utils";
+-import {useMenuTriggerState as $6IYYA$useMenuTriggerState} from "react-stately";
++import {useMenuTriggerState as $6IYYA$useMenuTriggerState} from "@react-stately/menu";
+ import {PressResponder as $6IYYA$PressResponder} from "@react-aria/interactions";
+ import $6IYYA$react, {createContext as $6IYYA$createContext, useRef as $6IYYA$useRef, useState as $6IYYA$useState, useCallback as $6IYYA$useCallback, forwardRef as $6IYYA$forwardRef, useContext as $6IYYA$useContext} from "react";
+ 
+diff --git a/dist/Menu.mjs b/dist/Menu.mjs
+index 97afd5048083b0b2384fecfa32813841097e1f50..dedd3e08f06c857a02918df94d49f14f378b0465 100644
+--- a/dist/Menu.mjs
++++ b/dist/Menu.mjs
+@@ -7,10 +7,14 @@ import {OverlayTriggerStateContext as $de32f1b87079253c$export$d2f961adcb0afbe}
+ import {PopoverContext as $07b14b47974efb58$export$9b9a0cd73afb7ca4} from "./Popover.mjs";
+ import {SeparatorContext as $431f98aba6844401$export$6615d83f6de245ce} from "./Separator.mjs";
+ import {TextContext as $514c0188e459b4c0$export$9afb8bc826b033ea} from "./Text.mjs";
+-import {useMenuTrigger as $kM2ZM$useMenuTrigger, useSubmenuTrigger as $kM2ZM$useSubmenuTrigger, useMenu as $kM2ZM$useMenu, FocusScope as $kM2ZM$FocusScope, mergeProps as $kM2ZM$mergeProps, useMenuSection as $kM2ZM$useMenuSection, useMenuItem as $kM2ZM$useMenuItem, useHover as $kM2ZM$useHover} from "react-aria";
++import {useMenuTrigger as $kM2ZM$useMenuTrigger, useSubmenuTrigger as $kM2ZM$useSubmenuTrigger} from "@react-aria/menu";
++import {useMenu as $kM2ZM$useMenu, useMenuSection as $kM2ZM$useMenuSection, useMenuItem as $kM2ZM$useMenuItem} from "@react-aria/menu";
++import {FocusScope as $kM2ZM$FocusScope} from "@react-aria/focus";
++import {mergeProps as $kM2ZM$mergeProps, useResizeObserver as $kM2ZM$useResizeObserver, useObjectRef as $kM2ZM$useObjectRef, filterDOMProps as $kM2ZM$filterDOMProps} from "@react-aria/utils";
++import {useHover as $kM2ZM$useHover} from "@react-aria/interactions";
+ import {CollectionNode as $kM2ZM$CollectionNode, createBranchComponent as $kM2ZM$createBranchComponent, CollectionBuilder as $kM2ZM$CollectionBuilder, Collection as $kM2ZM$Collection, SectionNode as $kM2ZM$SectionNode, createLeafComponent as $kM2ZM$createLeafComponent, ItemNode as $kM2ZM$ItemNode} from "@react-aria/collections";
+-import {useMenuTriggerState as $kM2ZM$useMenuTriggerState, useSubmenuTriggerState as $kM2ZM$useSubmenuTriggerState, useTreeState as $kM2ZM$useTreeState} from "react-stately";
+-import {useResizeObserver as $kM2ZM$useResizeObserver, useObjectRef as $kM2ZM$useObjectRef, filterDOMProps as $kM2ZM$filterDOMProps} from "@react-aria/utils";
++import {useMenuTriggerState as $kM2ZM$useMenuTriggerState, useSubmenuTriggerState as $kM2ZM$useSubmenuTriggerState} from "@react-stately/menu";
++import {useTreeState as $kM2ZM$useTreeState} from "@react-stately/tree";
+ import {SelectionManager as $kM2ZM$SelectionManager, useMultipleSelectionState as $kM2ZM$useMultipleSelectionState} from "@react-stately/selection";
+ import {PressResponder as $kM2ZM$PressResponder} from "@react-aria/interactions";
+ import $kM2ZM$react, {createContext as $kM2ZM$createContext, useRef as $kM2ZM$useRef, useState as $kM2ZM$useState, useCallback as $kM2ZM$useCallback, useContext as $kM2ZM$useContext, forwardRef as $kM2ZM$forwardRef, useMemo as $kM2ZM$useMemo} from "react";
+diff --git a/dist/Modal.mjs b/dist/Modal.mjs
+index 124c3ee386ffb85864f38755af07c153b9d6fc35..59f68ddff9dbe6cda35a0185c916b20a7ed14106 100644
+--- a/dist/Modal.mjs
++++ b/dist/Modal.mjs
+@@ -1,8 +1,10 @@
+ import {Provider as $64fa3d84918910a7$export$2881499e37b75b9a, useContextProps as $64fa3d84918910a7$export$29f1550f4b0d4415, useRenderProps as $64fa3d84918910a7$export$4d86445c2cf5e3} from "./utils.mjs";
+ import {OverlayTriggerStateContext as $de32f1b87079253c$export$d2f961adcb0afbe} from "./Dialog.mjs";
+-import {useIsSSR as $daTMi$useIsSSR, useModalOverlay as $daTMi$useModalOverlay, Overlay as $daTMi$Overlay, DismissButton as $daTMi$DismissButton} from "react-aria";
++// import {useIsSSR as $daTMi$useIsSSR, useModalOverlay as $daTMi$useModalOverlay, Overlay as $daTMi$Overlay, DismissButton as $daTMi$DismissButton} from "react-aria";
++import {useIsSSR as $daTMi$useIsSSR } from "@react-aria/ssr";
++import {useModalOverlay as $daTMi$useModalOverlay, Overlay as $daTMi$Overlay, DismissButton as $daTMi$DismissButton} from "@react-aria/overlays";
+ import {useObjectRef as $daTMi$useObjectRef, useExitAnimation as $daTMi$useExitAnimation, useEnterAnimation as $daTMi$useEnterAnimation, useViewportSize as $daTMi$useViewportSize, mergeProps as $daTMi$mergeProps, filterDOMProps as $daTMi$filterDOMProps, mergeRefs as $daTMi$mergeRefs} from "@react-aria/utils";
+-import {useOverlayTriggerState as $daTMi$useOverlayTriggerState} from "react-stately";
++import {useOverlayTriggerState as $daTMi$useOverlayTriggerState} from "@react-stately/overlays";
+ import $daTMi$react, {createContext as $daTMi$createContext, forwardRef as $daTMi$forwardRef, useContext as $daTMi$useContext, useRef as $daTMi$useRef, useMemo as $daTMi$useMemo} from "react";
+ 
+ /*
+diff --git a/dist/Popover.mjs b/dist/Popover.mjs
+index 920cdb78159bb0b1c82a1cdd2d94957a23a3348d..6b644c20d6121b75446b647b9705f7e6cb9d6e75 100644
+--- a/dist/Popover.mjs
++++ b/dist/Popover.mjs
+@@ -1,10 +1,11 @@
+ import {useContextProps as $64fa3d84918910a7$export$29f1550f4b0d4415, useRenderProps as $64fa3d84918910a7$export$4d86445c2cf5e3} from "./utils.mjs";
+ import {OverlayArrowContext as $44f671af83e7d9e0$export$2de4954e8ae13b9f} from "./OverlayArrow.mjs";
+ import {OverlayTriggerStateContext as $de32f1b87079253c$export$d2f961adcb0afbe} from "./Dialog.mjs";
+-import {useLocale as $ehFet$useLocale, usePopover as $ehFet$usePopover, DismissButton as $ehFet$DismissButton, Overlay as $ehFet$Overlay} from "react-aria";
++import {useLocale as $ehFet$useLocale} from "@react-aria/i18n";
++import {usePopover as $ehFet$usePopover, DismissButton as $ehFet$DismissButton, Overlay as $ehFet$Overlay} from "@react-aria/overlays";
+ import {useExitAnimation as $ehFet$useExitAnimation, useEnterAnimation as $ehFet$useEnterAnimation, useLayoutEffect as $ehFet$useLayoutEffect, mergeProps as $ehFet$mergeProps, filterDOMProps as $ehFet$filterDOMProps} from "@react-aria/utils";
+ import {focusSafely as $ehFet$focusSafely} from "@react-aria/interactions";
+-import {useOverlayTriggerState as $ehFet$useOverlayTriggerState} from "react-stately";
++import {useOverlayTriggerState as $ehFet$useOverlayTriggerState} from "@react-stately/overlays";
+ import $ehFet$react, {createContext as $ehFet$createContext, forwardRef as $ehFet$forwardRef, useContext as $ehFet$useContext, useRef as $ehFet$useRef, useState as $ehFet$useState, useEffect as $ehFet$useEffect, useMemo as $ehFet$useMemo} from "react";
+ import {useIsHidden as $ehFet$useIsHidden} from "@react-aria/collections";
+ 
+diff --git a/dist/ProgressBar.mjs b/dist/ProgressBar.mjs
+index 06d3286e3b287d5636f34bfd5c66a05054a51c81..3345b64094f7bf78f95179f00bb2e4500db60542 100644
+--- a/dist/ProgressBar.mjs
++++ b/dist/ProgressBar.mjs
+@@ -1,6 +1,6 @@
+ import {useContextProps as $64fa3d84918910a7$export$29f1550f4b0d4415, useRenderProps as $64fa3d84918910a7$export$4d86445c2cf5e3, useSlot as $64fa3d84918910a7$export$9d4c57ee4c6ffdd8} from "./utils.mjs";
+ import {LabelContext as $01b77f81d0f07f68$export$75b6ee27786ba447} from "./Label.mjs";
+-import {useProgressBar as $hU2kz$useProgressBar} from "react-aria";
++import {useProgressBar as $hU2kz$useProgressBar} from "@react-aria/progress";
+ import {clamp as $hU2kz$clamp} from "@react-stately/utils";
+ import {filterDOMProps as $hU2kz$filterDOMProps, mergeProps as $hU2kz$mergeProps} from "@react-aria/utils";
+ import $hU2kz$react, {createContext as $hU2kz$createContext, forwardRef as $hU2kz$forwardRef} from "react";
+diff --git a/dist/Separator.mjs b/dist/Separator.mjs
+index 9989b084d7402c9dbee2b0a7dc4b72ea1462bf0e..8bd5e4e926f051db8efcb20a6794a7e27d606327 100644
+--- a/dist/Separator.mjs
++++ b/dist/Separator.mjs
+@@ -1,5 +1,5 @@
+ import {useContextProps as $64fa3d84918910a7$export$29f1550f4b0d4415} from "./utils.mjs";
+-import {useSeparator as $i9JCE$useSeparator} from "react-aria";
++import {useSeparator as $i9JCE$useSeparator} from "@react-aria/separator";
+ import {CollectionNode as $i9JCE$CollectionNode, createLeafComponent as $i9JCE$createLeafComponent} from "@react-aria/collections";
+ import {filterDOMProps as $i9JCE$filterDOMProps, mergeProps as $i9JCE$mergeProps} from "@react-aria/utils";
+ import $i9JCE$react, {createContext as $i9JCE$createContext} from "react";
+diff --git a/dist/Tabs.mjs b/dist/Tabs.mjs
+index 9d00500ac8fa5c5ae7db563fccc7a950b7070e53..1b27d380027f630e8329eda93176a19e635ebd66 100644
+--- a/dist/Tabs.mjs
++++ b/dist/Tabs.mjs
+@@ -1,9 +1,13 @@
+ import {CollectionRendererContext as $7135fc7d473fd974$export$4feb769f8ddf26c5, DefaultCollectionRenderer as $7135fc7d473fd974$export$a164736487e3f0ae, usePersistedKeys as $7135fc7d473fd974$export$90e00781bc59d8f9} from "./Collection.mjs";
+ import {Provider as $64fa3d84918910a7$export$2881499e37b75b9a, useContextProps as $64fa3d84918910a7$export$29f1550f4b0d4415, useRenderProps as $64fa3d84918910a7$export$4d86445c2cf5e3, useSlottedContext as $64fa3d84918910a7$export$fabf2dc03a41866e} from "./utils.mjs";
+-import {useFocusRing as $7aSLZ$useFocusRing, mergeProps as $7aSLZ$mergeProps, useTabList as $7aSLZ$useTabList, useTab as $7aSLZ$useTab, useHover as $7aSLZ$useHover, useTabPanel as $7aSLZ$useTabPanel} from "react-aria";
++// import {useFocusRing as $7aSLZ$useFocusRing, mergeProps as $7aSLZ$mergeProps, useTabList as $7aSLZ$useTabList, useTab as $7aSLZ$useTab, useHover as $7aSLZ$useHover, useTabPanel as $7aSLZ$useTabPanel} from "react-aria";
++import {useFocusRing as $7aSLZ$useFocusRing} from "@react-aria/focus";
++import {mergeProps as $7aSLZ$mergeProps } from "@react-aria/utils";
++import {useTabList as $7aSLZ$useTabList, useTab as $7aSLZ$useTab, useTabPanel as $7aSLZ$useTabPanel} from "@react-aria/tabs";
++import {useHover as $7aSLZ$useHover } from "@react-aria/interactions";
+ import {CollectionBuilder as $7aSLZ$CollectionBuilder, Collection as $7aSLZ$Collection, CollectionNode as $7aSLZ$CollectionNode, createLeafComponent as $7aSLZ$createLeafComponent, createHideableComponent as $7aSLZ$createHideableComponent} from "@react-aria/collections";
+ import {filterDOMProps as $7aSLZ$filterDOMProps, useObjectRef as $7aSLZ$useObjectRef, inertValue as $7aSLZ$inertValue} from "@react-aria/utils";
+-import {useTabListState as $7aSLZ$useTabListState} from "react-stately";
++import {useTabListState as $7aSLZ$useTabListState} from "@react-stately/tabs";
+ import $7aSLZ$react, {createContext as $7aSLZ$createContext, forwardRef as $7aSLZ$forwardRef, useMemo as $7aSLZ$useMemo, useContext as $7aSLZ$useContext} from "react";
+ 
+ /*
+diff --git a/dist/Tooltip.mjs b/dist/Tooltip.mjs
+index 091fc6694595cb7d135155a76735f60b38922775..18bee4f45ee6c1c3d04e8d193f7629b230091bee 100644
+--- a/dist/Tooltip.mjs
++++ b/dist/Tooltip.mjs
+@@ -1,9 +1,11 @@
+ import {Provider as $64fa3d84918910a7$export$2881499e37b75b9a, useContextProps as $64fa3d84918910a7$export$29f1550f4b0d4415, useRenderProps as $64fa3d84918910a7$export$4d86445c2cf5e3} from "./utils.mjs";
+ import {OverlayArrowContext as $44f671af83e7d9e0$export$2de4954e8ae13b9f} from "./OverlayArrow.mjs";
+-import {useTooltipTrigger as $cCslV$useTooltipTrigger, OverlayContainer as $cCslV$OverlayContainer, useOverlayPosition as $cCslV$useOverlayPosition, mergeProps as $cCslV$mergeProps, useTooltip as $cCslV$useTooltip} from "react-aria";
+-import {useExitAnimation as $cCslV$useExitAnimation, useEnterAnimation as $cCslV$useEnterAnimation, filterDOMProps as $cCslV$filterDOMProps} from "@react-aria/utils";
++import {useTooltipTrigger as $cCslV$useTooltipTrigger} from "@react-aria/tooltip";
++import {OverlayContainer as $cCslV$OverlayContainer, useOverlayPosition as $cCslV$useOverlayPosition} from "@react-aria/overlays";
++import {mergeProps as $cCslV$mergeProps, useExitAnimation as $cCslV$useExitAnimation, useEnterAnimation as $cCslV$useEnterAnimation, filterDOMProps as $cCslV$filterDOMProps} from "@react-aria/utils";
++import {useTooltip as $cCslV$useTooltip} from "@react-aria/tooltip";
+ import {FocusableProvider as $cCslV$FocusableProvider} from "@react-aria/focus";
+-import {useTooltipTriggerState as $cCslV$useTooltipTriggerState} from "react-stately";
++import {useTooltipTriggerState as $cCslV$useTooltipTriggerState} from "@react-stately/tooltip";
+ import $cCslV$react, {createContext as $cCslV$createContext, useRef as $cCslV$useRef, forwardRef as $cCslV$forwardRef, useContext as $cCslV$useContext} from "react";
+ 
+ /*
+diff --git a/package.json b/package.json
+index d3c48ef42b0d1374487a32ada1f1451ddcc4b0bd..356135b3598fc7a788d2fac161de25ea9409d432 100644
+--- a/package.json
++++ b/package.json
+@@ -26,6 +26,10 @@
+       "types": "./i18n/lang.d.ts",
+       "import": "./i18n/*.mjs",
+       "require": "./i18n/*.js"
++    },
++    "./patched-dist/*": {
++      "import": "./dist/*.mjs",
++      "types": "./dist/types.d.ts"
+     }
+   },
+   "files": [

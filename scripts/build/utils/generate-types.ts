@@ -3,8 +3,8 @@ import limit from 'p-limit';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 
+import { ROOT_DIRECTORY } from '../../utils/constants';
 import type { BuildEntries } from './entry-utils';
-import { modifyCoreThemeTypes } from './modify-core-theme-types';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
@@ -21,7 +21,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
   // ...this way we do not bog down the main process/esbuild and can run them in parallel
   // we limit the number of concurrent processes to 3, because we don't want to overload the host machine
   // by trial and error, 3 seems to be the sweet spot between perf and consistency
-  const limited = limit(10);
+  const limited = limit(5);
   let processes: ReturnType<typeof spawn>[] = [];
 
   await Promise.all(
@@ -29,7 +29,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
       return limited(async () => {
         let timer: ReturnType<typeof setTimeout> | undefined;
         const dtsProcess = spawn(
-          `"${join(import.meta.dirname, '..', '..', 'node_modules', '.bin', 'jiti')}"`,
+          `"${join(ROOT_DIRECTORY, 'node_modules', '.bin', 'jiti')}"`,
           [`"${join(import.meta.dirname, 'dts-process.ts')}"`, `"${entryPoint}"`],
           {
             shell: true,
@@ -83,12 +83,8 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
           processes.forEach((p) => p.kill());
           processes = [];
           process.exit(dtsProcess.exitCode || 1);
-        } else {
+        } else if (!process.env.CI) {
           console.log('✅ Generated types for', picocolors.cyan(join(DIR_REL, entryPoint)));
-
-          if (entryPoint.includes('src/theming/index')) {
-            await modifyCoreThemeTypes(cwd);
-          }
         }
       });
     })

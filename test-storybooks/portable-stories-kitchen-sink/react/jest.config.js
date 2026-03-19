@@ -1,5 +1,6 @@
 module.exports = {
   testMatch: ['**/?(*.)+(test).[jt]s?(x)'],
+  setupFiles: ['<rootDir>/globals.setup.ts'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   transform: {
     '^.+\\.(t|j)sx?$': [

@@ -1,3 +1,4 @@
+import { Tag } from 'storybook/internal/core-server';
 import { readConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
@@ -78,8 +79,8 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
         async (preview) => {
           const tags = preview.getFieldValue(['tags']) || [];
 
-          if (!tags.includes('autodocs') && !dryRun) {
-            preview.setFieldValue(['tags'], [...tags, 'autodocs']);
+          if (!tags.includes(Tag.AUTODOCS) && !dryRun) {
+            preview.setFieldValue(['tags'], [...tags, Tag.AUTODOCS]);
           }
         }
       );

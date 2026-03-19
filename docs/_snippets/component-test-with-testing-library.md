@@ -1,7 +1,7 @@
 ```ts filename="form.component.spec.ts" renderer="angular" language="ts"
 import { render, screen, fireEvent } from '@testing-library/angular';
 
-import { FormComponent } from './LoginForm.component';
+import { FormComponent } from './login-form.component';
 
 import { InvalidForm } from './Form.stories'; //👈 Our stories imported here.
 

@@ -16,8 +16,10 @@ export interface TypescriptOptions extends TypeScriptOptionsBase {
   checkOptions?: ConstructorParameters<typeof ForkTsCheckerWebpackPlugin>[0];
 }
 
-export interface StorybookConfigWebpack
-  extends Omit<StorybookConfig, 'webpack' | 'webpackFinal' | 'features'> {
+export interface StorybookConfigWebpack extends Omit<
+  StorybookConfig,
+  'webpack' | 'webpackFinal' | 'features'
+> {
   /**
    * Modify or return a custom Webpack config after the Storybook's default configuration has run
    * (mostly used by addons).
@@ -34,7 +36,7 @@ export interface StorybookConfigWebpack
     /**
      * Enable the experimental `.test` function in CSF Next
      *
-     * @see https://storybook.js.org/docs/10/api/main-config/main-config-features#experimentalTestSyntax
+     * @see https://storybook.js.org/docs/api/main-config/main-config-features#experimentaltestsyntax
      */
     experimentalTestSyntax?: boolean;
   };

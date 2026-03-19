@@ -23,4 +23,4 @@ export function definePreview<Addons extends PreviewAddon<never>[]>(
   });
 }
 
-interface NextPreview<T extends AddonTypes> extends ReactPreview<NextJsTypes & T> {}
+export interface NextPreview<T extends AddonTypes> extends ReactPreview<NextJsTypes & T> {}

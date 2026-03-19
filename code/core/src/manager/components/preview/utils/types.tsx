@@ -49,6 +49,7 @@ export type CustomCanvasRenderer = (
 ) => ReactElement<any, any> | null;
 
 export interface FramesRendererProps {
+  api: API;
   entry: LeafEntry;
   storyId: StoryId;
   refId: string;

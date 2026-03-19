@@ -12,6 +12,8 @@ const currentDirPath = dirname(currentFilePath);
 
 const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
 const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
+const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
+const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
@@ -54,10 +56,6 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
-      directory: '../addons/docs/src/blocks',
-      titlePrefix: 'addons/docs/blocks',
-    },
-    {
       directory: '../addons/a11y/src',
       titlePrefix: 'addons/accessibility',
     },
@@ -67,6 +65,10 @@ const config = defineMain({
     },
     {
       directory: '../addons/docs/template/stories',
+      titlePrefix: 'addons/docs',
+    },
+    {
+      directory: '../addons/docs/src',
       titlePrefix: 'addons/docs',
     },
     {
@@ -80,6 +82,9 @@ const config = defineMain({
     {
       directory: '../addons/onboarding/src',
       titlePrefix: 'addons/onboarding',
+    },
+    {
+      directory: '../addons/onboarding/example-stories',
     },
     {
       directory: '../addons/pseudo-states/src',
@@ -100,6 +105,7 @@ const config = defineMain({
     },
   ],
   addons: [
+    '@storybook/addon-onboarding',
     '@storybook/addon-themes',
     '@storybook/addon-docs',
     '@storybook/addon-designs',
@@ -149,6 +155,8 @@ const config = defineMain({
             ? {
                 'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
+                'storybook/theming/create': themingCreatePath,
+                'storybook/theming': themingPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {

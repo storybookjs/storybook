@@ -18,13 +18,17 @@ export async function syncStorybookAddons(
   previewConfigPath: string,
   configDir: string
 ) {
-  const previewConfig = await readConfig(previewConfigPath!);
-  const modifiedConfig = await getSyncedStorybookAddons(mainConfig, previewConfig, configDir);
+  const previewConfig = await readConfig(previewConfigPath);
+  const modifiedConfig = await syncPreviewAddonsWithMainConfig(
+    mainConfig,
+    previewConfig,
+    configDir
+  );
 
   await writeConfig(modifiedConfig);
 }
 
-export async function getSyncedStorybookAddons(
+export async function syncPreviewAddonsWithMainConfig(
   mainConfig: StorybookConfig,
   previewConfig: ConfigFile,
   configDir: string

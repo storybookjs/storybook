@@ -1,7 +1,9 @@
+import module from 'node:module';
 import { dirname, join, relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
+// TODO: Remove in SB11
 import PnpWebpackPlugin from 'pnp-webpack-plugin';
 import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
 
@@ -28,6 +30,7 @@ type ResolveLoader = Configuration['resolveLoader'];
 // This loader is shared by both the `managerWebpack` and `webpack` functions.
 const resolveLoader: ResolveLoader = {
   modules: ['node_modules', join(REACT_SCRIPTS_PATH, 'node_modules')],
+  // TODO: Remove in SB11
   plugins: [PnpWebpackPlugin.moduleLoader(module)],
 };
 
@@ -68,10 +71,10 @@ const webpack = async (
     return webpackConfig;
   }
 
-  logger.info(`=> Loading Webpack configuration from \`${relative(CWD, scriptsPath)}\``);
+  logger.step(`Loading Webpack configuration from \`${relative(CWD, scriptsPath)}\``);
 
   // Remove existing rules related to JavaScript and TypeScript.
-  logger.info(`=> Removing existing JavaScript and TypeScript rules.`);
+  logger.step(`Removing existing JavaScript and TypeScript rules.`);
   const filteredRules = (webpackConfig.module?.rules as RuleSetRule[])?.filter((rule) => {
     if (typeof rule === 'string') {
       return false;
@@ -86,7 +89,7 @@ const webpack = async (
   const craWebpackConfig = require(craWebpackConfigPath)(webpackConfig.mode) as Configuration;
 
   // Select the relevant CRA rules and add the Storybook config directory.
-  logger.info(`=> Modifying Create React App rules.`);
+  logger.step(`Modifying Create React App rules.`);
   const craRules = await processCraConfig(craWebpackConfig, options);
 
   // NOTE: This is code replicated from
@@ -127,6 +130,7 @@ const webpack = async (
         join(REACT_SCRIPTS_PATH, 'node_modules'),
         ...getModulePath(CWD),
       ],
+      // TODO: Remove in SB11
       plugins: [PnpWebpackPlugin as any],
       // manual copy from builder-webpack because defaults are disabled in this CRA preset
       conditionNames: [

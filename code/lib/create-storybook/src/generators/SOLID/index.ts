@@ -1,17 +1,18 @@
-import { CoreBuilder } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-const generator: Generator = async (packageManager, npmOptions, options) => {
-  await baseGenerator(
-    packageManager,
-    npmOptions,
-    { ...options, builder: CoreBuilder.Vite },
-    'solid',
-    { addComponents: false },
-    'solid'
-  );
-};
-
-export default generator;
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.SOLID,
+    renderer: SupportedRenderer.SOLID,
+    framework: SupportedFramework.SOLID,
+    builderOverride: SupportedBuilder.VITE,
+  },
+  configure: async () => {
+    return {
+      addComponents: true,
+    };
+  },
+});

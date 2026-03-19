@@ -1,12 +1,10 @@
 import { stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { SupportedLanguage } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
+import { Feature, SupportedLanguage } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
-
-import type { GeneratorFeature } from './types';
 
 interface ConfigureMainOptions {
   addons: string[];
@@ -16,7 +14,7 @@ interface ConfigureMainOptions {
   language: SupportedLanguage;
   prefixes: string[];
   frameworkPackage: string;
-  features: GeneratorFeature[];
+  features: Set<Feature>;
   /**
    * Extra values for main.js
    *
@@ -52,12 +50,12 @@ export async function configureMain({
   language,
   frameworkPackage,
   prefixes = [],
-  features = [],
+  features,
   ...custom
 }: ConfigureMainOptions) {
   const srcPath = resolve(storybookConfigFolder, '../src');
   const prefix = (await pathExists(srcPath)) ? '../src' : '../stories';
-  const stories = features.includes('docs') ? [`${prefix}/**/*.mdx`] : [];
+  const stories = features.has(Feature.DOCS) ? [`${prefix}/**/*.mdx`] : [];
 
   stories.push(`${prefix}/**/*.stories.@(${extensions.join('|')})`);
 
@@ -84,7 +82,7 @@ export async function configureMain({
   const imports = [];
   const finalPrefixes = [...prefixes];
 
-  if (custom.framework?.name.includes('path.dirname(')) {
+  if (custom.framework.includes('path.dirname(')) {
     imports.push(`import path from 'node:path';`);
   }
 
@@ -104,17 +102,19 @@ export async function configureMain({
   const mainPath = `./${storybookConfigFolder}/main.${isTypescript ? 'ts' : 'js'}`;
 
   await writeFile(mainPath, mainJsContents, { encoding: 'utf8' });
+
+  return { mainPath };
 }
 
 export async function configurePreview(options: ConfigurePreviewOptions) {
   const { prefix: frameworkPrefix = '' } = options.frameworkPreviewParts || {};
   const isTypescript = options.language === SupportedLanguage.TYPESCRIPT;
 
-  const previewPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
+  const previewConfigPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
 
   // If the framework template included a preview then we have nothing to do
-  if (await pathExists(previewPath)) {
-    return;
+  if (await pathExists(previewConfigPath)) {
+    return { previewConfigPath };
   }
 
   const frameworkPackage = options.frameworkPackage;
@@ -149,5 +149,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     .replace('  \n', '')
     .trim();
 
-  await writeFile(previewPath, preview, { encoding: 'utf8' });
+  await writeFile(previewConfigPath, preview, { encoding: 'utf8' });
+
+  return { previewConfigPath };
 }

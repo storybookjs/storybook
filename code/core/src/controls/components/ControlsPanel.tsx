@@ -30,13 +30,16 @@ const clean = (obj: { [key: string]: any }) =>
     {} as typeof obj
   );
 
-const AddonWrapper = styled.div({
-  display: 'grid',
-  gridTemplateRows: '1fr 39px',
+const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, theme }) => ({
   height: '100%',
   maxHeight: '100vh',
-  overflowY: 'auto',
-});
+  paddingBottom: showSaveFromUI ? 41 : 0,
+  backgroundColor: theme.background.content,
+
+  table: {
+    backgroundColor: theme.background.app,
+  },
+}));
 
 interface ControlsParameters {
   sort?: SortType;
@@ -91,8 +94,16 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
     [args, initialArgs]
   );
 
+  const showSaveFromUI =
+    hasControls &&
+    storyData.type === 'story' &&
+    storyData.subtype !== 'test' &&
+    hasUpdatedArgs &&
+    global.CONFIG_TYPE === 'DEVELOPMENT' &&
+    disableSaveFromUI !== true;
+
   return (
-    <AddonWrapper>
+    <AddonWrapper showSaveFromUI={showSaveFromUI}>
       <ArgsTable
         key={path} // resets state when switching stories
         compact={!expanded && hasControls}
@@ -105,12 +116,7 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
         sort={sort}
         isLoading={isLoading}
       />
-      {hasControls &&
-        storyData.type === 'story' &&
-        storyData.subtype !== 'test' &&
-        hasUpdatedArgs &&
-        global.CONFIG_TYPE === 'DEVELOPMENT' &&
-        disableSaveFromUI !== true && <SaveStory {...{ resetArgs, saveStory, createStory }} />}
+      {showSaveFromUI && <SaveStory {...{ resetArgs, saveStory, createStory }} />}
     </AddonWrapper>
   );
 };

@@ -11,7 +11,10 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 
   return result
     .concat(input)
-    .concat([fileURLToPath(import.meta.resolve('@storybook/web-components/entry-preview'))])
+    .concat([
+      fileURLToPath(import.meta.resolve('@storybook/web-components/entry-preview')),
+      fileURLToPath(import.meta.resolve('@storybook/web-components/entry-preview-argtypes')),
+    ])
     .concat(
       docsEnabled
         ? [fileURLToPath(import.meta.resolve('@storybook/web-components/entry-preview-docs'))]

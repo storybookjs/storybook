@@ -1,7 +1,7 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<Button> = {
   component: MyComponent,
@@ -16,7 +16,22 @@ export const Simple: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Simple = meta.story({
+  name: 'So simple!',
+  // ...
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -29,7 +44,7 @@ export const Simple = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -48,7 +63,67 @@ export const Simple: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Simple = meta.story({
+  name: 'So simple!',
+  // ...
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Simple = meta.story({
+  name: 'So simple!',
+  // ...
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Simple = meta.story({
+  name: 'So simple!',
+  // ...
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Simple = meta.story({
+  name: 'So simple!',
+  // ...
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
 };
@@ -59,7 +134,7 @@ export const Simple = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -73,4 +148,30 @@ export const Simple: Story = {
   name: 'So simple!',
   // ...
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Simple = meta.story({
+  name: 'So simple!',
+  // ...
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Simple = meta.story({
+  name: 'So simple!',
+  // ...
+});
 ```

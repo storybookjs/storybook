@@ -4,7 +4,7 @@ import React from 'react';
 // @ts-ignore (js import not supported in TS)
 import { imported } from '../imported';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore (css import not supported in TS)
+// @ts-ignore no types for this
 import * as styles from '../imported.module.css';
 
 const local = 'local-value';
@@ -29,7 +29,9 @@ interface PropsWriterProps {
   importedReference?: string;
   globalReference?: any;
   stringGlobalName?: string;
-  myClass: typeof styles.foo;
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore no types for this
+  myClass: typeof styles;
 }
 
 /** A component that renders its props */
@@ -37,6 +39,8 @@ export const PropsWriter: React.FC<PropsWriterProps> = (props: PropsWriterProps)
   <pre>{JSON.stringify(props)}</pre>
 );
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we can't expect error as it isn't an error in 18 (development) but it is in 19 (sandbox)
+// @ts-ignore not present on react 19
 PropsWriter.defaultProps = {
   numberOptional: 1,
   stringOptional: 'stringOptional',
@@ -49,6 +53,8 @@ PropsWriter.defaultProps = {
   importedReference: imported,
   globalReference: Date,
   stringGlobalName: 'top',
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore no types for this
   myClass: styles.foo,
 };
 

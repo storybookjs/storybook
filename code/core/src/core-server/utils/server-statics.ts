@@ -2,10 +2,15 @@ import { existsSync, statSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
 
-import { getDirectoryFromWorkingDir, resolvePathInStorybookCache } from 'storybook/internal/common';
-import { logger, once } from 'storybook/internal/node-logger';
+import {
+  getDirectoryFromWorkingDir,
+  getProjectRoot,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
+import { CLI_COLORS, logger, once } from 'storybook/internal/node-logger';
 import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
+import { relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Polka } from 'polka';
 import sirv from 'sirv';
@@ -113,8 +118,9 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
 
       // Don't log for internal static dirs
       if (!targetEndpoint.startsWith('/sb-') && !staticDir.startsWith(cacheDir)) {
-        logger.info(
-          `=> Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
+        const relativeStaticDir = relative(getProjectRoot(), staticDir);
+        logger.debug(
+          `Serving static files from ${CLI_COLORS.info(relativeStaticDir)} at ${CLI_COLORS.info(targetEndpoint)}`
         );
       }
 

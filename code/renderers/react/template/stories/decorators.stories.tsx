@@ -43,7 +43,7 @@ export const Context: StoryObj<typeof Component> = {
       </TestContext.Provider>
     ),
   ],
-  render: function Render(args, context) {
+  render: function Render() {
     const value = useContext(TestContext);
 
     if (!value) {

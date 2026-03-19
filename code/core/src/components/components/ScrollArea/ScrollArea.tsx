@@ -10,6 +10,12 @@ export interface ScrollAreaProps {
   className?: string;
   offset?: number;
   scrollbarSize?: number;
+  scrollPadding?: number | string;
+  /**
+   * Set this to define a tabIndex on the scrollable content; only needed when content has no
+   * interactive elements.
+   */
+  focusable?: boolean;
 }
 
 const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number; offset: number }>(
@@ -22,10 +28,18 @@ const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number;
   })
 );
 
-const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)({
-  width: '100%',
-  height: '100%',
-});
+const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)<{ focusable: boolean }>(
+  ({ focusable, theme }) => ({
+    width: '100%',
+    height: '100%',
+    '&:focus': focusable
+      ? {
+          outline: `2px solid ${theme.color.secondary}`,
+          outlineOffset: -2,
+        }
+      : {},
+  })
+);
 
 const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
   offset: number;
@@ -62,6 +76,7 @@ const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
   borderRadius: `var(--scrollbar-size)`,
   position: 'relative',
   transition: 'opacity 0.2s ease-out',
+  zIndex: 1,
 
   '&:hover': { opacity: 0.8 },
 
@@ -79,11 +94,27 @@ const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
 
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
   (
-    { children, horizontal = false, vertical = false, offset = 2, scrollbarSize = 6, className },
+    {
+      children,
+      horizontal = false,
+      vertical = false,
+      offset = 2,
+      scrollbarSize = 6,
+      scrollPadding = 0,
+      className,
+      focusable = false,
+    },
     ref
   ) => (
     <ScrollAreaRoot scrollbarsize={scrollbarSize} offset={offset} className={className}>
-      <ScrollAreaViewport ref={ref}>{children}</ScrollAreaViewport>
+      <ScrollAreaViewport
+        ref={ref}
+        style={{ scrollPadding }}
+        tabIndex={focusable ? 0 : undefined}
+        focusable={focusable}
+      >
+        {children}
+      </ScrollAreaViewport>
       {horizontal && (
         <ScrollAreaScrollbar
           orientation="horizontal"

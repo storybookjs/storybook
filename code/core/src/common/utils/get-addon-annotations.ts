@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import { isCorePackage } from './cli';
 
 /**
@@ -37,7 +39,8 @@ export async function getAddonAnnotations(addon: string, configDir: string) {
 
   // If the preview endpoint doesn't exist, we don't need to add the addon to definePreview
   try {
-    import.meta.resolve(`${addon}/preview`, configDir);
+    const require = createRequire(import.meta.url);
+    require.resolve(`${addon}/preview`, { paths: [configDir] });
   } catch (err) {
     return null;
   }

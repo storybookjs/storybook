@@ -1,4 +1,11 @@
 import { detectPnp } from 'storybook/internal/cli';
+import {
+  getAbsolutePathWrapperAsCallExpression,
+  getAbsolutePathWrapperName,
+  getFieldsForGetAbsolutePathWrapper,
+  isGetAbsolutePathWrapperNecessary,
+  wrapValueWithGetAbsolutePathWrapper,
+} from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
@@ -6,13 +13,6 @@ import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
-import {
-  getAbsolutePathWrapperAsCallExpression,
-  getAbsolutePathWrapperName,
-  getFieldsForGetAbsolutePathWrapper,
-  isGetAbsolutePathWrapperNecessary,
-  wrapValueWithGetAbsolutePathWrapper,
-} from './wrap-getAbsolutePath-utils';
 
 export interface WrapGetAbsolutePathRunOptions {
   storybookVersion: string;

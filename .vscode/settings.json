@@ -49,7 +49,7 @@
   "typescript.preferences.preferTypeOnlyAutoImports": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.preferGoToSourceDefinition": true,
-  "typescript.tsdk": "./code/node_modules/typescript/lib",
+  "typescript.tsdk": "./typescript/lib",
   "vitest.workspaceConfig": "./code/vitest.workspace.ts",
   "vitest.rootConfig": "./code/vitest.workspace.ts",
 }

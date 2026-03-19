@@ -4,6 +4,7 @@ import React from 'react';
 import { Markdown } from './Markdown';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export enum DescriptionType {
   INFO = 'info',
@@ -58,7 +59,7 @@ const getDescriptionFromResolvedOf = (resolvedOf: ReturnType<typeof useOf>): str
   }
 };
 
-const DescriptionContainer: FC<DescriptionProps> = (props) => {
+const DescriptionImpl: FC<DescriptionProps> = (props) => {
   const { of } = props;
 
   if ('of' in props && of === undefined) {
@@ -70,4 +71,4 @@ const DescriptionContainer: FC<DescriptionProps> = (props) => {
   return markdown ? <Markdown>{markdown}</Markdown> : null;
 };
 
-export { DescriptionContainer as Description };
+export const Description = withMdxComponentOverride('Description', DescriptionImpl);

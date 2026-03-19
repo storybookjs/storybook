@@ -4,9 +4,10 @@ import type { Options } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 import type { InlineConfig } from 'vite';
 
-import { sanitizeEnvVars } from './envs';
+import { createViteLogger } from './logger';
 import type { WebpackStatsPlugin } from './plugins';
 import { hasVitePlugins } from './utils/has-vite-plugins';
+import { bundlerOptionsKey } from './utils/vite-features';
 import { withoutVitePlugins } from './utils/without-vite-plugins';
 import { commonConfig } from './vite-config';
 
@@ -19,11 +20,13 @@ export async function build(options: Options) {
   const { presets } = options;
 
   const config = await commonConfig(options, 'build');
+
   config.build = mergeConfig(config, {
     build: {
       outDir: options.outputDir,
       emptyOutDir: false, // do not clean before running Vite build - Storybook has already added assets in there!
-      rollupOptions: {
+      // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
+      [bundlerOptionsKey]: {
         external: [/\.\/sb-common-assets\/.*\.woff2/],
       },
       ...(options.test
@@ -38,6 +41,28 @@ export async function build(options: Options) {
   } as InlineConfig).build;
 
   const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
+
+  // Add a plugin to enforce Storybook's outDir after all other plugins.
+  // This prevents frameworks like Nitro from redirecting
+  // build output to their own directories (e.g., .output/public/).
+  // The 'enforce: post' ensures this runs after all other config hooks.
+  finalConfig.plugins?.push({
+    name: 'storybook:enforce-output-dir',
+    enforce: 'post',
+    config: () => ({
+      build: {
+        outDir: options.outputDir,
+      },
+    }),
+    // configEnvironment is a new method in Vite 6
+    // It is used to configure configs based on the environment
+    // E.g. Nitro uses this method to set the output directory to .output/public/
+    configEnvironment: () => ({
+      build: {
+        outDir: options.outputDir,
+      },
+    }),
+  });
 
   if (options.features?.developmentModeForBuild) {
     finalConfig.plugins?.push({
@@ -64,7 +89,9 @@ export async function build(options: Options) {
     finalConfig.plugins = await withoutVitePlugins(finalConfig.plugins, [turbosnapPluginName]);
   }
 
-  await viteBuild(await sanitizeEnvVars(options, finalConfig));
+  finalConfig.customLogger ??= await createViteLogger();
+
+  await viteBuild(finalConfig);
 
   const statsPlugin = findPlugin(
     finalConfig,

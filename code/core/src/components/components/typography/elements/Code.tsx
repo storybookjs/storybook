@@ -1,29 +1,28 @@
 import type { ComponentProps } from 'react';
 import React, { Children } from 'react';
 
+import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
-import { SyntaxHighlighter } from '../../syntaxhighlighter/syntaxhighlighter';
+import { SyntaxHighlighter } from '../../syntaxhighlighter/lazy-syntaxhighlighter';
 import type { SupportedLanguage } from '../../syntaxhighlighter/syntaxhighlighter-types';
 import { codeCommon } from '../lib/common';
 import { isReactChildString } from '../lib/isReactChildString';
 
 const isInlineCodeRegex = /[\n\r]/g;
 
-const DefaultCodeBlock = styled.code(
-  ({ theme }) => ({
-    // from reset
-    fontFamily: theme.typography.fonts.mono,
-    WebkitFontSmoothing: 'antialiased',
-    MozOsxFontSmoothing: 'grayscale',
-    display: 'inline-block',
-    paddingLeft: 2,
-    paddingRight: 2,
-    verticalAlign: 'baseline',
-    color: 'inherit',
-  }),
-  codeCommon
-);
+const DefaultCodeBlock = styled.code(({ theme }) => ({
+  // from reset
+  fontFamily: theme.typography.fonts.mono,
+  WebkitFontSmoothing: 'antialiased',
+  MozOsxFontSmoothing: 'grayscale',
+  display: 'inline-block',
+  paddingLeft: 2,
+  paddingRight: 2,
+  verticalAlign: 'baseline',
+  color: 'inherit',
+  ...(codeCommon({ theme }) as CSSObject),
+}));
 
 const StyledSyntaxHighlighter = styled(SyntaxHighlighter)(({ theme }) => ({
   // DocBlocks-specific styling and overrides

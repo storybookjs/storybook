@@ -5,7 +5,7 @@ import './demo-wc-card';
 export default {
   component: 'demo-wc-card',
   render: ({ backSide, header, rows, prefix }) => html`
-    <demo-wc-card .backSide="${backSide}" .header="${header}" .rows="${rows}"
+    <demo-wc-card .backSide=${backSide} .header=${header} .rows=${rows}
       ><span slot="prefix">${prefix}</span>A simple card</demo-wc-card
     >
   `,

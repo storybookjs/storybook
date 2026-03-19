@@ -1,11 +1,8 @@
-import { global } from '@storybook/global';
-
 import type { API_KeyCollection } from '../modules/shortcuts';
+import { isMacLike } from './platform';
 
-const { navigator } = global;
+export type { API_KeyCollection } from '../modules/shortcuts';
 
-export const isMacLike = () =>
-  navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
 export const controlOrMetaSymbol = () => (isMacLike() ? '⌘' : 'ctrl');
 export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');
 export const optionOrAltSymbol = () => (isMacLike() ? '⌥' : 'alt');
@@ -23,7 +20,7 @@ export type KeyboardEventLike = Pick<
 // NOTE: if we change the fields on the event that we need, we'll need to update the serialization in core/preview/start.js
 export const eventToShortcut = (e: KeyboardEventLike): (string | string[])[] | null => {
   // Meta key only doesn't map to a shortcut
-  if (['Meta', 'Alt', 'Control', 'Shift'].includes(e.key)) {
+  if (['Meta', 'Alt', 'Control', 'Shift', 'Tab'].includes(e.key)) {
     return null;
   }
 
@@ -131,6 +128,12 @@ export const eventMatchesShortcut = (
   return shortcutMatchesShortcut(eventToShortcut(e)!, shortcut);
 };
 
+/**
+ * Returns a human-readable symbol for a keyboard key.
+ *
+ * @param key The key to convert to a symbol.
+ * @returns A string that a human could understand as that keyboard key.
+ */
 export const keyToSymbol = (key: string): string => {
   if (key === 'alt') {
     return optionOrAltSymbol();
@@ -171,4 +174,22 @@ export const keyToSymbol = (key: string): string => {
 // Display the shortcut as a human readable string
 export const shortcutToHumanString = (shortcut: API_KeyCollection): string => {
   return shortcut.map(keyToSymbol).join(' ');
+};
+
+// Display the shortcut for use in an aria-keyshortcuts attribute
+export const shortcutToAriaKeyshortcuts = (shortcut: API_KeyCollection): string => {
+  return shortcut
+    .map((shortcut) => {
+      // aria-keyshortcuts needs `+` translated
+      if (shortcut === '+') {
+        return 'plus';
+      }
+
+      if (shortcut === ' ') {
+        return 'space';
+      }
+
+      return shortcut;
+    })
+    .join('+');
 };

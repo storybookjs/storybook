@@ -62,6 +62,15 @@ const OptionsSelect = styled.select(styleResets, ({ theme }) => ({
       padding: '6px 10px',
       marginLeft: 1,
       marginRight: 1,
+
+      '&:hover': {
+        background: theme.background.hoverable,
+      },
+      '&:checked': {
+        background: 'transparent',
+        color: theme.color.secondary,
+        fontWeight: theme.typography.weight.bold,
+      },
     },
   },
 }));
@@ -95,20 +104,23 @@ type SelectProps = ControlProps<OptionsSelection> & SelectConfig;
 
 const NO_SELECTION = 'Choose option...';
 
-const SingleSelect: FC<SelectProps> = ({ name, value, options, onChange, argType }) => {
+const SingleSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange, argType }) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     onChange(options[e.currentTarget.value]);
   };
   const selection = selectedKey(value, options) || NO_SELECTION;
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, storyId);
 
   const readonly = !!argType?.table?.readonly;
 
   return (
     <SelectWrapper>
       <ChevronSmallDownIcon />
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
       <OptionsSelect disabled={readonly} id={controlId} value={selection} onChange={handleChange}>
-        <option key="no-selection" disabled>
+        <option disabled={selection === NO_SELECTION} key="no-selection">
           {NO_SELECTION}
         </option>
         {Object.keys(options).map((key) => (
@@ -121,7 +133,7 @@ const SingleSelect: FC<SelectProps> = ({ name, value, options, onChange, argType
   );
 };
 
-const MultiSelect: FC<SelectProps> = ({ name, value, options, onChange, argType }) => {
+const MultiSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange, argType }) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selection = Array.from(e.currentTarget.options)
       .filter((option) => option.selected)
@@ -129,12 +141,15 @@ const MultiSelect: FC<SelectProps> = ({ name, value, options, onChange, argType 
     onChange(selectedValues(selection, options));
   };
   const selection = selectedKeys(value, options);
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, storyId);
 
   const readonly = !!argType?.table?.readonly;
 
   return (
     <SelectWrapper>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
       <OptionsSelect
         disabled={readonly}
         id={controlId}

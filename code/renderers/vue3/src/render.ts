@@ -1,5 +1,11 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import type { Args, ArgsStoryFn, RenderContext, StoryContext } from 'storybook/internal/types';
+import type { Globals } from 'storybook/internal/types';
+import {
+  type Args,
+  type ArgsStoryFn,
+  type RenderContext,
+  type StoryContext,
+} from 'storybook/internal/types';
 
 import type { PreviewWeb } from 'storybook/preview-api';
 import type { App } from 'vue';
@@ -18,7 +24,9 @@ export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
   return () => h(Component, props, getSlots(props, context));
 };
 
-export const setup = (fn: (app: App, storyContext?: StoryContext<VueRenderer>) => unknown) => {
+export const setup = <AppHostElement = any>(
+  fn: (app: App<AppHostElement>, storyContext?: StoryContext<VueRenderer>) => unknown
+) => {
   globalThis.PLUGINS_SETUP_FUNCTIONS ??= new Set();
   globalThis.PLUGINS_SETUP_FUNCTIONS.add(fn);
 };
@@ -37,6 +45,7 @@ const map = new Map<
   {
     vueApp: ReturnType<typeof createApp>;
     reactiveArgs: Args;
+    reactiveGlobals: Globals;
   }
 >();
 
@@ -54,7 +63,8 @@ export async function renderToCanvas(
     const element = storyFn(); // call the story function to get the root element with all the decorators
     const args = getArgs(element, storyContext); // get args in case they are altered by decorators otherwise use the args from the context
 
-    updateArgs(existingApp.reactiveArgs, args);
+    updateArgs<Args>(existingApp.reactiveArgs, args);
+    updateArgs<Globals>(existingApp.reactiveGlobals, storyContext.globals);
     return () => {
       teardown(existingApp.vueApp, canvasElement);
     };
@@ -65,19 +75,18 @@ export async function renderToCanvas(
   }
 
   // create vue app for the story
-
-  // create vue app for the story
   const vueApp = createApp({
     setup() {
       storyContext.args = reactive(storyContext.args);
+      storyContext.globals = reactive(storyContext.globals);
       const rootElement = storyFn(); // call the story function to get the root element with all the decorators
       const args = getArgs(rootElement, storyContext); // get args in case they are altered by decorators otherwise use the args from the context
       const appState = {
         vueApp,
         reactiveArgs: reactive(args),
+        reactiveGlobals: storyContext.globals,
       };
       map.set(canvasElement, appState);
-
       return () => {
         // not passing args here as props
         // treat the rootElement as a component without props
@@ -139,7 +148,11 @@ function getArgs(element: StoryFnVueReturnType, storyContext: StoryContext<VueRe
  * @param nextArgs
  * @returns
  */
-export function updateArgs(reactiveArgs: Args, nextArgs: Args) {
+export function updateArgs<
+  T extends {
+    [name: string]: unknown;
+  },
+>(reactiveArgs: T, nextArgs: T) {
   if (Object.keys(nextArgs).length === 0) {
     return;
   }

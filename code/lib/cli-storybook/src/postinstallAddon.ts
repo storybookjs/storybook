@@ -6,6 +6,7 @@ import type { PostinstallOptions } from './add';
 
 const DIR_CWD = process.cwd();
 const require = createRequire(DIR_CWD);
+
 export const postinstallAddon = async (addonName: string, options: PostinstallOptions) => {
   const hookPath = `${addonName}/postinstall`;
   let modulePath: string;
@@ -33,17 +34,16 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
   }
 
   const postinstall = moduledLoaded?.default || moduledLoaded?.postinstall || moduledLoaded;
+  const logger = options.logger;
 
   if (!postinstall || typeof postinstall !== 'function') {
-    console.log(`Error finding postinstall function for ${addonName}`);
+    logger.error(`Error finding postinstall function for ${addonName}`);
     return;
   }
 
   try {
-    console.log(`Running postinstall script for ${addonName}`);
     await postinstall(options);
   } catch (e) {
-    console.error(`Error running postinstall script for ${addonName}`);
-    console.error(e);
+    throw e;
   }
 };

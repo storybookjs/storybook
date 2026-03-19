@@ -10,6 +10,7 @@ const Wrapper = styled.div({
   left: '50%',
   width: '50%',
   height: '100%',
+  pointerEvents: 'none',
 });
 
 export const Confetti = React.memo(function Confetti({

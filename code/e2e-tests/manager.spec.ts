@@ -21,17 +21,17 @@ test.describe('Manager UI', () => {
       await page.locator('[aria-label="Settings"]').click();
 
       // should only hide if pressing Escape, and not other keyboard inputs
-      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await expect(page.getByRole('dialog')).toBeVisible();
       await page.keyboard.press('A');
-      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await expect(page.getByRole('dialog')).toBeVisible();
       await page.keyboard.press('Escape');
-      await expect(page.getByTestId('tooltip')).toBeHidden();
+      await expect(page.getByRole('dialog')).toBeHidden();
 
       // should also hide if clicking anywhere outside the tooltip
       await page.locator('[aria-label="Settings"]').click();
-      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await expect(page.getByRole('dialog')).toBeVisible();
       await page.click('body');
-      await expect(page.getByTestId('tooltip')).toBeHidden();
+      await expect(page.getByRole('dialog')).toBeHidden();
     });
 
     test('Sidebar toggling', async ({ page }) => {
@@ -63,9 +63,10 @@ test.describe('Manager UI', () => {
       // Context menu should contain open in editor for component node
       await page.locator('[data-item-id="example-button"]').hover();
       await page
-        .locator('[data-item-id="example-button"] div[data-testid="context-menu"] button')
+        .locator('[data-item-id="example-button"]')
+        .getByRole('button', { name: 'Open context menu' })
         .click();
-      const sidebarContextMenu = page.getByTestId('tooltip');
+      const sidebarContextMenu = page.getByRole('dialog');
       await expect(
         sidebarContextMenu.getByRole('button', { name: /open in editor/i })
       ).toBeVisible();
@@ -74,23 +75,25 @@ test.describe('Manager UI', () => {
       // Context menu should contain open in editor for docs node
       await page.locator('[data-item-id="example-button--docs"]').hover();
       await page
-        .locator('[data-item-id="example-button--docs"] div[data-testid="context-menu"] button')
+        .locator('[data-item-id="example-button--docs"]')
+        .getByRole('button', { name: 'Open context menu' })
         .click();
       await expect(
-        page.getByTestId('tooltip').getByRole('button', { name: /open in editor/i })
+        page.getByRole('dialog').getByRole('button', { name: /open in editor/i })
       ).toBeVisible();
       await page.click('body');
 
       // Context menu should contain open in editor and copy story name for story node
       await page.locator('[data-item-id="example-button--primary"]').hover();
       await page
-        .locator('[data-item-id="example-button--primary"] div[data-testid="context-menu"] button')
+        .locator('[data-item-id="example-button--primary"]')
+        .getByRole('button', { name: 'Open context menu' })
         .click();
       await expect(
-        page.getByTestId('tooltip').getByRole('button', { name: /open in editor/i })
+        page.getByRole('dialog').getByRole('button', { name: /open in editor/i })
       ).toBeVisible();
       await page
-        .getByTestId('tooltip')
+        .getByRole('dialog')
         .getByRole('button', { name: /copy story name/i })
         .click();
 
@@ -104,7 +107,7 @@ test.describe('Manager UI', () => {
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'primary');
       await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible();
-      await page.getByRole('button', { name: 'Share' }).click();
+      await page.getByRole('button', { name: 'Share', exact: true }).click();
       await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
       await page.getByRole('button', { name: /copy story link/i }).click();
 
@@ -117,7 +120,7 @@ test.describe('Manager UI', () => {
       test.skip(type !== 'build', 'These actions are only applicable in build mode');
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'primary');
-      await page.getByRole('button', { name: 'Share' }).click();
+      await page.getByRole('button', { name: 'Share', exact: true }).click();
       await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
       await page.getByRole('button', { name: /copy story link/i }).click();
 
@@ -128,31 +131,30 @@ test.describe('Manager UI', () => {
 
     test('Toolbar toggling', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
-      const expectToolbarVisibility = async (visible: boolean) => {
-        await expect(async () => {
-          const toolbar = sbPage.page.locator(`[data-test-id="sb-preview-toolbar"]`);
-          const marginTop = await toolbar.evaluate(
-            (element) => window.getComputedStyle(element).marginTop
-          );
-          expect(marginTop).toBe(visible ? '0px' : '-40px');
-        }).toPass({ intervals: [400] });
+      const expectToolbarToBeVisible = async () => {
+        const toolbar = page.getByTestId('sb-preview-toolbar').getByRole('toolbar');
+        await expect(toolbar).toBeVisible();
       };
 
-      await expectToolbarVisibility(true);
+      const expectToolbarToNotExist = async () => {
+        const toolbar = page.getByTestId('sb-preview-toolbar').getByRole('toolbar');
+        await expect(toolbar).toBeHidden();
+      };
+
+      await expectToolbarToBeVisible();
 
       // toggle with keyboard shortcut
       await sbPage.page.locator('html').press('Alt+t');
-      await expectToolbarVisibility(false);
+      await expectToolbarToNotExist();
       await sbPage.page.locator('html').press('Alt+t');
-      await expectToolbarVisibility(true);
+      await expectToolbarToBeVisible();
 
       // toggle with menu item
       await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
-      await expectToolbarVisibility(false);
-      await sbPage.page.locator('[aria-label="Settings"]').click();
+      await expectToolbarToNotExist();
       await sbPage.page.locator('#list-item-T').click();
-      await expectToolbarVisibility(true);
+      await expectToolbarToBeVisible();
     });
 
     test.describe('Panel', () => {
@@ -189,9 +191,10 @@ test.describe('Manager UI', () => {
         await sbPage.page.locator('[aria-label="Settings"]').click();
         await sbPage.page.locator('#list-item-A').click();
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
+        await sbPage.page.locator('html').press('Escape');
 
-        // toggle with "show addons" button
-        await sbPage.page.locator('[aria-label="Show addons"]').click();
+        // toggle with "Show addon panel" button
+        await sbPage.page.locator('[aria-label="Show addon panel"]').click();
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       });
 
@@ -236,30 +239,27 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
-      // toggle with menu item
-      await sbPage.page.locator('[aria-label="Settings"]').click();
-      await sbPage.page.locator('#list-item-F').click();
-      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
-      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
-
       // toggle with "go/exit fullscreen" button
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
+
       await sbPage.page.locator('[aria-label="Exit full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
-      await sbPage.page.locator('[aria-label="Go full screen"]').click();
-      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
-      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
-
       // go fullscreen when sidebar is shown but panel is hidden
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await sbPage.page.locator('[aria-label="Show sidebar"]').click();
-      await sbPage.page.locator('[aria-label="Go full screen"]').click();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // go fullscreen when panel is shown but sidebar is hidden
-      await sbPage.page.locator('[aria-label="Show addons"]').click();
-      await sbPage.page.locator('[aria-label="Go full screen"]').click();
+      await sbPage.page.locator('[aria-label="Show addon panel"]').click();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
     });
@@ -273,7 +273,7 @@ test.describe('Manager UI', () => {
 
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
-      await sbPage.page.locator('[title="Close settings page"]').click();
+      await sbPage.page.locator('[aria-label="Close settings page"]').click();
       expect(sbPage.page.url()).not.toContain('/settings/about');
     });
   });
@@ -326,20 +326,20 @@ test.describe('Manager UI', () => {
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
+      await expect(sbPage.page.getByRole('tab', { name: 'Controls' })).toBeHidden();
 
       // open panel
       await sbPage.page.locator('[aria-label="Open addon panel"]').click();
 
       // panel is open
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeVisible();
+      await expect(sbPage.page.getByRole('tab', { name: 'Controls' })).toBeVisible();
 
       // close panel
-      await sbPage.page.locator('[aria-label="Close addon panel"]').click();
+      await sbPage.page.getByRole('button', { name: 'Close addon panel' }).click();
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
+      await expect(sbPage.page.getByRole('tab', { name: 'Controls' })).toBeHidden();
     });
   });
 });

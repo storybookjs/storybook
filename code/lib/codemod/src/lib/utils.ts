@@ -1,4 +1,4 @@
-import { camelCase, upperFirst } from 'es-toolkit/compat';
+import { camelCase, upperFirst } from 'es-toolkit/string';
 
 export const sanitizeName = (name: string) => {
   let key = upperFirst(camelCase(name)) as string;

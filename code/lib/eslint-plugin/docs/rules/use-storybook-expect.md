@@ -8,14 +8,14 @@
 
 ## Rule Details
 
-Storybook provides a browser compatible version of `expect` via the [@storybook/test](https://github.com/storybookjs/storybook/tree/next/code/lib/test) library (formerly available in the legacy [@storybook/jest](https://github.com/storybookjs/jest) library).
-When [writing interactions](https://storybook.js.org/docs/essentials/interactions) and asserting values, you should always use `expect` from the `@storybook/test` library.
+Storybook provides a browser-compatible version of `expect` via the [storybook/test](https://github.com/storybookjs/storybook/tree/next/code/core/src/test) core package (formerly available in the legacy [@storybook/jest](https://github.com/storybookjs/jest) library).
+When [writing interactions](https://storybook.js.org/docs/essentials/interactions) and asserting values, you should always use `expect` from the `storybook/test` library.
 
 Examples of **incorrect** code for this rule:
 
 ```js
 Default.play = async () => {
-  // using global expect from Jest. Will break on the browser
+  // Using global expect from Jest. Will break on the browser
   await expect(123).toEqual(123);
 };
 ```
@@ -23,17 +23,17 @@ Default.play = async () => {
 Examples of **correct** code for this rule:
 
 ```js
-// correct import.
-import { expect } from '@storybook/test';
+// Correct import.
+import { expect } from 'storybook/test';
 // or this, which is now considered legacy
 import { expect } from '@storybook/jest';
 
 Default.play = async () => {
-  // using imported expect from storybook package
+  // Using imported expect from storybook package
   await expect(123).toEqual(123);
 };
 ```
 
 ## When Not To Use It
 
-This rule should not be applied in test files. Please ensure you are defining the storybook rules only for story files. You can see more details [here](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin#overridingdisabling-rules).
+This rule should not be applied in test files. Please ensure that you define the Storybook rules only for story files. You can see more details [here](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin#overridingdisabling-rules).

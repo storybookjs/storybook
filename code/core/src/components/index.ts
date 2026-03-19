@@ -37,11 +37,14 @@ export type {
   SupportedLanguage,
 } from './components/syntaxhighlighter/syntaxhighlighter-types';
 export { SyntaxHighlighter } from './components/syntaxhighlighter/lazy-syntaxhighlighter';
-export { createCopyToClipboardFunction } from './components/syntaxhighlighter/syntaxhighlighter';
+export { createCopyToClipboardFunction } from './components/syntaxhighlighter/clipboard';
 
 // UI
 export { ActionBar } from './components/ActionBar/ActionBar';
-export { Modal } from './components/Modal/Modal';
+export { ActionList } from './components/ActionList/ActionList';
+export { Collapsible } from './components/Collapsible/Collapsible';
+export { Card } from './components/Card/Card';
+export { Modal, ModalDecorator } from './components/Modal/Modal';
 export { Spaced } from './components/spaced/Spaced';
 export { Placeholder } from './components/placeholder/placeholder';
 export { ScrollArea } from './components/ScrollArea/ScrollArea';
@@ -49,28 +52,65 @@ export { Zoom } from './components/Zoom/Zoom';
 export type { ActionItem } from './components/ActionBar/ActionBar';
 export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 
+// Buttons
+export { Button, IconButton } from './components/Button/Button';
+export type { ButtonProps } from './components/Button/Button';
+export { ToggleButton } from './components/ToggleButton/ToggleButton';
+export { Select } from './components/Select/Select';
+
 // Forms
-export { Button } from './components/Button/Button';
-export { IconButton } from './components/IconButton/IconButton';
 export { Form } from './components/Form/Form';
 
+// Overlay helpers for popovers, menus, tooltips
+export { convertToReactAriaPlacement } from './components/shared/overlayHelpers';
+export type { PopperPlacement } from './components/shared/overlayHelpers';
+
+// Popovers
+export { Popover } from './components/Popover/Popover';
+export type { PopoverProps } from './components/Popover/Popover';
+export { PopoverProvider } from './components/Popover/PopoverProvider';
+export type { PopoverProviderProps } from './components/Popover/PopoverProvider';
+
 // Tooltips
+export { Tooltip } from './components/tooltip/Tooltip';
+export type { TooltipProps } from './components/tooltip/Tooltip';
+export { TooltipNote } from './components/tooltip/TooltipNote';
+export type { TooltipNoteProps } from './components/tooltip/TooltipNote';
+export { TooltipProvider } from './components/tooltip/TooltipProvider';
+export type { TooltipProviderProps } from './components/tooltip/TooltipProvider';
+
+// Old tooltips - deprecated and to remove in Storybook 11
 export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';
 export { TooltipMessage } from './components/tooltip/TooltipMessage';
-export { TooltipNote } from './components/tooltip/TooltipNote';
 export {
   TooltipLinkList,
   type Link as TooltipLinkListLink,
 } from './components/tooltip/TooltipLinkList';
 export { default as ListItem } from './components/tooltip/ListItem';
 
-// Toolbar and subcomponents
-export { Tabs, TabsState, TabBar, TabWrapper } from './components/tabs/tabs';
-export { EmptyTabContent } from './components/tabs/EmptyTabContent';
-export { TabButton } from './components/bar/button';
-export { Separator, interleaveSeparators } from './components/bar/separator';
-export { Bar, FlexBar } from './components/bar/bar';
+// Bar, Toolbar and Tabs
+export { Tabs, TabsState, TabBar, TabWrapper } from './components/Tabs/Tabs';
+export { TabButton } from './components/Tabs/Button';
+export { Separator, interleaveSeparators } from './components/Bar/Separator';
+export { Bar, FlexBar, type BarProps } from './components/Bar/Bar';
+export { EmptyTabContent } from './components/Tabs/EmptyTabContent';
 export { AddonPanel } from './components/addon-panel/addon-panel';
+export { Toolbar, AbstractToolbar } from './components/Toolbar/Toolbar';
+export { TabList } from './components/Tabs/TabList';
+export type { TabListProps } from './components/Tabs/TabList';
+export { TabPanel } from './components/Tabs/TabPanel';
+export type { TabPanelProps } from './components/Tabs/TabPanel';
+export { TabsView, useTabsState } from './components/Tabs/TabsView';
+export type { TabProps, TabsViewProps } from './components/Tabs/TabsView';
+
+export { StatelessTabList } from './components/Tabs/StatelessTabList';
+export type { StatelessTabListProps } from './components/Tabs/StatelessTabList';
+export { StatelessTabPanel } from './components/Tabs/StatelessTabPanel';
+export type { StatelessTabPanelProps } from './components/Tabs/StatelessTabPanel';
+export { StatelessTabsView } from './components/Tabs/StatelessTabsView';
+export type { StatelessTabsViewProps } from './components/Tabs/StatelessTabsView';
+export { StatelessTab } from './components/Tabs/StatelessTab';
+export type { StatelessTabProps } from './components/Tabs/StatelessTab';
 
 // Graphics
 export { StorybookLogo } from './brand/StorybookLogo';

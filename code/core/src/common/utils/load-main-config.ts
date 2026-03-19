@@ -14,24 +14,26 @@ import { validateConfigurationFiles } from './validate-configuration-files';
 export async function loadMainConfig({
   configDir = '.storybook',
   cwd,
+  skipCache,
 }: {
   configDir: string;
   cwd?: string;
+  skipCache?: boolean;
 }): Promise<StorybookConfig> {
   await validateConfigurationFiles(configDir, cwd);
 
   const mainPath = getInterpretedFile(resolve(configDir, 'main')) as string;
 
   try {
-    const out = await importModule(mainPath);
+    const out = await importModule(mainPath, { skipCache });
     return out;
   } catch (e) {
     if (!(e instanceof Error)) {
       throw e;
     }
-    if (e.message.includes('require is not defined')) {
+    if (e.message.includes('not defined in ES module scope')) {
       logger.info(
-        'Loading main config failed, trying a temporary fix, Please ensure the main config is valid ESM'
+        'Loading main config failed as the file does not seem to be valid ESM. Trying a temporary fix, please ensure the main config is valid ESM.'
       );
       const comment =
         '// end of Storybook 10 migration assistant header, you can delete the above code';

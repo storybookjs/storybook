@@ -11,7 +11,7 @@ const fileExists = (basename: string) =>
 export async function getMiddleware(configDir: string) {
   const middlewarePath = fileExists(resolve(configDir, 'middleware'));
   if (middlewarePath) {
-    const middlewareModule = await import(middlewarePath);
+    const middlewareModule = await import('file://' + middlewarePath);
     return middlewareModule.default ?? middlewareModule;
   }
   return () => {};

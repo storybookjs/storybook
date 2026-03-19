@@ -8,7 +8,7 @@
 
 ## Rule Details
 
-Starting in [CSF 3.0](https://storybook.js.org/blog/component-story-format-3-0/), story titles can be generated automatically. You can still specify a title like in CSF 2.0, but if you don't specify one, it can be inferred from the story's path on disk.
+Starting in [CSF 3.0](https://storybook.js.org/blog/storybook-csf3-is-here/), story titles can be generated automatically. You can still specify a title like in CSF 2.0, but if you don't define it, it can be inferred from the story's path on disk.
 This rule aims to enforce not setting a title, making the codebase consistent.
 
 Examples of **incorrect** code for this rule:
@@ -30,7 +30,7 @@ export default {
 
 ## When Not To Use It
 
-If you're not strictly enforcing this rule in your codebase (thus allowing custom titles), you should turn this rule off.
+If you're not strictly enforcing this rule in your codebase (thus allowing custom titles), you should turn off this rule.
 
 ## Further Reading
 

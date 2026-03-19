@@ -40,6 +40,7 @@ function revokeOldUrls(urls: string[]) {
 export const FilesControl: FC<FilesControlProps> = ({
   onChange,
   name,
+  storyId,
   accept = 'image/*',
   value,
   argType,
@@ -63,17 +64,24 @@ export const FilesControl: FC<FilesControlProps> = ({
     }
   }, [value, name]);
 
+  const controlId = getControlId(name, storyId);
+
   return (
-    <FileInput
-      ref={inputElement}
-      id={getControlId(name)}
-      type="file"
-      name={name}
-      multiple
-      disabled={readonly}
-      onChange={handleFileChange}
-      accept={accept}
-      size="flex"
-    />
+    <>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
+      <FileInput
+        ref={inputElement}
+        id={controlId}
+        type="file"
+        name={name}
+        multiple
+        disabled={readonly}
+        onChange={handleFileChange}
+        accept={accept}
+        size="flex"
+      />
+    </>
   );
 };

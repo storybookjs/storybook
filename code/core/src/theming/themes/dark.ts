@@ -6,13 +6,14 @@ const theme: ThemeVars = {
 
   // Storybook-specific color palette
   colorPrimary: '#FF4785', // coral
-  colorSecondary: '#029CFD', // ocean
+  colorSecondary: '#479DFF',
 
   // UI
-  appBg: '#222425',
-  appContentBg: '#1B1C1D',
+  appBg: '#1B1C1D',
+  appContentBg: '#222325',
+  appHoverBg: '#233952',
   appPreviewBg: color.lightest,
-  appBorderColor: 'rgba(255,255,255,.1)',
+  appBorderColor: 'hsl(0 0% 100% / 0.1)',
   appBorderRadius: 4,
 
   // Fonts
@@ -20,24 +21,24 @@ const theme: ThemeVars = {
   fontCode: typography.fonts.mono,
 
   // Text colors
-  textColor: '#C9CDCF',
-  textInverseColor: '#222425',
-  textMutedColor: '#798186',
+  textColor: '#C9CCCF',
+  textInverseColor: '#1B1C1D',
+  textMutedColor: '#95999D',
 
   // Toolbar default and active colors
-  barTextColor: color.mediumdark,
-  barHoverColor: color.secondary,
-  barSelectedColor: color.secondary,
-  barBg: '#292C2E',
+  barTextColor: '#95999D',
+  barHoverColor: '#70B3FF',
+  barSelectedColor: '#479DFF',
+  barBg: '#222325',
 
   // Form colors
-  buttonBg: '#222425',
-  buttonBorder: 'rgba(255,255,255,.1)',
-  booleanBg: '#222425',
-  booleanSelectedBg: '#2E3438',
+  buttonBg: '#1B1C1D',
+  buttonBorder: 'hsl(0 0% 100% / 0.1)',
+  booleanBg: '#1B1C1D',
+  booleanSelectedBg: '#292B2E',
   inputBg: '#1B1C1D',
-  inputBorder: 'rgba(255,255,255,.1)',
-  inputTextColor: color.lightest,
+  inputBorder: 'hsl(0 0% 100% / 0.1)',
+  inputTextColor: '#C9CCCF',
   inputBorderRadius: 4,
 };
 

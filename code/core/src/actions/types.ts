@@ -19,7 +19,13 @@ export interface ActionsParameters {
      */
     argTypesRegex?: string;
 
-    /** Remove the addon panel and disable the addon's behavior */
+    /**
+     * Removes the addon panel and turns off the feature's behavior. If you wish to turn off this
+     * feature for the entire Storybook, you can set the option in your `main.js|ts` configuration
+     * file.
+     *
+     * @see https://storybook.js.org/docs/essentials/actions#disable
+     */
     disable?: boolean;
 
     /**
@@ -30,10 +36,15 @@ export interface ActionsParameters {
      * **To enable this feature, you must use the `withActions` decorator.**
      *
      * @example `handles: ['mouseover', 'click .btn']`
-     *
-     * @see https://storybook.js.org/docs/essentials/actions#action-event-handlers
      */
     handles?: string[];
+
+    /**
+     * An integer specifying to which level the tree should be initially expanded.
+     *
+     * @default 1
+     */
+    expandLevel?: number;
   };
 }
 

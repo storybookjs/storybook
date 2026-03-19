@@ -16,7 +16,6 @@ import { normalizeInputTypes } from './normalizeInputTypes';
 // That makes sense to me as it avoids the need for both WP + Vite to call composeConfigs at the right time.
 export function normalizeProjectAnnotations<TRenderer extends Renderer>({
   argTypes,
-  globalTypes,
   argTypesEnhancers,
   decorators,
   loaders,
@@ -27,7 +26,6 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
 }: ProjectAnnotations<TRenderer>): NormalizedProjectAnnotations<TRenderer> {
   return {
     ...(argTypes && { argTypes: normalizeInputTypes(argTypes as ArgTypes) }),
-    ...(globalTypes && { globalTypes: normalizeInputTypes(globalTypes) }),
     decorators: normalizeArrays(decorators),
     loaders: normalizeArrays(loaders),
     beforeEach: normalizeArrays(beforeEach),

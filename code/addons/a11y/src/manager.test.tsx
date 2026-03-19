@@ -38,7 +38,7 @@ describe('A11yManager', () => {
 
   it('should compute title with no issues', () => {
     // given
-    mockedApi.useAddonState.mockImplementation(() => [undefined]);
+    mockedApi.useAddonState.mockImplementation(() => [{ results: undefined }]);
     registrationImpl(api as unknown as api.API);
     const title = mockedAddons.add.mock.calls.map(([_, def]) => def).find(isPanel)
       ?.title as () => void;
@@ -65,8 +65,10 @@ describe('A11yManager', () => {
     // given
     mockedApi.useAddonState.mockImplementation(() => [
       {
-        violations: [{}],
-        incomplete: [{}, {}],
+        results: {
+          violations: [{}],
+          incomplete: [{}, {}],
+        },
       },
     ]);
     registrationImpl(mockedApi);

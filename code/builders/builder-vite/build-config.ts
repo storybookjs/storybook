@@ -7,6 +7,11 @@ const config: BuildEntries = {
         exportEntries: ['.'],
         entryPoint: './src/index.ts',
       },
+      {
+        exportEntries: ['./preset'],
+        entryPoint: './src/preset.ts',
+        dts: false,
+      },
     ],
   },
   extraOutputs: {

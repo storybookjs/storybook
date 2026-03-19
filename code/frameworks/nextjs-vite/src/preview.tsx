@@ -11,7 +11,7 @@ import { createNavigation } from '@storybook/nextjs-vite/navigation.mock';
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
 import { createRouter } from '@storybook/nextjs-vite/router.mock';
 
-import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
+import { isNextRouterError } from 'next/dist/client/components/is-next-router-error.js';
 
 import { HeadManagerDecorator } from './head-manager/decorator';
 import { ImageDecorator } from './images/decorator';

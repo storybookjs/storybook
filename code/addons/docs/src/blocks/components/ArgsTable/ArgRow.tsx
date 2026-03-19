@@ -21,6 +21,7 @@ interface ArgRowProps {
   compact?: boolean;
   expandable?: boolean;
   initialExpandedArgs?: boolean;
+  storyId?: string;
 }
 
 const Name = styled.span({ fontWeight: 'bold' });

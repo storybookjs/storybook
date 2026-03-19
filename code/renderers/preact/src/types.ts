@@ -12,6 +12,6 @@ export interface ShowErrorArgs {
 }
 
 export interface PreactRenderer extends WebRenderer {
-  component: AnyComponent<any, any>;
+  component: AnyComponent<this['T'], any>;
   storyResult: StoryFnPreactReturnType;
 }

@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { FORCE_REMOUNT } from 'storybook/internal/core-events';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
@@ -15,8 +15,8 @@ interface AnimatedButtonProps {
   animating?: boolean;
 }
 
-const StyledAnimatedIconButton = styled(IconButton)<
-  AnimatedButtonProps & Pick<ComponentProps<typeof IconButton>, 'disabled'>
+const StyledAnimatedButton = styled(Button)<
+  AnimatedButtonProps & Pick<ComponentProps<typeof Button>, 'disabled'>
 >(({ theme, animating, disabled }) => ({
   opacity: disabled ? 0.5 : 1,
   svg: {
@@ -49,21 +49,25 @@ export const remountTool: Addon_BaseType = {
           remount();
         };
 
-        api.on(FORCE_REMOUNT, () => {
-          setIsAnimating(true);
-        });
+        useEffect(() => {
+          const handler = () => setIsAnimating(true);
+          api.on(FORCE_REMOUNT, handler);
+          return () => api.off?.(FORCE_REMOUNT, handler);
+        }, [api]);
 
         return (
-          <StyledAnimatedIconButton
+          <StyledAnimatedButton
             key="remount"
-            title="Remount component"
+            padding="small"
+            variant="ghost"
+            ariaLabel="Reload story"
             onClick={remountComponent}
             onAnimationEnd={() => setIsAnimating(false)}
             animating={isAnimating}
             disabled={!storyId}
           >
             <SyncIcon />
-          </StyledAnimatedIconButton>
+          </StyledAnimatedButton>
         );
       }}
     </Consumer>

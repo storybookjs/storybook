@@ -4,7 +4,7 @@ import type { StoryContext } from '@storybook/react';
 
 import { expect, fn } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
+import preview from './preview';
 
 const Button = (args: React.ComponentProps<'button'>) => <button {...args} />;
 
@@ -78,7 +78,7 @@ Default.test(
   },
   async ({ canvas }) => {
     const button = canvas.getByText('Arg from story');
-    await expect(button).toBeEnabled();
+    await expect(button).not.toHaveAttribute('aria-disabled', 'true');
   }
 );
 export const Extended = Default.extend({
@@ -88,5 +88,5 @@ export const Extended = Default.extend({
 });
 Extended.test('should have extended args', async ({ canvas }) => {
   const button = canvas.getByText('Arg from extended story');
-  await expect(button).toBeEnabled();
+  await expect(button).not.toHaveAttribute('aria-disabled', 'true');
 });

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, findByText, fireEvent, fn } from 'storybook/test';
+import { expect, fireEvent, fn, within } from 'storybook/test';
 
 import { FileSearchList } from './FileSearchList';
 
@@ -39,12 +39,11 @@ export const Empty: Story = {
 
 export const WithResults: Story = {
   play: async ({ canvasElement, args }) => {
-    // use react testing library
-    // select first item in the list and click on it
-    const firstItem = await findByText(canvasElement, 'module-multiple-exports.js');
+    const canvas = within(canvasElement);
+    const firstItem = await canvas.findByText('module-multiple-exports.js', {}, { timeout: 3000 });
     fireEvent.click(firstItem);
 
-    const exportedElement1 = await findByText(canvasElement, 'module-multiple-exports');
+    const exportedElement1 = await canvas.findByText('module-multiple-exports');
     fireEvent.click(exportedElement1);
 
     expect(args.onNewStory).toHaveBeenCalledWith(
@@ -56,7 +55,7 @@ export const WithResults: Story = {
       })
     );
 
-    const exportedElement2 = await findByText(canvasElement, 'namedExport');
+    const exportedElement2 = await canvas.findByText('namedExport');
     fireEvent.click(exportedElement2);
 
     expect(args.onNewStory).toHaveBeenCalledWith(
@@ -68,7 +67,7 @@ export const WithResults: Story = {
       })
     );
 
-    const singleExport = await findByText(canvasElement, 'module-single-export.js');
+    const singleExport = await canvas.findByText('module-single-export.js');
     fireEvent.click(singleExport);
 
     expect(args.onNewStory).toHaveBeenCalledWith(
@@ -82,12 +81,12 @@ export const WithResults: Story = {
 
     expect(args.onNewStory).toHaveBeenCalledTimes(3);
 
-    const noExportsModule1 = await findByText(canvasElement, 'no-exports-module.js');
+    const noExportsModule1 = await canvas.findByText('no-exports-module.js');
     fireEvent.click(noExportsModule1);
 
     expect(args.onNewStory).toHaveBeenCalledTimes(3);
 
-    const noExportsModule2 = await findByText(canvasElement, 'no-exports-module-1.js');
+    const noExportsModule2 = await canvas.findByText('no-exports-module-1.js');
     fireEvent.click(noExportsModule2);
 
     expect(args.onNewStory).toHaveBeenCalledTimes(3);

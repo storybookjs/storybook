@@ -21,7 +21,7 @@ export const withGlobals = (StoryFn: StoryFunction<Renderer>, context: StoryCont
   const isInDocs = context.viewMode === 'docs';
 
   const outlineStyles = useMemo(() => {
-    const selector = isInDocs ? `#anchor--${context.id} .docs-story` : '.sb-show-main';
+    const selector = isInDocs ? `#anchor--${context.id} .docs-story, #anchor--primary--${context.id} .docs-story` : '.sb-show-main';
 
     return outlineCSS(selector);
   }, [context.id]);

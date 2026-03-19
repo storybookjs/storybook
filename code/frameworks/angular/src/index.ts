@@ -1,6 +1,8 @@
 export * from './client/index';
 export * from './types';
 
+export { __definePreview as definePreview } from './client/index';
+
 /*
  * ATTENTION:
  * - moduleMetadata

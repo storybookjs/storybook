@@ -33,7 +33,7 @@ Use checkboxes to select one or more options from a list of choices.
 ```
 
 <!-- prettier-ignore -->
-```mdx filename="Checkbox.mdx" renderer="svelte" language="mdx" tabTitle="CSF"
+```mdx filename="Checkbox.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
 import { Canvas, Meta } from '@storybook/addon-docs/blocks';
 
 import * as CheckboxStories from './Checkbox.stories';

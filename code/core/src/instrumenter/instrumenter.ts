@@ -223,7 +223,7 @@ export class Instrumenter {
     }) => {
       const { isDebugging } = this.getState(storyId);
       if (newPhase === 'preparing' && isDebugging) {
-        return resetState({ storyId, renderPhase: newPhase });
+        return resetState({ storyId, renderPhase: newPhase, isDebugging });
       } else if (newPhase === 'playing') {
         return resetState({ storyId, renderPhase: newPhase, isDebugging });
       }

@@ -319,6 +319,26 @@ describe('default value extraction', () => {
     });
   });
 
+  it('extracts body-level destructuring through nullish coalescing with empty object fallback', async () => {
+    const entry = await extract(
+      'Alert',
+      dedent`
+        import React from 'react';
+        interface Props { color?: string; label?: string }
+        export const Alert = (props: Props) => {
+          const { color = 'info', label } = props ?? {};
+          return <div />;
+        };
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        color: { defaultValue: { value: "'info'" } },
+        label: { defaultValue: null },
+      },
+    });
+  });
+
   it('prefers destructuring defaults over JSDoc @default', async () => {
     const entry = await extract(
       'Button',

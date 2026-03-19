@@ -705,11 +705,6 @@ function resolveLiteralValue(
     return node.getText();
   }
 
-  // Prefix unary: -1, +2
-  if (typescript.isPrefixUnaryExpression(node)) {
-    return node.getText();
-  }
-
   // Identifier — follow to declaration
   if (typescript.isIdentifier(node)) {
     if (node.text === 'undefined') {
@@ -759,7 +754,7 @@ function resolveLiteralValue(
     return node.getText();
   }
 
-  // Fallback — return source text
+  // Fallback — preserve source text for expressions we don't resolve explicitly.
   return node.getText();
 }
 

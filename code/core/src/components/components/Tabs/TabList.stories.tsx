@@ -1,6 +1,6 @@
 import { Bar } from 'storybook/internal/components';
 
-import { expect } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { TabList } from './TabList';
@@ -145,5 +145,72 @@ export const PreservesAriaLabels = meta.story({
   play: ({ canvas }) => {
     const tabOne = canvas.getAllByRole('tab')[0];
     expect(tabOne).toHaveAttribute('aria-label', 'Tab one');
+  },
+});
+
+export const ScrollButtonsAreKeyboardAccessible = meta.story({
+  name: 'Scroll Buttons Are Keyboard Accessible',
+  parameters: {
+    data: {
+      tabs: MANY_TABS,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Scroll buttons should be present and focusable (no tabIndex={-1})
+    const scrollForwardButton = canvas.getByRole('button', { name: 'Scroll forward' });
+    expect(scrollForwardButton).not.toHaveAttribute('tabindex', '-1');
+    expect(scrollForwardButton).toBeEnabled();
+
+    const scrollBackwardButton = canvas.getByRole('button', { name: 'Scroll backward' });
+    expect(scrollBackwardButton).toBeDisabled();
+  },
+});
+
+export const ArrowKeyScrollsOverflowingTabs = meta.story({
+  name: 'Arrow Keys Scroll Overflowing Tabs Into View',
+  parameters: {
+    data: {
+      tabs: MANY_TABS,
+    },
+  },
+  decorators: [
+    (Story, { args }) => {
+      return (
+        <Bar
+          border
+          scrollable={false}
+          innerStyle={{ width: 400, padding: 0 }}
+          backgroundColor={'rgba(0,0,0,.05)'}
+        >
+          <Story args={{ ...args }} />
+        </Bar>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tabs = canvas.getAllByRole('tab');
+
+    // Focus the first tab
+    await userEvent.click(tabs[0]);
+    expect(tabs[0]).toHaveFocus();
+
+    // Arrow right through several tabs — each should auto-scroll into view
+    for (let i = 1; i < Math.min(tabs.length, 8); i++) {
+      await userEvent.keyboard('{ArrowRight}');
+    }
+
+    // After arrowing right, a later tab should have focus and be visible
+    const focusedTab = canvasElement.querySelector('[role="tab"]:focus') as HTMLElement;
+    expect(focusedTab).toBeTruthy();
+
+    // Verify the focused tab is within the visible scroll area
+    const scrollContainer = canvasElement.querySelector('[style*="overflow"]') ?? canvasElement;
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const tabRect = focusedTab.getBoundingClientRect();
+    expect(tabRect.right).toBeLessThanOrEqual(containerRect.right + 1);
+    expect(tabRect.left).toBeGreaterThanOrEqual(containerRect.left - 1);
   },
 });

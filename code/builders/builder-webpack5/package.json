@@ -61,7 +61,7 @@
     "html-webpack-plugin": "^5.5.0",
     "magic-string": "^0.30.5",
     "style-loader": "^4.0.0",
-    "terser-webpack-plugin": "^5.3.14",
+    "terser-webpack-plugin": "^5.3.17",
     "ts-dedent": "^2.0.0",
     "webpack": "5",
     "webpack-dev-middleware": "^6.1.2",

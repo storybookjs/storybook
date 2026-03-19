@@ -4,12 +4,13 @@ import React, { useCallback } from 'react';
 import { Button } from 'storybook/internal/components';
 
 import { opacify, transparentize } from 'polished';
+import type { CSSObject, StorybookTheme } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import type { BooleanConfig, BooleanValue, ControlProps } from './types';
 
-const Label = styled.label(({ theme }) => ({
+export const getBooleanControlStyles = (theme: StorybookTheme): CSSObject => ({
   lineHeight: '18px',
   alignItems: 'center',
   marginBottom: 8,
@@ -26,11 +27,24 @@ const Label = styled.label(({ theme }) => ({
       cursor: 'not-allowed',
     },
   },
+  '@media (forced-colors: active)': {
+    background: 'ButtonFace',
+    outline: '1px solid ButtonText',
+  },
+  '&:focus-within': {
+    outline: 'none',
+    boxShadow: `${theme.color.secondary} 0 0 0 1px inset !important`,
+
+    '@media (forced-colors: active)': {
+      outline: '1px solid Highlight',
+      outlineOffset: 1,
+    },
+  },
 
   input: {
     appearance: 'none',
-    width: '100%',
-    height: '100%',
+    width: 1,
+    height: 1,
     position: 'absolute',
     left: 0,
     top: 0,
@@ -38,18 +52,12 @@ const Label = styled.label(({ theme }) => ({
     padding: 0,
     border: 'none',
     background: 'transparent',
+    clip: 'rect(0 0 0 0)',
+    clipPath: 'inset(50%)',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
     cursor: 'pointer',
     borderRadius: '3em',
-
-    '&:focus': {
-      outline: 'none',
-      boxShadow: `${theme.color.secondary} 0 0 0 1px inset !important`,
-    },
-    '@media (forced-colors: active)': {
-      '&:focus': {
-        outline: '1px solid highlight',
-      },
-    },
   },
 
   span: {
@@ -82,6 +90,11 @@ const Label = styled.label(({ theme }) => ({
     '&:last-of-type': {
       paddingLeft: 8,
     },
+
+    '@media (forced-colors: active)': {
+      color: 'ButtonText',
+      boxShadow: 'none',
+    },
   },
 
   'input:checked ~ span:last-of-type, input:not(:checked) ~ span:first-of-type': {
@@ -94,10 +107,16 @@ const Label = styled.label(({ theme }) => ({
     padding: '7px 15px',
 
     '@media (forced-colors: active)': {
-      textDecoration: 'underline',
+      forcedColorAdjust: 'none',
+      background: 'Highlight',
+      color: 'HighlightText',
+      boxShadow: 'none',
+      outline: '1px solid ButtonText',
     },
   },
-}));
+});
+
+const Label = styled.label(({ theme }) => getBooleanControlStyles(theme));
 
 const parse = (value: string | null): boolean => value === 'true';
 

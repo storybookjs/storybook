@@ -77,7 +77,9 @@ test.describe('interactions', () => {
     await expect(panel).toBeVisible();
 
     // Test interactions debugger - Stepping through works, count is correct and values are as expected
-    const interactionsRow = panel.locator('[aria-label="Interaction step"]');
+    const interactionsRow = panel.getByRole('button', {
+      name: /^(Go to )?interaction step:/i,
+    });
 
     await expect(interactionsRow.first()).toBeVisible();
 

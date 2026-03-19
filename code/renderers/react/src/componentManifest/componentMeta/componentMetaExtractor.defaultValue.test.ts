@@ -339,6 +339,7 @@ describe('default value extraction', () => {
     });
   });
 
+  // Default precedence is intentional: destructuring > defaultProps > JSDoc.
   it('prefers destructuring defaults over JSDoc @default', async () => {
     const entry = await extract(
       'Button',

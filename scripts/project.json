@@ -5,9 +5,9 @@
   "targets": {
     "pretty-docs": {
       "command": "yarn fmt:check",
-      "cwd": "{workspaceRoot}",
+      "cwd": "{projectRoot}",
       "cache": true,
-      "inputs": ["{workspaceRoot}/docs/**/*"]
+      "inputs": ["{workspaceRoot}/docs/**/*", "{workspaceRoot}/docs/.oxfmtrc.json"]
     },
     "check": {
       "dependsOn": [],

@@ -10,6 +10,7 @@ import type { ParserOptions } from 'react-docgen-typescript';
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
 import {
   type ComponentDocWithExportName,
+  getReactDocgenTypescriptError,
   matchComponentDoc,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript';
@@ -271,10 +272,11 @@ export const getComponents = async ({
             let reactDocgenTypescript: ComponentDocWithExportName | undefined;
             let reactDocgenTypescriptError: { name: string; message: string } | undefined;
             try {
-              reactDocgenTypescript = matchComponentDoc(
-                await parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions),
-                component
-              );
+              const docs = await parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions);
+              reactDocgenTypescript = matchComponentDoc(docs, component);
+              if (!reactDocgenTypescript) {
+                reactDocgenTypescriptError = getReactDocgenTypescriptError(path, component, docs);
+              }
             } catch (e) {
               const message = e instanceof Error ? e.message : String(e);
               logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);

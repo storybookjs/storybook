@@ -256,6 +256,35 @@ export function matchComponentDoc(
   );
 }
 
+export function getReactDocgenTypescriptError(
+  path: string,
+  {
+    importName,
+    localImportName,
+    componentName,
+  }: { importName?: string; localImportName?: string; componentName?: string },
+  docs: ComponentDocWithExportName[]
+) {
+  if (docs.length === 0) {
+    return {
+      name: 'react-docgen-typescript found no component docs',
+      message: [
+        `File: ${path}`,
+        'react-docgen-typescript did not return any component docs for this file.',
+      ].join('\n'),
+    };
+  }
+
+  return {
+    name: 'react-docgen-typescript could not match component docs',
+    message: [
+      `File: ${path}`,
+      "react-docgen-typescript returned component docs for this file, but none matched the story's component import.",
+      `Looked for: componentName=${componentName}, localImportName=${localImportName ?? '<none>'}, importName=${importName ?? '<none>'}.`,
+    ].join('\n'),
+  };
+}
+
 /**
  * Parse a component file with react-docgen-typescript. Per-file results are cached via
  * `invalidateCache()`. The underlying TS program is a long-lived singleton.

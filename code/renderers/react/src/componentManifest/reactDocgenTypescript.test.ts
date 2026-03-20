@@ -2,8 +2,13 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { Tag } from 'storybook/internal/core-server';
+
+import { dedent } from 'ts-dedent';
 import { loadConfig } from 'tsconfig-paths';
 
+import { cleanup, createTempProject } from './componentMeta/test-helpers';
+import { manifests } from './generator';
 import {
   type ComponentDocWithExportName,
   invalidateParser,
@@ -35,6 +40,14 @@ function normalize(results: ComponentDocWithExportName[]) {
 
 const parseFixture = async (name: string) =>
   normalize(await parseWithReactDocgenTypescript(fixture(name)));
+
+type ManifestOptions = Parameters<typeof manifests>[1];
+type ManifestEntries = ManifestOptions['manifestEntries'];
+
+const createManifestOptions = (
+  manifestEntries: ManifestEntries,
+  options: Partial<ManifestOptions> = {}
+): ManifestOptions => ({ watch: false, manifestEntries, ...options }) as ManifestOptions;
 
 describe('parseFile', { timeout: 30_000 }, () => {
   test('Button', () => {
@@ -1567,5 +1580,81 @@ describe('parseFile', { timeout: 30_000 }, () => {
           },
         ]
       `);
+  });
+});
+
+describe('react-docgen-typescript error handling', () => {
+  test('surfaces a specific error when a no-props component yields no docs', async () => {
+    const { projectDir } = createTempProject({
+      'package.json': JSON.stringify({ name: 'mealdrop' }),
+      'src/Logo.tsx': dedent`
+        import React from 'react';
+
+        export const Logo = () => <svg />;
+      `,
+      'src/Logo.stories.tsx': dedent`
+        import type { Meta, StoryObj } from '@storybook/react';
+        import { Logo } from './Logo';
+
+        const meta = {
+          title: 'Example/Logo',
+          component: Logo,
+        } satisfies Meta<typeof Logo>;
+
+        export default meta;
+        type Story = StoryObj<typeof meta>;
+
+        export const Default: Story = {};
+      `,
+    });
+
+    vi.spyOn(process, 'cwd').mockReturnValue(projectDir);
+
+    try {
+      const manifestEntries = [
+        {
+          type: 'story' as const,
+          subtype: 'story' as const,
+          id: 'example-logo--default',
+          name: 'Default',
+          title: 'Example/Logo',
+          importPath: './src/Logo.stories.tsx',
+          componentPath: './src/Logo.tsx',
+          tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+          exportName: 'Default',
+        },
+      ] satisfies ManifestEntries;
+
+      const presets = {
+        apply: async (key: string, config?: unknown) => {
+          if (key === 'typescript') {
+            return {
+              reactDocgen: 'react-docgen-typescript',
+              reactDocgenTypescriptOptions: {},
+            };
+          }
+
+          return config ?? {};
+        },
+      } as NonNullable<ManifestOptions['presets']>;
+
+      const result = await manifests(
+        undefined,
+        createManifestOptions(manifestEntries, { presets })
+      );
+
+      const logo = result?.components?.components?.['example-logo'];
+
+      expect(logo).toMatchObject({
+        error: {
+          name: 'react-docgen-typescript found no component docs',
+          message: expect.stringMatching(
+            /^File: .*\/src\/Logo\.tsx\nreact-docgen-typescript did not return any component docs for this file\.$/
+          ),
+        },
+      });
+    } finally {
+      cleanup(projectDir);
+    }
   });
 });

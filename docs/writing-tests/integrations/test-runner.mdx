@@ -17,8 +17,8 @@ If you are using a Vite-powered Storybook framework, we recommend using the Vite
 
 Storybook test runner turns all of your stories into executable tests. It is powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/).
 
-- For those [without a play function](../../writing-stories/index.mdx): it verifies whether the story renders without any errors.
-- For those [with a play function](../../writing-stories/play-function.mdx): it also checks for errors in the play function and that all assertions passed.
+* For those [without a play function](../../writing-stories/index.mdx): it verifies whether the story renders without any errors.
+* For those [with a play function](../../writing-stories/play-function.mdx): it also checks for errors in the play function and that all assertions passed.
 
 These tests run in a live browser and can be executed via the [command line](#cli-options) or your [CI server](#set-up-ci-to-run-tests).
 
@@ -53,9 +53,7 @@ Start your Storybook with:
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-Storybook's test runner requires either a locally running Storybook instance or a published Storybook to run all the existing tests.
-
+  Storybook's test runner requires either a locally running Storybook instance or a published Storybook to run all the existing tests.
 </Callout>
 
 Finally, open a new terminal window and run the test-runner with:
@@ -75,31 +73,31 @@ Test runner offers zero-config support for Storybook. However, you can run `test
 The test-runner is powered by [Jest](https://jestjs.io/) and accepts a subset of its [CLI options](https://jestjs.io/docs/cli) (for example, `--watch`, `--maxWorkers`).
 If you're already using any of those flags in your project, you should be able to migrate them into Storybook's test-runner without any issues. Listed below are all the available flags and examples of using them.
 
-| Options                         | Description                                                                                                                                                                                               |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--help`                        | Output usage information <br />`test-storybook --help`                                                                                                                                                    |
-| `-s`, `--index-json`            | Run in index json mode. Automatically detected (requires a compatible Storybook) <br />`test-storybook --index-json`                                                                                      |
-| `--no-index-json`               | Disables index json mode <br />`test-storybook --no-index-json`                                                                                                                                           |
-| `-c`, `--config-dir [dir-name]` | Directory where to load Storybook configurations from <br />`test-storybook -c .storybook`                                                                                                                |
-| `--watch`                       | Run in watch mode <br />`test-storybook --watch`                                                                                                                                                          |
-| `--watchAll`                    | Watch files for changes and rerun all tests when something changes.<br />`test-storybook --watchAll`                                                                                                      |
-| `--coverage`                    | Runs [coverage tests](#generate-code-coverage) on your stories and components <br /> `test-storybook --coverage`                                                                                          |
-| `--coverageDirectory`           | Directory where to write coverage report output <br />`test-storybook --coverage --coverageDirectory coverage/ui/storybook`                                                                               |
-| `--url`                         | Define the URL to run tests in. Useful for custom Storybook URLs <br />`test-storybook --url http://the-storybook-url-here.com`                                                                           |
-| `--browsers`                    | Define browsers to run tests in. One or multiple of: chromium, firefox, webkit <br />`test-storybook --browsers firefox chromium`                                                                         |
-| `--maxWorkers [amount]`         | Specifies the maximum number of workers the worker-pool will spawn for running tests <br />`test-storybook --maxWorkers=2`                                                                                |
-| `--testTimeout [amount]`        | Defines the maximum time in milliseconds that a test can run before it is automatically marked as failed. Useful for long-running tests <br /> `test-storybook --testTimeout=60000`                       |
-| `--no-cache`                    | Disable the cache <br />`test-storybook --no-cache`                                                                                                                                                       |
-| `--clearCache`                  | Deletes the Jest cache directory and then exits without running tests <br />`test-storybook --clearCache`                                                                                                 |
-| `--verbose`                     | Display individual test results with the test suite hierarchy <br />`test-storybook --verbose`                                                                                                            |
-| `-u`, `--updateSnapshot`        | Use this flag to re-record every snapshot that fails during this test run <br />`test-storybook -u`                                                                                                       |
-| `--eject`                       | Creates a local configuration file to override defaults of the test-runner <br />`test-storybook --eject`                                                                                                 |
-| `--json`                        | Prints the test results in JSON. This mode will send all other test output and user messages to stderr. <br />`test-storybook --json`                                                                     |
-| `--outputFile`                  | Write test results to a file when the --json option is also specified. <br />`test-storybook --json --outputFile results.json`                                                                            |
-| `--junit`                       | Indicates that test information should be reported in a junit file. <br />`test-storybook --**junit**`                                                                                                    |
-| `--ci`                          | Instead of the regular behavior of storing a new snapshot automatically, it will fail the test and require Jest to be run with `--updateSnapshot`. <br />`test-storybook --ci`                            |
-| `--shard [index/count]`         | Requires CI. Splits the test suite execution into multiple machines <br /> `test-storybook --shard=1/8`                                                                                                   |
-| `--failOnConsole`               | Makes tests fail on browser console errors<br />`test-storybook --failOnConsole`                                                                                                                          |
+| Options                         | Description                                                                                                                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--help`                        | Output usage information <br />`test-storybook --help`                                                                                                                                                   |
+| `-s`, `--index-json`            | Run in index json mode. Automatically detected (requires a compatible Storybook) <br />`test-storybook --index-json`                                                                                     |
+| `--no-index-json`               | Disables index json mode <br />`test-storybook --no-index-json`                                                                                                                                          |
+| `-c`, `--config-dir [dir-name]` | Directory where to load Storybook configurations from <br />`test-storybook -c .storybook`                                                                                                               |
+| `--watch`                       | Run in watch mode <br />`test-storybook --watch`                                                                                                                                                         |
+| `--watchAll`                    | Watch files for changes and rerun all tests when something changes.<br />`test-storybook --watchAll`                                                                                                     |
+| `--coverage`                    | Runs [coverage tests](#generate-code-coverage) on your stories and components <br /> `test-storybook --coverage`                                                                                              |
+| `--coverageDirectory`           | Directory where to write coverage report output <br />`test-storybook --coverage --coverageDirectory coverage/ui/storybook`                                                                              |
+| `--url`                         | Define the URL to run tests in. Useful for custom Storybook URLs <br />`test-storybook --url http://the-storybook-url-here.com`                                                                          |
+| `--browsers`                    | Define browsers to run tests in. One or multiple of: chromium, firefox, webkit <br />`test-storybook --browsers firefox chromium`                                                                        |
+| `--maxWorkers [amount]`         | Specifies the maximum number of workers the worker-pool will spawn for running tests <br />`test-storybook --maxWorkers=2`                                                                               |
+| `--testTimeout [amount]`        | Defines the maximum time in milliseconds that a test can run before it is automatically marked as failed. Useful for long-running tests <br /> `test-storybook --testTimeout=60000`                      |
+| `--no-cache`                    | Disable the cache <br />`test-storybook --no-cache`                                                                                                                                                      |
+| `--clearCache`                  | Deletes the Jest cache directory and then exits without running tests <br />`test-storybook --clearCache`                                                                                                |
+| `--verbose`                     | Display individual test results with the test suite hierarchy <br />`test-storybook --verbose`                                                                                                           |
+| `-u`, `--updateSnapshot`        | Use this flag to re-record every snapshot that fails during this test run <br />`test-storybook -u`                                                                                                      |
+| `--eject`                       | Creates a local configuration file to override defaults of the test-runner <br />`test-storybook --eject`                                                                                                |
+| `--json`                        | Prints the test results in JSON. This mode will send all other test output and user messages to stderr. <br />`test-storybook --json`                                                                    |
+| `--outputFile`                  | Write test results to a file when the --json option is also specified. <br />`test-storybook --json --outputFile results.json`                                                                           |
+| `--junit`                       | Indicates that test information should be reported in a junit file. <br />`test-storybook --**junit**`                                                                                                   |
+| `--ci`                          | Instead of the regular behavior of storing a new snapshot automatically, it will fail the test and require Jest to be run with `--updateSnapshot`. <br />`test-storybook --ci`                           |
+| `--shard [index/count]`         | Requires CI. Splits the test suite execution into multiple machines <br /> `test-storybook --shard=1/8`                                                                                                  |
+| `--failOnConsole`               | Makes tests fail on browser console errors<br />`test-storybook --failOnConsole`                                                                                                                         |
 | `--includeTags`                 | Experimental feature <br />Defines a subset of stories to be tested if they match the enabled [tags](#experimental-filter-tests). <br />`test-storybook --includeTags="test-only, pages"`                 |
 | `--excludeTags`                 | Experimental feature <br />Prevents stories from being tested if they match the provided [tags](#experimental-filter-tests). <br />`test-storybook --excludeTags="no-tests, tokens"`                      |
 | `--skipTags`                    | Experimental feature <br />Configures the test runner to skip running tests for stories that match the provided [tags](#experimental-filter-tests). <br />`test-storybook --skipTags="skip-test, layout"` |
@@ -149,9 +147,7 @@ Add a new [configuration file](#test-hook-api) inside your Storybook directory w
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-The `postVisit` hook allows you to extend the test runner's default configuration. Read more about them [here](#test-hook-api).
-
+  The `postVisit` hook allows you to extend the test runner's default configuration. Read more about them [here](#test-hook-api).
 </Callout>
 
 When you execute the test-runner (for example, with `yarn test-storybook`), it will run through all of your stories and run the snapshot tests, generating a snapshot file for each story in your project located in the `__snapshots__` directory.
@@ -255,11 +251,11 @@ By default, the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@s
 <details>
 <summary>Vite options</summary>
 
-| Options                | Description                                                                                                                                                                                                                                         | Type                        |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Options           | Description                                                                                                                                                                                                                                        | Type                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
 | `checkProd`            | Configures the plugin to skip instrumentation in production environments<br />`options: { istanbul: { checkProd: true,}}`                                                                                                                           | `boolean`                   |
-| `cwd`                  | Configures the working directory for the coverage tests.<br />Defaults to `process.cwd()`<br />`options: { istanbul: { cwd: process.cwd(),}}`                                                                                                       | `string`                    |
-| `cypress`              | Replaces the `VITE_COVERAGE` environment variable with `CYPRESS_COVERAGE`.<br />Requires Cypress's [code coverage](https://docs.cypress.io/guides/tooling/code-coverage)<br />`options: { istanbul: { cypress: true,}}`                             | `boolean`                   |
+| `cwd`                  | Configures the working directory for the coverage tests.<br />Defaults to `process.cwd()`<br />`options: { istanbul: { cwd: process.cwd(),}}`                                                                                                        | `string`                    |
+| `cypress`              | Replaces the `VITE_COVERAGE` environment variable with `CYPRESS_COVERAGE`.<br />Requires Cypress's [code coverage](https://docs.cypress.io/guides/tooling/code-coverage)<br />`options: { istanbul: { cypress: true,}}`                              | `boolean`                   |
 | `exclude`              | Overrides the [default exclude list](https://github.com/storybookjs/addon-coverage/blob/main/src/constants.ts) with the provided list of files or directories to exclude from coverage<br />`options: { istanbul: { exclude: ['**/stories/**'],}}`  | `Array<String>` or `string` |
 | `extension`            | Extends the [default extension list](https://github.com/storybookjs/addon-coverage/blob/main/src/constants.ts) with the provided list of file extensions to include in coverage<br />`options: { istanbul: { extension: ['.js', '.cjs', '.mjs'],}}` | `Array<String>` or `string` |
 | `forceBuildInstrument` | Configures the plugin to add instrumentation in build mode <br />`options: { istanbul: { forceBuildInstrument: true,}}`                                                                                                                             | `boolean`                   |
@@ -272,12 +268,12 @@ By default, the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@s
 <details>
 <summary>Webpack 5 options</summary>
 
-| Options                | Description                                                                                                                                                                                                                                         | Type                        |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Options      | Description                                                                                                                                                                                                                                        | Type                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
 | `autoWrap`             | Provides support for top-level return statements by wrapping the program code in a function<br />`options: { istanbul: { autoWrap: true,}}`                                                                                                         | `boolean`                   |
 | `compact`              | Condenses the output of the instrumented code. Useful for debugging<br />`options: { istanbul: { compact: false,}}`                                                                                                                                 | `boolean`                   |
 | `coverageVariable`     | Defines the global variable name that Istanbul will use to store coverage results<br />`options: { istanbul: { coverageVariable: '__coverage__',}}`                                                                                                 | `string`                    |
-| `cwd`                  | Configures the working directory for the coverage tests.<br />Defaults to `process.cwd()`<br />`options: { istanbul: { cwd: process.cwd(),}}`                                                                                                       | `string`                    |
+| `cwd`                  | Configures the working directory for the coverage tests.<br />Defaults to `process.cwd()`<br />`options: { istanbul: { cwd: process.cwd(),}}`                                                                                                        | `string`                    |
 | `debug`                | Enables the debug mode for additional logging information during the instrumentation process<br />`options: { istanbul: { debug: true,}}`                                                                                                           | `boolean`                   |
 | `esModules`            | Enables support for ES Module syntax<br />`options: { istanbul: { esModules: true,}}`                                                                                                                                                               | `boolean`                   |
 | `exclude`              | Overrides the [default exclude list](https://github.com/storybookjs/addon-coverage/blob/main/src/constants.ts) with the provided list of files or directories to exclude from coverage<br />`options: { istanbul: { exclude: ['**/stories/**'],}}`  | `Array<String>` or `string` |
@@ -315,9 +311,7 @@ If you're publishing your Storybook with services such as [Vercel](https://verce
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-The published Storybook must be publicly available for this example to work. We recommend running the test server using the recipe [below](#run-against-non-deployed-storybooks) if it requires authentication.
-
+  The published Storybook must be publicly available for this example to work. We recommend running the test server using the recipe [below](#run-against-non-deployed-storybooks) if it requires authentication.
 </Callout>
 
 ### Run against non-deployed Storybooks
@@ -331,9 +325,7 @@ You can use your CI provider (for example, [GitHub Actions](https://github.com/f
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-By default, Storybook outputs the [build](../../sharing/publish-storybook.mdx#build-storybook-as-a-static-web-application) to the `storybook-static` directory. If you're using a different build directory, you'll need to adjust the recipe accordingly.
-
+  By default, Storybook outputs the [build](../../sharing/publish-storybook.mdx#build-storybook-as-a-static-web-application) to the `storybook-static` directory. If you're using a different build directory, you'll need to adjust the recipe accordingly.
 </Callout>
 
 ## Advanced configuration
@@ -342,20 +334,18 @@ By default, Storybook outputs the [build](../../sharing/publish-storybook.mdx#bu
 
 The test-runner renders a story and executes its [play function](../../writing-stories/play-function.mdx) if one exists. However, certain behaviors are impossible to achieve via the play function, which executes in the browser. For example, if you want the test-runner to take visual snapshots for you, this is possible via Playwright/Jest but must be executed in Node.
 
-The test-runner exports test hooks that can be overridden globally to enable use cases like visual or DOM snapshots. These hooks give you access to the test lifecycle _before_ and _after_ the story is rendered.
+The test-runner exports test hooks that can be overridden globally to enable use cases like visual or DOM snapshots. These hooks give you access to the test lifecycle *before* and *after* the story is rendered.
 Listed below are the available hooks and an overview of how to use them.
 
-| Hook        | Description                                                                                                      |
-| ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| Hook        | Description                                                                                                     |
+| ----------- | --------------------------------------------------------------------------------------------------------------- |
 | `prepare`   | Prepares the browser for tests<br />`async prepare({ page, browserContext, testRunnerConfig }) {}`               |
 | `setup`     | Executes once before all the tests run<br />`setup() {}`                                                         |
 | `preVisit`  | Executes before a story is initially visited and rendered in the browser<br />`async preVisit(page, context) {}` |
 | `postVisit` | Executes after the story is visited and fully rendered<br />`async postVisit(page, context) {}`                  |
 
 <Callout variant="info" icon="💡">
-
-These test hooks are experimental and may be subject to breaking changes. We encourage you to test as much as possible within the story's [play function](../../writing-stories/play-function.mdx).
-
+  These test hooks are experimental and may be subject to breaking changes. We encourage you to test as much as possible within the story's [play function](../../writing-stories/play-function.mdx).
 </Callout>
 
 To enable the hooks API, you'll need to add a new configuration file inside your Storybook directory and set them up as follows:
@@ -367,19 +357,17 @@ To enable the hooks API, you'll need to add a new configuration file inside your
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-Except for the `setup` function, all other functions run asynchronously. Both `preVisit` and `postVisit` functions include two additional arguments, a [Playwright page](https://playwright.dev/docs/pages) and a context object which contains the `id`, `title`, and the `name` of the story.
-
+  Except for the `setup` function, all other functions run asynchronously. Both `preVisit` and `postVisit` functions include two additional arguments, a [Playwright page](https://playwright.dev/docs/pages) and a context object which contains the `id`, `title`, and the `name` of the story.
 </Callout>
 
 When the test-runner executes, your existing tests will go through the following lifecycle:
 
-- The `setup` function is executed before all the tests run.
-- The context object is generated containing the required information.
-- Playwright navigates to the story's page.
-- The `preVisit` function is executed.
-- The story is rendered, and any existing `play` functions are executed.
-- The `postVisit` function is executed.
+* The `setup` function is executed before all the tests run.
+* The context object is generated containing the required information.
+* Playwright navigates to the story's page.
+* The `preVisit` function is executed.
+* The story is rendered, and any existing `play` functions are executed.
+* The `postVisit` function is executed.
 
 ### (Experimental) Filter tests
 
@@ -398,9 +386,7 @@ When you run the test-runner on Storybook, it tests every story by default. Howe
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="ℹ️">
-
-Running tests with the CLI flags takes precedence over the options provided in the configuration file and will override the available options in the configuration file.
-
+  Running tests with the CLI flags takes precedence over the options provided in the configuration file and will override the available options in the configuration file.
 </Callout>
 
 #### Disabling tests
@@ -424,9 +410,7 @@ To allow the test-runner only to run tests on a specific story or subset of stor
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="ℹ️">
-
-Applying tags for the component's stories should either be done at the component level (using `meta`) or at the story level. Importing tags across stories is not supported in Storybook and won't work as intended.
-
+  Applying tags for the component's stories should either be done at the component level (using `meta`) or at the story level. Importing tags across stories is not supported in Storybook and won't work as intended.
 </Callout>
 
 #### Skip tests
@@ -494,9 +478,7 @@ Suppose you run into a situation where the local and remote Storybooks appear ou
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-The `index.json` mode is not compatible with the watch mode.
-
+  The `index.json` mode is not compatible with the watch mode.
 </Callout>
 
 If you need to disable it, use the `--no-index-json` flag:
@@ -515,12 +497,12 @@ Index.json mode requires a `index.json` file. Open a browser window and navigate
 
 The test-runner is a generic testing tool that can run locally or on CI and be configured or extended to run all kinds of tests.
 
-[Chromatic](https://www.chromatic.com/?utm_source=storybook_website&utm_medium=link&utm_campaign=storybook) is a cloud-based service that runs [visual](../visual-testing.mdx) and [interaction tests](../interaction-testing.mdx) (and soon [accessibility tests](../accessibility-testing.mdx)) without setting up the test runner. It also syncs with your git provider and manages access control for private projects.
+[Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) is a cloud-based service that runs [visual](../visual-testing.mdx) and [interaction tests](../interaction-testing.mdx) (and soon [accessibility tests](../accessibility-testing.mdx)) without setting up the test runner. It also syncs with your git provider and manages access control for private projects.
 
 However, you might want to pair the test runner and Chromatic in some cases.
 
-- Use it locally and Chromatic on your CI.
-- Use Chromatic for visual and component tests and run other custom tests using the test runner.
+* Use it locally and Chromatic on your CI.
+* Use Chromatic for visual and component tests and run other custom tests using the test runner.
 
 ## Troubleshooting
 
@@ -590,12 +572,12 @@ As the [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverag
 
 **More testing resources**
 
-- [Interaction testing](../interaction-testing.mdx) for user behavior simulation
-- [Accessibility testing](../accessibility-testing.mdx) for accessibility
-- [Visual testing](../visual-testing.mdx) for appearance
-- [Snapshot testing](../snapshot-testing.mdx) for rendering errors and warnings
-- [Test coverage](../test-coverage.mdx) for measuring code coverage
-- [CI](../in-ci.mdx) for running tests in your CI/CD pipeline
-- [Vitest addon](./vitest-addon/index.mdx) for running tests in Storybook
-- [End-to-end testing](./stories-in-end-to-end-tests.mdx) for simulating real user scenarios
-- [Unit testing](./stories-in-unit-tests.mdx) for functionality
+* [Interaction testing](../interaction-testing.mdx) for user behavior simulation
+* [Accessibility testing](../accessibility-testing.mdx) for accessibility
+* [Visual testing](../visual-testing.mdx) for appearance
+* [Snapshot testing](../snapshot-testing.mdx) for rendering errors and warnings
+* [Test coverage](../test-coverage.mdx) for measuring code coverage
+* [CI](../in-ci.mdx) for running tests in your CI/CD pipeline
+* [Vitest addon](./vitest-addon/index.mdx) for running tests in Storybook
+* [End-to-end testing](./stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+* [Unit testing](./stories-in-unit-tests.mdx) for functionality

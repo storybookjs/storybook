@@ -87,7 +87,6 @@ Now, those queries are available on the `canvas` object in your `play` function:
 <CodeSnippets path="shadow-dom-testing-library-in-story.md" />
 
 {/* END only web-components */}
-
 </If>
 
 ### Simulating behavior with `userEvent`
@@ -100,8 +99,8 @@ There are many methods available on `userEvent`, which are detailed in the [`use
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `click`           | Clicks the element, calling a click() function<br />`await userEvent.click(<element>)`                                   |
 | `dblClick`        | Clicks the element twice<br />`await userEvent.dblClick(<element>)`                                                      |
-| `hover`           | Hovers an element<br />`await userEvent.hover(<element>)`                                                                |
-| `unhover`         | Unhovers out of element<br />`await userEvent.unhover(<element>)`                                                        |
+| `hover`           | Hovers an element<br />`await userEvent.hover(<element>)`                                                                 |
+| `unhover`         | Unhovers out of element<br />`await userEvent.unhover(<element>)`                                                         |
 | `tab`             | Presses the tab key<br />`await userEvent.tab()`                                                                         |
 | `type`            | Writes text inside inputs or textareas<br />`await userEvent.type(<element>, 'Some text');`                              |
 | `keyboard`        | Simulates keyboard events<br />`await userEvent.keyboard('{Shift}');`                                                    |
@@ -111,7 +110,7 @@ There are many methods available on `userEvent`, which are detailed in the [`use
 
 <Callout variant="warning">
 
-`userEvent` methods should _always_ be `await`ed inside of the play function. This ensures they can be properly logged and debugged in the Interactions panel.
+`userEvent` methods should *always* be `await`ed inside of the play function. This ensures they can be properly logged and debugged in the Interactions panel.
 
 </Callout>
 
@@ -129,13 +128,13 @@ The `expect` utility here combines the methods available in [Vitest’s `expect`
 | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | [`toBeInTheDocument()`](https://github.com/testing-library/jest-dom#tobeinthedocument) | Checks if the element is in the DOM<br />`await expect(<element>).toBeInTheDocument()`                                               |
 | [`toBeVisible()`](https://github.com/testing-library/jest-dom#tobevisible)             | Checks if the element is visible to the user<br />`await expect(<element>).toBeVisible()`                                            |
-| [`toHaveAttribute()`](https://github.com/testing-library/jest-dom#tohaveattribute)     | Checks if an element has an attribute<br />`await expect(<element>).toHaveAttribute('aria-disabled', 'true')`                        |
+| [`toHaveAttribute()`](https://github.com/testing-library/jest-dom#tohaveattribute)     | Checks if an element has an attribute<br />`await expect(<element>).toHaveAttribute('aria-disabled', 'true')`                                                       |
 | [`toHaveBeenCalled()`](https://vitest.dev/api/expect.html#tohavebeencalled)            | Checks that a spied function was called<br />`await expect(<function-spy>).toHaveBeenCalled()`                                       |
 | [`toHaveBeenCalledWith()`](https://vitest.dev/api/expect.html#tohavebeencalledwith)    | Checks that a spied function was called with specific parameters<br />`await expect(<function-spy>).toHaveBeenCalledWith('example')` |
 
 <Callout variant="warning">
 
-`expect` calls should _always_ be `await`ed inside of the play function. This ensures they can be properly logged and debugged in the Interactions panel.
+`expect` calls should *always* be `await`ed inside of the play function. This ensures they can be properly logged and debugged in the Interactions panel.
 
 </Callout>
 
@@ -144,7 +143,7 @@ The `expect` utility here combines the methods available in [Vitest’s `expect`
 When your component calls a function, you can spy on that function to make assertions on its behavior using the `fn` utility from Vitest, available via the `storybook/test` module:
 
 ```js
-import { fn } from 'storybook/test';
+import { fn } from 'storybook/test'
 ```
 
 Most of the time, you will use `fn` as an `arg` value when writing your story, then access that `arg` in your test:
@@ -165,7 +164,7 @@ Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate
 
 There are two requirements to use the `mount` function:
 
-1. You _must_ destructure the mount property from the `context` (the argument passed to your play function). This makes sure that Storybook does not start rendering the story before the play function begins.
+1. You *must* destructure the mount property from the `context` (the argument passed to your play function). This makes sure that Storybook does not start rendering the story before the play function begins.
 2. Your Storybook framework or builder must be configured to transpile to ES2017 or newer. This is because destructuring statements and async/await usages are otherwise transpiled away, which prevents Storybook from recognizing your usage of `mount`.
 
 </Callout>
@@ -324,12 +323,12 @@ Interaction tests integrate Vitest and Testing Library into Storybook. The bigge
 
 **More testing resources**
 
-- [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
-- [Accessibility testing](./accessibility-testing.mdx) for accessibility
-- [Visual testing](./visual-testing.mdx) for appearance
-- [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
-- [Test coverage](./test-coverage.mdx) for measuring code coverage
-- [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
-- [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
-- [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-- [Test runner](./integrations/test-runner.mdx) to automate test execution
+* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
+* [Accessibility testing](./accessibility-testing.mdx) for accessibility
+* [Visual testing](./visual-testing.mdx) for appearance
+* [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
+* [Test coverage](./test-coverage.mdx) for measuring code coverage
+* [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
+* [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+* [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
+* [Test runner](./integrations/test-runner.mdx) to automate test execution

@@ -57,9 +57,9 @@ Remove the following files:
 ### 3. Set up `@storybook/addon-vitest`
 
 - Run this command, which will set up all the necessary code for you.
-
+  
   <CodeSnippets path="addon-test-install.md" />
-
+  
 - Update the `package.json` script for Storybook tests, replacing the test-runner binary and using Vitest instead:
 
   ```diff title="package.json"
@@ -69,7 +69,6 @@ Remove the following files:
   +    "test-storybook": "vitest --project=storybook"
     }
   }
-  ```
 
 ### 4. Update your CI to run Vitest instead of the test-runner
 

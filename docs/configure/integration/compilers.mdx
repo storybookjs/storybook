@@ -12,9 +12,7 @@ Javascript compilers are essential in optimizing and transforming code, enhancin
 SWC is a fast, highly extensible tool for compiling and bundling modern JavaScript applications. Powered by [Rust](https://www.rust-lang.org/), it improves performance and reduces build times. Storybook includes a built-in integration with SWC, allowing zero-configuration setup and built-in types for APIs. If you've initialized Storybook in a Webpack-based project with any of the supported [frameworks](./frameworks.mdx), except Angular, Create React App, Ember.js and Next.js, it will automatically use SWC as its default, providing you with faster loading time.
 
 <Callout variant="info">
-
-Support for the SWC builder is currently experimental for Next.js projects, and it's not enabled by default. It requires you to opt in to use it. For more information on configuring SWC with the supported frameworks, see the [SWC API](../../api/main-config/main-config-swc.mdx) documentation.
-
+  Support for the SWC builder is currently experimental for Next.js projects, and it's not enabled by default. It requires you to opt in to use it. For more information on configuring SWC with the supported frameworks, see the [SWC API](../../api/main-config/main-config-swc.mdx) documentation.
 </Callout>
 
 ## Babel
@@ -22,24 +20,20 @@ Support for the SWC builder is currently experimental for Next.js projects, and 
 Babel is a widely adopted JavaScript compiler providing a modular architecture and extensive plugin system to support a wide range of use cases, enabling access to the cutting-edge features of the tooling ecosystem. Storybook provides a seamless integration with Babel, allowing you to share a standard setup between your project and Storybook without any additional configuration.
 
 <Callout variant="info">
-
-If you're not using Storybook 7, please reference the [previous documentation](../../../release-6-5/docs/configure/babel.mdx) for guidance on configuring your Babel setup.
-
+  If you're not using Storybook 7, please reference the [previous documentation](../../../release-6-5/docs/configure/babel.mdx) for guidance on configuring your Babel setup.
 </Callout>
 
 ### Configure
 
 By default, Babel provides an opinionated [configuration](https://babeljs.io/docs/config-files) that works for most projects, relying on two distinct methods for configuring projects with the tool:
 
-- **Project-wide configuration**: Babel will look for a `babel.config.js` or equivalent file in the root of your project and use it to configure your project's Babel setup.
-- **File-relative configuration**: Babel will look for a `.babelrc.json` or equivalent file, introspecting the project structure until it finds a configuration file. This will allow you to configure Babel individually for multiple aspects of your project.
+* **Project-wide configuration**: Babel will look for a `babel.config.js` or equivalent file in the root of your project and use it to configure your project's Babel setup.
+* **File-relative configuration**: Babel will look for a `.babelrc.json` or equivalent file, introspecting the project structure until it finds a configuration file. This will allow you to configure Babel individually for multiple aspects of your project.
 
 Storybook relies on an agnostic approach to configuring Babel, enabling you to provide the necessary configuration for your project, and it will use it. Based on the supported frameworks, builders, and addons, it may include minor adjustments to ensure compatibility with Storybook's features.
 
 <Callout variant="info">
-
-For custom project configurations such as monorepos, where you have multiple Storybook configurations, creating a `.babelrc.json` file in your project's current working directory may not be sufficient. In those cases, you can create a `babel.config.js` file to override Babel's configuration, and Storybook will automatically detect and use it. See the Babel [documentation](https://babeljs.io/docs/config-files) for more information.
-
+  For custom project configurations such as monorepos, where you have multiple Storybook configurations, creating a `.babelrc.json` file in your project's current working directory may not be sufficient. In those cases, you can create a `babel.config.js` file to override Babel's configuration, and Storybook will automatically detect and use it. See the Babel [documentation](https://babeljs.io/docs/config-files) for more information.
 </Callout>
 
 ### Working with Create React App
@@ -49,17 +43,15 @@ If you're working with a project that was initialized with [Create React App](ht
 ## Troubleshooting
 
 <IfRenderer renderer="react">
+  ### The SWC compiler doesn't work with React
 
-### The SWC compiler doesn't work with React
+  If you have enabled the SWC builder option in a React-based project and you are not explicitly importing React in your `jsx|tsx` files, it can cause Storybook to fail to load. SWC does not automatically import the `jsx-runtime` module when using the SWC builder. To resolve this issue, you need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and configure the `swc` option as follows:
 
-If you have enabled the SWC builder option in a React-based project and you are not explicitly importing React in your `jsx|tsx` files, it can cause Storybook to fail to load. SWC does not automatically import the `jsx-runtime` module when using the SWC builder. To resolve this issue, you need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and configure the `swc` option as follows:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  <CodeSnippets path="main-config-swc-jsx-transform.md" />
 
-<CodeSnippets path="main-config-swc-jsx-transform.md" />
-
-{/* prettier-ignore-end */}
-
+  {/* prettier-ignore-end */}
 </IfRenderer>
 
 ### Babel configuration not working

@@ -26,7 +26,7 @@ Note that by adding a `subcomponents` property to the meta (or default export), 
 Subcomponents are only intended for documentation purposes and have some limitations:
 
 1. The [argTypes](../api/arg-types.mdx) of subcomponents are [inferred (for the renderers that support that feature)](../api/arg-types.mdx#automatic-argtype-inference) and cannot be manually defined or overridden.
-2. The table for each documented subcomponent does _not_ include [controls](../essentials/controls.mdx) to change the value of the props, because controls always apply to the main component's args.
+2. The table for each documented subcomponent does *not* include [controls](../essentials/controls.mdx) to change the value of the props, because controls always apply to the main component's args.
 
 Let's talk about some techniques you can use to mitigate the above, which are especially useful in more complicated situations.
 
@@ -43,37 +43,33 @@ We can also reduce repetition in our stories by reusing story definitions. Here,
 By rendering the `Unchecked` story with its args, we are able to reuse the input data from the `ListItem` stories in the `List`.
 
 <If renderer="react">
+  However, we still aren’t using args to control the `ListItem` stories, which means we cannot change them with controls and we cannot reuse them in other, more complex component stories.
 
-However, we still aren’t using args to control the `ListItem` stories, which means we cannot change them with controls and we cannot reuse them in other, more complex component stories.
+  ## Using children as an arg
 
-## Using children as an arg
+  One way we improve that situation is by pulling the rendered subcomponent out into a `children` arg:
 
-One way we improve that situation is by pulling the rendered subcomponent out into a `children` arg:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  <CodeSnippets path="list-story-with-unchecked-children.md" />
 
-<CodeSnippets path="list-story-with-unchecked-children.md" />
+  {/* prettier-ignore-end */}
 
-{/* prettier-ignore-end */}
+  Now that `children` is an arg, we can potentially reuse it in another story.
 
-Now that `children` is an arg, we can potentially reuse it in another story.
+  However, there are some caveats when using this approach that you should be aware of.
 
-However, there are some caveats when using this approach that you should be aware of.
+  The `children` arg, just like all args, needs to be JSON serializable. To avoid errors with your Storybook, you should:
 
-The `children` arg, just like all args, needs to be JSON serializable. To avoid errors with your Storybook, you should:
-
-- Avoid using empty values
-- Use [mapping](../essentials/controls.mdx#dealing-with-complex-values) if you want to adjust the value with [controls](../essentials/controls.mdx)
-- Use caution with components that include third party libraries
+  * Avoid using empty values
+  * Use [mapping](../essentials/controls.mdx#dealing-with-complex-values) if you want to adjust the value with [controls](../essentials/controls.mdx)
+  * Use caution with components that include third party libraries
 
   <Callout variant="info">
-
-  We're currently working on improving the overall experience for the children arg and allow you to edit children arg in a control and allow you to use other types of components in the near future. But for now you need to factor in this caveat when you're implementing your stories.
-
+    We're currently working on improving the overall experience for the children arg and allow you to edit children arg in a control and allow you to use other types of components in the near future. But for now you need to factor in this caveat when you're implementing your stories.
   </Callout>
 
-{/* End if react */}
-
+  {/* End if react */}
 </If>
 
 ## Creating a Template Component

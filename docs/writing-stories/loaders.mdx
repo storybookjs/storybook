@@ -43,9 +43,9 @@ Like [parameters](./parameters.mdx), loaders can be defined globally, at the com
 
 All loaders, defined at all levels that apply to a story, run before the story renders in Storybook's canvas.
 
-- All loaders run in parallel
-- All results are the `loaded` field in the story context
-- If there are keys that overlap, "later" loaders take precedence (from lowest to highest):
-  - Global loaders, in the order they are defined
-  - Component loaders, in the order they are defined
-  - Story loaders, in the order they are defined
+* All loaders run in parallel
+* All results are the `loaded` field in the story context
+* If there are keys that overlap, "later" loaders take precedence (from lowest to highest):
+  * Global loaders, in the order they are defined
+  * Component loaders, in the order they are defined
+  * Story loaders, in the order they are defined

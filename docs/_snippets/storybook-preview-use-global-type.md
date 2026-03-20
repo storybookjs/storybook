@@ -7,7 +7,7 @@ const preview: Preview = {
       (story) => `<div [class]="myTheme">${story}</div>`,
       ({ globals }) => {
         return { myTheme: globals['theme'] };
-      }
+      },
     ),
   ],
 };
@@ -24,7 +24,7 @@ export default definePreview({
       (story) => `<div [class]="myTheme">${story}</div>`,
       ({ globals }) => {
         return { myTheme: globals['theme'] };
-      }
+      },
     ),
   ],
 });

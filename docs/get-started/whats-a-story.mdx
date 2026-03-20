@@ -11,9 +11,9 @@ When you installed Storybook, the CLI created example components that demonstrat
 
 <If renderer="svelte">
 
-Each example component has a set of stories that show the states it supports. You can browse the stories in the UI and see the code behind them in files that end with `.stories.svelte`. Stories can be written in [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 modules-based standard for writing component examples or using Svelte native template syntax, via a community-led project called [`Svelte CSF`](https://storybook.js.org/addons/@storybook/addon-svelte-csf).
+  Each example component has a set of stories that show the states it supports. You can browse the stories in the UI and see the code behind them in files that end with `.stories.svelte`. Stories can be written in [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 modules-based standard for writing component examples or using Svelte native template syntax, via a community-led project called [`Svelte CSF`](https://storybook.js.org/addons/@storybook/addon-svelte-csf).
 
-Let’s start with the `Button` component. With Svelte, a story can be defined as an object using standard CSF or with a `Story` component using Svelte CSF. Here’s how to render `Button` in the “primary” state and export a story called `Primary` using both approaches.
+  Let’s start with the `Button` component. With Svelte, a story can be defined as an object using standard CSF or with a `Story` component using Svelte CSF. Here’s how to render `Button` in the “primary” state and export a story called `Primary` using both approaches.
 
 </If>
 
@@ -21,7 +21,7 @@ Let’s start with the `Button` component. With Svelte, a story can be defined a
   
   Each example component has a set of stories that show the states it supports. You can browse the stories in the UI and see the code behind them in files that end with `.stories.js|ts`. The stories are written in [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 modules-based standard for writing component examples.
 
-Let’s start with the `Button` component. A story is an object that describes how to render the component in question. Here’s how to render `Button` in the “primary” state and export a story called `Primary`.
+  Let’s start with the `Button` component. A story is an object that describes how to render the component in question. Here’s how to render `Button` in the “primary” state and export a story called `Primary`.
 
 </If>
 
@@ -35,8 +35,8 @@ Let’s start with the `Button` component. A story is an object that describes h
 
 View the rendered `Button` by clicking on it in the Storybook sidebar. Note how the values specified in [`args`](../writing-stories/args.mdx) are used to render the component and match those represented in the [Controls](../essentials/controls.mdx) panel. Using `args` in your stories has additional benefits:
 
-- `Button`'s callbacks are logged into the [Actions](../essentials/actions.mdx) panel. Click to try it.
-- `Button`'s arguments are dynamically editable in the Controls panel. Adjust the controls.
+* `Button`'s callbacks are logged into the [Actions](../essentials/actions.mdx) panel. Click to try it.
+* `Button`'s arguments are dynamically editable in the Controls panel. Adjust the controls.
 
 ## Working with stories
 
@@ -45,13 +45,11 @@ Storybook makes it easy to work on one component in one state (aka a story) at a
 ### Create a new story
 
 <If renderer="react">
+  If you're working on a component that does not yet have any stories, you can click the ➕ button in the sidebar to search for your component and have a basic story created for you.
 
-If you're working on a component that does not yet have any stories, you can click the ➕ button in the sidebar to search for your component and have a basic story created for you.
+  <Video src="../_assets/get-started/new-component-story-from-plus-button-optimized.mp4" />
 
-<Video src="../_assets/get-started/new-component-story-from-plus-button-optimized.mp4" />
-
-You can also create a story file for your new story. We recommend copy/pasting an existing story file next to the component source file, then adjusting it for your component.
-
+  You can also create a story file for your new story. We recommend copy/pasting an existing story file next to the component source file, then adjusting it for your component.
 </If>
 
 <If renderer="svelte">
@@ -59,15 +57,13 @@ You can also create a story file for your new story. We recommend copy/pasting a
   <Callout variant="info">
 
     This feature is not supported with the Svelte template syntax story format. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../api/csf/index.mdx).
-
+    
   </Callout>
   
 </If>
 
 <If notRenderer="react">
-
-If you're working on a component that does not yet have any stories, you can create a story file for your component with a new story. We recommend copy/pasting an existing story file next to the component source file, then adjusting it for your component.
-
+  If you're working on a component that does not yet have any stories, you can create a story file for your component with a new story. We recommend copy/pasting an existing story file next to the component source file, then adjusting it for your component.
 </If>
 
 <Video src="../_assets/get-started/new-component-story-in-code-optimized.mp4" />

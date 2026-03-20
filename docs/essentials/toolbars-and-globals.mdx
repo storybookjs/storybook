@@ -27,7 +27,7 @@ Storybook has a simple, declarative syntax for configuring toolbar menus. In you
 
 <Callout variant="info" icon="💡">
 
-As globals are _global_ you can _only_ set `globalTypes` and `initialGlobals` in [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
+ As globals are *global* you can *only* set `globalTypes` and `initialGlobals` in [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
 
 </Callout>
 
@@ -38,51 +38,43 @@ When you start your Storybook, your toolbar should have a new dropdown menu with
 We have a `global` implemented. Let's wire it up! We can consume our new `theme` global in a decorator using the `context.globals.theme` value.
 
 <IfRenderer renderer="react">
+ For example, suppose you are using [`styled-components`](https://styled-components.com/). You can add a theme provider decorator to your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) config:
 
-For example, suppose you are using [`styled-components`](https://styled-components.com/). You can add a theme provider decorator to your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) config:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  <CodeSnippets path="storybook-preview-use-global-type.md" />
 
-<CodeSnippets path="storybook-preview-use-global-type.md" />
-
-{/* prettier-ignore-end */}
-
+  {/* prettier-ignore-end */}
 </IfRenderer>
 
 <IfRenderer renderer="vue">
+ For example, suppose you are using [`Vuetify`](https://vuetifyjs.com/en/). You can add a theme provider decorator to your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) config:
 
-For example, suppose you are using [`Vuetify`](https://vuetifyjs.com/en/). You can add a theme provider decorator to your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) config:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  <CodeSnippets path="storybook-preview-use-global-type.md" />
 
-<CodeSnippets path="storybook-preview-use-global-type.md" />
-
-{/* prettier-ignore-end */}
-
+  {/* prettier-ignore-end */}
 </IfRenderer>
 
 <IfRenderer renderer="angular">
+ For example, suppose you are using [`Angular Material`](https://material.angular.io/). You can add a theme provider decorator to your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) config:
 
-For example, suppose you are using [`Angular Material`](https://material.angular.io/). You can add a theme provider decorator to your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) config:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  <CodeSnippets path="storybook-preview-use-global-type.md" />
 
-<CodeSnippets path="storybook-preview-use-global-type.md" />
-
-{/* prettier-ignore-end */}
-
+  {/* prettier-ignore-end */}
 </IfRenderer>
 
 <IfRenderer renderer={['ember', 'html', 'preact', 'qwik', 'svelte', 'solid', 'web-components' ]}>
+ Depending on your framework and theming library, you can extend your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) and provide a decorator to load the theme. For example:
 
-Depending on your framework and theming library, you can extend your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) and provide a decorator to load the theme. For example:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  <CodeSnippets path="storybook-preview-use-global-type.md" />
 
-<CodeSnippets path="storybook-preview-use-global-type.md" />
-
-{/* prettier-ignore-end */}
-
+  {/* prettier-ignore-end */}
 </IfRenderer>
 
 ## Setting globals on a story
@@ -122,7 +114,7 @@ In your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rend
 <Callout variant="info" icon="💡" style={{ marginBottom: '10px' }}>
 
 The `icon` element used in the examples loads the icons from the `@storybook/icons` package. See [here](../faq.mdx#what-icons-are-available-for-my-toolbar-or-my-addon) for the list of available icons that you can use.
-
+  
 </Callout>
 
 Adding the configuration element `right` will display the text on the right side in the toolbar menu once you connect it to a decorator.

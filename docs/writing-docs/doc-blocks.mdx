@@ -58,14 +58,7 @@ The blocks are also used to define the page template for [automatics docs](./aut
 ![Screenshot of automatic docs template](../_assets/writing-docs/autodocs-default-template.png)
 
 ```jsx
-import {
-  Title,
-  Subtitle,
-  Description,
-  Primary,
-  Controls,
-  Stories,
-} from '@storybook/addon-docs/blocks';
+import { Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/addon-docs/blocks';
 
 export const autoDocsTemplate = () => (
   <>
@@ -89,7 +82,6 @@ Note that some doc blocks render other blocks. For example, the `<Stories />` bl
 ## Stories
 
 <Canvas>
-
   ### Story name
   <Description />
   <Story />
@@ -117,7 +109,7 @@ For example, you can filter out the `style` prop from all [`Controls`](../api/do
 
 <Callout variant="info">
 
-Parameters can also be defined at the [component](../writing-stories/parameters.mdx#component-parameters) (or meta) level or the [story](../writing-stories/parameters.mdx#story-parameters) level, allowing you to customize Doc Blocks exactly as you need, where you need.
+  Parameters can also be defined at the [component](../writing-stories/parameters.mdx#component-parameters) (or meta) level or the [story](../writing-stories/parameters.mdx#story-parameters) level, allowing you to customize Doc Blocks exactly as you need, where you need.
 
 </Callout>
 
@@ -129,7 +121,6 @@ When using a doc block in MDX, it can also be customized with its props:
 
 ```md
 <Controls exclude={['style']}>
-
 ```
 
 {/* prettier-ignore-end */}
@@ -142,7 +133,7 @@ Each block has a dedicated API reference page detailing usage, available options
 
 <Callout variant="info">
 
-Accepts parameters in the namespace `parameters.docs.argTypes`.
+  Accepts parameters in the namespace `parameters.docs.argTypes`.
 
 </Callout>
 
@@ -154,7 +145,7 @@ The `ArgTypes` block can be used to show a static table of [arg types](../api/ar
 
 <Callout variant="info">
 
-Accepts parameters in the namespace `parameters.docs.canvas`.
+  Accepts parameters in the namespace `parameters.docs.canvas`.
 
 </Callout>
 
@@ -172,7 +163,7 @@ The `ColorPalette` block allows you to document all color-related items (e.g., s
 
 <Callout variant="info">
 
-Accepts parameters in the namespace `parameters.docs.controls`.
+  Accepts parameters in the namespace `parameters.docs.controls`.
 
 </Callout>
 
@@ -202,8 +193,8 @@ The `Markdown` block allows you to import and include plain markdown in your MDX
 
 The `Meta` block is used to [attach](#attached-vs-unattached) a custom MDX docs page alongside a component’s list of stories. It doesn’t render any content but serves two purposes in an MDX file:
 
-- Attaches the MDX file to a component and its stories, or
-- Controls the location of the unattached docs entry in the sidebar.
+* Attaches the MDX file to a component and its stories, or
+* Controls the location of the unattached docs entry in the sidebar.
 
 ### [Primary](../api/doc-blocks/doc-block-primary.mdx)
 
@@ -215,7 +206,7 @@ The `Primary` block displays the primary (first defined in the stories file) sto
 
 <Callout variant="info">
 
-Accepts parameters in the namespace `parameters.docs.source`.
+  Accepts parameters in the namespace `parameters.docs.source`.
 
 </Callout>
 
@@ -233,8 +224,8 @@ The `Stories` block renders the full collection of stories in a stories file.
 
 <Callout variant="info">
 
-Accepts parameters in the namespace `parameters.docs.story`.
-
+  Accepts parameters in the namespace `parameters.docs.story`.
+  
 </Callout>
 
 [Stories](../writing-stories/index.mdx) are Storybook's fundamental building blocks.
@@ -253,7 +244,7 @@ The `Subtitle` block can serve as a secondary heading for your docs entry.
 
 <Callout variant="info">
 
-Accepts parameters in the namespace `parameters.docs.toc`.
+  Accepts parameters in the namespace `parameters.docs.toc`.
 
 </Callout>
 
@@ -297,7 +288,7 @@ Storybook's Doc Blocks are highly customizable and helpful building blocks to as
 
 **Learn more about Storybook documentation**
 
-- [Autodocs](./autodocs.mdx) for creating documentation for your stories
-- [MDX](./mdx.mdx) for customizing your documentation
-- Doc Blocks for authoring your documentation
-- [Publishing docs](./build-documentation.mdx) to automate the process of publishing your documentation
+* [Autodocs](./autodocs.mdx) for creating documentation for your stories
+* [MDX](./mdx.mdx) for customizing your documentation
+* Doc Blocks for authoring your documentation
+* [Publishing docs](./build-documentation.mdx) to automate the process of publishing your documentation

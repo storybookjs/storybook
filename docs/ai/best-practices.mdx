@@ -4,13 +4,11 @@ sidebar:
   order: 2
   title: Best practices
 ---
-
+  
 <Callout variant="info" icon="🧪">
+  The best practices here relate to the [generated manifests](./manifests.mdx), which are currently only supported for [React](?renderer=react) projects.
 
-The best practices here relate to the [generated manifests](./manifests.mdx), which are currently only supported for [React](?renderer=react) projects.
-
-Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
-
+  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
 </Callout>
 
 <If renderer={['react']}>
@@ -79,10 +77,7 @@ For unattached MDX docs pages (such as documentation for design tokens, guidelin
 ```jsx title="Colors.mdx"
 import { Meta } from '@storybook/addon-docs/blocks';
 
-<Meta
-  title="Design Tokens/Colors"
-  summary="A list of our color tokens, their usages, and guidelines for using them."
-/>
+<Meta title="Design Tokens/Colors" summary="A list of our color tokens, their usages, and guidelines for using them." />
 ```
 
 ## Docs content
@@ -103,7 +98,6 @@ import { colors } from '../src/tokens/colors';
     <ColorItem key={color.name} color={color.value} name={color.name} />
   ))}
 </ColorPalette>
-
 ```
 
 To ensure that your agents have access to all the necessary information, it's important to include any relevant details directly in your MDX files, rather than referencing external sources.
@@ -137,3 +131,5 @@ import { Meta } from '@storybook/addon-docs/blocks';
 - [MCP server API](./mcp/api.mdx)
 - [Sharing your MCP server](./mcp/sharing.mdx)
 - [Manifests](./manifests.mdx)
+
+

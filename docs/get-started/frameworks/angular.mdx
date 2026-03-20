@@ -18,20 +18,15 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions
-  versions={[
-    {
-      name: 'Angular',
-      range: '≥ 18.0 < 22.0',
-      icon: '/images/logos/renderers/logo-angular.svg',
-    },
-    {
-      name: 'Webpack',
-      range: '5',
-      icon: '/images/logos/builders/webpack.svg',
-    },
-  ]}
-/>
+<GetStartedVersions versions={[{
+  name: 'Angular',
+  range: '≥ 18.0 < 22.0',
+  icon: '/images/logos/renderers/logo-angular.svg'
+}, {
+  name: 'Webpack',
+  range: '5',
+  icon: '/images/logos/builders/webpack.svg'
+}]} />
 
 ## Run Storybook
 
@@ -89,15 +84,20 @@ Add the following option to your Storybook Builder:
               "-d",
               // Where to store the generated documentation. It's usually the root of your Angular project. It's not necessarily the root of your Angular Workspace!
               "."
-            ]
+            ],
           }
-        }
+        },
         "build-storybook": {
           "builder": "@storybook/angular:build-storybook",
           "options": {
             // 👇 Add these
             "compodoc": true,
-            "compodocArgs": ["-e", "json", "-d", "."]
+            "compodocArgs": [
+              "-e",
+              "json",
+              "-d",
+              "."
+            ],
           }
         }
       }
@@ -195,7 +195,7 @@ Finally, update your `angular.json` to include the Storybook builder:
             // More options available, documented here:
             // https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular/src/builders/start-storybook/schema.json
           }
-        }
+        },
         "build-storybook": {
           "builder": "@storybook/angular:build-storybook",
           "options": {
@@ -249,6 +249,7 @@ Note that `compodoc` is now built into `@storybook/angular`; you don't have to c
 }
 ```
 
+
 #### With multiple projects in your Angular workspace
 
 In case you have multiple projects, you will have to adjust your `angular.json` and `package.json` as described above for each project you want to use Storybook with. Please note that each project should have a dedicated `.storybook` folder placed at the project's root directory.
@@ -261,41 +262,41 @@ You can then combine multiple Storybooks with [Storybook composition](../../shar
 
 These are common options you may need for the Angular builder:
 
-| Configuration element        | Description                                                                                                                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `"browserTarget"`            | Build target to be served using the following format. <br /> `"example-project:builder:config"`                                                                                             |
-| `"debugWebpack"`             | Debug the Webpack configuration <br /> `"debugWebpack": true`                                                                                                                               |
-| `"tsConfig"`                 | Location of the TypeScript configuration file relative to the current workspace. <br /> `"tsConfig": "./tsconfig.json"`.                                                                    |
-| `"preserveSymlinks"`         | Do not use the real path when resolving modules. If true, symlinks are resolved to their real path; otherwise, they are resolved to their symlinked path. <br /> `"preserveSymlinks": true` |
-| `"port"`                     | Port used by Storybook. <br /> `"port": 6006`                                                                                                                                               |
-| `"host"`                     | Set up a custom host for Storybook. <br /> `"host": "http://my-custom-host"`                                                                                                                |
-| `"configDir"`                | Storybook configuration directory location. <br /> `"configDir": ".storybook"`                                                                                                              |
-| `"https"`                    | Starts Storybook with HTTPS enabled. <br /> `"https": true` <br /> Requires custom certificate information.                                                                                 |
-| `"sslCa"`                    | Provides an SSL certificate authority. <br /> `"sslCa": "your-custom-certificate-authority"` <br /> Optional usage with `"https"`                                                           |
-| `"sslCert"`                  | Provides an SSL certificate. <br /> `"sslCert": "your-custom-certificate"` <br /> Required for `https`                                                                                      |
-| `"sslKey"`                   | Provides an SSL key to serve Storybook. <br /> `"sslKey": "your-ssl-key"`                                                                                                                   |
-| `"smokeTest"`                | Exit Storybook after successful start. <br /> `"smokeTest": true`                                                                                                                           |
-| `"ci"`                       | Starts Storybook in CI mode (skips interactive prompts and will not open browser window). <br /> `"ci": true`                                                                               |
-| `"open"`                     | Whether to open Storybook automatically in the browser. <br /> `"open": true`                                                                                                               |
-| `"quiet"`                    | Filters Storybook verbose build output. <br /> `"quiet": true`                                                                                                                              |
-| `"enableProdMode"`           | Disable Angular's development mode, which turns off assertions and other checks within the framework. <br /> `"enableProdMode": true`                                                       |
-| `"docs"`                     | Starts Storybook in [documentation mode](../../writing-docs/build-documentation.mdx#preview-storybooks-documentation). <br /> `"docs": true`                                                |
-| `"compodoc"`                 | Execute compodoc before. <br /> `"compodoc": true`                                                                                                                                          |
-| `"compodocArgs"`             | Compodoc [options](https://compodoc.app/guides/options.html). Options `-p` with tsconfig path and `-d` with workspace root is always given. <br /> `"compodocArgs": ["-e", "json"]`         |
-| `"styles"`                   | Provide the location of the [application's styles](../../configure/styling-and-css.mdx#global-styles) to be used with Storybook. <br /> `"styles": ["src/styles.css", "src/styles.scss"]`   |
-| `"stylePreprocessorOptions"` | Provides further customization for style preprocessors resolved to the workspace root. <br /> `"stylePreprocessorOptions": { "includePaths": ["src/styles"] }`                              |
-| `"assets"`                   | List of static application assets. <br /> `"assets": ["src/assets"]`                                                                                                                        |
-| `"initialPath"`              | URL path to be appended when visiting Storybook for the first time. <br /> `"initialPath": "docs/configure-your-project--docs"`                                                             |
-| `"webpackStatsJson"`         | Write Webpack Stats JSON to disk. <br /> `"webpackStatsJson": true`                                                                                                                         |
-| `"previewUrl"`               | Disables the default storybook preview and lets you use your own. <br /> `"previewUrl": "iframe.html"`                                                                                      |
-| `"loglevel"`                 | Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                     |
-| `"sourceMap"`                | Configure [sourcemaps](https://angular.dev/reference/configs/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                        |
-| `"experimentalZoneless"`     | Configure [zoneless change detection](https://angular.dev/guide/zoneless). <br /> `"experimentalZoneless": true`                                                                            |
+| Configuration element        | Description                                                                                                                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"browserTarget"`            | Build target to be served using the following format. <br /> `"example-project:builder:config"`                                                                                                 |
+| `"debugWebpack"`             | Debug the Webpack configuration <br /> `"debugWebpack": true`                                                                                                                                   |
+| `"tsConfig"`                 | Location of the TypeScript configuration file relative to the current workspace. <br /> `"tsConfig": "./tsconfig.json"`.                                                                        |
+| `"preserveSymlinks"`         | Do not use the real path when resolving modules. If true, symlinks are resolved to their real path; otherwise, they are resolved to their symlinked path. <br /> `"preserveSymlinks": true`     |
+| `"port"`                     | Port used by Storybook. <br /> `"port": 6006`                                                                                                                                                   |
+| `"host"`                     | Set up a custom host for Storybook. <br /> `"host": "http://my-custom-host"`                                                                                                                    |
+| `"configDir"`                | Storybook configuration directory location. <br /> `"configDir": ".storybook"`                                                                                                                  |
+| `"https"`                    | Starts Storybook with HTTPS enabled. <br /> `"https": true` <br /> Requires custom certificate information.                                                                                     |
+| `"sslCa"`                    | Provides an SSL certificate authority. <br /> `"sslCa": "your-custom-certificate-authority"` <br /> Optional usage with `"https"`                                                               |
+| `"sslCert"`                  | Provides an SSL certificate. <br /> `"sslCert": "your-custom-certificate"` <br /> Required for `https`                                                                                          |
+| `"sslKey"`                   | Provides an SSL key to serve Storybook. <br /> `"sslKey": "your-ssl-key"`                                                                                                                       |
+| `"smokeTest"`                | Exit Storybook after successful start. <br /> `"smokeTest": true`                                                                                                                               |
+| `"ci"`                       | Starts Storybook in CI mode (skips interactive prompts and will not open browser window). <br /> `"ci": true`                                                                                   |
+| `"open"`                     | Whether to open Storybook automatically in the browser. <br /> `"open": true`                                                                                                                   |
+| `"quiet"`                    | Filters Storybook verbose build output. <br /> `"quiet": true`                                                                                                                                  |
+| `"enableProdMode"`           | Disable Angular's development mode, which turns off assertions and other checks within the framework. <br /> `"enableProdMode": true`                                                           |
+| `"docs"`                     | Starts Storybook in [documentation mode](../../writing-docs/build-documentation.mdx#preview-storybooks-documentation). <br /> `"docs": true`                                                    |
+| `"compodoc"`                 | Execute compodoc before. <br /> `"compodoc": true`                                                                                                                                              |
+| `"compodocArgs"`             | Compodoc [options](https://compodoc.app/guides/options.html). Options `-p` with tsconfig path and `-d` with workspace root is always given. <br /> `"compodocArgs": ["-e", "json"]`             |
+| `"styles"`                   | Provide the location of the [application's styles](../../configure/styling-and-css.mdx#global-styles) to be used with Storybook. <br /> `"styles": ["src/styles.css", "src/styles.scss"]`       |
+| `"stylePreprocessorOptions"` | Provides further customization for style preprocessors resolved to the workspace root. <br /> `"stylePreprocessorOptions": { "includePaths": ["src/styles"] }`                                  |
+| `"assets"`                   | List of static application assets. <br /> `"assets": ["src/assets"]`                                                                                                                            |
+| `"initialPath"`              | URL path to be appended when visiting Storybook for the first time. <br /> `"initialPath": "docs/configure-your-project--docs"`                                                                 |
+| `"webpackStatsJson"`         | Write Webpack Stats JSON to disk. <br /> `"webpackStatsJson": true`                                                                                                                             |
+| `"previewUrl"`               | Disables the default storybook preview and lets you use your own. <br /> `"previewUrl": "iframe.html"`                                                                                          |
+| `"loglevel"`                 | Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                       |
+| `"sourceMap"`                | Configure [sourcemaps](https://angular.dev/reference/configs/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                                         |
+| `"experimentalZoneless"`     | Configure [zoneless change detection](https://angular.dev/guide/zoneless). <br /> `"experimentalZoneless": true`                                                                 |
 
 The full list of options can be found in the Angular builder schemas:
 
-- [Build Storybook](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular/build-schema.json)
-- [Start Storybook](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular/start-schema.json)
+* [Build Storybook](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular/build-schema.json)
+* [Start Storybook](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular/start-schema.json)
 
 ## API
 

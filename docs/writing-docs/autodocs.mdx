@@ -58,9 +58,10 @@ In addition to enabling the feature with `tags`, you can extend your Storybook c
 {/* prettier-ignore-end */}
 
 | Option                                                               | Description                                                                                                                    |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| ---------------------------------------------------------------------| -------------------------------------------------------------------------------------------------------------------------------|
 | [`defaultName`](../api/main-config/main-config-docs.mdx#defaultname) | Renames the auto-generated documentation page<br /> Default: `docs: { defaultName: 'Docs' }`                                   |
 | [`docsMode`](../api/main-config/main-config-docs.mdx#docsmode)       | Toggles the documentation mode, which only shows documentation pages in the sidebar<br /> Default: `docs: { docsMode: false }` |
+
 
 ### Write a custom template
 
@@ -73,9 +74,7 @@ To replace the default documentation template used by Storybook, you can extend 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-Internally, Storybook uses a similar implementation to generate the default template. See the Doc Blocks [API reference](./doc-blocks.mdx#available-blocks) to learn more about how Doc Blocks work.
-
+  Internally, Storybook uses a similar implementation to generate the default template. See the Doc Blocks [API reference](./doc-blocks.mdx#available-blocks) to learn more about how Doc Blocks work.
 </Callout>
 
 Going over the code snippet in more detail. When Storybook starts up, it will override the default template with the custom one composed of the following:
@@ -105,7 +104,7 @@ Then you can use it in your `.storybook/preview.js|ts` or an individual story fi
 
 <Callout variant="info" icon="💡">
 
-If you only need to override the documentation page for a single component, we recommend creating an MDX file and referencing it directly via the `<Meta of={} />` Doc Block.
+  If you only need to override the documentation page for a single component, we recommend creating an MDX file and referencing it directly via the `<Meta of={} />` Doc Block.
 
 </Callout>
 
@@ -123,19 +122,19 @@ Storybook's auto-generated documentation pages can be quite long and difficult t
 
 By default, the table of contents on the documentation page will only show the `h3` headings that are automatically generated. However, if you want to customize the table of contents, you can add more parameters to the `toc` property. The following options and examples of how to use them are available.
 
-| Option                | Description                                                                                                                                                                                                      |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `contentsSelector`    | Defines the container's CSS selector for search for the headings <br /> `toc: { contentsSelector: '.sbdocs-content' }`                                                                                           |
-| `disable`             | Hides the table of contents for the documentation pages <br /> `toc: { disable: true }`                                                                                                                          |
-| `headingSelector`     | Defines the list of headings to feature in the table of contents <br /> `toc: { headingSelector: 'h1, h2, h3' }`                                                                                                 |
-| `ignoreSelector`      | Configures the table of contents to ignore specific headings or stories. By default, the table of contents will ignore all content placed within Story blocks <br /> `toc: { ignoreSelector: '.docs-story h2' }` |
-| `title`               | Defines a title caption for the table of contents. <br />Accepts one of: `string`, `null`, React element <br /> `toc: { title: 'Table of Contents' }`                                                            |
-| `unsafeTocbotOptions` | Provides additional [`TocBot`](https://tscanlin.github.io/tocbot/) configuration options <br /> `toc: { unsafeTocbotOptions: { orderedList: true } }`                                                            |
+| Option                | Description                                                                                                                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contentsSelector`    | Defines the container's CSS selector for search for the headings <br /> `toc: { contentsSelector: '.sbdocs-content' }`                                                                                            |
+| `disable`             | Hides the table of contents for the documentation pages <br /> `toc: { disable: true }`                                                                                                                           |
+| `headingSelector`     | Defines the list of headings to feature in the table of contents <br /> `toc: { headingSelector: 'h1, h2, h3' }`                                                                                                  |
+| `ignoreSelector`      | Configures the table of contents to ignore specific headings or stories. By default, the table of contents will ignore all content placed within Story blocks <br /> `toc: { ignoreSelector: '.docs-story h2' }`  |
+| `title`               | Defines a title caption for the table of contents. <br />Accepts one of: `string`, `null`, React element <br /> `toc: { title: 'Table of Contents' }`                                                             |
+| `unsafeTocbotOptions` | Provides additional [`TocBot`](https://tscanlin.github.io/tocbot/) configuration options <br /> `toc: { unsafeTocbotOptions: { orderedList: true } }`                                                             |
 
 <Callout variant="info">
 
-The `contentsSelector`, `headingSelector`, and `ignoreSelector` properties allow additional customization. For more information on using them, see the [`Tocbot` documentation](https://tscanlin.github.io/tocbot/).
-
+  The `contentsSelector`, `headingSelector`, and `ignoreSelector` properties allow additional customization. For more information on using them, see the [`Tocbot` documentation](https://tscanlin.github.io/tocbot/).
+  
 </Callout>
 
 {/* prettier-ignore-start */}
@@ -209,11 +208,9 @@ Out of the box, Storybook has a set of components that you can use to customize 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+  This is not a Storybook issue but a detail of how MDX works. From their [migration guide](https://mdxjs.com/migrating/v2/#update-mdx-content):
 
-This is not a Storybook issue but a detail of how MDX works. From their [migration guide](https://mdxjs.com/migrating/v2/#update-mdx-content):
-
-“We now ‘sandbox’ components, for lack of a better name. It means that when you pass a component for h1, it does get used for `# hi` but not for `<h1>hi</h1>`”
-
+  “We now ‘sandbox’ components, for lack of a better name. It means that when you pass a component for h1, it does get used for `# hi` but not for `<h1>hi</h1>`”
 </Callout>
 
 ### Addon options
@@ -275,7 +272,7 @@ If you turned off inline rendering for your stories via the [`inline`](../api/do
 
 **Learn more about Storybook documentation**
 
-- Autodocs for creating documentation for your stories
-- [MDX](./mdx.mdx) for customizing your documentation
-- [Doc Blocks](./doc-blocks.mdx) for authoring your documentation
-- [Publishing docs](./build-documentation.mdx) to automate the process of publishing your documentation
+* Autodocs for creating documentation for your stories
+* [MDX](./mdx.mdx) for customizing your documentation
+* [Doc Blocks](./doc-blocks.mdx) for authoring your documentation
+* [Publishing docs](./build-documentation.mdx) to automate the process of publishing your documentation

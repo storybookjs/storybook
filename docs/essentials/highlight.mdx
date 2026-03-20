@@ -20,9 +20,7 @@ To highlight DOM elements with the feature, you'll need to emit the `HIGHLIGHT` 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-We recommend choosing the most specific selector possible to avoid highlighting elements other addons use. This is because the feature tries to match selectors against the entire DOM tree.
-
+  We recommend choosing the most specific selector possible to avoid highlighting elements other addons use. This is because the feature tries to match selectors against the entire DOM tree.
 </Callout>
 
 ### Customize style
@@ -36,9 +34,7 @@ By default, highlighted elements contain a standard outline style applied to the
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-
-These properties are optional, and you can use them to customize the appearance of the highlighted elements. The `hoverStyles` and `focusStyles` properties are recommended for use with the `menu` property. Pseudo-classes and pseudo-elements are not supported.
-
+  These properties are optional, and you can use them to customize the appearance of the highlighted elements. The `hoverStyles` and `focusStyles` properties are recommended for use with the `menu` property. Pseudo-classes and pseudo-elements are not supported.
 </Callout>
 
 ### Highlight menu
@@ -51,7 +47,7 @@ The Highlight feature includes a built-in debugging option, allowing you to sele
 
 <CodeSnippets path="highlight-menu.md" />
 
-{/* prettier-ignore-end */}
+{/* prettier-ignore-end */ }
 
 When enabled, the menu will be displayed when you click on the selected element matching your provided selectors. However, if you don't want to show any information, you can omit the items or set the `menu` property to an empty array to show the default menu.
 
@@ -68,9 +64,7 @@ If you need to remove a highlight from a specific element, you can do so by emit
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-
-The `emit` function derived from the `useChannel` API hook creates a communication channel in Storybook's UI to listen for events and update the UI accordingly. The Highlight feature uses this channel to listen to custom events and update the highlighted elements (if any) accordingly.
-
+  The `emit` function derived from the `useChannel` API hook creates a communication channel in Storybook's UI to listen for events and update the UI accordingly. The Highlight feature uses this channel to listen to custom events and update the highlighted elements (if any) accordingly.
 </Callout>
 
 ## Reset highlighted elements
@@ -112,12 +106,7 @@ This parameter is most useful to allow overriding at more specific levels. For e
 This feature contributes the following exports to Storybook:
 
 ```js
-import {
-  HIGHLIGHT,
-  REMOVE_HIGHLIGHT,
-  RESET_HIGHLIGHT,
-  SCROLL_INTO_VIEW,
-} from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
 ```
 
 #### `HIGHLIGHT`
@@ -163,9 +152,9 @@ interface HighlightMenuItem {
   /** Description of the menu item */
   description?: string;
   /** Icon for the menu item, left side */
-  iconLeft?: 'chevronLeft' | 'chevronRight' | 'info' | 'shareAlt';
+  iconLeft?: "chevronLeft" | "chevronRight" | "info" | "shareAlt";
   /** Icon for the menu item, right side */
-  iconRight?: 'chevronLeft' | 'chevronRight' | 'info' | 'shareAlt';
+  iconRight?: "chevronLeft" | "chevronRight" | "info" | "shareAlt";
   /** Name for a channel event to trigger when the menu item is clicked */
   clickEvent?: string;
   /** HTML selectors for which this menu item should show (subset of HighlightOptions['selectors']) */
@@ -201,18 +190,15 @@ import type { ClickEventDetails } from 'storybook/highlight';
 
 const handleClickEvent = (itemId: string, details: ClickEventDetails) => {
   // Handle the menu item click event
-};
+}
 
 // When you have a channel instance:
-channel.on('MY_CLICK_EVENT', handleClickEvent);
+channel.on('MY_CLICK_EVENT', handleClickEvent)
 
 // Or from a decorator:
-useChannel(
-  {
-    MY_CLICK_EVENT: handleClickEvent,
-  },
-  [handleClickEvent]
-);
+useChannel({
+  MY_CLICK_EVENT: handleClickEvent,
+}, [handleClickEvent])
 ```
 
 #### `REMOVE_HIGHLIGHT`

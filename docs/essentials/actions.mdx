@@ -10,7 +10,6 @@ Actions are used to show that an event handler (callback) has been called, and t
 <Video src="../_assets/essentials/addon-actions-demo-optimized.mp4" />
 
 ## Story args
-
 Actions work via supplying special Storybook-generated mock functions to your story's event handler args. There are two ways to get an action arg:
 
 ### Via storybook/test fn spies
@@ -49,6 +48,8 @@ If you need more granular control over which `argTypes` are matched, you can adj
 
 This will bind a standard HTML event handler to the outermost HTML element rendered by your component and trigger an action when the event is called for a given selector. The format is `<eventname> <selector>`. The selector is optional; it defaults to all elements.
 
+
+
 ## Non-story function calls
 
 You can still use the actions panel if you need to log function calls that are unrelated to any story. This can be helpful for debugging or logging purposes. There are two main ways to do this: `spyOn` from `storybook/test` or the `action` function from `storybook/actions`. For basic logging, we recommend creating a function spy, and for more complex scenarios, you can use the `action` function directly.
@@ -59,11 +60,13 @@ Mocks and spies from `storybook/test` are automatically logged as actions. The e
 
 <CodeSnippets path="actions-spyon-basic-example.md" />
 
+
 ### Via the `action` function
 
-To filter which function calls are logged, you can override the `spyOn` function's behavior by providing a custom implementation that calls the `action` function from `storybook/actions` only if it matches a specific condition to prevent it from logging all calls to the function it spies on.
+To filter which function calls are logged, you can override the `spyOn` function's behavior by providing a custom implementation that calls the  `action` function from `storybook/actions` only if it matches a specific condition to prevent it from logging all calls to the function it spies on.
 
 <CodeSnippets path="actions-filtering-example.md" />
+
 
 ## API
 

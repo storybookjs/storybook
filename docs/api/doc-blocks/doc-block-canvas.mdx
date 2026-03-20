@@ -25,9 +25,7 @@ import * as ButtonStories from './Button.stories';
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-
-In previous versions of Storybook it was possible to pass in arbitrary components as children to `Canvas`. That is deprecated and the `Canvas` block now only supports a single story.
-
+  In previous versions of Storybook it was possible to pass in arbitrary components as children to `Canvas`. That is deprecated and the `Canvas` block now only supports a single story.
 </Callout>
 
 ## Canvas
@@ -39,26 +37,25 @@ import { Canvas } from '@storybook/addon-docs/blocks';
 <details>
   <summary>Configuring with props <strong>and</strong> parameters</summary>
 
-ℹ️ Like most blocks, the `Canvas` block is configured with props in MDX. Many of those props derive their default value from a corresponding [parameter](../../writing-stories/parameters.mdx) in the block's namespace, `parameters.docs.canvas`.
+  ℹ️ Like most blocks, the `Canvas` block is configured with props in MDX. Many of those props derive their default value from a corresponding [parameter](../../writing-stories/parameters.mdx) in the block's namespace, `parameters.docs.canvas`.
 
-The following `sourceState` configurations are equivalent:
+  The following `sourceState` configurations are equivalent:
 
-{/* prettier-ignore-start */}
+  {/* prettier-ignore-start */}
 
-<CodeSnippets path="api-doc-block-canvas-parameter.md" />
+  <CodeSnippets path="api-doc-block-canvas-parameter.md" />
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-end */}
 
-{/* prettier-ignore-start */}
+  {/* prettier-ignore-start */}
 
-```md title="ButtonDocs.mdx"
-<Canvas of={ButtonStories.Basic} sourceState="shown" />
-```
+  ```md title="ButtonDocs.mdx"
+  <Canvas of={ButtonStories.Basic} sourceState="shown" />
+  ```
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-end */}
 
-The example above applied the parameter at the [story](../../writing-stories/parameters.mdx#story-parameters) level, but it could also be applied at the [component](../../writing-stories/parameters.mdx#component-parameters) (or meta) level or [project](../../writing-stories/parameters.mdx#global-parameters) level.
-
+  The example above applied the parameter at the [story](../../writing-stories/parameters.mdx#story-parameters) level, but it could also be applied at the [component](../../writing-stories/parameters.mdx#component-parameters) (or meta) level or [project](../../writing-stories/parameters.mdx#global-parameters) level.
 </details>
 
 ### `additionalActions`
@@ -125,9 +122,9 @@ Default: `parameters.layout` or `parameters.docs.canvas.layout` or `'padded'`
 
 Specifies how the canvas should layout the story.
 
-- **centered**: Center the story within the canvas
-- **padded**: (default) Add padding to the story
-- **fullscreen**: Show the story as-is, without padding
+* **centered**: Center the story within the canvas
+* **padded**: (default) Add padding to the story
+* **fullscreen**: Show the story as-is, without padding
 
 In addition to the `parameters.docs.canvas.layout` property or the `layout` prop, the `Canvas` block will respect the `parameters.layout` value that defines [how a story is laid out](../../configure/story-layout.mdx) in the regular story view.
 
@@ -168,9 +165,7 @@ Type: `SourceProps['code'] | SourceProps['format'] | SourceProps['language'] | S
 Specifies the props passed to the inner `Source` block. For more information, see the `Source` Doc Block [documentation](./doc-block-source.mdx).
 
 <Callout variant="info" icon="💡">
-
-The dark prop is ignored, as the `Source` block is always rendered in dark mode when shown as part of a `Canvas` block.
-
+  The dark prop is ignored, as the `Source` block is always rendered in dark mode when shown as part of a `Canvas` block.
 </Callout>
 
 ### `sourceState`
@@ -181,9 +176,9 @@ Default: `parameters.docs.canvas.sourceState` or `'hidden'`
 
 Specifies the initial state of the source panel.
 
-- **hidden**: the source panel is hidden by default
-- **shown**: the source panel is shown by default
-- **none**: the source panel is not available and the button to show it is not rendered
+* **hidden**: the source panel is hidden by default
+* **shown**: the source panel is shown by default
+* **none**: the source panel is not available and the button to show it is not rendered
 
 ### `story`
 

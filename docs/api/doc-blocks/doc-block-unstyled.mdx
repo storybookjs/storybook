@@ -22,7 +22,6 @@ import { Header } from "./Header.tsx";
 ... and so will this paragraph.
 
 <Unstyled>
-
   > This block quote will not be styled
 
   ... neither will this paragraph, nor the following component (which contains an \<h1\>):
@@ -30,7 +29,6 @@ import { Header } from "./Header.tsx";
   <Header />
 
 </Unstyled>
-
 ```
 
 {/* prettier-ignore-end */}
@@ -41,26 +39,24 @@ Yields:
 
 <Callout variant="info">
 
-The other blocks like [`Story`](./doc-block-story.mdx) and [`Canvas`](./doc-block-canvas.mdx) are already unstyled, so there’s no need to wrap those in the `Unstyled` block to ensure that Storybook’s styles don’t bleed into the stories. However, if you import your components directly in the MDX, you most likely want to wrap them in the Unstyled block.
-
+  The other blocks like [`Story`](./doc-block-story.mdx) and [`Canvas`](./doc-block-canvas.mdx) are already unstyled, so there’s no need to wrap those in the `Unstyled` block to ensure that Storybook’s styles don’t bleed into the stories. However, if you import your components directly in the MDX, you most likely want to wrap them in the Unstyled block.
+  
 </Callout>
 
 <Callout variant="info" icon="💡">
+  Due to how CSS inheritance works it’s best to always add the Unstyled block to the root of your MDX, and not nested into other elements. The following example will cause some Storybook styles like `color` to be inherited into `CustomComponent` because they are applied to the root `div`:
 
-Due to how CSS inheritance works it’s best to always add the Unstyled block to the root of your MDX, and not nested into other elements. The following example will cause some Storybook styles like `color` to be inherited into `CustomComponent` because they are applied to the root `div`:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  ```md
+  <div>
+    <Unstyled>
+      <CustomComponent/>
+    </Unstyled>
+  </div>
+  ```
 
-```md
-<div>
-  <Unstyled>
-    <CustomComponent/>
-  </Unstyled>
-</div>
-```
-
-{/* prettier-ignore-end */}
-
+  {/* prettier-ignore-end */}
 </Callout>
 
 ## Unstyled
@@ -75,4 +71,4 @@ import { Unstyled } from '@storybook/addon-docs/blocks';
 
 Type: `React.ReactNode`
 
-Provides the content to which you do _not_ want to apply default docs styles.
+Provides the content to which you do *not* want to apply default docs styles.

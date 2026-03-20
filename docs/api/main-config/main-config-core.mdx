@@ -55,11 +55,9 @@ Type:
 Configures Storybook's builder, [Vite](../../builders/vite.mdx) or [Webpack](../../builders/webpack.mdx).
 
 <Callout variant="info" icon="💡">
+  With the new [Framework API](../new-frameworks.mdx), [`framework.options.builder`](./main-config-framework.mdx#optionsbuilder) is now the preferred way to configure the builder.
 
-With the new [Framework API](../new-frameworks.mdx), [`framework.options.builder`](./main-config-framework.mdx#optionsbuilder) is now the preferred way to configure the builder.
-
-You should only use `core.builder.options` if you need to configure a builder that is not part of a framework.
-
+  You should only use `core.builder.options` if you need to configure a builder that is not part of a framework.
 </Callout>
 
 {/* prettier-ignore-start */}
@@ -87,6 +85,7 @@ Configures the channel used by Storybook to communicate between the manager and 
 
 Only two properties are likely to be used:
 
+
 ### `channelOptions.maxDepth`
 
 Type: `number`
@@ -103,8 +102,8 @@ Enable CORS headings to run document in a "secure context". See [SharedArrayBuff
 
 This enables these headers in development-mode:
 
-- `Cross-Origin-Opener-Policy: same-origin`
-- `Cross-Origin-Embedder-Policy: require-corp`
+* `Cross-Origin-Opener-Policy: same-origin`
+* `Cross-Origin-Embedder-Policy: require-corp`
 
 {/* prettier-ignore-start */}
 

@@ -6,11 +6,9 @@ sidebar:
 ---
 
 <Callout variant="info" icon="🧪">
+  While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](../manifests.mdx) and [MCP server](./overview.mdx)) are currently only supported for [React](?renderer=react) projects.
 
-While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](../manifests.mdx) and [MCP server](./overview.mdx)) are currently only supported for [React](?renderer=react) projects.
-
-Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
-
+  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
 </Callout>
 
 <If renderer={['react']}>
@@ -58,11 +56,11 @@ import { createStorybookMcpHandler } from '@storybook/mcp';
 const storybookMcpHandler = await createStorybookMcpHandler();
 
 export async function handleRequest(request: Request): Promise<Response> {
-  if (new URL(request.url).pathname === '/mcp') {
-    return storybookMcpHandler(request);
-  }
+	if (new URL(request.url).pathname === '/mcp') {
+		return storybookMcpHandler(request);
+	}
 
-  return new Response('Not found', { status: 404 });
+	return new Response('Not found', { status: 404 });
 }
 ```
 

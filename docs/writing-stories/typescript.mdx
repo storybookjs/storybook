@@ -9,11 +9,9 @@ Storybook has built-in TypeScript support, so you can get started with zero conf
 <If renderer={['react', 'vue', 'angular', 'web-components']}>
 
 <Callout variant="positive" icon="💡">
+  [CSF Next](../api/csf/csf-next.mdx) (currently in preview) provides significantly improved TypeScript support, which infers component types automatically and requires no explicit typing for most cases. We recommend using CSF Next for all new TypeScript stories. 
 
-[CSF Next](../api/csf/csf-next.mdx) (currently in preview) provides significantly improved TypeScript support, which infers component types automatically and requires no explicit typing for most cases. We recommend using CSF Next for all new TypeScript stories.
-
-You only need to add types when using [custom args](#typing-custom-args).
-
+  You only need to add types when using [custom args](#typing-custom-args).
 </Callout>
 
 </If>
@@ -40,7 +38,6 @@ The example above passes a component type. See [**Typing custom args**](#typing-
 
 <IfRenderer renderer={['angular', 'web-components']}>
   <Callout variant="info">
-
     We are not yet able to provide additional type safety using the `satisfies` operator with Angular and Web components.
 
     <details>
@@ -52,7 +49,6 @@ The example above passes a component type. See [**Typing custom args**](#typing-
 
       For more information, please refer to [this discussion](https://github.com/storybookjs/storybook/discussions/20988).
     </details>
-
   </Callout>
 </IfRenderer>
 
@@ -127,34 +123,32 @@ Prior CSF versions suffer from a [long-standing type inference issue](https://gi
 </IfRenderer>
 
 <IfRenderer renderer="svelte">
+  ## Svelte specific tips
 
-## Svelte specific tips
+  Svelte offers excellent TypeScript support for .svelte files. For example, consider the following component. You can run type checks using svelte-check and add VSCode editor support with the [Svelte for VSCode extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
 
-Svelte offers excellent TypeScript support for .svelte files. For example, consider the following component. You can run type checks using svelte-check and add VSCode editor support with the [Svelte for VSCode extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+  ```svelte
+  <script lang="ts">
+    let count: number = $state(0);
+    let disabled: boolean = $state(false);
 
-```svelte
-<script lang="ts">
-  let count: number = $state(0);
-  let disabled: boolean = $state(false);
+    const increaseBy = () => {
+      count += 1
+    };
+    
+    const decreaseBy = () => {
+      count -= 1
+    };
+  </script>
 
-  const increaseBy = () => {
-    count += 1
-  };
+  <div class="card">
+    {count}
+    <button onclick={increaseBy} {disabled}> Increase by 1 </button>
+    <button onclick={decreaseBy} {disabled}> Decrease by 1 </button>
+  </div>
+  ```
 
-  const decreaseBy = () => {
-    count -= 1
-  };
-</script>
-
-<div class="card">
-  {count}
-  <button onclick={increaseBy} {disabled}> Increase by 1 </button>
-  <button onclick={decreaseBy} {disabled}> Decrease by 1 </button>
-</div>
-```
-
-The same setup works with Svelte stories files too, providing both type safety and autocompletion.
-
+  The same setup works with Svelte stories files too, providing both type safety and autocompletion.
 </IfRenderer>
 
 <If renderer="angular">
@@ -195,7 +189,7 @@ const meta = preview.type<{ args: MyComponentProps }>().meta({
 ```ts
 declare global {
   interface HTMLElementTagNameMap {
-    'my-element': MyElement;
+    "my-element": MyElement;
   }
 }
 ```

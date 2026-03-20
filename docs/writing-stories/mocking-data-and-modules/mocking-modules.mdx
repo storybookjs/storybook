@@ -10,7 +10,6 @@ Components often depend on other modules, such as other components, utility func
 For example, this simple component depends on two modules, a local utility function to access the user's browser session and an external package to generate a unique ID:
 
 {/* TODO: More renderers than just React */}
-
 ```jsx title="AuthButton.jsx"
 import { v4 as uuidv4 } from 'uuid';
 import { getUserFromSession } from '../lib/session';
@@ -20,11 +19,7 @@ export function AuthButton() {
   const id = uuidv4();
 
   return (
-    <button
-      onClick={() => {
-        console.log(`User: ${user.name}, ID: ${id}`);
-      }}
-    >
+    <button onClick={() => { console.log(`User: ${user.name}, ID: ${id}`) }}>
       {user ? `Welcome, ${user.name}` : 'Sign in'}
     </button>
   );
@@ -187,12 +182,12 @@ You can use [subpath imports](https://nodejs.org/api/packages.html#subpath-impor
 
 To mock a module, create a file with the same name and in the same directory as the module you want to mock. For example, to mock a module named `session`, create a file next to it named `session.mock.js|ts`, with a few characteristics:
 
-- It must import the original module using a relative import.
-  - Using a subpath or alias import would result in it importing itself.
-- It should re-export all exports from the original module.
-- It should use the `fn` utility to mock any necessary functionality from the original module.
-- It should use the [`mockName`](https://vitest.dev/api/mock.html#mockname) method to ensure the name is preserved when minified
-- It should not introduce side effects that could affect other tests or components. Mock files should be isolated and only affect the module they are mocking.
+* It must import the original module using a relative import.
+  * Using a subpath or alias import would result in it importing itself.
+* It should re-export all exports from the original module.
+* It should use the `fn` utility to mock any necessary functionality from the original module.
+* It should use the [`mockName`](https://vitest.dev/api/mock.html#mockname) method to ensure the name is preserved when minified
+* It should not introduce side effects that could affect other tests or components. Mock files should be isolated and only affect the module they are mocking.
 
 Here's an example of a mock file for a module named `session`:
 
@@ -254,13 +249,11 @@ import { getUserFromSession } from '#lib/session';
 ```
 
 <Callout variant="info">
+  Subpath imports will only be correctly resolved and typed when the [`moduleResolution` property](https://www.typescriptlang.org/tsconfig/#moduleResolution) is set to `'Bundler'`, `'NodeNext'`, or `'Node16'` in your TypeScript configuration.
 
-Subpath imports will only be correctly resolved and typed when the [`moduleResolution` property](https://www.typescriptlang.org/tsconfig/#moduleResolution) is set to `'Bundler'`, `'NodeNext'`, or `'Node16'` in your TypeScript configuration.
+  If you are currently using `'node'`, that is intended for projects using a Node.js version older than v10. Projects written with modern code likely do not need to use `'node'`.
 
-If you are currently using `'node'`, that is intended for projects using a Node.js version older than v10. Projects written with modern code likely do not need to use `'node'`.
-
-Storybook recommends the [TSConfig Cheat Sheet](https://www.totaltypescript.com/tsconfig-cheat-sheet) for guidance on setting up your TypeScript configuration.
-
+  Storybook recommends the [TSConfig Cheat Sheet](https://www.totaltypescript.com/tsconfig-cheat-sheet) for guidance on setting up your TypeScript configuration.
 </Callout>
 
 #### Using subpath imports in stories
@@ -282,9 +275,7 @@ Here, we define `beforeEach` on a story (which will run before the story is rend
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-
-If you are [writing your stories in TypeScript](../typescript.mdx), you must import your mock modules using the full mocked file name to have the functions correctly typed in your stories. You do **not** need to do this in your component files. That's what the [subpath import](#subpath-imports) or [builder alias](#builder-aliases) is for.
-
+  If you are [writing your stories in TypeScript](../typescript.mdx), you must import your mock modules using the full mocked file name to have the functions correctly typed in your stories. You do **not** need to do this in your component files. That's what the [subpath import](#subpath-imports) or [builder alias](#builder-aliases) is for.
 </Callout>
 
 #### Spying on mocked modules
@@ -311,7 +302,7 @@ If your project is unable to use [automocking](#automocking) or [subpath imports
 
 Usage of the aliased module in stories is similar to when [using subpath imports in stories](#using-subpath-imports-in-stories), but you import the module using the alias instead of the subpath.
 
----
+-----
 
 ## Common scenarios
 
@@ -322,9 +313,7 @@ Before the story renders, you can use the asynchronous `beforeEach` function to 
 You can also return a cleanup function from `beforeEach` which will be called after your story unmounts. This is useful for tasks like unsubscribing observers, etc.
 
 <Callout variant="info">
-
-It is _not_ necessary to restore `fn()` mocks with the cleanup function, as Storybook will already do that automatically before rendering a story. See the [`parameters.test.restoreMocks` API](../../api/parameters.mdx#restoremocks) for more information.
-
+  It is *not* necessary to restore `fn()` mocks with the cleanup function, as Storybook will already do that automatically before rendering a story. See the [`parameters.test.restoreMocks` API](../../api/parameters.mdx#restoremocks) for more information.
 </Callout>
 
 Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate) package to mock the [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) and reset it when the story unmounts.
@@ -335,7 +324,7 @@ Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate
 
 {/* prettier-ignore-end */}
 
----
+-----
 
 ## Troubleshooting
 

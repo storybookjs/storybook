@@ -31,26 +31,25 @@ import { Source } from '@storybook/addon-docs/blocks';
 <details>
   <summary>Configuring with props <strong>and</strong> parameters</summary>
 
-ℹ️ Like most blocks, the `Source` block is configured with props in MDX. Many of those props derive their default value from a corresponding [parameter](../../writing-stories/parameters.mdx) in the block's namespace, `parameters.docs.source`.
+  ℹ️ Like most blocks, the `Source` block is configured with props in MDX. Many of those props derive their default value from a corresponding [parameter](../../writing-stories/parameters.mdx) in the block's namespace, `parameters.docs.source`.
 
-The following `language` configurations are equivalent:
+  The following `language` configurations are equivalent:
 
-{/* prettier-ignore-start */}
+  {/* prettier-ignore-start */}
 
-<CodeSnippets path="api-doc-block-source-parameter.md" />
+  <CodeSnippets path="api-doc-block-source-parameter.md" />
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-end */}
 
-{/* prettier-ignore-start */}
+  {/* prettier-ignore-start */}
 
-```md title="ButtonDocs.mdx"
-<Source of={ButtonStories.Basic} language="tsx" />
-```
+  ```md title="ButtonDocs.mdx"
+  <Source of={ButtonStories.Basic} language="tsx" />
+  ```
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-end */}
 
-The example above applied the parameter at the [story](../../writing-stories/parameters.mdx#story-parameters) level, but it could also be applied at the [component](../../writing-stories/parameters.mdx#component-parameters) (or meta) level or [project](../../writing-stories/parameters.mdx#global-parameters) level.
-
+  The example above applied the parameter at the [story](../../writing-stories/parameters.mdx#story-parameters) level, but it could also be applied at the [component](../../writing-stories/parameters.mdx#component-parameters) (or meta) level or [project](../../writing-stories/parameters.mdx#global-parameters) level.
 </details>
 
 ### `code`
@@ -87,20 +86,18 @@ Determines if the snippet is rendered in dark mode.
 
 <Callout variant="info" icon="💡">
 
-Light mode is only supported when the `Source` block is rendered independently. When rendered as part of a [`Canvas` block](./doc-block-canvas.mdx)—like it is in [autodocs](../../writing-docs/autodocs.mdx)—it will always use dark mode.
+  Light mode is only supported when the `Source` block is rendered independently. When rendered as part of a [`Canvas` block](./doc-block-canvas.mdx)—like it is in [autodocs](../../writing-docs/autodocs.mdx)—it will always use dark mode.
 
 </Callout>
 
 <IfRenderer renderer={['angular', 'react', 'html', 'web-components' ]}>
+  ### `excludeDecorators`
 
-### `excludeDecorators`
+  Type: `boolean`
 
-Type: `boolean`
+  Default: `parameters.docs.source.excludeDecorators`
 
-Default: `parameters.docs.source.excludeDecorators`
-
-Determines if [decorators](../../writing-stories/decorators.mdx) are rendered in the source code snippet.
-
+  Determines if [decorators](../../writing-stories/decorators.mdx) are rendered in the source code snippet.
 </IfRenderer>
 
 ### `language`
@@ -146,12 +143,12 @@ Default: `parameters.docs.source.type` or `'auto'`
 
 Specifies how the source code is rendered.
 
-- **auto**: Same as **dynamic**, if the story's `render` function accepts args inputs and **dynamic** is supported by the framework in use; otherwise same as **code**
-- **code**: Renders the value of [`code` prop](#code), otherwise renders static story source
-- **dynamic**: Renders the story source with dynamically updated arg values
+* **auto**: Same as **dynamic**, if the story's `render` function accepts args inputs and **dynamic** is supported by the framework in use; otherwise same as **code**
+* **code**: Renders the value of [`code` prop](#code), otherwise renders static story source
+* **dynamic**: Renders the story source with dynamically updated arg values
 
 <Callout variant="info" icon="💡">
 
-Note that dynamic snippets will only work if the story uses [`args`](../../writing-stories/args.mdx) and the [`Story` block](./doc-block-story.mdx) for that story is rendered along with the `Source` block.
-
+  Note that dynamic snippets will only work if the story uses [`args`](../../writing-stories/args.mdx) and the [`Story` block](./doc-block-story.mdx) for that story is rendered along with the `Source` block.
+  
 </Callout>

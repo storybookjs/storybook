@@ -7,7 +7,7 @@ const preview: Preview = {
   decorators: [
     moduleMetadata({ declarations: [ThemeProvider] }),
     componentWrapperDecorator(
-      (story) => `<theme-provider class="default">${story}</theme-provider>`
+      (story) => `<theme-provider class="default">${story}</theme-provider>`,
     ),
   ],
 };
@@ -19,7 +19,7 @@ const preview: Preview = {
     moduleMetadata({ declarations: [ThemeProvider] }),
     componentWrapperDecorator(
       (story) => `<theme-provider [class]="theme">${story}</theme-provider>`,
-      ({ globals }) => ({ theme: globals.theme })
+      ({ globals }) => ({ theme: globals.theme }),
     ),
   ],
 };

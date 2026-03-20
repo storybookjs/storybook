@@ -18,20 +18,15 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions
-  versions={[
-    {
-      name: 'Vue',
-      range: '≥ 3',
-      icon: '/images/logos/renderers/logo-vue.svg',
-    },
-    {
-      name: 'Vite',
-      range: '≥ 5',
-      icon: '/images/logos/builders/vite.svg',
-    },
-  ]}
-/>
+<GetStartedVersions versions={[{
+  name: 'Vue',
+  range: '≥ 3',
+  icon: '/images/logos/renderers/logo-vue.svg'
+}, {
+  name: 'Vite',
+  range: '≥ 5',
+  icon: '/images/logos/builders/vite.svg'
+}]} />
 
 ## Run Storybook
 
@@ -70,9 +65,7 @@ setup((app) => {
 ### Using `vue-component-meta`
 
 <Callout variant="info">
-
-`vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook.
-
+  `vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook.
 </Callout>
 
 [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
@@ -112,10 +105,10 @@ To describe a prop, including tags, you can use JSDoc comments in your component
     /** The name of the user */
     name: string;
     /**
-     * The category of the component
-     *
-     * @since 8.0.0
-     */
+      * The category of the component
+      *
+      * @since 8.0.0
+      */
     category?: string;
   }
 
@@ -238,9 +231,7 @@ export default config;
 ```
 
 <Callout variant="info">
-
-This is not a limitation of Storybook, but how `vue-component-meta` works. For more information, refer to the appropriate [GitHub issue](https://github.com/vuejs/language-tools/issues/3896).
-
+  This is not a limitation of Storybook, but how `vue-component-meta` works. For more information, refer to the appropriate [GitHub issue](https://github.com/vuejs/language-tools/issues/3896).
 </Callout>
 
 Otherwise, you might face missing component types/descriptions or unresolvable import aliases like `@/some/import`.

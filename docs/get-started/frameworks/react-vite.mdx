@@ -18,20 +18,15 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions
-  versions={[
-    {
-      name: 'React',
-      range: '≥ 16.8',
-      icon: '/images/logos/renderers/logo-react.svg',
-    },
-    {
-      name: 'Vite',
-      range: '≥ 5',
-      icon: '/images/logos/builders/vite.svg',
-    },
-  ]}
-/>
+<GetStartedVersions versions={[{
+  name: 'React',
+  range: '≥ 16.8',
+  icon: '/images/logos/renderers/logo-react.svg'
+}, {
+  name: 'Vite',
+  range: '≥ 5',
+  icon: '/images/logos/builders/vite.svg'
+}]} />
 
 ## Run Storybook
 
@@ -46,7 +41,6 @@ To build Storybook, run:
 You will find the output in the configured `outputDir` (default is `storybook-static`).
 
 ## FAQ
-
 ### How do I migrate from the React Webpack framework?
 
 The `upgrade` command should prompt you to migrate to `@storybook/react-vite` when you run it:

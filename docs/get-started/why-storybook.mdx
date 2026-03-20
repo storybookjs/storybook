@@ -48,33 +48,30 @@ Storybook is an interactive directory of your UI components and their stories. I
 <details>
   <summary>Where does Storybook fit into my project?</summary>
 
-Storybook is packaged as a small, development-only, [workshop](https://bradfrost.com/blog/post/a-frontend-workshop-environment/) that lives alongside your app. Install it by [running a command](../get-started/install.mdx).
+  Storybook is packaged as a small, development-only, [workshop](https://bradfrost.com/blog/post/a-frontend-workshop-environment/) that lives alongside your app. Install it by [running a command](../get-started/install.mdx).
 
-During development, run it in a separate node process. If you’re working on UI in isolation, the only thing you’ll need to run is Storybook.
-
+  During development, run it in a separate node process. If you’re working on UI in isolation, the only thing you’ll need to run is Storybook.
 </details>
 
 <details>
   <summary>Does Storybook work with my favorite libraries?</summary>
 
-Storybook aims to integrate with industry-standard tools and platforms to simplify setup. Thanks to our ambitious developer community, we’ve made significant progress. There are hundreds of [addons](https://storybook.js.org/addons/) and tutorials that walk through how to set up Storybook in all types of projects.
+  Storybook aims to integrate with industry-standard tools and platforms to simplify setup. Thanks to our ambitious developer community, we’ve made significant progress. There are hundreds of [addons](https://storybook.js.org/addons/) and tutorials that walk through how to set up Storybook in all types of projects.
 
-If you’re using a niche framework or a recently launched tool, we might not have an integration for it yet. Consider creating a [proof of concept](../addons/writing-addons.mdx) yourself first to lead the way for the rest of the community.
-
+  If you’re using a niche framework or a recently launched tool, we might not have an integration for it yet. Consider creating a [proof of concept](../addons/writing-addons.mdx) yourself first to lead the way for the rest of the community.
 </details>
 
 <details>
   <summary>What’s the recommended Storybook workflow?</summary>
 
-Every team is different and so is their workflow. Storybook is designed to be incrementally adoptable. Teams can gradually try features to see what works best for them.
+  Every team is different and so is their workflow. Storybook is designed to be incrementally adoptable. Teams can gradually try features to see what works best for them.
 
-Most community members choose a [Component-Driven](https://www.componentdriven.org/) workflow. UIs are developed in isolation from the “bottom up” starting with basic components then progressively combined to assemble pages.
+  Most community members choose a [Component-Driven](https://www.componentdriven.org/) workflow. UIs are developed in isolation from the “bottom up” starting with basic components then progressively combined to assemble pages.
 
-1. Build each component in isolation and write stories for its variations.
-2. Compose small components together to enable more complex functionality.
-3. Assemble pages by combining composite components.
-4. Integrate pages into your project by hooking up data and business logic.
-
+  1. Build each component in isolation and write stories for its variations.
+  2. Compose small components together to enable more complex functionality.
+  3. Assemble pages by combining composite components.
+  4. Integrate pages into your project by hooking up data and business logic.
 </details>
 
 ## Benefits
@@ -105,8 +102,8 @@ Storybook is compatible with your continuous integration workflow. Add it as a C
 
 Storybook is powered by [Component Story Format](../api/csf/index.mdx), an open standard based on JavaScript ES6 modules. This enables stories to interoperate between development, testing, and design tools. Each story is exported as a JavaScript function enabling you to reuse it with other tools. No vendor lock-in.
 
-Reuse stories with [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) to verify interactions. Put them in [Chromatic](https://www.chromatic.com/?utm_source=storybook_website&utm_medium=link&utm_campaign=storybook) for visual testing. Audit story accessibility with [Axe](https://github.com/dequelabs/axe-core). Or test user flows with [Playwright](https://playwright.dev/) and [Cypress](https://www.cypress.io/). Reuse unlocks more workflows at no extra cost.
+Reuse stories with [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) to verify interactions. Put them in [Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) for visual testing. Audit story accessibility with [Axe](https://github.com/dequelabs/axe-core). Or test user flows with [Playwright](https://playwright.dev/) and [Cypress](https://www.cypress.io/). Reuse unlocks more workflows at no extra cost.
 
----
+***
 
 Storybook is purpose-built to help you develop complex UIs faster with greater durability and lower maintenance. It’s used by 100s of [leading companies](https://storybook.js.org/showcase) and thousands of [developers](https://github.com/storybookjs/storybook/).

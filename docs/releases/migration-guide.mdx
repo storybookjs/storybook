@@ -20,20 +20,18 @@ Coming soon:
 This guide is meant to help you **upgrade from Storybook 9.x to 10** successfully!
 
 <Callout variant="info">
+  **Migrating from a Storybook version prior to 9?**
 
-**Migrating from a Storybook version prior to 9?**
-
-You'll first need to [upgrade to Storybook 9](./migration-guide-from-older-version.mdx). Then you can return to this guide.
-
+  You'll first need to [upgrade to Storybook 9](./migration-guide-from-older-version.mdx). Then you can return to this guide.
 </Callout>
 
 ## Major breaking changes
 
 The rest of this guide will help you upgrade successfully, either automatically or manually. But first, there are some [breaking changes][full-migration-notes] in Storybook 10. Here are the most impactful changes you should know about before you go further:
 
-- [Main configuration (`.storybook/main.js|ts`) and other presets must be valid ESM](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#the-storybookmain-file-and-other-presets-must-be-valid-esm)
-- Ecosystem updates
-  - [Node 20.19+ or 22.12+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2019-or-2212-required)
+* [Main configuration (`.storybook/main.js|ts`) and other presets must be valid ESM](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#the-storybookmain-file-and-other-presets-must-be-valid-esm)
+* Ecosystem updates
+  * [Node 20.19+ or 22.12+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2019-or-2212-required)
 
 If any of these changes apply to your project, please read through the linked migration notes before continuing.
 
@@ -56,12 +54,12 @@ This will:
 1. Find all of the Storybook projects in your repository
 2. For each project
    1. Determine that none of the [breaking changes](#major-breaking-changes) apply to your project
-      - If they do, you will receive instructions on how to resolve them before continuing
+      * If they do, you will receive instructions on how to resolve them before continuing
    2. Upgrade your Storybook dependencies to the latest version
-   3. Run a collection of _automigrations_, which will:
-      - Check for common upgrade tasks
-      - Explain the necessary changes with links to more information
-      - Ask for approval, then perform the task automatically on your behalf
+   3. Run a collection of *automigrations*, which will:
+      * Check for common upgrade tasks
+      * Explain the necessary changes with links to more information
+      * Ask for approval, then perform the task automatically on your behalf
 
 ## New projects
 

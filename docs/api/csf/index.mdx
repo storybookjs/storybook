@@ -21,7 +21,7 @@ The default export defines metadata about your component, including the `compone
 
 <Callout variant="info">
 
-When writing Svelte CSF stories, you use the `defineMeta` function instead of the default export to define the metadata for your component.
+When writing Svelte CSF stories, you use the `defineMeta` function instead of the default export to define the metadata for your component. 
 
 </Callout>
 
@@ -59,13 +59,13 @@ With Svelte CSF, you use the `Story` component returned by `defineMeta` instead 
 
 The exported identifiers will be converted to "start case" using Lodash's [startCase](https://lodash.com/docs/#startCase) function. For example:
 
-| Identifier       | Transformation    |
-| ---------------- | ----------------- |
-| name             | Name              |
-| someName         | Some Name         |
-| someNAME         | Some NAME         |
-| some_custom_NAME | Some Custom NAME  |
-| someName1234     | Some Name 1 2 3 4 |
+| Identifier       | Transformation      |
+| ---------------- | ------------------- |
+| name             | Name                |
+| someName         | Some Name           |
+| someNAME         | Some NAME           |
+| some\_custom\_NAME | Some Custom NAME  |
+| someName1234     | Some Name 1 2 3 4   |
 
 We recommend that all export names to start with a capital letter.
 
@@ -126,33 +126,30 @@ A good use case for the `play` function is a form component. With previous Story
 When the story renders in the UI, Storybook executes each step defined in the `play` function and runs the assertions without the need for user interaction.
 
 <IfRenderer renderer={[ 'angular', 'ember', 'html', 'preact', 'qwik', 'react', 'solid', 'vue', 'web-components' ]}>
+  ## Custom render functions
 
-## Custom render functions
+  Starting in Storybook 6.4, you can write your stories as JavaScript objects, reducing the boilerplate code you need to generate to test your components, thus improving functionality and usability. `Render` functions are helpful methods to give you additional control over how the story renders. For example, if you were writing a story as an object and you wanted to specify how your component should render, you could write the following:
 
-Starting in Storybook 6.4, you can write your stories as JavaScript objects, reducing the boilerplate code you need to generate to test your components, thus improving functionality and usability. `Render` functions are helpful methods to give you additional control over how the story renders. For example, if you were writing a story as an object and you wanted to specify how your component should render, you could write the following:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  <CodeSnippets path="component-story-with-custom-render-function.md" />
 
-<CodeSnippets path="component-story-with-custom-render-function.md" />
+  {/* prettier-ignore-end */}
 
-{/* prettier-ignore-end */}
-
-When Storybook loads this story, it will detect the existence of a `render` function and adjust the component rendering accordingly based on what's defined.
-
+  When Storybook loads this story, it will detect the existence of a `render` function and adjust the component rendering accordingly based on what's defined.
 </IfRenderer>
 
 <IfRenderer renderer="svelte">
+   ## Custom render functions
 
-## Custom render functions
+   If you're using Svelte CSF to write your stories, you can add a custom snippet to allow you additional control over how your story renders. For example, if you were writing a story and you wanted to specify how your component should render, you could write the following:
 
-If you're using Svelte CSF to write your stories, you can add a custom snippet to allow you additional control over how your story renders. For example, if you were writing a story and you wanted to specify how your component should render, you could write the following:
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-start */}
+  <CodeSnippets path="component-story-with-custom-render-function.md" />
 
-<CodeSnippets path="component-story-with-custom-render-function.md" />
-
-{/* prettier-ignore-end */}
-
+  {/* prettier-ignore-end */}
+  
 </IfRenderer>
 
 ## Storybook export vs. name handling
@@ -194,12 +191,12 @@ When this file renders in Storybook, it treats `ComplexStory` and `SimpleStory` 
 
 For this particular example, you could achieve the same result in different ways, depending on what's convenient:
 
-- `includeStories: /^[A-Z]/`
-- `includeStories: /.*Story$/`
-- `includeStories: ['SimpleStory', 'ComplexStory']`
-- `excludeStories: /^[a-z]/`
-- `excludeStories: /.*Data$/`
-- `excludeStories: ['simpleData', 'complexData']`
+* `includeStories: /^[A-Z]/`
+* `includeStories: /.*Story$/`
+* `includeStories: ['SimpleStory', 'ComplexStory']`
+* `excludeStories: /^[a-z]/`
+* `excludeStories: /.*Data$/`
+* `excludeStories: ['simpleData', 'complexData']`
 
 The first option is the recommended solution if you follow the best practice of starting story exports with an uppercase letter (i.e., use UpperCamelCase).
 
@@ -278,7 +275,6 @@ Now, let's rewrite it as a story object in CSF 3 with an explicit `render` funct
 <CodeSnippets path="csf-3-example-render.md" />
 
 <IfRenderer renderer={[ 'angular', 'ember', 'html', 'preact', 'qwik', 'react', 'solid', 'vue', 'web-components' ]}>
-
   Learn more about [render functions](#custom-render-functions).
 </IfRenderer>
 
@@ -295,9 +291,7 @@ CSF 3 provides default render functions for each renderer. If all you're doing i
 {/* prettier-ignore-end */}
 
 <IfRenderer renderer={[ 'angular', 'ember', 'html', 'preact', 'qwik', 'react', 'solid', 'vue', 'web-components' ]}>
-
-For more information, see the section on [custom render functions](#custom-render-functions).
-
+  For more information, see the section on [custom render functions](#custom-render-functions).
 </IfRenderer>
 
 ### Generate titles automatically

@@ -26,7 +26,6 @@ npm create storybook@next
 ## Supported Versions
 
 We actively maintain the latest major version of Storybook. Within the current major, we patch only the latest minor version. Most fixes and new work go into the next minor (or sometimes major) and are not backported. Critical security fixes may be backported more broadly based on severity:
-
 - Latest major: Receives all security fixes
 - Previous two majors: Receive security patches for **High or Critical [CVSS vulnerabilities](https://en.wikipedia.org/wiki/Common_Vulnerability_Scoring_System) only**
 - Older versions: No longer receive any patches
@@ -49,14 +48,12 @@ For compatibility with other libraries and tools in the JavaScript ecosystem, pl
 
 **Channel**: Stable (`latest`)
 
-Major releases introduce breaking changes and significant new features. We use major releases to keep up with ecosystem changes, evolve Storybook’s architecture and APIs, and make the tool faster, leaner, and easier to use.
+Major releases introduce breaking changes and significant new features. We use major releases to keep up with ecosystem changes, evolve Storybook’s architecture and APIs, and make the tool faster, leaner, and easier to use. 
 
 Once we start working on a major release, we pause minor releases but continue to ship patch releases as needed. Major releases go through a sequence of [pre-releases](#pre-release)—`alpha`, `beta`, and `rc` (release candidate)—before landing in the stable channel. We aim to include automated migrations and provide [a comprehensive migration guide](../releases/migration-guide.mdx) when manual changes are necessary.
 
 <Callout variant="info">
-
-Storybook versions prior to 7 had a very different architecture. As a result, upgrading from v6 to newer versions can be more challenging. Starting in v7, we’ve focused heavily on smoother migrations. Upgrades from v7 to v8, and v8 to v9 (and beyond), should feel significantly easier thanks to automigrations and better tooling.
-
+  Storybook versions prior to 7 had a very different architecture. As a result, upgrading from v6 to newer versions can be more challenging. Starting in v7, we’ve focused heavily on smoother migrations. Upgrades from v7 to v8, and v8 to v9 (and beyond), should feel significantly easier thanks to automigrations and better tooling.
 </Callout>
 
 #### Minor Release

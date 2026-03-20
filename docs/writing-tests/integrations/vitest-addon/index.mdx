@@ -40,15 +40,13 @@ Before installing, make sure your project meets the following requirements:
 
 - A Storybook framework that uses Vite (e.g. [`vue3-vite`](../../../get-started/frameworks/vue3-vite.mdx), [`react-vite`](../../../get-started/frameworks/react-vite.mdx), [`preact-vite`](../../../get-started/frameworks/preact-vite.mdx), [`nextjs-vite`](../../../get-started/frameworks/nextjs-vite.mdx), [`sveltekit`](../../../get-started/frameworks/sveltekit.mdx), etc.)
 - Vitest ≥ 3.0
-  - If you're not yet using Vitest, it will be installed and configured for you automatically
+    - If you're not yet using Vitest, it will be installed and configured for you automatically
 - (optional) MSW ≥ 2.0
-  - If MSW is installed, it must be v2.0.0 or later to not conflict with Vitest's dependency
+    - If MSW is installed, it must be v2.0.0 or later to not conflict with Vitest's dependency
 
 <If renderer="react">
   <Callout variant="info" icon="ℹ️">
-
     **Using with Next.js** — The Vitest addon is supported in Next.js ≥ 14.1 projects, but you must be using the [`@storybook/nextjs-vite` framework](../../../get-started/frameworks/nextjs-vite.mdx). When you run the setup command below, you will be prompted to install and use the framework if you haven't already.
-
   </Callout>
 </If>
 
@@ -60,11 +58,11 @@ Run the following command to install and configure the addon automatically:
 
 The [`add` command](../../../addons/install-addons.mdx#automatic-installation) will:
 
-- Install and register the Vitest addon
-- Inspect your project's Vite and Vitest setup
-- Install and configure Vitest with sensible defaults if necessary
-- Set up browser mode using Playwright's Chromium browser
-- **Prompt you to install Playwright browser binaries** if needed
+* Install and register the Vitest addon
+* Inspect your project's Vite and Vitest setup
+* Install and configure Vitest with sensible defaults if necessary
+* Set up browser mode using Playwright's Chromium browser
+* **Prompt you to install Playwright browser binaries** if needed
 
 The setup is fully automated and handles all configuration for you. The full configuration options can be found in the [API section](#options), below.
 
@@ -98,26 +96,26 @@ When the addon is set up automatically, it will create or adjust your Vitest con
 <details id="example-vitest-config">
   <summary>Example Vitest config file</summary>
 
-The most simple application of the plugin is to include it in your Vitest configuration file:
+  The most simple application of the plugin is to include it in your Vitest configuration file:
 
-{/* prettier-ignore-start */}
+  {/* prettier-ignore-start */}
 
-<CodeSnippets path="vitest-plugin-vitest-config.md" />
+  <CodeSnippets path="vitest-plugin-vitest-config.md" />
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-end */}
 
 </details>
 
 <details id="example-vitest-workspace">
   <summary>Example Vitest workspace file (Vitest < 3.2)</summary>
 
-If you're using a [Vitest workspace](https://v3.vitest.dev/config/#workspace), you can define a new workspace project:
+  If you're using a [Vitest workspace](https://v3.vitest.dev/config/#workspace), you can define a new workspace project:
 
-{/* prettier-ignore-start */}
+  {/* prettier-ignore-start */}
 
-<CodeSnippets path="vitest-plugin-vitest-workspace.md" />
+  <CodeSnippets path="vitest-plugin-vitest-workspace.md" />
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-end */}
 
 </details>
 
@@ -206,7 +204,7 @@ The Vitest addon works by using a Vitest plugin to transform your stories into [
 
 Stories are tested in two ways: a smoke test to ensure it renders and, if a [play function](../../interaction-testing.mdx#writing-interaction-tests) is defined, that function is run and any [assertions made](../../interaction-testing.mdx#asserting-with-expect) within it are validated.
 
-When you run tests in the [Storybook UI](#storybook-ui), the addon runs Vitest in the background and reports the results in the sidebar.
+When you run tests in the [Storybook UI](#storybook-ui), the addon runs Vitest in the background and reports the results in the sidebar. 
 
 ## Configuring tests
 
@@ -250,12 +248,12 @@ The [test runner](../test-runner.mdx) requires a running Storybook instance to t
 
 | Feature                                                  | Vitest addon       | test-runner              |
 | -------------------------------------------------------- | ------------------ | ------------------------ |
-| **Test types**                                           |
+| **Test types**                                                                                           |
 | - [Interaction tests](../../interaction-testing.mdx)     | ✅                 | ✅                       |
 | - [Accessibility tests](../../accessibility-testing.mdx) | ✅                 | ✅                       |
 | - [Visual tests](../../visual-testing.mdx)               | ✅                 | ❌                       |
 | - [Snapshot tests](../../snapshot-testing.mdx)           | ❌                 | ✅                       |
-| **Testing contexts**                                     |
+| **Testing contexts**                                                                                     |
 | - Storybook UI                                           | ✅                 | ❌                       |
 | - Editor extensions                                      | ✅                 | ❌                       |
 | - CLI                                                    | ✅                 | ✅                       |
@@ -310,6 +308,7 @@ To isolate your Storybook tests from other tests, you need to move the `test` pr
 
 Additionally, we recommend using a [test project](#example-configuration-files) if you're using Vitest ≥ 4.0, or a workspace for previous versions to define separate configurations for your Storybook tests and other tests. This ensures each can be run either in isolation or together, depending on your needs.
 
+
 ### Why do we recommend browser mode?
 
 Vitest's browser mode runs your tests in a real browser (Chromium, via Playwright, in the default configuration). The alternative is a simulated browser environment, like JSDom or HappyDom, which can have differences in behavior compared to a real browser. For UI components, which can often depend on browser APIs or features, running tests in a real browser is more accurate.
@@ -330,7 +329,7 @@ By default, the export name of a story is mapped to the test name. To create a m
 
 ```js title="Example.stories.js|ts"
 export const Story = {
-  name: 'custom, descriptive name',
+  name: 'custom, descriptive name'
 };
 ```
 
@@ -347,7 +346,7 @@ export default defineConfig({
   // ...
   resolve: {
     alias: {
-      '@storybook/react-dom-shim': '@storybook/react-dom-shim/dist/react-16',
+      "@storybook/react-dom-shim": "@storybook/react-dom-shim/dist/react-16",
     },
   },
 });
@@ -412,7 +411,7 @@ See [Vitest's sharding guide](https://vitest.dev/guide/improving-performance.htm
 This addon has the following exports:
 
 ```js
-import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 ```
 
 #### `storybookTest`
@@ -493,12 +492,12 @@ You might set `disableAddonDocs` to `false` only in case your stories actually n
 
 **More testing resources**
 
-- [Interaction testing](../../interaction-testing.mdx) for user behavior simulation
-- [Accessibility testing](../../accessibility-testing.mdx) for accessibility
-- [Visual testing](../../visual-testing.mdx) for appearance
-- [Snapshot testing](../../snapshot-testing.mdx) for rendering errors and warnings
-- [Test coverage](../../test-coverage.mdx) for measuring code coverage
-- [CI](../../in-ci.mdx) for running tests in your CI/CD pipeline
-- [Test runner](../test-runner.mdx) to automate test execution
-- [End-to-end testing](../stories-in-end-to-end-tests.mdx) for simulating real user scenarios
-- [Unit testing](../stories-in-unit-tests.mdx) for functionality
+* [Interaction testing](../../interaction-testing.mdx) for user behavior simulation
+* [Accessibility testing](../../accessibility-testing.mdx) for accessibility
+* [Visual testing](../../visual-testing.mdx) for appearance
+* [Snapshot testing](../../snapshot-testing.mdx) for rendering errors and warnings
+* [Test coverage](../../test-coverage.mdx) for measuring code coverage
+* [CI](../../in-ci.mdx) for running tests in your CI/CD pipeline
+* [Test runner](../test-runner.mdx) to automate test execution
+* [End-to-end testing](../stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+* [Unit testing](../stories-in-unit-tests.mdx) for functionality

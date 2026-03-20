@@ -40,9 +40,9 @@ The following options are configurable under the `sidebar` namespace:
 
 The following options are configurable under the `toolbar` namespace:
 
-| Name     | Type   | Description                                                          | Example Value       |
-| -------- | ------ | -------------------------------------------------------------------- | ------------------- |
-| **[id]** | String | Toggle visibility for a specific toolbar item (e.g. `title`, `zoom`) | `{ hidden: false }` |
+| Name     | Type   | Description                                                          | Example Value        |
+| ---------| ------ | -------------------------------------------------------------------- | -------------------- |
+| **[id]** | String | Toggle visibility for a specific toolbar item (e.g. `title`, `zoom`) | `{ hidden: false }`  |
 
 The following options are configurable under the `layoutCustomisations` namespace:
 
@@ -52,9 +52,7 @@ The following options are configurable under the `layoutCustomisations` namespac
 | **showToolbar** | Function | Toggle visibility for the toolbar | `({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue`  |
 
 <Callout variant="warning">
-
-The `showSidebar` and `showToolbar` functions let you hide parts of the UI that are essential to Storybook's functionality. If misused, they can make navigation impossible. When hiding the sidebar, ensure the displayed page provides an alternative means of navigation.
-
+  The `showSidebar` and `showToolbar` functions let you hide parts of the UI that are essential to Storybook's functionality. If misused, they can make navigation impossible. When hiding the sidebar, ensure the displayed page provides an alternative means of navigation.
 </Callout>
 
 ## Customize the UI
@@ -65,19 +63,19 @@ Storybook's UI is highly customizable. Its API and configuration options, availa
 
 The sidebar, present on the left of the screen, contains the search function and navigation menu. Users may show or hide it with a keyboard shortcut. If you want to force the sidebar to be visible or hidden in certain places, you can define a `showSidebar` function in `layoutCustomisations`. Below are the available parameters passed to this function and an overview of how to use them.
 
-| Name                     | Type    | Description                                                       | Example Value                                         |
-| ------------------------ | ------- | ----------------------------------------------------------------- | ----------------------------------------------------- |
-| **path**                 | String  | Path to the page being displayed                                  | `'/story/components-button--default'`                 |
-| **viewMode**             | String  | Whether the current page is a story or docs                       | `'docs'` or `'story'`                                 |
-| **singleStory**          | Boolean | Whether the current page is the only story for a component        | `true` or `false`                                     |
-| **storyId**              | String  | The id of the current story or docs page                          | `'blocks-unstyled--docs'`                             |
-| **index**                | Object  | The index containing statically analysed metadata for every story | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }` |
-| **layout**               | Object  | The current layout state                                          | _see below_                                           |
-| **layout.isFullscreen**  | Boolean | Whether the preview canvas is in fullscreen mode                  | `true` or `false`                                     |
-| **layout.panelPosition** | String  | Whether the panel is shown below or on the side of the preview    | `'bottom'` or `'right'`                               |
-| **layout.showNav**       | Boolean | The setting for whether the end user wants to see the sidebar     | `true` or `false`                                     |
-| **layout.showPanel**     | Boolean | The setting for whether the end user wants to see the panel       | `true` or `false`                                     |
-| **layout.showToolbar**   | Boolean | The setting for whether the end user wants to see the toolbar     | `true` or `false`                                     |
+| Name                     | Type     | Description                                                    | Example Value                         |
+| ------------------------ | -------- | -------------------------------------------------------------- | ------------------------------------- |
+| **path**                 | String   | Path to the page being displayed                               | `'/story/components-button--default'` |
+| **viewMode**             | String   | Whether the current page is a story or docs                    | `'docs'` or `'story'`                 |
+| **singleStory**          | Boolean  | Whether the current page is the only story for a component     | `true` or `false`                     |
+| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-unstyled--docs'`      |
+| **index**              | Object   | The index containing statically analysed metadata for every story    | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }`  |
+| **layout**               | Object   | The current layout state                                       | *see below*                           |
+| **layout.isFullscreen**  | Boolean  | Whether the preview canvas is in fullscreen mode               | `true` or `false`                     |
+| **layout.panelPosition** | String   | Whether the panel is shown below or on the side of the preview | `'bottom'` or `'right'`               |
+| **layout.showNav**       | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
+| **layout.showPanel**     | Boolean  | The setting for whether the end user wants to see the panel    | `true` or `false`                     |
+| **layout.showToolbar**   | Boolean  | The setting for whether the end user wants to see the toolbar  | `true` or `false`                     |
 
 {/* prettier-ignore-start */}
 
@@ -87,7 +85,7 @@ The sidebar, present on the left of the screen, contains the search function and
 
 <Callout variant="warning">
 
-If you're hiding the sidebar through `showSidebar`, ensure the displayed page provides an alternative means of navigation.
+  If you're hiding the sidebar through `showSidebar`, ensure the displayed page provides an alternative means of navigation.
 
 </Callout>
 
@@ -95,19 +93,19 @@ If you're hiding the sidebar through `showSidebar`, ensure the displayed page pr
 
 When viewing a story, Storybook displays the addon panel on the bottom or right of the UI. The panel shows UIs for available addons (e.g., the [interactions panel](../../writing-tests/interaction-testing#debugging-interaction-tests), [accessibility tests panel](../../writing-tests/accessibility-testing) or [controls panel](../../essentials/controls)). If you want to customize when the addon panel appears, you can use the `showPanel` function. Listed below are the available options and an overview of how to use them.
 
-| Name                     | Type    | Description                                                       | Example Value                                         |
-| ------------------------ | ------- | ----------------------------------------------------------------- | ----------------------------------------------------- |
-| **path**                 | String  | Path to the page being displayed                                  | `'/story/components-button--default'`                 |
-| **viewMode**             | String  | Whether the current page is a story or docs                       | `'docs'` or `'story'`                                 |
-| **singleStory**          | Boolean | Whether the current page is the only story for a component        | `true` or `false`                                     |
-| **storyId**              | String  | The id of the current story or docs page                          | `'blocks-unstyled--docs'`                             |
-| **index**                | Object  | The index containing statically analysed metadata for every story | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }` |
-| **layout**               | Object  | The current layout state                                          | _see below_                                           |
-| **layout.isFullscreen**  | Boolean | Whether the preview canvas is in fullscreen mode                  | `true` or `false`                                     |
-| **layout.panelPosition** | String  | Whether the panel is shown below or on the side of the preview    | `'bottom'` or `'right'`                               |
-| **layout.showNav**       | Boolean | The setting for whether the end user wants to see the sidebar     | `true` or `false`                                     |
-| **layout.showPanel**     | Boolean | The setting for whether the end user wants to see the panel       | `true` or `false`                                     |
-| **layout.showToolbar**   | Boolean | The setting for whether the end user wants to see the toolbar     | `true` or `false`                                     |
+| Name                     | Type     | Description                                                    | Example Value                         |
+| ------------------------ | -------- | -------------------------------------------------------------- | ------------------------------------- |
+| **path**                 | String   | Path to the page being displayed                               | `'/story/components-button--default'` |
+| **viewMode**             | String   | Whether the current page is a story or docs                    | `'docs'` or `'story'`                 |
+| **singleStory**          | Boolean  | Whether the current page is the only story for a component     | `true` or `false`                     |
+| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-unstyled--docs'`      |
+| **index**              | Object   | The index containing statically analysed metadata for every story    | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }`  |
+| **layout**               | Object   | The current layout state                                       | *see below*                           |
+| **layout.isFullscreen**  | Boolean  | Whether the preview canvas is in fullscreen mode               | `true` or `false`                     |
+| **layout.panelPosition** | String   | Whether the panel is shown below or on the side of the preview | `'bottom'` or `'right'`               |
+| **layout.showNav**       | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
+| **layout.showPanel**     | Boolean  | The setting for whether the end user wants to see the panel    | `true` or `false`                     |
+| **layout.showToolbar**   | Boolean  | The setting for whether the end user wants to see the toolbar  | `true` or `false`                     |
 
 {/* prettier-ignore-start */}
 
@@ -119,19 +117,19 @@ When viewing a story, Storybook displays the addon panel on the bottom or right 
 
 By default, Storybook displays a toolbar at the top of the UI, allowing you to access menus from addons (e.g., [viewport](../../essentials/viewport.mdx), [background](../../essentials/backgrounds.mdx)), or custom defined [menus](../../essentials/toolbars-and-globals.mdx#global-types-and-the-toolbar-annotation). However, if you want to customize the toolbar's behavior, you can use the `showToolbar` function. Listed below are the available options and an overview of how to use them.
 
-| Name                     | Type    | Description                                                       | Example Value                                         |
-| ------------------------ | ------- | ----------------------------------------------------------------- | ----------------------------------------------------- |
-| **path**                 | String  | Path to the page being displayed                                  | `'/story/components-button--default'`                 |
-| **viewMode**             | String  | Whether the current page is a story or docs                       | `'docs'` or `'story'`                                 |
-| **singleStory**          | Boolean | Whether the current page is the only story for a component        | `true` or `false`                                     |
-| **storyId**              | String  | The id of the current story or docs page                          | `'blocks-unstyled--docs'`                             |
-| **index**                | Object  | The index containing statically analysed metadata for every story | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }` |
-| **layout**               | Object  | The current layout state                                          | _see below_                                           |
-| **layout.isFullscreen**  | Boolean | Whether the preview canvas is in fullscreen mode                  | `true` or `false`                                     |
-| **layout.panelPosition** | String  | Whether the panel is shown below or on the side of the preview    | `'bottom'` or `'right'`                               |
-| **layout.showNav**       | Boolean | The setting for whether the end user wants to see the sidebar     | `true` or `false`                                     |
-| **layout.showPanel**     | Boolean | The setting for whether the end user wants to see the panel       | `true` or `false`                                     |
-| **layout.showToolbar**   | Boolean | The setting for whether the end user wants to see the toolbar     | `true` or `false`                                     |
+| Name                     | Type     | Description                                                    | Example Value                         |
+| ------------------------ | -------- | -------------------------------------------------------------- | ------------------------------------- |
+| **path**                 | String   | Path to the page being displayed                               | `'/story/components-button--default'` |
+| **viewMode**             | String   | Whether the current page is a story or docs                    | `'docs'` or `'story'`                 |
+| **singleStory**          | Boolean  | Whether the current page is the only story for a component     | `true` or `false`                     |
+| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-unstyled--docs'`      |
+| **index**              | Object   | The index containing statically analysed metadata for every story    | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }`  |
+| **layout**               | Object   | The current layout state                                       | *see below*                           |
+| **layout.isFullscreen**  | Boolean  | Whether the preview canvas is in fullscreen mode               | `true` or `false`                     |
+| **layout.panelPosition** | String   | Whether the panel is shown below or on the side of the preview | `'bottom'` or `'right'`               |
+| **layout.showNav**       | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
+| **layout.showPanel**     | Boolean  | The setting for whether the end user wants to see the panel    | `true` or `false`                     |
+| **layout.showToolbar**   | Boolean  | The setting for whether the end user wants to see the toolbar  | `true` or `false`                     |
 
 {/* prettier-ignore-start */}
 

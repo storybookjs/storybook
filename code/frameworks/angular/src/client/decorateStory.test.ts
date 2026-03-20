@@ -328,13 +328,17 @@ function makeContext(input: Record<string, unknown>): StoryContext<AngularRender
 
 @Component({
   selector: 'foo',
-  template: `foo`,
+  template: `
+    foo
+  `,
 })
 class FooComponent {}
 
 @Component({
   selector: 'parent',
-  template: `<ng-content></ng-content>`,
+  template: `
+    <ng-content></ng-content>
+  `,
 })
 class ParentComponent {
   @Input()

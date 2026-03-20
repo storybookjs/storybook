@@ -71,7 +71,7 @@ describe('globals API', () => {
     });
   });
 
-  it('emits UPDATE_GLOBALS if retains a globals value different to what receives on SET_GLOBALS', () => {
+  it('emits UPDATE_GLOBALS if retains a user globals value different to what receives on SET_GLOBALS', () => {
     const channel = new EventEmitter();
     const listener = vi.fn();
     channel.on(UPDATE_GLOBALS, listener);
@@ -83,6 +83,7 @@ describe('globals API', () => {
     } as unknown as ModuleArgs);
     store.setState({
       ...state,
+      userGlobals: { a: 'c' },
       globals: { a: 'c' },
     });
 
@@ -101,6 +102,31 @@ describe('globals API', () => {
       globals: { a: 'c' },
       options: { target: 'storybook-preview-iframe' },
     });
+  });
+
+  it('does not push story globals to preview when SET_GLOBALS fires with empty globals', () => {
+    const channel = new EventEmitter();
+    const listener = vi.fn();
+    channel.on(UPDATE_GLOBALS, listener);
+
+    const store = createMockStore();
+    const { state } = initModule({
+      store,
+      provider: { channel },
+    } as unknown as ModuleArgs);
+    store.setState({
+      ...state,
+      userGlobals: {},
+      storyGlobals: { viewport: 'mobile1' },
+      globals: { viewport: 'mobile1' },
+    });
+
+    channel.emit(SET_GLOBALS, {
+      globals: {},
+      globalTypes: {},
+    } satisfies SetGlobalsPayload);
+
+    expect(listener).not.toHaveBeenCalled();
   });
 
   it('ignores SET_STORIES from other refs', () => {

@@ -13,13 +13,14 @@ const threadCount = process.env.CI ? (process.platform === 'win32' ? 4 : 7) : un
 const shouldRunStorybookTests = !(process.env.CI && process.platform === 'win32');
 
 const projects = [
-  'addons/*/vitest.config.ts',
-  'frameworks/*/vitest.config.ts',
-  'lib/*/vitest.config.ts',
-  'core/vitest.config.ts',
-  'builders/*/vitest.config.ts',
-  'presets/*/vitest.config.ts',
-  'renderers/*/vitest.config.ts',
+  'code/addons/*/vitest.config.ts',
+  'code/frameworks/*/vitest.config.ts',
+  'code/lib/*/vitest.config.ts',
+  'code/core/vitest.config.ts',
+  'code/builders/*/vitest.config.ts',
+  'code/presets/*/vitest.config.ts',
+  'code/renderers/*/vitest.config.ts',
+  'scripts/vitest.config.ts',
 ];
 
 /**
@@ -27,7 +28,7 @@ const projects = [
  * these tests, that need browser-mode cannot be run/added
  */
 if (shouldRunStorybookTests) {
-  projects.push('vitest.config.storybook.ts');
+  projects.push('code/vitest.config.storybook.ts');
 }
 
 export default defineConfig({

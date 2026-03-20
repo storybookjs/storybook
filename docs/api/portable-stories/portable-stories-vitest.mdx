@@ -8,14 +8,18 @@ sidebar:
 
 <If notRenderer={['react', 'vue', 'svelte']}>
   <Callout variant="info">
+
     Portable stories in Vitest are currently only supported in [React](?renderer=react), [Vue](?renderer=vue) and [Svelte](?renderer=svelte) projects.
+
   </Callout>
 
-  {/* End non-supported renderers */}
+{/* End non-supported renderers */}
+
 </If>
 
 <If renderer="svelte">
-  (⚠️ **Experimental**)
+
+(⚠️ **Experimental**)
 
     <Callout variant="info">
 
@@ -27,242 +31,254 @@ sidebar:
 
 <If renderer={['react', 'vue', 'svelte']}>
   <Callout variant="warning">
+
     Storybook now recommends testing your stories in Vitest with the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), which automatically transforms stories into real Vitest tests (using this API under the hood).
-    
+
     This API is still available for those who prefer to use portable stories directly, but we recommend using the Vitest addon for a more streamlined testing experience.
+
   </Callout>
 
-  Portable stories are Storybook [stories](../../writing-stories/index.mdx) which can be used in external environments, such as [Vitest](https://vitest.dev).
+Portable stories are Storybook [stories](../../writing-stories/index.mdx) which can be used in external environments, such as [Vitest](https://vitest.dev).
 
-  Normally, Storybook composes a story and its [annotations](#annotations) automatically, as part of the [story pipeline](#story-pipeline). When using stories in Vitest tests, you must handle the story pipeline yourself, which is what the [`composeStories`](#composestories) and [`composeStory`](#composestory) functions enable.
+Normally, Storybook composes a story and its [annotations](#annotations) automatically, as part of the [story pipeline](#story-pipeline). When using stories in Vitest tests, you must handle the story pipeline yourself, which is what the [`composeStories`](#composestories) and [`composeStory`](#composestory) functions enable.
 
   <If renderer="react">
     <Callout variant="warning">
+
       **Using `Next.js`?** You can test your Next.js stories with Vitest by installing and setting up the `@storybook/nextjs-vite` which re-exports [vite-plugin-storybook-nextjs](https://github.com/storybookjs/vite-plugin-storybook-nextjs) package.
     </Callout>
+
   </If>
 
-  ## composeStories
+## composeStories
 
-  `composeStories` will process the component's stories you specify, compose each of them with the necessary [annotations](#annotations), and return an object containing the composed stories.
+`composeStories` will process the component's stories you specify, compose each of them with the necessary [annotations](#annotations), and return an object containing the composed stories.
 
   <If notRenderer="svelte">
+
     By default, the composed story will render the component with the [args](../../writing-stories/args.mdx) that are defined in the story. You can also pass any props to the component in your test and those props will override the values passed in the story's args.
+
   </If>
 
   <If renderer="svelte">
+
     By default, the composed story will render the component with the [args](../../writing-stories/args.mdx) that are defined in the story. If you need to override props for an individual story, you can use the [`composeStory`](#composestory) function to do so.
+
   </If>
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-start */}
 
-  <CodeSnippets path="portable-stories-vitest-compose-stories.md" />
+<CodeSnippets path="portable-stories-vitest-compose-stories.md" />
 
-  {/* prettier-ignore-end */}
+{/* prettier-ignore-end */}
 
-  ### Type
+### Type
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-start */}
 
-  ```ts
-  (
-    csfExports: CSF file exports,
-    projectAnnotations?: ProjectAnnotations
-  ) => Record<string, ComposedStoryFn>
-  ```
+```ts
+(
+  csfExports: CSF file exports,
+  projectAnnotations?: ProjectAnnotations
+) => Record<string, ComposedStoryFn>
+```
 
-  {/* prettier-ignore-end */}
+{/* prettier-ignore-end */}
 
-  ### Parameters
+### Parameters
 
-  #### `csfExports`
+#### `csfExports`
 
-  (**Required**)
+(**Required**)
 
-  Type: CSF file exports
+Type: CSF file exports
 
-  Specifies which component's stories you want to compose. Pass the **full set of exports** from the CSF file (not the default export!). E.g. `import * as stories from './Button.stories'`
+Specifies which component's stories you want to compose. Pass the **full set of exports** from the CSF file (not the default export!). E.g. `import * as stories from './Button.stories'`
 
-  #### `projectAnnotations`
+#### `projectAnnotations`
 
-  Type: `ProjectAnnotation | ProjectAnnotation[]`
+Type: `ProjectAnnotation | ProjectAnnotation[]`
 
-  Specifies the project annotations to be applied to the composed stories.
+Specifies the project annotations to be applied to the composed stories.
 
-  This parameter is provided for convenience. You should likely use [`setProjectAnnotations`](#setprojectannotations) instead. Details about the `ProjectAnnotation` type can be found in that function's [`projectAnnotations`](#projectannotations-2) parameter.
+This parameter is provided for convenience. You should likely use [`setProjectAnnotations`](#setprojectannotations) instead. Details about the `ProjectAnnotation` type can be found in that function's [`projectAnnotations`](#projectannotations-2) parameter.
 
-  This parameter can be used to [override](#overriding-globals) the project annotations applied via `setProjectAnnotations`.
+This parameter can be used to [override](#overriding-globals) the project annotations applied via `setProjectAnnotations`.
 
-  ### Return
+### Return
 
-  Type: `Record<string, ComposedStoryFn>`
+Type: `Record<string, ComposedStoryFn>`
 
-  An object where the keys are the names of the stories and the values are the composed stories.
+An object where the keys are the names of the stories and the values are the composed stories.
 
-  Additionally, the composed story will have the following properties:
+Additionally, the composed story will have the following properties:
 
-  | Property   | Type                                      | Description                                                                           |
-  | ---------- | ----------------------------------------- | ------------------------------------------------------------------------------------- |
-  | args       | `Record<string, any>`                     | The story's [args](../../writing-stories/args.mdx)                                    |
-  | argTypes   | `ArgType`                                 | The story's [argTypes](../arg-types.mdx)                                              |
-  | id         | `string`                                  | The story's id                                                                        |
-  | parameters | `Record<string, any>`                     | The story's [parameters](../parameters.mdx)                                           |
-  | play       | `(context) => Promise<void> \| undefined` | Executes the play function of a given story                                |
-  | run        | `(context) => Promise<void> \| undefined` | [Mounts and executes the play function](#3-run) of a given story                     |
-  | storyName  | `string`                                  | The story's name                                                                      |
-  | tags       | `string[]`                                | The story's [tags](../../writing-stories/tags.mdx)                                    |
+| Property   | Type                                      | Description                                                      |
+| ---------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| args       | `Record<string, any>`                     | The story's [args](../../writing-stories/args.mdx)               |
+| argTypes   | `ArgType`                                 | The story's [argTypes](../arg-types.mdx)                         |
+| id         | `string`                                  | The story's id                                                   |
+| parameters | `Record<string, any>`                     | The story's [parameters](../parameters.mdx)                      |
+| play       | `(context) => Promise<void> \| undefined` | Executes the play function of a given story                      |
+| run        | `(context) => Promise<void> \| undefined` | [Mounts and executes the play function](#3-run) of a given story |
+| storyName  | `string`                                  | The story's name                                                 |
+| tags       | `string[]`                                | The story's [tags](../../writing-stories/tags.mdx)               |
 
-  ## composeStory
+## composeStory
 
-  You can use `composeStory` if you wish to compose a single story for a component.
+You can use `composeStory` if you wish to compose a single story for a component.
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-start */}
 
-  <CodeSnippets path="portable-stories-vitest-compose-story.md" />
+<CodeSnippets path="portable-stories-vitest-compose-story.md" />
 
-  {/* prettier-ignore-end */}
+{/* prettier-ignore-end */}
 
-  ### Type
+### Type
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-start */}
 
-  ```ts
-  (
-    story: Story export,
-    componentAnnotations: Meta,
-    projectAnnotations?: ProjectAnnotations,
-    exportsName?: string
-  ) => ComposedStoryFn
-  ```
+```ts
+(
+  story: Story export,
+  componentAnnotations: Meta,
+  projectAnnotations?: ProjectAnnotations,
+  exportsName?: string
+) => ComposedStoryFn
+```
 
-  {/* prettier-ignore-end */}
+{/* prettier-ignore-end */}
 
-  ### Parameters
+### Parameters
 
-  #### `story`
+#### `story`
 
-  (**Required**)
+(**Required**)
 
-  Type: `Story export`
+Type: `Story export`
 
-  Specifies which story you want to compose.
+Specifies which story you want to compose.
 
-  #### `componentAnnotations`
+#### `componentAnnotations`
 
-  (**Required**)
+(**Required**)
 
-  Type: `Meta`
+Type: `Meta`
 
-  The default export from the stories file containing the [`story`](#story).
+The default export from the stories file containing the [`story`](#story).
 
-  #### `projectAnnotations`
+#### `projectAnnotations`
 
-  Type: `ProjectAnnotation | ProjectAnnotation[]`
+Type: `ProjectAnnotation | ProjectAnnotation[]`
 
-  Specifies the project annotations to be applied to the composed story.
+Specifies the project annotations to be applied to the composed story.
 
-  This parameter is provided for convenience. You should likely use [`setProjectAnnotations`](#setprojectannotations) instead. Details about the `ProjectAnnotation` type can be found in that function's [`projectAnnotations`](#projectannotations-2) parameter.
+This parameter is provided for convenience. You should likely use [`setProjectAnnotations`](#setprojectannotations) instead. Details about the `ProjectAnnotation` type can be found in that function's [`projectAnnotations`](#projectannotations-2) parameter.
 
-  This parameter can be used to [override](#overriding-globals) the project annotations applied via `setProjectAnnotations`.
+This parameter can be used to [override](#overriding-globals) the project annotations applied via `setProjectAnnotations`.
 
-  #### `exportsName`
+#### `exportsName`
 
-  Type: `string`
+Type: `string`
 
-  You probably don't need this. Because `composeStory` accepts a single story, it does not have access to the name of that story's export in the file (like `composeStories` does). If you must ensure unique story names in your tests and you cannot use `composeStories`, you can pass the name of the story's export here.
+You probably don't need this. Because `composeStory` accepts a single story, it does not have access to the name of that story's export in the file (like `composeStories` does). If you must ensure unique story names in your tests and you cannot use `composeStories`, you can pass the name of the story's export here.
 
-  ### Return
+### Return
 
-  Type: `ComposedStoryFn`
+Type: `ComposedStoryFn`
 
-  A single [composed story](#return).
+A single [composed story](#return).
 
-  ## setProjectAnnotations
+## setProjectAnnotations
 
-  This API should be called once, before the tests run, typically in a [setup file](https://vitest.dev/config/#setupfiles). This will make sure that whenever `composeStories` or `composeStory` are called, the project annotations are taken into account as well.
+This API should be called once, before the tests run, typically in a [setup file](https://vitest.dev/config/#setupfiles). This will make sure that whenever `composeStories` or `composeStory` are called, the project annotations are taken into account as well.
 
-  These are the configurations needed in the setup file:
-  - preview annotations: those defined in `.storybook/preview.ts`
-  - addon annotations (optional): those exported by addons
-  - beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
+These are the configurations needed in the setup file:
 
-  {/* prettier-ignore-start */}
+- preview annotations: those defined in `.storybook/preview.ts`
+- addon annotations (optional): those exported by addons
+- beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
 
-  <CodeSnippets path="portable-stories-vitest-set-project-annotations.md" />
+{/* prettier-ignore-start */}
 
-  {/* prettier-ignore-end */}
+<CodeSnippets path="portable-stories-vitest-set-project-annotations.md" />
 
-  {/* TODO: Create issue for interest in non-Testing Library render option, with recipe, and mention here (Jest, too) */}
+{/* prettier-ignore-end */}
 
-  Sometimes a story can require an addon's [decorator](../../writing-stories/decorators.mdx) or [loader](../../writing-stories/loaders.mdx) to render properly. For example, an addon can apply a decorator that wraps your story in the necessary router context. In this case, you must include that addon's `preview` export in the project annotations set. See `addonAnnotations` in the example above.
+{/* TODO: Create issue for interest in non-Testing Library render option, with recipe, and mention here (Jest, too) */}
 
-  Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.js|ts` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
+Sometimes a story can require an addon's [decorator](../../writing-stories/decorators.mdx) or [loader](../../writing-stories/loaders.mdx) to render properly. For example, an addon can apply a decorator that wraps your story in the necessary router context. In this case, you must include that addon's `preview` export in the project annotations set. See `addonAnnotations` in the example above.
 
-  If you need to configure Testing Library's `render` or use a different render function, please let us know in [this discussion](https://github.com/storybookjs/storybook/discussions/28532) so we can learn more about your needs.
+Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.js|ts` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
 
-  ### Type
+If you need to configure Testing Library's `render` or use a different render function, please let us know in [this discussion](https://github.com/storybookjs/storybook/discussions/28532) so we can learn more about your needs.
 
-  ```ts
-  (projectAnnotations: ProjectAnnotation | ProjectAnnotation[]) => ProjectAnnotation
-  ```
+### Type
 
-  ### Parameters
+```ts
+(projectAnnotations: ProjectAnnotation | ProjectAnnotation[]) => ProjectAnnotation;
+```
 
-  #### `projectAnnotations`
+### Parameters
 
-  (**Required**)
+#### `projectAnnotations`
 
-  Type: `ProjectAnnotation | ProjectAnnotation[]`
+(**Required**)
 
-  A set of project [annotations](#annotations) (those defined in `.storybook/preview.js|ts`) or an array of sets of project annotations, which will be applied to all composed stories.
+Type: `ProjectAnnotation | ProjectAnnotation[]`
 
-  ## Annotations
+A set of project [annotations](#annotations) (those defined in `.storybook/preview.js|ts`) or an array of sets of project annotations, which will be applied to all composed stories.
 
-  Annotations are the metadata applied to a story, like [args](../../writing-stories/args.mdx), [decorators](../../writing-stories/decorators.mdx), [loaders](../../writing-stories/loaders.mdx), and [play functions](../../writing-stories/play-function.mdx). They can be defined for a specific story, all stories for a component, or all stories in the project.
+## Annotations
 
-  ## Story pipeline
+Annotations are the metadata applied to a story, like [args](../../writing-stories/args.mdx), [decorators](../../writing-stories/decorators.mdx), [loaders](../../writing-stories/loaders.mdx), and [play functions](../../writing-stories/play-function.mdx). They can be defined for a specific story, all stories for a component, or all stories in the project.
 
-  To preview your stories in Storybook, Storybook runs a story pipeline, which includes applying project annotations, loading data, rendering the story, and playing interactions. This is a simplified version of the pipeline:
+## Story pipeline
 
-  ![A flow diagram of the story pipeline. First, set project annotations. Collect annotations (decorators, args, etc) which are exported by addons and the preview file. Second, compose story. Create renderable elements based on the stories passed onto the API. Third, run. Mount the component and execute all the story lifecycle hooks, including the play function.](../../_assets/api/story-pipeline.png)
+To preview your stories in Storybook, Storybook runs a story pipeline, which includes applying project annotations, loading data, rendering the story, and playing interactions. This is a simplified version of the pipeline:
 
-  When you want to reuse a story in a different environment, however, it's crucial to understand that all these steps make a story. The portable stories API provides you with the mechanism to recreate that story pipeline in your external environment:
+![A flow diagram of the story pipeline. First, set project annotations. Collect annotations (decorators, args, etc) which are exported by addons and the preview file. Second, compose story. Create renderable elements based on the stories passed onto the API. Third, run. Mount the component and execute all the story lifecycle hooks, including the play function.](../../_assets/api/story-pipeline.png)
 
-  ### 1. Apply project-level annotations
+When you want to reuse a story in a different environment, however, it's crucial to understand that all these steps make a story. The portable stories API provides you with the mechanism to recreate that story pipeline in your external environment:
 
-  [Annotations](#annotations) come from the story itself, that story's component, and the project. The project-level annotations are those defined in your `.storybook/preview.js` file and by addons you're using. In portable stories, these annotations are not applied automatically — you must apply them yourself.
+### 1. Apply project-level annotations
 
-  👉 For this, you use the [`setProjectAnnotations`](#setprojectannotations) API.
+[Annotations](#annotations) come from the story itself, that story's component, and the project. The project-level annotations are those defined in your `.storybook/preview.js` file and by addons you're using. In portable stories, these annotations are not applied automatically — you must apply them yourself.
 
-  ### 2. Compose
+👉 For this, you use the [`setProjectAnnotations`](#setprojectannotations) API.
 
-  The story is prepared by running [`composeStories`](#composestories) or [`composeStory`](#composestory). The outcome is a renderable component that represents the render function of the story.
+### 2. Compose
 
-  ### 3. Run
+The story is prepared by running [`composeStories`](#composestories) or [`composeStory`](#composestory). The outcome is a renderable component that represents the render function of the story.
 
-  Finally, stories can prepare data they need (e.g. setting up some mocks or fetching data) before rendering by defining [loaders](../../writing-stories/loaders.mdx), [beforeEach](../../writing-tests/interaction-testing.mdx#run-code-before-each-story) or by having all the story code in the play function when using the [mount](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered). In portable stories, all of these steps will be executed when you call the `run` method of the composed story.
+### 3. Run
 
-  👉 For this, you use the [`composeStories`](#composestories) or [`composeStory`](#composestory) API. The composed story will return a `run` method to be called.
+Finally, stories can prepare data they need (e.g. setting up some mocks or fetching data) before rendering by defining [loaders](../../writing-stories/loaders.mdx), [beforeEach](../../writing-tests/interaction-testing.mdx#run-code-before-each-story) or by having all the story code in the play function when using the [mount](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered). In portable stories, all of these steps will be executed when you call the `run` method of the composed story.
 
-  {/* prettier-ignore-start */}
+👉 For this, you use the [`composeStories`](#composestories) or [`composeStory`](#composestory) API. The composed story will return a `run` method to be called.
 
-  <CodeSnippets path="portable-stories-vitest-with-play-function.md" />
+{/* prettier-ignore-start */}
 
-  {/* prettier-ignore-end */}
+<CodeSnippets path="portable-stories-vitest-with-play-function.md" />
+
+{/* prettier-ignore-end */}
 
   <Callout variant="info">
+
     If your play function contains assertions (e.g. `expect` calls), your test will fail when those assertions fail.
+
   </Callout>
 
-  ## Overriding globals
+## Overriding globals
 
-  If your stories behave differently based on [globals](../../essentials/toolbars-and-globals.mdx#globals) (e.g. rendering text in English or Spanish), you can define those global values in portable stories by overriding project annotations when composing a story:
+If your stories behave differently based on [globals](../../essentials/toolbars-and-globals.mdx#globals) (e.g. rendering text in English or Spanish), you can define those global values in portable stories by overriding project annotations when composing a story:
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-start */}
 
-  <CodeSnippets path="portable-stories-vitest-override-globals.md" />
+<CodeSnippets path="portable-stories-vitest-override-globals.md" />
 
-  {/* prettier-ignore-end */}
+{/* prettier-ignore-end */}
 
-  {/* End supported renderers */}
+{/* End supported renderers */}
+
 </If>

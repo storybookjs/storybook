@@ -13,6 +13,7 @@ Storybook for React & Webpack is a [framework](../../contribute/framework.mdx) t
 **We recommend using [`@storybook/react-vite`](./react-vite.mdx)** for most React projects. The Vite-based framework is faster, more modern, and offers better support for testing features.
 
 Use this Webpack-based framework (`@storybook/react-webpack5`) only if you need specific Webpack features not available in Vite.
+
 </Callout>
 
 ## Install
@@ -25,15 +26,20 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'React',
-  range: '≥ 16.8',
-  icon: '/images/logos/renderers/logo-react.svg'
-}, {
-  name: 'Webpack',
-  range: '5',
-  icon: '/images/logos/builders/webpack.svg'
-}]} />
+<GetStartedVersions
+  versions={[
+    {
+      name: 'React',
+      range: '≥ 16.8',
+      icon: '/images/logos/renderers/logo-react.svg',
+    },
+    {
+      name: 'Webpack',
+      range: '5',
+      icon: '/images/logos/builders/webpack.svg',
+    },
+  ]}
+/>
 
 ## Run Storybook
 
@@ -74,7 +80,9 @@ First, install the framework:
 Next, install and register your appropriate compiler addon, depending on whether you're using SWC (recommended) or Babel:
 
 <Callout variant="info">
-  If your project is using [Create React App](#create-react-app-cra), you can skip this step.
+
+If your project is using [Create React App](#create-react-app-cra), you can skip this step.
+
 </Callout>
 
 {/* prettier-ignore-start */}

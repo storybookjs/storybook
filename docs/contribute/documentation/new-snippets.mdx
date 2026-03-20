@@ -14,11 +14,9 @@ Storybook maintains code snippets for a [variety of frameworks](../../configure/
 
 We welcome community contributions to the code snippets. Here's a matrix of the frameworks for which we have snippets. Help us add snippets for your favorite framework.
 
-
-| React  | Vue 3 | Angular   | Web Components | Svelte | Solid  | Ember | HTML | Preact | Qwik |
-| ------ | ----- | --------- | ---------------|--------|--------|-------|------| -------|------|
-| ✅     | ✅    | ✅        | ✅             | ✅     | ✅     | ❌    | ❌   | ❌     | ❌  |
-
+| React | Vue 3 | Angular | Web Components | Svelte | Solid | Ember | HTML | Preact | Qwik |
+| ----- | ----- | ------- | -------------- | ------ | ----- | ----- | ---- | ------ | ---- |
+| ✅    | ✅    | ✅      | ✅             | ✅     | ✅    | ❌    | ❌   | ❌     | ❌   |
 
 ## Snippet syntax
 
@@ -63,7 +61,6 @@ export const Pair: Story = {
 ````
 
 {/* prettier-ignore-end */}
-
 
 ## Common attributes for code snippets
 
@@ -123,7 +120,6 @@ Alternatively, if you're documenting examples that apply to multiple frameworks,
 
 Use the `packageManager` attribute to configure the package manager used in the example from the following options: `npm`, `yarn`, or `pnpm`.
 
-
 {/* prettier-ignore-start */}
 
 ````md title="docs/_snippets/storybook-run-dev.md"
@@ -136,7 +132,7 @@ Use the `packageManager` attribute to configure the package manager used in the 
 ### Working with multiple snippets
 
 Use the `tabTitle` attribute to indicate the tab title in which the code snippet will be displayed. This attribute should only be used when multiple examples are in a single code snippet file.
- 
+
 {/* prettier-ignore-start */}
 
 ````md title="docs/_snippets/component-decorator.md"
@@ -175,7 +171,6 @@ Browse the documentation and look for the code snippets you want to contribute. 
 ```
 
 {/* prettier-ignore-end */}
-
 
 Open the file inside the `docs/_snippets` directory and adjust the content to match the code snippet you're willing to contribute. For example:
 
@@ -279,7 +274,6 @@ Go through the documentation and check your work.
 
 Once you have verified that your changes are working as expected, you're ready to create a "Pull Request". This will let the Storybook maintainers know you have some changes to propose. At this point, we can give you feedback and request changes. To help with the review process, we encourage you to add a clear title and description of your work.
 
-
 ## Troubleshooting
 
 ### Code snippets not displaying
@@ -288,8 +282,8 @@ If you're documenting an example that includes the `packageManager` attribute co
 
 ## Learn more about contributing to Storybook
 
-* [RFC process](../RFC.mdx) for authoring feature requests
-* [Code](../code.mdx) for features and bug fixes
-* [Frameworks](../framework.mdx) to get started with a new framework
-* [Documentation](./documentation-updates.mdx) for documentation improvements, typos, and clarifications
-* Examples for new snippets
+- [RFC process](../RFC.mdx) for authoring feature requests
+- [Code](../code.mdx) for features and bug fixes
+- [Frameworks](../framework.mdx) to get started with a new framework
+- [Documentation](./documentation-updates.mdx) for documentation improvements, typos, and clarifications
+- Examples for new snippets

@@ -41,87 +41,87 @@ Because a framework is a node package, it must contain a `package.json` file. He
 <details>
   <summary><code>package.json</code> template</summary>
 
-  ```json title="package.json"
-  {
-    "name": "<your-framework-name>",
-    "version": "1.0.0",
-    "description": "Storybook for <meta-framework-name> or <renderer> & <builder>",
-    "keywords": [
-      "Storybook",
-      "<meta-framework-name>",
-      "<renderer>",
-      "<builder>",
-      "<anything>",
-      "<else>",
-      "<relevant>"
-    ],
-    "homepage": "<your package's homepage>",
-    "bugs": {
-      "url": "https://github.com/<your-org>/<your-repo>/issues"
+```json title="package.json"
+{
+  "name": "<your-framework-name>",
+  "version": "1.0.0",
+  "description": "Storybook for <meta-framework-name> or <renderer> & <builder>",
+  "keywords": [
+    "Storybook",
+    "<meta-framework-name>",
+    "<renderer>",
+    "<builder>",
+    "<anything>",
+    "<else>",
+    "<relevant>"
+  ],
+  "homepage": "<your package's homepage>",
+  "bugs": {
+    "url": "https://github.com/<your-org>/<your-repo>/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/<your-org>/<your-repo>.git",
+    "directory": "<path/to/your/framework>"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
     },
-    "repository": {
-      "type": "git",
-      "url": "https://github.com/<your-org>/<your-repo>.git",
-      "directory": "<path/to/your/framework>"
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "require": "./dist/preset.js",
+      "import": "./dist/preset.mjs"
     },
-    "license": "MIT",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "require": "./dist/index.js",
-        "import": "./dist/index.mjs"
-      },
-      "./preset": {
-        "types": "./dist/preset.d.ts",
-        "require": "./dist/preset.js",
-        "import": "./dist/preset.mjs"
-      },
-      "./preview.js": {
-        "types": "./dist/preview.d.ts",
-        "require": "./dist/preview.js",
-        "import": "./dist/preview.mjs"
-      },
-      "./package.json": "./package.json"
+    "./preview.js": {
+      "types": "./dist/preview.d.ts",
+      "require": "./dist/preview.js",
+      "import": "./dist/preview.mjs"
     },
-    "main": "dist/index.js",
-    "module": "dist/index.mjs",
-    "types": "dist/index.d.ts",
-    "files": ["dist/**/*", "types/**/*", "README.md", "*.js", "*.d.ts"],
-    "scripts": {
-      "check": "tsc --noEmit",
-      "test": "..."
-    },
-    "dependencies": {
-      "storybook": "^9.0.0",
-      "@storybook/<builder>": "^9.0.0",
-      "@storybook/<renderer>": "^9.0.0"
-    },
-    "devDependencies": {
-      "typescript": "x.x.x",
-      "<meta-framework>": "^x.x.x",
-      "<builder>": "^x.x.x"
-    },
-    "peerDependencies": {
-      "<meta-framework>": "^x.x.x || ^x.x.x",
-      "<renderer>": "^x.x.x || ^x.x.x",
-      "<builder>": "^x.x.x"
-    },
-    "engines": {
-      "node": ">=20.0.0"
-    },
-    "publishConfig": {
-      "access": "public"
-    }
+    "./package.json": "./package.json"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": ["dist/**/*", "types/**/*", "README.md", "*.js", "*.d.ts"],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "..."
+  },
+  "dependencies": {
+    "storybook": "^9.0.0",
+    "@storybook/<builder>": "^9.0.0",
+    "@storybook/<renderer>": "^9.0.0"
+  },
+  "devDependencies": {
+    "typescript": "x.x.x",
+    "<meta-framework>": "^x.x.x",
+    "<builder>": "^x.x.x"
+  },
+  "peerDependencies": {
+    "<meta-framework>": "^x.x.x || ^x.x.x",
+    "<renderer>": "^x.x.x || ^x.x.x",
+    "<builder>": "^x.x.x"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
-  ```
+}
+```
 
-  A few notes on some of those properties:
+A few notes on some of those properties:
 
-  * `exports`: The root, `./preset`, and `package.json` exports are required. If your framework has a `preview.js`, then that is required as well.
-  * `types`: We strongly encourage you to author your framework in TypeScript and distribute the types.
-  * `dependencies` and `devDependencies`: These are just examples. Yours may look quite different.
-  * `peerDependencies`: If your framework provides support for multiple versions of the libraries you’re targeting, be sure that is represented here.
-</details>
+- `exports`: The root, `./preset`, and `package.json` exports are required. If your framework has a `preview.js`, then that is required as well.
+- `types`: We strongly encourage you to author your framework in TypeScript and distribute the types.
+- `dependencies` and `devDependencies`: These are just examples. Yours may look quite different.
+- `peerDependencies`: If your framework provides support for multiple versions of the libraries you’re targeting, be sure that is represented here.
+  </details>
 
 #### `preset.js` ([example](https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/src/preset.ts))
 
@@ -145,8 +145,8 @@ Once it's fully tested and released, please let us know about your framework by 
 
 **Learn more about contributing to Storybook**
 
-* [RFC process](./RFC.mdx) for authoring feature requests
-* [Code](./code.mdx) for features and bug fixes
-* Frameworks to get started with a new framework
-* [Documentation](./documentation/documentation-updates.mdx) for documentation improvements, typos, and clarifications
-* [Examples](./documentation/new-snippets.mdx) for new snippets
+- [RFC process](./RFC.mdx) for authoring feature requests
+- [Code](./code.mdx) for features and bug fixes
+- Frameworks to get started with a new framework
+- [Documentation](./documentation/documentation-updates.mdx) for documentation improvements, typos, and clarifications
+- [Examples](./documentation/new-snippets.mdx) for new snippets

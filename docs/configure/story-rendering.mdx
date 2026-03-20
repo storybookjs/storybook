@@ -12,19 +12,22 @@ In Storybook, your stories render in a particular “preview” iframe (also cal
 Code executed in the preview file (`.storybook/preview.js|ts`) runs for every story in your Storybook. This is useful for setting up global styles, initializing libraries, or anything else required to render your components.
 
 <If notRenderer={['angular', 'vue']}>
-  Here's an example of how you might use the preview file to initialize a library that must run before your components render:
+
+Here's an example of how you might use the preview file to initialize a library that must run before your components render:
 
   <CodeSnippets path="initialize-library-in-preview.md" />
 </If>
 
 <If renderer={['angular', 'vue']}>
-  For example, with Vue, you can extend Storybook's application and register your library (e.g., [Fontawesome](https://github.com/FortAwesome/vue-fontawesome)). Or with Angular, add the package ([localize](https://angular.io/api/localize)) into your `polyfills.ts` and import it:
 
-  {/* prettier-ignore-start */}
+For example, with Vue, you can extend Storybook's application and register your library (e.g., [Fontawesome](https://github.com/FortAwesome/vue-fontawesome)). Or with Angular, add the package ([localize](https://angular.io/api/localize)) into your `polyfills.ts` and import it:
 
-  <CodeSnippets path="storybook-preview-with-library-decorator.md" />
+{/* prettier-ignore-start */}
 
-  {/* prettier-ignore-end */}
+<CodeSnippets path="storybook-preview-with-library-decorator.md" />
+
+{/* prettier-ignore-end */}
+
 </If>
 
 ## Adding to \<head>
@@ -38,7 +41,9 @@ If you need to add extra elements to the `head` of the preview iframe, for insta
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  Storybook will inject these tags into the *preview iframe* where your components render, not the Storybook application UI.
+
+Storybook will inject these tags into the _preview iframe_ where your components render, not the Storybook application UI.
+
 </Callout>
 
 However, it's also possible to modify the preview head HTML programmatically using a preset defined in the `main.js` file. Read the [presets documentation](../addons/writing-presets.mdx#ui-configuration) for more information.
@@ -64,7 +69,9 @@ If using relative sizing in your project (like `rem` or `em`), you may update th
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  Storybook will inject these tags into the *preview iframe* where your components render, not the Storybook application UI.
+
+Storybook will inject these tags into the _preview iframe_ where your components render, not the Storybook application UI.
+
 </Callout>
 
 Just like how you have the ability to customize the preview `head` HTML tag, you can also follow the same steps to customize the preview `body` with a preset. To obtain more information on how to do this, refer to the [presets documentation](../addons/writing-presets.mdx#ui-configuration).

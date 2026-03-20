@@ -65,20 +65,19 @@ If you are already running `vitest` as part of your CI then your stories should 
 If you’re not yet running Vitest in CI, you should set that up. First by adding a new script to your `package.json`:
 
 ```json title="package.json"
-{ 
+{
   "scripts": {
     "test-storybook": "vitest --project=storybook"
   }
-}  
+}
 ```
 
 Note that this assumes you have a Vitest project called “storybook” for your stories, which is the default configuration when you install Storybook Test. If you’ve renamed it, adjust the script accordingly.
 
-Next, add a new CI workflow. 
+Next, add a new CI workflow.
 
 <details>
-<summary>If you use Github Actions that would look like:</summary>
-    
+  <summary>If you use Github Actions that would look like:</summary>
   ```yaml title=".github/workflows/test-storybook.yml"
   name: Storybook Tests
   
@@ -161,9 +160,9 @@ Storybook Test supports a variety of testing types to help you validate your wor
 
 ### Render tests
 
-The most important tool for testing your components in Storybook is stories that render your components in various states. 
+The most important tool for testing your components in Storybook is stories that render your components in various states.
 
-However, you might not be aware that a basic story is also a [smoke test](https://en.wikipedia.org/wiki/Smoke_testing_(software)), which we call a **render test**. The test passes when the story renders successfully and fails when it errors.
+However, you might not be aware that a basic story is also a [smoke test](<https://en.wikipedia.org/wiki/Smoke_testing_(software)>), which we call a **render test**. The test passes when the story renders successfully and fails when it errors.
 
 ![Storybook app showing a failing render test](../_assets/writing-tests/interactions-test-failure-render.png)
 
@@ -175,7 +174,7 @@ Render tests are a very basic kind of interaction test. To test stateful compone
 
 <CodeSnippets path="interaction-test-simple.md" />
 
-But `play` functions can also be used for setting up state, creating spies, mocking out the network, simulating user interactions with your components, asserting output, and more. They are the meat and potatoes of testing and are the foundation for the rest of your testing journey in Storybook. 
+But `play` functions can also be used for setting up state, creating spies, mocking out the network, simulating user interactions with your components, asserting output, and more. They are the meat and potatoes of testing and are the foundation for the rest of your testing journey in Storybook.
 
 Here’s a more complex example, which includes [spying and mocking](./interaction-testing.mdx#spying-on-functions-with-fn) via the `fn` utility.
 
@@ -227,13 +226,13 @@ If you prefer, you can reuse your Storybook stories in a traditional testing env
 
 **More testing resources**
 
-* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
-* [Interaction testing](./interaction-testing.mdx) for user behavior simulation
-* [Accessibility testing](./accessibility-testing.mdx) for accessibility
-* [Visual testing](./visual-testing.mdx) for appearance
-* [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
-* [Test coverage](./test-coverage.mdx) for measuring code coverage
-* [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
-* [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
-* [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-* [Test runner](./integrations/test-runner.mdx) to automate test execution
+- [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
+- [Interaction testing](./interaction-testing.mdx) for user behavior simulation
+- [Accessibility testing](./accessibility-testing.mdx) for accessibility
+- [Visual testing](./visual-testing.mdx) for appearance
+- [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
+- [Test coverage](./test-coverage.mdx) for measuring code coverage
+- [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
+- [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+- [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
+- [Test runner](./integrations/test-runner.mdx) to automate test execution

@@ -20,7 +20,7 @@ export const Basic: Story = {
     const canvas = await mount(
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      <Page {...args} params={{ id: String(note.id) }} />,
+      <Page {...args} params={{ id: String(note.id) }} />
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -48,7 +48,7 @@ export const Basic = {
     const canvas = await mount(
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      <Page {...args} params={{ id: String(note.id) }} />,
+      <Page {...args} params={{ id: String(note.id) }} />
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -82,7 +82,7 @@ export const Basic: Story = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } },
+      { props: { ...args, params: { id: String(note.id) } } }
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -113,7 +113,7 @@ export const Basic = meta.story({
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } },
+      { props: { ...args, params: { id: String(note.id) } } }
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -148,7 +148,7 @@ export const Basic: Story = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } },
+      { props: { ...args, params: { id: String(note.id) } } }
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -177,7 +177,7 @@ export const Basic = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } },
+      { props: { ...args, params: { id: String(note.id) } } }
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -211,7 +211,7 @@ export const Basic: Story = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } },
+      { props: { ...args, params: { id: String(note.id) } } }
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -240,7 +240,7 @@ export const Basic = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } },
+      { props: { ...args, params: { id: String(note.id) } } }
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -270,7 +270,7 @@ export const Basic = meta.story({
     const canvas = await mount(
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      <Page {...args} params={{ id: String(note.id) }} />,
+      <Page {...args} params={{ id: String(note.id) }} />
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -303,7 +303,7 @@ export const Basic = meta.story({
     const canvas = await mount(
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      <Page {...args} params={{ id: String(note.id) }} />,
+      <Page {...args} params={{ id: String(note.id) }} />
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -334,7 +334,7 @@ export const Basic = meta.story({
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } },
+      { props: { ...args, params: { id: String(note.id) } } }
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -367,7 +367,7 @@ export const Basic = meta.story({
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } },
+      { props: { ...args, params: { id: String(note.id) } } }
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));

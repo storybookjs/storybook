@@ -8,7 +8,9 @@ sidebar:
 We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 10.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 9.x to 10.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 9.0](../../../release-9-1/docs/addons/addon-migration-guide.mdx).
 
 <Callout variant="info">
-  We also have a general [Storybook migration guide](../releases/migration-guide.mdx) that covers updates to your Storybook instance rather than your addon code.
+
+We also have a general [Storybook migration guide](../releases/migration-guide.mdx) that covers updates to your Storybook instance rather than your addon code.
+
 </Callout>
 
 ## Dependency updates
@@ -47,6 +49,7 @@ If your addon supports multiple major versions of Storybook, you can specify a w
 ```
 
 However, we recommend releasing a new major version of your addon alongside new major versions of Storybook. This practice:
+
 1. Makes it easier to maintain your code
 2. Allows you to take advantage of new features and improvements
 3. Provides a clearer upgrade path for your users
@@ -60,11 +63,12 @@ Here are the changes in version 10.0 that impact addon development.
 Storybook 10 requires all addons to be built as ESM-only. This change simplifies the build process and reduces maintenance overhead. You'll need to make many changes to `tsup.config.ts`, so it can be easier to copy the reference file in the [`addon-kit` repository](https://github.com/storybookjs/addon-kit/blob/main/tsup.config.ts).
 
 This update brings the following changes:
-* The Node target moves from Node 20.0 to Node 20.19
-* You no longer need to build CJS files
-* You no longer need to pass `globalManagerPackages` and `globalPreviewPackages`
-* The `bundler` config in `package.json` no longer needs to be manually typed
-* We recommend you stop using `exportEntries` and switch exported entries to `previewEntries` and `managerEntries` instead based on where they are consumed by your users
+
+- The Node target moves from Node 20.0 to Node 20.19
+- You no longer need to build CJS files
+- You no longer need to pass `globalManagerPackages` and `globalPreviewPackages`
+- The `bundler` config in `package.json` no longer needs to be manually typed
+- We recommend you stop using `exportEntries` and switch exported entries to `previewEntries` and `managerEntries` instead based on where they are consumed by your users
 
 ```diff title="tsup.config.ts"
 - import { readFile } from "node:fs/promises";
@@ -259,21 +263,20 @@ Finally, change the `preset.js` file at the top-level of your addon to be ESM. T
 
 Because addons are now ESM-only, you must change how you load your own addon in your development Storybook instance. Imports and exports must now follow ESM syntax, and relative paths must use `import.meta.resolve`.
 
-
 Remove `.storybook/local-preset.cjs` and create `.storybook/local-preset.ts` with the following content:
 
 ```ts title=".storybook/local-preset.ts"
-import { fileURLToPath } from "node:url";
+import { fileURLToPath } from 'node:url';
 
 export function previewAnnotations(entry = []) {
-  return [...entry, fileURLToPath(import.meta.resolve("../dist/preview.js"))];
+  return [...entry, fileURLToPath(import.meta.resolve('../dist/preview.js'))];
 }
 
 export function managerEntries(entry = []) {
-  return [...entry, fileURLToPath(import.meta.resolve("../dist/manager.js"))];
+  return [...entry, fileURLToPath(import.meta.resolve('../dist/manager.js'))];
 }
 
-export * from "../dist/preset.js";
+export * from '../dist/preset.js';
 ```
 
 Next, update your `main.ts` to reference the new preset file:
@@ -288,6 +291,7 @@ Next, update your `main.ts` to reference the new preset file:
 The following changes are not strictly required yet, but we recommend making them to improve your users' experience.
 
 ### CSF Factories support
+
 To support CSF Factories annotations in your addon, you will need to update your `src/index.ts` file to use the new `definePreviewAddon`. This feature will be part of [CSF Next](../api/csf/csf-next.mdx). This change is highly recommended, as it will help your own users reap the benefits of CSF Factories.
 
 With CSF Factories, users can chain their preview configuration and benefit from better typing and more flexibility. Addons must export annotations to be compatible with this new syntax. CSF Factories will be the default way to write stories in Storybook 11.

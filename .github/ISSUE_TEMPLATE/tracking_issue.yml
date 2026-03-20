@@ -5,7 +5,7 @@ type: 'Tracking'
 body:
   - type: textarea
     attributes:
-      label: Problem statement
+      label: Problem statement 
       description: A brief description of the problem we're trying to solve.
     validations:
       required: true
@@ -25,22 +25,23 @@ body:
         **Complete by: `@date`**
         - [ ] task1
         - [ ] task2
-
+        
         ### M2: milestone 2
         **Owner: `@mention`**
         **Complete by: `@date`**
         - [ ] task1
         - [ ] task2
-
+        
         ### Milestone n: be sure to always scope these in
         **Owner: `@mention`**
         **Complete by: `@date`**
         - [ ]  Metric collection
         - [ ]  Documentation
         - [ ]  Blog posts
-
+        
         **========= Everything below this line is strictly nice-to-have =========**
-
+        
         ### Related issues that may be resolved by this project
         - [ ] issue1
         - [ ] issue2
+

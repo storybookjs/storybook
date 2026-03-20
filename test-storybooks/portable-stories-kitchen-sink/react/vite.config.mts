@@ -1,7 +1,7 @@
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
-import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-import { playwright } from '@vitest/browser-playwright';
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import { playwright } from "@vitest/browser-playwright";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,15 +11,15 @@ export default defineConfig({
       process.env.SKIP_FAIL_ON_PURPOSE
         ? {
             tags: {
-              exclude: ['fail-on-purpose'],
+              exclude: ["fail-on-purpose"],
             },
           }
         : undefined
     ),
   ],
   test: {
-    name: 'storybook',
-    pool: 'threads',
+    name: "storybook",
+    pool: "threads",
     deps: {
       optimizer: {
         web: {
@@ -33,11 +33,11 @@ export default defineConfig({
       headless: true,
       instances: [
         {
-          browser: 'chromium',
+          browser: "chromium",
         },
       ],
     },
-    setupFiles: ['./.storybook/vitest.setup.ts'],
-    environment: 'jsdom',
+    setupFiles: ["./.storybook/vitest.setup.ts"],
+    environment: "jsdom",
   },
 });

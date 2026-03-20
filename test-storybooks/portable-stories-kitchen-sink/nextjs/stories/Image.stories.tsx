@@ -13,7 +13,7 @@ export default {
   },
 };
 
-type Story = StoryObj<typeof Image>;
+type Story = StoryObj<typeof Image>
 
 export const Default: Story = {};
 

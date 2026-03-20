@@ -30,7 +30,7 @@ parameters:
 
 jobs:
   generate-and-run-config:
-    executor:
+    executor: 
       name: node/default
       resource_class: small
     steps:

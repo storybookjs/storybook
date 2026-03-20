@@ -1,3 +1,4 @@
+ 
 import { createTest } from '@storybook/react/experimental-playwright';
 import { test as base, expect } from '@playwright/experimental-ct-react';
 import stories, { SingleComposedStory, WithSpanishGlobal } from './Button.stories.playwright';
@@ -17,21 +18,14 @@ test('renders with composeStory (singular)', async ({ mount }) => {
 });
 
 test('renders story with props', async ({ mount }) => {
-  let called = false;
+  let called = false
   const component = await mount(
-    <stories.CSF3Button
-      primary={true}
-      onClick={() => {
-        called = true;
-      }}
-    >
-      child from test
-    </stories.CSF3Button>
+    <stories.CSF3Button primary={true} onClick={() => { called = true }}>child from test</stories.CSF3Button>
   );
   await expect(component).toContainText('child from test');
   await expect(component.getByRole('button')).toHaveClass(/storybook-button--primary/);
-  await component.getByRole('button').click();
-  await expect(called).toBe(true);
+  await component.getByRole('button').click()
+  await expect(called).toBe(true)
 });
 
 test('renders story with custom render', async ({ mount }) => {

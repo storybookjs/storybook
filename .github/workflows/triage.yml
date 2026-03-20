@@ -24,8 +24,8 @@ jobs:
             {
               "good first issue": ".github/comments/good-first-issue.md"
             }
-          reproduction-comment: '.github/comments/invalid-link.md'
-          reproduction-hosts: 'github.com,codesandbox.io,stackblitz.com'
-          reproduction-link-section: '### Reproduction link(.*)### Reproduction steps'
-          reproduction-invalid-label: 'needs reproduction'
-          reproduction-issue-labels: 'bug,needs triage'
+          reproduction-comment: ".github/comments/invalid-link.md"
+          reproduction-hosts: "github.com,codesandbox.io,stackblitz.com"
+          reproduction-link-section: "### Reproduction link(.*)### Reproduction steps"
+          reproduction-invalid-label: "needs reproduction"
+          reproduction-issue-labels: "bug,needs triage"

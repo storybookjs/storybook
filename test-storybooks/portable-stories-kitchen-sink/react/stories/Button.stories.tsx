@@ -63,7 +63,7 @@ CSF2StoryWithParamsAndDecorator.decorators = [(StoryFn) => <StoryFn />];
 
 export const CSF3Primary: CSF3Story<ButtonProps> = {
   args: {
-    children: 'foo',
+    children: "foo",
     size: 'large',
     primary: true,
   },

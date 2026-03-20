@@ -1,10 +1,10 @@
-import { defineConfig } from 'cypress';
+import { defineConfig } from "cypress";
 
 export default defineConfig({
   component: {
     devServer: {
-      framework: 'svelte',
-      bundler: 'vite',
+      framework: "svelte",
+      bundler: "vite",
     },
   },
 });

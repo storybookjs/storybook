@@ -1,9 +1,9 @@
-project_name: 'storybook'
+project_name: "storybook"
 
 languages:
   - typescript
 
-encoding: 'utf-8'
+encoding: "utf-8"
 
 ignore_all_files_in_gitignore: true
 ignored_paths: []

@@ -1,3 +1,3 @@
 export const getButtonString = () => {
-  return 'test';
+  return "test";
 };

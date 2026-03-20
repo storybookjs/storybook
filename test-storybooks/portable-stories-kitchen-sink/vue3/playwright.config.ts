@@ -34,7 +34,7 @@ export default defineConfig({
           vue: 'vue/dist/vue.esm-bundler.js',
         },
       },
-    },
+    }
   },
 
   /* Configure projects for major browsers */

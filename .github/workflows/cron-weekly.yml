@@ -2,7 +2,7 @@ name: Markdown Links Check
 # runs every monday at 9 am
 on:
   schedule:
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
 
 permissions:
   contents: read # to fetch repository files for markdown link checks
@@ -17,10 +17,10 @@ jobs:
         # checks all markdown files from important folders including all subfolders
         with:
           # only show errors that occur instead of successful links + errors
-          use-quiet-mode: 'yes'
+          use-quiet-mode: "yes"
           # output full HTTP info for broken links
-          use-verbose-mode: 'yes'
-          config-file: '.github/workflows/markdown-link-check-config.json'
+          use-verbose-mode: "yes"
+          config-file: ".github/workflows/markdown-link-check-config.json"
       # Notify to Discord channel on failure
       - name: Send Discord Notification
         if: failure() # Only run this step if previous steps failed

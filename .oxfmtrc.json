@@ -31,24 +31,35 @@
     "code/core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
     "code/lib/codemod/src/transforms/__testfixtures__",
     "code/frameworks/angular/template/**",
-    ".prettierrc"
+    ".prettierrc",
+    "test-storybooks",
+    "*.yml",
+    "*.yaml",
   ],
   "overrides": [
     {
-      "files": ["*.md", "*.mdx"],
+      "files": [
+        "*.md",
+        "*.mdx"
+      ],
       "options": {
         "importOrderSeparation": false,
         "importOrderSortSpecifiers": false
       }
     },
     {
-      "files": ["*.component.html"],
+      "files": [
+        "*.component.html"
+      ],
       "options": {
         "parser": "angular"
       }
     },
     {
-      "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
+      "files": [
+        "**/frameworks/angular/src/**/*.ts",
+        "**/frameworks/angular/template/**/*.ts"
+      ],
       "options": {
         "parser": "babel-ts"
       }

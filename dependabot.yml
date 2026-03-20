@@ -1,9 +1,9 @@
 version: 2
 
 updates:
-  - package-ecosystem: 'npm'
+  - package-ecosystem: "npm"
     directories:
-      - 'code'
-      - 'scripts'
+      - "code"
+      - "scripts"
     schedule:
-      interval: 'weekly'
+      interval: "weekly"

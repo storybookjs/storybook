@@ -1,13 +1,15 @@
 import type { Preview } from '@storybook/svelte';
-import GlobalDecorator from './GlobalDecorator.svelte';
+import GlobalDecorator from './GlobalDecorator.svelte'
 
 console.log('preview file is called!');
 
 const preview: Preview = {
   decorators: [
-    () => ({
-      Component: GlobalDecorator,
-    }),
+    () => (
+      {
+        Component: GlobalDecorator,
+      }
+    ),
   ],
   globalTypes: {
     locale: {

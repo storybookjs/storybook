@@ -15,13 +15,14 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import './commands';
+import './commands'
 
-import { mount } from 'cypress/vue';
+import { mount } from 'cypress/vue'
 
 import type { ProjectAnnotations } from 'storybook/internal/types';
 import { VueRenderer, setProjectAnnotations } from '@storybook/vue3';
 import sbAnnotations from '../../.storybook/preview';
+
 
 // Augment the Cypress namespace to include type definitions for
 // your custom command.
@@ -30,12 +31,12 @@ import sbAnnotations from '../../.storybook/preview';
 declare global {
   namespace Cypress {
     interface Chainable {
-      mount: typeof mount;
+      mount: typeof mount
     }
   }
 }
 
-Cypress.Commands.add('mount', mount);
+Cypress.Commands.add('mount', mount)
 
 // This is needed because Cypress defines process but not process.env
 // And if the play function fails, testing library's internals have a check
@@ -43,4 +44,6 @@ Cypress.Commands.add('mount', mount);
 // which will break
 process.env = {};
 
-setProjectAnnotations([sbAnnotations]);
+setProjectAnnotations([
+  sbAnnotations,
+]);

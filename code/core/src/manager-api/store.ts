@@ -1,11 +1,11 @@
-import { global } from '@storybook/global';
-
 import type { StoreAPI } from 'store2';
 import store from 'store2';
 
 import storeSetup from './lib/store-setup';
 import type { State } from './root';
 import { version as currentVersion } from './version';
+import { getAnonymousProjectId } from 'storybook/internal/telemetry';
+
 
 // setting up the store, overriding set and get to use telejson
 storeSetup(store._);
@@ -16,7 +16,7 @@ const STORAGE_KEY_BASE = '@storybook/manager/store';
  * Storage key scoped per Storybook instance via `STORYBOOK_INSTANCE_ID` (a Git-derived project
  * hash).
  */
-export const STORAGE_KEY = `${STORAGE_KEY_BASE}/${global.STORYBOOK_INSTANCE_ID || 'anonymous'}`;
+export const STORAGE_KEY = `${STORAGE_KEY_BASE}/${getAnonymousProjectId() || 'anonymous'}`;
 
 /**
  * Key used to store the Storybook version alongside persisted data. This allows future migration

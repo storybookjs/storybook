@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 
 import StorybookNormalizeAngularEntryPlugin from './plugins/storybook-normalize-angular-entry-plugin';
+import { filterNodeEnvFromDefinePlugins } from './utils/filter-node-env-from-define-plugins';
 import { filterOutStylingRules } from './utils/filter-out-styling-rules';
 
 const require = createRequire(import.meta.url);
@@ -182,6 +183,11 @@ export const getWebpackConfig = async (baseConfig, { builderOptions, builderCont
     ...baseConfig.module,
     rules: [...cliConfig.module.rules, ...rulesExcludingStyles],
   };
+
+  // Remove 'process.env.NODE_ENV' from Angular CLI's DefinePlugin definitions to prevent
+  // webpack "Conflicting values for 'process.env.NODE_ENV'" warning when merged with
+  // Storybook's own DefinePlugin which also defines this value.
+  filterNodeEnvFromDefinePlugins(cliConfig.plugins ?? []);
 
   const plugins = [
     ...(cliConfig.plugins ?? []),

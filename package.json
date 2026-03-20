@@ -23,7 +23,7 @@
     "knip": "cd code; yarn knip",
     "lint": "cd code; yarn lint",
     "nx": "nx",
-    "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
+    "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:fmt:write",
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
     "svelte-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh svelte-kit/skeleton-ts",
     "svelte-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh svelte-kit/skeleton-ts svelte",
@@ -56,7 +56,6 @@
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
     "react": "^18.2.0",
-    "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19",
     "typescript": "^5.9.3"
   },

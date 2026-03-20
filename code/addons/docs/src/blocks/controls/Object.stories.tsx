@@ -162,8 +162,9 @@ export const JsonEditorValidation: Story = {
     await step('Show a parse error for invalid JSON', async () => {
       const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
 
+      rawInput.focus();
       await fireEvent.change(rawInput, { target: { value: '{"label":' } });
-      await fireEvent.blur(rawInput);
+      rawInput.blur();
 
       const parseError = await canvas.findByRole('status');
       await expect(parseError).toHaveTextContent('Invalid JSON');
@@ -178,8 +179,9 @@ export const JsonEditorValidation: Story = {
     await step('Clear the parse error after entering valid JSON', async () => {
       const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
 
+      rawInput.focus();
       await fireEvent.change(rawInput, { target: { value: '{"label":"updated"}' } });
-      await fireEvent.blur(rawInput);
+      rawInput.blur();
 
       await waitFor(async () => {
         await expect(canvas.queryByRole('status')).not.toBeInTheDocument();
@@ -204,8 +206,9 @@ export const JsonEditorErrorReset: Story = {
       await fireEvent.click(editAsJsonButton);
 
       const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
+      rawInput.focus();
       await fireEvent.change(rawInput, { target: { value: '{"label":' } });
-      await fireEvent.blur(rawInput);
+      rawInput.blur();
 
       await expect(await canvas.findByRole('status')).toHaveTextContent('Invalid JSON');
       await expect(rawInput).toHaveAttribute('aria-invalid', 'true');

@@ -6,7 +6,7 @@ import { Button, Form, ToggleButton } from 'storybook/internal/components';
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -126,7 +126,7 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(ToggleButton)({
+const RawButtonWrapper = styled.div({
   alignSelf: 'flex-start',
   order: 2,
   marginRight: -10,
@@ -176,7 +176,6 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
 export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
-  const theme = useTheme();
   const controlId = getControlId(name);
   const jsonErrorId = `${controlId}-error`;
   const rawToggleDescriptionId = `${controlId}-toggle-description`;
@@ -186,6 +185,17 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
+  const validateRaw = useCallback((raw: string) => {
+    try {
+      if (raw) {
+        JSON.parse(raw);
+      }
+      setParseError(null);
+    } catch (e) {
+      setParseError(e as Error);
+    }
+  }, []);
+
   const updateRaw: (raw: string) => void = useCallback(
     (raw) => {
       try {
@@ -249,6 +259,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
         name={name}
         key={jsonString}
         defaultValue={jsonString}
+        onChange={(event) => validateRaw(event.target.value)}
         onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
         autoFocus={forceVisible}
         valid={parseError ? 'error' : undefined}
@@ -271,21 +282,28 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     <Wrapper>
       {isObjectOrArray && (
         <>
-          <RawButton
-            disabled={readonly}
-            pressed={showRaw}
-            ariaLabel={`Edit ${name} as JSON`}
-            aria-describedby={rawToggleDescriptionId}
-            onClick={(e: SyntheticEvent) => {
-              e.preventDefault();
-              setShowRaw((isRaw) => !isRaw);
-            }}
-            variant="ghost"
-            padding="small"
-            size="small"
-          >
-            <EditIcon />
-          </RawButton>
+          <RawButtonWrapper>
+            <ToggleButton
+              asChild
+              pressed={showRaw}
+              ariaLabel={false}
+              variant="ghost"
+              padding="small"
+              size="small"
+            >
+              <button
+                type="button"
+                aria-label={`Edit ${name} as JSON`}
+                aria-describedby={rawToggleDescriptionId}
+                onClick={(e: SyntheticEvent) => {
+                  e.preventDefault();
+                  setShowRaw((isRaw) => !isRaw);
+                }}
+              >
+                <EditIcon />
+              </button>
+            </ToggleButton>
+          </RawButtonWrapper>
           <span id={rawToggleDescriptionId} className="sb-sr-only">
             Toggle between the structured object editor and the raw JSON editor.
           </span>

@@ -159,10 +159,10 @@ export const Zoom = memo<{
         pressed={value !== INITIAL_ZOOM_LEVEL}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown') {
-            zoomBy(-0.01);
+            zoomBy(e.getModifierState('Shift') ? -0.1 : -0.01);
             e.preventDefault();
           } else if (e.key === 'ArrowUp') {
-            zoomBy(0.01);
+            zoomBy(e.getModifierState('Shift') ? 0.1 : 0.01);
             e.preventDefault();
           } else if (e.key === 'PageDown') {
             zoomOut();

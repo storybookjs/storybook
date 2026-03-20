@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { filterNodeEnvFromDefinePlugins } from './filter-node-env-from-define-plugins';
 
 // Simulate webpack's DefinePlugin with the same constructor name
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+
 class DefinePlugin {
   constructor(public definitions: Record<string, unknown>) {}
 }
@@ -85,7 +85,9 @@ describe('filterNodeEnvFromDefinePlugins', () => {
       definitions: { 'process.env.NODE_ENV': '"test"' },
     };
 
-    filterNodeEnvFromDefinePlugins([notADefinePlugin as unknown as import('webpack').WebpackPluginInstance]);
+    filterNodeEnvFromDefinePlugins([
+      notADefinePlugin as unknown as import('webpack').WebpackPluginInstance,
+    ]);
 
     // Should not modify a non-DefinePlugin's definitions
     expect(notADefinePlugin.definitions['process.env.NODE_ENV']).toBe('"test"');
@@ -96,12 +98,20 @@ describe('filterNodeEnvFromDefinePlugins', () => {
       'process.env.NODE_ENV': '"development"',
     });
 
-    expect(() => filterNodeEnvFromDefinePlugins([null, undefined, plugin as unknown as import('webpack').WebpackPluginInstance])).not.toThrow();
+    expect(() =>
+      filterNodeEnvFromDefinePlugins([
+        null,
+        undefined,
+        plugin as unknown as import('webpack').WebpackPluginInstance,
+      ])
+    ).not.toThrow();
     expect(plugin.definitions['process.env.NODE_ENV']).toBeUndefined();
   });
 
   it('should return the same plugins array (for composability)', () => {
-    const plugins = [new DefinePlugin({ OTHER: '"val"' }) as unknown as import('webpack').WebpackPluginInstance];
+    const plugins = [
+      new DefinePlugin({ OTHER: '"val"' }) as unknown as import('webpack').WebpackPluginInstance,
+    ];
     const result = filterNodeEnvFromDefinePlugins(plugins);
     expect(result).toBe(plugins);
   });

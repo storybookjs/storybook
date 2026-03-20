@@ -74,9 +74,9 @@ export const prettyDocs = defineJob('Prettify docs', () => ({
     npm.installScripts(),
     {
       run: {
-        name: 'Prettier',
+        name: 'Docs formatting',
         working_directory: `scripts`,
-        command: 'yarn docs:prettier:check',
+        command: 'yarn docs:fmt:check',
       },
     },
   ],

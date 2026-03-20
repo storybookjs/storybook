@@ -79,7 +79,7 @@ test.describe('interactions', () => {
     // Test interactions debugger - Stepping through works, count is correct and values are as expected
     const interactionsRow = panel.locator('[aria-label="Interaction step"]');
 
-    await interactionsRow.first().isVisible();
+    await expect(interactionsRow.first()).toBeVisible();
 
     await expect(interactionsRow).toHaveCount(3);
     const firstInteraction = interactionsRow.first();
@@ -102,9 +102,9 @@ test.describe('interactions', () => {
 
     await expect(formInput).toHaveValue('final value');
 
-    await interactionsRow.first().isVisible();
-    await interactionsRow.nth(1).isVisible();
-    await interactionsRow.nth(2).isVisible();
+    await expect(interactionsRow.first()).toBeVisible();
+    await expect(interactionsRow.nth(1)).toBeVisible();
+    await expect(interactionsRow.nth(2)).toBeVisible();
     await expect(interactionsTab.getByText('3')).toBeVisible();
     await expect(interactionsTab).toBeVisible();
     await expect(interactionsTab.getByText('3')).toBeVisible();
@@ -113,9 +113,9 @@ test.describe('interactions', () => {
     const remountComponentButton = page.locator('[aria-label="Reload story"]');
     await remountComponentButton.click();
 
-    await interactionsRow.first().isVisible();
-    await interactionsRow.nth(1).isVisible();
-    await interactionsRow.nth(2).isVisible();
+    await expect(interactionsRow.first()).toBeVisible();
+    await expect(interactionsRow.nth(1)).toBeVisible();
+    await expect(interactionsRow.nth(2)).toBeVisible();
     await expect(interactionsTab.getByText('3')).toBeVisible();
     await expect(interactionsTab).toBeVisible();
     await expect(interactionsTab).toBeVisible();

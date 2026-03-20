@@ -125,15 +125,6 @@ export const addWorkaroundResolutions = async ({
     };
   }
 
-  if (key === 'react-native-web-vite/expo-ts') {
-    additionalResolutions = {
-      ...additionalResolutions,
-      // The expo sandbox started to break in beta 5, yet to investigate the root cause
-      // in the meantime, we downgrade to the version where things worked.
-      vite: '8.0.0-beta.4',
-    };
-  }
-
   packageJson.resolutions = {
     ...packageJson.resolutions,
     '@testing-library/dom': '^9.3.4',

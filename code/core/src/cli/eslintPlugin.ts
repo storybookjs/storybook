@@ -55,6 +55,35 @@ function unwrapTSExpression(expr: any): t.Expression | null | undefined {
 export const configureFlatConfig = async (code: string) => {
   const ast = babelParse(code);
 
+  // Bail out if eslint-plugin-storybook is already imported (static or dynamic) to avoid
+  // referencing an undefined variable or duplicating the config spread.
+  // Some configs use dynamic import() expressions (e.g. via eslint-flat-config-utils).
+  let alreadyHasStorybookImport = false;
+  traverse(ast, {
+    ImportDeclaration(path) {
+      if (path.node.source.value === 'eslint-plugin-storybook') {
+        alreadyHasStorybookImport = true;
+        path.stop();
+      }
+    },
+    CallExpression(path) {
+      // Dynamic import: import('eslint-plugin-storybook')
+      // Babel represents this as a CallExpression with callee.type === 'Import'
+      if (
+        t.isImport(path.node.callee) &&
+        path.node.arguments.length > 0 &&
+        t.isStringLiteral(path.node.arguments[0]) &&
+        path.node.arguments[0].value === 'eslint-plugin-storybook'
+      ) {
+        alreadyHasStorybookImport = true;
+        path.stop();
+      }
+    },
+  });
+  if (alreadyHasStorybookImport) {
+    return code;
+  }
+
   let tsEslintLocalName = '';
   let eslintDefineConfigLocalName = '';
   let eslintConfigExpression: any = null;
@@ -267,6 +296,9 @@ export async function configureEslintPlugin({
         logger.debug(`Detected flat config at ${eslintConfigFile}`);
         const code = await readFile(eslintConfigFile, { encoding: 'utf8' });
         const output = await configureFlatConfig(code);
+        if (output === code) {
+          return;
+        }
         await writeFile(eslintConfigFile, output);
       } else {
         const eslint = await readConfig(eslintConfigFile);

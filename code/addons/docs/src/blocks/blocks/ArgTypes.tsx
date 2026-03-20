@@ -13,6 +13,7 @@ import type { SortType } from '../components';
 import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
 import { useOf } from './useOf';
 import { getComponentName } from './utils';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type ArgTypesParameters = {
   include?: PropDescriptor;
@@ -62,7 +63,7 @@ function getArgTypesFromResolved(resolved: ReturnType<typeof useOf>) {
   return { argTypes, parameters, component, subcomponents };
 }
 
-export const ArgTypes: FC<ArgTypesProps> = (props) => {
+const ArgTypesImpl: FC<ArgTypesProps> = (props) => {
   const { of } = props;
   if ('of' in props && of === undefined) {
     throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
@@ -103,3 +104,5 @@ export const ArgTypes: FC<ArgTypesProps> = (props) => {
   };
   return <TabbedArgsTable tabs={tabs as any} sort={sort} />;
 };
+
+export const ArgTypes = withMdxComponentOverride('ArgTypes', ArgTypesImpl);

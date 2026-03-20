@@ -25,7 +25,7 @@ jobs:
       - name: check
         run: yarn task --task check
 
-  prettier:
+  formatting:
     name: Core Formatting
     if: github.repository_owner != 'storybookjs'
     runs-on: ubuntu-latest
@@ -39,8 +39,8 @@ jobs:
         with:
           install-code-deps: true
 
-      - name: prettier
-        run: cd code && yarn lint:prettier --check .
+      - name: oxfmt
+        run: cd code && yarn lint:fmt
 
   test:
     strategy:

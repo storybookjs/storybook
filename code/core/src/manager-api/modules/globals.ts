@@ -130,7 +130,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI, provider }) =
     SET_GLOBALS,
     function handleSetGlobals(this: any, { globals, globalTypes }: SetGlobalsPayload) {
       const { ref } = getEventMetadata(this, fullAPI)!;
-      const currentGlobals = store.getState()?.globals;
+      const currentUserGlobals = store.getState()?.userGlobals;
 
       if (!ref) {
         store.setState({ globals, userGlobals: globals, globalTypes });
@@ -138,14 +138,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI, provider }) =
         logger.warn('received globals from a non-local ref. This is not currently supported.');
       }
 
-      // If we have stored globals different to what the preview just inited with,
-      // we should update it to those values
       if (
-        currentGlobals &&
-        Object.keys(currentGlobals).length !== 0 &&
-        !deepEqual(globals, currentGlobals)
+        currentUserGlobals &&
+        Object.keys(currentUserGlobals).length !== 0 &&
+        !deepEqual(globals, currentUserGlobals)
       ) {
-        api.updateGlobals(currentGlobals);
+        api.updateGlobals(currentUserGlobals);
       }
     }
   );

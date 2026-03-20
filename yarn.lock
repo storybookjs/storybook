@@ -8722,6 +8722,7 @@ __metadata:
     jiti: "npm:^2.6.1"
     kill-port: "npm:^2.0.1"
     nx: "npm:^22.1.3"
+    oxfmt: "npm:^0.41.0"
     prettier: "npm:^3.7.1"
     vite: "npm:^7.0.4"
     vitest: "npm:^4.1.0"

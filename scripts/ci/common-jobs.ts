@@ -71,11 +71,10 @@ export const prettyDocs = defineJob('Prettify docs', () => ({
   },
   steps: [
     git.checkout(),
-    npm.installScripts(),
+    npm.install('.'),
     {
       run: {
-        name: 'Docs formatting',
-        working_directory: `scripts`,
+        name: 'Format check',
         command: 'yarn fmt:check',
       },
     },
@@ -197,8 +196,7 @@ export const lint = defineJob(
       },
       {
         run: {
-          name: 'Format code',
-          working_directory: `code`,
+          name: 'Format check',
           command: 'yarn fmt:check',
         },
       },

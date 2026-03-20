@@ -1,4 +1,5 @@
 {
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "printWidth": 100,
   "tabWidth": 2,
   "bracketSpacing": true,
@@ -14,6 +15,7 @@
     ".vscode",
     ".nx/cache",
     ".nx/workspace-data",
+    "docs",
     "dist",
     "build",
     "bench",
@@ -30,5 +32,26 @@
     "code/lib/codemod/src/transforms/__testfixtures__",
     "code/frameworks/angular/template/**",
     ".prettierrc"
+  ],
+  "overrides": [
+    {
+      "files": ["*.md", "*.mdx"],
+      "options": {
+        "importOrderSeparation": false,
+        "importOrderSortSpecifiers": false
+      }
+    },
+    {
+      "files": ["*.component.html"],
+      "options": {
+        "parser": "angular"
+      }
+    },
+    {
+      "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
+      "options": {
+        "parser": "babel-ts"
+      }
+    }
   ]
 }

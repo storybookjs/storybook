@@ -5,6 +5,7 @@
   "targets": {
     "pretty-docs": {
       "command": "yarn fmt:check",
+      "cwd": "{workspaceRoot}",
       "cache": true,
       "inputs": ["{workspaceRoot}/docs/**/*"]
     },

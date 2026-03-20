@@ -4,14 +4,15 @@
  * in order to update its content execute "yarn update"
  */
 // configs
-import addonInteractions from './configs/addon-interactions';
 import csf from './configs/csf';
 import csfStrict from './configs/csf-strict';
-import flatAddonInteractions from './configs/flat/addon-interactions';
+import addonInteractions from './configs/addon-interactions';
+import recommended from './configs/recommended';
 import flatCsf from './configs/flat/csf';
 import flatCsfStrict from './configs/flat/csf-strict';
+import flatAddonInteractions from './configs/flat/addon-interactions';
 import flatRecommended from './configs/flat/recommended';
-import recommended from './configs/recommended';
+
 // rules
 import awaitInteractions from './rules/await-interactions';
 import contextInPlayFunction from './rules/context-in-play-function';

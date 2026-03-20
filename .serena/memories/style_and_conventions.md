@@ -8,25 +8,21 @@
 - JSX: preserve
 - No emit (handled by build tools, not tsc)
 
-## Prettier Configuration
+## Oxfmt Configuration
 
 - Print width: 100
 - Tab width: 2
 - Single quotes: yes
 - Trailing commas: es5
 - Arrow parens: always
-- Brace style: 1tbs (one true brace style)
-- Import order (via @trivago/prettier-plugin-sort-imports):
-  1. `node:` builtins
-  2. `vitest`, `@testing-library`
-  3. `react`, `react-dom`
-  4. `storybook/internal`
-  5. `@storybook/[non-addon]`
-  6. `@storybook/addon-*`
-  7. Third-party modules
-  8. Relative imports (`./`, `../`)
-- Import order separation: yes (blank lines between groups)
-- Import specifiers sorted: yes
+- Bracket spacing: yes
+- `sortPackageJson`: false
+- `embeddedLanguageFormatting`: off
+- Root formatter excludes: `docs`, `test-storybooks`, `*.yml`, `*.yaml`, generated/build output, and selected fixture/template paths
+- Markdown/MDX override: `importOrderSeparation: false`, `importOrderSortSpecifiers: false`
+- Angular `*.component.html` files use the `angular` parser
+- Angular framework/template TypeScript files use the `babel-ts` parser
+- Import ordering is not managed by a Prettier plugin here
 
 ## ESLint Rules (Notable)
 

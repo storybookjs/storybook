@@ -47,8 +47,11 @@ cd code && yarn lint
 # Lint JS/TS only
 cd code && yarn lint:js
 
-# Format check with oxfmt
-cd code && yarn fmt:check
+# Format check with oxfmt (repo root)
+yarn fmt:check
+
+# Format docs snippets only
+yarn pretty-docs
 
 # Run knip (unused code detection)
 cd code && yarn knip

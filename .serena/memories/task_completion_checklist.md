@@ -23,7 +23,7 @@ cd code && yarn lint:js
 Ensure code is properly formatted:
 
 ```bash
-cd code && yarn fmt:check
+yarn fmt:check
 ```
 
 ## 4. Unit Tests
@@ -38,10 +38,10 @@ cd code && yarn test <test-pattern>
 
 The project uses husky + lint-staged for pre-commit hooks:
 
-- JS/TS files: ESLint with `--fix`
+- JS/TS and code HTML/JSON files: oxfmt plus ESLint
 - EJS files: ejslint
-- CSS/HTML/JSON/MD/YML: oxfmt
-- package.json: lint:package
+- package.json files: sort-package-json via `lint:package`
+- `*.yml` and `*.yaml` are excluded from oxfmt
 
 ## Notes
 

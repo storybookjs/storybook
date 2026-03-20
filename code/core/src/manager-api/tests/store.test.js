@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import flushPromises from 'flush-promises';
 import store2 from 'store2';
@@ -21,9 +21,31 @@ vi.mock('store2', () => ({
 
 vi.mock('../version', () => ({ version: '0.0.0-test' }));
 
+vi.mock('storybook/internal/telemetry', () => ({
+  getAnonymousProjectId: vi.fn(),
+}));
+
 describe('store', () => {
-  it('falls back to anonymous storage key when STORYBOOK_INSTANCE_ID is not set', () => {
-    expect(STORAGE_KEY).toBe('@storybook/manager/store/anonymous');
+  describe('STORAGE_KEY', () => {
+    beforeEach(() => {
+      vi.resetModules();
+    });
+
+    it('scopes storage key to the project ID when available', async () => {
+      vi.doMock('storybook/internal/telemetry', () => ({
+        getAnonymousProjectId: () => 'test-project-id',
+      }));
+      const { STORAGE_KEY: key } = await import('../store');
+      expect(key).toBe('@storybook/manager/store/test-project-id');
+    });
+
+    it('falls back to anonymous when project ID is unavailable', async () => {
+      vi.doMock('storybook/internal/telemetry', () => ({
+        getAnonymousProjectId: () => undefined,
+      }));
+      const { STORAGE_KEY: key } = await import('../store');
+      expect(key).toBe('@storybook/manager/store/anonymous');
+    });
   });
 
   it('persists the current version in localStorage on getInitialState', () => {

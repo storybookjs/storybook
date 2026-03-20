@@ -191,7 +191,7 @@ export const Preview: FC<PreviewProps> = ({
   return (
     <>
       <PreviewContainer
-        {...{ withSource, withToolbar: withToolbar || !!onReloadStory }}
+        {...{ withSource, withToolbar }}
         {...props}
         className={previewClasses.join(' ')}
       >

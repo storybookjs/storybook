@@ -1,17 +1,14 @@
 # Storybook - Project Overview
 
 ## Purpose
-
 Storybook is an open-source UI development tool for building, testing, and documenting UI components in isolation.
 It supports multiple frontend frameworks (React, Vue, Angular, Svelte, Web Components, Preact, Ember, HTML, etc.)
 and integrates with various build tools (Vite, Webpack5).
 
 ## Version
-
 Current version: 10.2.x (as of March 2026)
 
 ## Tech Stack
-
 - **Language**: TypeScript (strict mode), targeting ES2020
 - **Package Manager**: Yarn 4.10.3 (with workspaces)
 - **Node.js**: 22.21.1 (specified in `.nvmrc`)
@@ -24,7 +21,6 @@ Current version: 10.2.x (as of March 2026)
 - **Build System**: Custom build via `jiti ./scripts/build/build-package.ts`
 
 ## Repository Structure
-
 ```
 storybook/
 ├── code/                   # Main codebase
@@ -44,7 +40,6 @@ storybook/
 ```
 
 ## Key Packages
-
 - `@storybook/core` - Core functionality (UI, API, server, preview, channels, etc.)
 - `@storybook/react`, `@storybook/vue3`, etc. - Framework renderers
 - `@storybook/react-vite`, `@storybook/nextjs`, etc. - Framework integrations

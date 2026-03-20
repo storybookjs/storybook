@@ -234,7 +234,7 @@ When writing tests:
 
 After changing files:
 
-1. Format/check with `cd code && yarn fmt:check` and `cd scripts && yarn fmt:check` when docs snippets are affected
+1. Format with `cd code && oxfmt`
 2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 

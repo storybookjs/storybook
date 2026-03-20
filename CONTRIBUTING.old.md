@@ -31,8 +31,8 @@
     - [Verify your local version is working](#verify-your-local-version-is-working)
   - [Documentation](#documentation)
 - [Release Guide](#release-guide)
-  - [Prerelease:](#prerelease)
-  - [Full release:](#full-release)
+    - [Prerelease:](#prerelease)
+    - [Full release:](#full-release)
 
 Thanks for your interest in improving Storybook! We are a community-driven project and welcome contributions of all kinds: from discussion to documentation to bugfixes to feature improvements.
 

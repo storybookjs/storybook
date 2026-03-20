@@ -35,6 +35,8 @@
     "test-storybooks",
     "*.yml",
     "*.yaml",
+    "*.md",
+    "*.mdx"
   ],
   "overrides": [
     {

@@ -1,13 +1,11 @@
 # Suggested Commands
 
 ## Installation
-
 ```bash
 yarn install          # Install all dependencies (from repo root)
 ```
 
 ## Building
-
 ```bash
 # Compile a single package (always use --no-cloud to avoid NX Cloud issues)
 yarn nx compile core --no-cloud
@@ -21,7 +19,6 @@ cd code && yarn build
 ```
 
 ## Testing
-
 ```bash
 # Run all unit tests (from repo root or code/)
 cd code && yarn test
@@ -39,7 +36,6 @@ cd code && npx playwright test
 ```
 
 ## Linting & Formatting
-
 ```bash
 # Run all linting
 cd code && yarn lint
@@ -47,18 +43,14 @@ cd code && yarn lint
 # Lint JS/TS only
 cd code && yarn lint:js
 
-# Format check with oxfmt (repo root)
-yarn fmt:check
-
-# Format docs snippets only
-yarn pretty-docs
+# Format with Prettier
+cd code && yarn lint:prettier '**/*.{css,html,json,md,yml}'
 
 # Run knip (unused code detection)
 cd code && yarn knip
 ```
 
 ## Running the Internal Dev Storybook
-
 ```bash
 # Must compile core first!
 yarn nx compile core --no-cloud
@@ -74,7 +66,6 @@ cd code && yarn storybook:ui:build
 ```
 
 ## Sandbox / Task System
-
 ```bash
 # Start a sandbox with a specific template
 yarn start  # defaults to react-vite/default-ts
@@ -84,7 +75,6 @@ yarn task --task dev --template react-vite/default-ts --start-from=install
 ```
 
 ## NX Commands
-
 ```bash
 # Always use --no-cloud flag!
 yarn nx compile <package> --no-cloud
@@ -93,7 +83,6 @@ yarn nx show projects --affected
 ```
 
 ## Git
-
 ```bash
 git status
 git diff
@@ -102,7 +91,6 @@ git checkout next   # main branch is "next"
 ```
 
 ## System Utilities (macOS/Darwin)
-
 ```bash
 ls, cd, pwd, cat, head, tail
 grep, find, xargs

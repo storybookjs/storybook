@@ -4085,6 +4085,7 @@ NPM publish failed
 - Manager caching for faster startup [#12707](https://github.com/storybookjs/storybook/pull/12707)
 - Asynchronous loaders [#12699](https://github.com/storybookjs/storybook/pull/12699)
 - React improvements
+
   - React 17 support [#12972](https://github.com/storybookjs/storybook/pull/12972) [#12975](https://github.com/storybookjs/storybook/pull/12975)
   - Fast refresh [#12470](https://github.com/storybookjs/storybook/pull/12470) [#12535](https://github.com/storybookjs/storybook/pull/12535)
   - Strict mode [#12781](https://github.com/storybookjs/storybook/pull/12781)

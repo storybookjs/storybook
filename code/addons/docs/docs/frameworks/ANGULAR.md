@@ -81,8 +81,8 @@ Then you'll need to configure Compodoc to generate a `documentation.json` file. 
             "json",
             "-d",
             "." // the root folder of your project
-          ]
-        }
+          ],
+        },
         "build-storybook": {
           ...,
           "compodoc": true,

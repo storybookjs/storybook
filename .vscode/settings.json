@@ -1,10 +1,10 @@
 {
   "[javascript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "[typescript]": {
@@ -12,7 +12,7 @@
     "editor.formatOnSave": true
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
   "editor.codeActionsOnSave": {
@@ -20,11 +20,17 @@
   },
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
-  "eslint.format.enable": true,
   "eslint.options": {
     "cache": true,
     "cacheLocation": ".cache/eslint",
-    "extensions": [".js", ".jsx", ".mjs", ".json", ".ts", ".tsx"]
+    "extensions": [
+      ".js",
+      ".jsx",
+      ".mjs",
+      ".json",
+      ".ts",
+      ".tsx"
+    ]
   },
   "eslint.useESLintClass": true,
   "eslint.validate": [
@@ -35,7 +41,10 @@
     "typescript",
     "typescriptreact"
   ],
-  "eslint.workingDirectories": ["./code", "./scripts"],
+  "eslint.workingDirectories": [
+    "./code",
+    "./scripts"
+  ],
   "files.associations": {
     "*.js": "javascriptreact"
   },

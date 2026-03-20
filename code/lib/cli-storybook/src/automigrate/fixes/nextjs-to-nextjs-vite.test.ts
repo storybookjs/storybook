@@ -231,6 +231,37 @@ describe('nextjs-to-nextjs-vite', () => {
       );
     });
 
+    it('should not corrupt main config that already references @storybook/nextjs-vite', async () => {
+      // Regression: projects with both @storybook/nextjs and @storybook/nextjs-vite installed
+      // (valid in SB9) already use nextjs-vite in main.ts. Without the fix, the regex would
+      // rewrite @storybook/nextjs-vite to @storybook/nextjs-vite-vite.
+      const result = {
+        hasNextjsPackage: true,
+        packageJsonFiles: [],
+      };
+
+      mockReadFile.mockResolvedValue(`
+        import type { StorybookConfig } from '@storybook/nextjs-vite';
+        export default {
+          framework: { name: '@storybook/nextjs-vite', options: {} },
+        };
+      `);
+
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('7.0.0');
+
+      await nextjsToNextjsVite.run!({
+        result,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '10.0.0',
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
     it('should handle dry run mode', async () => {
       const result = {
         hasNextjsPackage: true,

@@ -43,11 +43,11 @@
   },
   "lint-staged": {
     "code/**/*.{js,jsx,mjs,ts,tsx}": [
-      "oxfmt",
+      "oxfmt --check",
       "yarn --cwd code lint:js:cmd"
     ],
     "code/**/*.{html,json}": [
-      "oxfmt",
+      "oxfmt --check",
       "yarn --cwd code lint:js:cmd"
     ],
     "scripts/**/*.{html,js,json,jsx,mjs,ts,tsx}": [

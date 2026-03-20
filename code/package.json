@@ -36,22 +36,6 @@
     "storybook:ui:chromatic": "chromatic --storybook-build-dir storybook-static --exit-zero-on-changes --exit-once-uploaded",
     "task": "yarn --cwd ../scripts task"
   },
-  "lint-staged": {
-    "*.{js,jsx,mjs,ts,tsx}": [
-      "oxfmt",
-      "yarn lint:js:cmd"
-    ],
-    "*.{html,json}": [
-      "oxfmt",
-      "yarn lint:js:cmd"
-    ],
-    "*.ejs": [
-      "yarn --cwd ../scripts ejslint"
-    ],
-    "package.json": [
-      "yarn lint:package"
-    ]
-  },
   "browserslist": [
     "chrome >= 131",
     "android >= 131",
@@ -125,7 +109,6 @@
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
     "knip": "^5.70.2",
-    "lint-staged": "^16.2.7",
     "mock-require": "^3.0.3",
     "prettier": "^3.7.1",
     "process": "^0.11.10",

@@ -42,14 +42,6 @@
     "upgrade": "jiti ./task.ts",
     "upload-bench": "jiti ./upload-bench.ts"
   },
-  "lint-staged": {
-    "*.{html,js,json,jsx,mjs,ts,tsx}": [
-      "yarn lint:js:cmd"
-    ],
-    "package.json": [
-      "yarn lint:package"
-    ]
-  },
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
@@ -126,7 +118,6 @@
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
     "knip": "^5.70.2",
-    "lint-staged": "^16.2.7",
     "memoizerific": "^1.11.3",
     "minimatch": "^10.0.1",
     "node-gyp": "^12.1.0",

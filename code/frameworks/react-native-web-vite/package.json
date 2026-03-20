@@ -54,8 +54,8 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
-    "vite-plugin-rnw": "^0.0.10",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-plugin-rnw": "^0.0.11",
+    "vite-tsconfig-paths": "^6.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",

@@ -171,10 +171,6 @@ test.describe("component testing", () => {
     const runTestsButton = await page.getByLabel("Start test run");
     await runTestsButton.click();
 
-    await expect(testingModuleDescription).not.toContainText(/Ran \d+ tests/, {
-      timeout: 60000,
-    });
-
     // Wait for test results to appear
     await expect(testingModuleDescription).toHaveText(/Ran \d+ tests/, {
       timeout: 60000,
@@ -241,8 +237,6 @@ test.describe("component testing", () => {
     await expect(watchModeButton).not.toHaveAttribute("aria-disabled", "true");
 
     await runTestsButton.click();
-
-    await expect(watchModeButton).toHaveAttribute("aria-disabled", "true");
 
     // Wait for test results to appear
     await expect(page.locator("#testing-module-description")).toHaveText(

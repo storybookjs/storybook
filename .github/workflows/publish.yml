@@ -16,7 +16,8 @@ on:
         type: number
   pull_request:
     # Automated canary releases on PRs with the "with-canary-release"-suffix in the branch name
-    types: [opened, synchronize, reopened]
+    # or when the "canary" label is added/present
+    types: [opened, synchronize, reopened, labeled]
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -227,12 +228,21 @@ jobs:
       github.repository_owner == 'storybookjs' &&
       (
         github.event_name == 'workflow_dispatch' ||
-        (github.event_name == 'pull_request' && endsWith(github.head_ref, 'with-canary-release'))
+        (github.event_name == 'pull_request' && endsWith(github.head_ref, 'with-canary-release')) ||
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'canary'))
       ) &&
       contains(github.event.head_commit.message, '[skip ci]') != true
     environment: Release
     steps:
       - name: Fail if triggering actor is not administrator
+        # Admin check is required when the canary label is first added (to authorize the PR),
+        # for manual workflow_dispatch triggers, and for the legacy with-canary-release branch suffix.
+        # It is intentionally skipped for subsequent pushes (synchronize/opened/reopened) to a
+        # canary-labeled PR — the admin already authorized the PR by adding the label.
+        if: |
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'pull_request' && endsWith(github.head_ref, 'with-canary-release')) ||
+          (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'canary')
         uses: prince-chrismc/check-actor-permissions-action@87c6d9b36c730377858fd9719fbbac1b58fa678d
         with:
           permission: admin
@@ -244,7 +254,7 @@ jobs:
           PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          PR_INFO=$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json isCrossRepository,headRefOid,headRefName,headRepository,headRepositoryOwner --jq '{isFork: .isCrossRepository, owner: .headRepositoryOwner.login, repoName: .headRepository.name, branch: .headRefName, sha: .headRefOid}')
+          PR_INFO=$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json isCrossRepository,headRefOid,headRefName,headRepository,headRepositoryOwner,author --jq '{isFork: .isCrossRepository, owner: .headRepositoryOwner.login, repoName: .headRepository.name, branch: .headRefName, sha: .headRefOid, author: .author.login}')
           echo $PR_INFO
           # Loop through each key-value pair in PR_INFO and set as step output
           for key in $(echo "$PR_INFO" | jq -r 'keys[]'); do
@@ -309,6 +319,60 @@ jobs:
 
             _core team members can create a new canary release [here](https://github.com/storybookjs/storybook/actions/workflows/publish.yml) or locally with `gh workflow run --repo storybookjs/storybook publish.yml --field pr=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}`_
             </details>
+
+      - name: Ensure canary labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh label create "needs verification" \
+            --repo "$REPOSITORY" \
+            --color "d93f0b" \
+            --description "Canary release available, awaiting contributor verification" \
+            --force
+          gh label create "verification provided" \
+            --repo "$REPOSITORY" \
+            --color "0e8a16" \
+            --description "Contributor has verified the canary release" \
+            --force
+
+      - name: Update PR labels for canary verification
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh pr edit "$PR_NUMBER" --repo "$REPOSITORY" --remove-label "verification provided" 2>/dev/null || true
+          gh pr edit "$PR_NUMBER" --repo "$REPOSITORY" --add-label "needs verification"
+
+      - name: Post canary notification comment
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          VERSION: ${{ steps.version.outputs.next-version }}
+          PR_AUTHOR: ${{ steps.info.outputs.author }}
+        run: |
+          gh pr comment "$PR_NUMBER" \
+            --repo "$REPOSITORY" \
+            --body "$(cat <<HEREDOC
+          ## 📦 Canary release \`${VERSION}\` published
+
+          @${PR_AUTHOR} A new canary release has been published for this pull request.
+
+          **Test in a new sandbox:**
+          \`\`\`
+          npx storybook@${VERSION} sandbox
+          \`\`\`
+
+          **Or upgrade an existing project:**
+          \`\`\`
+          npx storybook@${VERSION} upgrade
+          \`\`\`
+
+          Please test this canary release and reply with \`/verified\` below once you have confirmed that your changes work as expected. The \`needs verification\` label will then be replaced with \`verification provided\`.
+          HEREDOC
+          )"
 
       - name: Create failing comment on PR
         if: failure()

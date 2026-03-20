@@ -442,20 +442,38 @@ Before you start you should make sure that your working tree is clean and the re
 
 It's possible to release any pull request as a canary release multiple times during development. This is an effective way to try out changes in standalone projects without linking projects together via package managers.
 
-To create a canary release, a core team member (or anyone else with administrator privileges) must manually trigger the publish workflow with the pull request number.
+### Automated Canary Releases (Label-Based)
+
+The recommended way to trigger a canary release is by adding the **`canary`** label to a pull request. This requires administrator privileges on the repository.
+
+**Flow:**
+
+1. A core team member adds the `canary` label to the pull request.
+2. The `publish.yml` workflow automatically builds and publishes a canary release.
+3. The PR body is updated with install instructions and the published version.
+4. A comment is posted on the PR notifying the author with the canary version and test instructions.
+5. The `needs verification` label is added to the PR.
+6. The PR author tests the canary release and replies with `/verified` when confirmed.
+7. The `needs verification` label is replaced with `verification provided`.
+
+When new commits are pushed to a `canary`-labeled PR, a new canary is automatically published and the verification status resets (the `verification provided` label is removed and `needs verification` is added again).
+
+### Manual Canary Releases
+
+To create a canary release manually, a core team member (or anyone else with administrator privileges) must trigger the publish workflow with the pull request number.
 
 **Before creating a canary release from contributors, the core team member must ensure that the code being released is not malicious.**
 
 Creating a canary release can either be done via GitHub's UI or the [CLI](https://cli.github.com/):
 
-### With GitHub UI
+#### With GitHub UI
 
 1. Open the workflow UI at https://github.com/storybookjs/storybook/actions/workflows/publish.yml
 2. On the top right corner, click "Run workflow"
 3. For "branch", **always select `next`**, regardless of which branch your pull request is on
 4. For the pull request number, input the number for the pull request **without a leading #**
 
-### With the CLI
+#### With the CLI
 
 The following command will trigger a workflow run - replace `<PR_NUMBER>` with the actual pull request number:
 
@@ -471,15 +489,13 @@ The canary release will have the following version format: `0.0.0-pr-<PR_NUMBER>
 > All canary releases are released under the same "canary" dist tag. This means you'll technically be able to install it with `npm install @storybook/cli@canary`. However, this doesn't make sense, as releases from subsequent pull requests will overwrite that tag quickly. Therefore you should always install the specific version string, e.g., `npm install @storybook/cli@0.0.0-pr-23508-sha-5ec8c1c3`.
 
 <details>
-  <summary>Isn't there a simpler/smarter way to do this?</summary>
+  <summary>Why is admin permission required for canary releases?</summary>
 
 The simple approach would be to release canaries for all pull requests automatically; however, this would be insecure as any contributor with Write privileges to the repository (200+ users) could create a malicious pull request that alters the release script to release a malicious release (e.g., release a patch version that adds a crypto miner).
 
 To alleviate this, we only allow the "Release" GitHub environment that contains the npm token to be accessible from workflows running on the protected branches (`next`, `main`, etc.).
 
-You could also be tempted to require approval from admins before running the workflows. However, this would spam the core team with GitHub notifications for workflow runs seeking approval - even when a core team member triggered the workflow. Therefore we are doing it the other way around, requiring contributors and maintainers to ask for a canary release to be created explicitly.
-
-Instead of triggering the workflow manually, you could also do something smart, like trigger it when there's a specific label on the pull request or when someone writes a specific comment on the pull request. However, this would create a lot of unnecessary workflow runs because there isn't a way to filter workflow runs based on labels or comment content. The only way to achieve this would be to trigger the workflow on every comment/labeling, then cancel it if it didn't contain the expected content, which is inefficient.
+For the label-based flow: only admins can add the `canary` label (due to the admin permission check). Once a PR is authorized (label added by admin), subsequent pushes to that branch automatically trigger new canary builds without re-requiring admin action — because the admin already verified the PR by adding the label.
 
 </details>
 

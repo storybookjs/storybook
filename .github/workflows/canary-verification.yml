@@ -1,0 +1,56 @@
+name: Canary Verification
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  # GITHUB_TOKEN is used here (not GH_TOKEN) because label management and PR comments
+  # only require the standard repository token permissions — no elevated access needed.
+  pull-requests: write
+  issues: write
+
+jobs:
+  verify:
+    name: Handle canary verification signal
+    # Only run on PR comments (not issue comments) that contain "/verified"
+    if: |
+      github.repository_owner == 'storybookjs' &&
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '/verified')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR has "needs verification" label
+        id: check-label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json labels --jq '[.labels[].name] | join("\n")')
+          if echo "$LABELS" | grep -qx "needs verification"; then
+            echo "has-label=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-label=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Swap labels on verification
+        if: steps.check-label.outputs.has-label == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh pr edit "$PR_NUMBER" --repo "$REPOSITORY" --remove-label "needs verification" --add-label "verification provided"
+
+      - name: Post confirmation comment
+        if: steps.check-label.outputs.has-label == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+        run: |
+          gh pr comment "$PR_NUMBER" \
+            --repo "$REPOSITORY" \
+            --body "✅ Thank you @${COMMENTER} for verifying the canary release! The \`needs verification\` label has been replaced with \`verification provided\`."

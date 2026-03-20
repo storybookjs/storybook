@@ -69,9 +69,9 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 
 <!-- CANARY_RELEASE_SECTION -->
 
-This PR does not have a canary release associated. You can request a canary release of this pull request by mentioning the `@storybookjs/core` team here.
+This PR does not have a canary release associated. Core team members can trigger a canary release by adding the `canary` label to this pull request.
 
-_core team members can create a canary release [here](https://github.com/storybookjs/storybook/actions/workflows/publish.yml) or locally with `gh workflow run --repo storybookjs/storybook publish.yml --field pr=<PR_NUMBER>`_
+_core team members can also create a canary release [here](https://github.com/storybookjs/storybook/actions/workflows/publish.yml) or locally with `gh workflow run --repo storybookjs/storybook publish.yml --field pr=<PR_NUMBER>`_
 
 <!-- CANARY_RELEASE_SECTION -->
 

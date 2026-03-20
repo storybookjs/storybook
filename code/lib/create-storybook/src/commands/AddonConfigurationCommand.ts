@@ -126,7 +126,7 @@ export class AddonConfigurationCommand {
         const options = {
           packageManager: this.packageManager.type,
           configDir,
-          yes: this.commandOptions.yes,
+          yes: true,
           skipInstall: true,
           skipDependencyManagement: true,
           logger,

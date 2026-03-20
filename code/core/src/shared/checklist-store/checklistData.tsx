@@ -718,7 +718,7 @@ export const Disabled: Story = {
     await userEvent.click(button);
     
     // 👇 Make assertions
-    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
     await expect(args.onClick).not.toHaveBeenCalled();
   }
 };`}

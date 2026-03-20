@@ -52,7 +52,6 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 - [ ] Make sure this PR contains **one** of the labels below:
    <details>
      <summary>Available labels</summary>
-
   - `bug`: Internal changes that fixes incorrect behavior.
   - `maintenance`: User-facing maintenance tasks.
   - `dependencies`: Upgrading (sometimes downgrading) dependencies.

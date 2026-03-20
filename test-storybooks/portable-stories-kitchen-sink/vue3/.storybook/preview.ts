@@ -5,15 +5,15 @@ console.log('preview file is called!');
 const preview: Preview = {
   // TODO: figure out decorators
   decorators: [
-    () => ({ 
+    () => ({
       template: `
         <div data-decorator>
           Global Decorator
           <br />
           <story />
         </div>
-      `
-    })
+      `,
+    }),
   ],
   globalTypes: {
     locale: {

@@ -89,8 +89,7 @@ jobs:
 
   request-create-frontpage-branch:
     if: ${{ always() && github.repository_owner == 'storybookjs' }}
-    needs:
-      [branch-checks, next-release-branch-check, create-next-release-branch]
+    needs: [branch-checks, next-release-branch-check, create-next-release-branch]
     runs-on: ubuntu-latest
     steps:
       - if: ${{ needs.branch-checks.outputs.is-actionable-branch == 'true' && needs.branch-checks.outputs.is-latest-branch == 'false' && needs.next-release-branch-check.outputs.check == 'false' }}

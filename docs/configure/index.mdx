@@ -8,7 +8,9 @@ sidebar:
 Storybook is configured via a folder called `.storybook`, which contains various configuration files.
 
 <Callout variant="info">
-  Note that you can change the folder that Storybook uses by setting the `-c` flag to your `storybook dev` and `storybook build` [CLI commands](../api/cli-options.mdx).
+
+Note that you can change the folder that Storybook uses by setting the `-c` flag to your `storybook dev` and `storybook build` [CLI commands](../api/cli-options.mdx).
+
 </Callout>
 
 ## Configure your Storybook project
@@ -22,18 +24,20 @@ Storybook's main configuration (i.e., the `main.js|ts`) defines your Storybook p
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  This configuration file is a [preset](../addons/addon-types.mdx) and, as such, has a powerful interface, which can be further customized. Read our documentation on writing [presets](../addons/writing-presets.mdx) to learn more.
+
+This configuration file is a [preset](../addons/addon-types.mdx) and, as such, has a powerful interface, which can be further customized. Read our documentation on writing [presets](../addons/writing-presets.mdx) to learn more.
+
 </Callout>
 
 | Configuration element | Description                                                                                                                                                                                                                       |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `stories`             | The array of globs that indicates the [location of your story files](#configure-story-loading), relative to `main.js`                                                                                                             |
 | `staticDirs`          | Sets a list of directories of [static files](./integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration) to be loaded by Storybook <br /> `staticDirs: ['../public']`                                   |
-| `addons`              | Sets the list of [addons](https://storybook.js.org/integrations) loaded by Storybook <br /> `addons: ['@storybook/addon-docs']`                                                                                             |
+| `addons`              | Sets the list of [addons](https://storybook.js.org/integrations) loaded by Storybook <br /> `addons: ['@storybook/addon-docs']`                                                                                                   |
 | `typescript`          | Configures how Storybook handles [TypeScript files](./integration/typescript.mdx) <br /> `typescript: { check: false, checkOptions: {} }`                                                                                         |
 | `framework`           | Configures Storybook based on a set of [framework-specific](./integration/frameworks.mdx) settings <br /> `framework: { name: '@storybook/svelte-vite', options:{} }`                                                             |
 | `core`                | Configures Storybook's [internal features](../api/main-config/main-config-core.mdx) <br /> `core: { disableTelemetry: true, }`                                                                                                    |
-| `docs`                | Configures Storybook's [auto-generated documentation](../writing-docs/autodocs.mdx)<br /> `docs: { defaultName: 'Documentation' }`                                                                                                             |
+| `docs`                | Configures Storybook's [auto-generated documentation](../writing-docs/autodocs.mdx)<br /> `docs: { defaultName: 'Documentation' }`                                                                                                |
 | `features`            | Enables Storybook's [additional features](../api/main-config/main-config-features.mdx)<br /> See table below for a list of available features                                                                                     |
 | `refs`                | Configures [Storybook composition](../sharing/storybook-composition.mdx) <br /> `refs: { example: { title: 'ExampleStorybook', url:'https://your-url.com' } }`                                                                    |
 | `logLevel`            | Configures Storybook's logs in the browser terminal. Useful for debugging <br /> `logLevel: 'debug'`                                                                                                                              |
@@ -99,8 +103,8 @@ You can also adjust your Storybook configuration and implement custom logic to l
 
 Because of the way stories are currently indexed in Storybook, loading stories on demand has a couple of minor limitations at the moment:
 
-* [CSF formats](../api/csf/index.mdx) from version 1 to version 3 are supported.
-* Custom `storySort` functions are allowed based on a restricted API.
+- [CSF formats](../api/csf/index.mdx) from version 1 to version 3 are supported.
+- Custom `storySort` functions are allowed based on a restricted API.
 
 ## Configure story rendering
 
@@ -108,9 +112,9 @@ To control the way stories are rendered and add global [decorators](../writing-s
 
 The `preview.js` file can be an ES module and export the following keys:
 
-* `decorators` - an array of global [decorators](../writing-stories/decorators.mdx#global-decorators)
-* `parameters` - an object of global [parameters](../writing-stories/parameters.mdx#global-parameters)
-* `globalTypes` - definition of [globalTypes](../essentials/toolbars-and-globals.mdx#global-types-and-the-toolbar-annotation)
+- `decorators` - an array of global [decorators](../writing-stories/decorators.mdx#global-decorators)
+- `parameters` - an object of global [parameters](../writing-stories/parameters.mdx#global-parameters)
+- `globalTypes` - definition of [globalTypes](../essentials/toolbars-and-globals.mdx#global-types-and-the-toolbar-annotation)
 
 If you’re looking to change how to order your stories, read about [sorting stories](../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories).
 

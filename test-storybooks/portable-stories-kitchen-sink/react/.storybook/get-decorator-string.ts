@@ -1,3 +1,3 @@
 export const getDecoratorString = () => {
-  return "Global Decorator";
+  return 'Global Decorator';
 };

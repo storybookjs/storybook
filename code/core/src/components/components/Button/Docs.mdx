@@ -31,11 +31,14 @@ To ensure Buttons are accessible, the `ariaLabel` prop must contain a label to b
 // Using the onClick event handler
 <Button ariaLabel={false} onClick={() => {}}>Hello world!</Button>
 
-  // Using the asChild prop to render a custom child
-  <Button ariaLabel={false} asChild>
-    <a href="https://storybook.js.org">Hello world!</a>
-  </Button>
+// Using the asChild prop to render a custom child
+
+<Button ariaLabel={false} asChild>
+  <a href="https://storybook.js.org">Hello world!</a>
+</Button>
+
 `} />
+
 <Canvas of={ButtonStories.Base} />
 <Controls />
 
@@ -50,7 +53,8 @@ Use the `size` prop to change the size of the button. You can set the value to `
   code={`
 <Button ariaLabel={false} size="small">Small Button</Button>
 <Button ariaLabel={false} size="medium">Medium Button</Button>
-`} />
+`}
+/>
 
 ### Button variants
 
@@ -64,7 +68,8 @@ Use the `variant` prop to change the visual style of the button. You can set the
 <Button variant="outline">Outline</Button>
 <Button variant="solid">Solid</Button>
 <Button variant="Ghost">Ghost</Button>
-`} />
+`}
+/>
 
 ### Button with icon
 
@@ -78,7 +83,8 @@ You can add an icon to the button by adding the icon on the left of the text. Pl
 <Button ariaLabel={false}>
   <FaceHappyIcon /> Button
 </Button>
-`} />
+`}
+/>
 
 ### Icon only buttons
 
@@ -92,7 +98,8 @@ You can also use the button as an icon only button by removing the text. To make
 <Button ariaLabel="Button" padding="small">
   <FaceHappyIcon />
 </Button>
-`} />
+`}
+/>
 
 ### Button with custom wrapper
 
@@ -109,7 +116,8 @@ If you want to use a custom wrapper to set the button as an external link or to 
 <Button ariaLabel={false} asChild>
   <Link href='/home'>Hello world!</Link>
 </Button>
-`} />
+`}
+/>
 
 ### Button with animations
 
@@ -129,7 +137,8 @@ You can use the `animate` prop to add animations to the button. You can set the 
 <Button ariaLabel={false} animation="rotate360">
   <FaceHappyIcon />Button
 </Button>
-`} />
+`}
+/>
 
 ### Disabled button
 
@@ -143,5 +152,5 @@ You can use the `disabled` prop to set the button as disabled.
 <Button ariaLabel={false} disabled>
   <FaceHappyIcon />Button
 </Button>
- `}
+`}
 />

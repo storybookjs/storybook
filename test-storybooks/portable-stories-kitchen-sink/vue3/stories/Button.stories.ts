@@ -93,7 +93,7 @@ export const CSF3ButtonWithRender: CSF3Story = {
   render: (args) => ({
     components: { Button },
     setup() {
-      console.log('hello')
+      console.log('hello');
       return { args };
     },
     template: `
@@ -153,4 +153,3 @@ export const WithLoader: StoryObj<{ mockFn: (val: string) => string }> = {
     expect(mockFn).toHaveBeenCalledWith('render');
   },
 };
-

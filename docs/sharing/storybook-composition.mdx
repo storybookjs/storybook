@@ -11,10 +11,10 @@ Composition allows you to browse components from any Storybook accessible via UR
 
 You’ll see the composed Storybook’s stories in the sidebar alongside your own. This unlocks common workflows that teams often struggle with:
 
-* 👩‍💻 UI developers can quickly reference prior art without switching between Storybooks.
-* 🎨 Design systems can expand adoption by composing themselves into their users’ Storybooks.
-* 🛠 Frontend platform can audit how components are used across projects.
-* 📚 View multiple Storybooks with different tech stacks in one place
+- 👩‍💻 UI developers can quickly reference prior art without switching between Storybooks.
+- 🎨 Design systems can expand adoption by composing themselves into their users’ Storybooks.
+- 🛠 Frontend platform can audit how components are used across projects.
+- 📚 View multiple Storybooks with different tech stacks in one place
 
 ![Storybook composition](../_assets/sharing/combine-storybooks.png)
 
@@ -29,7 +29,9 @@ In your [`.storybook/main.js|ts`](../configure/index.mdx#configure-story-renderi
 {/* prettier-ignore-end */}
 
 <Callout variant="warning">
-  Addons in composed Storybooks will not work as they normally do in a non-composed Storybook.
+
+Addons in composed Storybooks will not work as they normally do in a non-composed Storybook.
+
 </Callout>
 
 ## Compose local Storybooks
@@ -55,7 +57,9 @@ You can also compose Storybooks based on the current development environment (e.
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  Similar to other fields available in Storybook’s configuration file, the `refs` field can also be a function that accepts a `config` parameter containing Storybook’s configuration object. See the [API reference](../api/main-config/main-config-refs.mdx) for more information.
+
+Similar to other fields available in Storybook’s configuration file, the `refs` field can also be a function that accepts a `config` parameter containing Storybook’s configuration object. See the [API reference](../api/main-config/main-config-refs.mdx) for more information.
+
 </Callout>
 
 ## Troubleshooting
@@ -71,5 +75,7 @@ If you're working with an outdated Storybook version or have a project-specific 
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  The usage of a specific version of the CLI is intended as the `extract` command is not available in Storybook 8.0 or higher. It also requires you to provide additional configuration to generate the `index.json` file accurately. See the [previous documentation](../../../release-7-6/docs/sharing/storybook-composition.mdx) for more information.
+
+The usage of a specific version of the CLI is intended as the `extract` command is not available in Storybook 8.0 or higher. It also requires you to provide additional configuration to generate the `index.json` file accurately. See the [previous documentation](../../../release-7-6/docs/sharing/storybook-composition.mdx) for more information.
+
 </Callout>

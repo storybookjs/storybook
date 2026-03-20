@@ -41,8 +41,8 @@ Let’s break it down.
 
 The first thing you'll notice is that the component documentation is divided into distinct formats: one for writing component stories describing each possible component state and the second one for documenting how to use them. This split leverages the best qualities of each format:
 
-* **CSF** is great for succinctly defining stories (component examples). If you use TypeScript, it also provides type safety and auto-completion.
-* **MDX** is great for writing structured documentation and composing it with interactive JSX elements.
+- **CSF** is great for succinctly defining stories (component examples). If you use TypeScript, it also provides type safety and auto-completion.
+- **MDX** is great for writing structured documentation and composing it with interactive JSX elements.
 
 ### Anatomy of MDX
 
@@ -77,7 +77,9 @@ Imports the components and stories that will be used in the JSX throughout the r
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  When providing the `of` prop to the `Meta` block, make sure that you're referencing the **full set of exports** of the story file and not the component itself to prevent render issues with the generated documentation.
+
+When providing the `of` prop to the `Meta` block, make sure that you're referencing the **full set of exports** of the story file and not the component itself to prevent render issues with the generated documentation.
+
 </Callout>
 
 The `Meta` block defines where the document will be placed in the sidebar. In this case, it is adjacent to the Checkbox’s stories. By default, the docs sidebar node is titled `"Docs"`, but this can be customized by passing a `name` prop (e.g., `<Meta of={CheckboxStories} name="Info" />`). If you want to place a docs node at an arbitrary point in the navigation hierarchy, you can use the `title` prop (e.g., `<Meta title="path/to/node" />`).
@@ -158,8 +160,8 @@ However, providing the `Meta` Doc Block may not be required for certain use case
 
 <Callout variant="info" icon="💡">
 
-  If you're overriding an existing auto-generated documentation page enabled via [`tags`](./autodocs.mdx#setup-automated-docs) configuration property, we recommend removing it to avoid errors.
-  
+If you're overriding an existing auto-generated documentation page enabled via [`tags`](./autodocs.mdx#setup-automated-docs) configuration property, we recommend removing it to avoid errors.
+
 </Callout>
 
 Once the custom MDX documentation is loaded, Storybook will infer the title and location using the same heuristic rules to generate [auto-title stories](../configure/user-interface/sidebar-and-urls.mdx#csf-30-auto-titles) and render it in the sidebar as a `Docs` entry.
@@ -209,7 +211,9 @@ If you need to extend your documentation with additional content written in Mark
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  The `Markdown` Doc Block provides additional configuration options to customize the rendering of your documentation. For more information, refer to the [API documentation](../api/doc-blocks/doc-block-markdown.mdx).
+
+The `Markdown` Doc Block provides additional configuration options to customize the rendering of your documentation. For more information, refer to the [API documentation](../api/doc-blocks/doc-block-markdown.mdx).
+
 </Callout>
 
 ![Changelog markdown in an MDX story](../_assets/writing-docs/mdx-markdown-docs-import.png)
@@ -230,13 +234,13 @@ Instead, if you need to target a specific documentation section, you can adjust 
 
 However, cross-linking documentation isn't restricted to documentation pages. You can adjust the `path` query and supply the story's unique identifier if you need to reference a specific one. For example:
 
-{/*This redirects to the **Canvas** tab of the story: */}
+{/* This redirects to the **Canvas** tab of the story: */}
 
 ```md
 [Go to specific story canvas](?path=/story/some--id)
 ```
 
-{/*You can also use anchors to target a specific section of a page: */}
+{/* You can also use anchors to target a specific section of a page: */}
 
 <Callout variant="info" icon="💡">
 
@@ -257,7 +261,9 @@ If you're extending your documentation to include specific features (e.g., table
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  The [`remark-gfm`](https://github.com/remarkjs/remark-gfm) package is not included by default with Storybook and must be installed separately as a development dependency. To learn more about how to use it and the other breaking changes introduced by MDX, refer to the [GFM guide](https://mdxjs.com/guides/gfm/) and the [migration guide](https://mdxjs.com/migrating/v2/) provided by the MDX team for more information.
+
+The [`remark-gfm`](https://github.com/remarkjs/remark-gfm) package is not included by default with Storybook and must be installed separately as a development dependency. To learn more about how to use it and the other breaking changes introduced by MDX, refer to the [GFM guide](https://mdxjs.com/guides/gfm/) and the [migration guide](https://mdxjs.com/migrating/v2/) provided by the MDX team for more information.
+
 </Callout>
 
 ### The MDX documentation doesn't render in my environment
@@ -279,7 +285,9 @@ npx @hipster/mdx2-issue-checker
 ```
 
 <Callout variant="info" icon="💡">
-  Depending on the volume, you may be required to run the command multiple times to fix all the issues.
+
+Depending on the volume, you may be required to run the command multiple times to fix all the issues.
+
 </Callout>
 
 When it finishes, it will output the list of files causing issues. You can then use this information to fix the problems manually.
@@ -302,14 +310,14 @@ If you turned off inline rendering for your stories via the [`inline`](../api/do
 
 For most projects, Storybook's addon-docs uses the React version listed in your project's dependencies. If it does not find one, it will use React 18.2.0. There are two exceptions to this:
 
-* Preact projects will always use React 17
-* Next.js projects will always use the canary version that comes with the Next.js version installed, regardless of which React version is listed in the project’s dependencies.
+- Preact projects will always use React 17
+- Next.js projects will always use the canary version that comes with the Next.js version installed, regardless of which React version is listed in the project’s dependencies.
 
 If you're having issues with the React version used, you may need to re-create your project's `node_modules` folder to ensure the correct version is used.
 
 **Learn more about Storybook documentation**
 
-* [Autodocs](./autodocs.mdx) for creating documentation for your stories
-* MDX for customizing your documentation
-* [Doc Blocks](./doc-blocks.mdx) for authoring your documentation
-* [Publishing docs](./build-documentation.mdx) to automate the process of publishing your documentation
+- [Autodocs](./autodocs.mdx) for creating documentation for your stories
+- MDX for customizing your documentation
+- [Doc Blocks](./doc-blocks.mdx) for authoring your documentation
+- [Publishing docs](./build-documentation.mdx) to automate the process of publishing your documentation

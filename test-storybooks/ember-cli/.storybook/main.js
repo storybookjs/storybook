@@ -8,11 +8,7 @@ module.exports = {
   },
   stories: ['../stories/*.stories.js'],
   logLevel: 'debug',
-  addons: [
-    '@storybook/addon-a11y',
-    '@storybook/addon-docs',
-    '@storybook/addon-links'
-  ],
+  addons: ['@storybook/addon-a11y', '@storybook/addon-docs', '@storybook/addon-links'],
   webpackFinal: async (config) => {
     // eslint-disable-next-line no-param-reassign
     config.resolve.fallback = {

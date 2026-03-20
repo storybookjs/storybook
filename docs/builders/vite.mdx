@@ -7,8 +7,8 @@ sidebar:
 
 Storybook Vite builder bundles your components and stories with [Vite](https://vitejs.dev/), a fast ESM bundler.
 
-* For applications built with Vite: it allows reusing the existing configuration in Storybook.
-* For applications built with Webpack: it provides faster startup and refresh times, with the disadvantage that your component's execution environment differs from your application.
+- For applications built with Vite: it allows reusing the existing configuration in Storybook.
+- For applications built with Webpack: it provides faster startup and refresh times, with the disadvantage that your component's execution environment differs from your application.
 
 ## Setup
 
@@ -65,7 +65,9 @@ By default, the Vite builder in Storybook searches for the Vite configuration fi
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  If you do not want Storybook to load the Vite configuration file automatically, you can use the `viteConfigPath` option to point to a non-existent file.
+
+If you do not want Storybook to load the Vite configuration file automatically, you can use the `viteConfigPath` option to point to a non-existent file.
+
 </Callout>
 
 ### TypeScript
@@ -78,7 +80,7 @@ If you need, you can also configure Storybook's Vite builder using TypeScript. R
 
 {/* prettier-ignore-end */}
 
-***
+---
 
 ## Troubleshooting
 
@@ -123,6 +125,6 @@ If you are migrating from a Webpack-based project, such as [CRA](https://create-
 
 **Learn more about builders**
 
-* Vite builder for bundling with Vite
-* [Webpack builder](./webpack.mdx) for bundling with Webpack
-* [Builder API](./builder-api.mdx) for building a Storybook builder
+- Vite builder for bundling with Vite
+- [Webpack builder](./webpack.mdx) for bundling with Webpack
+- [Builder API](./builder-api.mdx) for building a Storybook builder

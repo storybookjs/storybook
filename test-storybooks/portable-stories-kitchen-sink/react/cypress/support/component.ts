@@ -15,12 +15,12 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import "./commands";
+import './commands';
 
-import { mount } from "cypress/react18";
+import { mount } from 'cypress/react18';
 
-import { setProjectAnnotations } from "@storybook/react-vite";
-import sbAnnotations from "../../.storybook/preview";
+import { setProjectAnnotations } from '@storybook/react-vite';
+import sbAnnotations from '../../.storybook/preview';
 
 // Augment the Cypress namespace to include type definitions for
 // your custom command.
@@ -40,6 +40,6 @@ declare global {
 // which will break
 process.env = {};
 
-Cypress.Commands.add("mount", mount);
+Cypress.Commands.add('mount', mount);
 
 setProjectAnnotations([sbAnnotations]);

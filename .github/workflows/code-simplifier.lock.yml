@@ -1,12 +1,12 @@
 #
-#    ___                   _   _      
-#   / _ \                 | | (_)     
-#  | |_| | __ _  ___ _ __ | |_ _  ___ 
+#    ___                   _   _
+#   / _ \                 | | (_)
+#  | |_| | __ _  ___ _ __ | |_ _  ___
 #  |  _  |/ _` |/ _ \ '_ \| __| |/ __|
-#  | | | | (_| |  __/ | | | |_| | (__ 
+#  | | | | (_| |  __/ | | | |_| | (__
 #  \_| |_/\__, |\___|_| |_|\__|_|\___|
 #          __/ |
-#  _    _ |___/ 
+#  _    _ |___/
 # | |  | |                / _| |
 # | |  | | ___ _ __ _  __| |_| | _____      ____
 # | |/\| |/ _ \ '__| |/ /|  _| |/ _ \ \ /\ / / ___|
@@ -32,20 +32,20 @@
 #
 # gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"dbddcd7da0eefb6c24a3380b4e555d7aacd3ba78c14d79ebc131c33cb86f02ea","compiler_version":"v0.55.0","strict":true}
 
-name: "Code Simplifier"
-"on":
+name: 'Code Simplifier'
+'on':
   schedule:
-  - cron: "6 12 * * *"
-    # Friendly format: daily (scattered)
+    - cron: '6 12 * * *'
+      # Friendly format: daily (scattered)
   # skip-if-match: is:pr is:open in:title "[code-simplifier]" # Skip-if-match processed as search check in pre-activation job
   workflow_dispatch:
 
 permissions: {}
 
 concurrency:
-  group: "gh-aw-${{ github.workflow }}"
+  group: 'gh-aw-${{ github.workflow }}'
 
-run-name: "Code Simplifier"
+run-name: 'Code Simplifier'
 
 jobs:
   activation:
@@ -55,8 +55,8 @@ jobs:
     permissions:
       contents: read
     outputs:
-      comment_id: ""
-      comment_repo: ""
+      comment_id: ''
+      comment_repo: ''
       model: ${{ steps.generate_aw_info.outputs.model }}
       secret_verification_result: ${{ steps.validate-secret.outputs.verification_result }}
     steps:
@@ -67,22 +67,22 @@ jobs:
       - name: Generate agentic run info
         id: generate_aw_info
         env:
-          GH_AW_INFO_ENGINE_ID: "copilot"
-          GH_AW_INFO_ENGINE_NAME: "GitHub Copilot CLI"
+          GH_AW_INFO_ENGINE_ID: 'copilot'
+          GH_AW_INFO_ENGINE_NAME: 'GitHub Copilot CLI'
           GH_AW_INFO_MODEL: ${{ vars.GH_AW_MODEL_AGENT_COPILOT || '' }}
-          GH_AW_INFO_VERSION: ""
-          GH_AW_INFO_AGENT_VERSION: "latest"
-          GH_AW_INFO_CLI_VERSION: "v0.55.0"
-          GH_AW_INFO_WORKFLOW_NAME: "Code Simplifier"
-          GH_AW_INFO_EXPERIMENTAL: "false"
-          GH_AW_INFO_SUPPORTS_TOOLS_ALLOWLIST: "true"
-          GH_AW_INFO_STAGED: "false"
+          GH_AW_INFO_VERSION: ''
+          GH_AW_INFO_AGENT_VERSION: 'latest'
+          GH_AW_INFO_CLI_VERSION: 'v0.55.0'
+          GH_AW_INFO_WORKFLOW_NAME: 'Code Simplifier'
+          GH_AW_INFO_EXPERIMENTAL: 'false'
+          GH_AW_INFO_SUPPORTS_TOOLS_ALLOWLIST: 'true'
+          GH_AW_INFO_STAGED: 'false'
           GH_AW_INFO_ALLOWED_DOMAINS: '["defaults"]'
-          GH_AW_INFO_FIREWALL_ENABLED: "true"
-          GH_AW_INFO_AWF_VERSION: "v0.23.0"
-          GH_AW_INFO_AWMG_VERSION: ""
-          GH_AW_INFO_FIREWALL_TYPE: "squid"
-          GH_AW_COMPILED_STRICT: "true"
+          GH_AW_INFO_FIREWALL_ENABLED: 'true'
+          GH_AW_INFO_AWF_VERSION: 'v0.23.0'
+          GH_AW_INFO_AWMG_VERSION: ''
+          GH_AW_INFO_FIREWALL_TYPE: 'squid'
+          GH_AW_COMPILED_STRICT: 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
@@ -105,7 +105,7 @@ jobs:
       - name: Check workflow file timestamps
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          GH_AW_WORKFLOW_FILE: "code-simplifier.lock.yml"
+          GH_AW_WORKFLOW_FILE: 'code-simplifier.lock.yml'
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -168,7 +168,7 @@ jobs:
           - **workflow-run-id**: __GH_AW_GITHUB_RUN_ID__
           {{/if}}
           </github-context>
-          
+
           GH_AW_PROMPT_EOF
           cat << 'GH_AW_PROMPT_EOF'
           </system>
@@ -212,9 +212,9 @@ jobs:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
             setupGlobals(core, github, context, exec, io);
-            
+
             const substitutePlaceholders = require('/opt/gh-aw/actions/substitute_placeholders.cjs');
-            
+
             // Call the substitution function
             return await substitutePlaceholders({
               file: process.env.GH_AW_PROMPT,
@@ -256,11 +256,11 @@ jobs:
       issues: read
       pull-requests: read
     concurrency:
-      group: "gh-aw-copilot-${{ github.workflow }}"
+      group: 'gh-aw-copilot-${{ github.workflow }}'
     env:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      GH_AW_ASSETS_ALLOWED_EXTS: ""
-      GH_AW_ASSETS_BRANCH: ""
+      GH_AW_ASSETS_ALLOWED_EXTS: ''
+      GH_AW_ASSETS_BRANCH: ''
       GH_AW_ASSETS_MAX_SIZE_KB: 0
       GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs
       GH_AW_SAFE_OUTPUTS: /opt/gh-aw/safeoutputs/outputs.jsonl
@@ -587,17 +587,17 @@ jobs:
           # Mask immediately to prevent timing vulnerabilities
           API_KEY=$(openssl rand -base64 45 | tr -d '/+=')
           echo "::add-mask::${API_KEY}"
-          
+
           PORT=3001
-          
+
           # Set outputs for next steps
           {
             echo "safe_outputs_api_key=${API_KEY}"
             echo "safe_outputs_port=${PORT}"
           } >> "$GITHUB_OUTPUT"
-          
+
           echo "Safe Outputs MCP server will run on port ${PORT}"
-          
+
       - name: Start Safe Outputs MCP HTTP Server
         id: safe-outputs-start
         env:
@@ -615,9 +615,9 @@ jobs:
           export GH_AW_SAFE_OUTPUTS_TOOLS_PATH
           export GH_AW_SAFE_OUTPUTS_CONFIG_PATH
           export GH_AW_MCP_LOG_DIR
-          
+
           bash /opt/gh-aw/actions/start_safe_outputs_server.sh
-          
+
       - name: Start MCP Gateway
         id: start-mcp-gateway
         env:
@@ -629,7 +629,7 @@ jobs:
         run: |
           set -eo pipefail
           mkdir -p /tmp/gh-aw/mcp-config
-          
+
           # Export gateway environment variables for MCP config and gateway script
           export MCP_GATEWAY_PORT="80"
           export MCP_GATEWAY_DOMAIN="host.docker.internal"
@@ -640,10 +640,10 @@ jobs:
           mkdir -p "${MCP_GATEWAY_PAYLOAD_DIR}"
           export MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD="524288"
           export DEBUG="*"
-          
+
           export GH_AW_ENGINE="copilot"
           export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_LOCKDOWN -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.1.8'
-          
+
           mkdir -p /home/runner/.copilot
           cat << GH_AW_MCP_CONFIG_EOF | bash /opt/gh-aw/actions/start_mcp_gateway.sh
           {
@@ -731,7 +731,7 @@ jobs:
           # This ensures they are in /tmp/gh-aw/ where secret redaction can scan them
           SESSION_STATE_DIR="$HOME/.copilot/session-state"
           LOGS_DIR="/tmp/gh-aw/sandbox/agent/logs"
-          
+
           if [ -d "$SESSION_STATE_DIR" ]; then
             echo "Copying Copilot session state files from $SESSION_STATE_DIR to $LOGS_DIR"
             mkdir -p "$LOGS_DIR"
@@ -780,7 +780,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_SAFE_OUTPUTS: ${{ env.GH_AW_SAFE_OUTPUTS }}
-          GH_AW_ALLOWED_DOMAINS: "api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,github.com,host.docker.internal,json-schema.org,json.schemastore.org,keyserver.ubuntu.com,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,ppa.launchpad.net,raw.githubusercontent.com,registry.npmjs.org,s.symcb.com,s.symcd.com,security.ubuntu.com,telemetry.enterprise.githubcopilot.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com"
+          GH_AW_ALLOWED_DOMAINS: 'api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,github.com,host.docker.internal,json-schema.org,json.schemastore.org,keyserver.ubuntu.com,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,ppa.launchpad.net,raw.githubusercontent.com,registry.npmjs.org,s.symcb.com,s.symcd.com,security.ubuntu.com,telemetry.enterprise.githubcopilot.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com'
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_API_URL: ${{ github.api_url }}
         with:
@@ -889,8 +889,8 @@ jobs:
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          WORKFLOW_NAME: "Code Simplifier"
-          WORKFLOW_DESCRIPTION: "Analyzes recently modified code and creates pull requests with simplifications that improve clarity, consistency, and maintainability while preserving functionality"
+          WORKFLOW_NAME: 'Code Simplifier'
+          WORKFLOW_DESCRIPTION: 'Analyzes recently modified code and creates pull requests with simplifications that improve clarity, consistency, and maintainability while preserving functionality'
           HAS_PATCH: ${{ steps.collect_output.outputs.has_patch }}
         with:
           script: |
@@ -983,7 +983,7 @@ jobs:
       issues: write
       pull-requests: write
     concurrency:
-      group: "gh-aw-conclusion-code-simplifier"
+      group: 'gh-aw-conclusion-code-simplifier'
       cancel-in-progress: false
     outputs:
       noop_message: ${{ steps.noop.outputs.noop_message }}
@@ -1012,11 +1012,11 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_NOOP_MAX: "1"
-          GH_AW_WORKFLOW_NAME: "Code Simplifier"
-          GH_AW_WORKFLOW_SOURCE: "github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md"
-          GH_AW_TRACKER_ID: "code-simplifier"
+          GH_AW_NOOP_MAX: '1'
+          GH_AW_WORKFLOW_NAME: 'Code Simplifier'
+          GH_AW_WORKFLOW_SOURCE: 'github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619'
+          GH_AW_WORKFLOW_SOURCE_URL: '${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md'
+          GH_AW_TRACKER_ID: 'code-simplifier'
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1029,10 +1029,10 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Code Simplifier"
-          GH_AW_WORKFLOW_SOURCE: "github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md"
-          GH_AW_TRACKER_ID: "code-simplifier"
+          GH_AW_WORKFLOW_NAME: 'Code Simplifier'
+          GH_AW_WORKFLOW_SOURCE: 'github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619'
+          GH_AW_WORKFLOW_SOURCE_URL: '${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md'
+          GH_AW_TRACKER_ID: 'code-simplifier'
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1045,20 +1045,20 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Code Simplifier"
-          GH_AW_WORKFLOW_SOURCE: "github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md"
-          GH_AW_TRACKER_ID: "code-simplifier"
+          GH_AW_WORKFLOW_NAME: 'Code Simplifier'
+          GH_AW_WORKFLOW_SOURCE: 'github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619'
+          GH_AW_WORKFLOW_SOURCE_URL: '${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md'
+          GH_AW_TRACKER_ID: 'code-simplifier'
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
-          GH_AW_WORKFLOW_ID: "code-simplifier"
+          GH_AW_WORKFLOW_ID: 'code-simplifier'
           GH_AW_SECRET_VERIFICATION_RESULT: ${{ needs.activation.outputs.secret_verification_result }}
           GH_AW_CHECKOUT_PR_SUCCESS: ${{ needs.agent.outputs.checkout_pr_success }}
           GH_AW_INFERENCE_ACCESS_ERROR: ${{ needs.agent.outputs.inference_access_error }}
           GH_AW_CODE_PUSH_FAILURE_ERRORS: ${{ needs.safe_outputs.outputs.code_push_failure_errors }}
           GH_AW_CODE_PUSH_FAILURE_COUNT: ${{ needs.safe_outputs.outputs.code_push_failure_count }}
-          GH_AW_GROUP_REPORTS: "false"
-          GH_AW_TIMEOUT_MINUTES: "30"
+          GH_AW_GROUP_REPORTS: 'false'
+          GH_AW_TIMEOUT_MINUTES: '30'
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1071,14 +1071,14 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Code Simplifier"
-          GH_AW_WORKFLOW_SOURCE: "github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md"
-          GH_AW_TRACKER_ID: "code-simplifier"
+          GH_AW_WORKFLOW_NAME: 'Code Simplifier'
+          GH_AW_WORKFLOW_SOURCE: 'github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619'
+          GH_AW_WORKFLOW_SOURCE_URL: '${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md'
+          GH_AW_TRACKER_ID: 'code-simplifier'
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_MESSAGE: ${{ steps.noop.outputs.noop_message }}
-          GH_AW_NOOP_REPORT_AS_ISSUE: "true"
+          GH_AW_NOOP_REPORT_AS_ISSUE: 'true'
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1091,10 +1091,10 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Code Simplifier"
-          GH_AW_WORKFLOW_SOURCE: "github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md"
-          GH_AW_TRACKER_ID: "code-simplifier"
+          GH_AW_WORKFLOW_NAME: 'Code Simplifier'
+          GH_AW_WORKFLOW_SOURCE: 'github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619'
+          GH_AW_WORKFLOW_SOURCE_URL: '${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md'
+          GH_AW_TRACKER_ID: 'code-simplifier'
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -1130,9 +1130,9 @@ jobs:
         id: check_skip_if_match
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          GH_AW_SKIP_QUERY: "is:pr is:open in:title \"[code-simplifier]\""
-          GH_AW_WORKFLOW_NAME: "Code Simplifier"
-          GH_AW_SKIP_MAX_MATCHES: "1"
+          GH_AW_SKIP_QUERY: 'is:pr is:open in:title "[code-simplifier]"'
+          GH_AW_WORKFLOW_NAME: 'Code Simplifier'
+          GH_AW_SKIP_MAX_MATCHES: '1'
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -1152,13 +1152,13 @@ jobs:
       pull-requests: write
     timeout-minutes: 15
     env:
-      GH_AW_CALLER_WORKFLOW_ID: "${{ github.repository }}/code-simplifier"
-      GH_AW_ENGINE_ID: "copilot"
-      GH_AW_TRACKER_ID: "code-simplifier"
-      GH_AW_WORKFLOW_ID: "code-simplifier"
-      GH_AW_WORKFLOW_NAME: "Code Simplifier"
-      GH_AW_WORKFLOW_SOURCE: "github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619"
-      GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md"
+      GH_AW_CALLER_WORKFLOW_ID: '${{ github.repository }}/code-simplifier'
+      GH_AW_ENGINE_ID: 'copilot'
+      GH_AW_TRACKER_ID: 'code-simplifier'
+      GH_AW_WORKFLOW_ID: 'code-simplifier'
+      GH_AW_WORKFLOW_NAME: 'Code Simplifier'
+      GH_AW_WORKFLOW_SOURCE: 'github/gh-aw/.github/workflows/code-simplifier.md@852cb06ad52958b402ed982b69957ffc57ca0619'
+      GH_AW_WORKFLOW_SOURCE_URL: '${{ github.server_url }}/github/gh-aw/tree/852cb06ad52958b402ed982b69957ffc57ca0619/.github/workflows/code-simplifier.md'
     outputs:
       code_push_failure_count: ${{ steps.process_safe_outputs.outputs.code_push_failure_count }}
       code_push_failure_errors: ${{ steps.process_safe_outputs.outputs.code_push_failure_errors }}
@@ -1219,10 +1219,10 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_ALLOWED_DOMAINS: "api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,github.com,host.docker.internal,json-schema.org,json.schemastore.org,keyserver.ubuntu.com,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,ppa.launchpad.net,raw.githubusercontent.com,registry.npmjs.org,s.symcb.com,s.symcd.com,security.ubuntu.com,telemetry.enterprise.githubcopilot.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com"
+          GH_AW_ALLOWED_DOMAINS: 'api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,github.com,host.docker.internal,json-schema.org,json.schemastore.org,keyserver.ubuntu.com,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,ppa.launchpad.net,raw.githubusercontent.com,registry.npmjs.org,s.symcb.com,s.symcd.com,security.ubuntu.com,telemetry.enterprise.githubcopilot.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com'
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_API_URL: ${{ github.api_url }}
-          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"create_pull_request\":{\"expires\":24,\"labels\":[\"refactoring\",\"code-quality\",\"automation\"],\"max\":1,\"max_patch_size\":1024,\"reviewers\":[\"copilot\"],\"title_prefix\":\"[code-simplifier] \"},\"missing_data\":{},\"missing_tool\":{}}"
+          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: '{"create_pull_request":{"expires":24,"labels":["refactoring","code-quality","automation"],"max":1,"max_patch_size":1024,"reviewers":["copilot"],"title_prefix":"[code-simplifier] "},"missing_data":{},"missing_tool":{}}'
           GH_AW_CI_TRIGGER_TOKEN: ${{ secrets.GH_AW_CI_TRIGGER_TOKEN }}
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -1238,4 +1238,3 @@ jobs:
           name: safe-output-items
           path: /tmp/safe-output-items.jsonl
           if-no-files-found: warn
-

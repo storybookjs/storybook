@@ -11,7 +11,6 @@
 
 ## 10.4.0-alpha.0
 
-
 ## 10.3.0-beta.3
 
 - Addon-Vitest: Handle additional vitest config export patterns in postinstall - [#34106](https://github.com/storybookjs/storybook/pull/34106), thanks @copilot-swe-agent!

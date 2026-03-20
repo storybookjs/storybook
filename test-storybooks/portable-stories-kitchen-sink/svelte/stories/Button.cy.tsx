@@ -9,10 +9,10 @@ describe('<Button()', () => {
     // TODO figure out the following issue ReferenceError: $state is not defined
     // at createSvelte5Props (http://localhost:5173/__cypress/src/@fs/storybook/code/renderers/svelte/dist/createSvelte5Props.svelte.js:11:17)
     const Primary = composeStory(stories.CSF3Primary, stories.default);
-    cy.mount(CSF3Primary)
+    cy.mount(CSF3Primary);
     cy.get('button').should('contain.text', 'foo');
     // cy.get('[data-decorator]').should('exist');
-  })
+  });
 
   // it('renders primary button with custom args', async () => {
   //   cy.mount(CSF3Primary({ label: 'bar' }))
@@ -42,4 +42,4 @@ describe('<Button()', () => {
   //     cy.get('[data-testid="input"]').should('contain.value', 'Hello world!');
   //   });
   // })
-})
+});

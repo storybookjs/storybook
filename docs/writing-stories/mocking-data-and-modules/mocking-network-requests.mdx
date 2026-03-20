@@ -29,7 +29,9 @@ If you're not already using MSW, generate the service worker file necessary for 
 
 <If renderer="angular">
   <Callout variant="info" icon="💡">
+
     Angular projects will likely need to adjust the command to save the mock service worker file in a different directory (e.g., `src`).
+
   </Callout>
 </If>
 
@@ -60,7 +62,9 @@ If your component fetches data from a REST API, you can use MSW to mock those re
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  This example uses the [`fetch` API](https://developer.mozilla.org/en-US/docs/Web/API/fetch) to make network requests. If you're using a different library (e.g. [`axios`](https://axios-http.com/)), you can apply the same principles to mock network requests in Storybook.
+
+This example uses the [`fetch` API](https://developer.mozilla.org/en-US/docs/Web/API/fetch) to make network requests. If you're using a different library (e.g. [`axios`](https://axios-http.com/)), you can apply the same principles to mock network requests in Storybook.
+
 </Callout>
 
 With the MSW addon, we can write stories that use MSW to mock the REST requests. Here's an example of two stories for the document screen component: one that fetches data successfully and another that fails.
@@ -84,7 +88,9 @@ GraphQL is another common way to fetch data in components. You can use MSW to mo
 <If renderer="svelte">
 
 <Callout variant="info">
-  This example uses [URQL](https://formidable.com/open-source/urql/) to make network requests. If you're using a different library (e.g., [Houdini](https://houdinigraphql.com/) or [Graffle](https://graffle.js.org/)), you can apply the same principles to mock network requests in Storybook.
+
+This example uses [URQL](https://formidable.com/open-source/urql/) to make network requests. If you're using a different library (e.g., [Houdini](https://houdinigraphql.com/) or [Graffle](https://graffle.js.org/)), you can apply the same principles to mock network requests in Storybook.
+
 </Callout>
 
 </If>
@@ -92,7 +98,9 @@ GraphQL is another common way to fetch data in components. You can use MSW to mo
 <If notRenderer="svelte">
 
 <Callout variant="info">
-  This example uses GraphQL with [Apollo Client](https://www.apollographql.com/docs/) to make network requests. If you're using a different library (e.g. [URQL](https://formidable.com/open-source/urql/) or [React Query](https://react-query.tanstack.com/)), you can apply the same principles to mock network requests in Storybook.
+
+This example uses GraphQL with [Apollo Client](https://www.apollographql.com/docs/) to make network requests. If you're using a different library (e.g. [URQL](https://formidable.com/open-source/urql/) or [React Query](https://react-query.tanstack.com/)), you can apply the same principles to mock network requests in Storybook.
+
 </Callout>
 
 </If>

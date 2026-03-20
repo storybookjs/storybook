@@ -18,30 +18,34 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'Next.js',
-  range: '≥ 14.1',
-  icon: '/images/logos/renderers/logo-nextjs.svg'
-}, {
-  name: 'Vite',
-  range: '≥ 5',
-  icon: '/images/logos/builders/vite.svg'
-}]} />
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Next.js',
+      range: '≥ 14.1',
+      icon: '/images/logos/renderers/logo-nextjs.svg',
+    },
+    {
+      name: 'Vite',
+      range: '≥ 5',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
 
 ## Choose between Vite and Webpack
 
 This Vite-based framework offers several advantages over the Webpack-based [`@storybook/nextjs`](./nextjs.mdx) framework, and is the recommended option:
 
-* ⚡ **Faster builds** - Vite's build system is significantly faster than Webpack
-* 🔧 **Modern tooling** - Uses the latest build tools and optimizations
-* 🧪 **Better test support** - Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) and other testing features
-* 📦 **Simpler configuration** - No need for Babel or complex Webpack configurations
-* 🎯 **Better development experience** - Faster Hot Module Replacement and dev server startup
+- ⚡ **Faster builds** - Vite's build system is significantly faster than Webpack
+- 🔧 **Modern tooling** - Uses the latest build tools and optimizations
+- 🧪 **Better test support** - Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) and other testing features
+- 📦 **Simpler configuration** - No need for Babel or complex Webpack configurations
+- 🎯 **Better development experience** - Faster Hot Module Replacement and dev server startup
 
 Storybook will automatically detect your project and select the `nextjs-vite` framework **unless** your project has custom Webpack or Babel configurations. If you have custom configurations, Storybook will ask you which framework to install.
 
 Choose `nextjs-vite` if you're willing to migrate existing Babel or Webpack configurations to Vite. Choose `nextjs` (Webpack 5) if you need to keep your existing Webpack/Babel setup.
-
 
 ## Run Storybook
 
@@ -59,14 +63,14 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 Storybook for Next.js with Vite supports many Next.js features including:
 
-* 🖼 [Image optimization](#nextjss-image-component)
-* 🔤 [Font optimization](#nextjs-font-optimization)
-* 🔀 [Routing and navigation](#nextjs-routing)
-* 🌐 [`next/head`](#nextjs-head)
-* ⤵️ [Absolute imports](#imports)
-* 🎨 [Styling](#styling)
-* 🎭 [Module mocking](#mocking-modules)
-* ☁️ [React Server Component (experimental)](#react-server-components-rsc)
+- 🖼 [Image optimization](#nextjss-image-component)
+- 🔤 [Font optimization](#nextjs-font-optimization)
+- 🔀 [Routing and navigation](#nextjs-routing)
+- 🌐 [`next/head`](#nextjs-head)
+- ⤵️ [Absolute imports](#imports)
+- 🎨 [Styling](#styling)
+- 🎭 [Module mocking](#mocking-modules)
+- ☁️ [React Server Component (experimental)](#react-server-components-rsc)
 
 ### Next.js's Image component
 
@@ -143,11 +147,11 @@ The Vite-based framework automatically handles font path mapping, so you don't n
 
 The following features are not supported (yet). Support for these features might be planned for the future:
 
-* [Support font loaders configuration in next.config.js](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts#local-fonts)
-* [fallback](https://nextjs.org/docs/pages/api-reference/components/font#fallback) option
-* [adjustFontFallback](https://nextjs.org/docs/pages/api-reference/components/font#adjustfontfallback) option
-* [preload](https://nextjs.org/docs/pages/api-reference/components/font#preload) option gets ignored. Storybook handles Font loading its own way.
-* [display](https://nextjs.org/docs/pages/api-reference/components/font#display) option gets ignored. All fonts are loaded with display set to "block" to make Storybook load the font properly.
+- [Support font loaders configuration in next.config.js](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts#local-fonts)
+- [fallback](https://nextjs.org/docs/pages/api-reference/components/font#fallback) option
+- [adjustFontFallback](https://nextjs.org/docs/pages/api-reference/components/font#adjustfontfallback) option
+- [preload](https://nextjs.org/docs/pages/api-reference/components/font#preload) option gets ignored. Storybook handles Font loading its own way.
+- [display](https://nextjs.org/docs/pages/api-reference/components/font#display) option gets ignored. All fonts are loaded with display set to "block" to make Storybook load the font properly.
 
 #### Mocking fonts during testing
 
@@ -362,7 +366,6 @@ To override these defaults, you can use [parameters](../../writing-stories/param
 
 [`next/head`](https://nextjs.org/docs/pages/api-reference/components/head) is supported out of the box. You can use it in your stories like you would in your Next.js application. Please keep in mind, that the Head `children` are placed into the head element of the iframe that Storybook uses to render your stories.
 
-
 ## Next.js styling
 
 ### Sass/Scss
@@ -418,6 +421,7 @@ Tailwind in Next.js [is supported via PostCSS](https://nextjs.org/docs/app/getti
 Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/building-your-application/configuring/post-css). Thus this framework will automatically handle your PostCSS config for you.
 
 ### Imports
+
 #### Absolute imports
 
 [Absolute imports](https://nextjs.org/docs/pages/building-your-application/configuring/absolute-imports-and-module-aliases#absolute-imports) from the root directory are supported.
@@ -748,10 +752,10 @@ You can refer to the [Install `sharp` to Use Built-In Image Optimization](https:
 
 We recommend using `@storybook/nextjs-vite` (this framework) for most projects because it offers:
 
-* Faster builds and development server startup
-* Better support for modern testing features like the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx)
-* Simpler configuration without Babel
-* Better developer experience with faster HMR
+- Faster builds and development server startup
+- Better support for modern testing features like the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx)
+- Simpler configuration without Babel
+- Better developer experience with faster HMR
 
 However, if your project has custom Webpack configurations that are incompatible with Vite, or you need specific Webpack features, you should use [`@storybook/nextjs`](./nextjs.mdx) (Webpack 5) instead.
 
@@ -777,13 +781,13 @@ This module exports mocked implementations of the `next/cache` module's exports.
 
 Type: [`cookies`](https://nextjs.org/docs/app/api-reference/functions/cookies#cookiessetname-value-options), [`headers`](https://nextjs.org/docs/app/api-reference/functions/headers) and [`draftMode`](https://nextjs.org/docs/app/api-reference/functions/draft-mode) from Next.js
 
-This module exports *writable* mocked implementations of the `next/headers` module's exports. You can use it to set up cookies or headers that are read in your story, and to later assert that they have been called.
+This module exports _writable_ mocked implementations of the `next/headers` module's exports. You can use it to set up cookies or headers that are read in your story, and to later assert that they have been called.
 
 Next.js's default [`headers()`](https://nextjs.org/docs/app/api-reference/functions/headers) export is read-only, but this module exposes methods allowing you to write to the headers:
 
-* **`headers().append(name: string, value: string)`**: Appends the value to the header if it exists already.
-* **`headers().delete(name: string)`**: Deletes the header
-* **`headers().set(name: string, value: string)`**: Sets the header to the value provided.
+- **`headers().append(name: string, value: string)`**: Appends the value to the header if it exists already.
+- **`headers().delete(name: string)`**: Deletes the header
+- **`headers().set(name: string, value: string)`**: Sets the header to the value provided.
 
 For cookies, you can use the existing API to write them. E.g., `cookies().set('firstName', 'Jane')`.
 
@@ -893,4 +897,3 @@ Type:
 ```
 
 The router object that is passed to the `next/router` context. See [Next.js's router docs](https://nextjs.org/docs/pages/building-your-application/routing) for more details.
-

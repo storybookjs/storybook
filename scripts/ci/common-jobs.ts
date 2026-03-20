@@ -76,7 +76,7 @@ export const prettyDocs = defineJob('Prettify docs', () => ({
       run: {
         name: 'Docs formatting',
         working_directory: `scripts`,
-        command: 'yarn docs:fmt:check',
+        command: 'yarn fmt:check',
       },
     },
   ],
@@ -180,7 +180,7 @@ export const check = defineJob(
 );
 
 export const lint = defineJob(
-  'EsLint & Prettier validation',
+  'ESLint & oxfmt validation',
   () => ({
     executor: {
       name: 'sb_node_22_classic',
@@ -197,9 +197,9 @@ export const lint = defineJob(
       },
       {
         run: {
-          name: 'Lint code Other',
+          name: 'Format code',
           working_directory: `code`,
-          command: 'yarn lint:other',
+          command: 'yarn fmt:check',
         },
       },
       {

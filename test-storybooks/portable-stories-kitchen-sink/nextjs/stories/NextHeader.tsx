@@ -30,7 +30,7 @@ export default function Component() {
         );
       })}
 
-        <button onClick={handleClick}>add user-id cookie</button>
+      <button onClick={handleClick}>add user-id cookie</button>
     </>
   );
 }

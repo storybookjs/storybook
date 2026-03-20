@@ -24,7 +24,9 @@ test('renders story with props as second argument', async ({ mount }) => {
 
 test('renders story with custom render', async ({ mount }) => {
   const component = await mount(<stories.CSF3ButtonWithRender />);
-  await expect(component.getByTestId('custom-render')).toContainText('I am a custom render function');
+  await expect(component.getByTestId('custom-render')).toContainText(
+    'I am a custom render function'
+  );
   await expect(component.getByRole('button')).toHaveText('foo');
 });
 

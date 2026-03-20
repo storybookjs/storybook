@@ -1,3 +1,3 @@
 export const getString = () => {
-  return "initial string";
+  return 'initial string';
 };

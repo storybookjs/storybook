@@ -11,8 +11,8 @@ Storybook's API allows developers to interact programmatically with Storybook. W
 
 Our API is exposed via two distinct packages, each one with a different purpose:
 
-* `storybook/manager-api` used to interact with the Storybook manager UI or access the Storybook API.
-* `storybook/preview-api` used to control and configure the addon's behavior.
+- `storybook/manager-api` used to interact with the Storybook manager UI or access the Storybook API.
+- `storybook/preview-api` used to control and configure the addon's behavior.
 
 {/* prettier-ignore-start */}
 
@@ -24,9 +24,9 @@ Our API is exposed via two distinct packages, each one with a different purpose:
 
 The `add` method allows you to register the type of UI component associated with the addon (e.g., panels, toolbars, tabs). For a minimum viable Storybook addon, you should provide the following arguments:
 
-* `type`: The type of UI component to register.
-* `title`: The title to feature in the Addon Panel.
-* `render`: The function that renders the addon's UI component.
+- `type`: The type of UI component to register.
+- `title`: The title to feature in the Addon Panel.
+- `render`: The function that renders the addon's UI component.
 
 {/* prettier-ignore-start */}
 
@@ -35,7 +35,9 @@ The `add` method allows you to register the type of UI component associated with
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  The render function is called with `active`. The `active` value will be true when the panel is focused on the UI.
+
+The render function is called with `active`. The `active` value will be true when the panel is focused on the UI.
+
 </Callout>
 
 ### addons.register()
@@ -73,17 +75,19 @@ Use the `makeDecorator` API to create decorators in the style of the official ad
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  If the story's parameters include `{ exampleParameter: { disable: true } }` (where `exampleParameter` is the `parameterName` of your addon), your decorator will not be called.
+
+If the story's parameters include `{ exampleParameter: { disable: true } }` (where `exampleParameter` is the `parameterName` of your addon), your decorator will not be called.
+
 </Callout>
 
 The `makeDecorator` API requires the following arguments:
 
-* `name`: Unique name to identify the custom addon decorator.
-* `parameterName`: Sets a unique parameter to be consumed by the addon.
-* `skipIfNoParametersOrOptions`: (Optional) Doesn't run the decorator if the user hasn't options either via [decorators](../writing-stories/decorators.mdx) or [parameters](../writing-stories/parameters.mdx).
-* `wrapper`: your decorator function. Takes the `getStory`, `context`, and both the `options` and `parameters` (as defined in `skipIfNoParametersOrOptions` above).
+- `name`: Unique name to identify the custom addon decorator.
+- `parameterName`: Sets a unique parameter to be consumed by the addon.
+- `skipIfNoParametersOrOptions`: (Optional) Doesn't run the decorator if the user hasn't options either via [decorators](../writing-stories/decorators.mdx) or [parameters](../writing-stories/parameters.mdx).
+- `wrapper`: your decorator function. Takes the `getStory`, `context`, and both the `options` and `parameters` (as defined in `skipIfNoParametersOrOptions` above).
 
-***
+---
 
 ## Storybook API
 
@@ -252,19 +256,19 @@ This method allows you to override the default Storybook UI configuration (e.g.,
 
 The following table details how to use the API values:
 
-| Name                  | Type            | Description                                             | Example Value                         |
-| --------------------- | --------------- | ------------------------------------------------------- | ------------------------------------- |
-| **navSize**           | Number (pixels) | The size of the sidebar that shows a list of stories    | `300`                                 |
-| **bottomPanelHeight** | Number (pixels) | The size of the addon panel when in the bottom position | `200`                                 |
-| **rightPanelWidth**   | Number (pixels) | The size of the addon panel when in the right position  | `200`                                 |
-| **panelPosition**     | String          | Where to show the addon panel                           | `'bottom'` or `'right'`               |
-| **enableShortcuts**   | Boolean         | Enable/disable shortcuts                                | `true`                                |
-| **showToolbar**       | Boolean         | Show/hide toolbar                                       | `true`                                |
-| **theme**             | Object          | Storybook Theme, see next section                       | `undefined`                           |
-| **selectedPanel**     | String          | Id to select an addon panel                             | `storybook/actions/panel`             |
-| **initialActive**     | String          | Select the default active tab on Mobile                 | `sidebar` or `canvas` or `addons`     |
-| **sidebar**           | Object          | Sidebar options, see below                              | `{ showRoots: false }`                |
-| **toolbar**           | Object          | Modify the tools in the toolbar using the addon id      | `{ fullscreen: { hidden: false } }`   |
+| Name                  | Type            | Description                                             | Example Value                       |
+| --------------------- | --------------- | ------------------------------------------------------- | ----------------------------------- |
+| **navSize**           | Number (pixels) | The size of the sidebar that shows a list of stories    | `300`                               |
+| **bottomPanelHeight** | Number (pixels) | The size of the addon panel when in the bottom position | `200`                               |
+| **rightPanelWidth**   | Number (pixels) | The size of the addon panel when in the right position  | `200`                               |
+| **panelPosition**     | String          | Where to show the addon panel                           | `'bottom'` or `'right'`             |
+| **enableShortcuts**   | Boolean         | Enable/disable shortcuts                                | `true`                              |
+| **showToolbar**       | Boolean         | Show/hide toolbar                                       | `true`                              |
+| **theme**             | Object          | Storybook Theme, see next section                       | `undefined`                         |
+| **selectedPanel**     | String          | Id to select an addon panel                             | `storybook/actions/panel`           |
+| **initialActive**     | String          | Select the default active tab on Mobile                 | `sidebar` or `canvas` or `addons`   |
+| **sidebar**           | Object          | Sidebar options, see below                              | `{ showRoots: false }`              |
+| **toolbar**           | Object          | Modify the tools in the toolbar using the addon id      | `{ fullscreen: { hidden: false } }` |
 
 The following options are configurable under the `sidebar` namespace:
 
@@ -276,11 +280,11 @@ The following options are configurable under the `sidebar` namespace:
 
 The following options are configurable under the `toolbar` namespace:
 
-| Name      | Type   | Description                                                          | Example Value       |
-| --------- | ------ | -------------------------------------------------------------------- | ------------------- |
-| **[id]**  | String | Toggle visibility for a specific toolbar item (e.g. `title`, `zoom`) | `{ hidden: false }` |
+| Name     | Type   | Description                                                          | Example Value       |
+| -------- | ------ | -------------------------------------------------------------------- | ------------------- |
+| **[id]** | String | Toggle visibility for a specific toolbar item (e.g. `title`, `zoom`) | `{ hidden: false }` |
 
-***
+---
 
 ## Storybook hooks
 
@@ -360,8 +364,8 @@ Hook that allows you to retrieve or update a story's [`args`](../writing-stories
 
 **Learn more about the Storybook addon ecosystem**
 
-* [Types of addons](./addon-types.mdx) for other types of addons
-* [Writing addons](./writing-addons.mdx) for the basics of addon development
-* [Presets](./writing-presets.mdx) for preset development
-* [Integration catalog](./integration-catalog.mdx) for requirements and available recipes
-* API reference to learn about the available APIs
+- [Types of addons](./addon-types.mdx) for other types of addons
+- [Writing addons](./writing-addons.mdx) for the basics of addon development
+- [Presets](./writing-presets.mdx) for preset development
+- [Integration catalog](./integration-catalog.mdx) for requirements and available recipes
+- API reference to learn about the available APIs

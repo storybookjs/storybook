@@ -11,12 +11,12 @@ Storybook integrates with design tools to speed up your development workflow. Th
 
 [Figma](https://www.figma.com/) is a collaborative UI design tool that allows multiple people to work on the same design simultaneously in the browser. There are two ways to integrate Storybook and Figma.
 
-* [**Embed Storybook in Figma**](#embed-storybook-in-figma-with-the-plugin)
-* [**Embed Figma in Storybook**](#embed-figma-in-storybook-with-the-addon)
+- [**Embed Storybook in Figma**](#embed-storybook-in-figma-with-the-plugin)
+- [**Embed Figma in Storybook**](#embed-figma-in-storybook-with-the-addon)
 
 ### Embed Storybook in Figma with the plugin
 
-[Storybook Connect](https://www.figma.com/community/plugin/1056265616080331589/Storybook-Connect) is a Figma plugin that allows you to embed component stories in Figma. It’s powered by [Storybook embeds](./embed.mdx) and [Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook), a publishing tool created by the Storybook team.
+[Storybook Connect](https://www.figma.com/community/plugin/1056265616080331589/Storybook-Connect) is a Figma plugin that allows you to embed component stories in Figma. It’s powered by [Storybook embeds](./embed.mdx) and [Chromatic](https://www.chromatic.com/?utm_source=storybook_website&utm_medium=link&utm_campaign=storybook), a publishing tool created by the Storybook team.
 
 <Video src="../_assets/sharing/figma-plugin-open-story.mp4" />
 
@@ -45,7 +45,9 @@ In Figma, select the component, open the plugin, and paste the URL.
 Chromatic will automatically update your linked stories to reflect the most recent Storybook published on the branch you linked. That means the link persists even as you push new code.
 
 <Callout variant="info" icon="💡">
-  The plugin does not support linking stories to Figma layers.
+
+The plugin does not support linking stories to Figma layers.
+
 </Callout>
 
 #### View stories in Figma
@@ -80,9 +82,9 @@ The CLI's [`add`](../api/cli-options.mdx#add) command automates the addon's inst
 
 In Figma, open the file you want to embed in Storybook. You can embed files, prototypes, components, and frames.
 
-* Embed a file or prototype, click the "Share" button to generate a unique URL for the file then click "Copy link".
+- Embed a file or prototype, click the "Share" button to generate a unique URL for the file then click "Copy link".
 
-* Embed a component or frame check "Link to selected frame" in the Share dialog. Or right click on the frame and go to "Copy/Paste as" » "Copy link".
+- Embed a component or frame check "Link to selected frame" in the Share dialog. Or right click on the frame and go to "Copy/Paste as" » "Copy link".
 
 In Storybook, add a new [parameter](../writing-stories/parameters.mdx) named `design` to your story and paste the Figma URL. For example:
 
@@ -142,5 +144,5 @@ Integrate Adobe XD with Storybook using the [design addon](https://storybook.js.
 
 Extend and customize Storybook by building an integration. Integrate with lower-level Storybook APIs or bootstrap an addon to customize Storybook's UI and behavior.
 
-* [Addon documentation](../addons/index.mdx)
-* [Create an addon tutorial](../addons/writing-addons.mdx)
+- [Addon documentation](../addons/index.mdx)
+- [Create an addon tutorial](../addons/writing-addons.mdx)

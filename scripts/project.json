@@ -4,7 +4,7 @@
   "includedScripts": [],
   "targets": {
     "pretty-docs": {
-      "command": "yarn docs:fmt:check",
+      "command": "yarn fmt:check",
       "cache": true,
       "inputs": ["{workspaceRoot}/docs/**/*"]
     },

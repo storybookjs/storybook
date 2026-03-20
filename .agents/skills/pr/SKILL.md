@@ -47,6 +47,13 @@ Read `.github/PULL_REQUEST_TEMPLATE.md` from the repository root.
 
 Copy that template **EXACTLY**, including all HTML comments (`<!-- ... -->`). Fill in the relevant sections based on the changes, but keep all comments intact.
 
+## Validation reminders
+
+- Formatting is oxfmt-based in this repo. Use `yarn fmt:check` entrypoints, not Prettier.
+- Typical checks before opening a PR:
+  - `cd code && yarn fmt:check`
+  - `cd scripts && yarn fmt:check`
+
 ## Command
 
 Always create PRs in draft mode:

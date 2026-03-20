@@ -40,28 +40,20 @@
   ],
   "overrides": [
     {
-      "files": [
-        "*.md",
-        "*.mdx"
-      ],
+      "files": ["*.md", "*.mdx"],
       "options": {
         "importOrderSeparation": false,
         "importOrderSortSpecifiers": false
       }
     },
     {
-      "files": [
-        "*.component.html"
-      ],
+      "files": ["*.component.html"],
       "options": {
         "parser": "angular"
       }
     },
     {
-      "files": [
-        "**/frameworks/angular/src/**/*.ts",
-        "**/frameworks/angular/template/**/*.ts"
-      ],
+      "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
       "options": {
         "parser": "babel-ts"
       }

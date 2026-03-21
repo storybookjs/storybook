@@ -46,6 +46,34 @@ describe('findOutdatedPackage', () => {
     expect(result).toBe(false);
   });
 
+  it('uses alias target version when package is not installed', async () => {
+    vi.mocked(packageManager.getModulePackageJSON).mockResolvedValue(null);
+    vi.mocked(packageManager.getDependencyVersion).mockReturnValue('npm:vite5@^5.4.16');
+
+    const result = await findOutdatedPackage(
+      {
+        vite: '5.0.0',
+      },
+      { packageManager }
+    );
+
+    expect(result).toBe(false);
+  });
+
+  it('does not report outdated when installed version equals minimum', async () => {
+    vi.mocked(packageManager.getModulePackageJSON).mockResolvedValue({ version: '5.0.0' } as any);
+    vi.mocked(packageManager.getDependencyVersion).mockReturnValue('^5.0.0');
+
+    const result = await findOutdatedPackage(
+      {
+        vite: '5.0.0',
+      },
+      { packageManager }
+    );
+
+    expect(result).toBe(false);
+  });
+
   it('still reports outdated package when npm alias target version is below minimum', async () => {
     vi.mocked(packageManager.getModulePackageJSON).mockResolvedValue({ version: '0.1.12' } as any);
     vi.mocked(packageManager.getDependencyVersion).mockReturnValue('npm:vite5@^4.9.9');

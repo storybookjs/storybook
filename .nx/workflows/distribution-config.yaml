@@ -1,6 +1,9 @@
 # see https://github.com/nrwl/nx/blob/master/.nx/workflows/dynamic-changesets.yaml for inspiration
 distribute-on:
-  default: 19 linux-browsers-js, 1 linux-js
+  small-changeset: 5 linux-browsers-js, 1 linux-js # Distribute on small if 1-25% of projects affected in PR
+  medium-changeset: 10 linux-browsers-js, 1 linux-js # Distribute on medium if 26-50% of projects affected in PR
+  large-changeset: 20 linux-browsers-js, 1 linux-js # Distribute on large if 51-75% of projects affected in PR
+  extra-large-changeset: 30 linux-browsers-js, 1 linux-js # Distribute on extra-large if 76-100% of projects affected in PR
 
 assignment-rules:
   - targets:

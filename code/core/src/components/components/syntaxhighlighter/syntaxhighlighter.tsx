@@ -68,6 +68,8 @@ export interface WrapperProps {
 const Wrapper = styled.div<WrapperProps>(
   ({ theme }) => ({
     position: 'relative',
+    display: 'flex',
+    flexWrap: 'wrap',
     overflow: 'hidden',
     color: theme.color.defaultText,
   }),
@@ -97,7 +99,10 @@ const UnstyledScroller = ({ children, className }: ScrollAreaProps) => (
 );
 const Scroller = styled(UnstyledScroller)(
   {
-    position: 'relative',
+    flex: 1,
+    flexShrink: 0,
+    flexBasis: 'fit-content',
+    maxWidth: '100%',
   },
   ({ theme }) => themedSyntax(theme)
 );
@@ -247,7 +252,7 @@ export const SyntaxHighlighter = ({
       </Scroller>
 
       {copyable ? (
-        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} />
+        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} flexLayout />
       ) : null}
     </Wrapper>
   );

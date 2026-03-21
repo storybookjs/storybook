@@ -1,1 +1,1 @@
-export type HandlerFunction = (...args: any[]) => void;
+export type HandlerFunction = (...args: any[]) => any;

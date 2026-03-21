@@ -271,7 +271,7 @@ PrimaryDisabled.test('should be disabled', async ({ canvas, userEvent, args }) =
   const button = await canvas.findByRole('button');
   await userEvent.click(button);
 
-  await expect(button).toBeDisabled();
+  await expect(button).toHaveAttribute('aria-disabled', 'true');
   await expect(args.onClick).not.toHaveBeenCalled();
 });
 ```

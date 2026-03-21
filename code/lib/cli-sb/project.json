@@ -1,5 +1,7 @@
 {
   "name": "sb",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
+  "// targets": "to see all targets run: nx show project sb --web",
   "targets": {}
 }

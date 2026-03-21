@@ -4,7 +4,6 @@ distribute-on:
   medium-changeset: 10 linux-browsers-js, 1 linux-js # Distribute on medium if 26-50% of projects affected in PR
   large-changeset: 20 linux-browsers-js, 1 linux-js # Distribute on large if 51-75% of projects affected in PR
   extra-large-changeset: 30 linux-browsers-js, 1 linux-js # Distribute on extra-large if 76-100% of projects affected in PR
-
 assignment-rules:
   - targets:
       - compile

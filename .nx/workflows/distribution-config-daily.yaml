@@ -1,0 +1,28 @@
+# Distribution config for daily/scheduled runs — more agents for faster throughput
+distribute-on:
+  small-changeset: 10 linux-browsers-js, 1 linux-js
+  medium-changeset: 20 linux-browsers-js, 1 linux-js
+  large-changeset: 40 linux-browsers-js, 1 linux-js
+  extra-large-changeset: 60 linux-browsers-js, 1 linux-js
+assignment-rules:
+  - targets:
+      - compile
+    projects:
+      - core
+    run-on:
+      - agent: linux-js
+        parallelism: 1
+  - targets:
+      - compile
+      - check
+      - lint
+      - pretty-docs
+      - knip
+    run-on:
+      - agent: linux-js
+        parallelism: 6
+  - targets:
+      - '*'
+    run-on:
+      - agent: linux-browsers-js
+        parallelism: 1

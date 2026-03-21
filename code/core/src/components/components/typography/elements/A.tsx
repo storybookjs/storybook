@@ -34,7 +34,7 @@ export const A = styled(Link)(({ theme }) => ({
   '& code': {
     color: 'inherit',
     textDecoration: 'underline',
-    textDecorationThickness: '1px',
+    textDecorationThickness: '0.03125rem',
     paddingLeft: 0,
     paddingRight: 0,
     '&::before': {

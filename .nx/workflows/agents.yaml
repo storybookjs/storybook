@@ -57,10 +57,14 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Install Node Modules
     script: |
       yarn install --immutable
+  - name: Clean stale Storybook packages from yarn cache
+    script: |
+      rm -f ~/.yarn/berry/cache/storybook-npm-*.zip 2>/dev/null || true
+      rm -f ~/.yarn/berry/cache/@storybook-*.zip 2>/dev/null || true
   - name: Install Browsers
     script: |
       yarn dlx cypress install
-      yarn exec playwright install --with-deps
+      yarn exec playwright install chromium --with-deps
   - name: Verify
     script: |
       echo "node:         $(node --version)"

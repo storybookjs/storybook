@@ -8,6 +8,7 @@ import { now, saveBench } from '../bench/utils';
 import type { Task } from '../task';
 import { ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
+import { isNxTaskExecution } from '../utils/nx';
 
 async function pathExists(path: string) {
   try {
@@ -64,7 +65,7 @@ export const build: Task = {
     );
 
     const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'), 'storybook-static');
-    if (process.env.NX_CLI_SET === 'true' && builtSandboxDir !== cacheDir) {
+    if (isNxTaskExecution() && builtSandboxDir !== cacheDir) {
       console.info(`✅ Removing cache directory ${cacheDir}`);
       await rm(cacheDir, { recursive: true, force: true });
 

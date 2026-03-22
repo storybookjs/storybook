@@ -5,13 +5,14 @@ import { getPort } from '../sandbox/utils/getPort';
 import { type Task } from '../task';
 import { ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
+import { isNxTaskExecution } from '../utils/nx';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
   : 8001;
 
 function getServePort(key: AllTemplatesKey) {
-  return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'serve', key }) : PORT;
+  return isNxTaskExecution() ? getPort({ selectedTask: 'serve', key }) : PORT;
 }
 
 export const serve: Task = {

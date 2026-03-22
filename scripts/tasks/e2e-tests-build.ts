@@ -4,6 +4,7 @@ import waitOn from 'wait-on';
 import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
+import { isNxTaskExecution } from '../utils/nx';
 import { PORT } from './serve';
 
 const testFileRegex = /(test|spec)\.(js|ts|mjs)$/;
@@ -19,7 +20,7 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
   },
   async run({ codeDir, junitFilename, key, sandboxDir, selectedTask }, { dryRun, debug }) {
     const port =
-      process.env.NX_CLI_SET === 'true'
+      isNxTaskExecution()
         ? getPort({ key, selectedTask: selectedTask === 'e2e-tests' ? 'serve' : 'dev' })
         : this.port;
 

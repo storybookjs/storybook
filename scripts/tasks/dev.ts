@@ -5,13 +5,14 @@ import { now, saveBench } from '../bench/utils';
 import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
+import { isNxTaskExecution } from '../utils/nx';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
   : 6006;
 
 function getDevPort(key: AllTemplatesKey) {
-  return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'dev', key }) : PORT;
+  return isNxTaskExecution() ? getPort({ selectedTask: 'dev', key }) : PORT;
 }
 
 export const dev: Task = {

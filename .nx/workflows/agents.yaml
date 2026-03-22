@@ -49,9 +49,14 @@ linux-browsers-init-steps: &linux-browsers-init-steps
     inputs:
       key: '"browsers"|yarn.lock|.yarn/patches/**'
       paths: |
-        ~/.cache/Cypress
         ~/.cache/ms-playwright
       base-branch: 'next'
+  - name: Log Cache State Before Install
+    script: |
+      echo "HOME=$HOME"
+      df -h
+      du -sh ~/.cache/ms-playwright ~/.yarn/berry node_modules code/node_modules scripts/node_modules 2>/dev/null || true
+      find ~/.cache/ms-playwright -maxdepth 1 -mindepth 1 -type d | sort || true
   - name: Install Node
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
@@ -63,13 +68,14 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       rm -f ~/.yarn/berry/cache/@storybook-*.zip 2>/dev/null || true
   - name: Install Browsers
     script: |
-      yarn dlx cypress install
       yarn exec playwright install chromium --with-deps
+      du -sh ~/.cache/ms-playwright 2>/dev/null || true
   - name: Verify
     script: |
       echo "node:         $(node --version)"
       echo "yarn:         $(yarn --version)"
       echo "home:         $HOME"
+      du -sh ~/.cache/ms-playwright ~/.yarn/berry node_modules code/node_modules scripts/node_modules /home/workflows/storybook-sandboxes 2>/dev/null || true
       git diff --exit-code
       yarn dedupe --check
 
@@ -77,6 +83,7 @@ common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true
   IN_STORYBOOK_SANDBOX: true
   STORYBOOK_SANDBOX_ROOT: ../storybook-sandboxes
+  STORYBOOK_NX_CLOUD_AGENT: true
   CI: true
   NODE_OPTIONS: --max_old_space_size=6144
 

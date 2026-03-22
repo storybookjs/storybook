@@ -6,7 +6,6 @@ import storybookVersions from '../../code/core/src/common/versions';
 import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { exec } from './exec';
-import { isNxTaskExecution } from './nx';
 
 export type YarnOptions = {
   cwd: string;
@@ -145,8 +144,8 @@ export const configureYarn2ForVerdaccio = async ({
 }: YarnOptions & { key: AllTemplatesKey }) => {
   // On NX Cloud agents, we use the global cache to avoid duplicating .yarn/cache across sandboxes.
   // Stale @storybook/* packages are cleaned from the global cache in the agent init step (agents.yaml).
-  // On CircleCI, we disable the global cache to avoid stale packages from previous runs.
-  const useGlobalCache = isNxTaskExecution();
+  // Locally and on CircleCI, we disable the global cache to avoid stale packages from previous runs.
+  const useGlobalCache = Boolean(process.env.STORYBOOK_NX_CLOUD_AGENT);
 
   const command = [
     `yarn config set enableGlobalCache ${useGlobalCache}`,

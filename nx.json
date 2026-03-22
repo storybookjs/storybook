@@ -63,14 +63,14 @@
       "configurations": { "production": {} }
     },
     "check-sandbox": {
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task check-sandbox -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "build": {
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task build -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
@@ -78,27 +78,27 @@
       "configurations": { "production": {} }
     },
     "dev": {
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task dev -s task --debug --no-link --template={projectName}",
       "continuous": true,
       "configurations": { "production": {} }
     },
     "vitest-integration": {
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task vitest-integration -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "chromatic": {
-      "dependsOn": ["build"],
+      "dependsOn": ["build", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "serve": {
-      "dependsOn": ["build"],
+      "dependsOn": ["build", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task serve -s task --debug --no-link --template={projectName}",
       "continuous": true,
       "configurations": { "production": {} }

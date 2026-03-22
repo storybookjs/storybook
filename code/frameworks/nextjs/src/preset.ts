@@ -16,6 +16,7 @@ import { configureConfig } from './config/webpack';
 import TransformFontImports from './font/babel';
 import type { FrameworkOptions, StorybookConfig } from './types';
 import { isNextVersionGte } from './utils';
+import { getBuilderOptions } from 'storybook/internal/common';
 
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
@@ -40,9 +41,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
     ...config,
     builder: {
       name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
-      options: {
-        ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
-      },
+      options: await getBuilderOptions(options)
     },
     renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };

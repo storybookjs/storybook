@@ -13,6 +13,7 @@ import semver from 'semver';
 import { normalizePostCssConfig } from './find-postcss-config';
 import type { FrameworkOptions } from './types';
 import { getNextjsVersion } from './utils';
+import { getBuilderOptions } from 'storybook/internal/common';
 
 const require = createRequire(import.meta.url);
 
@@ -20,15 +21,13 @@ const require = createRequire(import.meta.url);
 const vitePluginStorybookNextjs = require('vite-plugin-storybook-nextjs');
 
 export const core: PresetProperty<'core'> = async (config, options) => {
-  const framework = await options.presets.apply('framework');
 
+  
   return {
     ...config,
     builder: {
       name: fileURLToPath(import.meta.resolve('@storybook/builder-vite')),
-      options: {
-        ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
-      },
+      options: await getBuilderOptions(options),
     },
     renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };

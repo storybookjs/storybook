@@ -200,3 +200,49 @@ export const PanelDisabled: Story = {
     showPanel: false,
   },
 };
+
+export const ReactNodeRenderLabel: Story = {
+  decorators: [
+    (storyFn) => {
+      const renderReactNodeLabel = ({ name }: { name: string }) => <em>{startCase(name)}</em>;
+
+      const mockManagerStoreWithReactNodeLabels: any = {
+        state: {
+          index: {
+            someRootId: {
+              type: 'root',
+              id: 'someRootId',
+              name: 'root',
+              renderLabel: renderReactNodeLabel,
+            },
+            someComponentId: {
+              type: 'component',
+              id: 'someComponentId',
+              name: 'component',
+              parent: 'someRootId',
+              renderLabel: renderReactNodeLabel,
+            },
+            someStoryId: {
+              type: 'story',
+              subtype: 'story',
+              id: 'someStoryId',
+              name: 'story',
+              parent: 'someComponentId',
+              renderLabel: renderReactNodeLabel,
+            },
+          },
+        },
+        api: {
+          getCurrentStoryData() {
+            return mockManagerStoreWithReactNodeLabels.state.index.someStoryId;
+          },
+        },
+      };
+      return (
+        <ManagerContext.Provider value={mockManagerStoreWithReactNodeLabels}>
+          {storyFn()}
+        </ManagerContext.Provider>
+      );
+    },
+  ],
+};

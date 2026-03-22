@@ -203,5 +203,6 @@
       "{workspaceRoot}/code/**/*",
       "!{workspaceRoot}/code/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
-  }
+  },
+  "analytics": false
 }

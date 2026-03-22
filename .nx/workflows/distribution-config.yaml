@@ -14,6 +14,12 @@ assignment-rules:
         parallelism: 1
   - targets:
       - compile
+    run-on:
+      - agent: linux-js
+        parallelism: 1
+      - agent: linux-browsers-js
+        parallelism: 1
+  - targets:
       - check
       - lint
       - pretty-docs
@@ -21,15 +27,6 @@ assignment-rules:
     run-on:
       - agent: linux-js
         parallelism: 6
-  #  - targets:
-  #      - e2e-tests
-  #      - e2e-tests-dev
-  #      - test-runner
-  #      - test-runner-dev
-  #      - check-sandbox
-  #    run-on:
-  #      - agent: linux-browsers-js
-  #        parallelism: 2
   - targets:
       - '*'
     run-on:

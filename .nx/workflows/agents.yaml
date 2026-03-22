@@ -9,15 +9,6 @@ linux-init-steps: &linux-init-steps
       key: 'yarn.lock|.yarn/patches/**'
       paths: |
         ~/.yarn/berry
-        node_modules
-        code/node_modules
-        code/addons/*/node_modules
-        code/frameworks/*/node_modules
-        code/lib/*/node_modules
-        code/builders/*/node_modules
-        code/presets/*/node_modules
-        code/renderers/*/node_modules
-        scripts/node_modules
       base-branch: 'next'
   - name: Install Node
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'

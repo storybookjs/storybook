@@ -3,7 +3,7 @@ distribute-on:
   small-changeset: 15 linux-browsers-js, 1 linux-js
   medium-changeset: 25 linux-browsers-js, 1 linux-js
   large-changeset: 35 linux-browsers-js, 1 linux-js
-  extra-large-changeset: 55 linux-browsers-js, 1 linux-js
+  extra-large-changeset: 45 linux-browsers-js, 1 linux-js
 assignment-rules:
   - targets:
       - compile

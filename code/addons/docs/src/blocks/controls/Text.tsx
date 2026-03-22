@@ -1,11 +1,12 @@
 import type { ChangeEvent, FC } from 'react';
 import React, { useCallback, useState } from 'react';
 
-import { Button, Form } from 'storybook/internal/components';
+import { Form } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-import { getControlId, getControlSetterButtonId } from './helpers';
+import { getControlId } from './helpers';
+import { SetValueButton } from './SetValueButton';
 import type { ControlProps, TextConfig, TextValue } from './types';
 
 export type TextProps = ControlProps<TextValue | undefined> & TextConfig;
@@ -45,16 +46,13 @@ export const TextControl: FC<TextProps> = ({
 
   if (value === undefined) {
     return (
-      <Button
-        ariaLabel={false}
-        variant="outline"
-        size="medium"
-        disabled={readonly}
-        id={getControlSetterButtonId(name, storyId)}
+      <SetValueButton
+        name={name}
+        storyId={storyId}
+        label="Set string"
         onClick={onForceVisible}
-      >
-        Set string
-      </Button>
+        disabled={readonly}
+      />
     );
   }
 

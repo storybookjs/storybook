@@ -108,7 +108,7 @@
       "command": "yarn task e2e-tests --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/test-results"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
     "test-runner": {
@@ -116,7 +116,7 @@
       "command": "yarn task test-runner --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/test-results"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
     "e2e-tests-dev": {
@@ -124,7 +124,7 @@
       "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/test-results"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
     "test-runner-dev": {
@@ -132,7 +132,7 @@
       "command": "yarn task test-runner-dev --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/test-results"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
 
@@ -145,7 +145,7 @@
       },
       "cache": true,
       "inputs": ["default", "^production"],
-      "outputs": ["{workspaceRoot}/test-results"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
     "jest": {
@@ -172,7 +172,7 @@
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn playwright-ct" },
       "cache": true,
       "inputs": ["default", "^production"],
-      "outputs": ["{workspaceRoot}/test-results"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
     "cypress": {

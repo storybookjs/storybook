@@ -25,15 +25,6 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       key: 'yarn.lock|.yarn/patches/**'
       paths: |
         ~/.yarn/berry
-        node_modules
-        code/node_modules
-        code/addons/*/node_modules
-        code/frameworks/*/node_modules
-        code/lib/*/node_modules
-        code/builders/*/node_modules
-        code/presets/*/node_modules
-        code/renderers/*/node_modules
-        scripts/node_modules
       base-branch: 'next'
   - name: Restore Browser Binary Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
@@ -42,12 +33,6 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       paths: |
         ~/.cache/ms-playwright
       base-branch: 'next'
-  - name: Log Cache State Before Install
-    script: |
-      echo "HOME=$HOME"
-      df -h
-      du -sh ~/.cache/ms-playwright ~/.yarn/berry node_modules code/node_modules scripts/node_modules 2>/dev/null || true
-      find ~/.cache/ms-playwright -maxdepth 1 -mindepth 1 -type d | sort || true
   - name: Install Node
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules

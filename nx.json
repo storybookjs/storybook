@@ -62,55 +62,43 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}"],
       "configurations": { "production": {} }
     },
-    "prepare-sandbox": {
-      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
-      "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
-      "cache": false,
-      "configurations": { "production": {} }
-    },
     "check-sandbox": {
-      "dependsOn": ["prepare-sandbox"],
+      "dependsOn": ["sandbox"],
       "command": "yarn task check-sandbox -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "build": {
-      "dependsOn": ["prepare-sandbox"],
+      "dependsOn": ["sandbox"],
       "command": "yarn task build -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}/storybook-static"],
       "configurations": { "production": {} }
     },
-    "prepare-build-sandbox": {
-      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }, "build"],
-      "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
-      "cache": false,
-      "configurations": { "production": {} }
-    },
     "dev": {
-      "dependsOn": ["prepare-sandbox"],
+      "dependsOn": ["sandbox"],
       "command": "yarn task dev -s task --debug --no-link --template={projectName}",
       "continuous": true,
       "configurations": { "production": {} }
     },
     "vitest-integration": {
-      "dependsOn": ["prepare-sandbox"],
+      "dependsOn": ["sandbox"],
       "command": "yarn task vitest-integration -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "chromatic": {
-      "dependsOn": ["prepare-build-sandbox"],
+      "dependsOn": ["build"],
       "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "serve": {
-      "dependsOn": ["prepare-build-sandbox"],
+      "dependsOn": ["build"],
       "command": "yarn task serve -s task --debug --no-link --template={projectName}",
       "continuous": true,
       "configurations": { "production": {} }

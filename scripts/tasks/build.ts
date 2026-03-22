@@ -9,6 +9,7 @@ import type { Task } from '../task';
 import { ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 import { isNxTaskExecution } from '../utils/nx';
+import { prepareSandbox } from '../prepare-sandbox';
 
 async function pathExists(path: string) {
   try {
@@ -25,7 +26,8 @@ export const build: Task = {
   async ready({ builtSandboxDir }) {
     return pathExists(builtSandboxDir);
   },
-  async run({ builtSandboxDir, sandboxDir, template, key }, { dryRun, debug }) {
+  async run({ builtSandboxDir, sandboxDir, template, key }, { dryRun, debug, link }) {
+    await prepareSandbox({ key, link });
     const start = now();
 
     await exec(

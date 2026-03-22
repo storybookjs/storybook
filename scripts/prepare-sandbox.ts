@@ -1,96 +1,54 @@
-import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { cp, rm } from 'node:fs/promises';
-import { parseArgs } from 'node:util';
 
 import { join } from 'path';
 import waitOn from 'wait-on';
 
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
 import { exec } from './utils/exec';
+import { isNxTaskExecution } from './utils/nx';
 
-process.setMaxListeners(50);
-
-const DEBUG_DISK = Boolean(process.env.STORYBOOK_DEBUG_DISK);
-
-function shellQuote(value: string) {
-  return `'${value.replaceAll(`'`, `'\\''`)}'`;
-}
-
-function logCommand(command: string) {
-  console.log(`$ ${command}`);
-  try {
-    const output = execSync(command, {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      encoding: 'utf8',
-    }).trim();
-
-    if (output) {
-      console.log(output);
-    }
-  } catch {
-    // Diagnostic commands are best-effort
-  }
-}
-
-function logDiskDiagnostics(label: string, sandboxDir: string, cacheDir: string) {
-  if (!DEBUG_DISK) {
+/**
+ * Prepares a sandbox for use during NX task execution.
+ *
+ * In NX CI, the `sandbox` task caches its output at `sandbox/<dir>` (inside the repo,
+ * without node_modules). Downstream tasks need the sandbox at `../storybook-sandboxes/<dir>`
+ * with node_modules installed. This function bridges that gap by:
+ *
+ * 1. Copying the cached sandbox to the working directory (if needed)
+ * 2. Waiting for the local verdaccio registry (when using --no-link)
+ * 3. Running `yarn install` to restore node_modules
+ * 4. Running framework-specific setup (e.g. svelte-kit sync)
+ * 5. Copying storybook-static from cache (if a build was cached)
+ *
+ * This is called at the start of each downstream task's `run()` (dev, build, serve, etc.)
+ * instead of being a separate NX target, so that NX Cloud doesn't have uncacheable tasks.
+ *
+ * No-op when not running under NX (i.e. when using `yarn task` directly),
+ * or when the sandbox is already prepared (node_modules exist).
+ */
+export async function prepareSandbox({ key, link }: { key: string; link: boolean }): Promise<void> {
+  // When running via `yarn task`, the sandbox task already fully initializes
+  // the sandbox (including node_modules), so no preparation is needed.
+  if (!isNxTaskExecution()) {
     return;
   }
 
-  console.log(`\n=== Disk diagnostics: ${label} ===`);
+  const templateDir = key.replace('/', '-');
 
-  if (process.platform === 'win32') {
-    return;
-  }
-
-  const home = process.env.HOME;
-  const paths = [
-    sandboxDir,
-    join(sandboxDir, '.yarn', 'cache'),
-    join(sandboxDir, 'node_modules'),
-    cacheDir,
-    join(cacheDir, '.yarn', 'cache'),
-    join(cacheDir, 'node_modules'),
-    SANDBOX_DIRECTORY,
-    join(ROOT_DIRECTORY, 'sandbox'),
-    home ? join(home, '.yarn', 'berry') : undefined,
-  ].filter(Boolean) as string[];
-
-  logCommand(`df -h ${shellQuote(ROOT_DIRECTORY)}`);
-  logCommand(`du -sh ${paths.map(shellQuote).join(' ')} 2>/dev/null`);
-  logCommand(
-    `find ${shellQuote(SANDBOX_DIRECTORY)} -mindepth 3 -maxdepth 3 -type d -path '*/.yarn/cache' -exec du -sh {} + 2>/dev/null | sort -h | tail -n 20`
-  );
-  logCommand(
-    `find ${shellQuote(SANDBOX_DIRECTORY)} -mindepth 2 -maxdepth 2 -type d -name node_modules -exec du -sh {} + 2>/dev/null | sort -h | tail -n 20`
-  );
-}
-
-const {
-  values: { link, template },
-} = parseArgs({
-  options: {
-    template: { type: 'string' },
-    link: { type: 'boolean', default: true },
-  },
-  allowNegative: true,
-});
-
-async function main() {
-  if (!template) {
-    throw new Error('Missing required --template option for prepare-sandbox.');
-  }
-  const templateDir = template.replace('/', '-');
-
+  // sandboxDir: where tasks actually run (e.g. ../storybook-sandboxes/react-vite-default-ts)
+  // cacheDir: where NX caches sandbox output (e.g. sandbox/react-vite-default-ts, inside repo)
   const sandboxDir = join(SANDBOX_DIRECTORY, templateDir);
   const cacheDir = join(ROOT_DIRECTORY, 'sandbox', templateDir);
 
+  // Fast path: if node_modules already exist, the sandbox was already prepared
+  // by a previous task in the same pipeline (e.g. build already prepared, so serve can skip)
   if (!existsSync(join(sandboxDir, 'node_modules'))) {
+    // Copy from NX cache to the actual working directory
     if (sandboxDir !== cacheDir) {
       console.log(`🧹 copying cached ${cacheDir} to ${sandboxDir}`);
       await rm(sandboxDir, { recursive: true, force: true });
-      if (!existsSync(join(cacheDir))) {
+      if (!existsSync(cacheDir)) {
         throw new Error(
           `Sandbox should exist at ${cacheDir}. Did you forget to run the sandbox command first?`
         );
@@ -99,6 +57,8 @@ async function main() {
       await cp(cacheDir, sandboxDir, { recursive: true, force: true });
     }
 
+    // In --no-link mode, packages are installed from a local verdaccio registry
+    // that must be running before we can install
     if (!link) {
       await waitOn({
         log: true,
@@ -108,20 +68,18 @@ async function main() {
       });
     }
 
-    logDiskDiagnostics('before yarn install', sandboxDir, cacheDir);
-    try {
-      await exec('yarn install --immutable', { cwd: sandboxDir }, { debug: true });
-    } catch (error) {
-      logDiskDiagnostics('after failed yarn install', sandboxDir, cacheDir);
-      throw error;
-    }
-    logDiskDiagnostics('after yarn install', sandboxDir, cacheDir);
+    // Restore node_modules — the NX cache deliberately excludes them to keep
+    // the remote cache small. The yarn cache is shared, so this is fast.
+    await exec('yarn install --immutable', { cwd: sandboxDir }, { debug: true });
   }
 
-  if (template.includes('svelte-kit')) {
+  // SvelteKit requires a sync step to generate types after install
+  if (key.includes('svelte-kit')) {
     await exec('yarn exec svelte-kit sync', { cwd: sandboxDir }, { debug: true });
   }
 
+  // If a `build` task already ran and cached storybook-static, copy it over
+  // so that serve/chromatic tasks can use it without rebuilding
   const storybookStaticSandboxDir = join(sandboxDir, 'storybook-static');
   const storybookStaticCacheDir = join(cacheDir, 'storybook-static');
 
@@ -133,12 +91,3 @@ async function main() {
     });
   }
 }
-
-main()
-  .then(() => {
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });

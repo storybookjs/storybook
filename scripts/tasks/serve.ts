@@ -6,6 +6,7 @@ import { type Task } from '../task';
 import { ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 import { isNxTaskExecution } from '../utils/nx';
+import { prepareSandbox } from '../prepare-sandbox';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
@@ -28,7 +29,8 @@ export const serve: Task = {
       return false;
     }
   },
-  async run({ builtSandboxDir, key }, { debug, dryRun }) {
+  async run({ builtSandboxDir, key }, { debug, dryRun, link }) {
+    await prepareSandbox({ key, link });
     const port = getServePort(key);
 
     const controller = new AbortController();

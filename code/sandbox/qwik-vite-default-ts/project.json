@@ -13,10 +13,8 @@
   ],
   "targets": {
     "sandbox": { "options": { "dir": "qwik-vite-default-ts" } },
-    "prepare-sandbox": {},
     "dev": {},
     "build": { "options": { "dir": "qwik-vite-default-ts" } },
-    "prepare-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "test-runner": {},

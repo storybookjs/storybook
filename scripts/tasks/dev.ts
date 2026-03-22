@@ -6,6 +6,7 @@ import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
 import { isNxTaskExecution } from '../utils/nx';
+import { prepareSandbox } from '../prepare-sandbox';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
@@ -28,7 +29,8 @@ export const dev: Task = {
       return false;
     }
   },
-  async run({ sandboxDir, key, selectedTask }, { dryRun, debug }) {
+  async run({ sandboxDir, key, selectedTask }, { dryRun, debug, link }) {
+    await prepareSandbox({ key, link });
     const controller = new AbortController();
     const port = getDevPort(key);
     const devCommand = `yarn storybook --port ${port}${selectedTask === 'dev' ? '' : ' --ci'}`;

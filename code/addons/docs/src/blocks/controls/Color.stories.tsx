@@ -1,21 +1,24 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { fn } from 'storybook/test';
+import { fn } from "storybook/test";
 
-import { ColorControl } from './Color';
+import { ColorControl } from "./Color";
 
 const meta = {
   component: ColorControl,
-  parameters: { withRawArg: 'value', controls: { include: ['value', 'startOpen'] } },
-  tags: ['autodocs'],
+  parameters: {
+    withRawArg: "value",
+    controls: { include: ["value", "startOpen"] },
+  },
+  tags: ["autodocs"],
   argTypes: {
     value: {
       control: {
-        type: 'color',
+        type: "color",
       },
     },
   },
-  args: { name: 'color', onChange: fn() },
+  args: { name: "color", onChange: fn() },
 } satisfies Meta<typeof ColorControl>;
 
 export default meta;
@@ -24,7 +27,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Basic: Story = {
   args: {
-    value: '#ff00ff',
+    value: "#ff00ff",
   },
 };
 
@@ -36,58 +39,58 @@ export const Undefined: Story = {
 
 export const WithPresetColors: Story = {
   args: {
-    value: '#00ffff',
+    value: "#00ffff",
     presetColors: [
-      { color: '#ff4785', title: 'Coral' },
-      { color: '#1EA7FD', title: 'Ocean' },
-      { color: 'rgb(252, 82, 31)', title: 'Orange' },
-      { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
-      { color: 'hsl(101, 52%, 49%)', title: 'Green' },
-      { color: 'hsla(179,65%,53%,0.5)', title: 'Seafoam' },
-      { color: '#6F2CAC', title: 'Purple' },
-      { color: '#2A0481', title: 'Ultraviolet' },
-      { color: 'black' },
-      { color: '#333', title: 'Darkest' },
-      { color: '#444', title: 'Darker' },
-      { color: '#666', title: 'Dark' },
-      { color: '#999', title: 'Mediumdark' },
-      { color: '#ddd', title: 'Medium' },
-      { color: '#EEE', title: 'Mediumlight' },
-      { color: '#F3F3F3', title: 'Light' },
-      { color: '#F8F8F8', title: 'Lighter' },
-      { color: '#FFFFFF', title: 'Lightest' },
-      '#fe4a49',
-      '#FED766',
-      'rgba(0, 159, 183, 1)',
-      'hsla(240,11%,91%,0.5)',
-      'slategray',
+      { color: "#ff4785", title: "Coral" },
+      { color: "#1EA7FD", title: "Ocean" },
+      { color: "rgb(252, 82, 31)", title: "Orange" },
+      { color: "rgba(255, 174, 0, 0.5)", title: "Gold" },
+      { color: "hsl(101, 52%, 49%)", title: "Green" },
+      { color: "hsla(179,65%,53%,0.5)", title: "Seafoam" },
+      { color: "#6F2CAC", title: "Purple" },
+      { color: "#2A0481", title: "Ultraviolet" },
+      { color: "black" },
+      { color: "#333", title: "Darkest" },
+      { color: "#444", title: "Darker" },
+      { color: "#666", title: "Dark" },
+      { color: "#999", title: "Mediumdark" },
+      { color: "#ddd", title: "Medium" },
+      { color: "#EEE", title: "Mediumlight" },
+      { color: "#F3F3F3", title: "Light" },
+      { color: "#F8F8F8", title: "Lighter" },
+      { color: "#FFFFFF", title: "Lightest" },
+      "#fe4a49",
+      "#FED766",
+      "rgba(0, 159, 183, 1)",
+      "hsla(240,11%,91%,0.5)",
+      "slategray",
     ],
   },
 };
 
 export const WithMaxPresetColors: Story = {
-  name: 'With maxPresetColors (limit to 5)',
+  name: "With maxPresetColors (limit to 5)",
   args: {
-    value: '#00ffff',
+    value: "#00ffff",
     startOpen: true,
     maxPresetColors: 5,
     presetColors: [
-      { color: '#ff4785', title: 'Coral' },
-      { color: '#1EA7FD', title: 'Ocean' },
-      { color: 'rgb(252, 82, 31)', title: 'Orange' },
-      { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
-      { color: 'hsl(101, 52%, 49%)', title: 'Green' },
-      { color: 'hsla(179,65%,53%,0.5)', title: 'Seafoam' },
-      { color: '#6F2CAC', title: 'Purple' },
-      { color: '#2A0481', title: 'Ultraviolet' },
+      { color: "#ff4785", title: "Coral" },
+      { color: "#1EA7FD", title: "Ocean" },
+      { color: "rgb(252, 82, 31)", title: "Orange" },
+      { color: "rgba(255, 174, 0, 0.5)", title: "Gold" },
+      { color: "hsl(101, 52%, 49%)", title: "Green" },
+      { color: "hsla(179,65%,53%,0.5)", title: "Seafoam" },
+      { color: "#6F2CAC", title: "Purple" },
+      { color: "#2A0481", title: "Ultraviolet" },
     ],
   },
 };
 
 export const WithUnlimitedPresetColors: Story = {
-  name: 'With unlimited presets (maxPresetColors: 0)',
+  name: "With unlimited presets (maxPresetColors: 0)",
   args: {
-    value: '#00ffff',
+    value: "#00ffff",
     startOpen: true,
     maxPresetColors: 0,
     presetColors: Array.from({ length: 40 }, (_, i) => {
@@ -98,22 +101,16 @@ export const WithUnlimitedPresetColors: Story = {
 };
 
 export const WithInvalidMaxPresetColors: Story = {
-  name: 'With invalid maxPresetColors (negative, falls back to 27)',
+  name: "With invalid maxPresetColors (negative, falls back to 27)",
   args: {
-    value: '#00ffff',
+    value: "#00ffff",
     startOpen: true,
     maxPresetColors: -5,
-    presetColors: [
-      { color: '#ff4785', title: 'Coral' },
-      { color: '#1EA7FD', title: 'Ocean' },
-      { color: 'rgb(252, 82, 31)', title: 'Orange' },
-      { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
-      { color: 'hsl(101, 52%, 49%)', title: 'Green' },
-    ],
     presetColors: Array.from({ length: 40 }, (_, i) => {
       const hue = Math.round((i / 40) * 360);
       return { color: `hsl(${hue}, 70%, 50%)`, title: `Color ${i + 1}` };
     }),
+  },
 };
 
 export const StartOpen: Story = {
@@ -124,7 +121,7 @@ export const StartOpen: Story = {
 
 export const Readonly: Story = {
   args: {
-    value: '#ff00ff',
+    value: "#ff00ff",
     argType: { table: { readonly: true } },
   },
 };

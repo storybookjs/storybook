@@ -1,20 +1,29 @@
-import type { ChangeEvent, FC, FocusEvent } from 'react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ChangeEvent, FC, FocusEvent } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button, Form, PopoverProvider } from 'storybook/internal/components';
+import { Button, Form, PopoverProvider } from "storybook/internal/components";
 
-import { MarkupIcon } from '@storybook/icons';
+import { MarkupIcon } from "@storybook/icons";
 
-import convert from 'color-convert';
-import { debounce } from 'es-toolkit/function';
-import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
-import { styled } from 'storybook/theming';
+import convert from "color-convert";
+import { debounce } from "es-toolkit/function";
+import {
+  HexColorPicker,
+  HslaStringColorPicker,
+  RgbaStringColorPicker,
+} from "react-colorful";
+import { styled } from "storybook/theming";
 
-import { getControlId } from './helpers';
-import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types';
+import { getControlId } from "./helpers";
+import type {
+  ColorConfig,
+  ColorValue,
+  ControlProps,
+  PresetColor,
+} from "./types";
 
 const Wrapper = styled.div({
-  position: 'relative',
+  position: "relative",
   maxWidth: 250,
 });
 
@@ -22,20 +31,20 @@ const TooltipContent = styled.div({
   width: 200,
   margin: 5,
 
-  '.react-colorful__saturation': {
-    borderRadius: '4px 4px 0 0',
+  ".react-colorful__saturation": {
+    borderRadius: "4px 4px 0 0",
   },
-  '.react-colorful__hue': {
-    boxShadow: 'inset 0 0 0 1px rgb(0 0 0 / 5%)',
+  ".react-colorful__hue": {
+    boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 5%)",
   },
-  '.react-colorful__last-control': {
-    borderRadius: '0 0 4px 4px',
+  ".react-colorful__last-control": {
+    borderRadius: "0 0 4px 4px",
   },
 });
 
 const Swatches = styled.div({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(9, 16px)',
+  display: "grid",
+  gridTemplateColumns: "repeat(9, 16px)",
   gap: 6,
   padding: 3,
   marginTop: 5,
@@ -43,7 +52,7 @@ const Swatches = styled.div({
 });
 
 const swatchBackground = (isDark: boolean) =>
-  `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill-opacity="0.05" fill="${isDark ? 'white' : 'black'}"><path d="M8 0h8v8H8zM0 8h8v8H0z"/></svg>')`;
+  `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill-opacity="0.05" fill="${isDark ? "white" : "black"}"><path d="M8 0h8v8H8zM0 8h8v8H0z"/></svg>')`;
 
 const SwatchColor = styled(Button)<{ selected?: boolean; value: string }>(
   ({ value, selected, theme }) => ({
@@ -52,59 +61,63 @@ const SwatchColor = styled(Button)<{ selected?: boolean; value: string }>(
     boxShadow: selected
       ? `${theme.appBorderColor} 0 0 0 1px inset, ${theme.textMutedColor}50 0 0 0 4px`
       : `${theme.appBorderColor} 0 0 0 1px inset`,
-    border: 'none',
+    border: "none",
     borderRadius: theme.appBorderRadius,
-    '&, &:hover': {
-      background: 'unset',
-      backgroundColor: 'unset',
-      backgroundImage: `linear-gradient(${value}, ${value}), ${swatchBackground(theme.base === 'dark')}`,
+    "&, &:hover": {
+      background: "unset",
+      backgroundColor: "unset",
+      backgroundImage: `linear-gradient(${value}, ${value}), ${swatchBackground(theme.base === "dark")}`,
     },
-  })
+  }),
 );
 
 const Input = styled(Form.Input)(({ theme }) => ({
-  width: '100%',
+  width: "100%",
   paddingLeft: 30,
   paddingRight: 30,
-  boxSizing: 'border-box',
+  boxSizing: "border-box",
   fontFamily: theme.typography.fonts.base,
 
   '[aria-readonly="true"] > &': {
-    background: theme.base === 'light' ? theme.color.lighter : 'transparent',
+    background: theme.base === "light" ? theme.color.lighter : "transparent",
   },
 }));
 
-const PopoverTrigger = styled(SwatchColor)<{ disabled: boolean }>(({ disabled }) => ({
-  position: 'absolute',
-  top: 4,
-  left: 4,
-  zIndex: 1,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-}));
+const PopoverTrigger = styled(SwatchColor)<{ disabled: boolean }>(
+  ({ disabled }) => ({
+    position: "absolute",
+    top: 4,
+    left: 4,
+    zIndex: 1,
+    cursor: disabled ? "not-allowed" : "pointer",
+  }),
+);
 
 const CycleColorSpaceButton = styled(Button)(({ theme }) => ({
-  position: 'absolute',
+  position: "absolute",
   zIndex: 1,
   top: 6,
   right: 7,
   width: 20,
   height: 20,
   padding: 4,
-  boxSizing: 'border-box',
-  cursor: 'pointer',
+  boxSizing: "border-box",
+  cursor: "pointer",
   color: theme.input.color,
 }));
 
 enum ColorSpace {
-  RGB = 'rgb',
-  HSL = 'hsl',
-  HEX = 'hex',
+  RGB = "rgb",
+  HSL = "hsl",
+  HEX = "hex",
 }
 
 const COLOR_SPACES = Object.values(ColorSpace);
 const COLOR_REGEXP = /\(([0-9]+),\s*([0-9]+)%?,\s*([0-9]+)%?,?\s*([0-9.]+)?\)/;
-const RGB_REGEXP = /^\s*rgba?\(([0-9]+),\s*([0-9]+),\s*([0-9]+),?\s*([0-9.]+)?\)\s*$/i;
-const HSL_REGEXP = /^\s*hsla?\(([0-9]+),\s*([0-9]+)%,\s*([0-9]+)%,?\s*([0-9.]+)?\)\s*$/i;
+const RGB_REGEXP =
+  /^\s*rgba?\(([0-9]+),\s*([0-9]+),\s*([0-9]+),?\s*([0-9.]+)?\)\s*$/i;
+const HSL_REGEXP =
+  /^\s*hsla?\(([0-9]+),\s*([0-9]+)%,\s*([0-9]+)%,?\s*([0-9.]+)?\)\s*$/i;
 const HEX_REGEXP = /^\s*#?([0-9a-f]{3}|[0-9a-f]{6})\s*$/i;
 const SHORTHEX_REGEXP = /^\s*#?([0-9a-f]{3})\s*$/i;
 
@@ -125,9 +138,9 @@ const ColorPicker = {
 };
 
 const fallbackColor = {
-  [ColorSpace.HEX]: 'transparent',
-  [ColorSpace.RGB]: 'rgba(0, 0, 0, 0)',
-  [ColorSpace.HSL]: 'hsla(0, 0%, 0%, 0)',
+  [ColorSpace.HEX]: "transparent",
+  [ColorSpace.RGB]: "rgba(0, 0, 0, 0)",
+  [ColorSpace.HSL]: "hsla(0, 0%, 0%, 0)",
 };
 
 const stringToArgs = (value: string) => {
@@ -171,7 +184,7 @@ const parseHsl = (value: string): ParsedColor => {
 };
 
 const parseHexOrKeyword = (value: string): ParsedColor => {
-  const plain = value.replace('#', '');
+  const plain = value.replace("#", "");
   // Try interpreting as keyword or hex
   const rgb = convert.keyword.rgb(plain as any) || convert.hex.rgb(plain);
   const hsl = convert.rgb.hsl(rgb);
@@ -185,7 +198,7 @@ const parseHexOrKeyword = (value: string): ParsedColor => {
   }
 
   let valid = true;
-  if (mapped.startsWith('#')) {
+  if (mapped.startsWith("#")) {
     valid = HEX_REGEXP.test(mapped);
   } else {
     try {
@@ -219,7 +232,11 @@ const parseValue = (value: string): ParsedColor | undefined => {
   return parseHexOrKeyword(value);
 };
 
-const getRealValue = (value: string, color: ParsedColor | undefined, colorSpace: ColorSpace) => {
+const getRealValue = (
+  value: string,
+  color: ParsedColor | undefined,
+  colorSpace: ColorSpace,
+) => {
   if (!value || !color?.valid) {
     return fallbackColor[colorSpace];
   }
@@ -227,7 +244,7 @@ const getRealValue = (value: string, color: ParsedColor | undefined, colorSpace:
   if (colorSpace !== ColorSpace.HEX) {
     return color?.[colorSpace] || fallbackColor[colorSpace];
   }
-  if (!color.hex.startsWith('#')) {
+  if (!color.hex.startsWith("#")) {
     try {
       return `#${convert.keyword.hex(color.hex as any)}`;
     } catch (e) {
@@ -239,21 +256,23 @@ const getRealValue = (value: string, color: ParsedColor | undefined, colorSpace:
   if (!short) {
     return HEX_REGEXP.test(color.hex) ? color.hex : fallbackColor.hex;
   }
-  const [r, g, b] = short[1].split('');
+  const [r, g, b] = short[1].split("");
   return `#${r}${r}${g}${g}${b}${b}`;
 };
 
 const useColorInput = (
   initialValue: string | undefined,
-  onChange: (value: string | undefined) => string | void
+  onChange: (value: string | undefined) => string | void,
 ) => {
-  const [value, setValue] = useState(initialValue || '');
+  const [value, setValue] = useState(initialValue || "");
   const [color, setColor] = useState(() => parseValue(value));
-  const [colorSpace, setColorSpace] = useState(color?.colorSpace || ColorSpace.HEX);
+  const [colorSpace, setColorSpace] = useState(
+    color?.colorSpace || ColorSpace.HEX,
+  );
 
   // Reset state when initialValue changes (when resetting controls)
   useEffect(() => {
-    const nextValue = initialValue || '';
+    const nextValue = initialValue || "";
     const nextColor = parseValue(nextValue);
     setValue(nextValue);
     setColor(nextColor);
@@ -262,17 +281,17 @@ const useColorInput = (
 
   const realValue = useMemo(
     () => getRealValue(value, color, colorSpace).toLowerCase(),
-    [value, color, colorSpace]
+    [value, color, colorSpace],
   );
 
   const updateValue = useCallback(
     (update: string) => {
       const parsed = parseValue(update);
-      const v = parsed?.value || update || '';
+      const v = parsed?.value || update || "";
 
       setValue(v);
 
-      if (v === '') {
+      if (v === "") {
         setColor(undefined);
         onChange(undefined);
       }
@@ -285,7 +304,7 @@ const useColorInput = (
       setColorSpace(parsed.colorSpace);
       onChange(parsed.value);
     },
-    [onChange]
+    [onChange],
   );
 
   const cycleColorSpace = useCallback(() => {
@@ -294,7 +313,7 @@ const useColorInput = (
     const nextSpace = COLOR_SPACES[nextIndex];
 
     setColorSpace(nextSpace);
-    const updatedValue = color?.[nextSpace] || '';
+    const updatedValue = color?.[nextSpace] || "";
     setValue(updatedValue);
     onChange(updatedValue);
   }, [color, colorSpace, onChange]);
@@ -302,15 +321,17 @@ const useColorInput = (
   return { value, realValue, updateValue, color, colorSpace, cycleColorSpace };
 };
 
-const id = (value: string) => value.replace(/\s*/, '').toLowerCase();
+const id = (value: string) => value.replace(/\s*/, "").toLowerCase();
 
 const usePresets = (
   presetColors: PresetColor[],
   currentColor: ParsedColor | undefined,
   colorSpace: ColorSpace,
-  maxPresetColors = 27
+  maxPresetColors = 27,
 ) => {
-  const [selectedColors, setSelectedColors] = useState(currentColor?.valid ? [currentColor] : []);
+  const [selectedColors, setSelectedColors] = useState(
+    currentColor?.valid ? [currentColor] : [],
+  );
 
   // Reset state when currentColor becomes undefined (when resetting controls)
   useEffect(() => {
@@ -322,7 +343,7 @@ const usePresets = (
 
   const presets = useMemo(() => {
     const initialPresets = (presetColors || []).map((preset) => {
-      if (typeof preset === 'string') {
+      if (typeof preset === "string") {
         return parseValue(preset);
       }
 
@@ -335,7 +356,10 @@ const usePresets = (
     if (maxPresetColors === 0 || maxPresetColors === Infinity) {
       return combined;
     }
-    const limit = Number.isInteger(maxPresetColors) && maxPresetColors > 0 ? maxPresetColors : 27;
+    const limit =
+      Number.isInteger(maxPresetColors) && maxPresetColors > 0
+        ? maxPresetColors
+        : 27;
     return combined.slice(-limit);
   }, [presetColors, selectedColors, maxPresetColors]);
 
@@ -350,14 +374,14 @@ const usePresets = (
           (preset) =>
             preset &&
             preset[colorSpace] &&
-            id(preset[colorSpace] || '') === id(color[colorSpace] || '')
+            id(preset[colorSpace] || "") === id(color[colorSpace] || ""),
         )
       ) {
         return;
       }
       setSelectedColors((arr) => arr.concat(color));
     },
-    [colorSpace, presets]
+    [colorSpace, presets],
   );
 
   return { presets, addPreset };
@@ -377,11 +401,14 @@ export const ColorControl: FC<ColorControlProps> = ({
   argType,
 }) => {
   const debouncedOnChange = useCallback(debounce(onChange, 200), [onChange]);
-  const { value, realValue, updateValue, color, colorSpace, cycleColorSpace } = useColorInput(
-    initialValue,
-    debouncedOnChange
+  const { value, realValue, updateValue, color, colorSpace, cycleColorSpace } =
+    useColorInput(initialValue, debouncedOnChange);
+  const { presets, addPreset } = usePresets(
+    presetColors ?? [],
+    color,
+    colorSpace,
+    maxPresetColors,
   );
-  const { presets, addPreset } = usePresets(presetColors ?? [], color, colorSpace, maxPresetColors);
   const Picker = ColorPicker[colorSpace];
 
   const readOnly = !!argType?.table?.readonly;
@@ -395,7 +422,9 @@ export const ColorControl: FC<ColorControlProps> = ({
       <Input
         id={controlId}
         value={value}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => updateValue(e.target.value)}
+        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+          updateValue(e.target.value)
+        }
         onFocus={(e: FocusEvent<HTMLInputElement>) => e.target.select()}
         readOnly={readOnly}
         placeholder="Choose color..."
@@ -408,7 +437,7 @@ export const ColorControl: FC<ColorControlProps> = ({
         popover={
           <TooltipContent>
             <Picker
-              color={realValue === 'transparent' ? '#000000' : realValue}
+              color={realValue === "transparent" ? "#000000" : realValue}
               {...{ onChange: updateValue, onFocus, onBlur }}
             />
             {presets.length > 0 && (
@@ -420,17 +449,17 @@ export const ColorControl: FC<ColorControlProps> = ({
                     padding="small"
                     size="small"
                     ariaLabel="Pick this color"
-                    tooltip={preset?.keyword || preset?.value || ''}
-                    value={preset?.value || ''}
+                    tooltip={preset?.keyword || preset?.value || ""}
+                    value={preset?.value || ""}
                     selected={
                       !!(
                         color &&
                         preset &&
                         preset[colorSpace] &&
-                        id(preset[colorSpace] || '') === id(color[colorSpace])
+                        id(preset[colorSpace] || "") === id(color[colorSpace])
                       )
                     }
-                    onClick={() => preset && updateValue(preset.value || '')}
+                    onClick={() => preset && updateValue(preset.value || "")}
                   />
                 ))}
               </Swatches>

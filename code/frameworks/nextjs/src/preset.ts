@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot, getBuilderOptions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -16,7 +16,7 @@ import { configureConfig } from './config/webpack';
 import TransformFontImports from './font/babel';
 import type { FrameworkOptions, StorybookConfig } from './types';
 import { isNextVersionGte } from './utils';
-import { getBuilderOptions } from 'storybook/internal/common';
+
 
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),

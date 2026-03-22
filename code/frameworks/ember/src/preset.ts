@@ -1,11 +1,11 @@
-import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { getProjectRoot, resolvePathInStorybookCache, getBuilderOptions } from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { StorybookConfig } from './types';
 
-import { getBuilderOptions } from 'storybook/internal/common';
+
 
 export const addons: PresetProperty<'addons'> = [
   import.meta.resolve('@storybook/ember/server/framework-preset-babel-ember'),

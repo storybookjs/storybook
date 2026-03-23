@@ -79,3 +79,4 @@ CLAUDE.local.md
 .cursor/mcp.json
 .vscode/mcp.json
 .mcp.json
+.nx/polygraph

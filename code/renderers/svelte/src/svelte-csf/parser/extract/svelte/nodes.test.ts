@@ -5,7 +5,7 @@ import { extractSvelteASTNodes } from './nodes.js';
 import { getSvelteAST } from '$lib/parser/ast.js';
 
 describe(extractSvelteASTNodes.name, () => {
-  it('works with a simple example', ({ expect }) => {
+  it('works with a simple example', async ({ expect }) => {
     const ast = getSvelteAST({
       code: `
         <script module>
@@ -28,6 +28,6 @@ describe(extractSvelteASTNodes.name, () => {
       `,
     });
 
-    expect(extractSvelteASTNodes({ ast })).resolves.not.toThrow();
+    await expect(extractSvelteASTNodes({ ast })).resolves.not.toThrow();
   });
 });

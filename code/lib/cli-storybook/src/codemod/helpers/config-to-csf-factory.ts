@@ -34,14 +34,22 @@ export async function configToCsfFactory(
   const hasNamedExports = defineConfigProps.length > 0;
 
   // Early return if the code is already transformed (default export is already defineMain/definePreview)
-  const isAlreadyTransformed = programNode.body.some(
-    (node) =>
-      t.isExportDefaultDeclaration(node) &&
-      t.isCallExpression(node.declaration) &&
-      t.isIdentifier(node.declaration.callee) &&
-      node.declaration.callee.name === methodName
-  );
+  const isAlreadyTransformed = programNode.body.some((node) => {
+    if (!t.isExportDefaultDeclaration(node)) return false;
 
+    // Unwrap TS syntax (e.g. `as`, `satisfies`) around the default export expression
+    const declaration =
+      // eslint-disable-next-line no-underscore-dangle
+      typeof (config as any)._unwrap === 'function'
+        ? (config as any)._unwrap(node.declaration)
+        : node.declaration;
+
+    return (
+      t.isCallExpression(declaration) &&
+      t.isIdentifier(declaration.callee) &&
+      declaration.callee.name === methodName
+    );
+  });
   if (isAlreadyTransformed && !hasNamedExports) {
     return info.source;
   }

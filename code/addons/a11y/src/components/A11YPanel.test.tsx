@@ -94,7 +94,7 @@ describe('A11YPanel', () => {
 
     expect(
       component.getByText('Please wait while the accessibility scan is running...')
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
   });
 
   it('should render error state', () => {

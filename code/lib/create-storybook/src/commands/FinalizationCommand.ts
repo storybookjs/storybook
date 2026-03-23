@@ -88,8 +88,8 @@ export class FinalizationCommand {
     }
 
     logger.log(dedent`
-      Wanna know more about Storybook? Check out ${CLI_COLORS.cta('https://storybook.js.org/')}
-      Having trouble or want to chat? Join us at ${CLI_COLORS.cta('https://discord.gg/storybook/')}
+      Want to learn more about Storybook? ${CLI_COLORS.cta('https://storybook.js.org/')}
+      Having trouble or want to chat? ${CLI_COLORS.cta('https://discord.gg/storybook/')}
     `);
   }
 }

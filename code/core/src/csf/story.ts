@@ -584,8 +584,8 @@ export type StoryAnnotationsOrFn<TRenderer extends Renderer = Renderer, TArgs = 
 
 export type ArgsFromMeta<TRenderer extends Renderer, Meta> = Meta extends {
   render?: ArgsStoryFn<TRenderer, infer RArgs>;
-  loaders?: (infer Loaders)[] | infer Loaders;
-  decorators?: (infer Decorators)[] | infer Decorators;
+  loaders?: (infer Loaders)[] | (infer Loaders);
+  decorators?: (infer Decorators)[] | (infer Decorators);
 }
   ? Simplify<
       RemoveIndexSignature<

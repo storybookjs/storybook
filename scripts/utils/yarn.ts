@@ -125,15 +125,6 @@ export const addWorkaroundResolutions = async ({
     };
   }
 
-  if (key === 'react-native-web-vite/expo-ts') {
-    additionalResolutions = {
-      ...additionalResolutions,
-      // The expo sandbox started to break in beta 5, yet to investigate the root cause
-      // in the meantime, we downgrade to the version where things worked.
-      vite: '8.0.0-beta.4',
-    };
-  }
-
   packageJson.resolutions = {
     ...packageJson.resolutions,
     '@testing-library/dom': '^9.3.4',
@@ -151,11 +142,13 @@ export const configureYarn2ForVerdaccio = async ({
   debug,
   key,
 }: YarnOptions & { key: AllTemplatesKey }) => {
+  // On NX Cloud agents, we use the global cache to avoid duplicating .yarn/cache across sandboxes.
+  // Stale @storybook/* packages are cleaned from the global cache in the agent init step (agents.yaml).
+  // Locally and on CircleCI, we disable the global cache to avoid stale packages from previous runs.
+  const useGlobalCache = Boolean(process.env.STORYBOOK_NX_CLOUD_AGENT);
+
   const command = [
-    // We don't want to use the cache or we might get older copies of our built packages
-    // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
-    // TODO publish unique versions instead
-    `yarn config set enableGlobalCache false`,
+    `yarn config set enableGlobalCache ${useGlobalCache}`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
     `yarn config set npmRegistryServer "http://localhost:6001/"`,

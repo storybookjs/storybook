@@ -67,9 +67,10 @@ export class DemoWcCard extends LitElement {
         <div class="header"><slot name="prefix"></slot> ${this.header}</div>
 
         <div class="content">
-          ${this.rows.length === 0
-            ? html``
-            : html`
+          ${
+            this.rows.length === 0
+              ? html``
+              : html`
                 <dl>
                   ${this.rows.map(
                     (row) => html`
@@ -78,7 +79,8 @@ export class DemoWcCard extends LitElement {
                     `
                   )}
                 </dl>
-              `}
+              `
+          }
         </div>
         <div class="footer">
           <div class="note">B</div>

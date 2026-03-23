@@ -164,4 +164,68 @@ describe('Emit Code', () => {
     `
     );
   });
+
+  it('should exclude children from props when used in template and unwrap string literals', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<Button {...args}>{args.children}</Button>',
+        args: {
+          onclick: 'onclick',
+          primary: true,
+          children: 'Click me',
+        },
+      })
+    ).toMatchInlineSnapshot(`"<Button onclick="onclick" primary>Click me</Button>"`);
+  });
+
+  it('should exclude children from props when children is used in slot', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<Button {...args}>{args.children}</Button>',
+        args: {
+          onclick: 'onclick',
+          primary: true,
+          size: 'large',
+          children: 'Button text',
+        },
+      })
+    ).toMatchInlineSnapshot(
+      `"<Button onclick="onclick" primary size="large">Button text</Button>"`
+    );
+  });
+
+  it('should handle children when not used in template', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<Button {...args} />',
+        args: {
+          onclick: 'onclick',
+          children: 'Click me',
+        },
+      })
+    ).toMatchInlineSnapshot(`"<Button onclick="onclick" children="Click me" />"`);
+  });
+
+  it('should unwrap string literals in slot content', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<Component>{args.text}</Component>',
+        args: {
+          text: 'Hello World',
+        },
+      })
+    ).toMatchInlineSnapshot(`"<Component>Hello World</Component>"`);
+  });
+
+  it('should unwrap multiple string literals in slot content', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<div><p>{args.first}</p><p>{args.second}</p></div>',
+        args: {
+          first: 'First text',
+          second: 'Second text',
+        },
+      })
+    ).toMatchInlineSnapshot(`"<div><p>First text</p><p>Second text</p></div>"`);
+  });
 });

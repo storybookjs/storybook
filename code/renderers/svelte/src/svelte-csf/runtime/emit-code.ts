@@ -64,8 +64,18 @@ const skipSourceRender = (context: Params['storyContext']) => {
 };
 
 export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryObj['args'] }) => {
+  // check if children is used in the template (e.g., {args.children})
+  // if so, we should exclude it from the props to avoid it appearing twice
+  const childrenUsedInTemplate = /\bargs\.children\b/.test(code);
+
   const allPropsArray = Object.entries(args ?? {})
-    .map(([argKey, argValue]) => argsToProps(argKey, argValue))
+    .map(([argKey, argValue]) => {
+      // skip children if it's used in the template content (slot)
+      if (childrenUsedInTemplate && argKey === 'children') {
+        return null;
+      }
+      return argsToProps(argKey, argValue);
+    })
     .filter((p) => p);
 
   let allPropsString = allPropsArray.join(' ');
@@ -85,6 +95,13 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
       const path = argPath.replaceAll('?', ''); // remove optional chaining character
       const value = get({ args }, path);
       return valueToString(value);
+    })
+    // clean up string literals in slot content: {"string"} => string
+    // This handles cases like <Button>{"Click me"}</Button> => <Button>Click me</Button>
+    .replace(/>\s*\{(".*?")\}\s*</g, (match, stringLiteral) => {
+      // Remove the quotes from the string literal
+      const unwrapped = stringLiteral.slice(1, -1);
+      return `>${unwrapped}<`;
     });
 
   return codeToEmit;

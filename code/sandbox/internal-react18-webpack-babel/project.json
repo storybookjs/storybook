@@ -12,11 +12,17 @@
     "react-webpack5"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "internal-react18-webpack-babel" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "internal-react18-webpack-babel"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "internal-react18-webpack-babel" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "internal-react18-webpack-babel"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

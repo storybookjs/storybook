@@ -33,6 +33,19 @@ export async function configToCsfFactory(
   const defineConfigProps = getConfigProperties(exportDecls, { configType });
   const hasNamedExports = defineConfigProps.length > 0;
 
+  // Early return if the code is already transformed (default export is already defineMain/definePreview)
+  const isAlreadyTransformed = programNode.body.some(
+    (node) =>
+      t.isExportDefaultDeclaration(node) &&
+      t.isCallExpression(node.declaration) &&
+      t.isIdentifier(node.declaration.callee) &&
+      node.declaration.callee.name === methodName
+  );
+
+  if (isAlreadyTransformed && !hasNamedExports) {
+    return info.source;
+  }
+
   function findDeclarationNodeIndex(declarationName: string): number {
     return programNode.body.findIndex(
       (n) =>

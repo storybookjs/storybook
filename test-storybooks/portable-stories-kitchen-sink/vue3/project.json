@@ -1,5 +1,6 @@
 {
   "name": "portable-stories-kitchen-sink/vue3",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "targets": {
     "jest": {},

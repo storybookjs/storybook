@@ -1,3 +1,7 @@
+## 10.3.3
+
+- Addon-Vitest: Streamline vite(st) config detection across init and postinstall - [#34193](https://github.com/storybookjs/storybook/pull/34193), thanks @valentinpalkovic!
+
 ## 10.3.2
 
 - CLI: Shorten CTA link messages - [#34236](https://github.com/storybookjs/storybook/pull/34236), thanks @shilman!

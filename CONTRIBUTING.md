@@ -86,7 +86,7 @@ Here's a highlight of notable directories and files:
 │   ├── package.json
 │   ├── playwright.config.ts
 │   ├── presets                  # Preset packages
-│   ├── prettier.config.mjs
+│   ├── .oxfmtrc.json
 │   ├── renderers                # Storybook renderers for different frameworks
 │   ├── sandbox                  # Sandboxes for Bug Reproductions or experimentation
 │   ├── tsconfig.json
@@ -117,7 +117,7 @@ Here's a highlight of notable directories and files:
 │   └── writing-tests
 ├── node_modules
 ├── package.json                      # Root of the yarn monorepo
-├── prettier.config.mjs
+├── .oxfmtrc.json
 ├── scripts                           # Build and Helper Scripts
 ├── test-storybooks
 │   ├── ember-cli

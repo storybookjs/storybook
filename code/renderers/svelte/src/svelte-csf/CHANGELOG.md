@@ -1,3 +1,15 @@
+# v5.1.0 (Mon Mar 23 2026)
+
+#### 🚀 Enhancement
+
+- Add support for Vite 8 [#339](https://github.com/storybookjs/addon-svelte-csf/pull/339) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v5.0.12 (Wed Mar 18 2026)
 
 #### ⚠️ Pushed to `main`

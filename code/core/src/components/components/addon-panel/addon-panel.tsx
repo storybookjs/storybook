@@ -29,7 +29,6 @@ export interface AddonPanelProps {
   hasScrollbar?: boolean;
   /** Whether the panel has an horizontal scrollbar, `false` by default */
   hasHorizontalScrollbar?: boolean;
-
 }
 
 const Div = styled.div(({ theme }) => ({
@@ -37,12 +36,19 @@ const Div = styled.div(({ theme }) => ({
   height: '100%',
 }));
 
-export const AddonPanel = ({ active, children, hasScrollbar = true, hasHorizontalScrollbar = false }: AddonPanelProps) => {
+export const AddonPanel = ({
+  active,
+  children,
+  hasScrollbar = true,
+  hasHorizontalScrollbar = false,
+}: AddonPanelProps) => {
   return (
     // the hidden attribute is an valid html element that's both accessible and works to visually hide content
     <Div hidden={!active}>
       {hasScrollbar || hasHorizontalScrollbar ? (
-        <ScrollArea vertical={hasScrollbar} horizontal={hasHorizontalScrollbar}>{useUpdate(active, children)}</ScrollArea>
+        <ScrollArea vertical={hasScrollbar} horizontal={hasHorizontalScrollbar}>
+          {useUpdate(active, children)}
+        </ScrollArea>
       ) : (
         useUpdate(active, children)
       )}

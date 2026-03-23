@@ -1,6 +1,6 @@
 export async function trySelectStory(
-  selectStory: (id: string) => Promise<void> | void,
-  storyId: string,
+  selectStory: (id?: string) => Promise<void> | void,
+  storyId?: string,
   attempt = 1
 ): Promise<void> {
   if (attempt > 10) {

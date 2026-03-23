@@ -195,7 +195,7 @@ export const Preview: FC<PreviewProps> = ({
         {...props}
         className={previewClasses.join(' ')}
       >
-        {(withToolbar || onReloadStory) && (
+        {withToolbar && (
           <PositionedToolbar
             isLoading={isLoading}
             border

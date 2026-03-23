@@ -130,6 +130,10 @@ export interface QueryParams {
   [key: string]: string | undefined;
 }
 
+interface QueryParamInput {
+  [key: string]: string | undefined | null;
+}
+
 /** SubAPI for managing URL navigation and state. */
 export interface SubAPI {
   /**
@@ -201,7 +205,7 @@ export interface SubAPI {
    * @param {QueryParams} input - An object containing the query parameters to set.
    * @returns {void}
    */
-  setQueryParams: (input: QueryParam) => void;
+  setQueryParams: (input: QueryParamInput) => void;
   /**
    * Set the query parameters for the current URL & navigates.
    *
@@ -209,7 +213,7 @@ export interface SubAPI {
    * @param {NavigateOptions} options - Options for the navigation.
    * @returns {void}
    */
-  applyQueryParams: (input: QueryParam, options?: NavigateOptions) => void;
+  applyQueryParams: (input: QueryParamInput, options?: NavigateOptions) => void;
 }
 
 export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {

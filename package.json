@@ -79,7 +79,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@nx/workspace": "^22.1.3",
+    "@nx/workspace": "^22.6.1",
     "@playwright/test": "^1.58.2",
     "@types/kill-port": "^2.0.3",
     "http-server": "^14.1.1",
@@ -87,7 +87,7 @@
     "jiti": "^2.6.1",
     "kill-port": "^2.0.1",
     "lint-staged": "^16.4.0",
-    "nx": "^22.1.3",
+    "nx": "^22.6.1",
     "oxfmt": "^0.41.0",
     "vite": "^7.0.4",
     "vitest": "^4.1.0"

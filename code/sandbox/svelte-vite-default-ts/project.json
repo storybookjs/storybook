@@ -12,12 +12,18 @@
     "svelte-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "svelte-vite-default-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "svelte-vite-default-ts"
+      }
+    },
     "dev": {},
     "vitest-integration": {},
-    "build": { "options": { "dir": "svelte-vite-default-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "svelte-vite-default-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

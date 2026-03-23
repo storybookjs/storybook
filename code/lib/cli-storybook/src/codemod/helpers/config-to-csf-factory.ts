@@ -65,7 +65,12 @@ export async function configToCsfFactory(
       )
   );
 
-  if (isAlreadyTransformed && !hasNamedExports && hasCorrectImport) {
+  // For main configs, always return early when already transformed and imports are valid.
+  // For preview configs, only return early when there are no named exports to merge.
+  const shouldSkipTransform =
+    configType === 'main' ? isAlreadyTransformed : isAlreadyTransformed && !hasNamedExports;
+
+  if (shouldSkipTransform && hasCorrectImport) {
     return info.source;
   }
 
@@ -88,8 +93,8 @@ export async function configToCsfFactory(
     );
   }
 
-  if (isAlreadyTransformed && !hasNamedExports) {
-    // already transformed with no named exports — skip transformation but still run import fixup below
+  if (shouldSkipTransform) {
+    // already transformed — skip transformation but still run import fixup below
   } else if (config._exportsObject && hasNamedExports) {
     /**
      * Scenario 1: Mixed exports

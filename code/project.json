@@ -1,5 +1,6 @@
 {
   "name": "code",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "tags": ["library"],
   "targets": {
     "lint": {

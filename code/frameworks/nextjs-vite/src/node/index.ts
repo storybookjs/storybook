@@ -1,5 +1,7 @@
-import type { StorybookConfig } from '../types';
+import { createDefineMain } from 'storybook/internal/common'
 
-export function defineMain(config: StorybookConfig) {
-  return config;
-}
+import type { StorybookConfig } from '../types'
+
+export const defineMain = createDefineMain<StorybookConfig>()
+
+export type { StorybookConfig }

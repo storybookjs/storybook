@@ -52,3 +52,5 @@ export * from './utils/command';
 export { versions };
 
 export { createFileSystemCache, FileSystemCache } from './utils/file-cache';
+
+export * from './utils/define-main';

@@ -183,9 +183,16 @@ const Result: FC<
 
   const [icon] = item.status ? getStatus(theme, item.status) : [];
 
+  // Docs stories have "Docs" as their primary name.
+  // This check fixes rendering `Example, Button, Docs`
+  // and instead renders `Docs, Example, Button`
+  const labelParts = item.type === 'docs' ? [item.name, ...item.path] : [...item.path, item.name];
+
+  const ariaLabel = labelParts.join(', ');
+
   return (
-    <ResultRow {...props} onClick={click}>
-      <IconWrapper>
+    <ResultRow {...props} onClick={click} aria-label={ariaLabel}>
+      <IconWrapper aria-hidden={true}>
         {item.type === 'component' && (
           <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="component">
             <UseSymbol type="component" />

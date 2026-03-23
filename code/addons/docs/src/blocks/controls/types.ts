@@ -1,4 +1,4 @@
-import type { ArgType } from "../components/ArgsTable/types";
+import type { ArgType } from '../components/ArgsTable/types';
 
 export interface ControlProps<T> {
   name: string;
@@ -56,12 +56,12 @@ export type OptionsArray = any[];
 export type OptionsObject = Record<string, any>;
 export type Options = OptionsArray | OptionsObject;
 export type OptionsControlType =
-  | "radio"
-  | "inline-radio"
-  | "check"
-  | "inline-check"
-  | "select"
-  | "multi-select";
+  | 'radio'
+  | 'inline-radio'
+  | 'check'
+  | 'inline-check'
+  | 'select'
+  | 'multi-select';
 
 export interface OptionsConfig {
   labels?: Record<any, string>;
@@ -78,15 +78,15 @@ export interface TextConfig {
 }
 
 export type ControlType =
-  | "array"
-  | "boolean"
-  | "color"
-  | "date"
-  | "number"
-  | "range"
-  | "object"
+  | 'array'
+  | 'boolean'
+  | 'color'
+  | 'date'
+  | 'number'
+  | 'range'
+  | 'object'
   | OptionsControlType
-  | "text";
+  | 'text';
 
 export type Control =
   | BooleanConfig

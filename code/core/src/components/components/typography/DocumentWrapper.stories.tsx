@@ -169,14 +169,25 @@ export const WithDOM = () => (
     </p>
     <h2>Inline Code Inside Links</h2>
     <p>
-      Check out <a href="https://example.com"><code>inline-code</code></a> inside a link.
+      Check out{' '}
+      <a href="https://example.com">
+        <code>inline-code</code>
+      </a>{' '}
+      inside a link.
     </p>
     <p>
-      Visit the <a href="https://example.com"><code>@storybook/addon-essentials</code></a> package
-      for more details.
+      Visit the{' '}
+      <a href="https://example.com">
+        <code>@storybook/addon-essentials</code>
+      </a>{' '}
+      package for more details.
     </p>
     <p>
-      Mixed link: <a href="https://example.com">regular text and <code>code text</code> together</a>.
+      Mixed link:{' '}
+      <a href="https://example.com">
+        regular text and <code>code text</code> together
+      </a>
+      .
     </p>
     <p>
       For comparison, here is regular <code>inline-code</code> outside a link.

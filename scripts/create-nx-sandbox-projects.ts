@@ -34,7 +34,6 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    'prepare-sandbox': {},
     dev: {},
     ...(template.typeCheck === true
       ? {
@@ -51,7 +50,6 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    'prepare-build-sandbox': {},
     chromatic: {},
     serve: {},
     ...(template.skipTasks && template.skipTasks.includes('e2e-tests')

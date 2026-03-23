@@ -1,5 +1,7 @@
 import type { ArgTypes, SBType } from 'storybook/internal/csf';
 
+export { trySelectStory as trySelectNewStory } from '../../utils/trySelectStory';
+
 export function extractSeededRequiredArgs(argTypes: ArgTypes) {
   const extractedArgTypes = Object.keys(argTypes).reduce(
     (acc, key: keyof typeof argTypes) => {
@@ -97,22 +99,5 @@ function setArgType(
       break;
     default:
       break;
-  }
-}
-
-export async function trySelectNewStory(
-  selectStory: (id: string) => Promise<void> | void,
-  storyId: string,
-  attempt = 1
-): Promise<void> {
-  if (attempt > 10) {
-    throw new Error('We could not select the new story. Please try again.');
-  }
-
-  try {
-    await selectStory(storyId);
-  } catch (e) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return trySelectNewStory(selectStory, storyId, attempt + 1);
   }
 }

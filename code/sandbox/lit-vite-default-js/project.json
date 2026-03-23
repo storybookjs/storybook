@@ -12,11 +12,18 @@
     "web-components-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "lit-vite-default-js" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "lit-vite-default-js"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "lit-vite-default-js" } },
-    "prepare-build-sandbox": {},
+    "vitest-integration": {},
+    "build": {
+      "options": {
+        "dir": "lit-vite-default-js"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

@@ -12,11 +12,17 @@
     "react-webpack5"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "react-webpack-prerelease-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "react-webpack-prerelease-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "react-webpack-prerelease-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "react-webpack-prerelease-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

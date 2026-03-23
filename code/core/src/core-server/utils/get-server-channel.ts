@@ -14,6 +14,7 @@ import { isValidToken } from './validate-token';
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 
 type ServerChannelTransportOptions = HostValidationOptions & {
+  skipValidation?: boolean;
   token: string;
 };
 
@@ -38,14 +39,16 @@ export class ServerChannelTransport {
           return;
         }
 
-        const originHost = request.headers.origin && new URL(request.headers.origin).host;
-        if (!isValidHost(originHost, options)) {
-          throw new Error('Invalid websocket origin');
-        }
+        if (!options.skipValidation) {
+          const originHost = request.headers.origin && new URL(request.headers.origin).host;
+          if (!isValidHost(originHost, options)) {
+            throw new Error('Invalid websocket origin');
+          }
 
-        const requestToken = url.searchParams.get('token');
-        if (!isValidToken(requestToken, options.token)) {
-          throw new Error('Invalid websocket token');
+          const requestToken = url.searchParams.get('token');
+          if (!isValidToken(requestToken, options.token)) {
+            throw new Error('Invalid websocket token');
+          }
         }
 
         this.socket.handleUpgrade(request, socket, head, (ws) => {

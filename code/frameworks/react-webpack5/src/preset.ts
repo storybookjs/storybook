@@ -12,12 +12,11 @@ export const addons: PresetProperty<'addons'> = [
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
-
   return {
     ...config,
     builder: {
       name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
-      options:  await getBuilderOptions(options),
+      options: await getBuilderOptions(options),
     },
     renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };

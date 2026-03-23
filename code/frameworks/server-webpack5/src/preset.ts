@@ -6,7 +6,6 @@ export const addons: PresetProperty<'addons'> = [
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
-
   return {
     ...config,
     builder: {

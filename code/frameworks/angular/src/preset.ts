@@ -35,12 +35,11 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 };
 
 export const core: PresetProperty<'core'> = async (config, options) => {
-  
   return {
     ...config,
     builder: {
       name: import.meta.resolve('@storybook/builder-webpack5'),
-      options: await getBuilderOptions(options)
+      options: await getBuilderOptions(options),
     },
   };
 };

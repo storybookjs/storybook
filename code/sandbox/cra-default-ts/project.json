@@ -12,11 +12,17 @@
     "react-webpack5"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "cra-default-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "cra-default-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "cra-default-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "cra-default-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

@@ -62,7 +62,7 @@ const config = defineMain({
       titlePrefix: "highlight",
     },
     {
-      directory: "../core/src/actions/components",
+      directory: "../core/src/actions/containers",
       titlePrefix: "actions",
     },
     {

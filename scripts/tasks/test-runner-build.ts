@@ -3,6 +3,7 @@ import waitOn from 'wait-on';
 import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
+import { isNxTaskExecution } from '../utils/nx';
 import { PORT } from './serve';
 
 export const testRunnerBuild: Task & { port: number } = {
@@ -15,7 +16,7 @@ export const testRunnerBuild: Task & { port: number } = {
   },
   async run({ sandboxDir, junitFilename, key, selectedTask }, { dryRun, debug }) {
     const port =
-      process.env.NX_CLI_SET === 'true'
+      isNxTaskExecution()
         ? getPort({ key, selectedTask: selectedTask === 'test-runner' ? 'serve' : 'dev' })
         : this.port;
 

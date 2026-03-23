@@ -6,7 +6,6 @@ import type { State } from './root';
 import { version as currentVersion } from './version';
 import { getAnonymousProjectId } from 'storybook/internal/telemetry';
 
-
 // setting up the store, overriding set and get to use telejson
 storeSetup(store._);
 

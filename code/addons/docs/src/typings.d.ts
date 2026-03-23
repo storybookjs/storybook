@@ -3,8 +3,14 @@ declare module 'acorn-jsx';
 declare module 'vue/dist/vue';
 
 declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['features'];
-declare var __DOCS_CONTEXT__: any;
-declare var PREVIEW_URL: any;
+declare var __DOCS_CONTEXT__: import('react').Context<
+  | import('storybook/internal/types').DocsContextProps<import('storybook/internal/types').Renderer>
+  | null
+>;
+declare var __DOCS_SLUGGER_CONTEXT__: import('react').Context<
+  import('./blocks/blocks/DocsSluggerContext').DocsSlugger | null
+>;
+declare var PREVIEW_URL: string | undefined;
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;
 declare var TAGS_OPTIONS: import('storybook/internal/types').TagsOptions;
 

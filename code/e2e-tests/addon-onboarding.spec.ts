@@ -1,4 +1,4 @@
-import { rm } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 
 import { expect, test } from '@playwright/test';
@@ -12,10 +12,27 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
 
 async function clearChecklistCache() {
-  // await rm(join(process.env.STORYBOOK_SANDBOX_DIR!, 'node_modules', '.cache'), {
-  //   recursive: true,
-  //   force: true,
-  // });
+  const storybookCacheDir = join(
+    process.env.STORYBOOK_SANDBOX_DIR!,
+    'node_modules',
+    '.cache',
+    'storybook'
+  );
+  const storybookCacheEntries = await readdir(storybookCacheDir, { withFileTypes: true }).catch(
+    () => []
+  );
+
+  // Storybook scopes cache entries by version, so remove the checklist for any installed version.
+  await Promise.all(
+    storybookCacheEntries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) =>
+        rm(join(storybookCacheDir, entry.name, 'default', 'checklist'), {
+          recursive: true,
+          force: true,
+        })
+      )
+  );
 }
 
 test.describe('addon-onboarding', () => {

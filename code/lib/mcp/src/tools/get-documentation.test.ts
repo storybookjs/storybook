@@ -290,6 +290,97 @@ describe('getDocumentationTool', () => {
 		`);
 	});
 
+	it('should include props section when reactComponentMeta is present', async () => {
+		const manifestWithReactComponentMeta = {
+			v: 1,
+			components: {
+				button: {
+					id: 'button',
+					name: 'Button',
+					description: 'A button component',
+					reactComponentMeta: {
+						displayName: 'Button',
+						filePath: 'src/components/Button.tsx',
+						description: '',
+						exportName: 'Button',
+						props: {
+							variant: {
+								name: 'variant',
+								description: 'Button style variant',
+								required: false,
+								defaultValue: { value: '"primary"' },
+								type: {
+									name: 'enum',
+									raw: '"primary" | "secondary"',
+								},
+							},
+							disabled: {
+								name: 'disabled',
+								description: 'Disable the button',
+								required: false,
+								defaultValue: null,
+								type: {
+									name: 'boolean',
+								},
+							},
+						},
+					},
+				},
+			},
+		};
+
+		getManifestsSpy.mockResolvedValue({
+			componentManifest: manifestWithReactComponentMeta,
+		});
+
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: GET_TOOL_NAME,
+				arguments: {
+					id: 'button',
+				},
+			},
+		};
+
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		const response = await server.receive(request, {
+			custom: { request: mockHttpRequest },
+		});
+
+		expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "# Button
+
+			ID: button
+
+			A button component
+
+			## Props
+
+			\`\`\`
+			export type Props = {
+			  /**
+			    Button style variant
+			  */
+			  variant?: "primary" | "secondary" = "primary";
+			  /**
+			    Disable the button
+			  */
+			  disabled?: boolean;
+			}
+			\`\`\`",
+			      "type": "text",
+			    },
+			  ],
+			}
+		`);
+	});
+
 	describe('multi-source mode', () => {
 		const sources = [
 			{ id: 'local', title: 'Local' },

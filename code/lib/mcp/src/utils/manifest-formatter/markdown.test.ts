@@ -601,6 +601,59 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			`);
 		});
 
+		it('should format props from reactComponentMeta', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				path: 'src/components/Button.tsx',
+				reactComponentMeta: {
+					displayName: 'Button',
+					filePath: 'src/components/Button.tsx',
+					description: '',
+					exportName: 'Button',
+					props: {
+						variant: {
+							name: 'variant',
+							description: 'The visual style variant',
+							type: { name: 'enum', raw: '"primary" | "secondary"' },
+							defaultValue: { value: '"primary"' },
+							required: false,
+						},
+						onClick: {
+							name: 'onClick',
+							description: 'Click handler',
+							type: { name: '(event: MouseEvent) => void' },
+							defaultValue: null,
+							required: true,
+						},
+					},
+				},
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"# Button
+
+				ID: button
+
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  /**
+				    The visual style variant
+				  */
+				  variant?: "primary" | "secondary" = "primary";
+				  /**
+				    Click handler
+				  */
+				  onClick: (event: MouseEvent) => void;
+				}
+				\`\`\`"
+			`);
+		});
+
 		it('should prefer reactDocgen over reactDocgenTypescript when both are present', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
@@ -636,6 +689,50 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 			expect(result).toContain('From react-docgen');
 			expect(result).not.toContain('From react-docgen-typescript');
+		});
+
+		it('should prefer reactDocgenTypescript over reactComponentMeta when both are present', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				path: 'src/components/Button.tsx',
+				reactDocgenTypescript: {
+					displayName: 'Button',
+					filePath: 'src/components/Button.tsx',
+					description: '',
+					exportName: 'Button',
+					methods: [],
+					props: {
+						label: {
+							name: 'label',
+							description: 'From react-docgen-typescript',
+							type: { name: 'string' },
+							defaultValue: null,
+							required: true,
+						},
+					},
+				},
+				reactComponentMeta: {
+					displayName: 'Button',
+					filePath: 'src/components/Button.tsx',
+					description: '',
+					exportName: 'Button',
+					props: {
+						label: {
+							name: 'label',
+							description: 'From react-component-meta',
+							type: { name: 'string' },
+							defaultValue: null,
+							required: true,
+						},
+					},
+				},
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toContain('From react-docgen-typescript');
+			expect(result).not.toContain('From react-component-meta');
 		});
 
 		it('should limit stories when reactDocgenTypescript has props', () => {
@@ -680,6 +777,54 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			const result = formatComponentManifest(manifest);
 
 			// Should show first 3 stories in full, then remaining under "Other Stories"
+			expect(result).toContain('### Default');
+			expect(result).toContain('### Primary');
+			expect(result).toContain('### Secondary');
+			expect(result).toContain('### Other Stories');
+			expect(result).toContain('- Disabled: Button in disabled state');
+			expect(result).toContain('- WithIcon: Button with an icon');
+		});
+
+		it('should limit stories when reactComponentMeta has props', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				path: 'src/components/Button.tsx',
+				import: 'import { Button } from "@/components";',
+				stories: [
+					{ name: 'Default', snippet: '<Button>Default</Button>' },
+					{ name: 'Primary', snippet: '<Button variant="primary">Primary</Button>' },
+					{ name: 'Secondary', snippet: '<Button variant="secondary">Secondary</Button>' },
+					{
+						name: 'Disabled',
+						summary: 'Button in disabled state',
+						snippet: '<Button disabled>Disabled</Button>',
+					},
+					{
+						name: 'WithIcon',
+						description: 'Button with an icon',
+						snippet: '<Button icon="check">With Icon</Button>',
+					},
+				],
+				reactComponentMeta: {
+					displayName: 'Button',
+					filePath: 'src/components/Button.tsx',
+					description: '',
+					exportName: 'Button',
+					props: {
+						variant: {
+							name: 'variant',
+							description: '',
+							type: { name: 'string' },
+							defaultValue: null,
+							required: false,
+						},
+					},
+				},
+			};
+
+			const result = formatComponentManifest(manifest);
+
 			expect(result).toContain('### Default');
 			expect(result).toContain('### Primary');
 			expect(result).toContain('### Secondary');

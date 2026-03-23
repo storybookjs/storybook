@@ -133,6 +133,8 @@ export const ComponentManifest = v.object({
 	reactDocgen: v.optional(v.any()),
 	// loose schema for react-docgen-typescript types
 	reactDocgenTypescript: v.optional(v.any()),
+	// loose schema for react-component-meta types
+	reactComponentMeta: v.optional(v.any()),
 	docs: v.optional(v.record(v.string(), Doc)),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;

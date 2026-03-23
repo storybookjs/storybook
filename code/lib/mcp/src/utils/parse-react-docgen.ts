@@ -13,6 +13,10 @@ export type ParsedDocgen = {
 	>;
 };
 
+// Storybook's `reactComponentMeta` payload is not the same full schema as
+// `react-docgen-typescript`'s `ComponentDoc`, but `props` has the same type shape.
+type ComponentDocLike = Pick<ComponentDoc, 'props'>;
+
 // Serialize a react-docgen tsType into a TypeScript-like string when raw is not available
 function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
 	if (!tsType) return undefined;
@@ -93,8 +97,8 @@ export const parseReactDocgen = (reactDocgen: Documentation): ParsedDocgen => {
  * RDT uses flat type strings (prop.type.name / prop.type.raw) instead of react-docgen's
  * nested tsType structure, so no serialization is needed.
  */
-export const parseReactDocgenTypescript = (reactDocgenTypescript: ComponentDoc): ParsedDocgen => {
-	const props = reactDocgenTypescript.props ?? {};
+const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => {
+	const props = componentDoc.props ?? {};
 	return {
 		props: Object.fromEntries(
 			Object.entries(props).map(([propName, prop]) => [
@@ -111,3 +115,9 @@ export const parseReactDocgenTypescript = (reactDocgenTypescript: ComponentDoc):
 		),
 	};
 };
+
+export const parseReactDocgenTypescript = (reactDocgenTypescript: ComponentDoc): ParsedDocgen =>
+	parseComponentDocLike(reactDocgenTypescript);
+
+export const parseReactComponentMeta = (reactComponentMeta: ComponentDocLike): ParsedDocgen =>
+	parseComponentDocLike(reactComponentMeta);

@@ -1,5 +1,6 @@
 import type { AllManifests, ComponentManifest, Doc, SourceManifests, Story } from '../../types.ts';
 import {
+	parseReactComponentMeta,
 	parseReactDocgen,
 	parseReactDocgenTypescript,
 	type ParsedDocgen,
@@ -61,7 +62,8 @@ function extractSummary(
 }
 
 /**
- * Extract parsed docgen from a component manifest, preferring reactDocgen over reactDocgenTypescript.
+ * Extract parsed docgen from a component manifest, preferring reactDocgen over
+ * reactDocgenTypescript over reactComponentMeta.
  */
 function getParsedDocgen(componentManifest: ComponentManifest): ParsedDocgen | undefined {
 	if (componentManifest.reactDocgen) {
@@ -69,6 +71,9 @@ function getParsedDocgen(componentManifest: ComponentManifest): ParsedDocgen | u
 	}
 	if (componentManifest.reactDocgenTypescript) {
 		return parseReactDocgenTypescript(componentManifest.reactDocgenTypescript);
+	}
+	if (componentManifest.reactComponentMeta) {
+		return parseReactComponentMeta(componentManifest.reactComponentMeta);
 	}
 	return undefined;
 }

@@ -64,7 +64,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   ],
 }));
 
-export const prettyDocs = defineJob('Prettify docs', () => ({
+export const fmt = defineJob('Format check', () => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'medium+',

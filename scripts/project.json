@@ -3,12 +3,6 @@
   "tags": ["library"],
   "includedScripts": [],
   "targets": {
-    "pretty-docs": {
-      "command": "yarn fmt:check",
-      "cwd": "{projectRoot}",
-      "cache": true,
-      "inputs": ["{workspaceRoot}/docs/**/*", "{workspaceRoot}/docs/.oxfmtrc.json"]
-    },
     "check": {
       "dependsOn": [],
       "executor": "nx:run-commands",

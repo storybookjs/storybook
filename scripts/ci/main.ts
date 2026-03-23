@@ -12,7 +12,7 @@ import {
   commonJobsNoOpJob,
   knip,
   lint,
-  prettyDocs,
+  fmt,
   storybookChromatic,
   testUnit_windows,
   testsStories_linux,
@@ -39,7 +39,7 @@ const dirname = import.meta.dirname;
 function generateConfig(workflow: Workflow) {
   const jobs: JobOrNoOpJob[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
-    jobs.push(prettyDocs);
+    jobs.push(fmt);
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks(workflow);

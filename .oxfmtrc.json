@@ -7,7 +7,6 @@
   "singleQuote": true,
   "arrowParens": "always",
   "sortPackageJson": false,
-  "embeddedLanguageFormatting": "off",
   "ignorePatterns": [
     "*.bundle.js",
     "*.js.map",
@@ -15,7 +14,6 @@
     ".vscode",
     ".nx/cache",
     ".nx/workspace-data",
-    "docs",
     "dist",
     "build",
     "bench",
@@ -36,9 +34,16 @@
     "*.yml",
     "*.yaml",
     "*.md",
-    "*.mdx"
+    "*.mdx",
+    "!docs/_snippets/**"
   ],
   "overrides": [
+    {
+      "files": ["docs/_snippets/**"],
+      "options": {
+        "trailingComma": "all"
+      }
+    },
     {
       "files": ["*.md", "*.mdx"],
       "options": {

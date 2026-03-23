@@ -15,6 +15,15 @@ import * as recast from 'recast';
 
 export * from './babelParse';
 export { unwrapTSExpression, resolveExpression } from './expression-resolver';
+export {
+  isImportedDefineConfigLikeIdentifier,
+  isDefineConfigLike,
+  getConfigObjectFromMergeArg,
+  getEffectiveMergeConfigCall,
+  getTargetConfigObject,
+  canUpdateVitestConfigFile,
+  canUpdateVitestWorkspaceFile,
+} from './vitest-config-helpers';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)
 const traverse = (bt.default || bt) as typeof bt;

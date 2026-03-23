@@ -7,6 +7,7 @@ import dirSize from 'fast-folder-size';
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants';
+import { isNxTaskExecution } from '../utils/nx';
 
 const logger = console;
 
@@ -178,14 +179,14 @@ export const sandbox: Task = {
 
     await extendPreview(details, options);
 
-    logger.info('✅ Moving sandbox to cache directory');
-    const sandboxDir = join(details.sandboxDir);
-    const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
-
     // For NX we move the sandbox to a directory that can be cached.
     // We remove node_modules to keep the remote cache small and fast
     // node_modules are already cached in the global yarn cache
-    if (process.env.NX_CLI_SET === 'true') {
+    if (isNxTaskExecution()) {
+      logger.info('✅ Moving sandbox to cache directory');
+      const sandboxDir = join(details.sandboxDir);
+      const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
+
       if (sandboxDir !== cacheDir) {
         logger.info(`✅ Removing cache directory ${cacheDir}`);
         await rm(cacheDir, { recursive: true, force: true });

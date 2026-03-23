@@ -10,4 +10,3 @@ declare var STORYBOOK_ADDON_STATE: Record<string, any>;
 declare var STORYBOOK_FRAMEWORK: import('storybook/internal/types').SupportedFramework | undefined;
 declare var STORYBOOK_RENDERER: import('storybook/internal/types').SupportedRenderer | undefined;
 declare var STORYBOOK_BUILDER: import('storybook/internal/types').SupportedBuilder | undefined;
-declare var STORYBOOK_INSTANCE_ID: string | undefined;

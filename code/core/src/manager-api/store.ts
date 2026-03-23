@@ -12,8 +12,7 @@ storeSetup(store._);
 const STORAGE_KEY_BASE = '@storybook/manager/store';
 
 /**
- * Storage key scoped per Storybook instance via `STORYBOOK_INSTANCE_ID` (a Git-derived project
- * hash).
+ * Storage key scoped per Storybook instance (a Git-derived project hash).
  */
 export const STORAGE_KEY = `${STORAGE_KEY_BASE}/${getAnonymousProjectId() || 'anonymous'}`;
 
@@ -88,7 +87,9 @@ export default class Store {
     const initialState = { ...base, ...get(store.local), ...get(store.session) };
 
     // Record the current version in localStorage so future migrations can be version-aware
-    persistVersion(store.local);
+    if (this.upstreamPersistence) {
+      persistVersion(store.local);
+    }
 
     return initialState;
   }

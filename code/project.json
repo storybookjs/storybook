@@ -16,7 +16,7 @@
       "executor": "nx:run-commands",
       "options": { "command": "yarn test" },
       "cache": true,
-      "inputs": ["default", "{workspaceRoot}/vitest.config.ts"],
+      "inputs": ["{workspaceRoot}/code/**/*", "{workspaceRoot}/vitest.config.ts"],
       "configurations": { "production": {} }
     },
     "knip": {

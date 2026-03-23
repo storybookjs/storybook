@@ -11,11 +11,17 @@
     "addon-onboarding"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "vue3-rsbuild-default-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "vue3-rsbuild-default-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "vue3-rsbuild-default-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "vue3-rsbuild-default-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "test-runner": {},

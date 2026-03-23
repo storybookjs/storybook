@@ -12,11 +12,17 @@
     "angular"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "angular-cli-default-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "angular-cli-default-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "angular-cli-default-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "angular-cli-default-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

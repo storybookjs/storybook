@@ -12,11 +12,17 @@
     "nextjs"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "nextjs-prerelease" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "nextjs-prerelease"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "nextjs-prerelease" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "nextjs-prerelease"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

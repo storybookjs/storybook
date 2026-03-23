@@ -39,7 +39,6 @@ export async function configToCsfFactory(
 
     // Unwrap TS syntax (e.g. `as`, `satisfies`) around the default export expression
     const declaration =
-      // eslint-disable-next-line no-underscore-dangle
       typeof (config as any)._unwrap === 'function'
         ? (config as any)._unwrap(node.declaration)
         : node.declaration;
@@ -50,7 +49,23 @@ export async function configToCsfFactory(
       declaration.callee.name === methodName
     );
   });
-  if (isAlreadyTransformed && !hasNamedExports) {
+
+  // Check whether the required framework import (e.g. defineMain from '@storybook/react-vite/node') is already present
+  const expectedImportSource = frameworkPackage + (configType === 'main' ? '/node' : '');
+  const hasCorrectImport = programNode.body.some(
+    (node) =>
+      t.isImportDeclaration(node) &&
+      node.importKind !== 'type' &&
+      node.source.value === expectedImportSource &&
+      node.specifiers.some(
+        (spec) =>
+          t.isImportSpecifier(spec) &&
+          t.isIdentifier(spec.imported) &&
+          spec.imported.name === methodName
+      )
+  );
+
+  if (isAlreadyTransformed && !hasNamedExports && hasCorrectImport) {
     return info.source;
   }
 
@@ -73,19 +88,21 @@ export async function configToCsfFactory(
     );
   }
 
-  /**
-   * Scenario 1: Mixed exports
-   *
-   * ```
-   * export const tags = [];
-   * export default {
-   *   parameters: {},
-   * };
-   * ```
-   *
-   * Transform into: `export default defineMain({ tags: [], parameters: {} })`
-   */
-  if (config._exportsObject && hasNamedExports) {
+  if (isAlreadyTransformed && !hasNamedExports) {
+    // already transformed with no named exports — skip transformation but still run import fixup below
+  } else if (config._exportsObject && hasNamedExports) {
+    /**
+     * Scenario 1: Mixed exports
+     *
+     * ```
+     * export const tags = [];
+     * export default {
+     *   parameters: {},
+     * };
+     * ```
+     *
+     * Transform into: `export default defineMain({ tags: [], parameters: {} })`
+     */
     // when merging named exports with default exports, add the named exports first in the list
     config._exportsObject.properties = [...defineConfigProps, ...config._exportsObject.properties];
     programNode.body = removeExportDeclarations(programNode, exportDecls);

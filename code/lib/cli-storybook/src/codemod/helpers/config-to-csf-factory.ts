@@ -50,7 +50,7 @@ export async function configToCsfFactory(
       declaration.callee.name === methodName
     );
   });
-  if (isAlreadyTransformed && !hasNamedExports) {
+  if ((configType === 'main' && isAlreadyTransformed) || (configType === 'preview' && isAlreadyTransformed && !hasNamedExports)) {
     return info.source;
   }
 

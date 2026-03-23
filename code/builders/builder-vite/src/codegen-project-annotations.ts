@@ -109,7 +109,7 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 function hash(value: string) {
   let acc = 5381;
   for (let i = 0; i < value.length; i++) {
-    acc = (acc << 5) + acc + value.charCodeAt(i);
+    acc = ((acc << 5) + acc + value.charCodeAt(i)) >>> 0;
   }
-  return acc >>> 0;
+  return acc;
 }

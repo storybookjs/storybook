@@ -204,5 +204,6 @@
       "!{workspaceRoot}/code/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
   },
-  "analytics": false
+  "analytics": false,
+  "codexCacheBust": "2026-03-23T06:08:30Z"
 }

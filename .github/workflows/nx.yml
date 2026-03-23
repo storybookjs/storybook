@@ -68,7 +68,7 @@ jobs:
           else
             echo "config=./.nx/workflows/distribution-config.yaml" >> "$GITHUB_OUTPUT"
           fi
-      - run: npx nx@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS"
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@v7
         with:

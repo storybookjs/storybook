@@ -39,6 +39,14 @@ linux-browsers-init-steps: &linux-browsers-init-steps
     script: |
       yarn install --immutable
   - name: Clean stale Storybook packages from yarn cache
+    # NX Cloud agents use the global yarn cache (enableGlobalCache: true) to
+    # avoid duplicating .yarn/cache across sandboxes. However, sandboxes install
+    # @storybook/* packages from a local verdaccio registry using the same
+    # version number but different contents on each run. The global cache may
+    # hold a stale copy from a previous pipeline, causing `yarn install` to
+    # silently use the published version instead of the local verdaccio build.
+    # Purging these entries forces yarn to fetch fresh copies from verdaccio.
+    # TODO: publish unique versions to verdaccio so this workaround is unnecessary.
     script: |
       rm -f ~/.yarn/berry/cache/storybook-npm-*.zip 2>/dev/null || true
       rm -f ~/.yarn/berry/cache/@storybook-*.zip 2>/dev/null || true

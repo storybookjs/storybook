@@ -672,11 +672,25 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should reject invalid vitest config', async () => {
+    it('should accept plain export default {}', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue('export default {}');
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should reject arrow function vitest config (unsupported)', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `import { defineConfig } from 'vitest/config';
+export default defineConfig(() => ({ test: {} }))`
+      );
 
       const result = await service.validateConfigFiles('.storybook');
 
@@ -761,14 +775,121 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should reject mergeConfig with invalid object (non-object argument)', async () => {
+    it('should accept defineConfig(mergeConfig(...)) pattern', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
         .mockReturnValueOnce('vitest.config.ts'); // config
-      vi.mocked(fs.readFile).mockResolvedValue('export default mergeConfig(viteConfig, "string")');
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default defineConfig(
+          mergeConfig(viteConfig, {
+            test: { name: 'node', environment: 'happy-dom' },
+          })
+        )`
+      );
       const result = await service.validateConfigFiles('.storybook');
-      expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r) => r.includes('invalid Vitest config'))).toBe(true);
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineConfig(mergeConfig(...) satisfies ViteUserConfig) pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import type { ViteUserConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default defineConfig(
+          mergeConfig(viteConfig, {
+            test: { name: 'node' },
+          }) satisfies ViteUserConfig
+        )`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig(...) as ViteUserConfig pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import type { ViteUserConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default mergeConfig(viteConfig, {
+          test: { name: 'node' },
+        }) as ViteUserConfig`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig with shorthand test variable', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const test = { name: 'node', environment: 'happy-dom' };
+        export default mergeConfig(viteConfig, { test })`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig with external vitestConfig variable', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const vitestConfig = { test: { name: 'node' } };
+        export default mergeConfig(viteConfig, vitestConfig)`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept const config = mergeConfig(...); export default config pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const config = mergeConfig(
+          viteConfig,
+          defineConfig({ test: { name: 'node' } })
+        );
+        export default config`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineProject({}) pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineProject } from 'vitest/config';
+        export default defineProject({
+          test: { name: 'node', environment: 'happy-dom' },
+        })`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
     });
   });
 });

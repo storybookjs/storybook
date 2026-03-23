@@ -1,10 +1,11 @@
 {
   "name": "scripts",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "tags": ["library"],
   "includedScripts": [],
   "targets": {
     "pretty-docs": {
-      "command": "yarn docs:prettier:check",
+      "command": "yarn docs:fmt:check",
       "cache": true,
       "inputs": ["{workspaceRoot}/docs/**/*"]
     },

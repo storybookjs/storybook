@@ -1,10 +1,11 @@
 {
   "name": "scripts",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "tags": ["library"],
   "includedScripts": [],
   "targets": {
     "pretty-docs": {
-      "command": "yarn docs:prettier:check",
+      "command": "yarn docs:fmt:check",
       "cache": true,
       "inputs": ["{workspaceRoot}/docs/**/*"]
     },
@@ -20,14 +21,6 @@
       "options": { "cwd": "{projectRoot}", "command": "yarn lint" },
       "cache": true,
       "inputs": ["default"],
-      "configurations": { "production": {} }
-    },
-    "test": {
-      "dependsOn": [{ "projects": ["core"], "target": "compile" }],
-      "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn test" },
-      "cache": true,
-      "inputs": ["default", "all-production"],
       "configurations": { "production": {} }
     },
     "run-registry": {},

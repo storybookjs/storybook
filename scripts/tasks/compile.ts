@@ -33,6 +33,9 @@ export const compile: Task = {
     const command = link && !prod ? linkCommand : noLinkCommand;
     await rm(join(codeDir, 'bench/esbuild-metafiles'), { recursive: true, force: true });
     return exec(
+      // NX cache is disabled in Circle CI during the NX Cloud experiment so we can
+      // measure the true cost of NX Cloud agents without local cache hits.
+      // This will be reverted once the experiment concludes.
       `${command} ${skipCache || process.env.CI ? '--skip-nx-cache' : ''}`,
       { cwd: ROOT_DIRECTORY },
       {

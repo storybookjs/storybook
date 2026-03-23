@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { exec } from './exec';
 
@@ -37,9 +38,9 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     ...packageJson.resolutions,
     ...storybookVersions,
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
-    playwright: '1.52.0',
-    'playwright-core': '1.52.0',
-    '@playwright/test': '1.52.0',
+    playwright: '1.58.2',
+    'playwright-core': '1.58.2',
+    '@playwright/test': '1.58.2',
   };
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
@@ -80,6 +81,10 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   );
 };
 
+export const isViteSandbox = (key?: AllTemplatesKey) => {
+  return allTemplates[key as AllTemplatesKey]?.expected.builder === '@storybook/builder-vite';
+};
+
 export const addWorkaroundResolutions = async ({
   cwd,
   dryRun,
@@ -95,35 +100,37 @@ export const addWorkaroundResolutions = async ({
   const content = await readFile(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(content);
 
-  const additionalReact19Resolutions = [
-    'nextjs/default-ts',
-    'nextjs/prerelease',
-    'nextjs-vite/15-ts',
-    'nextjs-vite/default-ts',
-    'nextjs-vite/14-ts',
-    'react-native-web-vite/expo-ts',
-  ].includes(key)
-    ? {
-        react: '^19.0.0',
-        'react-dom': '^19.0.0',
-      }
-    : key === 'react-webpack/prerelease-ts'
-      ? {
-          react: packageJson.dependencies.react,
-          'react-dom': packageJson.dependencies['react-dom'],
-        }
-      : key === 'react-rsbuild/default-ts'
-        ? {
-            'react-docgen': '^8.0.2',
-          }
-        : {};
+  let additionalResolutions = {};
+
+  // add additional resolutions for React 19
+  if (['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)) {
+    additionalResolutions = {
+      react: '^19.0.0',
+      'react-dom': '^19.0.0',
+    };
+  }
+
+  if (key === 'react-webpack/prerelease-ts') {
+    additionalResolutions = {
+      ...additionalResolutions,
+      react: packageJson.dependencies.react,
+      'react-dom': packageJson.dependencies['react-dom'],
+    };
+  }
+
+  if (key === 'react-rsbuild/default-ts') {
+    additionalResolutions = {
+      ...additionalResolutions,
+      'react-docgen': '^8.0.2',
+    };
+  }
 
   packageJson.resolutions = {
     ...packageJson.resolutions,
-    ...additionalReact19Resolutions,
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
+    ...additionalResolutions,
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
@@ -135,11 +142,13 @@ export const configureYarn2ForVerdaccio = async ({
   debug,
   key,
 }: YarnOptions & { key: AllTemplatesKey }) => {
+  // On NX Cloud agents, we use the global cache to avoid duplicating .yarn/cache across sandboxes.
+  // Stale @storybook/* packages are cleaned from the global cache in the agent init step (agents.yaml).
+  // Locally and on CircleCI, we disable the global cache to avoid stale packages from previous runs.
+  const useGlobalCache = Boolean(process.env.STORYBOOK_NX_CLOUD_AGENT);
+
   const command = [
-    // We don't want to use the cache or we might get older copies of our built packages
-    // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
-    // TODO publish unique versions instead
-    `yarn config set enableGlobalCache false`,
+    `yarn config set enableGlobalCache ${useGlobalCache}`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
     `yarn config set npmRegistryServer "http://localhost:6001/"`,
@@ -172,7 +181,7 @@ export const configureYarn2ForVerdaccio = async ({
     // Discard all YN0013 - FETCH_NOT_CACHED messages
     // Error on YN0060 - INCOMPATIBLE_PEER_DEPENDENCY
     command.push(
-      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"error\\"}]"`
+      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"discard\\"}]"`
     );
   }
 

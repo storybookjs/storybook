@@ -26,7 +26,6 @@ export default defineWorkspace([
         provider: 'playwright',
         instances: [{ browser: 'chromium' }],
       },
-      setupFiles: ['SETUP_FILE'],
     },
   },
 ]);

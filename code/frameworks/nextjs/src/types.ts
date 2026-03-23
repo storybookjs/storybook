@@ -19,7 +19,6 @@ type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;
 
 export type FrameworkOptions = ReactOptions & {
   nextConfigPath?: string;
-  image?: Partial<NextImage.ImageProps>;
   builder?: BuilderOptions;
 };
 
@@ -71,6 +70,9 @@ export interface NextJsParameters {
 
     /** Next.js router configuration */
     router?: Partial<NextRouter>;
+
+    /** Next.js image props */
+    image?: Partial<NextImage.ImageProps>;
   };
 }
 

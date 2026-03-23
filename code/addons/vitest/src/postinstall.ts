@@ -1,6 +1,6 @@
-import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
+import os from 'node:os';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import { AddonVitestService } from 'storybook/internal/cli';
@@ -165,54 +165,23 @@ export default async function postInstall(options: PostinstallOptions) {
         useRemotePkg: !!options.skipInstall,
       });
     } else {
+      const platform = os.platform();
+      const useWithDeps = platform === 'darwin' || platform === 'win32';
+      const manualCommand = useWithDeps
+        ? 'npx playwright install chromium --with-deps'
+        : 'npx playwright install chromium';
+      const linuxNote = !useWithDeps
+        ? '\n        Note: add --with-deps to the command above if you are on Debian or Ubuntu.'
+        : '';
       logger.warn(dedent`
         Playwright browser binaries installation skipped. Please run the following command manually later:
-        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
+        ${CLI_COLORS.cta(manualCommand)}${linuxNote}
       `);
     }
   }
 
   const fileExtension =
     allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
-
-  const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
-  const existingSetupFile =
-    EXTENSIONS.map((ext) => resolve(options.configDir, `vitest.setup${ext}`)).find(existsSync) ||
-    null;
-
-  if (existingSetupFile) {
-    logger.step(`Found existing Vitest setup file, reusing:`);
-    logger.log(`${existingSetupFile}\n`);
-  } else {
-    logger.step(`Creating a Vitest setup file for Storybook:`);
-    logger.log(`${vitestSetupFile}\n`);
-
-    const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
-      existsSync
-    );
-
-    const annotationsImport = info.frameworkPackage;
-
-    const imports = [`import { setProjectAnnotations } from '${annotationsImport}';`];
-
-    const projectAnnotations = [];
-
-    if (previewExists) {
-      imports.push(`import * as projectAnnotations from './preview';`);
-      projectAnnotations.push('projectAnnotations');
-    }
-
-    await writeFile(
-      vitestSetupFile,
-      dedent`
-      ${imports.join('\n')}
-
-      // This is an important step to apply the right configuration when testing your stories.
-      // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
-      setProjectAnnotations([${projectAnnotations.join(', ')}]);
-    `
-    );
-  }
 
   const vitestWorkspaceFile = findFile('vitest.workspace', ['.ts', '.js', '.json']);
   const viteConfigFile = findFile('vite.config');
@@ -229,10 +198,16 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   }
 
-  const getTemplateName = () => {
+  const getTemplateName = (configContent?: string) => {
     if (isVitest4OrNewer) {
       return 'vitest.config.4.template';
     } else if (isVitest3_2To4) {
+      // In Vitest 3.2, `workspace` was deprecated in favor of `projects` but still works.
+      // If the user's existing config already uses `workspace`, use the old template that
+      // also uses `workspace` so that the merge doesn't introduce both keys.
+      if (configContent && configUsesWorkspace(configContent)) {
+        return 'vitest.config.template';
+      }
       return 'vitest.config.3.2.template';
     }
     return 'vitest.config.template';
@@ -256,7 +231,6 @@ export default async function postInstall(options: PostinstallOptions) {
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
         : '',
       CONFIG_DIR: options.configDir,
-      SETUP_FILE: relative(dirname(vitestWorkspaceFile), existingSetupFile ?? vitestSetupFile),
     }).then((t) => t.replace(`\n  'ROOT_CONFIG',`, '').replace(/\s+extends: '',/, ''));
     const source = babelParse(workspaceTemplate);
     const target = babelParse(workspaceFileContent);
@@ -295,14 +269,13 @@ export default async function postInstall(options: PostinstallOptions) {
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
 
-    const templateName = getTemplateName();
+    const templateName = getTemplateName(configFile);
 
     const alreadyConfigured = isConfigAlreadySetup(rootConfig, configFile);
 
     if (templateName && !alreadyConfigured) {
       const configTemplate = await loadTemplate(templateName, {
         CONFIG_DIR: options.configDir,
-        SETUP_FILE: relative(dirname(rootConfig), existingSetupFile ?? vitestSetupFile),
       });
 
       const source = babelParse(configTemplate);
@@ -345,7 +318,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
     const configTemplate = await loadTemplate(getTemplateName(), {
       CONFIG_DIR: options.configDir,
-      SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
     });
 
     logger.step(`Creating a Vitest config file:`);
@@ -478,4 +450,43 @@ export function isConfigAlreadySetup(_configPath: string, configContent: string)
   });
 
   return pluginReferenced;
+}
+
+/**
+ * Checks whether an existing config file uses `test.workspace` (Vitest 3.0-3.1 style) rather than
+ * `test.projects` (Vitest 3.2+ style).
+ */
+function configUsesWorkspace(configContent: string): boolean {
+  let ast: ReturnType<typeof babelParse>;
+  try {
+    ast = babelParse(configContent);
+  } catch {
+    return false;
+  }
+
+  let found = false;
+
+  traverse(ast, {
+    ObjectProperty(path) {
+      if (found) {
+        path.stop();
+        return;
+      }
+      const key = path.node.key;
+      if (key.type === 'Identifier' && key.name === 'workspace') {
+        // Check that this is inside a `test` property to avoid false positives
+        const parent = path.parentPath?.parentPath;
+        if (
+          parent?.isObjectProperty() &&
+          parent.node.key.type === 'Identifier' &&
+          parent.node.key.name === 'test'
+        ) {
+          found = true;
+          path.stop();
+        }
+      }
+    },
+  });
+
+  return found;
 }

@@ -12,12 +12,18 @@
     "nextjs-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "nextjs-vite-14-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "nextjs-vite-14-ts"
+      }
+    },
     "dev": {},
     "vitest-integration": {},
-    "build": { "options": { "dir": "nextjs-vite-14-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "nextjs-vite-14-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

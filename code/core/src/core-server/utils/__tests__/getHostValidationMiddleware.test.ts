@@ -155,10 +155,9 @@ describe('isValidHost', () => {
     expect(isValidHost('127.0.0.1:6006', options)).toBe(true);
   });
 
-  // TODO: Change default to [] in SB11
-  it('when allowedHosts is undefined (default true), allows any host', () => {
-    expect(isValidHost('malicious-site.com', options)).toBe(true);
-    expect(isValidHost('any-origin.example.com', options)).toBe(true);
+  it('when allowedHosts is undefined (default []), rejects foreign hosts', () => {
+    expect(isValidHost('malicious-site.com', options)).toBe(false);
+    expect(isValidHost('any-origin.example.com', options)).toBe(false);
   });
 
   it('when allowedHosts is true, allows any host', () => {

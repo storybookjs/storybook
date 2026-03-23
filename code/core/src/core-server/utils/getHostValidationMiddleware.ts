@@ -4,8 +4,7 @@ import { isHostAllowed } from 'host-validation-middleware';
 
 import type { Middleware } from '../../types';
 
-// TODO: Change to `[]` in SB11 to change from opt-in to opt-out
-export const DEFAULT_ALLOWED_HOSTS: string[] | true = true;
+export const DEFAULT_ALLOWED_HOSTS: string[] | true = [];
 
 export type HostValidationOptions = {
   host?: string;

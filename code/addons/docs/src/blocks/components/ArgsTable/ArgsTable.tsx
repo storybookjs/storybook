@@ -215,6 +215,7 @@ export interface ArgsTableOptionProps {
   initialExpandedArgs?: boolean;
   isLoading?: boolean;
   sort?: SortType;
+  storyId?: string;
 }
 interface ArgsTableDataProps {
   rows: ArgTypes;
@@ -338,6 +339,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     initialExpandedArgs,
     sort = 'none',
     isLoading,
+    storyId,
   } = props;
 
   if ('error' in props) {
@@ -391,7 +393,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
   }
   const expandable = Object.keys(groups.sections).length > 0;
 
-  const common = { updateArgs, compact, inAddonPanel, initialExpandedArgs };
+  const common = { updateArgs, compact, inAddonPanel, initialExpandedArgs, storyId };
 
   return (
     <ResetWrapper>

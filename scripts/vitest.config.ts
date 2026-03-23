@@ -13,6 +13,7 @@ const threadCount = process.env.CI ? 1 : undefined;
 
 export default defineConfig({
   test: {
+    name: 'scripts',
     clearMocks: true,
     pool: 'threads',
     maxWorkers: threadCount,

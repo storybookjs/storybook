@@ -18,6 +18,7 @@ import { color } from 'storybook/theming';
 import { ControlsPanel } from './components/ControlsPanel';
 import { Title } from './components/Title';
 import { ADDON_ID, PARAM_KEY } from './constants';
+import { trySelectStory } from '../manager/utils/trySelectStory';
 import { stringifyArgs } from './stringifyArgs';
 
 export default addons.register(ADDON_ID, (api) => {
@@ -108,7 +109,7 @@ export default addons.register(ADDON_ID, (api) => {
         duration: 8_000,
         onClick: ({ onDismiss }) => {
           onDismiss();
-          api.selectStory(response.newStoryId);
+          void trySelectStory(api.selectStory, response.newStoryId);
         },
       });
     };
@@ -141,7 +142,7 @@ export default addons.register(ADDON_ID, (api) => {
 
       api.resetStoryArgs(story);
       if (data.payload.newStoryId) {
-        api.selectStory(data.payload.newStoryId);
+        void trySelectStory(api.selectStory, data.payload.newStoryId);
       }
     });
   }

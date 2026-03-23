@@ -130,6 +130,10 @@ export interface QueryParams {
   [key: string]: string | undefined;
 }
 
+interface QueryParamInput {
+  [key: string]: string | undefined | null;
+}
+
 /** SubAPI for managing URL navigation and state. */
 export interface SubAPI {
   /**
@@ -381,5 +385,13 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   return {
     api,
     state: initialUrlSupport(moduleArgs),
+    init: () => {
+      store.registerPersistenceHandler('url', (_patch, serialize) => {
+        if (serialize) {
+          const params = serialize(store.getState());
+          api.applyQueryParams(params, { replace: true });
+        }
+      });
+    },
   };
 };

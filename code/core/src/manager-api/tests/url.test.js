@@ -123,6 +123,38 @@ describe('initial state', () => {
 });
 
 describe('queryParams', () => {
+  it('removes a key from customQueryParams when null is passed', () => {
+    let state = { customQueryParams: { tags: 'a11y', args: 'foo:bar' } };
+    const store = {
+      setState: (change) => {
+        state = { ...state, ...change };
+      },
+      getState: () => state,
+    };
+    const channel = new EventEmitter();
+    const navigate = vi.fn();
+    const { api } = initURL({
+      state: { location: { search: '?tags=a11y&args=foo:bar', path: '/', hash: '' } },
+      navigate,
+      store,
+      provider: { channel },
+    });
+
+    api.applyQueryParams({ tags: null }, { replace: true });
+
+    // tags key must be absent from stored customQueryParams
+    expect(state.customQueryParams).not.toHaveProperty('tags');
+    expect(state.customQueryParams).toHaveProperty('args', 'foo:bar');
+
+    // subsequent URL updates must not reintroduce tags
+    api.applyQueryParams({ args: 'foo:baz' }, { replace: true });
+    expect(navigate).toHaveBeenLastCalledWith(
+      expect.not.stringContaining('tags='),
+      expect.anything()
+    );
+    expect(state.customQueryParams).not.toHaveProperty('tags');
+  });
+
   it('lets your read out parameters you set previously', () => {
     let state = {};
     const store = {

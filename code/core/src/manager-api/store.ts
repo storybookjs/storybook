@@ -42,8 +42,14 @@ type Patch = Partial<State>;
 type InputFnPatch = (s: State) => Patch;
 type InputPatch = Patch | InputFnPatch;
 
+export type PersistenceHandler = (
+  patch: Partial<State>,
+  serialize: ((s: State) => Partial<Record<string, string | null | undefined>>) | undefined
+) => void | Promise<void>;
+
 export interface Options {
-  persistence: 'none' | 'session' | string;
+  persistence: 'none' | 'session' | 'url' | string;
+  serialize?: (s: State) => Partial<Record<string, string | null | undefined>>;
 }
 type CallBack = (s: State) => void;
 type CallbackOrOptions = CallBack | Options;
@@ -54,11 +60,16 @@ export default class Store {
   upstreamPersistence: boolean;
   upstreamGetState: GetState;
   upstreamSetState: SetState;
+  private persistenceHandlers: Map<string, PersistenceHandler> = new Map();
 
   constructor({ allowPersistence, setState, getState }: Upstream) {
     this.upstreamPersistence = allowPersistence ?? true;
     this.upstreamSetState = setState;
     this.upstreamGetState = getState;
+  }
+
+  registerPersistenceHandler(key: string, handler: PersistenceHandler) {
+    this.persistenceHandlers.set(key, handler);
   }
 
   // The assumption is that this will be called once, to initialize the React state
@@ -115,8 +126,15 @@ export default class Store {
     });
 
     if (persistence !== 'none' && this.upstreamPersistence) {
-      const storage = persistence === 'session' ? store.session : store.local;
-      await update(storage, delta);
+      if (persistence === 'url') {
+        const handler = this.persistenceHandlers.get('url');
+        if (handler) {
+          await handler(delta, (options as Options | undefined)?.serialize);
+        }
+      } else {
+        const storage = persistence === 'session' ? store.session : store.local;
+        await update(storage, delta);
+      }
     }
 
     if (callback) {

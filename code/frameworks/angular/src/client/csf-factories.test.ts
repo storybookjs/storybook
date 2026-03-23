@@ -10,7 +10,9 @@ import type { Decorator } from './public-types';
 @Component({
   selector: 'storybook-button',
   standalone: true,
-  template: `<button [disabled]="disabled">{{ label }}</button>`,
+  template: `
+    <button [disabled]="disabled">{{ label }}</button>
+  `,
 })
 class ButtonComponent {
   @Input()
@@ -297,7 +299,9 @@ it('Components without Props can be used', () => {
   @Component({
     selector: 'storybook-simple',
     standalone: true,
-    template: `<div>Simple</div>`,
+    template: `
+      <div>Simple</div>
+    `,
   })
   class SimpleComponent {}
 
@@ -322,14 +326,16 @@ it('Signal components can be used', () => {
     standalone: false,
     // Needs to be a different name to the CLI template button
     selector: 'storybook-signal-button',
-    template: ` <button
-  type="button"
-  (click)="onClick.emit($event)"
-  [ngClass]="classes"
-  [ngStyle]="{ 'background-color': backgroundColor }"
->
-  {{ label() }}
-</button>`,
+    template: `
+      <button
+        type="button"
+        (click)="onClick.emit($event)"
+        [ngClass]="classes"
+        [ngStyle]="{ 'background-color': backgroundColor }"
+      >
+        {{ label() }}
+      </button>
+    `,
   })
   class SignalButtonComponent {
     /** Is this the principal call to action on the page? */

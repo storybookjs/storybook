@@ -1,3 +1,17 @@
+## 10.3.3
+
+- Addon-Vitest: Streamline vite(st) config detection across init and postinstall - [#34193](https://github.com/storybookjs/storybook/pull/34193), thanks @valentinpalkovic!
+
+## 10.3.2
+
+- CLI: Shorten CTA link messages - [#34236](https://github.com/storybookjs/storybook/pull/34236), thanks @shilman!
+- React Native Web: Fix vite8 support by bumping vite-plugin-rnw - [#34231](https://github.com/storybookjs/storybook/pull/34231), thanks @dannyhw!
+
+## 10.3.1
+
+- CLI: Use npm info to fetch versions in repro command - [#34214](https://github.com/storybookjs/storybook/pull/34214), thanks @yannbf!
+- Core: Prevent story-local viewport from persisting in URL - [#34153](https://github.com/storybookjs/storybook/pull/34153), thanks @ghengeveld!
+
 ## 10.3.0
 
 _> Improved developer experience, AI-assisting tools, and broader ecosystem support_
@@ -8,7 +22,6 @@ Storybook 10.3 contains hundreds of fixes and improvements including:
 - ⚡ Vite 8 support
 - ▲ Next.js 16.2 support
 - 📝 ESLint 10 support
-- 🧪 React: Experimental `react-component-meta` prop extraction tool for accurate controls and args tables
 - 〰️ Addon Pseudo-States: Tailwind v4 support
 - 🔧 Addon-Vitest: Simplified configuration - no more setup files required
 - ♿ Numerous accessibility improvements across the UI

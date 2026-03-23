@@ -13,7 +13,6 @@ Storybook 10.3 contains hundreds of fixes and improvements including:
 - ⚡ Vite 8 support
 - ▲ Next.js 16.2 support
 - 📝 ESLint 10 support
-- 🧪 React: Experimental `react-component-meta` prop extraction tool for accurate controls and args tables
 - 〰️ Addon Pseudo-States: Tailwind v4 support
 - 🔧 Addon-Vitest: Simplified configuration - no more setup files required
 - ♿ Numerous accessibility improvements across the UI

@@ -17,6 +17,7 @@ declare var STORYBOOK_RENDERER: import('./types/modules/renderers').SupportedRen
 declare var STORYBOOK_HOOKS_CONTEXT: any;
 declare var STORYBOOK_CURRENT_TASK_LOG: undefined | null | Array<any>;
 
+declare var STORYBOOK_ANONYMOUS_PROJECT_ID: string | undefined;
 declare var STORYBOOK_NETWORK_ADDRESS: string | undefined;
 declare var PREVIEW_URL: string | undefined;
 

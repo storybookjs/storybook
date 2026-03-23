@@ -4,6 +4,7 @@ import {
   frameworkToRenderer,
   getFrameworkName,
 } from 'storybook/internal/common';
+import { getAnonymousProjectId } from 'storybook/internal/telemetry';
 import { type Options, SupportedBuilder } from 'storybook/internal/types';
 
 export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
@@ -26,6 +27,7 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   globals.STORYBOOK_FRAMEWORK = framework;
   globals.STORYBOOK_RENDERER = renderer;
   globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
+  globals.STORYBOOK_ANONYMOUS_PROJECT_ID = getAnonymousProjectId();
 
   return globals;
 };

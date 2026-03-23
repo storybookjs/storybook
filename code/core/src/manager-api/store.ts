@@ -4,7 +4,6 @@ import store from 'store2';
 import storeSetup from './lib/store-setup';
 import type { State } from './root';
 import { version as currentVersion } from './version';
-import { getAnonymousProjectId } from 'storybook/internal/telemetry';
 
 // setting up the store, overriding set and get to use telejson
 storeSetup(store._);
@@ -12,9 +11,11 @@ storeSetup(store._);
 const STORAGE_KEY_BASE = '@storybook/manager/store';
 
 /**
- * Storage key scoped per Storybook instance (a Git-derived project hash).
+ * Storage key scoped per Storybook instance (a Git-derived project hash). The project ID is
+ * injected as a window global by the manager builder at build time so the manager (a browser app)
+ * does not need to depend on Node-only telemetry code.
  */
-export const STORAGE_KEY = `${STORAGE_KEY_BASE}/${getAnonymousProjectId() || 'anonymous'}`;
+export const STORAGE_KEY = `${STORAGE_KEY_BASE}/${globalThis.STORYBOOK_ANONYMOUS_PROJECT_ID || 'anonymous'}`;
 
 /**
  * Key used to store the Storybook version alongside persisted data. This allows future migration
@@ -84,7 +85,11 @@ export default class Store {
     // We don't only merge at the very top level (the same way as React setState)
     // when you set keys, so it makes sense to do the same in combining the two storage modes
     // Really, you shouldn't store the same key in both places
-    const initialState = { ...base, ...get(store.local), ...get(store.session) };
+    const initialState = {
+      ...base,
+      ...get(store.local),
+      ...get(store.session),
+    };
 
     // Record the current version in localStorage so future migrations can be version-aware
     if (this.upstreamPersistence) {

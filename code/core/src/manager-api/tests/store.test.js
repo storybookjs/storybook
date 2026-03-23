@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import flushPromises from 'flush-promises';
 import store2 from 'store2';
@@ -21,28 +21,27 @@ vi.mock('store2', () => ({
 
 vi.mock('../version', () => ({ version: '0.0.0-test' }));
 
-vi.mock('storybook/internal/telemetry', () => ({
-  getAnonymousProjectId: vi.fn(),
-}));
-
 describe('store', () => {
   describe('STORAGE_KEY', () => {
+    let originalProjectId;
+
     beforeEach(() => {
       vi.resetModules();
+      originalProjectId = globalThis.STORYBOOK_ANONYMOUS_PROJECT_ID;
+    });
+
+    afterEach(() => {
+      globalThis.STORYBOOK_ANONYMOUS_PROJECT_ID = originalProjectId;
     });
 
     it('scopes storage key to the project ID when available', async () => {
-      vi.doMock('storybook/internal/telemetry', () => ({
-        getAnonymousProjectId: () => 'test-project-id',
-      }));
+      globalThis.STORYBOOK_ANONYMOUS_PROJECT_ID = 'test-project-id';
       const { STORAGE_KEY: key } = await import('../store');
       expect(key).toBe('@storybook/manager/store/test-project-id');
     });
 
     it('falls back to anonymous when project ID is unavailable', async () => {
-      vi.doMock('storybook/internal/telemetry', () => ({
-        getAnonymousProjectId: () => undefined,
-      }));
+      globalThis.STORYBOOK_ANONYMOUS_PROJECT_ID = undefined;
       const { STORAGE_KEY: key } = await import('../store');
       expect(key).toBe('@storybook/manager/store/anonymous');
     });
@@ -59,8 +58,15 @@ describe('store', () => {
   });
 
   it('sensibly combines local+session storage for initial state', () => {
-    store2.session.get.mockReturnValueOnce({ foo: 'bar', combined: { a: 'b' } });
-    store2.local.get.mockReturnValueOnce({ foo: 'baz', another: 'value', combined: { c: 'd' } });
+    store2.session.get.mockReturnValueOnce({
+      foo: 'bar',
+      combined: { a: 'b' },
+    });
+    store2.local.get.mockReturnValueOnce({
+      foo: 'baz',
+      another: 'value',
+      combined: { c: 'd' },
+    });
 
     const store = new Store({});
     expect(store.getInitialState()).toEqual({
@@ -101,7 +107,9 @@ describe('store', () => {
       await store.setState({ foo: 'bar' }, { persistence: 'session' });
 
       expect(setState).toHaveBeenCalledWith({ foo: 'bar' }, expect.any(Function));
-      expect(store2.session.set).toHaveBeenCalledWith(STORAGE_KEY, { foo: 'bar' });
+      expect(store2.session.set).toHaveBeenCalledWith(STORAGE_KEY, {
+        foo: 'bar',
+      });
       expect(store2.local.set).not.toHaveBeenCalled();
     });
 
@@ -114,7 +122,9 @@ describe('store', () => {
 
       expect(setState).toHaveBeenCalledWith({ foo: 'bar' }, expect.any(Function));
       expect(store2.session.set).not.toHaveBeenCalled();
-      expect(store2.local.set).toHaveBeenCalledWith(STORAGE_KEY, { foo: 'bar' });
+      expect(store2.local.set).toHaveBeenCalledWith(STORAGE_KEY, {
+        foo: 'bar',
+      });
     });
 
     it('properly patches existing values', async () => {
@@ -197,7 +207,9 @@ describe('store', () => {
       await store.setState(patch, { persistence: 'session' });
 
       expect(patch).toHaveBeenCalledWith('OLD_STATE');
-      expect(store2.session.set).toHaveBeenCalledWith(STORAGE_KEY, { foo: 'bar' });
+      expect(store2.session.set).toHaveBeenCalledWith(STORAGE_KEY, {
+        foo: 'bar',
+      });
     });
   });
 });

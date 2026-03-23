@@ -5,17 +5,14 @@ import { expect, test } from '@playwright/test';
 import { join } from 'pathe';
 import process from 'process';
 
-import { SANDBOX_DIRECTORY } from '../../scripts/utils/constants';
 import { SbPage, hasOnboardingFeature } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
-const sandboxDir =
-  process.env.STORYBOOK_SANDBOX_DIR || join(SANDBOX_DIRECTORY, 'react-vite-default-ts');
 
-async function clearChecklistCache(rootDir: string) {
-  await rm(join(rootDir, 'node_modules', '.cache', 'storybook'), {
+async function clearChecklistCache() {
+  await rm(join(process.env.STORYBOOK_SANDBOX_DIR!, 'node_modules', '.cache'), {
     recursive: true,
     force: true,
   });
@@ -31,9 +28,8 @@ test.describe('addon-onboarding', () => {
     // eslint-disable-next-line playwright/no-conditional-in-test
     if (process.env.CI) {
       await rm(join(homedir(), '.storybook', 'settings.json'), { force: true });
+      await clearChecklistCache();
     }
-
-    await clearChecklistCache(sandboxDir);
 
     await page.goto(`${storybookUrl}/?path=/onboarding`);
     const sbPage = new SbPage(page, expect);

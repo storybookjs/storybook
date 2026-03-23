@@ -107,10 +107,10 @@ export default addons.register(ADDON_ID, (api) => {
           ),
         },
         duration: 8_000,
-        onClick: async ({ onDismiss }) => {
+        onClick: ({ onDismiss }) => {
           onDismiss();
 
-          await trySelectStory(api.selectStory, response.newStoryId);
+          void trySelectStory(api.selectStory, response.newStoryId);
         },
       });
     };
@@ -131,7 +131,7 @@ export default addons.register(ADDON_ID, (api) => {
       },
     });
 
-    channel.on(SAVE_STORY_RESPONSE, async (data: ResponseData<SaveStoryResponsePayload>) => {
+    channel.on(SAVE_STORY_RESPONSE, (data: ResponseData<SaveStoryResponsePayload>) => {
       if (!data.success) {
         return;
       }
@@ -143,7 +143,7 @@ export default addons.register(ADDON_ID, (api) => {
 
       api.resetStoryArgs(story);
       if (data.payload.newStoryId) {
-        await trySelectStory(api.selectStory, data.payload.newStoryId);
+        void trySelectStory(api.selectStory, data.payload.newStoryId);
       }
     });
   }

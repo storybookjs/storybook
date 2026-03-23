@@ -142,7 +142,6 @@ test.describe("component testing", () => {
     browserName,
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
-    test.setTimeout(40_000);
     const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory("addons/group/test", "Mismatch Failure");
@@ -161,7 +160,7 @@ test.describe("component testing", () => {
       exact: true,
     });
     if ((await testStoryElement.getAttribute("aria-expanded")) !== "true") {
-      testStoryElement.click();
+      await testStoryElement.click();
     }
 
     const testingModuleDescription = await page.locator(

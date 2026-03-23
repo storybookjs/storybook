@@ -287,5 +287,38 @@ describe(getStoryContentRawCode.name, () => {
 
       expect(rawSource).toBe(`<SomeComponent wins="inner-template" {...args} />`);
     });
+
+    it('works when a static children content provided without component in defineMeta', async ({
+      expect,
+    }) => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/addon-svelte-csf";
+
+          const { Story } = defineMeta({
+            title: 'Templating',
+          });
+        </script>
+
+        <Story name="Static template">
+          <h2 data-testid="heading">Static template</h2>
+          <p>This story is static</p>
+        </Story>
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(dedent`<h2 data-testid="heading">Static template</h2>
+          <p>This story is static</p>`);
+    });
   });
 });

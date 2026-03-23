@@ -160,6 +160,17 @@ export const TableWrapper = styled.table<{
             },
           }),
     },
+    // High contrast mode: ensure borders are visible with system colors
+    '@media (forced-colors: active)': {
+      tbody: {
+        filter: 'none',
+
+        '> tr > *': {
+          borderColor: 'CanvasText',
+        },
+      },
+    },
+
     // End awesome table styling
   },
 }));

@@ -9,7 +9,7 @@ beforeEach(() => {
   vi.mocked(formatFileContent).mockImplementation(async (_path, content) => content);
 });
 expect.addSnapshotSerializer({
-  serialize: (val: unknown) => (typeof val === 'string' ? val : val.toString()),
+  serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
   test: () => true,
 });
 

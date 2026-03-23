@@ -130,10 +130,6 @@ export interface QueryParams {
   [key: string]: string | undefined;
 }
 
-interface QueryParamInput {
-  [key: string]: string | undefined | null;
-}
-
 /** SubAPI for managing URL navigation and state. */
 export interface SubAPI {
   /**
@@ -205,7 +201,7 @@ export interface SubAPI {
    * @param {QueryParams} input - An object containing the query parameters to set.
    * @returns {void}
    */
-  setQueryParams: (input: QueryParams) => void;
+  setQueryParams: (input: QueryParam) => void;
   /**
    * Set the query parameters for the current URL & navigates.
    *
@@ -213,7 +209,7 @@ export interface SubAPI {
    * @param {NavigateOptions} options - Options for the navigation.
    * @returns {void}
    */
-  applyQueryParams: (input: QueryParams, options?: NavigateOptions) => void;
+  applyQueryParams: (input: QueryParam, options?: NavigateOptions) => void;
 }
 
 export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
@@ -305,16 +301,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
     },
     setQueryParams(input) {
       const { customQueryParams } = store.getState();
-      const queryParams: QueryParams = {};
-      const update = {
-        ...customQueryParams,
-        ...Object.entries(input).reduce((acc, [key, value]) => {
-          if (value !== null) {
-            acc[key] = value;
-          }
-          return acc;
-        }, queryParams),
-      };
+      const update: QueryParams = { ...customQueryParams };
+      for (const [key, value] of Object.entries(input)) {
+        if (value === null || value === undefined) {
+          delete update[key];
+        } else {
+          update[key] = value;
+        }
+      }
       if (!deepEqual(customQueryParams, update)) {
         store.setState({ customQueryParams: update });
         provider.channel?.emit(UPDATE_QUERY_PARAMS, update);

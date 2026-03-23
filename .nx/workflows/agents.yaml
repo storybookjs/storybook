@@ -45,13 +45,11 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Install Browsers
     script: |
       yarn exec playwright install chromium --with-deps
-      du -sh ~/.cache/ms-playwright 2>/dev/null || true
   - name: Verify
     script: |
       echo "node:         $(node --version)"
       echo "yarn:         $(yarn --version)"
       echo "home:         $HOME"
-      du -sh ~/.cache/ms-playwright ~/.yarn/berry node_modules code/node_modules scripts/node_modules /home/workflows/storybook-sandboxes 2>/dev/null || true
       git diff --exit-code
       yarn dedupe --check
 

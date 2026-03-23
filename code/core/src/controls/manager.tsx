@@ -109,7 +109,6 @@ export default addons.register(ADDON_ID, (api) => {
         duration: 8_000,
         onClick: ({ onDismiss }) => {
           onDismiss();
-
           void trySelectStory(api.selectStory, response.newStoryId);
         },
       });

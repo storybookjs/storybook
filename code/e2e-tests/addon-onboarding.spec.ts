@@ -12,10 +12,10 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
 
 async function clearChecklistCache() {
-  await rm(join(process.env.STORYBOOK_SANDBOX_DIR!, 'node_modules', '.cache'), {
-    recursive: true,
-    force: true,
-  });
+  // await rm(join(process.env.STORYBOOK_SANDBOX_DIR!, 'node_modules', '.cache'), {
+  //   recursive: true,
+  //   force: true,
+  // });
 }
 
 test.describe('addon-onboarding', () => {

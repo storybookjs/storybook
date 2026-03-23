@@ -1,5 +1,5 @@
 export async function trySelectStory(
-  selectStory: (id?: string) => Promise<void> | void,
+  selectStory: (id?: string) => void,
   storyId?: string,
   attempt = 1
 ): Promise<void> {
@@ -8,7 +8,7 @@ export async function trySelectStory(
   }
 
   try {
-    await selectStory(storyId);
+    selectStory(storyId);
   } catch {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return trySelectStory(selectStory, storyId, attempt + 1);

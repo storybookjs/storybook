@@ -1,9 +1,6 @@
 
 mcp_servers.nx-mcp.command = 'npx'
-mcp_servers.nx-mcp.args = [
-	'nx',
-	'mcp',
-]
+mcp_servers.nx-mcp.args = ['nx', 'mcp']
 features.multi_agent = true
 
 [agents.ci-monitor-subagent]

@@ -137,9 +137,7 @@ function cycleCheck() {
     agentTriggered: false,
     envRerunCount,
     approachingLimit,
-    message: approachingLimit
-      ? `Approaching cycle limit (${cycleCount}/${maxCycles})`
-      : null,
+    message: approachingLimit ? `Approaching cycle limit (${cycleCount}/${maxCycles})` : null,
   });
 }
 

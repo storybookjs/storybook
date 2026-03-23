@@ -176,6 +176,31 @@ describe('main/preview codemod: general parsing functionality', () => {
     expect(transformed).toEqual(original);
   });
 
+  it('should add missing import when already transformed but import is absent', async () => {
+    await expect(
+      transform(dedent`
+        export default defineMain({});
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { defineMain } from "@storybook/react-vite/node";
+      export default defineMain({});
+    `);
+  });
+
+  it('should add missing specifier when already transformed but defineMain is not in existing import', async () => {
+    await expect(
+      transform(dedent`
+        import { someHelper } from '@storybook/react-vite/node';
+
+        export default defineMain({});
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { someHelper, defineMain } from '@storybook/react-vite/node';
+
+      export default defineMain({});
+    `);
+  });
+
   it('should remove legacy main config type imports if unused', async () => {
     await expect(
       transform(dedent`

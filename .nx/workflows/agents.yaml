@@ -61,25 +61,6 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       git diff --exit-code
       yarn dedupe --check
 
-windows-init-steps: &windows-init-steps
-  - name: Checkout
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
-  - name: Restore Node Modules Cache
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
-    inputs:
-      key: '"windows"|yarn.lock|.yarn/patches/**'
-      paths: |
-        ~\AppData\Local\Yarn\Berry
-      base-branch: 'next'
-  - name: Install Node
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
-  - name: Enable Corepack
-    script: |
-      corepack enable
-  - name: Install Node Modules
-    script: |
-      yarn install --immutable
-
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true
   IN_STORYBOOK_SANDBOX: true
@@ -99,9 +80,4 @@ launch-templates:
     resource-class: 'docker_linux_amd64/medium+'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *linux-browsers-init-steps
-    env: *common-env-vars
-  windows-js:
-    resource-class: 'windows/medium'
-    image: 'windows-2022'
-    init-steps: *windows-init-steps
     env: *common-env-vars

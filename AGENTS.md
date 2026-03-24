@@ -243,6 +243,8 @@ Use Storybook loggers instead of raw `console.*` in normal code paths:
 - Server-side: `storybook/internal/node-logger`
 - Client-side: `storybook/internal/client-logger`
 
+The pre-commit hook automatically detects AI agents (via `std-env`) and switches from check-only to write mode, so formatting is auto-fixed when agents commit.
+
 Avoid `console.log`, `console.warn`, and `console.error` unless the file is isolated enough that importing the logger is not reasonable.
 
 ## Troubleshooting

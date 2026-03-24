@@ -24,9 +24,9 @@ Examples of **correct** code for this rule:
 
 ```js
 // Correct import.
-import { expect } from 'storybook/test';
+import { expect } from "storybook/test";
 // or this, which is now considered legacy
-import { expect } from '@storybook/jest';
+import { expect } from "@storybook/jest";
 
 Default.play = async () => {
   // Using imported expect from storybook package

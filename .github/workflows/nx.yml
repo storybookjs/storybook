@@ -161,13 +161,12 @@ jobs:
             });
 
   nx-windows:
-    name: Nx Cloud - Windows Main
     if: >
       github.repository == 'storybookjs/storybook' &&
         ((github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
-          contains(github.event.pull_request.labels.*.name, 'ci:windows')
-        ))
+          contains(github.event.pull_request.labels.*.name, 'ci:daily')
+        ) || (github.event_name == 'schedule'))
     runs-on: windows-latest
     env:
       NX_CI_EXECUTION_ENV: 'windows'
@@ -181,43 +180,12 @@ jobs:
         with:
           node-version: 22
           cache: 'yarn'
-      - run: corepack enable
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
-      - run: npx nx-cloud@latest start-ci-run --stop-agents-after="$WINDOWS_TASKS"
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --stop-agents-after="$WINDOWS_TASKS"
       - name: 'Run nx'
         shell: bash
         run: yarn nx run-many -t $WINDOWS_TASKS -c production -p="tag:library,tag:ci:windows"
       - name: Stop all running agents
         if: always()
         run: npx nx-cloud stop-all-agents
-
-  nx-windows-agents:
-    name: Nx Cloud - Windows Agent ${{ matrix.agent }}
-    if: >
-      github.repository == 'storybookjs/storybook' &&
-        ((github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository &&
-          contains(github.event.pull_request.labels.*.name, 'ci:windows')
-        ))
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        agent: [1]
-    env:
-      NX_CI_EXECUTION_ENV: 'windows'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          filter: tree:0
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'yarn'
-      - run: corepack enable
-      - run: yarn install --immutable
-      - name: Start Nx Agent ${{ matrix.agent }}
-        run: npx nx-cloud start-agent
-        env:
-          NX_AGENT_NAME: ${{ matrix.agent }}

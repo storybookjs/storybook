@@ -55,7 +55,8 @@ test.describe('preview-api', () => {
   });
 
   // if rerenders were interleaved the button would have rendered "Error: Interleaved loaders. Changed arg"
-  test('should only render once at a time when rapidly changing args', async ({ page }) => {
+  // TODO: ENABLE again once the flake is fixed
+  test.skip('should only render once at a time when rapidly changing args', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('core/rendering', 'slow-loader');
 

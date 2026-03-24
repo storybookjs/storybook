@@ -1,5 +1,6 @@
 {
   "name": "portable-stories-kitchen-sink/react",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "targets": {
     "jest": {},

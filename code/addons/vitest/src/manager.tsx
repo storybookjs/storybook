@@ -42,14 +42,8 @@ addons.register(ADDON_ID, (api) => {
         },
       });
     });
-    store.untilReady().then(() => {
-      store.setState((state) => ({
-        ...state,
-        indexUrl: new URL('index.json', window.location.href).toString(),
-      }));
-      store.subscribe('TEST_RUN_COMPLETED', ({ payload }) => {
-        api.emit(STORYBOOK_ADDON_TEST_CHANNEL, { type: 'test-run-completed', payload });
-      });
+    store.subscribe('TEST_RUN_COMPLETED', ({ payload }) => {
+      api.emit(STORYBOOK_ADDON_TEST_CHANNEL, { type: 'test-run-completed', payload });
     });
 
     addons.add(TEST_PROVIDER_ID, {

@@ -10,7 +10,7 @@ import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
 import { resolvePackageDir } from '../shared/utils/module';
-import { getAnonymousProjectId } from './anonymous-id';
+import { getAnonymousProjectId, getProjectSince } from './anonymous-id';
 import { detectAgent } from './detect-agent';
 import { set as saveToCache } from './event-cache';
 import { fetch } from './fetch';
@@ -51,7 +51,7 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
 // by the app. currently:
 // - cliVersion
 const inCI = isCI();
-const agentDetection = detectAgent({ stdoutIsTTY: process.stdout.isTTY, env: process.env });
+const agentDetection = detectAgent();
 const globalContext = {
   inCI,
   isTTY: process.stdout.isTTY,
@@ -107,6 +107,7 @@ export async function sendTelemetry(
     : {
         ...globalContext,
         anonymousId: getAnonymousProjectId(),
+        projectSince: getProjectSince()?.getTime(),
       };
 
   let request: any;

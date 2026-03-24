@@ -1,13 +1,13 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
 
-import * as babel from 'storybook/internal/babel';
+import { canUpdateVitestConfigFile, canUpdateVitestWorkspaceFile } from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
-import type { CallExpression } from '@babel/types';
 import * as find from 'empathic/find';
 import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -106,7 +106,10 @@ export class AddonVitestService {
   /**
    * Install Playwright browser binaries for @storybook/addon-vitest
    *
-   * Installs Chromium with dependencies via `npx playwright install chromium --with-deps`
+   * Installs Chromium via `npx playwright install chromium`. In CI environments and on
+   * macOS/Windows (officially supported platforms), also installs system-level browser dependencies
+   * via `--with-deps`. On other platforms (e.g. Linux), `--with-deps` is omitted to avoid requiring
+   * `sudo` — system packages are typically managed by the distro package manager.
    *
    * @param packageManager - The package manager to use for installation
    * @param prompt - The prompt instance for displaying progress
@@ -123,7 +126,11 @@ export class AddonVitestService {
   ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
-    const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
+    const platform = os.platform();
+    const useWithDeps = !!process.env.CI || platform === 'darwin' || platform === 'win32';
+    const playwrightCommand = useWithDeps
+      ? ['playwright', 'install', 'chromium', '--with-deps']
+      : ['playwright', 'install', 'chromium'];
     const playwrightCommandString = this.packageManager.getPackageCommand(playwrightCommand);
 
     let result: 'installed' | 'skipped' | 'aborted' | 'failed';
@@ -168,6 +175,14 @@ export class AddonVitestService {
           result = 'aborted';
         } else {
           result = 'installed';
+          if (!useWithDeps) {
+            logger.warn(dedent`
+              Playwright was installed without system dependencies. Depending on your operating system, you may need to install additional libraries for Playwright to work correctly.
+              To check for missing dependencies, run Storybook Test from the Storybook UI — it will report any libraries that need to be installed.
+              On MacOS, Windows, Debian and Ubuntu, you can install system dependencies manually by running:
+              ${CLI_COLORS.cta(this.packageManager.getPackageCommand(['playwright', 'install', 'chromium', '--with-deps']))}
+            `);
+          }
         }
       } else {
         logger.warn('Playwright installation skipped');
@@ -243,8 +258,9 @@ export class AddonVitestService {
     // Check Vitest version (>=3.0.0 - stricter requirement from postinstall)
     const vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
     const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
+    const isCanary = coercedVitestVersion?.version.startsWith('0.0.0') ?? false;
 
-    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0')) {
+    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0') && !isCanary) {
       reasons.push(
         `The addon requires Vitest 3.0.0 or higher. You are currently using ${vitestVersionSpecifier}.`
       );
@@ -282,7 +298,7 @@ export class AddonVitestService {
       reasons.push(`Cannot auto-update JSON workspace file: ${vitestWorkspaceFile}`);
     } else if (vitestWorkspaceFile) {
       const fileContents = await fs.readFile(vitestWorkspaceFile, 'utf8');
-      if (!this.isValidWorkspaceConfigFile(fileContents)) {
+      if (!canUpdateVitestWorkspaceFile(fileContents)) {
         reasons.push(`Found an invalid workspace config file: ${vitestWorkspaceFile}`);
       }
     }
@@ -297,112 +313,11 @@ export class AddonVitestService {
       reasons.push(`Cannot auto-update CommonJS config file: ${vitestConfigFile}`);
     } else if (vitestConfigFile) {
       const configContent = await fs.readFile(vitestConfigFile, 'utf8');
-      if (!this.isValidVitestConfig(configContent)) {
+      if (!canUpdateVitestConfigFile(configContent)) {
         reasons.push(`Found an invalid Vitest config file: ${vitestConfigFile}`);
       }
     }
 
     return reasons.length > 0 ? { compatible: false, reasons } : { compatible: true };
-  }
-
-  // Private helper methods for Vitest config validation
-
-  /** Validate workspace config file structure */
-  private isValidWorkspaceConfigFile(fileContents: string): boolean {
-    let isValid = false;
-    const parsedFile = babel.babelParse(fileContents);
-
-    babel.traverse(parsedFile, {
-      ExportDefaultDeclaration: (path: any) => {
-        const declaration = path.node.declaration;
-        isValid =
-          this.isWorkspaceConfigArray(declaration) || this.isDefineWorkspaceExpression(declaration);
-      },
-    });
-
-    return isValid;
-  }
-
-  /** Validate Vitest config file structure */
-  private isValidVitestConfig(configContent: string): boolean {
-    const parsedConfig = babel.babelParse(configContent);
-    let isValidVitestConfig = false;
-
-    babel.traverse(parsedConfig, {
-      ExportDefaultDeclaration: (path: any) => {
-        if (this.isDefineConfigExpression(path.node.declaration)) {
-          isValidVitestConfig = this.isSafeToExtendWorkspace(path.node.declaration);
-        } else if (this.isMergeConfigExpression(path.node.declaration)) {
-          // the config could be anywhere in the mergeConfig call, so we need to check each argument
-          const mergeCall = path.node.declaration as CallExpression;
-          isValidVitestConfig = mergeCall.arguments.some((arg) =>
-            this.isSafeToExtendWorkspace(arg as CallExpression)
-          );
-        }
-      },
-    });
-
-    return isValidVitestConfig;
-  }
-
-  private isWorkspaceConfigArray(node: any): boolean {
-    return (
-      babel.types.isArrayExpression(node) &&
-      node?.elements.every(
-        (el: any) => babel.types.isStringLiteral(el) || babel.types.isObjectExpression(el)
-      )
-    );
-  }
-
-  private isDefineWorkspaceExpression(node: any): boolean {
-    return (
-      babel.types.isCallExpression(node) &&
-      node.callee &&
-      (node.callee as any)?.name === 'defineWorkspace' &&
-      this.isWorkspaceConfigArray(node.arguments?.[0])
-    );
-  }
-
-  private isDefineConfigExpression(node: any): boolean {
-    return (
-      babel.types.isCallExpression(node) &&
-      (node.callee as any)?.name === 'defineConfig' &&
-      babel.types.isObjectExpression(node.arguments?.[0])
-    );
-  }
-
-  private isMergeConfigExpression(path: babel.types.Node): boolean {
-    return babel.types.isCallExpression(path) && (path.callee as any)?.name === 'mergeConfig';
-  }
-
-  private isSafeToExtendWorkspace(node: babel.types.Node): boolean {
-    // Extract the object expression to validate
-    let objectToValidate: babel.types.ObjectExpression | null = null;
-
-    if (babel.types.isCallExpression(node)) {
-      // Handle function calls like defineConfig({...})
-      if (node.arguments.length > 0 && babel.types.isObjectExpression(node.arguments[0])) {
-        objectToValidate = node.arguments[0];
-      }
-    } else if (babel.types.isObjectExpression(node)) {
-      // Handle plain object literals like {...}
-      objectToValidate = node;
-    }
-
-    // If we couldn't extract a valid object, it's not safe
-    if (!objectToValidate) {
-      return false;
-    }
-
-    // Check that the object doesn't have problematic test.workspace properties
-    return objectToValidate.properties.every(
-      (p: any) =>
-        p.key?.name !== 'test' ||
-        (babel.types.isObjectExpression(p.value) &&
-          p.value.properties.every(
-            ({ key, value }: any) =>
-              key?.name !== 'workspace' || babel.types.isArrayExpression(value)
-          ))
-    );
   }
 }

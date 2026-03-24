@@ -54,6 +54,6 @@ test.describe('addon-viewport', () => {
 
     const toolbar = page.getByLabel('Viewport size');
 
-    await expect(toolbar).toBeDisabled();
+    await expect(toolbar).toHaveAttribute('aria-disabled', 'true');
   });
 });

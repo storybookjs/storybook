@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.3.0-alpha.4",
+  "version": "10.4.0-alpha.3",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -54,13 +54,16 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/react-dom-shim": "workspace:*",
-    "react-docgen": "^8.0.2"
+    "react-docgen": "^8.0.2",
+    "react-docgen-typescript": "^2.2.2"
   },
   "devDependencies": {
     "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
     "@types/node": "^22.19.1",
+    "@volar/language-core": "~2.4.28",
+    "@volar/typescript": "~2.4.28",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",

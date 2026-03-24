@@ -38,6 +38,13 @@ export interface ActionsParameters {
      * @example `handles: ['mouseover', 'click .btn']`
      */
     handles?: string[];
+
+    /**
+     * An integer specifying to which level the tree should be initially expanded.
+     *
+     * @default 1
+     */
+    expandLevel?: number;
   };
 }
 

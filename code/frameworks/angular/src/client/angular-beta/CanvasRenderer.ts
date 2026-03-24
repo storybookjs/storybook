@@ -8,6 +8,7 @@ export class CanvasRenderer extends AbstractRenderer {
     parameters: Parameters;
     component: any;
     targetDOMNode: HTMLElement;
+    storyId: string;
   }) {
     await super.render(options);
   }

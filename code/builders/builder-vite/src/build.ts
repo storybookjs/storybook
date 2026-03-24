@@ -5,11 +5,11 @@ import type { RollupWatcher, RollupWatcherEvent } from 'rollup';
 import { dedent } from 'ts-dedent';
 import type { InlineConfig } from 'vite';
 
-import { sanitizeEnvVars } from './envs';
 import { createViteLogger } from './logger';
 import type { WebpackStatsPlugin } from './plugins';
 import type { ViteStats } from './types';
 import { hasVitePlugins } from './utils/has-vite-plugins';
+import { bundlerOptionsKey } from './utils/vite-features';
 import { withoutVitePlugins } from './utils/without-vite-plugins';
 import { commonConfig } from './vite-config';
 
@@ -22,11 +22,13 @@ export async function build(options: Options) {
   const { presets } = options;
 
   const config = await commonConfig(options, 'build');
+
   config.build = mergeConfig(config, {
     build: {
       outDir: options.outputDir,
       emptyOutDir: false, // do not clean before running Vite build - Storybook has already added assets in there!
-      rollupOptions: {
+      // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
+      [bundlerOptionsKey]: {
         external: [/\.\/sb-common-assets\/.*\.woff2/],
       },
       ...(options.test
@@ -49,8 +51,7 @@ export async function build(options: Options) {
   finalConfig.plugins?.push({
     name: 'storybook:enforce-output-dir',
     enforce: 'post',
-    config: (config) => ({
-      ...config,
+    config: () => ({
       build: {
         outDir: options.outputDir,
       },
@@ -92,7 +93,7 @@ export async function build(options: Options) {
   logger.info('Building storybook with Vite...');
 
   finalConfig.customLogger ??= await createViteLogger();
-  const result = await viteBuild(await sanitizeEnvVars(options, finalConfig));
+  const result = 
 
   if (finalConfig.build?.watch && 'on' in result) {
     const watcher = result as RollupWatcher;

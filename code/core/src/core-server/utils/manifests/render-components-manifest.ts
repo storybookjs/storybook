@@ -2,6 +2,11 @@ import path from 'node:path';
 
 import { groupBy } from 'storybook/internal/common';
 
+import type { ComponentDoc, PropItem } from 'react-docgen-typescript';
+
+// Type-only import to reuse the source-of-truth react-component-meta manifest shape
+// without creating a runtime dependency from core to the React renderer package.
+import type { ComponentDoc as ReactComponentMetaDoc } from '../../../../../renderers/react/src/componentManifest/componentMeta/componentMetaExtractor';
 import type { ComponentManifest, ComponentsManifest } from '../../../types';
 
 /** Minimal docs entry type for rendering in the manifest debugger */
@@ -24,6 +29,9 @@ export interface DocsManifest {
 /** Extended component manifest that may include docs from the docs addon */
 interface ComponentManifestWithDocs extends ComponentManifest {
   docs?: Record<string, DocsManifestEntry>;
+  reactDocgen?: DocgenDoc;
+  reactDocgenTypescript?: RdtComponentDoc;
+  reactComponentMeta?: ReactComponentMetaDoc;
 }
 
 // AI generated manifests/components.html page
@@ -55,6 +63,9 @@ export function renderComponentsManifest(
     docs: docsEntries.length + attachedDocs,
     docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
+
+  const activeEngine = manifest?.meta?.docgen ?? 'react-docgen';
+  const durationMs = manifest?.meta?.durationMs ?? 0;
 
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
   const allPill = `<a class="filter-pill all" data-k="all" href="#filter-all">All</a>`;
@@ -696,6 +707,28 @@ export function renderComponentsManifest(
 <main>
   <div class="wrap">
     ${
+      activeEngine === 'react-docgen'
+        ? `<div class="note info" style="margin-bottom: 16px;">
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <pre><code>typescript: {
+  reactDocgen: 'react-docgen-typescript',
+}</code></pre>
+            Note: <code>react-docgen-typescript</code> can be slower. If performance is acceptable for your project, it generally produces better results.
+            <a href="https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen" target="_blank">Learn more</a>
+          </div>`
+        : activeEngine === 'react-docgen-typescript' && durationMs > 7500
+          ? `<div class="note err" style="margin-bottom: 16px;">
+              <strong>Performance warning:</strong> <code>react-docgen-typescript</code> took <strong>${(durationMs / 1000).toFixed(1)}s</strong> to generate the manifest. This delay applies every time the manifest is used by an agent. Consider switching to the faster <code>react-docgen</code> in your <code>main.ts</code>:
+              <pre><code>typescript: {
+  reactDocgen: 'react-docgen',
+}</code></pre>
+              <a href="https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen" target="_blank">Learn more</a>
+            </div>`
+          : `<div class="note ok" style="margin-bottom: 16px;">
+              Using <code>${activeEngine}</code>. Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>.
+            </div>`
+    }
+    ${
       grid
         ? `<h2 class="section-title">Components</h2>
     <div class="grid" role="list">
@@ -728,10 +761,9 @@ export function renderComponentsManifest(
 }
 
 const esc = (s: unknown) =>
-  String(s ?? '').replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
-  );
+  String(s ?? '').replace(/[&<>"']/g, (c) => {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c;
+  });
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 
 function analyzeComponent(c: ComponentManifestWithDocs) {
@@ -887,10 +919,13 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
       ? `<label for="${slug}-docs" class="badge ${a.docsErrors > 0 ? 'err' : 'ok'} as-toggle">${a.docsErrors > 0 ? `${a.docsErrors}/${a.totalDocs} doc errors` : `${a.totalDocs} ${plural(a.totalDocs, 'doc')}`}</label>`
       : '';
 
-  // When there is no prop type error, try to read prop types from reactDocgen if present
-  const reactDocgen: any = !a.hasPropTypeError && 'reactDocgen' in c && c.reactDocgen;
-  const parsedDocgen = reactDocgen ? parseReactDocgen(reactDocgen) : undefined;
-  const propEntries = parsedDocgen ? Object.entries(parsedDocgen.props ?? {}) : [];
+  const {
+    parsed: activeParsed,
+    engine: cardEngine,
+    filePath,
+    exportName,
+  } = getDocgenRenderData(c, a.hasPropTypeError);
+  const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
       ? `<label for="${slug}-props" class="badge ok as-toggle">${propEntries.length} ${plural(propEntries.length, 'prop type')}</label>`
@@ -927,7 +962,6 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
           .join('')
       : '';
 
-  esc(c.error?.message || 'Unknown error');
   return `
 <article
   class="card 
@@ -983,10 +1017,10 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
         <div class="panel panel-props">
           <div class="note ok">
             <div class="row">
-              <span class="ex-name">Prop types</span>
+              <span class="ex-name">Prop types <small>(${cardEngine})</small></span>
               <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
             </div>
-            <pre><code>Component: ${reactDocgen?.definedInFile ? esc(path.relative(process.cwd(), reactDocgen.definedInFile)) : ''}${reactDocgen?.exportName ? '::' + esc(reactDocgen?.exportName) : ''}</code></pre>
+            <pre><code>Component: ${filePath ? esc(path.relative(process.cwd(), filePath)) : ''}${exportName ? '::' + esc(exportName) : ''}</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>${esc(propsCode)}</code></pre>
           </div>
@@ -999,7 +1033,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
         <div class="panel panel-stories">
           ${errorStories
             .map(
-              (ex, j) => `
+              (ex) => `
             <div class="note err">
               <div class="row">
                 <span class="ex-name">${esc(ex.name)}</span>
@@ -1081,20 +1115,131 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
 </article>`;
 }
 
-type ParsedDocgen = {
-  props: Record<
-    string,
-    {
-      description?: string;
-      type?: string;
-      defaultValue?: string;
-      required?: boolean;
-    }
-  >;
+type ParsedProp = {
+  description?: string;
+  type?: string;
+  defaultValue?: string;
+  required?: boolean;
 };
 
-const parseReactDocgen = (reactDocgen: any): ParsedDocgen => {
-  const props: Record<string, any> = (reactDocgen as any)?.props ?? {};
+type ParsedDocgen = {
+  props: Record<string, ParsedProp>;
+};
+
+type RdtComponentDoc = ComponentDoc & { exportName?: string };
+type DocgenRenderData = {
+  parsed?: ParsedDocgen;
+  engine?: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+  filePath?: string;
+  exportName?: string;
+};
+
+const getDocgenRenderData = (
+  component: ComponentManifestWithDocs,
+  hasPropTypeError: boolean
+): DocgenRenderData => {
+  if (hasPropTypeError) {
+    return {};
+  }
+
+  if (component.reactDocgen) {
+    return {
+      parsed: parseReactDocgen(component.reactDocgen),
+      engine: 'react-docgen',
+      filePath: component.reactDocgen.definedInFile,
+      exportName: component.reactDocgen.exportName,
+    };
+  }
+
+  if (component.reactDocgenTypescript) {
+    return {
+      parsed: parseReactDocgenTypescript(component.reactDocgenTypescript),
+      engine: 'react-docgen-typescript',
+      filePath: component.reactDocgenTypescript.filePath,
+      exportName: component.reactDocgenTypescript.exportName,
+    };
+  }
+
+  if (component.reactComponentMeta) {
+    return {
+      parsed: parseReactComponentMeta(component.reactComponentMeta),
+      engine: 'react-component-meta',
+      filePath: component.reactComponentMeta.filePath,
+      exportName: component.reactComponentMeta.exportName,
+    };
+  }
+
+  return {};
+};
+
+const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): ParsedDocgen => {
+  const props: Record<string, PropItem> = reactDocgenTypescript.props ?? {};
+  return {
+    props: Object.fromEntries(
+      Object.entries(props).map(([propName, prop]) => [
+        propName,
+        {
+          description: prop.description,
+          // RDT uses prop.type.name as a flat string (e.g. "() => void", "{ id: string }")
+          // For enums, prefer prop.type.raw which has the full union
+          type: prop.type?.raw ?? prop.type?.name,
+          defaultValue: prop.defaultValue?.value,
+          required: prop.required,
+        },
+      ])
+    ),
+  };
+};
+
+const parseReactComponentMeta = (reactComponentMeta: ReactComponentMetaDoc): ParsedDocgen => {
+  const props = reactComponentMeta.props ?? {};
+  return {
+    props: Object.fromEntries(
+      Object.entries(props).map(([propName, prop]) => [
+        propName,
+        {
+          description: prop.description,
+          type: prop.type?.raw ?? prop.type?.name,
+          defaultValue: prop.defaultValue?.value,
+          required: prop.required,
+        },
+      ])
+    ),
+  };
+};
+
+/** Shape of a react-docgen tsType node (recursive) */
+interface DocgenTsType {
+  name?: string;
+  raw?: string;
+  value?: string;
+  elements?: DocgenTsType[];
+  type?: string;
+  signature?: {
+    arguments?: { name: string; type?: DocgenTsType }[];
+    return?: DocgenTsType;
+    properties?: { key: string; value?: DocgenTsType & { required?: boolean } }[];
+  };
+}
+
+/** Shape of a single prop from react-docgen's Documentation.props */
+interface DocgenPropItem {
+  description?: string;
+  tsType?: DocgenTsType;
+  type?: DocgenTsType;
+  defaultValue?: { value?: string } | null;
+  required?: boolean;
+}
+
+/** Shape of react-docgen's Documentation (only fields we read) */
+interface DocgenDoc {
+  props?: Record<string, DocgenPropItem>;
+  definedInFile?: string;
+  exportName?: string;
+}
+
+const parseReactDocgen = (reactDocgen: DocgenDoc): ParsedDocgen => {
+  const props = reactDocgen.props ?? {};
   return {
     props: Object.fromEntries(
       Object.entries(props).map(([propName, prop]) => [
@@ -1111,13 +1256,12 @@ const parseReactDocgen = (reactDocgen: any): ParsedDocgen => {
 };
 
 // Serialize a react-docgen tsType into a TypeScript-like string when raw is not available
-function serializeTsType(tsType: any): string | undefined {
+function serializeTsType(tsType: DocgenTsType | undefined): string | undefined {
   if (!tsType) {
     return undefined;
   }
   // Prefer raw if provided
-  // Prefer raw if provided
-  if ('raw' in tsType && typeof tsType.raw === 'string' && tsType.raw.trim().length > 0) {
+  if (tsType.raw && tsType.raw.trim().length > 0) {
     return tsType.raw;
   }
 
@@ -1125,40 +1269,40 @@ function serializeTsType(tsType: any): string | undefined {
     return undefined;
   }
 
-  if ('elements' in tsType) {
+  if (tsType.elements) {
     if (tsType.name === 'union') {
-      const parts = (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+      const parts = tsType.elements.map((el) => serializeTsType(el) ?? 'unknown');
       return parts.join(' | ');
     }
     if (tsType.name === 'intersection') {
-      const parts = (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+      const parts = tsType.elements.map((el) => serializeTsType(el) ?? 'unknown');
       return parts.join(' & ');
     }
     if (tsType.name === 'Array') {
       // Prefer raw earlier; here build fallback
-      const el = (tsType.elements ?? [])[0];
+      const el = tsType.elements[0];
       const inner = serializeTsType(el) ?? 'unknown';
       return `${inner}[]`;
     }
     if (tsType.name === 'tuple') {
-      const parts = (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+      const parts = tsType.elements.map((el) => serializeTsType(el) ?? 'unknown');
       return `[${parts.join(', ')}]`;
     }
   }
-  if ('value' in tsType && tsType.name === 'literal') {
+  if (tsType.value && tsType.name === 'literal') {
     return tsType.value;
   }
-  if ('signature' in tsType && tsType.name === 'signature') {
+  if (tsType.signature && tsType.name === 'signature') {
     if (tsType.type === 'function') {
-      const args = (tsType.signature?.arguments ?? []).map((a: any) => {
+      const args = (tsType.signature.arguments ?? []).map((a) => {
         const argType = serializeTsType(a.type) ?? 'any';
         return `${a.name}: ${argType}`;
       });
-      const ret = serializeTsType(tsType.signature?.return) ?? 'void';
+      const ret = serializeTsType(tsType.signature.return) ?? 'void';
       return `(${args.join(', ')}) => ${ret}`;
     }
     if (tsType.type === 'object') {
-      const props = (tsType.signature?.properties ?? []).map((p: any) => {
+      const props = (tsType.signature.properties ?? []).map((p) => {
         const req: boolean = Boolean(p.value?.required);
         const propType = serializeTsType(p.value) ?? 'any';
         return `${p.key}${req ? '' : '?'}: ${propType}`;
@@ -1168,8 +1312,8 @@ function serializeTsType(tsType: any): string | undefined {
     return 'unknown';
   }
   // Default case (Generic like Item<TMeta>)
-  if ('elements' in tsType) {
-    const inner = (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+  if (tsType.elements) {
+    const inner = tsType.elements.map((el) => serializeTsType(el) ?? 'unknown');
 
     if (inner.length > 0) {
       return `${tsType.name}<${inner.join(', ')}>`;

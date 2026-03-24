@@ -1,3 +1,20 @@
-# Distribution config for Windows CI — single agent for compile, test, init-empty
 distribute-on:
   default: 3 windows-js
+assignment-rules:
+  - targets:
+      - compile
+    projects:
+      - core
+    run-on:
+      - agent: windows-js
+        parallelism: 1
+  - targets:
+      - compile
+    run-on:
+      - agent: windows-js
+        parallelism: 3
+  - targets:
+      - '*'
+    run-on:
+      - agent: windows-js
+        parallelism: 1

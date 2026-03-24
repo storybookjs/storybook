@@ -87,7 +87,13 @@ const projectJson = (
           },
         }
       : {}),
-    ...(name === 'react-vite/default-ts' ? { 'init-features': {} } : {}),
+    ...(name === 'react-vite/default-ts'
+      ? {
+          'init-features': {
+            options: { env: { STORYBOOK_INIT_EMPTY_TYPE: 'react-vite-ts' } },
+          },
+        }
+      : {}),
   },
   tags,
 });

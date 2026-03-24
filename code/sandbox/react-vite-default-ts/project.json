@@ -38,7 +38,13 @@
         }
       }
     },
-    "init-features": {}
+    "init-features": {
+      "options": {
+        "env": {
+          "STORYBOOK_INIT_EMPTY_TYPE": "react-vite-ts"
+        }
+      }
+    }
   },
   "tags": ["ci:normal", "ci:merged", "ci:daily", "ci:windows"]
 }

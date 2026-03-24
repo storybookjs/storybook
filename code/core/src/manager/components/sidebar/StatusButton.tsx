@@ -18,6 +18,8 @@ const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue 
     color: {
       'status-value:pending': defaultColor,
       'status-value:success': theme.color.positive,
+      'status-value:new': theme.color.positive,
+      'status-value:modified': theme.color.secondary,
       'status-value:error': theme.color.negative,
       'status-value:warning': theme.color.warning,
       'status-value:unknown': defaultColor,

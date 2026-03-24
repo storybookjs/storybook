@@ -30,6 +30,8 @@ const statusValueToStoryIds = (
   const statusValueToStoryIdsMap: StatusValueToStoryIds = {
     'status-value:pending': [],
     'status-value:success': [],
+    'status-value:new': [],
+    'status-value:modified': [],
     'status-value:error': [],
     'status-value:warning': [],
     'status-value:unknown': [],

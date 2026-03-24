@@ -29,6 +29,20 @@ describe('getHighestStatus', () => {
       'status-value:warning'
     );
   });
+  it('should rank new and modified between success and warning', () => {
+    expect(
+      getMostCriticalStatusValue([
+        'status-value:new',
+        'status-value:modified',
+        'status-value:success',
+      ])
+    ).toBe('status-value:modified');
+  });
+  it('should rank warning above new', () => {
+    expect(getMostCriticalStatusValue(['status-value:new', 'status-value:warning'])).toBe(
+      'status-value:warning'
+    );
+  });
 });
 
 describe('getGroupStatus', () => {
@@ -88,6 +102,36 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:error",
+        "group-1--child-b1": "status-value:unknown",
+        "group-1--child-b2": "status-value:unknown",
+        "root-1-child-a1": "status-value:unknown",
+        "root-1-child-a2": "status-value:unknown",
+        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
+        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
+        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
+        "root-3--child-a1": "status-value:unknown",
+        "root-3-child-a2": "status-value:unknown",
+        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
+        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
+      }
+    `);
+  });
+  it('should propagate status-value:new through group aggregation', () => {
+    expect(
+      getGroupStatus(mockDataset.withRoot, {
+        'group-1--child-b1': {
+          a: {
+            storyId: 'group-1--child-b1',
+            typeId: 'a',
+            value: 'status-value:new',
+            description: '',
+            title: '',
+          },
+        },
+      })
+    ).toMatchInlineSnapshot(`
+      {
+        "group-1": "status-value:new",
         "group-1--child-b1": "status-value:unknown",
         "group-1--child-b2": "status-value:unknown",
         "root-1-child-a1": "status-value:unknown",

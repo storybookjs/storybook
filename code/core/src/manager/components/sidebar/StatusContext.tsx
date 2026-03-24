@@ -27,6 +27,8 @@ export const useStatusSummary = (item: Item) => {
     counts: {
       'status-value:pending': 0,
       'status-value:success': 0,
+      'status-value:new': 0,
+      'status-value:modified': 0,
       'status-value:error': 0,
       'status-value:warning': 0,
       'status-value:unknown': 0,
@@ -34,6 +36,8 @@ export const useStatusSummary = (item: Item) => {
     statusesByValue: {
       'status-value:pending': {},
       'status-value:success': {},
+      'status-value:new': {},
+      'status-value:modified': {},
       'status-value:error': {},
       'status-value:warning': {},
       'status-value:unknown': {},

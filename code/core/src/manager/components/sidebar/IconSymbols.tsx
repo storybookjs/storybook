@@ -24,6 +24,8 @@ const SUCCESS_ID = 'icon--success';
 const ERROR_ID = 'icon--error';
 const WARNING_ID = 'icon--warning';
 const DOT_ID = 'icon--dot';
+const NEW_ID = 'icon--new';
+const MODIFIED_ID = 'icon--modified';
 
 export const IconSymbols: FC = () => {
   return (
@@ -104,6 +106,24 @@ export const IconSymbols: FC = () => {
       <symbol id={DOT_ID}>
         <circle cx="3" cy="3" r="3" fill="currentColor" />
       </symbol>
+      <symbol id={NEW_ID}>
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/AddIcon.tsx */}
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M7.5 1.5a.5.5 0 00-1 0V6.5H1.5a.5.5 0 000 1H6.5v5a.5.5 0 001 0V7.5h5a.5.5 0 000-1H7.5v-5z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id={MODIFIED_ID}>
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/EditIcon.tsx */}
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M11.293 1.293a1 1 0 011.414 1.414l-9 9a1 1 0 01-.39.242l-3 1a1 1 0 01-1.265-1.265l1-3a1 1 0 01.242-.39l9-9zM10 3.414L11.586 5 3 13.586 1.414 12 10 3.414zM2.5 13l-.914-.914.305-.914.609.609L2.5 13z"
+          fill="currentColor"
+        />
+      </symbol>
     </Svg>
   );
 };
@@ -118,7 +138,9 @@ export const UseSymbol: FC<{
     | 'success'
     | 'error'
     | 'warning'
-    | 'dot';
+    | 'dot'
+    | 'new'
+    | 'modified';
 }> = ({ type }) => {
   if (type === 'group') {
     return <use xlinkHref={`#${GROUP_ID}`} />;
@@ -155,5 +177,14 @@ export const UseSymbol: FC<{
   if (type === 'dot') {
     return <use xlinkHref={`#${DOT_ID}`} />;
   }
+
+  if (type === 'new') {
+    return <use xlinkHref={`#${NEW_ID}`} />;
+  }
+
+  if (type === 'modified') {
+    return <use xlinkHref={`#${MODIFIED_ID}`} />;
+  }
+
   return null;
 };

@@ -535,6 +535,13 @@ export interface StorybookConfigRaw {
      * @experimental This feature is in early development and may change significantly in future releases.
      */
     experimentalCodeExamples?: boolean;
+
+    /**
+     * Enable change detection for agentic UI review.
+     *
+     * @default true
+     */
+    changeDetection?: boolean;
   };
 
   build?: TestBuildConfig;

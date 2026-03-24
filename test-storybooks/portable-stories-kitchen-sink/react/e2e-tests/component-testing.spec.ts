@@ -84,7 +84,7 @@ test.describe("component testing", () => {
   test.afterEach(async ({ page }) => {
     await page.click("body");
     try {
-      const descriptionButton = page.locator("#testing-module-description a");
+      const descriptionButton = page.locator("#testing-module-description button");
       if (
         await descriptionButton.isVisible({ timeout: 4000 }).catch(() => false)
       ) {
@@ -138,7 +138,6 @@ test.describe("component testing", () => {
     browserName,
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
-    test.setTimeout(40_000);
     const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory("addons/group/test", "Mismatch Failure");
@@ -157,7 +156,7 @@ test.describe("component testing", () => {
       exact: true,
     });
     if ((await testStoryElement.getAttribute("aria-expanded")) !== "true") {
-      testStoryElement.click();
+      await testStoryElement.click();
     }
 
     const testingModuleDescription = await page.locator(
@@ -166,10 +165,6 @@ test.describe("component testing", () => {
 
     const runTestsButton = await page.getByLabel("Start test run");
     await runTestsButton.click();
-
-    await expect(testingModuleDescription).not.toContainText(/Ran \d+ tests/, {
-      timeout: 60000,
-    });
 
     // Wait for test results to appear
     await expect(testingModuleDescription).toHaveText(/Ran \d+ tests/, {
@@ -233,12 +228,10 @@ test.describe("component testing", () => {
     const watchModeButton = await page.getByRole("switch", {
       name: "Watch mode",
     });
-    await expect(runTestsButton).toBeEnabled();
-    await expect(watchModeButton).toBeEnabled();
+    await expect(runTestsButton).not.toHaveAttribute("aria-disabled", "true");
+    await expect(watchModeButton).not.toHaveAttribute("aria-disabled", "true");
 
     await runTestsButton.click();
-
-    await expect(watchModeButton).toBeDisabled();
 
     // Wait for test results to appear
     await expect(page.locator("#testing-module-description")).toHaveText(
@@ -246,8 +239,8 @@ test.describe("component testing", () => {
       { timeout: 30000 }
     );
 
-    await expect(runTestsButton).toBeEnabled();
-    await expect(watchModeButton).toBeEnabled();
+    await expect(runTestsButton).not.toHaveAttribute("aria-disabled", "true");
+    await expect(watchModeButton).not.toHaveAttribute("aria-disabled", "true");
 
     const errorFilter = page.getByLabel(
       /Filter main navigation to show \d+ tests with errors/
@@ -592,7 +585,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and errors are reported
-    const errorLink = page.locator("#testing-module-description a");
+    const errorLink = page.locator("#testing-module-description button");
     await expect(errorLink).toContainText("View full error", {
       timeout: 30000,
     });

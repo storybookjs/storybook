@@ -12,12 +12,18 @@
     "sveltekit"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "svelte-kit-skeleton-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "svelte-kit-skeleton-ts"
+      }
+    },
     "dev": {},
     "vitest-integration": {},
-    "build": { "options": { "dir": "svelte-kit-skeleton-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "svelte-kit-skeleton-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

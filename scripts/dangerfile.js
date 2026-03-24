@@ -42,6 +42,8 @@ const { labels } = danger.github.issue;
 const prLogConfig = pkg['pr-log'];
 
 const branchVersion = Versions.MINOR;
+const targetBranch = danger.github.pr.base.ref;
+const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
 
 /** @param {string[]} labels */
 const checkRequiredLabels = (labels) => {
@@ -66,18 +68,29 @@ const checkRequiredLabels = (labels) => {
     );
   }
 
-  const foundRequiredLabels = intersection(requiredLabels, labels);
-  if (foundRequiredLabels.length === 0) {
-    fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
-  } else if (foundRequiredLabels.length > 1) {
-    fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
-  }
+  if (isReleasePr) {
+    // Release PRs only need `ci:daily`.
+    if (!labels.includes('ci:daily')) {
+      fail(
+        'Release PRs targeting latest-release or next-release must include the "ci:daily" label.'
+      );
+    }
+    return;
+  } else {
+    // All other PRs to `next` to a qualifying change type and one of several applicable CI labels.
+    const foundRequiredLabels = intersection(requiredLabels, labels);
+    if (foundRequiredLabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
+    } else if (foundRequiredLabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
+    }
 
-  const foundCILabels = intersection(ciLabels, labels);
-  if (foundCILabels.length === 0) {
-    fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
-  } else if (foundCILabels.length > 1) {
-    fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
+    const foundCILabels = intersection(ciLabels, labels);
+    if (foundCILabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
+    } else if (foundCILabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
+    }
   }
 };
 
@@ -104,8 +117,11 @@ const checkManualTestingSection = (body) => {
   const author = danger.github.pr.user;
   const authorAssociation = danger.github.pr.author_association;
 
-  // Bypass check for OWNER, MEMBER roles (but never for bots e.g. Copilot)
-  if (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') {
+  // Bypass check for OWNER, MEMBER roles (but never for agent bots)
+  if (
+    (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
     return;
   }
 
@@ -147,10 +163,14 @@ const checkManualTestingSection = (body) => {
 
 const checkTargetBranch = () => {
   const targetBranch = danger.github.pr.base.ref;
+  const author = danger.github.pr.user;
   const authorAssociation = danger.github.pr.author_association;
 
-  // Only check for non-team members (not OWNER or MEMBER)
-  if (['OWNER', 'MEMBER'].includes(authorAssociation)) {
+  // Only check for non-team members (not OWNER, MEMBER) and skip GitHub Actions bot
+  if (
+    ['OWNER', 'MEMBER'].includes(authorAssociation) ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
     return;
   }
 

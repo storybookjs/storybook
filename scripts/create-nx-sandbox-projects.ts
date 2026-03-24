@@ -1,8 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import prettier from 'prettier';
-
 import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates';
 import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 
@@ -36,7 +34,6 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    'prepare-sandbox': {},
     dev: {},
     ...(template.typeCheck === true
       ? {
@@ -53,7 +50,6 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    'prepare-build-sandbox': {},
     chromatic: {},
     serve: {},
     ...(template.skipTasks && template.skipTasks.includes('e2e-tests')
@@ -99,9 +95,7 @@ await Promise.all(
     ensureDirectoryExistence(full);
     console.log(full);
 
-    const data = await prettier.format(JSON.stringify(projectJson(key, project, tags, value)), {
-      filepath: full,
-    });
+    const data = JSON.stringify(projectJson(key, project, tags, value), null, 2) + '\n';
 
     writeFileSync(full, data, { encoding: 'utf-8' });
   })

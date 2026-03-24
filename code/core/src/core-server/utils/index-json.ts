@@ -39,7 +39,7 @@ export function registerIndexJsonRoute({
   normalizedStories: NormalizedStoriesSpecifier[];
 }) {
   const maybeInvalidate = debounce(() => channel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
-    edges: ['trailing'],
+    edges: ['leading', 'trailing'],
   });
   watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed) => {
     (await storyIndexGeneratorPromise).invalidate(path, removed);

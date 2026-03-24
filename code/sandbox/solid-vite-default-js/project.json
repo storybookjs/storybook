@@ -1,5 +1,6 @@
 {
   "name": "solid-vite/default-js",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": [
     "core",
@@ -11,10 +12,8 @@
   ],
   "targets": {
     "sandbox": { "options": { "dir": "solid-vite-default-js" } },
-    "prepare-sandbox": {},
     "dev": {},
     "build": { "options": { "dir": "solid-vite-default-js" } },
-    "prepare-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

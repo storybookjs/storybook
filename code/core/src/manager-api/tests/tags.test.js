@@ -28,8 +28,8 @@ describe('parseTagsParam', () => {
 });
 
 describe('serializeTagsParam', () => {
-  it('returns undefined when no tags are provided', () => {
-    expect(serializeTagsParam([], [])).toBeUndefined();
+  it('returns empty string when no tags are provided', () => {
+    expect(serializeTagsParam([], [])).toBe('');
   });
 
   it('serializes include/exclude entries and maps known built-in internal tags', () => {

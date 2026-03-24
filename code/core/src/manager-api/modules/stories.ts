@@ -437,7 +437,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   const navigateWithQueryParams = (path: string, options?: NavigateOptions) => {
     const { customQueryParams } = store.getState();
     const params = Object.entries(customQueryParams)
-      .filter(([, v]) => v)
+      .filter(([, v]) => v !== null && v !== undefined)
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([k, v]) => `${k}=${v}`);
     const to = [path, ...params].join('&');
@@ -449,7 +449,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       persistence: 'url' as const,
       serialize: (s: ReturnType<typeof store.getState>) => {
         const tagsValue = serializeTagsParam(s.includedTagFilters, s.excludedTagFilters);
-        return { tags: tagsValue || null };
+        return { tags: tagsValue ?? null };
       },
     });
   };

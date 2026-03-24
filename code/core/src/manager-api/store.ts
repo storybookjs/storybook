@@ -78,7 +78,20 @@ export default class Store {
     // We don't only merge at the very top level (the same way as React setState)
     // when you set keys, so it makes sense to do the same in combining the two storage modes
     // Really, you shouldn't store the same key in both places
-    return { ...base, ...get(store.local), ...get(store.session) };
+    const local = get(store.local);
+    const session = get(store.session);
+
+    // One-time migration: tag filter state moved from localStorage to URL persistence.
+    // Remove the old keys so they no longer interfere with URL-derived initial state.
+    for (const storage of [store.local, store.session] as const) {
+      const persisted = get(storage);
+      if ('includedTagFilters' in persisted || 'excludedTagFilters' in persisted) {
+        const { includedTagFilters: _i, excludedTagFilters: _e, ...rest } = persisted;
+        set(storage, rest);
+      }
+    }
+
+    return { ...base, ...local, ...session };
   }
 
   getState() {

@@ -221,11 +221,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
   const navigateTo = (
     path: string,
-    queryParams: Record<string, string> = {},
+    queryParams: Record<string, string | null | undefined> = {},
     options: NavigateOptions = {}
   ) => {
     const params = Object.entries(queryParams)
-      .filter(([, v]) => v)
+      .filter(([, v]) => v !== null && v !== undefined)
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([k, v]) => `${k}=${v}`);
     const to = [path, ...params].join('&');
@@ -348,8 +348,8 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
     const { args, initialArgs } = currentStory;
     const argsString = buildArgsParam(initialArgs, args as Args);
-    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString }, { replace: true });
-    api.setQueryParams({ args: argsString });
+    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString || null }, { replace: true });
+    api.setQueryParams({ args: argsString || null });
   };
 
   provider.channel?.on(SET_CURRENT_STORY, () => updateArgsParam());
@@ -372,8 +372,12 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
     const { path, hash = '', queryParams } = api.getUrlState();
     const globalsString = buildArgsParam(initialGlobals, merge(initialGlobals, userGlobals));
-    navigateTo(`${path}${hash}`, { ...queryParams, globals: globalsString }, { replace: true });
-    api.setQueryParams({ globals: globalsString });
+    navigateTo(
+      `${path}${hash}`,
+      { ...queryParams, globals: globalsString || null },
+      { replace: true }
+    );
+    api.setQueryParams({ globals: globalsString || null });
   });
 
   provider.channel?.on(NAVIGATE_URL, (url: string, options: NavigateOptions) => {

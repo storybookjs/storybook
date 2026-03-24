@@ -36,9 +36,9 @@ export const parseTagsParam = (
   return { included, excluded };
 };
 
-export const serializeTagsParam = (included: Tag[], excluded: Tag[]): string | undefined => {
+export const serializeTagsParam = (included: Tag[], excluded: Tag[]): string => {
   if (!included.length && !excluded.length) {
-    return undefined;
+    return '';
   }
 
   const reverseBuiltInUrlTagMap = Object.fromEntries(

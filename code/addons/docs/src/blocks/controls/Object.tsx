@@ -178,7 +178,6 @@ export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
   const controlId = getControlId(name);
   const jsonErrorId = `${controlId}-error`;
-  const rawToggleDescriptionId = `${controlId}-toggle-description`;
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
@@ -278,35 +277,30 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const isObjectOrArray =
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
+  const tooltip = showRaw
+    ? `Return to structured editor for ${name}`
+    : `Open raw JSON editor for ${name}`;
+
   return (
     <Wrapper>
       {isObjectOrArray && (
         <>
           <RawButtonWrapper>
             <ToggleButton
-              asChild
               pressed={showRaw}
-              ariaLabel={false}
+              ariaLabel={`Edit ${name} as JSON`}
+              tooltip={tooltip}
               variant="ghost"
               padding="small"
               size="small"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowRaw((isRaw) => !isRaw);
+              }}
             >
-              <button
-                type="button"
-                aria-label={`Edit ${name} as JSON`}
-                aria-describedby={rawToggleDescriptionId}
-                onClick={(e: SyntheticEvent) => {
-                  e.preventDefault();
-                  setShowRaw((isRaw) => !isRaw);
-                }}
-              >
-                <EditIcon />
-              </button>
+              <EditIcon />
             </ToggleButton>
           </RawButtonWrapper>
-          <span id={rawToggleDescriptionId} className="sb-sr-only">
-            Toggle between the structured object editor and the raw JSON editor.
-          </span>
         </>
       )}
       {!showRaw ? (

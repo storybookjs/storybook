@@ -152,7 +152,6 @@ export const JsonEditorValidation: Story = {
     await step('Open the raw JSON editor and verify it is described', async () => {
       const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
 
-      await expect(editAsJsonButton).toHaveAttribute('aria-describedby');
       await fireEvent.click(editAsJsonButton);
       await expect(
         canvas.getByRole('textbox', { name: 'Edit object as JSON' })

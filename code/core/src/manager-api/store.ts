@@ -75,12 +75,6 @@ export default class Store {
   // The assumption is that this will be called once, to initialize the React state
   // when the module is instantiated
   getInitialState(base: State) {
-    // We don't only merge at the very top level (the same way as React setState)
-    // when you set keys, so it makes sense to do the same in combining the two storage modes
-    // Really, you shouldn't store the same key in both places
-    const local = get(store.local);
-    const session = get(store.session);
-
     // One-time migration: tag filter state moved from localStorage to URL persistence.
     // Remove the old keys so they no longer interfere with URL-derived initial state.
     for (const storage of [store.local, store.session] as const) {
@@ -90,6 +84,12 @@ export default class Store {
         set(storage, rest);
       }
     }
+
+    // We don't only merge at the very top level (the same way as React setState)
+    // when you set keys, so it makes sense to do the same in combining the two storage modes
+    // Really, you shouldn't store the same key in both places
+    const local = get(store.local);
+    const session = get(store.session);
 
     return { ...base, ...local, ...session };
   }

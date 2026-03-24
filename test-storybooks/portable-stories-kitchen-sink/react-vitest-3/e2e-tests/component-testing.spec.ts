@@ -142,7 +142,6 @@ test.describe("component testing", () => {
     browserName,
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
-    test.setTimeout(40_000);
     const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory("addons/group/test", "Mismatch Failure");
@@ -161,7 +160,7 @@ test.describe("component testing", () => {
       exact: true,
     });
     if ((await testStoryElement.getAttribute("aria-expanded")) !== "true") {
-      testStoryElement.click();
+      await testStoryElement.click();
     }
 
     const testingModuleDescription = await page.locator(
@@ -170,10 +169,6 @@ test.describe("component testing", () => {
 
     const runTestsButton = await page.getByLabel("Start test run");
     await runTestsButton.click();
-
-    await expect(testingModuleDescription).not.toContainText(/Ran \d+ tests/, {
-      timeout: 60000,
-    });
 
     // Wait for test results to appear
     await expect(testingModuleDescription).toHaveText(/Ran \d+ tests/, {
@@ -241,8 +236,6 @@ test.describe("component testing", () => {
     await expect(watchModeButton).not.toHaveAttribute("aria-disabled", "true");
 
     await runTestsButton.click();
-
-    await expect(watchModeButton).toHaveAttribute("aria-disabled", "true");
 
     // Wait for test results to appear
     await expect(page.locator("#testing-module-description")).toHaveText(

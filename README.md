@@ -1,3 +1,21 @@
+## CES Info
+
+### Group Members
+
+| Student               | ID        |
+| --------------------- | --------- |
+| Beatriz Oziel de Lima | 202510621 |
+| Rubens Brock Silva    | 202510624 |
+| Matvii Suk            | 202514197 |
+
+### Issues
+
+| Issue                                                           | Resources                           |
+| --------------------------------------------------------------- | ----------------------------------- |
+| [#34258](https://github.com/storybookjs/storybook/issues/34258) | [Report doc](issue-34258-report.md) |
+
+## Rest of the Original README
+
 <p align="center">
   <a href="https://storybook.js.org/?ref=readme">
     <picture>

@@ -2,6 +2,13 @@
   "name": "code",
   "tags": ["library"],
   "targets": {
+    "fmt": {
+      "executor": "nx:run-commands",
+      "options": { "command": "yarn fmt:check" },
+      "cache": true,
+      "inputs": ["sharedGlobals", "{workspaceRoot}/**/*"],
+      "configurations": { "production": {} }
+    },
     "lint": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",

@@ -160,7 +160,7 @@ const stepStatusTextMap: Record<Exclude<Call['status'], undefined>, string> = {
 };
 
 const getInteractionStatusText = (call: Call) =>
-  call.status ? stepStatusTextMap[call.status] : 'pending';
+  call.status ? stepStatusTextMap[call.status] : 'not run';
 
 const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();

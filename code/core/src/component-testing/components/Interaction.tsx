@@ -132,14 +132,16 @@ const ErrorExplainer = styled.p(({ theme }) => ({
   textWrap: 'balance',
 }));
 
-const stepStatusTextMap: Record<Exclude<Call['status'], undefined>, string> = {
-  [CallStates.DONE]: 'passed',
-  [CallStates.ERROR]: 'failed',
-  [CallStates.ACTIVE]: 'running',
-  [CallStates.WAITING]: 'pending',
-};
-
-const getInteractionLabel = (call: Call) => {
+/**
+ * Short name for an interaction row and its accessible labels.
+ *
+ * Play-function `step('…')` calls are recorded with `method === 'step'` and the user-facing
+ * description in `args[0]`. For a **top-level** step (`path` is empty) with a non-empty string
+ * there, that string is used so the UI matches what the author wrote.
+ *
+ * Otherwise we use `call.method` (e.g. `click`, `expect`, nested steps without their own title).
+ */
+export const getInteractionLabel = (call: Call) => {
   if (call.method === 'step' && call.path?.length === 0 && typeof call.args?.[0] === 'string') {
     const label = call.args[0].trim();
     if (label.length > 0) {
@@ -148,6 +150,13 @@ const getInteractionLabel = (call: Call) => {
   }
 
   return call.method;
+};
+
+const stepStatusTextMap: Record<Exclude<Call['status'], undefined>, string> = {
+  [CallStates.DONE]: 'passed',
+  [CallStates.ERROR]: 'failed',
+  [CallStates.ACTIVE]: 'running',
+  [CallStates.WAITING]: 'pending',
 };
 
 const getInteractionStatusText = (call: Call) =>

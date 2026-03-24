@@ -70,4 +70,25 @@ describe('createCorePreset', () => {
     expect(hook).toHaveBeenCalledOnce();
     expect(hook).toHaveBeenCalledWith(framework, options);
   });
+
+  it('awaits an async beforeReturn hook before returning', async () => {
+    let hookResolved = false;
+    const asyncHook = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) =>
+          setTimeout(() => {
+            hookResolved = true;
+            resolve();
+          }, 0)
+        )
+    );
+
+    await createCorePreset({
+      builderName: '@storybook/builder-webpack5',
+      beforeReturn: asyncHook,
+    })({}, makeOptions({ name: '@storybook/nextjs', options: {} }));
+
+    expect(hookResolved).toBe(true);
+    expect(asyncHook).toHaveBeenCalledOnce();
+  });
 });

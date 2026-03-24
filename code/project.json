@@ -7,7 +7,7 @@
       "executor": "nx:run-commands",
       "options": { "command": "yarn fmt:check" },
       "cache": true,
-      "inputs": ["default"],
+      "inputs": ["sharedGlobals", "{workspaceRoot}/**/*"],
       "configurations": { "production": {} }
     },
     "lint": {

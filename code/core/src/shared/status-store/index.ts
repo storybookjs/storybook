@@ -11,6 +11,7 @@ export type StatusValue =
   | 'status-value:success'
   | 'status-value:new'
   | 'status-value:modified'
+  | 'status-value:affected'
   | 'status-value:warning'
   | 'status-value:error'
   | 'status-value:unknown';

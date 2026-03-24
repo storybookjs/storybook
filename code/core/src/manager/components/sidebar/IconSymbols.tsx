@@ -26,6 +26,7 @@ const WARNING_ID = 'icon--warning';
 const DOT_ID = 'icon--dot';
 const NEW_ID = 'icon--new';
 const MODIFIED_ID = 'icon--modified';
+const AFFECTED_ID = 'icon--affected';
 
 export const IconSymbols: FC = () => {
   return (
@@ -124,6 +125,27 @@ export const IconSymbols: FC = () => {
           fill="currentColor"
         />
       </symbol>
+      <symbol id={AFFECTED_ID}>
+        {/* Ripple/wave icon for affected stories */}
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M7 5a2 2 0 100 4 2 2 0 000-4zM4 7a3 3 0 116 0 3 3 0 01-6 0z"
+          fill="currentColor"
+        />
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M7 2a5 5 0 00-5 5 .5.5 0 01-1 0 6 6 0 0112 0 .5.5 0 01-1 0 5 5 0 00-5-5z"
+          fill="currentColor"
+        />
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M7 12a5 5 0 005-5 .5.5 0 011 0 6 6 0 01-12 0 .5.5 0 011 0 5 5 0 005 5z"
+          fill="currentColor"
+        />
+      </symbol>
     </Svg>
   );
 };
@@ -140,7 +162,8 @@ export const UseSymbol: FC<{
     | 'warning'
     | 'dot'
     | 'new'
-    | 'modified';
+    | 'modified'
+    | 'affected';
 }> = ({ type }) => {
   if (type === 'group') {
     return <use xlinkHref={`#${GROUP_ID}`} />;
@@ -184,6 +207,10 @@ export const UseSymbol: FC<{
 
   if (type === 'modified') {
     return <use xlinkHref={`#${MODIFIED_ID}`} />;
+  }
+
+  if (type === 'affected') {
+    return <use xlinkHref={`#${AFFECTED_ID}`} />;
   }
 
   return null;

@@ -32,6 +32,7 @@ const statusValueToStoryIds = (
     'status-value:success': [],
     'status-value:new': [],
     'status-value:modified': [],
+    'status-value:affected': [],
     'status-value:error': [],
     'status-value:warning': [],
     'status-value:unknown': [],

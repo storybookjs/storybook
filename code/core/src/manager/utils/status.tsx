@@ -29,8 +29,9 @@ export const statusPriority: StatusValue[] = [
   'status-value:unknown',
   'status-value:pending',
   'status-value:success',
-  'status-value:new',
   'status-value:modified',
+  'status-value:affected',
+  'status-value:new',
   'status-value:warning',
   'status-value:error',
 ];
@@ -59,6 +60,12 @@ export const getStatus = memoizerific(5)((theme: Theme, status: StatusValue) => 
         <UseSymbol type="modified" />
       </svg>,
       theme.color.secondary,
+    ],
+    ['status-value:affected']: [
+      <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <UseSymbol type="affected" />
+      </svg>,
+      theme.color.warning,
     ],
     ['status-value:warning']: [
       <svg key="icon" viewBox="0 0 14 14" width="14" height="14">

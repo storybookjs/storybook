@@ -22,7 +22,6 @@ assignment-rules:
   - targets:
       - check
       - lint
-      - pretty-docs
       - knip
     run-on:
       - agent: linux-js

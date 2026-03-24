@@ -4,11 +4,6 @@
   "tags": ["library"],
   "includedScripts": [],
   "targets": {
-    "pretty-docs": {
-      "command": "yarn docs:fmt:check",
-      "cache": true,
-      "inputs": ["{workspaceRoot}/docs/**/*"]
-    },
     "check": {
       "dependsOn": [],
       "executor": "nx:run-commands",

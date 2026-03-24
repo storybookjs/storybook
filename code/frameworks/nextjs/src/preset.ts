@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { createCorePreset, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -21,32 +21,23 @@ export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
 ];
 
-export const core: PresetProperty<'core'> = async (config, options) => {
-  const framework = await options.presets.apply<StorybookConfig['framework']>('framework');
-
+export const core = createCorePreset({
+  builderName: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
+  rendererName: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   // Load the Next.js configuration before we need it in webpackFinal (below).
   // This gives Next.js an opportunity to override some of webpack's internals
   // (see next/dist/server/config-utils.js) before @storybook/builder-webpack5
   // starts to use it. Without this, webpack's file system cache (fsCache: true)
   // does not work.
-  await configureConfig({
-    // Pass in a dummy webpack config object for now, since we don't want to
-    // modify the real one yet. We pass in the real one in webpackFinal.
-    baseConfig: {},
-    nextConfigPath: typeof framework === 'string' ? undefined : framework.options.nextConfigPath,
-  });
-
-  return {
-    ...config,
-    builder: {
-      name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
-      options: {
-        ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
-      },
-    },
-    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
-  };
-};
+  beforeReturn: async (framework) => {
+    await configureConfig({
+      // Pass in a dummy webpack config object for now, since we don't want to
+      // modify the real one yet. We pass in the real one in webpackFinal.
+      baseConfig: {},
+      nextConfigPath: typeof framework === 'string' ? undefined : framework.options?.nextConfigPath,
+    });
+  },
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
   const annotations = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs/preview'))];

@@ -1,3 +1,4 @@
+import { createCorePreset } from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options';
@@ -33,17 +34,9 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   return annotations;
 };
 
-export const core: PresetProperty<'core'> = async (config, options) => {
-  const framework = await options.presets.apply('framework');
-
-  return {
-    ...config,
-    builder: {
-      name: import.meta.resolve('@storybook/builder-webpack5'),
-      options: typeof framework === 'string' ? {} : framework.options.builder || {},
-    },
-  };
-};
+export const core = createCorePreset({
+  builderName: import.meta.resolve('@storybook/builder-webpack5'),
+});
 
 export const typescript: PresetProperty<'typescript'> = async (config) => {
   return {

@@ -63,10 +63,10 @@ const RowContainer = styled('li', {
     }
 );
 
-const RowHeader = styled.div<{ isNavigationDisabled: boolean }>(
-  ({ theme, isNavigationDisabled }) => ({
+const RowHeader = styled.div<{ $isNavigationDisabled: boolean }>(
+  ({ theme, $isNavigationDisabled }) => ({
     display: 'flex',
-    '&:hover': isNavigationDisabled ? {} : { background: theme.background.hoverable },
+    '&:hover': $isNavigationDisabled ? {} : { background: theme.background.hoverable },
   })
 );
 
@@ -233,7 +233,7 @@ export const Interaction = ({
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>
-      <RowHeader isNavigationDisabled={isNavigationDisabled}>
+      <RowHeader $isNavigationDisabled={isNavigationDisabled}>
         <RowLabel
           aria-label={`${
             isNavigationDisabled ? 'Interaction step' : 'Go to interaction step'

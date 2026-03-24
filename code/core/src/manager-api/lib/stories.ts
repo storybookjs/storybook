@@ -267,7 +267,11 @@ export const transformStoryIndexToStoriesHash = (
         //   - Atoms / Button / LabelledButton
         //
         // In this example the entry for 'atoms-button' would *not* be a component.
-      } else if ((!acc[id] || acc[id].type === 'component') && idx === paths.length - 1) {
+      } else if (
+        (!acc[id] || acc[id].type === 'component') &&
+        idx === paths.length - 1 &&
+        !(item.type === 'docs' && paths.length === 1)
+      ) {
         acc[id] = merge<API_ComponentEntry>((acc[id] || {}) as API_ComponentEntry, {
           type: 'component',
           id,
@@ -297,11 +301,12 @@ export const transformStoryIndexToStoriesHash = (
     });
 
     // Finally add an entry for the docs/story/test itself
+    const isSingleSegmentDocs = item.type === 'docs' && paths.length === 1;
     acc[item.id] = {
       tags: [],
       ...item,
       depth: paths.length,
-      parent: 'parent' in item ? item.parent : paths[paths.length - 1],
+      parent: 'parent' in item ? item.parent : isSingleSegmentDocs ? undefined : paths[paths.length - 1],
       renderLabel,
       prepared: !!item.parameters,
     } as API_DocsEntry | API_StoryEntry;

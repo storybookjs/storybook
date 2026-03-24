@@ -179,7 +179,7 @@ export const check = defineJob(
 );
 
 export const lint = defineJob(
-  'ESLint & oxfmt validation',
+  'ESLint',
   () => ({
     executor: {
       name: 'sb_node_22_classic',
@@ -192,12 +192,6 @@ export const lint = defineJob(
           name: 'Lint code JS',
           working_directory: `code`,
           command: 'yarn lint:js',
-        },
-      },
-      {
-        run: {
-          name: 'Format check',
-          command: 'yarn fmt:check',
         },
       },
       {

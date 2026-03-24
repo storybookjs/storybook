@@ -56,6 +56,7 @@ function generateConfig(workflow: Workflow) {
 
       commonJobsNoOpJob,
       lint,
+      fmt,
       check,
       knip,
 

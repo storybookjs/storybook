@@ -212,7 +212,6 @@ jobs:
         with:
           node-version: 22
           cache: 'yarn'
-      - run: corepack enable
       - run: yarn install --immutable
       - name: Start Nx Agent ${{ matrix.agent }}
         run: npx nx-cloud start-agent

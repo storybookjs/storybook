@@ -189,3 +189,32 @@ jobs:
       - name: Stop all running agents
         if: always()
         run: npx nx-cloud stop-all-agents
+  nx-windows-agents:
+    name: Nx Cloud - Windows Agent ${{ matrix.agent }}
+    if: >
+      github.repository == 'storybookjs/storybook' &&
+        ((github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          contains(github.event.pull_request.labels.*.name, 'ci:windows')
+        ))
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        agent: [1, 2, 3, 4]
+    env:
+      NX_CI_EXECUTION_ENV: 'windows'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+      - run: corepack enable
+      - run: yarn install --immutable
+      - name: Start Nx Agent ${{ matrix.agent }}
+        run: npx nx-cloud start-agent
+        env:
+          NX_AGENT_NAME: ${{ matrix.agent }}

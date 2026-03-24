@@ -303,6 +303,23 @@ command('doctor')
     }).catch(handleCommandFailure(options.logfile));
   });
 
+command('skill')
+  .description('Assist AI agents in improving Storybook setups')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
+  .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
+  .action(async (options) => {
+    // TODO: Implement the actual skill logic and delete this comment.
+    // withTelemetry('skill', { cliOptions: options }, async () => {
+    logger.intro('Checking Storybook skills');
+    // await skill(options);
+    logger.outro('Done');
+    // }).catch(handleCommandFailure(options.logfile));
+  });
+
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;
   const availableCommands = program.commands.map((cmd) => cmd.name());

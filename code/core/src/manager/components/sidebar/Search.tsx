@@ -222,6 +222,13 @@ export const Search = React.memo<SearchProps>(function Search({
         ) {
           return false;
         }
+        // Skip docs-only components so their docs child can show the Docs icon instead
+        if (item.type === 'component' && 'children' in item && Array.isArray(item.children)) {
+          const index = dataset.hash[item.refId]?.index;
+          if (index && item.children.every((childId) => index[childId]?.type === 'docs')) {
+            return false;
+          }
+        }
         resultIds.add(item.id);
         return true;
       });
@@ -239,7 +246,7 @@ export const Search = React.memo<SearchProps>(function Search({
 
       return results;
     },
-    [allComponents, makeFuse]
+    [allComponents, dataset, makeFuse]
   );
 
   const onSelect = useCallback(

@@ -96,3 +96,28 @@ export const Searching = () => <SearchResults {...searching} />;
 export const NoResults = () => <SearchResults {...noResults} />;
 
 export const LastViewed = () => <SearchResults {...lastViewed} />;
+
+// Docs story: simulate a docs-only standalone page (e.g. Configure.mdx without <Meta of=...>)
+// These were previously shown with the Component icon; they should show the Docs icon instead
+const docsOnlyItem = {
+  id: 'configure-your-project',
+  type: 'docs',
+  name: 'Configure your project',
+  title: 'Configure your project',
+  refId: 'internal',
+  path: [],
+  importPath: './src/stories/Configure.mdx',
+  parent: undefined,
+  depth: 0,
+  tags: [],
+  prepared: false,
+  renderLabel: undefined,
+  status: undefined,
+} as unknown as SearchItem;
+
+export const SearchingDocPage = () => (
+  <SearchResults
+    {...searching}
+    results={[{ item: docsOnlyItem, matches: [{ value: 'Configure your project', indices: [[0, 9]], key: 'name' as const, arrayIndex: 0 }], score: 0 }]}
+  />
+);

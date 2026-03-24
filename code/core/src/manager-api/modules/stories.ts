@@ -429,14 +429,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   store,
   navigate,
   provider,
-  state: { location },
+  state: { location } = {} as any,
   storyId: initialStoryId,
   viewMode: initialViewMode,
   docsOptions = {},
 }) => {
   const navigateWithQueryParams = (path: string, options?: NavigateOptions) => {
     const { customQueryParams } = store.getState();
-    const params = Object.entries(customQueryParams)
+    const params = Object.entries(customQueryParams ?? {})
       .filter(([, v]) => v !== null && v !== undefined)
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([k, v]) => `${k}=${v}`);
@@ -958,7 +958,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
          */
         if (isCanvasRoute) {
           const { includedTagFilters, excludedTagFilters, filteredIndex } = state;
-          const hasActiveFilters = includedTagFilters.length > 0 || excludedTagFilters.length > 0;
+          const hasActiveFilters =
+            (includedTagFilters?.length ?? 0) > 0 || (excludedTagFilters?.length ?? 0) > 0;
 
           if (hasActiveFilters && !stateHasSelection) {
             const storyPassesFilter = filteredIndex && filteredIndex[storyId]?.type === 'story';

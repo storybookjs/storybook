@@ -296,7 +296,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const { location, path, customQueryParams, storyId, url, viewMode } = store.getState();
       return {
         path,
-        hash: location.hash ?? '',
+        hash: location?.hash ?? '',
         queryParams: customQueryParams,
         storyId,
         url,

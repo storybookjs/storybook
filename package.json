@@ -40,24 +40,6 @@
     "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
     "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts"
   },
-  "lint-staged": {
-    "code/**/*.{js,jsx,mjs,ts,tsx,html,json}": [
-      "oxfmt --check",
-      "yarn --cwd code lint:js:cmd"
-    ],
-    "scripts/**/*.{html,js,json,jsx,mjs,ts,tsx}": [
-      "yarn --cwd scripts lint:js:cmd"
-    ],
-    "docs/_snippets/**/*.{js,jsx,mjs,ts,tsx,html,json}": [
-      "oxfmt --check"
-    ],
-    "**/*.ejs": [
-      "yarn --cwd scripts exec ejslint"
-    ],
-    "**/package.json": [
-      "yarn --cwd scripts lint:package"
-    ]
-  },
   "resolutions": {
     "@babel/runtime": "latest",
     "@babel/traverse": "latest",
@@ -89,6 +71,7 @@
     "lint-staged": "^16.4.0",
     "nx": "^22.6.1",
     "oxfmt": "^0.41.0",
+    "std-env": "^4.0.0",
     "vite": "^7.0.4",
     "vitest": "^4.1.0"
   },

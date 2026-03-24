@@ -8706,6 +8706,7 @@ __metadata:
     lint-staged: "npm:^16.4.0"
     nx: "npm:^22.6.1"
     oxfmt: "npm:^0.41.0"
+    std-env: "npm:^4.0.0"
     vite: "npm:^7.0.4"
     vitest: "npm:^4.1.0"
   languageName: unknown

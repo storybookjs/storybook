@@ -1,0 +1,22 @@
+{
+  "name": "init-empty-lit-vite-ts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "init-empty": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bash -c 'DIR=$(mktemp -d) && cd $DIR && npm set registry http://localhost:6001 && npx storybook init --yes --package-manager npm && npm run storybook -- --smoke-test'",
+        "env": {
+          "IN_STORYBOOK_SANDBOX": "true",
+          "STORYBOOK_DISABLE_TELEMETRY": "true",
+          "STORYBOOK_INIT_EMPTY_TYPE": "lit-vite-ts"
+        }
+      },
+      "cache": false,
+      "configurations": { "production": {} }
+    }
+  },
+  "tags": ["ci:merged", "ci:daily"]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "init-empty-windows",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "init-empty": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bash -c 'cd $TEMP && rm -rf empty-react-vite-ts && mkdir empty-react-vite-ts && cd empty-react-vite-ts && npm set registry http://localhost:6001 && npx storybook init --yes --package-manager npm && npm run storybook -- --smoke-test'",
+        "env": {
+          "IN_STORYBOOK_SANDBOX": "true",
+          "STORYBOOK_DISABLE_TELEMETRY": "true",
+          "STORYBOOK_INIT_EMPTY_TYPE": "react-vite-ts"
+        }
+      },
+      "cache": false,
+      "configurations": { "production": {} }
+    }
+  },
+  "tags": ["ci:daily"]
+}

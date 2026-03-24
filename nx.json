@@ -183,6 +183,26 @@
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
+    },
+    "init-empty": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "bash -c 'rm -rf /tmp/sb-init && mkdir /tmp/sb-init'",
+          "bash -c 'cd /tmp/sb-init && npm set registry http://localhost:6001'",
+          "bash -c 'cd /tmp/sb-init && npx storybook init --yes --package-manager npm'",
+          "bash -c 'cd /tmp/sb-init && npm run storybook -- --smoke-test'"
+        ],
+        "parallel": false,
+        "env": {
+          "IN_STORYBOOK_SANDBOX": "true",
+          "STORYBOOK_DISABLE_TELEMETRY": "true",
+          "STORYBOOK_INIT_EMPTY_TYPE": "react-vite-ts"
+        }
+      },
+      "cache": false,
+      "configurations": { "production": {} }
     }
   },
   "namedInputs": {
@@ -205,5 +225,5 @@
     ]
   },
   "analytics": false,
-  "codexCacheBust": "2026-03-24T11:03:24Z"
+  "codexCacheBust": "2026-03-24T11:18:37Z"
 }

@@ -168,6 +168,9 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci:daily')
         ) || (github.event_name == 'schedule'))
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     env:
       NX_CI_EXECUTION_ENV: 'windows'
       WINDOWS_TASKS: compile,test,init-empty
@@ -180,11 +183,10 @@ jobs:
         with:
           node-version: 22
           cache: 'yarn'
-      - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
       - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --stop-agents-after="$WINDOWS_TASKS"
+      - run: yarn install --immutable
       - name: 'Run nx'
-        shell: bash
         run: yarn nx run-many -t $WINDOWS_TASKS -c production -p="tag:library,tag:ci:windows"
       - name: Stop all running agents
         if: always()
@@ -198,6 +200,9 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci:daily')
         ) || (github.event_name == 'schedule'))
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     strategy:
       matrix:
         agent: [1, 2, 3, 4]

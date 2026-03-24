@@ -184,7 +184,7 @@ jobs:
           node-version: 22
           cache: 'yarn'
       - uses: nrwl/nx-set-shas@v4
-      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --stop-agents-after="$WINDOWS_TASKS"
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="manual" --assignment-rules=".nx/workflows/assignment-rules-windows.yaml" --stop-agents-after="$WINDOWS_TASKS"
       - run: yarn install --immutable
       - name: 'Run nx'
         run: yarn nx run-many -t $WINDOWS_TASKS -c production -p="tag:library,tag:ci:windows"

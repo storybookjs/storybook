@@ -1,0 +1,18 @@
+assignment-rules:
+  - targets:
+      - compile
+    projects:
+      - core
+    run-on:
+      - agent: default
+        parallelism: 1
+  - targets:
+      - compile
+    run-on:
+      - agent: default
+        parallelism: 3
+  - targets:
+      - '*'
+    run-on:
+      - agent: default
+        parallelism: 1

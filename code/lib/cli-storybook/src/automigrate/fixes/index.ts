@@ -17,6 +17,7 @@ import { removeDocsAutodocs } from './remove-docs-autodocs';
 import { removeEssentials } from './remove-essentials';
 import { rendererToFramework } from './renderer-to-framework';
 import { rnstorybookConfig } from './rnstorybook-config';
+import { storybookPackageNameConflict } from './storybook-package-name-conflict';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
 import { wrapGetAbsolutePath } from './wrap-getAbsolutePath';
 
@@ -42,6 +43,7 @@ export const allFixes: Fix[] = [
   removeDocsAutodocs,
   wrapGetAbsolutePath,
   fixFauxEsmRequire,
+  storybookPackageNameConflict,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

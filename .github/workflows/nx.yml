@@ -165,8 +165,8 @@ jobs:
       github.repository == 'storybookjs/storybook' &&
         ((github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
-          contains(github.event.pull_request.labels.*.name, 'ci:daily')
-        ) || (github.event_name == 'schedule'))
+          contains(github.event.pull_request.labels.*.name, 'ci:windows')
+        ))
     runs-on: ubuntu-latest
     env:
       NX_CI_EXECUTION_ENV: 'windows'

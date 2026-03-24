@@ -32,7 +32,8 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
+      NX_CI_EXECUTION_ENV: 'linux'
+      ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress,init-empty,init-features
     steps:
       - uses: actions/checkout@v4
         with:
@@ -158,3 +159,28 @@ jobs:
                 : 'Nx Cloud run finished successfully',
               context: `nx: ${tag}`,
             });
+
+  nx-windows:
+    if: >
+      github.repository == 'storybookjs/storybook' &&
+        ((github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          contains(github.event.pull_request.labels.*.name, 'ci:daily')
+        ) || (github.event_name == 'schedule'))
+    runs-on: ubuntu-latest
+    env:
+      NX_CI_EXECUTION_ENV: 'windows'
+      WINDOWS_TASKS: compile,test,init-empty
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - uses: nrwl/nx-set-shas@v4
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="./.nx/workflows/distribution-config-windows.yaml" --stop-agents-after="$WINDOWS_TASKS"
+      - run: yarn nx run-many -t $WINDOWS_TASKS -c production -p="tag:library,tag:ci:windows"

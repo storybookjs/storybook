@@ -30,7 +30,15 @@
     "e2e-tests": {},
     "e2e-tests-dev": {},
     "test-runner": {},
-    "test-runner-dev": {}
+    "test-runner-dev": {},
+    "init-empty": {
+      "options": {
+        "env": {
+          "STORYBOOK_INIT_EMPTY_TYPE": "react-vite-ts"
+        }
+      }
+    },
+    "init-features": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": ["ci:normal", "ci:merged", "ci:daily", "ci:windows"]
 }

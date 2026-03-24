@@ -1,0 +1,3 @@
+# Distribution config for Windows CI — single agent for compile, test, init-empty
+distribute-on:
+  default: 1 windows-js

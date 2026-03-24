@@ -300,6 +300,7 @@ test.describe('Manager UI', () => {
 
       // open navigation menu
       await mobileNavigationHeading.click();
+      await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeVisible();
 
       await sbPage.openComponent('Example/Button');
 
@@ -322,6 +323,7 @@ test.describe('Manager UI', () => {
 
       const mobileNavigationHeading = sbPage.page.locator('[aria-label="Open navigation menu"]');
       await mobileNavigationHeading.click();
+      await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeVisible();
       await sbPage.navigateToStory('Example/Button', 'Secondary');
 
       // panel is closed

@@ -1,7 +1,8 @@
 /* eslint-disable react/destructuring-assignment */
-import React, { useContext } from 'react';
+import React, { useCallback, useContext } from 'react';
 import type { FC } from 'react';
 
+import { FORCE_REMOUNT } from 'storybook/internal/core-events';
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
@@ -82,6 +83,10 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
   // By default, stories will be iframed, but most frameworks support inline rendering and override that in a docs entry file
   const inline = props.story?.inline ?? story.parameters?.docs?.story?.inline ?? false;
 
+  const handleReloadStory = useCallback(() => {
+    docsContext.channel.emit(FORCE_REMOUNT, { storyId: story.id });
+  }, [docsContext.channel, story.id]);
+
   return (
     <PurePreview
       withSource={sourceState === 'none' ? undefined : sourceProps}
@@ -91,6 +96,7 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
       className={className}
       layout={layout}
       inline={inline}
+      onReloadStory={inline ? handleReloadStory : undefined}
     >
       <Story of={of || story.moduleExport} meta={props.meta} {...props.story} />
     </PurePreview>

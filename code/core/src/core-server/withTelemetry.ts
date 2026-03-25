@@ -16,6 +16,7 @@ type TelemetryOptions = {
   presetOptions?: Parameters<typeof loadAllPresets>[0];
   printError?: (err: any) => void;
   skipPrompt?: boolean;
+  eventType?: EventType;
 };
 
 const promptCrashReports = async () => {
@@ -40,29 +41,30 @@ export async function getErrorLevel({
   cliOptions,
   presetOptions,
   skipPrompt,
+  eventType,
 }: TelemetryOptions): Promise<ErrorLevel> {
   if (cliOptions.disableTelemetry) {
     return 'none';
   }
 
-  // If we are running init or similar, we just have to go with true here
-  if (!presetOptions) {
+  if (!presetOptions && eventType !== 'init') {
     return 'error';
   }
 
-  // should we load the preset?
-  const presets = await loadAllPresets(presetOptions);
+  if (presetOptions) {
+    const presets = await loadAllPresets(presetOptions);
 
-  // If the user has chosen to enable/disable crash reports in main.js
-  // or disabled telemetry, we can return that
-  const core = await presets.apply('core');
+    // If the user has chosen to enable/disable crash reports in main.js
+    // or disabled telemetry, we can return that
+    const core = await presets.apply('core');
 
-  if (core?.enableCrashReports !== undefined) {
-    return core.enableCrashReports ? 'full' : 'error';
-  }
+    if (core?.enableCrashReports !== undefined) {
+      return core.enableCrashReports ? 'full' : 'error';
+    }
 
-  if (core?.disableTelemetry) {
-    return 'none';
+    if (core?.disableTelemetry) {
+      return 'none';
+    }
   }
 
   // Deal with typo, remove in future version (7.1?)
@@ -96,7 +98,7 @@ export async function sendTelemetryError(
   try {
     let errorLevel = 'error';
     try {
-      errorLevel = await getErrorLevel(options);
+      errorLevel = await getErrorLevel({ ...options, eventType });
     } catch (err) {
       // If this throws, eg. due to main.js breaking, we fall back to 'error'
     }

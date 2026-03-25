@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cache, loadAllPresets } from 'storybook/internal/common';
+import { cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 
@@ -11,6 +11,18 @@ vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
 const cliOptions = {};
+const originalStdoutIsTTY = process.stdout.isTTY;
+
+const setStdoutIsTTY = (value: boolean | undefined) => {
+  Object.defineProperty(process.stdout, 'isTTY', {
+    value,
+    configurable: true,
+  });
+};
+
+afterEach(() => {
+  setStdoutIsTTY(originalStdoutIsTTY);
+});
 
 describe('withTelemetry', () => {
   beforeEach(() => {
@@ -71,6 +83,52 @@ describe('withTelemetry', () => {
           isErrorInstance: true,
         }),
         expect.objectContaining({})
+      );
+    });
+
+    it('prompts for crash reports when init fails without preset options', async () => {
+      vi.mocked(isCI).mockReturnValue(false);
+      vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
+      setStdoutIsTTY(true);
+
+      await expect(async () =>
+        withTelemetry('init', { cliOptions, printError: vi.fn() }, run)
+      ).rejects.toThrow(error);
+
+      expect(prompt.confirm).toHaveBeenCalledTimes(1);
+      expect(cache.set).toHaveBeenCalledWith('enableCrashReports', true);
+      expect(telemetry).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          eventType: 'init',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
+      );
+    });
+
+    it('does not send full error details when init prompt is rejected', async () => {
+      vi.mocked(isCI).mockReturnValue(false);
+      vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false);
+      setStdoutIsTTY(true);
+
+      await expect(async () =>
+        withTelemetry('init', { cliOptions, printError: vi.fn() }, run)
+      ).rejects.toThrow(error);
+
+      expect(prompt.confirm).toHaveBeenCalledTimes(1);
+      expect(cache.set).toHaveBeenCalledWith('enableCrashReports', false);
+      expect(telemetry).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          eventType: 'init',
+          error: undefined,
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: false })
       );
     });
 
@@ -412,11 +470,58 @@ describe('getErrorLevel', () => {
       },
       presetOptions: undefined,
       skipPrompt: false,
+      eventType: 'dev',
     };
 
     const errorLevel = await getErrorLevel(options);
 
     expect(errorLevel).toBe('error');
+  });
+
+  it('returns "full" for init when presetOptions are not provided and prompt is accepted', async () => {
+    const options: any = {
+      cliOptions: {
+        disableTelemetry: false,
+      },
+      presetOptions: undefined,
+      skipPrompt: false,
+      eventType: 'init',
+    };
+
+    vi.mocked(isCI).mockReturnValue(false);
+    vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+    vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
+    setStdoutIsTTY(true);
+
+    const errorLevel = await getErrorLevel(options);
+
+    expect(errorLevel).toBe('full');
+    expect(loadAllPresets).not.toHaveBeenCalled();
+    expect(prompt.confirm).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledWith('enableCrashReports', true);
+  });
+
+  it('returns "error" for init when presetOptions are not provided and prompt is rejected', async () => {
+    const options: any = {
+      cliOptions: {
+        disableTelemetry: false,
+      },
+      presetOptions: undefined,
+      skipPrompt: false,
+      eventType: 'init',
+    };
+
+    vi.mocked(isCI).mockReturnValue(false);
+    vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+    vi.mocked(prompt.confirm).mockResolvedValueOnce(false);
+    setStdoutIsTTY(true);
+
+    const errorLevel = await getErrorLevel(options);
+
+    expect(errorLevel).toBe('error');
+    expect(loadAllPresets).not.toHaveBeenCalled();
+    expect(prompt.confirm).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledWith('enableCrashReports', false);
   });
 
   it('returns "full" when core.enableCrashReports is true', async () => {

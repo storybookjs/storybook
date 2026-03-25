@@ -217,6 +217,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   measure: true,
   sidebarOnboardingChecklist: true,
   componentsManifest: true,
+  changeDetection: false,
 });
 
 export const csfIndexer: Indexer = {

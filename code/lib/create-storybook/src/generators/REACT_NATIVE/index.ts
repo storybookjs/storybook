@@ -7,12 +7,17 @@ import { dedent } from 'ts-dedent';
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 import { generateReactNativeEntrypoint } from './generateEntrypoint';
 import {
+  deriveStorybookPlatformScripts,
+  type StorybookPlatformScriptDerivationResult,
+} from './generateScripts';
+import {
   METRO_SETUP_DOCS_LINK,
   runMetroCodemodOrFallback,
   type MetroCodemodResult,
 } from './metroConfig';
 
 let lastMetroCodemodResult: MetroCodemodResult | undefined;
+let lastScriptDerivationResult: StorybookPlatformScriptDerivationResult | undefined;
 
 export default defineGeneratorModule({
   metadata: {
@@ -56,9 +61,16 @@ export default defineGeneratorModule({
 
     dependencyCollector.addDependencies(packages);
 
+    const existingScripts = packageManager.primaryPackageJson.packageJson.scripts;
+    const scriptDerivationResult = deriveStorybookPlatformScripts(
+      existingScripts as Record<string, unknown> | undefined
+    );
+    lastScriptDerivationResult = scriptDerivationResult;
+
     // Add React Native specific scripts
     packageManager.addScripts({
       'storybook-generate': 'sb-rn-get-stories',
+      ...scriptDerivationResult.scriptsToAdd,
     });
 
     const storybookConfigFolder = '.rnstorybook';
@@ -88,6 +100,27 @@ export default defineGeneratorModule({
     };
   },
   postConfigure: ({ packageManager }) => {
+    const platformRunGuidance = (() => {
+      const scriptNames = Object.keys(lastScriptDerivationResult?.scriptsToAdd ?? {});
+
+      if (scriptNames.length === 0) {
+        return 'No platform launch scripts could be generated automatically.';
+      }
+
+      return scriptNames
+        .map((scriptName) => packageManager.getRunCommand(scriptName))
+        .join('\n      ');
+    })();
+
+    const scriptWarningSummary = (() => {
+      const missing = lastScriptDerivationResult?.missingBaseScripts ?? [];
+      if (missing.length === 0) {
+        return null;
+      }
+
+      return `Could not infer ${missing.join(', ')} app scripts from package.json. To launch Storybook manually, set STORYBOOK_ENABLED=true when running your app scripts.`;
+    })();
+
     const metroCodemodSummary = (() => {
       if (!lastMetroCodemodResult) {
         return 'Metro config could not be evaluated automatically.';
@@ -115,27 +148,23 @@ export default defineGeneratorModule({
     logger.log(dedent`
       ${CLI_COLORS.warning('The Storybook for React Native installation is not 100% automated.')}
   
-      To run Storybook for React Native, you will need to:
-  
-      1. Replace the contents of your app entry with the following
-  
-      ${CLI_COLORS.info(' ' + "export {default} from './.rnstorybook';" + ' ')}
-  
-      2. Metro config status:
+      Storybook run scripts:
 
-      ${CLI_COLORS.info(` ${metroCodemodSummary} `)}
+      ${CLI_COLORS.cta(' ' + platformRunGuidance + ' ')}
+
+      Metro config status:
+
+      ${CLI_COLORS.info(' ' + metroCodemodSummary + ' ')}
 
       If manual setup is needed, wrap your Metro config with withStorybook like this:
   
       ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/metro');" + ' ')}
       ${CLI_COLORS.info(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
+
+      ${scriptWarningSummary ? `${CLI_COLORS.warning(scriptWarningSummary)}\n` : ''}
   
       For more details go to:
       ${METRO_SETUP_DOCS_LINK}
-  
-      Then to start Storybook for React Native, run:
-  
-      ${CLI_COLORS.cta(' ' + packageManager.getRunCommand('start') + ' ')}
     `);
   },
 });

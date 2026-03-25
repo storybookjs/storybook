@@ -132,12 +132,10 @@ const RawButtonWrapper = styled.div({
   marginRight: -10,
 });
 
+// Match Form.Textarea defaults (see Text control); only mono for JSON content.
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
   flex: 1,
-  padding: '7px 6px',
   fontFamily: theme.typography.fonts.mono,
-  fontSize: '12px',
-  lineHeight: '18px',
 }));
 
 const RawInputWrapper = styled.div({
@@ -147,14 +145,15 @@ const RawInputWrapper = styled.div({
   gap: 6,
 });
 
+// Visually aligned with Form ::placeholder (same as Text control empty state).
 const RawInputLabel = styled.span(({ theme }) => ({
   position: 'absolute',
-  top: 7,
-  left: 6,
+  top: 6,
+  left: 10,
   color: theme.textMutedColor,
-  fontFamily: theme.typography.fonts.mono,
-  fontSize: '12px',
-  lineHeight: '18px',
+  fontFamily: theme.typography.fonts.base,
+  fontSize: theme.typography.size.s2 - 1,
+  lineHeight: '20px',
   cursor: 'text',
   pointerEvents: 'none',
 }));

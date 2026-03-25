@@ -5,6 +5,7 @@ import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storyboo
 import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
+import { generateReactNativeEntrypoint } from './generateEntrypoint';
 import {
   METRO_SETUP_DOCS_LINK,
   runMetroCodemodOrFallback,
@@ -70,6 +71,7 @@ export default defineGeneratorModule({
       destination: storybookConfigFolder,
       features: context.features,
     });
+    await generateReactNativeEntrypoint({ language: context.language });
 
     lastMetroCodemodResult = await runMetroCodemodOrFallback({
       packageManager,

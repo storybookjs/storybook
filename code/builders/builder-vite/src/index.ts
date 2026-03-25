@@ -3,9 +3,15 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import type { Middleware, ModuleGraph, ModuleNode, Options } from 'storybook/internal/types';
+import type {
+  Builder,
+  Middleware,
+  ModuleGraph,
+  ModuleNode,
+  Options,
+} from 'storybook/internal/types';
 
-import type { ViteDevServer } from 'vite';
+import type { ViteDevServer, ModuleNode as ViteModuleNode } from 'vite';
 
 import { build as viteBuild } from './build';
 import type { ViteBuilder } from './types';
@@ -47,9 +53,9 @@ export function buildModuleGraph(
   const getOrCreateModuleNode = (
     viteModuleNode: {
       file: string | null;
-      type: ModuleNode['type'];
-      importers: Set<object>;
-      importedModules: Set<object>;
+      type: ViteModuleNode['type'];
+      importers: Set<ViteModuleNode>;
+      importedModules: Set<ViteModuleNode>;
     },
     fallbackFile?: string
   ): ModuleNode | undefined => {
@@ -127,7 +133,7 @@ export async function bail(): Promise<void> {
   return server?.close();
 }
 
-export const onModuleGraphChange: NonNullable<ViteBuilder['onModuleGraphChange']> = (cb) => {
+export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphChange']> = (cb) => {
   listeners.add(cb);
 
   return () => {
@@ -146,6 +152,7 @@ export const start: ViteBuilder['start'] = async ({
   router.get('/iframe.html', iframeHandler(options as Options, server));
   router.use(server.middlewares);
 
+  // Debounce handler to prevent multiple callback invocations when multiple files are edited
   watcherChangeHandler = () => {
     clearTimeout(debounce);
     debounce = setTimeout(() => {

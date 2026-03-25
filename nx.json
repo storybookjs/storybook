@@ -185,10 +185,15 @@
       "configurations": { "production": {} }
     },
     "init-empty": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "cd .. && mkdir empty-react-vite-ts && cd empty-react-vite-ts && npx --yes storybook@latest init --package-manager npm --loglevel=debug"
+          "cd ..",
+          "mkdir empty-react-vite-ts",
+          "cd empty-react-vite-ts",
+          "npm set registry http://localhost:6001",
+          "npx --yes storybook@latest init --yes --package-manager npm --loglevel=debug"
         ],
         "parallel": false
       },

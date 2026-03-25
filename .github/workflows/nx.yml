@@ -173,7 +173,7 @@ jobs:
         shell: bash
     env:
       NX_CI_EXECUTION_ENV: 'windows'
-      WINDOWS_TASKS: init-empty
+      WINDOWS_TASKS: compile,test,init-empty
     steps:
       - uses: actions/checkout@v4
         with:

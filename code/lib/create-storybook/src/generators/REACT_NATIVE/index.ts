@@ -5,6 +5,13 @@ import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storyboo
 import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
+import {
+  METRO_SETUP_DOCS_LINK,
+  runMetroCodemodOrFallback,
+  type MetroCodemodResult,
+} from './metroConfig';
+
+let lastMetroCodemodResult: MetroCodemodResult | undefined;
 
 export default defineGeneratorModule({
   metadata: {
@@ -64,6 +71,11 @@ export default defineGeneratorModule({
       features: context.features,
     });
 
+    lastMetroCodemodResult = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: !!context.yes,
+    });
+
     // React Native doesn't use baseGenerator - return special config
     return {
       // Signal to skip baseGenerator by returning minimal config
@@ -74,6 +86,30 @@ export default defineGeneratorModule({
     };
   },
   postConfigure: ({ packageManager }) => {
+    const metroCodemodSummary = (() => {
+      if (!lastMetroCodemodResult) {
+        return 'Metro config could not be evaluated automatically.';
+      }
+
+      if (lastMetroCodemodResult.status === 'updated') {
+        return 'Metro config was updated automatically with withStorybook(...).';
+      }
+
+      if (lastMetroCodemodResult.status === 'already-configured') {
+        return 'Metro config already appears to be configured for Storybook.';
+      }
+
+      if (lastMetroCodemodResult.status === 'skipped-existing-storybook-import') {
+        return 'Metro config already contains Storybook imports, so auto-modification was skipped.';
+      }
+
+      if (lastMetroCodemodResult.status === 'fallback-commented') {
+        return 'Metro config could not be transformed automatically; guidance was added to your Metro config file.';
+      }
+
+      return 'No Metro config file was selected; please update Metro manually.';
+    })();
+
     logger.log(dedent`
       ${CLI_COLORS.warning('The Storybook for React Native installation is not 100% automated.')}
   
@@ -83,13 +119,17 @@ export default defineGeneratorModule({
   
       ${CLI_COLORS.info(' ' + "export {default} from './.rnstorybook';" + ' ')}
   
-      2. Wrap your metro config with the withStorybook enhancer function like this:
+      2. Metro config status:
+
+      ${CLI_COLORS.info(` ${metroCodemodSummary} `)}
+
+      If manual setup is needed, wrap your Metro config with withStorybook like this:
   
-      ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/metro/withStorybook');" + ' ')}
+      ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/metro');" + ' ')}
       ${CLI_COLORS.info(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
   
       For more details go to:
-      https://github.com/storybookjs/react-native#getting-started
+      ${METRO_SETUP_DOCS_LINK}
   
       Then to start Storybook for React Native, run:
   

@@ -113,7 +113,7 @@ describe('PreflightCheckCommand', () => {
 
       await command.execute({ force: false } as any);
 
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
         expect.stringContaining('Your package.json "name" field is set to "storybook"')
       );
     });
@@ -124,7 +124,7 @@ describe('PreflightCheckCommand', () => {
 
       await command.execute({ force: false } as any);
 
-      expect(logger.warn).not.toHaveBeenCalledWith(
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
         expect.stringContaining('Your package.json "name" field is set to "storybook"')
       );
     });

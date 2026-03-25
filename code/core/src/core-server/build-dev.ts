@@ -5,6 +5,7 @@ import {
   getConfigInfo,
   getInterpretedFile,
   getProjectRoot,
+  isWebContainer,
   loadAllPresets,
   loadMainConfig,
   resolveAddonName,
@@ -236,6 +237,7 @@ export async function buildDevStandalone(
     token: getWsToken(),
     host: options.host,
     allowedHosts,
+    skipValidation: isWebContainer(),
     localAddress,
     networkAddress,
   });

@@ -62,7 +62,10 @@ export async function runCodemod(
   }
 
   // Normalize the glob pattern to use forward slashes (required for glob patterns on Windows)
-  const files = await tinyglobby([normalize(glob), '!**/node_modules', '!**/dist']);
+  // Use absolute: true to avoid cross-drive relative path issues on Windows (e.g. cwd on D: but tmpdir on C:)
+  const files = await tinyglobby([normalize(glob), '!**/node_modules', '!**/dist'], {
+    absolute: true,
+  });
   const extensions = new Set(files.map((file) => extname(file).slice(1)));
   const commaSeparatedExtensions = Array.from(extensions).join(',');
 

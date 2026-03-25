@@ -8,6 +8,14 @@ import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 const { allTemplates, merged, daily, normal } = (templates.default ||
   templates) as typeof templates;
 
+// Sandboxes that also run `storybook init` from an empty directory
+const INIT_EMPTY_TEMPLATES: Record<string, string> = {
+  'react-vite/default-ts': 'react-vite-ts',
+  'nextjs/default-ts': 'nextjs-ts',
+  'vue3-vite/default-ts': 'vue-vite-ts',
+  'lit-vite/default-ts': 'lit-vite-ts',
+};
+
 const projectJson = (
   name: string,
   framework: string | undefined,
@@ -72,6 +80,20 @@ const projectJson = (
       : {
           'test-runner-dev': {},
         }),
+    ...(name in INIT_EMPTY_TEMPLATES
+      ? {
+          'init-empty': {
+            options: { env: { STORYBOOK_INIT_EMPTY_TYPE: INIT_EMPTY_TEMPLATES[name] } },
+          },
+        }
+      : {}),
+    ...(name === 'react-vite/default-ts'
+      ? {
+          'init-features': {
+            options: { env: { STORYBOOK_INIT_EMPTY_TYPE: 'react-vite-ts' } },
+          },
+        }
+      : {}),
   },
   tags,
 });
@@ -91,6 +113,8 @@ await Promise.all(
       ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
       ...(merged.includes(key as any) && !value.inDevelopment ? ['ci:merged'] : []),
       ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
+      // Windows CI uses the first sandbox (react-vite/default-ts)
+      ...(key === 'react-vite/default-ts' ? ['ci:windows'] : []),
     ];
     ensureDirectoryExistence(full);
     console.log(full);

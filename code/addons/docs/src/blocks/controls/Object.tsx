@@ -289,6 +289,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
             <ToggleButton
               pressed={showRaw}
               ariaLabel={`Edit ${name} as JSON`}
+              ariaDescription="Toggle between the structured object editor and the raw JSON editor."
               tooltip={tooltip}
               variant="ghost"
               padding="small"

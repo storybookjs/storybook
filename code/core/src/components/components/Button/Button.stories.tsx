@@ -2,7 +2,7 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { fn } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
@@ -379,6 +379,69 @@ export const AriaDescription = meta.story({
     ariaLabel: 'Button',
     ariaDescription: 'Clicking this button allegedly makes you happy.',
     children: <FaceHappyIcon />,
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('preserve aria-describedby alongside the tooltip wrapper', async () => {
+      const button = canvas.getByRole('button', { name: 'Button' });
+      const describedById = button.getAttribute('aria-describedby');
+      const description = describedById ? document.getElementById(describedById) : null;
+
+      await expect(describedById).toBeTruthy();
+      await expect(description?.textContent).toBe(
+        'Clicking this button allegedly makes you happy.'
+      );
+    });
+  },
+});
+
+export const AriaDescriptionWithoutTooltip = meta.story({
+  args: {
+    ariaLabel: false,
+    ariaDescription: 'Clicking this button allegedly makes you happy.',
+    children: 'Button',
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('apply aria-describedby even when no tooltip is rendered', async () => {
+      const button = canvas.getByRole('button', { name: 'Button' });
+      const describedById = button.getAttribute('aria-describedby');
+      const description = describedById ? document.getElementById(describedById) : null;
+
+      await expect(describedById).toBeTruthy();
+      await expect(description?.textContent).toBe(
+        'Clicking this button allegedly makes you happy.'
+      );
+    });
+  },
+});
+
+export const SharedAriaDescription = meta.story({
+  render: () => (
+    <Row>
+      <Button ariaLabel="First button" ariaDescription="Shared description">
+        <FaceHappyIcon />
+      </Button>
+      <Button ariaLabel="Second button" ariaDescription="Shared description">
+        <FaceHappyIcon />
+      </Button>
+    </Row>
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('generate unique describedby IDs for repeated descriptions', async () => {
+      const firstButton = canvas.getByRole('button', { name: 'First button' });
+      const secondButton = canvas.getByRole('button', { name: 'Second button' });
+      const firstDescriptionId = firstButton.getAttribute('aria-describedby');
+      const secondDescriptionId = secondButton.getAttribute('aria-describedby');
+
+      await expect(firstDescriptionId).toBeTruthy();
+      await expect(secondDescriptionId).toBeTruthy();
+      await expect(firstDescriptionId).not.toBe(secondDescriptionId);
+    });
   },
 });
 

@@ -47,6 +47,12 @@ export interface TooltipProviderProps {
 
   /** Controlled state: fires when user interaction causes the tooltip to change visibility. */
   onVisibleChange?: (isVisible: boolean) => void;
+
+  /**
+   * Explicit aria-describedby ID to preserve on the trigger. When unset, we clear the attribute so
+   * react-aria cannot inject the tooltip's own description.
+   */
+  overrideAriaDescribedby?: string;
 }
 
 const TooltipProvider = ({
@@ -61,6 +67,7 @@ const TooltipProvider = ({
   delayHide = 200,
   visible,
   onVisibleChange,
+  overrideAriaDescribedby,
   ...props
 }: TooltipProviderProps) => {
   const placement = convertToReactAriaPlacement(placementProp);
@@ -88,9 +95,11 @@ const TooltipProvider = ({
       trigger={triggerOnFocusOnly ? 'focus' : undefined}
       {...props}
     >
-      {/* We don't let react-aria set an aria-describedby attribute because it clashes with our intention to explicitly set an aria-label that can be different from the tooltip copy. Some screenreaders would announce the label AND description if we also allowed aria-describedby, which would decrease usability. */}
-      {/* @ts-expect-error: We have to nullify aria-describedby and this is the only way we can do it (undefined won't work and an empty string will result in DOM pollution). */}
-      <Focusable>{React.cloneElement(child, { 'aria-describedby': null })}</Focusable>
+      {/* We don't let react-aria set an aria-describedby attribute because it clashes with our intention to explicitly set an aria-label that can be different from the tooltip copy. Some screenreaders would announce the label AND description if we also allowed aria-describedby, which would decrease usability. When a component has its own explicit description, we preserve that ID instead of the tooltip's. */}
+      <Focusable>
+        {/* @ts-expect-error: We have to override aria-describedby and this is the only way we can do it (undefined won't work and an empty string will result in DOM pollution). */}
+        {React.cloneElement(child, { 'aria-describedby': overrideAriaDescribedby ?? null })}
+      </Focusable>
       <TooltipUpstream
         data-testid="tooltip"
         placement={placement}

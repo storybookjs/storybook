@@ -1,5 +1,7 @@
 import React, { type ReactElement } from 'react';
 
+import { useId } from '@react-aria/utils';
+
 /**
  * Provides a way to create an accessible description for an element. Returns a hidden element that
  * contains the description and attributes to pass to the described element.
@@ -13,14 +15,15 @@ export function useAriaDescription(description = ''): {
   };
   AriaDescription: () => ReactElement | null;
 } {
-  const describedbyId = description.toLowerCase().trim().replace(/\s+/g, '-');
+  const id = useId();
+  const describedbyId = description ? `aria-description-${id}` : undefined;
 
   return {
     ariaDescriptionAttrs: {
-      'aria-describedby': description ? describedbyId : undefined,
+      'aria-describedby': describedbyId,
     },
     AriaDescription: () =>
-      description ? (
+      describedbyId ? (
         <span id={describedbyId} hidden>
           {description}
         </span>

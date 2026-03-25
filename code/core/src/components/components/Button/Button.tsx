@@ -9,7 +9,6 @@ import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/ma
 import { isPropValid, styled } from 'storybook/theming';
 
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
-import { useAriaDescription } from './helpers/useAriaDescription';
 
 export interface ButtonProps extends Omit<ComponentProps<typeof StyledButton>, 'as'> {
   as?: ComponentProps<typeof StyledButton>['as'] | typeof Slot;
@@ -94,8 +93,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       );
     }
 
-    const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(ariaDescription);
-
     const shortcutAttribute = useMemo(() => {
       return shortcut ? shortcutToAriaKeyshortcuts(shortcut) : undefined;
     }, [shortcut]);
@@ -125,33 +122,30 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const finalTooltip = tooltip || (ariaLabel !== false ? ariaLabel : undefined);
 
     return (
-      <>
-        <InteractiveTooltipWrapper
-          disableAllTooltips={disableAllTooltips}
-          shortcut={shortcut}
-          tooltip={finalTooltip}
-        >
-          <StyledButton
-            data-deprecated={deprecated}
-            as={Comp}
-            ref={ref}
-            variant={variant}
-            size={size}
-            padding={padding}
-            disabled={disabled || readOnly}
-            readOnly={readOnly}
-            active={active}
-            animating={isAnimating}
-            animation={animation}
-            onClick={handleClick}
-            aria-label={!readOnly && ariaLabel !== false ? ariaLabel : undefined}
-            aria-keyshortcuts={readOnly ? undefined : shortcutAttribute}
-            {...(readOnly ? {} : ariaDescriptionAttrs)}
-            {...props}
-          />
-        </InteractiveTooltipWrapper>
-        <AriaDescription />
-      </>
+      <InteractiveTooltipWrapper
+        disableAllTooltips={disableAllTooltips}
+        shortcut={shortcut}
+        tooltip={finalTooltip}
+        ariaDescription={readOnly ? undefined : ariaDescription}
+      >
+        <StyledButton
+          data-deprecated={deprecated}
+          as={Comp}
+          ref={ref}
+          variant={variant}
+          size={size}
+          padding={padding}
+          disabled={disabled || readOnly}
+          readOnly={readOnly}
+          active={active}
+          animating={isAnimating}
+          animation={animation}
+          onClick={handleClick}
+          aria-label={!readOnly && ariaLabel !== false ? ariaLabel : undefined}
+          aria-keyshortcuts={readOnly ? undefined : shortcutAttribute}
+          {...props}
+        />
+      </InteractiveTooltipWrapper>
     );
   }
 );

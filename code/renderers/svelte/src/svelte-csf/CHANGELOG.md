@@ -1,3 +1,15 @@
+# v5.1.1 (Wed Mar 25 2026)
+
+#### 🐛 Bug Fix
+
+- Merge pull request #341 from storybookjs/add-provenance [#341](https://github.com/storybookjs/addon-svelte-csf/pull/341) ([@Sidnioulz](https://github.com/Sidnioulz))
+
+#### Authors: 1
+
+- Steve Dodier-Lazaro ([@Sidnioulz](https://github.com/Sidnioulz))
+
+---
+
 # v5.1.0 (Mon Mar 23 2026)
 
 #### 🚀 Enhancement

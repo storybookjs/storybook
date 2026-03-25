@@ -188,9 +188,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "mkdir empty-react-vite-ts",
-          "cd empty-react-vite-ts",
-          "npx storybook init --yes --package-manager npm"
+          "bash -c 'cd .. && mkdir empty-react-vite-ts && cd empty-react-vite-ts && npx --yes storybook@latest init --package-manager npm'"
         ],
         "parallel": false
       },

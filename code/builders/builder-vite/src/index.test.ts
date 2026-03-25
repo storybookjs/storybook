@@ -337,4 +337,22 @@ describe('onModuleGraphChange', () => {
     expect(cb).not.toHaveBeenCalled();
     expect(fakeViteServer.watcher.off).toHaveBeenCalledWith('all', expect.any(Function));
   });
+
+  it('clears the module-graph polling interval during bail', async () => {
+    await start(createStartArgs());
+
+    expect(vi.getTimerCount()).toBe(1);
+
+    await bail();
+
+    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ]);
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(vi.getTimerCount()).toBe(0);
+    expect(fakeViteServer.waitForRequestsIdle).not.toHaveBeenCalled();
+  });
 });

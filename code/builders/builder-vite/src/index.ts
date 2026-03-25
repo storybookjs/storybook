@@ -36,6 +36,7 @@ let server: ViteDevServer;
 const listeners = new Set<(moduleGraph: ModuleGraph) => void>();
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let watcherChangeHandler: (() => void) | undefined;
+let waitForModuleGraph: ReturnType<typeof setInterval> | undefined;
 
 export function buildModuleGraph(
   fileToModulesMap: ViteDevServer['moduleGraph']['fileToModulesMap']
@@ -112,6 +113,11 @@ export async function bail(): Promise<void> {
     watcherChangeHandler = undefined;
   }
 
+  if (waitForModuleGraph) {
+    clearInterval(waitForModuleGraph);
+    waitForModuleGraph = undefined;
+  }
+
   if (debounce) {
     clearTimeout(debounce);
     debounce = undefined;
@@ -149,9 +155,10 @@ export const start: ViteBuilder['start'] = async ({
 
   server.watcher.on('all', watcherChangeHandler);
 
-  const waitForModuleGraph = setInterval(async () => {
+  waitForModuleGraph = setInterval(async () => {
     if (server.moduleGraph.fileToModulesMap.size > 0) {
       clearInterval(waitForModuleGraph);
+      waitForModuleGraph = undefined;
       await server.waitForRequestsIdle();
       watcherChangeHandler?.();
     }

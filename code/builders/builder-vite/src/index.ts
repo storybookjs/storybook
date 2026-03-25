@@ -108,7 +108,7 @@ function notifyListeners(moduleGraph: ModuleGraph): void {
 
 export async function bail(): Promise<void> {
   if (watcherChangeHandler) {
-    server?.watcher.off('change', watcherChangeHandler);
+    server?.watcher.off('all', watcherChangeHandler);
     watcherChangeHandler = undefined;
   }
 

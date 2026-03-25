@@ -318,17 +318,23 @@ describe('onModuleGraphChange', () => {
     expect(cb2).toHaveBeenCalledTimes(1);
   });
 
-  it('calls watcher.off during bail and clears listeners', async () => {
+  it('removes the all-event watcher during bail to avoid leaks across restarts', async () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
     await start(createStartArgs());
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(1);
+
     await bail();
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
+
+    await start(createStartArgs());
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(1);
 
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
     await vi.advanceTimersByTimeAsync(100);
 
     expect(cb).not.toHaveBeenCalled();
-    expect(fakeViteServer.watcher.off).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(fakeViteServer.watcher.off).toHaveBeenCalledWith('all', expect.any(Function));
   });
 });

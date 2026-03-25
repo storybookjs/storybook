@@ -44,7 +44,7 @@ describe('getHighestStatus', () => {
     );
   });
 
-  it('should rank affected above modified and below warning', () => {
+  it('should rank affected below modified and below warning', () => {
     expect(
       getMostCriticalStatusValue([
         'status-value:affected',

@@ -20,7 +20,12 @@ import {
 import { ADDON_ID, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from './constants';
 import type { StoreState } from './types';
 
-export type StatusValueToStoryIds = Record<StatusValue, StoryId[]>;
+type TestStatusValue = Extract<
+  StatusValue,
+  `status-value:${'pending' | 'success' | 'error' | 'warning' | 'unknown'}`
+>;
+
+export type StatusValueToStoryIds = Record<TestStatusValue, StoryId[]>;
 
 const statusValueToStoryIds = (
   allStatuses: StatusesByStoryIdAndTypeId,
@@ -30,9 +35,6 @@ const statusValueToStoryIds = (
   const statusValueToStoryIdsMap: StatusValueToStoryIds = {
     'status-value:pending': [],
     'status-value:success': [],
-    'status-value:new': [],
-    'status-value:modified': [],
-    'status-value:affected': [],
     'status-value:error': [],
     'status-value:warning': [],
     'status-value:unknown': [],
@@ -46,7 +48,7 @@ const statusValueToStoryIds = (
     if (!status) {
       return;
     }
-    statusValueToStoryIdsMap[status.value].push(status.storyId);
+    statusValueToStoryIdsMap[status.value as TestStatusValue].push(status.storyId);
   });
 
   return statusValueToStoryIdsMap;

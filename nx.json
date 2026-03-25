@@ -189,11 +189,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "cd ..",
-          "mkdir empty-react-vite-ts",
-          "cd empty-react-vite-ts",
-          "npm set registry http://localhost:6001",
-          "npx --yes create-storybook@latest --yes --package-manager npm --loglevel=debug"
+          "cd .. && mkdir empty-react-vite-ts && cd empty-react-vite-ts && npm set registry http://localhost:6001 && npx --yes create-storybook@latest --yes --package-manager npm --loglevel=debug"
         ],
         "parallel": false
       },

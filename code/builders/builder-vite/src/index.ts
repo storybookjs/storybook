@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import type { Middleware, Options } from 'storybook/internal/types';
+import type { Middleware, ModuleGraph, ModuleNode, Options } from 'storybook/internal/types';
 
 import type { ViteDevServer } from 'vite';
 
@@ -33,10 +33,112 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
 }
 
 let server: ViteDevServer;
+const listeners = new Set<(moduleGraph: ModuleGraph) => void>();
+let debounce: ReturnType<typeof setTimeout> | undefined;
+let watcherChangeHandler: (() => void) | undefined;
+
+export function buildModuleGraph(
+  fileToModulesMap: ViteDevServer['moduleGraph']['fileToModulesMap']
+): ModuleGraph {
+  const moduleGraph: ModuleGraph = new Map();
+  const moduleNodeMap = new WeakMap<object, ModuleNode>();
+
+  const getOrCreateModuleNode = (
+    viteModuleNode: {
+      file: string | null;
+      type: ModuleNode['type'];
+      importers: Set<object>;
+      importedModules: Set<object>;
+    },
+    fallbackFile?: string
+  ): ModuleNode | undefined => {
+    const file = viteModuleNode.file ?? fallbackFile;
+    if (!file) {
+      return undefined;
+    }
+
+    const existingNode = moduleNodeMap.get(viteModuleNode);
+    if (existingNode) {
+      return existingNode;
+    }
+
+    const moduleNode: ModuleNode = {
+      file,
+      type: viteModuleNode.type,
+      importers: new Set(),
+      importedModules: new Set(),
+    };
+    moduleNodeMap.set(viteModuleNode, moduleNode);
+
+    const moduleSet = moduleGraph.get(file) ?? new Set<ModuleNode>();
+    moduleSet.add(moduleNode);
+    moduleGraph.set(file, moduleSet);
+
+    return moduleNode;
+  };
+
+  fileToModulesMap.forEach((viteModuleSet, filePath) => {
+    viteModuleSet.forEach((viteModuleNode) => {
+      const moduleNode = getOrCreateModuleNode(viteModuleNode, filePath);
+      if (moduleNode) {
+        viteModuleNode.importers.forEach((importer) => {
+          const importerNode = getOrCreateModuleNode(importer);
+          if (importerNode) {
+            moduleNode.importers.add(importerNode);
+          }
+        });
+        viteModuleNode.importedModules.forEach((importedModule) => {
+          const importedModuleNode = getOrCreateModuleNode(importedModule);
+          if (importedModuleNode) {
+            moduleNode.importedModules.add(importedModuleNode);
+          }
+        });
+      }
+    });
+  });
+
+  console.log('MODULE GRAPH:', `(${fileToModulesMap.size} files)`);
+  console.log(
+    Object.fromEntries(
+      Array.from(moduleGraph.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([file, [node]]) => [file, Array.from(node.importedModules).map((n) => n.file)])
+        .filter(([_, importedModules]) => importedModules.length > 0)
+    )
+  );
+  console.log('');
+
+  return moduleGraph;
+}
+
+function notifyListeners(moduleGraph: ModuleGraph): void {
+  listeners.forEach((listener) => {
+    listener(moduleGraph);
+  });
+}
 
 export async function bail(): Promise<void> {
+  if (watcherChangeHandler) {
+    server?.watcher.off('change', watcherChangeHandler);
+    watcherChangeHandler = undefined;
+  }
+
+  if (debounce) {
+    clearTimeout(debounce);
+    debounce = undefined;
+  }
+
+  listeners.clear();
   return server?.close();
 }
+
+export const onModuleGraphChange: NonNullable<ViteBuilder['onModuleGraphChange']> = (cb) => {
+  listeners.add(cb);
+
+  return () => {
+    listeners.delete(cb);
+  };
+};
 
 export const start: ViteBuilder['start'] = async ({
   startTime,
@@ -48,6 +150,23 @@ export const start: ViteBuilder['start'] = async ({
 
   router.get('/iframe.html', iframeHandler(options as Options, server));
   router.use(server.middlewares);
+
+  watcherChangeHandler = () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      notifyListeners(buildModuleGraph(server.moduleGraph.fileToModulesMap));
+    }, 100);
+  };
+
+  server.watcher.on('all', watcherChangeHandler);
+
+  const waitForModuleGraph = setInterval(async () => {
+    if (server.moduleGraph.fileToModulesMap.size > 0) {
+      clearInterval(waitForModuleGraph);
+      await server.waitForRequestsIdle();
+      watcherChangeHandler?.();
+    }
+  }, 1000);
 
   return {
     bail,

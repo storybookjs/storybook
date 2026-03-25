@@ -4,7 +4,7 @@ import * as EVENTS from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
-import { isJSON, parse, stringify } from 'telejson';
+import { stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
 import type {
@@ -14,6 +14,7 @@ import type {
   ChannelTransport,
   Config,
 } from '../types';
+import { parseEvent } from '../parse-event';
 import { getEventSourceUrl } from './getEventSourceUrl';
 
 const { document, location } = global;
@@ -195,7 +196,7 @@ export class PostMessageTransport implements ChannelTransport {
     try {
       const { data } = rawEvent;
       const { key, event, refId } =
-        typeof data === 'string' && isJSON(data) ? parse(data, global.CHANNEL_OPTIONS || {}) : data;
+        parseEvent(data);
 
       if (key === KEY) {
         const pageString =

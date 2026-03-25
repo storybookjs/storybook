@@ -3,9 +3,10 @@ import type { IncomingMessage } from 'node:http';
 import type { ChannelHandler } from 'storybook/internal/channels';
 import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 
-import { isJSON, parse, stringify } from 'telejson';
+import { stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
+import { parseEvent } from '../../channels/parse-event';
 import { logger } from '../../node-logger';
 import { UniversalStore } from '../../shared/universal-store';
 import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware';
@@ -64,7 +65,7 @@ export class ServerChannelTransport {
     this.socket.on('connection', (wss) => {
       wss.on('message', (raw) => {
         const data = raw.toString();
-        const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;
+        const event = parseEvent(data);
         this.handler?.(event);
       });
     });

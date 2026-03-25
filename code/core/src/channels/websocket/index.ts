@@ -3,10 +3,11 @@ import * as EVENTS from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
-import { isJSON, parse, stringify } from 'telejson';
+import { stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
 import type { ChannelHandler, ChannelTransport, Config } from '../types';
+import { parseEvent } from '../parse-event';
 
 const { WebSocket } = global;
 
@@ -49,7 +50,7 @@ export class WebsocketTransport implements ChannelTransport {
       this.flush();
     };
     this.socket.onmessage = ({ data }) => {
-      const event = typeof data === 'string' && isJSON(data) ? parse(data) : data;
+      const event = parseEvent(data);
       invariant(this.handler, 'WebsocketTransport handler should be set');
       this.handler(event);
       if (event.type === 'ping') {

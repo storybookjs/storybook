@@ -204,20 +204,20 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
 
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
-  argTypeTargetsV7: true,
-  legacyDecoratorFileOrder: false,
-  disallowImplicitActionsInRenderV8: true,
-  viewport: true,
-  highlight: true,
-  controls: true,
-  interactions: true,
   actions: true,
+  argTypeTargetsV7: true,
   backgrounds: true,
-  outline: true,
-  measure: true,
-  sidebarOnboardingChecklist: true,
-  componentsManifest: true,
   changeDetection: false,
+  componentsManifest: true,
+  controls: true,
+  disallowImplicitActionsInRenderV8: true,
+  highlight: true,
+  interactions: true,
+  legacyDecoratorFileOrder: false,
+  measure: true,
+  outline: true,
+  sidebarOnboardingChecklist: true,
+  viewport: true,
 });
 
 export const csfIndexer: Indexer = {

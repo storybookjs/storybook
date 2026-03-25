@@ -193,7 +193,7 @@
           "mkdir empty-react-vite-ts",
           "cd empty-react-vite-ts",
           "npm set registry http://localhost:6001",
-          "npx storybook init --yes --package-manager npm --loglevel=debug"
+          "npx create-storybook@latest --yes --package-manager npm --loglevel=debug"
         ],
         "parallel": false
       },

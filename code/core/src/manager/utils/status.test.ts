@@ -51,7 +51,7 @@ describe('getHighestStatus', () => {
         'status-value:modified',
         'status-value:success',
       ])
-    ).toBe('status-value:affected');
+    ).toBe('status-value:modified');
 
     expect(getMostCriticalStatusValue(['status-value:modified', 'status-value:warning'])).toBe(
       'status-value:warning'

@@ -185,14 +185,12 @@
       "configurations": { "production": {} }
     },
     "init-empty": {
-      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "bash -c 'rm -rf /tmp/sb-init && mkdir /tmp/sb-init'",
-          "bash -c 'cd /tmp/sb-init && npm set registry http://localhost:6001'",
-          "bash -c 'cd /tmp/sb-init && npx storybook init --yes --package-manager npm'",
-          "bash -c 'cd /tmp/sb-init && npm run storybook -- --smoke-test'"
+          "mkdir empty-react-vite-ts",
+          "cd empty-react-vite-ts",
+          "npx storybook init --yes --package-manager npm"
         ],
         "parallel": false
       },

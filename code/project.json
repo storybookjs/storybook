@@ -21,7 +21,7 @@
     "test": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "command": "yarn test" },
+      "options": { "command": "bash -c 'yarn test'" },
       "cache": true,
       "inputs": ["{workspaceRoot}/code/**/*", "{workspaceRoot}/vitest.config.ts"],
       "configurations": { "production": {} }

@@ -7,6 +7,7 @@ const meta: Meta<Button> = {
   component: Button,
   render: (args) => ({
     props: args,
+
     template: `
       <demo-alert>
         Alert text
@@ -17,6 +18,7 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
+
 type Story = StoryObj<Button>;
 
 export const DefaultInAlert: Story = {

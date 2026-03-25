@@ -97,17 +97,6 @@ export function buildModuleGraph(
     });
   });
 
-  console.log('MODULE GRAPH:', `(${fileToModulesMap.size} files)`);
-  console.log(
-    Object.fromEntries(
-      Array.from(moduleGraph.entries())
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([file, [node]]) => [file, Array.from(node.importedModules).map((n) => n.file)])
-        .filter(([_, importedModules]) => importedModules.length > 0)
-    )
-  );
-  console.log('');
-
   return moduleGraph;
 }
 

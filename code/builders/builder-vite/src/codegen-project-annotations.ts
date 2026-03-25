@@ -105,6 +105,11 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   `.trim();
 }
 
+/** djb2 hash — http://www.cse.yorku.ca/~oz/hash.html */
 function hash(value: string) {
-  return value.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  let acc = 5381;
+  for (let i = 0; i < value.length; i++) {
+    acc = ((acc << 5) + acc + value.charCodeAt(i)) >>> 0;
+  }
+  return acc;
 }

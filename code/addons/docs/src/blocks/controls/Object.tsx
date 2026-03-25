@@ -155,7 +155,7 @@ const RawInputWrapper = styled.div({
 
 const ErrorMessage = styled.p(({ theme }) => ({
   margin: 0,
-  color: theme.color.negative,
+  color: theme.base === 'dark' ? theme.color.negative : theme.color.negativeText,
   fontSize: theme.typography.size.s2,
 }));
 

@@ -7,6 +7,8 @@ import { splitSelectors } from './splitSelectors';
 
 const pseudoStates = Object.values(PSEUDO_STATES);
 const pseudoStatesPattern = `${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:(${pseudoStates.join('|')})`;
+// Pseudoclass parameters opening parenthesis plus combinators and separators from https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Selectors#combinators_and_separators
+const selectorStartPattern = String.raw`[|>+~,\s(]`;
 const matchOne = new RegExp(pseudoStatesPattern);
 const matchAll = new RegExp(pseudoStatesPattern, 'g');
 
@@ -62,15 +64,15 @@ const extractPseudoStates = (selector: string) => {
   const states = new Set();
   const withoutPseudoStates =
     selector
-      .replace(matchAll, (_, state) => {
+      // If there's no selector for pseudostate pseudo-class, add '*' to the selector.
+
+      .replaceAll(new RegExp(`(${selectorStartPattern})(${pseudoStatesPattern})`, 'g'), '$1*$2')
+      .replaceAll(matchAll, (_, state) => {
         states.add(state);
         return '';
       })
-      // If removing pseudo-state selectors from inside a functional selector left it empty (thus invalid), must fix it by adding '*'.
-      // The negative lookbehind ensures we don't replace :is() with :is(*).
-      .replaceAll(/(?<!is)\(\)/g, '(*)')
       // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
-      .replace(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
+      .replaceAll(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
 
   return {
     states: Array.from(states),

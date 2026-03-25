@@ -1,5 +1,5 @@
 import type { FC, FocusEvent, SyntheticEvent } from 'react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
@@ -138,20 +138,26 @@ const RawInput = styled(Form.Textarea)(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   fontSize: '12px',
   lineHeight: '18px',
-  '&::placeholder': {
-    fontFamily: theme.typography.fonts.base,
-    fontSize: '13px',
-  },
-  '&:placeholder-shown': {
-    padding: '7px 10px',
-  },
 }));
 
 const RawInputWrapper = styled.div({
+  position: 'relative',
   flex: 1,
   display: 'grid',
   gap: 6,
 });
+
+const RawInputLabel = styled.span(({ theme }) => ({
+  position: 'absolute',
+  top: 7,
+  left: 6,
+  color: theme.textMutedColor,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: '12px',
+  lineHeight: '18px',
+  cursor: 'text',
+  pointerEvents: 'none',
+}));
 
 const ErrorMessage = styled.p(({ theme }) => ({
   margin: 0,
@@ -181,6 +187,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
+  const [isRawFocused, setIsRawFocused] = useState(false);
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
@@ -222,15 +229,21 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     }
   }, [forceVisible]);
 
-  // Use string value as key to force re-render on Arg value reset.
+  // Keep a stable serialized snapshot so raw-mode editing can sync back to external Arg updates.
   const jsonString = useMemo(() => {
     return JSON.stringify(data ?? '', null, 2);
   }, [data]);
+  const [rawValue, setRawValue] = useState(jsonString);
+  const isRawEmpty = rawValue.length === 0;
 
   useEffect(() => {
     if (showRaw) {
       setParseError(null);
     }
+  }, [jsonString, showRaw]);
+
+  useLayoutEffect(() => {
+    setRawValue(jsonString);
   }, [jsonString, showRaw]);
 
   if (!hasData) {
@@ -246,26 +259,38 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     );
   }
 
+  const rawJsonEditorLabel = `Edit ${name} as JSON`;
+
   const rawJSONForm = (
     <RawInputWrapper>
       <label htmlFor={controlId} className="sb-sr-only">
-        Edit {name} as JSON
+        {rawJsonEditorLabel}
       </label>
       <RawInput
         ref={htmlElRef}
         id={controlId}
         minRows={3}
         name={name}
-        key={jsonString}
-        defaultValue={jsonString}
-        onChange={(event) => validateRaw(event.target.value)}
-        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
+        value={rawValue}
+        onChange={(event) => {
+          const nextRawValue = event.target.value;
+          setRawValue(nextRawValue);
+          validateRaw(nextRawValue);
+        }}
+        onFocus={() => setIsRawFocused(true)}
+        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => {
+          setIsRawFocused(false);
+          updateRaw(event.target.value);
+        }}
         autoFocus={forceVisible}
         valid={parseError ? 'error' : undefined}
         aria-invalid={!!parseError}
         aria-describedby={parseError ? jsonErrorId : undefined}
         readOnly={readonly}
       />
+      {!readonly && !isRawFocused && isRawEmpty && (
+        <RawInputLabel aria-hidden="true">{rawJsonEditorLabel}</RawInputLabel>
+      )}
       {parseError && (
         <ErrorMessage id={jsonErrorId} role="status" aria-live="polite">
           Invalid JSON: {parseError.message}

@@ -60,10 +60,7 @@
       }
     },
     {
-      "files": [
-        "**/frameworks/angular/src/**/*.ts",
-        "**/frameworks/angular/template/**/*.ts"
-      ],
+      "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
       "options": {
         "parser": "babel-ts"
       }

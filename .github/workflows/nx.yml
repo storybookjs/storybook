@@ -205,7 +205,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        agent: [1, 2, 3, 4]
+        agent: [1, 2, 3]
     env:
       NX_CI_EXECUTION_ENV: 'windows'
     steps:
@@ -221,4 +221,5 @@ jobs:
       - name: Start Nx Agent ${{ matrix.agent }}
         run: npx nx-cloud start-agent
         env:
+          NX_AGENT_LAUNCH_TEMPLATE: 'windows-latest'
           NX_AGENT_NAME: ${{ matrix.agent }}

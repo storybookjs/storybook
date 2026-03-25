@@ -36,7 +36,8 @@
     "*.yaml",
     "*.md",
     "*.mdx",
-    "!docs/_snippets/**"
+    "!docs/_snippets/**",
+    "!docs/versions/*.json"
   ],
   "overrides": [
     {
@@ -59,7 +60,10 @@
       }
     },
     {
-      "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
+      "files": [
+        "**/frameworks/angular/src/**/*.ts",
+        "**/frameworks/angular/template/**/*.ts"
+      ],
       "options": {
         "parser": "babel-ts"
       }

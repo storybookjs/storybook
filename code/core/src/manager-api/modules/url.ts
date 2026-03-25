@@ -130,6 +130,10 @@ export interface QueryParams {
   [key: string]: string | undefined;
 }
 
+interface QueryParamInput {
+  [key: string]: string | undefined | null;
+}
+
 /** SubAPI for managing URL navigation and state. */
 export interface SubAPI {
   /**
@@ -201,7 +205,7 @@ export interface SubAPI {
    * @param {QueryParams} input - An object containing the query parameters to set.
    * @returns {void}
    */
-  setQueryParams: (input: QueryParams) => void;
+  setQueryParams: (input: QueryParamInput) => void;
   /**
    * Set the query parameters for the current URL & navigates.
    *
@@ -209,7 +213,7 @@ export interface SubAPI {
    * @param {NavigateOptions} options - Options for the navigation.
    * @returns {void}
    */
-  applyQueryParams: (input: QueryParams, options?: NavigateOptions) => void;
+  applyQueryParams: (input: QueryParamInput, options?: NavigateOptions) => void;
 }
 
 export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
@@ -217,11 +221,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
   const navigateTo = (
     path: string,
-    queryParams: Record<string, string> = {},
+    queryParams: Record<string, string | null | undefined> = {},
     options: NavigateOptions = {}
   ) => {
     const params = Object.entries(queryParams)
-      .filter(([, v]) => v)
+      .filter(([, v]) => v !== null && v !== undefined)
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([k, v]) => `${k}=${v}`);
     const to = [path, ...params].join('&');
@@ -292,7 +296,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const { location, path, customQueryParams, storyId, url, viewMode } = store.getState();
       return {
         path,
-        hash: location.hash ?? '',
+        hash: location?.hash ?? '',
         queryParams: customQueryParams,
         storyId,
         url,
@@ -301,16 +305,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
     },
     setQueryParams(input) {
       const { customQueryParams } = store.getState();
-      const queryParams: QueryParams = {};
-      const update = {
-        ...customQueryParams,
-        ...Object.entries(input).reduce((acc, [key, value]) => {
-          if (value !== null) {
-            acc[key] = value;
-          }
-          return acc;
-        }, queryParams),
-      };
+      const update: QueryParams = { ...customQueryParams };
+      for (const [key, value] of Object.entries(input)) {
+        if (value === null || value === undefined) {
+          delete update[key];
+        } else {
+          update[key] = value;
+        }
+      }
       if (!deepEqual(customQueryParams, update)) {
         store.setState({ customQueryParams: update });
         provider.channel?.emit(UPDATE_QUERY_PARAMS, update);
@@ -346,8 +348,8 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
     const { args, initialArgs } = currentStory;
     const argsString = buildArgsParam(initialArgs, args as Args);
-    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString }, { replace: true });
-    api.setQueryParams({ args: argsString });
+    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString || null }, { replace: true });
+    api.setQueryParams({ args: argsString || null });
   };
 
   provider.channel?.on(SET_CURRENT_STORY, () => updateArgsParam());
@@ -370,8 +372,12 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
     const { path, hash = '', queryParams } = api.getUrlState();
     const globalsString = buildArgsParam(initialGlobals, merge(initialGlobals, userGlobals));
-    navigateTo(`${path}${hash}`, { ...queryParams, globals: globalsString }, { replace: true });
-    api.setQueryParams({ globals: globalsString });
+    navigateTo(
+      `${path}${hash}`,
+      { ...queryParams, globals: globalsString || null },
+      { replace: true }
+    );
+    api.setQueryParams({ globals: globalsString || null });
   });
 
   provider.channel?.on(NAVIGATE_URL, (url: string, options: NavigateOptions) => {
@@ -381,5 +387,13 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   return {
     api,
     state: initialUrlSupport(moduleArgs),
+    init: () => {
+      store.registerPersistenceHandler('url', (_patch, serialize) => {
+        if (serialize) {
+          const params = serialize(store.getState());
+          api.applyQueryParams(params, { replace: true });
+        }
+      });
+    },
   };
 };

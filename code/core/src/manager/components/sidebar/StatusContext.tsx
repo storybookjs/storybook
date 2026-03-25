@@ -50,9 +50,14 @@ export const useStatusSummary = (item: Item) => {
     data &&
     allStatuses &&
     groupStatus &&
-    ['status-value:pending', 'status-value:warning', 'status-value:error'].includes(
-      groupStatus[item.id]
-    )
+    [
+      'status-value:pending',
+      'status-value:new',
+      'status-value:modified',
+      'status-value:affected',
+      'status-value:warning',
+      'status-value:error',
+    ].includes(groupStatus[item.id])
   ) {
     for (const storyId of getDescendantIds(data, item.id, false)) {
       for (const status of Object.values(allStatuses[storyId] ?? {})) {

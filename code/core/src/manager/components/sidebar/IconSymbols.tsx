@@ -108,42 +108,50 @@ export const IconSymbols: FC = () => {
         <circle cx="3" cy="3" r="3" fill="currentColor" />
       </symbol>
       <symbol id={NEW_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/AddIcon.tsx */}
         <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M7.5 1.5a.5.5 0 00-1 0V6.5H1.5a.5.5 0 000 1H6.5v5a.5.5 0 001 0V7.5h5a.5.5 0 000-1H7.5v-5z"
-          fill="currentColor"
+          d="M7 3.5L6.96971 3.68173C6.68873 5.36762 5.36762 6.68873 3.68173 6.96971L3.5 7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          fill="none"
         />
+        <path
+          d="M7 3.5L7.03029 3.68173C7.31127 5.36762 8.63238 6.68873 10.3183 6.96971L10.5 7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M7 10.5L6.96971 10.3183C6.68873 8.63238 5.36762 7.31127 3.68173 7.03029L3.5 7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M7 10.5L7.03029 10.3183C7.31127 8.63238 8.63238 7.31127 10.3183 7.03029L10.5 7"
+          stroke="currentColor"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path d="M7 4.5L4.5 7L7 9.5L9.5 7L7 4.5Z" fill="currentColor" />
       </symbol>
       <symbol id={MODIFIED_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/EditIcon.tsx */}
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M11.293 1.293a1 1 0 011.414 1.414l-9 9a1 1 0 01-.39.242l-3 1a1 1 0 01-1.265-1.265l1-3a1 1 0 01.242-.39l9-9zM10 3.414L11.586 5 3 13.586 1.414 12 10 3.414zM2.5 13l-.914-.914.305-.914.609.609L2.5 13z"
-          fill="currentColor"
-        />
+        <circle cx="7" cy="7" r="3" fill="currentColor" />
       </symbol>
       <symbol id={AFFECTED_ID}>
-        {/* Ripple/wave icon for affected stories */}
+        <circle cx="7" cy="7" r="2" fill="currentColor" />
         <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M7 5a2 2 0 100 4 2 2 0 000-4zM4 7a3 3 0 116 0 3 3 0 01-6 0z"
-          fill="currentColor"
+          d="M7 3.5A3.5 3.5 0 0 0 7 10.5"
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeLinecap="round"
+          fill="none"
         />
         <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M7 2a5 5 0 00-5 5 .5.5 0 01-1 0 6 6 0 0112 0 .5.5 0 01-1 0 5 5 0 00-5-5z"
-          fill="currentColor"
-        />
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M7 12a5 5 0 005-5 .5.5 0 011 0 6 6 0 01-12 0 .5.5 0 011 0 5 5 0 005 5z"
-          fill="currentColor"
+          d="M7 3.5A3.5 3.5 0 0 1 7 10.5"
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeLinecap="round"
+          fill="none"
         />
       </symbol>
     </Svg>

@@ -14,7 +14,7 @@ Examples of **incorrect** code for this rule:
 
 ```js
 export default {
-  title: 'Button',
+  title: "Button",
 };
 ```
 
@@ -22,7 +22,7 @@ Examples of **correct** code for this rule:
 
 ```js
 export default {
-  title: 'Button',
+  title: "Button",
   component: Button,
 };
 ```

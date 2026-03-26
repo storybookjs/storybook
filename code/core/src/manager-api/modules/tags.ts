@@ -1,7 +1,6 @@
 import type { Tag } from 'storybook/internal/types';
 
 export const BUILT_IN_URL_TAG_MAP: Record<string, Tag> = {
-  $changed: '_changed',
   $docs: '_docs',
   $play: '_play',
   $test: '_test',
@@ -45,8 +44,10 @@ export const serializeTagsParam = (included: Tag[], excluded: Tag[]): string => 
     Object.entries(BUILT_IN_URL_TAG_MAP).map(([urlTag, internalTag]) => [internalTag, urlTag])
   ) as Record<string, string>;
 
-  const serializedIncluded = included.map((tag) => reverseBuiltInUrlTagMap[tag] ?? tag);
-  const serializedExcluded = excluded.map((tag) => `!${reverseBuiltInUrlTagMap[tag] ?? tag}`);
+  const serializedIncluded = included.map((tag) => reverseBuiltInUrlTagMap[tag] ?? tag).sort();
+  const serializedExcluded = excluded
+    .map((tag) => `!${reverseBuiltInUrlTagMap[tag] ?? tag}`)
+    .sort();
 
   return [...serializedIncluded, ...serializedExcluded].join(';');
 };

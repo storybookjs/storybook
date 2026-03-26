@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import { existsSync } from 'node:fs';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 
@@ -6,9 +7,6 @@ import { ROOT_DIRECTORY } from '../../utils/constants';
 import type { BuildEntries } from './entry-utils';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
-
-const MAX_DTS_ATTEMPTS = 2;
-const RETRY_DELAY_MS = 500;
 
 /** Split entries into N roughly equal batches using round-robin. */
 function splitIntoBatches(entries: string[], batchCount: number): string[][] {
@@ -19,9 +17,55 @@ function splitIntoBatches(entries: string[], batchCount: number): string[][] {
   return batches.filter((b) => b.length > 0);
 }
 
+function spawnDtsBatch(
+  cwd: string,
+  entries: string[]
+): Promise<{ exitCode: number | null }> {
+  return new Promise((resolve) => {
+    const dtsProcess = spawn(
+      `"${join(ROOT_DIRECTORY, 'node_modules', '.bin', 'jiti')}"`,
+      [
+        `"${join(import.meta.dirname, 'dts-process.ts')}"`,
+        ...entries.map((e) => `"${e}"`),
+      ],
+      {
+        shell: true,
+        cwd,
+        stdio: ['ignore', 'inherit', 'pipe'],
+        env: {
+          ...process.env,
+          NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --max-old-space-size=8192`.trim(),
+        },
+      }
+    );
+
+    // Filter stderr to exclude ignorable rollup warnings
+    dtsProcess.stderr?.on('data', (data) => {
+      const message = data.toString();
+      if (!message.includes('are imported from external module')) {
+        process.stderr.write(data);
+      }
+    });
+
+    const timer = setTimeout(() => {
+      console.log('⌛ Timed out generating d.ts files');
+      dtsProcess.kill('SIGTERM');
+      resolve({ exitCode: 1 });
+    }, 600000); // 10 minutes
+
+    dtsProcess.on('exit', (code) => {
+      clearTimeout(timer);
+      resolve({ exitCode: code });
+    });
+    dtsProcess.on('error', () => {
+      clearTimeout(timer);
+      resolve({ exitCode: 1 });
+    });
+  });
+}
+
 export async function generateTypesFiles(cwd: string, data: BuildEntries) {
-  const DIR_CWD = cwd;
-  const DIR_REL = relative(DIR_CODE, DIR_CWD);
+  const DIR_REL = relative(DIR_CODE, cwd);
 
   const dtsEntries = Object.values(data.entries)
     .flat()
@@ -32,95 +76,38 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
     return;
   }
 
-  // When there are many entries (like core with 27+), batch them so each process
-  // shares a single TypeScript program via rollup multi-input.
-  // This avoids creating redundant TS programs (the main bottleneck, ~10s each).
+  // Batch entries so each process amortizes module loading and benefits from OS file cache.
   // Each batch runs in its own process for multi-core utilization.
-  // For packages with few entries, this falls back to one process per entry.
   const BATCH_COUNT = dtsEntries.length <= 4 ? dtsEntries.length : 4;
   const batches = splitIntoBatches(dtsEntries, BATCH_COUNT);
 
-  let processes: ReturnType<typeof spawn>[] = [];
+  // Phase 1: Run all batches in parallel.
+  // Some entries may fail due to cross-batch dependencies (e.g. mocking-utils depends on babel's d.ts).
+  await Promise.allSettled(batches.map((batch) => spawnDtsBatch(cwd, batch)));
 
-  await Promise.all(
-    batches.map(async (batch, batchIndex) => {
-      for (let attempt = 1; attempt <= MAX_DTS_ATTEMPTS; attempt++) {
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const dtsProcess = spawn(
-          `"${join(ROOT_DIRECTORY, 'node_modules', '.bin', 'jiti')}"`,
-          [
-            `"${join(import.meta.dirname, 'dts-process.ts')}"`,
-            ...batch.map((e) => `"${e}"`),
-          ],
-          {
-            shell: true,
-            cwd: DIR_CWD,
-            stdio: ['ignore', 'inherit', 'pipe'],
-            env: {
-              ...process.env,
-              NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --max-old-space-size=8192`.trim(),
-            },
-          }
-        );
-        processes.push(dtsProcess);
+  // Phase 2: Check which entries are still missing and retry them.
+  // By now all batches have completed, so cross-batch dependencies are resolved.
+  const missingEntries = dtsEntries.filter((entry) => {
+    const outputFile = join(cwd, entry.replace('src', 'dist').replace(/\.tsx?$/, '.d.ts'));
+    return !existsSync(outputFile);
+  });
 
-        // Filter stderr to exclude ignorable rollup warnings
-        dtsProcess.stderr?.on('data', (data) => {
-          const message = data.toString();
-          if (!message.includes('are imported from external module')) {
-            process.stderr.write(data);
-          }
-        });
+  if (missingEntries.length > 0) {
+    console.warn(
+      `⚠️ ${missingEntries.length} entries missing after initial pass, retrying:`,
+      missingEntries.map((e) => relative(cwd, e)).join(', ')
+    );
+    const { exitCode } = await spawnDtsBatch(cwd, missingEntries);
 
-        await Promise.race([
-          new Promise((resolve) => {
-            dtsProcess.on('exit', () => resolve(void 0));
-            dtsProcess.on('error', () => resolve(void 0));
-            dtsProcess.on('close', () => resolve(void 0));
-          }),
-          new Promise((resolve) => {
-            timer = setTimeout(() => {
-              console.log(
-                '⌛ Timed out generating d.ts files for batch',
-                batchIndex,
-                `(${batch.length} entries)`
-              );
-              dtsProcess.kill('SIGTERM');
-              resolve(void 0);
-            }, 600000); // 10 minutes per batch
-          }),
-        ]);
+    if (exitCode !== 0) {
+      console.error('\n❌ Generating types for', picocolors.cyan(DIR_REL), 'failed');
+      process.exit(exitCode || 1);
+    }
+  }
 
-        if (timer) {
-          clearTimeout(timer);
-        }
-
-        if (dtsProcess.exitCode !== 0) {
-          if (attempt < MAX_DTS_ATTEMPTS) {
-            console.warn(
-              `⚠️ DTS batch ${batchIndex} failed, retrying (${attempt}/${MAX_DTS_ATTEMPTS})...`
-            );
-            processes = processes.filter((p) => p !== dtsProcess);
-            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-            continue;
-          }
-          console.error(
-            '\n❌ Generating types for',
-            picocolors.cyan(DIR_REL),
-            `batch ${batchIndex} failed`
-          );
-          processes.forEach((p) => p.kill('SIGTERM'));
-          processes = [];
-          process.exit(dtsProcess.exitCode || 1);
-        }
-
-        if (!process.env.CI) {
-          for (const entry of batch) {
-            console.log('✅ Generated types for', picocolors.cyan(join(DIR_REL, entry)));
-          }
-        }
-        break;
-      }
-    })
-  );
+  if (!process.env.CI) {
+    for (const entry of dtsEntries) {
+      console.log('✅ Generated types for', picocolors.cyan(join(DIR_REL, entry)));
+    }
+  }
 }

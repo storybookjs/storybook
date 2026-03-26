@@ -9,7 +9,7 @@ import { Option, program } from 'commander';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
 import { initiate } from '../initiate';
-import { isAgent } from 'std-env';
+import { isAgent, detectAgent } from './detect-agent';
 
 addToGlobalContext('cliVersion', version);
 
@@ -99,7 +99,7 @@ const createStorybookProgram = program
       logger.setLogLevel(options.loglevel);
     }
 
-    if (options.logfile) {
+    if (options.logfile || isAgent) {
       logTracker.enableLogWriting();
     }
   })
@@ -123,9 +123,13 @@ createStorybookProgram
       options.features = [];
     }
 
+    logger.log(`Detecting agent presence: ${detectAgent().name}`);
+
     if (isAgent) {
       options.agent = true;
-      logger.log('This command is running via an AI agent. Enabling non-interactive defaults.');
+      logger.log(
+        `This command is running via an AI agent: ${detectAgent().name}. Enabling non-interactive defaults.`
+      );
     }
 
     await initiate(options as CommandOptions).catch(() => process.exit(1));

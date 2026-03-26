@@ -1,10 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 
 /**
- * Unit-tests for the vite-inject-mocker plugin, focused on the `transformIndexHtml` hook which must
- * emit a **relative** `src` during production builds (so Storybook artifacts load when hosted at
- * non-root paths, e.g. GitHub Pages) and an **absolute** `src` during development (so Vite's
- * dev-server `resolveId` can match it).
+ * Unit-tests for the vite-inject-mocker plugin.
+ *
+ * `transformIndexHtml` must emit a **relative** `src` during production builds (so Storybook
+ * artifacts load when hosted at non-root paths, e.g. GitHub Pages) and an **absolute** `src`
+ * during development (so the dev-server middleware can intercept the request).
+ *
+ * In dev mode, `configureServer` registers a Connect middleware that serves the pre-bundled
+ * mocker runtime directly — bypassing Vite 7's transform pipeline which could deadlock on that
+ * module. The `resolveId` hook is therefore only active in build mode.
  *
  * @see https://github.com/storybookjs/storybook/issues/32428
  */
@@ -14,6 +19,10 @@ import { describe, expect, it, vi } from 'vitest';
 // runtime path at import time.
 vi.mock('node:url', () => ({
   fileURLToPath: vi.fn(() => '/fake/mocker-runtime.js'),
+}));
+
+vi.mock('node:fs', () => ({
+  readFileSync: vi.fn(() => 'fake mocker runtime content'),
 }));
 
 // Mock import.meta.resolve
@@ -90,5 +99,82 @@ describe('vite-inject-mocker plugin — transformIndexHtml', () => {
       ''
     );
     expect(cleaned).toBe(html);
+  });
+});
+
+describe('vite-inject-mocker plugin — resolveId', () => {
+  it('resolves the entry path in build mode', () => {
+    const plugin = viteInjectMockerRuntime({ previewConfigPath: null }) as any;
+    plugin.configResolved({ command: 'build' });
+
+    expect(plugin.resolveId('/vite-inject-mocker-entry.js')).toBe('/fake/mocker-runtime.js');
+  });
+
+  it('does not resolve the entry path in dev mode (middleware handles it instead)', () => {
+    const plugin = viteInjectMockerRuntime({ previewConfigPath: null }) as any;
+    plugin.configResolved({ command: 'serve' });
+
+    expect(plugin.resolveId('/vite-inject-mocker-entry.js')).toBeUndefined();
+  });
+
+  it('does not resolve unrelated paths', () => {
+    const plugin = viteInjectMockerRuntime({ previewConfigPath: null }) as any;
+    plugin.configResolved({ command: 'build' });
+
+    expect(plugin.resolveId('/some-other-file.js')).toBeUndefined();
+  });
+});
+
+describe('vite-inject-mocker plugin — configureServer middleware', () => {
+  function createDevPlugin() {
+    const plugin = viteInjectMockerRuntime({ previewConfigPath: null }) as any;
+    plugin.configResolved({ command: 'serve' });
+    return plugin;
+  }
+
+  it('registers a middleware that serves the runtime for the entry path', () => {
+    const plugin = createDevPlugin();
+
+    const middlewares: Array<(req: any, res: any, next: any) => void> = [];
+    const server = {
+      watcher: { on: vi.fn() },
+      ws: { send: vi.fn() },
+      middlewares: { use: vi.fn((fn) => middlewares.push(fn)) },
+    };
+
+    plugin.configureServer(server);
+    expect(middlewares).toHaveLength(1);
+
+    const req = { url: '/vite-inject-mocker-entry.js' };
+    const res = { setHeader: vi.fn(), end: vi.fn() };
+    const next = vi.fn();
+
+    middlewares[0](req, res, next);
+
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/javascript');
+    expect(res.end).toHaveBeenCalledWith('fake mocker runtime content');
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('calls next() for unrelated URLs', () => {
+    const plugin = createDevPlugin();
+
+    const middlewares: Array<(req: any, res: any, next: any) => void> = [];
+    const server = {
+      watcher: { on: vi.fn() },
+      ws: { send: vi.fn() },
+      middlewares: { use: vi.fn((fn) => middlewares.push(fn)) },
+    };
+
+    plugin.configureServer(server);
+
+    const req = { url: '/some-other-file.js' };
+    const res = { setHeader: vi.fn(), end: vi.fn() };
+    const next = vi.fn();
+
+    middlewares[0](req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.end).not.toHaveBeenCalled();
   });
 });

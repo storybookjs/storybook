@@ -6,6 +6,7 @@ import { SourceType } from 'storybook/internal/docs-tools';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
 import * as ParametersStories from '../examples/SourceParameters.stories';
@@ -162,17 +163,32 @@ const BenchmarkHarness = ({ blocks }: { blocks: number }) => {
   }, [updateResult]);
 
   const runBenchmark = useCallback(async () => {
-    const startRenders = renderCount.current;
-    const start = performance.now();
+    const runSteps = async (withUpdates: boolean) => {
+      for (let step = 0; step < 5; step += 1) {
+        if (withUpdates) {
+          setIteration((value) => value + 1);
+        }
+        await waitForNextPaint();
+      }
+    };
 
-    for (let step = 0; step < 5; step += 1) {
-      setIteration((value) => value + 1);
-      await waitForNextPaint();
-    }
+    const measureRenders = async (work: () => Promise<void>) => {
+      const startRenders = renderCount.current;
+      const start = performance.now();
+      await work();
+      return {
+        elapsed: performance.now() - start,
+        renders: renderCount.current - startRenders,
+      };
+    };
 
-    const elapsed = performance.now() - start;
-    const additionalRenders = renderCount.current - startRenders;
-    updateResult(`${additionalRenders} extra renders in ${elapsed.toFixed(1)}ms`);
+    // Subtract background render noise (e.g. interactions rerun bookkeeping) to keep
+    // the benchmark stable across fresh loads and "Rerun" runs.
+    const baseline = await measureRenders(async () => runSteps(false));
+    const measured = await measureRenders(async () => runSteps(true));
+    const additionalRenders = Math.max(0, measured.renders - baseline.renders);
+
+    updateResult(`${additionalRenders} extra renders in ${measured.elapsed.toFixed(1)}ms`);
   }, [updateResult]);
 
   return (
@@ -292,5 +308,21 @@ export const CodeDarkParameters: Story = {
 export const ManyStaticCodeBlocksBenchmark: Story = {
   render: () => <BenchmarkHarness blocks={75} />,
   parameters: { chromatic: { disableSnapshot: true } },
-  tags: ['!test', '!vitest'],
+  tags: ['!test'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Ensure lazy syntax highlighter/rendering settles before benchmark measurement.
+    await waitFor(() => {
+      expect(canvas.getAllByRole('button', { name: 'Copy' })).toHaveLength(75);
+    });
+
+    await userEvent.click(await canvas.findByTestId('run-benchmark'));
+
+    await waitFor(() => {
+      expect(canvas.getByTestId('benchmark-result')).toHaveTextContent(
+        /^0 extra renders in \d+(\.\d+)?ms$/
+      );
+    });
+  },
 };

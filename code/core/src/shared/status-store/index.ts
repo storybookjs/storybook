@@ -9,8 +9,11 @@ import type { useUniversalStore as managerUseUniversalStore } from '../universal
 export type StatusValue =
   | 'status-value:pending'
   | 'status-value:success'
-  | 'status-value:error'
+  | 'status-value:new'
+  | 'status-value:modified'
+  | 'status-value:affected'
   | 'status-value:warning'
+  | 'status-value:error'
   | 'status-value:unknown';
 
 export type StatusTypeId = string;

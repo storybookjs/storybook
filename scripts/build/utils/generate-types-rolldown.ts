@@ -1,7 +1,7 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { sep } from 'node:path';
 
-import { join, relative } from 'pathe';
+import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { rolldown } from 'rolldown';
 import { dts } from 'rolldown-plugin-dts';
@@ -11,6 +11,16 @@ import { getExternal } from './entry-utils';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 const DIR_ROOT = join(DIR_CODE, '..');
+
+const DTS_EXCLUDES = [
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/*.stories.*',
+  '**/*.mockdata.*',
+  '**/__tests__/**',
+  '**/__mocks__/**',
+  '**/node_modules/**',
+];
 
 /**
  * Resolve a tsconfig chain (following `extends`) and return merged compilerOptions.
@@ -68,8 +78,9 @@ export async function generateTypesFiles(
   // When rootDir is the package dir, tsgo emits stray .d.ts files next to
   // source files for cross-package imports that fall outside rootDir.
   // Fix: create a temporary tsconfig at the repo root so rootDir covers
-  // the entire monorepo.
-  const wrapperTsconfig = join(DIR_ROOT, 'tsconfig.dts-tmp.json');
+  // the entire monorepo. Use a per-package filename to avoid races when
+  // NX compiles multiple packages in parallel.
+  const wrapperTsconfig = join(DIR_ROOT, `tsconfig.dts-tmp-${basename(cwd)}.json`);
   const packageTsconfig = join(cwd, 'tsconfig.json');
 
   const useTsgo = options?.tsgo ?? true;
@@ -84,15 +95,7 @@ export async function generateTypesFiles(
       JSON.stringify({
         compilerOptions,
         include: [`${relative(DIR_ROOT, cwd)}/src/**/*`],
-        exclude: [
-          '**/*.test.*',
-          '**/*.spec.*',
-          '**/*.stories.*',
-          '**/*.mockdata.*',
-          '**/__tests__/**',
-          '**/__mocks__/**',
-          '**/node_modules/**',
-        ],
+        exclude: DTS_EXCLUDES,
       })
     );
   } else {
@@ -100,15 +103,7 @@ export async function generateTypesFiles(
       wrapperTsconfig,
       JSON.stringify({
         extends: `./${relative(DIR_ROOT, packageTsconfig)}`,
-        exclude: [
-          '**/*.test.*',
-          '**/*.spec.*',
-          '**/*.stories.*',
-          '**/*.mockdata.*',
-          '**/__tests__/**',
-          '**/__mocks__/**',
-          '**/node_modules/**',
-        ],
+        exclude: DTS_EXCLUDES,
       })
     );
   }
@@ -121,7 +116,7 @@ export async function generateTypesFiles(
         dts({
           cwd,
           tsconfig: wrapperTsconfig,
-          tsgo: options?.tsgo ?? true,
+          tsgo: useTsgo,
           emitDtsOnly: true,
         }),
       ],

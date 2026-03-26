@@ -25,6 +25,8 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
   const renderer = projectInfo.renderer || 'react';
 
   return dedent`
+    Attention: The following instructions must be followed in order to successfully set up Storybook in this project. Do not skip steps or attempt to do them out of order.
+
     Your goal is to make Storybook fully functional in this project by analyzing the codebase,
     configuring the preview with the right decorators, and writing example stories for 9 components.
 

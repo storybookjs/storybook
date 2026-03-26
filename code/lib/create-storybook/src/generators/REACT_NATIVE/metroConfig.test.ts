@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,6 +31,7 @@ describe('metroConfig codemod', () => {
     packageManager = {
       getDependencyVersion: vi.fn().mockReturnValue(null),
       runInternalCommand: vi.fn(),
+      runPackageCommand: vi.fn(),
     } as unknown as JsPackageManager;
 
     vi.clearAllMocks();
@@ -146,6 +147,33 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     const result = await runMetroCodemodOrFallback({ packageManager, yes: true });
 
     expect(result.status).toBe('skipped-missing-file');
+  });
+
+  it('tries Expo command to create metro config when expo is detected', async () => {
+    vi.mocked(packageManager.getDependencyVersion as any).mockImplementation((dep: string) =>
+      dep === 'expo' ? '^52.0.0' : null
+    );
+
+    const result = await runMetroCodemodOrFallback({ packageManager, yes: true });
+
+    expect(packageManager.runPackageCommand).toHaveBeenCalledWith({
+      args: ['expo', 'customize', 'metro.config.js'],
+      cwd: process.cwd(),
+    });
+    expect(result.status).toBe('skipped-missing-file');
+  });
+
+  it('warns when Expo metro config creation command fails', async () => {
+    vi.mocked(packageManager.getDependencyVersion as any).mockImplementation((dep: string) =>
+      dep === 'expo' ? '^52.0.0' : null
+    );
+    vi.mocked(packageManager.runPackageCommand as any).mockRejectedValue(new Error('boom'));
+
+    await runMetroCodemodOrFallback({ packageManager, yes: true });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to create Expo Metro config automatically:')
+    );
   });
 
   it('uses prompt path for missing non-expo metro config', async () => {

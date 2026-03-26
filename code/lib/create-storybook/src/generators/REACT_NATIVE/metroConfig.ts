@@ -9,8 +9,8 @@ export const METRO_CONFIG_CANDIDATES = ['metro.config.ts', 'metro.config.js', 'm
 export const METRO_SETUP_DOCS_LINK = 'TODO_REPLACE_WITH_REACT_NATIVE_METRO_DOCS_LINK';
 export const METRO_FALLBACK_COMMENT_MARKER = 'storybook-react-native-metro-codemod-fallback';
 export const EXPO_CREATE_METRO_COMMAND = {
-  command: 'TODO_REPLACE_WITH_EXPO_METRO_CREATE_COMMAND',
-  args: [] as string[],
+  command: 'expo',
+  args: ['customize', 'metro.config.js'] as string[],
 } as const;
 
 type MetroCodemodStatus =
@@ -296,19 +296,11 @@ const detectMetroCandidates = async () => {
 };
 
 const createExpoMetroConfigHelper = async (packageManager: JsPackageManager) => {
-  if (EXPO_CREATE_METRO_COMMAND.command.startsWith('TODO_')) {
-    logger.warn(
-      'Expo Metro config auto-generation command is not configured yet. Skipping automatic creation.'
-    );
-    return false;
-  }
-
   try {
-    await packageManager.runInternalCommand(
-      EXPO_CREATE_METRO_COMMAND.command,
-      [...EXPO_CREATE_METRO_COMMAND.args],
-      process.cwd()
-    );
+    await packageManager.runPackageCommand({
+      args: [EXPO_CREATE_METRO_COMMAND.command, ...EXPO_CREATE_METRO_COMMAND.args],
+      cwd: process.cwd(),
+    });
     return true;
   } catch (error) {
     logger.warn(`Failed to create Expo Metro config automatically: ${String(error)}`);

@@ -22,6 +22,10 @@ vi.mock('store2', () => ({
 vi.mock('../version', () => ({ version: '0.0.0-test' }));
 
 describe('store', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
   describe('STORAGE_KEY', () => {
     let originalProjectId;
 
@@ -55,6 +59,25 @@ describe('store', () => {
     s.getInitialState();
 
     expect(store2.local.set).toHaveBeenCalledWith(`${STORAGE_KEY}/__version__`, '0.0.0-test');
+  });
+
+  it('migrates data from the old shared key to the instance-scoped key', () => {
+    const legacyData = { shortcuts: { fullScreen: ['alt', 'F'] } };
+
+    // First call to get() returns nothing under the scoped key
+    store2.local.get.mockImplementation((key) => {
+      if (key === '@storybook/manager/store') {
+        return legacyData;
+      }
+      return undefined;
+    });
+    store2.session.get.mockReturnValueOnce({});
+
+    const s = new Store({});
+    const state = s.getInitialState();
+
+    expect(state).toEqual(expect.objectContaining(legacyData));
+    expect(store2.local.set).toHaveBeenCalledWith(STORAGE_KEY, legacyData);
   });
 
   it('sensibly combines local+session storage for initial state', () => {

@@ -27,7 +27,10 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   globals.STORYBOOK_FRAMEWORK = framework;
   globals.STORYBOOK_RENDERER = renderer;
   globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
-  globals.STORYBOOK_ANONYMOUS_PROJECT_ID = getAnonymousProjectId();
+  if (options.configType === 'DEVELOPMENT') {
+    /** Anonymous project ID derived from Git info, falls back to `anonymous` when it can't be computed. */
+    globals.STORYBOOK_ANONYMOUS_PROJECT_ID = getAnonymousProjectId();
+  }
 
   return globals;
 };

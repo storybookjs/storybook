@@ -28,7 +28,17 @@ function persistVersion(storage: StoreAPI) {
 }
 
 function get(storage: StoreAPI) {
-  const data = storage.get(STORAGE_KEY);
+  let data = storage.get(STORAGE_KEY);
+
+  // Migration: if no data exists under the instance-specific key, try the old shared key.
+  // This is a one-time migration that preserves existing settings when upgrading.
+  if (!data && STORAGE_KEY !== STORAGE_KEY_BASE) {
+    data = storage.get(STORAGE_KEY_BASE);
+    if (data) {
+      storage.set(STORAGE_KEY, data);
+    }
+  }
+
   return data || {};
 }
 

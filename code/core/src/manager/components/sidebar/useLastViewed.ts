@@ -5,11 +5,13 @@ import store from 'store2';
 
 import type { Selection, StoryRef } from './types';
 
-const save = debounce((value) => store.set('lastViewedStoryIds', value), 1000);
+const LAST_VIEWED_KEY = `@storybook/manager/lastViewedStoryIds/${globalThis.STORYBOOK_ANONYMOUS_PROJECT_ID || 'anonymous'}`;
+
+const save = debounce((value) => store.set(LAST_VIEWED_KEY, value), 1000);
 
 export const useLastViewed = (selection: Selection) => {
   const initialLastViewedStoryIds = useMemo((): StoryRef[] => {
-    const items = store.get('lastViewedStoryIds');
+    const items = store.get(LAST_VIEWED_KEY);
 
     if (!items || !Array.isArray(items)) {
       return [];

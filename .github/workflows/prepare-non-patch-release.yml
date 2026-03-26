@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       release-type:
-        description: "Which release type to use for bumping the version"
+        description: 'Which release type to use for bumping the version'
         required: true
-        default: "prerelease"
+        default: 'prerelease'
         type: choice
         options:
           - prerelease
@@ -102,14 +102,14 @@ jobs:
         run: |
           yarn release:write-changelog ${{ steps.bump-version.outputs.next-version }} --verbose
 
-      - name: "Commit changes to branch: version-non-patch-from-${{ steps.bump-version.outputs.current-version }}"
+      - name: 'Commit changes to branch: version-non-patch-from-${{ steps.bump-version.outputs.current-version }}'
         working-directory: .
         run: |
           git config --global user.name 'storybook-bot'
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
           git checkout -b version-non-patch-from-${{ steps.bump-version.outputs.current-version }}
           git add .
-          git commit -m "Write changelog for ${{ steps.bump-version.outputs.next-version }} [skip ci]" || true
+          git commit --allow-empty --no-verify -m "Write changelog for ${{ steps.bump-version.outputs.next-version }} [skip ci]"
           git push --force origin version-non-patch-from-${{ steps.bump-version.outputs.current-version }}
 
       - name: Generate PR description
@@ -145,4 +145,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
         with:
-          args: "The GitHub Action for preparing the release pull request bumping from v${{ steps.bump-version.outputs.current-version }} to v${{ steps.bump-version.outputs.next-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          args: 'The GitHub Action for preparing the release pull request bumping from v${{ steps.bump-version.outputs.current-version }} to v${{ steps.bump-version.outputs.next-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'

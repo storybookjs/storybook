@@ -28,6 +28,7 @@ const meta = preview.meta({
   title: 'Overlay/PopoverProvider',
   component: PopoverProvider,
   args: {
+    ariaLabel: 'Sample popover',
     hasChrome: true,
     offset: 8,
     placement: 'top',

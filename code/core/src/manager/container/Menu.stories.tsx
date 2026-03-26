@@ -21,7 +21,13 @@ export default {
           height: '300px',
         }}
       >
-        <PopoverProvider placement="top" defaultVisible padding={0} popover={storyFn()}>
+        <PopoverProvider
+          ariaLabel="Menu"
+          placement="top"
+          defaultVisible
+          padding={0}
+          popover={storyFn()}
+        >
           <Button ariaLabel={false}>Click me</Button>
         </PopoverProvider>
       </div>

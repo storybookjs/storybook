@@ -32,6 +32,27 @@ const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
     linkAction(hrefString, { replace, scroll, shallow, prefetch, locale });
   };
 
+  if (legacyBehavior) {
+    const child = React.Children.only(children) as React.ReactElement<any>;
+    const childProps: Record<string, any> = {
+      ref,
+      onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        if (child.props && typeof child.props.onClick === 'function') {
+          child.props.onClick(e);
+        }
+        linkAction(hrefString, { replace, scroll, shallow, prefetch, locale });
+      },
+      ...rest,
+    };
+
+    if (passHref || (child.type === 'a' && !('href' in (child.props || {})))) {
+      childProps.href = hrefString;
+    }
+
+    return React.cloneElement(child, childProps);
+  }
+
   return (
     <a ref={ref} href={hrefString} onClick={handleClick} {...rest}>
       {children}

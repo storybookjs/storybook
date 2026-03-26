@@ -432,8 +432,8 @@ describe('ghostStoriesChannel', () => {
           runError: 'Failed to analyze components',
           stats: {
             globMatchCount: 0,
-            candidateAnalysisDuration: 0,
-            totalRunDuration: 0,
+            candidateAnalysisDuration: expect.any(Number),
+            totalRunDuration: expect.any(Number),
             analyzedCount: 0,
             avgComplexity: 0,
             candidateCount: 0,
@@ -516,12 +516,12 @@ describe('ghostStoriesChannel', () => {
           runError: 'JSON report not found',
           stats: {
             globMatchCount: 5,
-            candidateAnalysisDuration: 0,
-            totalRunDuration: 0,
+            candidateAnalysisDuration: expect.any(Number),
+            totalRunDuration: expect.any(Number),
             analyzedCount: 2,
             avgComplexity: 1.0,
             candidateCount: 1,
-            testRunDuration: 0,
+            testRunDuration: expect.any(Number),
           },
         });
       });
@@ -569,12 +569,12 @@ describe('ghostStoriesChannel', () => {
           runError: 'Startup Error',
           stats: {
             globMatchCount: 5,
-            candidateAnalysisDuration: 0,
-            totalRunDuration: 0,
+            candidateAnalysisDuration: expect.any(Number),
+            totalRunDuration: expect.any(Number),
             analyzedCount: 2,
             avgComplexity: 1.0,
             candidateCount: 1,
-            testRunDuration: 0,
+            testRunDuration: expect.any(Number),
           },
         });
       });

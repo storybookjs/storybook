@@ -6,6 +6,8 @@ declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' |
 declare var REFS: any;
 declare var VERSIONCHECK: any;
 
+declare var STORYBOOK_WEBSOCKET_TOKEN: string;
+
 declare var STORYBOOK_ADDON_STATE: Record<string, any>;
 declare var STORYBOOK_BUILDER: import('./types/modules/builders').SupportedBuilder | undefined;
 declare var STORYBOOK_FRAMEWORK:

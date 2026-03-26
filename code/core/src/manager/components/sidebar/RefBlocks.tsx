@@ -127,6 +127,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
           Oh no! Something went wrong loading this Storybook.
           <br />
           <PopoverProvider
+            ariaLabel="Error details"
             hasCloseButton
             offset={isMobile ? 0 : 8}
             placement={isMobile ? 'bottom-end' : 'bottom-start'}
@@ -136,7 +137,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
               </ErrorDisplay>
             }
           >
-            <Link isButton>
+            <Link>
               View error <ChevronDownIcon />
             </Link>
           </PopoverProvider>{' '}

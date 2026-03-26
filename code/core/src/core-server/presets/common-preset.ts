@@ -40,6 +40,7 @@ import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
+import { getWsToken } from './wsToken';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -92,7 +93,7 @@ export const favicon = async (
     .reduce((l1, l2) => l1.concat(l2), []);
 
   if (faviconPaths.length > 1) {
-    logger.warn(dedent`
+    logger.debug(dedent`
       Looks like multiple favicons were detected. Using the first one.
 
       ${faviconPaths.join(', ')}
@@ -192,6 +193,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
+  channelOptions: {
+    ...(existing?.channelOptions ?? {}),
+    ...(options.configType === 'DEVELOPMENT' ? { wsToken: getWsToken() } : {}),
+  },
   disableTelemetry: options.disableTelemetry === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
@@ -199,18 +204,20 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
 
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
-  argTypeTargetsV7: true,
-  legacyDecoratorFileOrder: false,
-  disallowImplicitActionsInRenderV8: true,
-  viewport: true,
-  highlight: true,
-  controls: true,
-  interactions: true,
   actions: true,
+  argTypeTargetsV7: true,
   backgrounds: true,
-  outline: true,
+  changeDetection: false,
+  componentsManifest: true,
+  controls: true,
+  disallowImplicitActionsInRenderV8: true,
+  highlight: true,
+  interactions: true,
+  legacyDecoratorFileOrder: false,
   measure: true,
+  outline: true,
   sidebarOnboardingChecklist: true,
+  viewport: true,
 });
 
 export const csfIndexer: Indexer = {
@@ -255,6 +262,10 @@ export const managerHead = async (_: any, options: Options) => {
   }
 
   return '';
+};
+
+export const channelToken = async (value: string | undefined) => {
+  return value;
 };
 
 export const experimental_serverChannel = async (

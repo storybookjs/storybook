@@ -108,7 +108,8 @@ const styles = StyleSheet.create({
   },
 
   a: {
-    color: '#1ea7fd',
+    color: '#1a237e',
+    textDecorationLine: 'underline',
   },
 
   ul: {
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 12,
     fontWeight: '700',
-    color: '#66bf3c',
+    color: '#1a237e',
   },
 
   tipWrapper: {

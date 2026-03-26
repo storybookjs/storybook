@@ -46,7 +46,7 @@ export const statusPriority: StatusValue[] = [
 // We might not want to make this a hook because it is used in the Tree after multiple returns.
 // There could be scenarios where creating a story changes the type of an item (e.g. story now
 // has children because it has a test child), so we could end up with rule of hooks violations.
-export const getStatus = memoizerific(5)((theme: Theme, status: StatusValue): StatusMapping => {
+export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): StatusMapping => {
   const defaultIconColor =
     theme.base === 'light'
       ? transparentize(0.3, theme.color.defaultText)

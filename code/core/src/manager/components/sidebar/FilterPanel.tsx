@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useMemo, useRef } from 'react';
+import React, { Fragment, useCallback, useMemo } from 'react';
 
 import { ActionList } from 'storybook/internal/components';
 import type { StatusValue, StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
@@ -8,9 +8,15 @@ import { BatchAcceptIcon, DocumentIcon, ShareAltIcon, SweepIcon, UndoIcon } from
 import type { API } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { FilterPanelItem } from './FilterPanelItem';
-import { areFiltersEqual } from './FilterPanel.utils';
-import { useStatusFilterItems, useTagFilterItems } from './useFilterData';
+import { getStatus } from '../../utils/status';
+import { createFilterLink, StatusIcon } from './FilterPanelLink';
+import { type FilterItem, areFiltersEqual } from './FilterPanel.utils';
+import {
+  type StatusFilterEntry,
+  type TagFilterEntry,
+  useStatusFilterEntries,
+  useTagFilterEntries,
+} from './useFilterData';
 
 const Wrapper = styled.div({
   minWidth: 240,
@@ -44,47 +50,92 @@ export const FilterPanel = ({
   includedStatusFilters,
   excludedStatusFilters,
 }: FilterPanelProps) => {
-  const ref = useRef<HTMLDivElement>(null);
   const theme = useTheme();
 
-  const toggleFilter = useCallback(
-    (id: string, selected: boolean, excluded?: boolean) => {
-      if (excluded !== undefined) {
-        api.addTagFilters([id], excluded);
-      } else if (selected) {
-        api.addTagFilters([id], false);
-      } else {
-        api.removeTagFilters([id]);
-      }
+  const { builtInEntries, tagEntries } = useTagFilterEntries(indexJson);
+  const statusEntries = useStatusFilterEntries(allStatuses);
+
+  const toTagFilterItem = useCallback(
+    (entry: TagFilterEntry): FilterItem | null => {
+      if (entry.count === 0 && entry.type === 'built-in') return null;
+      const isIncluded = includedFilters.includes(entry.id);
+      const isExcluded = excludedFilters.includes(entry.id);
+      const isChecked = isIncluded || isExcluded;
+      return {
+        id: entry.id,
+        type: entry.type,
+        title: entry.title,
+        count: entry.count,
+        icon: entry.icon,
+        isIncluded,
+        isExcluded,
+        onCheckboxChange: () => {
+          if (isChecked) {
+            api.removeTagFilters([entry.id]);
+          } else {
+            api.addTagFilters([entry.id], false);
+          }
+        },
+        onInvert: () => api.addTagFilters([entry.id], !isExcluded),
+      };
     },
-    [api]
+    [api, includedFilters, excludedFilters]
   );
 
-  const toggleStatusFilter = useCallback(
-    (statusValue: StatusValue, excluded: boolean | undefined) => {
-      if (excluded !== undefined) {
-        api.addStatusFilters([statusValue], excluded);
-      } else {
-        api.removeStatusFilters([statusValue]);
-      }
+  const toStatusFilterItem = useCallback(
+    (entry: StatusFilterEntry): FilterItem => {
+      const isIncluded = includedStatusFilters.includes(entry.statusValue);
+      const isExcluded = excludedStatusFilters.includes(entry.statusValue);
+      const isChecked = isIncluded || isExcluded;
+      const { icon: statusIconEl, iconColor } = getStatus(theme, entry.statusValue);
+      return {
+        id: entry.shortName,
+        type: 'status',
+        title: entry.shortName,
+        count: entry.count,
+        icon: statusIconEl ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
+        isIncluded,
+        isExcluded,
+        onCheckboxChange: () => {
+          if (isChecked) {
+            api.removeStatusFilters([entry.statusValue]);
+          } else {
+            api.addStatusFilters([entry.statusValue], false);
+          }
+        },
+        onInvert: () => api.addStatusFilters([entry.statusValue], !isExcluded),
+      };
     },
-    [api]
+    [api, includedStatusFilters, excludedStatusFilters, theme]
   );
 
-  const { builtInItems, tagItems, filterIds } = useTagFilterItems({
-    indexJson,
-    includedFilters,
-    excludedFilters,
-    toggleFilter,
-  });
+  const builtInItems = useMemo(
+    () =>
+      builtInEntries
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map(toTagFilterItem)
+        .filter((f): f is FilterItem => f !== null),
+    [builtInEntries, toTagFilterItem]
+  );
 
-  const statusItems = useStatusFilterItems({
-    allStatuses,
-    includedStatusFilters,
-    excludedStatusFilters,
-    toggleStatusFilter,
-    theme,
-  });
+  const tagItems = useMemo(
+    () =>
+      tagEntries
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map(toTagFilterItem)
+        .filter((f): f is FilterItem => f !== null),
+    [tagEntries, toTagFilterItem]
+  );
+
+  const statusItems = useMemo(
+    () => statusEntries.map(toStatusFilterItem),
+    [statusEntries, toStatusFilterItem]
+  );
+
+  const filterIds = useMemo(
+    () => [...builtInEntries.map((e) => e.id), ...tagEntries.map((e) => e.id)],
+    [builtInEntries, tagEntries]
+  );
 
   const setAllFilters = useCallback(
     (selected: boolean) => {
@@ -93,32 +144,23 @@ export const FilterPanel = ({
     [api, filterIds]
   );
 
-  const isDefaultSelection = useMemo(() => {
-    return (
-      areFiltersEqual(includedFilters, defaultIncludedFilters) &&
-      areFiltersEqual(excludedFilters, defaultExcludedFilters)
-    );
-  }, [includedFilters, excludedFilters, defaultIncludedFilters, defaultExcludedFilters]);
+  const isDefaultSelection =
+    areFiltersEqual(includedFilters, defaultIncludedFilters) &&
+    areFiltersEqual(excludedFilters, defaultExcludedFilters);
 
-  const hasDefaultSelection = useMemo(() => {
-    return defaultIncludedFilters.length > 0 || defaultExcludedFilters.length > 0;
-  }, [defaultIncludedFilters, defaultExcludedFilters]);
+  const hasDefaultSelection =
+    defaultIncludedFilters.length > 0 || defaultExcludedFilters.length > 0;
 
-  const isNothingSelectedYet = useMemo(() => {
-    return (
-      includedFilters.length === 0 &&
-      excludedFilters.length === 0 &&
-      includedStatusFilters.length === 0 &&
-      excludedStatusFilters.length === 0
-    );
-  }, [includedFilters, excludedFilters, includedStatusFilters, excludedStatusFilters]);
+  const isNothingSelectedYet =
+    includedFilters.length === 0 &&
+    excludedFilters.length === 0 &&
+    includedStatusFilters.length === 0 &&
+    excludedStatusFilters.length === 0;
 
   const hasItems = builtInItems.length > 0 || tagItems.length > 0;
-  const hasStatusFilters = statusItems.length > 0;
-  const hasUserTags = tagItems.length > 0;
 
   return (
-    <Wrapper ref={ref}>
+    <Wrapper>
       {hasItems && (
         <ActionList as="div">
           <ActionList.Item as="div">
@@ -164,15 +206,15 @@ export const FilterPanel = ({
       {builtInItems.length > 0 && (
         <ActionList>
           {builtInItems.map((item) => {
-            const link = FilterPanelItem(item);
+            const link = createFilterLink(item);
             return <Fragment key={link.id}>{link.content}</Fragment>;
           })}
         </ActionList>
       )}
-      {hasStatusFilters && (
+      {statusItems.length > 0 && (
         <ActionList>
           {statusItems.map((item) => {
-            const link = FilterPanelItem(item);
+            const link = createFilterLink(item);
             return <Fragment key={link.id}>{link.content}</Fragment>;
           })}
         </ActionList>
@@ -180,12 +222,12 @@ export const FilterPanel = ({
       {tagItems.length > 0 && (
         <ActionList>
           {tagItems.map((item) => {
-            const link = FilterPanelItem(item);
+            const link = createFilterLink(item);
             return <Fragment key={link.id}>{link.content}</Fragment>;
           })}
         </ActionList>
       )}
-      {!hasUserTags && (
+      {tagItems.length === 0 && (
         <ActionList as="div">
           <ActionList.Item as="div">
             <ActionList.Link

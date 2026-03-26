@@ -13,7 +13,15 @@ const MutedText = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-export const FilterPanelItem = ({
+export const StatusIcon = styled.span<{ $iconColor?: string | null }>(({ $iconColor }) => ({
+  display: 'contents',
+  color: $iconColor ?? undefined,
+  '> svg': {
+    transform: 'scale(1.3)',
+  },
+}));
+
+export const createFilterLink = ({
   id,
   type,
   title,

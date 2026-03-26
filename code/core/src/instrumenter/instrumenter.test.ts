@@ -643,6 +643,86 @@ describe('Instrumenter', () => {
     });
   });
 
+  it('includes interceptable calls after a caught error in the log', async () => {
+    // Simulates: expect(getByText('nope')).toBeInTheDocument() throwing,
+    // caught by user, then expect(getByText('yep')).toBeInTheDocument() succeeding.
+    const { fn1, fn2 } = instrument(
+      {
+        fn1: () => {
+          throw new Error('Boom!');
+        },
+        fn2: () => {},
+      },
+      { intercept: true }
+    );
+    try {
+      fn1();
+    } catch {
+      // caught
+    }
+    fn2();
+    await tick();
+    const logItems = mocks.syncSpy.mock.calls.at(-1)?.[0]?.logItems;
+    expect(logItems).toEqual([
+      expect.objectContaining({ callId: 'kind--story [0] fn1', status: 'error' }),
+      expect.objectContaining({ callId: 'kind--story [1] fn2', status: 'done' }),
+    ]);
+  });
+
+  it('includes interceptable calls after a caught async error in the log', async () => {
+    const { fn1, fn2 } = instrument(
+      {
+        fn1: () => Promise.reject(new Error('Boom!')),
+        fn2: () => {},
+      },
+      { intercept: true }
+    );
+    try {
+      await fn1();
+    } catch {
+      // caught
+    }
+    fn2();
+    await tick();
+    const logItems = mocks.syncSpy.mock.calls.at(-1)?.[0]?.logItems;
+    expect(logItems).toEqual([
+      expect.objectContaining({ callId: 'kind--story [0] fn1', status: 'error' }),
+      expect.objectContaining({ callId: 'kind--story [1] fn2', status: 'done' }),
+    ]);
+  });
+
+  it('includes chained interceptable calls after a caught error', async () => {
+    // Simulates the exact expect(element).toBeInTheDocument() pattern
+    const { expect: instrumentedExpect } = instrument(
+      {
+        expect: (val: any) => ({
+          toBeInTheDocument: () => {
+            if (!val) {
+              throw new Error('Element not found');
+            }
+          },
+        }),
+      },
+      { intercept: (method) => method !== 'expect', mutate: true }
+    );
+    try {
+      instrumentedExpect(null).toBeInTheDocument(); // throws
+    } catch {
+      // caught
+    }
+    instrumentedExpect({}).toBeInTheDocument(); // succeeds
+    await tick();
+    const logItems = mocks.syncSpy.mock.calls.at(-1)?.[0]?.logItems;
+    // Both toBeInTheDocument calls should appear: one errored, one done
+    expect(logItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: 'error' }),
+        expect.objectContaining({ status: 'done' }),
+      ])
+    );
+    expect(logItems.filter((item: any) => item.status === 'done').length).toBeGreaterThanOrEqual(1);
+  });
+
   describe('while debugging', () => {
     afterEach(() => {
       addons.getChannel().emit(EVENTS.END, { storyId });

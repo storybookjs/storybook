@@ -364,6 +364,7 @@ export const WithChangeDetectionOnly: Story = makeDualSlotStory({
       value: 'status-value:new',
       title: 'Change Detection',
       description: 'Story is new',
+      sidebarContextMenu: false,
     },
   },
 });
@@ -376,6 +377,7 @@ export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory({
       value: 'status-value:modified',
       title: 'Change Detection',
       description: 'Story is modified',
+      sidebarContextMenu: false,
     },
     'storybook/vitest': {
       storyId: dualSlotStoryId,
@@ -407,6 +409,7 @@ export const WithAffectedStatus: Story = makeDualSlotStory({
       value: 'status-value:affected',
       title: 'Change Detection',
       description: 'Story is affected',
+      sidebarContextMenu: false,
     },
   },
 });
@@ -419,6 +422,7 @@ export const BranchWithChangeDetectionPriority: Story = makeDualSlotStory({
       value: 'status-value:new',
       title: 'Change Detection',
       description: 'Story is new',
+      sidebarContextMenu: false,
     },
     'storybook/vitest': {
       storyId: dualSlotStoryId,

@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, screen, waitFor } from 'storybook/test';
 
-import { TagsFilter } from './TagsFilter';
+import { Filter } from './Filter';
 
 const getDefaultTagFilters = () => {
   const tagOptions = global.TAGS_OPTIONS ?? {};
@@ -48,8 +48,8 @@ const createInitialState = (initialStoryState: Record<string, unknown> = {}) => 
 };
 
 const meta = {
-  component: TagsFilter,
-  title: 'Sidebar/TagsFilter',
+  component: Filter,
+  title: 'Sidebar/Filter',
   tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   decorators: [
     (Story, { args, parameters }) => {
@@ -119,7 +119,7 @@ const meta = {
       );
     },
   ],
-} satisfies Meta<typeof TagsFilter>;
+} satisfies Meta<typeof Filter>;
 
 export default meta;
 

@@ -1,7 +1,13 @@
 import React, { Fragment, useCallback, useMemo, useRef } from 'react';
 
 import { ActionList, Form } from 'storybook/internal/components';
-import type { FilterFunction, StoryIndex, Tag } from 'storybook/internal/types';
+import type {
+  FilterFunction,
+  StatusValue,
+  StatusesByStoryIdAndTypeId,
+  StoryIndex,
+  Tag,
+} from 'storybook/internal/types';
 
 import {
   BatchAcceptIcon,
@@ -15,27 +21,24 @@ import {
 } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { color, styled } from 'storybook/theming';
+import { color, styled, useTheme } from 'storybook/theming';
+
+import { getStatus } from '../../utils/status';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags';
 
-type Filter = {
+type FilterItem = {
   id: string;
   type: string;
   title: string;
   count: number;
+  icon: React.ReactElement | null;
+  isIncluded: boolean;
+  isExcluded: boolean;
+  onCheckboxChange: () => void;
+  onInvert: () => void;
 };
-
-const groupByType = (filters: Filter[]) =>
-  filters.filter(Boolean).reduce(
-    (acc, filter) => {
-      acc[filter.type] ??= [];
-      acc[filter.type].push(filter);
-      return acc;
-    },
-    {} as Record<string, Filter[]>
-  );
 
 const Wrapper = styled.div({
   minWidth: 240,
@@ -50,13 +53,16 @@ const MutedText = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-interface TagsFilterPanelProps {
+interface FilterPanelProps {
   api: API;
   indexJson: StoryIndex;
   defaultIncludedFilters: string[];
   defaultExcludedFilters: string[];
   includedFilters: string[];
   excludedFilters: string[];
+  allStatuses: StatusesByStoryIdAndTypeId;
+  includedStatusFilters: StatusValue[];
+  excludedStatusFilters: StatusValue[];
 }
 
 /* Those tags are hidden in the UI. There's a more general built-in list defined in `shared/constants/tags`. */
@@ -71,6 +77,17 @@ const BUILT_IN_TAGS = new Set([
   'manifest',
 ]);
 
+const STATUS_DISPLAY_ORDER: Array<{ shortName: string; statusValue: StatusValue }> = [
+  { shortName: 'new', statusValue: 'status-value:new' },
+  { shortName: 'modified', statusValue: 'status-value:modified' },
+  { shortName: 'affected', statusValue: 'status-value:affected' },
+  { shortName: 'error', statusValue: 'status-value:error' },
+  { shortName: 'warning', statusValue: 'status-value:warning' },
+  { shortName: 'success', statusValue: 'status-value:success' },
+  { shortName: 'pending', statusValue: 'status-value:pending' },
+  { shortName: 'unknown', statusValue: 'status-value:unknown' },
+];
+
 // This equality check works on the basis that there are no duplicates in the arrays.
 // We use arrays because we need arrays for data persistence in the layout module.
 const equal = (left: string[], right: string[]) =>
@@ -84,17 +101,36 @@ const getFilterFunction = (tag: Tag): FilterFunction | null => {
   }
 };
 
-export const TagsFilterPanel = ({
+const StatusIcon = styled.span<{ $color: string | null }>(({ $color }) => ({
+  display: 'contents',
+  ...($color ? { color: $color } : {}),
+}));
+
+export const FilterPanel = ({
   api,
   indexJson,
   defaultIncludedFilters,
   defaultExcludedFilters,
   includedFilters,
   excludedFilters,
-}: TagsFilterPanelProps) => {
+  allStatuses,
+  includedStatusFilters,
+  excludedStatusFilters,
+}: FilterPanelProps) => {
   const ref = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
 
-  const filtersById = useMemo<{ [id: string]: Filter }>(() => {
+  const statusCounts = useMemo<Record<StatusValue, number>>(() => {
+    const counts = {} as Record<StatusValue, number>;
+    Object.values(allStatuses).forEach((statusByTypeId) => {
+      Object.values(statusByTypeId).forEach((status) => {
+        counts[status.value] = (counts[status.value] ?? 0) + 1;
+      });
+    });
+    return counts;
+  }, [allStatuses]);
+
+  const filtersById = useMemo(() => {
     const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
       (acc, entry) => {
         entry.tags?.forEach((tag: Tag) => {
@@ -156,6 +192,17 @@ export const TagsFilterPanel = ({
     [api]
   );
 
+  const toggleStatusFilter = useCallback(
+    (statusValue: StatusValue, excluded: boolean | undefined) => {
+      if (excluded !== undefined) {
+        api.addStatusFilters([statusValue], excluded);
+      } else {
+        api.removeStatusFilters([statusValue]);
+      }
+    },
+    [api]
+  );
+
   const setAllFilters = useCallback(
     (selected: boolean) => {
       api.setAllTagFilters(selected ? Object.keys(filtersById) : [], []);
@@ -183,22 +230,21 @@ export const TagsFilterPanel = ({
     []
   );
 
-  const renderLink = ({ id, type, title, count }: Filter): Link | undefined => {
-    const onToggle = (selected: boolean, excluded?: boolean) =>
-      toggleFilter(id, selected, excluded);
-    const isIncluded = includedFilters.includes(id);
-    const isExcluded = excludedFilters.includes(id);
+  const renderLink = ({
+    id,
+    type,
+    title,
+    count,
+    icon,
+    isIncluded,
+    isExcluded,
+    onCheckboxChange,
+    onInvert,
+  }: FilterItem): Link => {
     const isChecked = isIncluded || isExcluded;
     const toggleLabel = `${type} filter: ${isExcluded ? `exclude ${title}` : title}`;
     const toggleTooltip = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
     const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
-    const icon =
-      type === 'built-in' ? builtInFilterIcons[id as keyof typeof builtInFilterIcons] : null;
-
-    // for built-in filters (docs, play, test), don't show if there are no matches
-    if (count === 0 && type === 'built-in') {
-      return undefined;
-    }
 
     return {
       id: `filter-${type}-${id}`,
@@ -209,7 +255,7 @@ export const TagsFilterPanel = ({
               {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
               <Form.Checkbox
                 checked={isChecked}
-                onChange={() => onToggle(!isChecked)}
+                onChange={onCheckboxChange}
                 data-tag={title}
                 aria-label={toggleLabel}
               />
@@ -225,7 +271,7 @@ export const TagsFilterPanel = ({
           <ActionList.Button
             data-target-id={`filter-${type}-${id}`}
             ariaLabel={invertButtonLabel}
-            onClick={() => onToggle(true, !isExcluded)}
+            onClick={onInvert}
           >
             <span style={{ minWidth: 45 }}>{isExcluded ? 'Include' : 'Exclude'}</span>
           </ActionList.Button>
@@ -234,19 +280,84 @@ export const TagsFilterPanel = ({
     };
   };
 
-  const groups = groupByType(Object.values(filtersById));
-  const links: Link[][] = Object.values(groups)
-    .map((group) =>
-      group
-        .sort((a, b) => a.id.localeCompare(b.id))
-        .map((filter) => renderLink(filter))
-        .filter((value): value is Link => !!value)
-    )
-    .filter((value): value is Link[] => value.length > 0);
+  const toFilterItem = ({
+    id,
+    type,
+    title,
+    count,
+  }: {
+    id: string;
+    type: string;
+    title: string;
+    count: number;
+  }): FilterItem | null => {
+    if (count === 0 && type === 'built-in') return null;
+    const isIncluded = includedFilters.includes(id);
+    const isExcluded = excludedFilters.includes(id);
+    const isChecked = isIncluded || isExcluded;
+    const icon =
+      type === 'built-in'
+        ? (builtInFilterIcons[id as keyof typeof builtInFilterIcons] ?? null)
+        : null;
+    return {
+      id,
+      type,
+      title,
+      count,
+      icon,
+      isIncluded,
+      isExcluded,
+      onCheckboxChange: () => toggleFilter(id, !isChecked),
+      onInvert: () => toggleFilter(id, true, !isExcluded),
+    };
+  };
 
-  const hasItems = links.length > 0;
-  const hasUserTags = Object.values(filtersById).some(({ type }) => type === 'tag');
-  const isNothingSelectedYet = includedFilters.length === 0 && excludedFilters.length === 0;
+  const allFiltersById = Object.values(filtersById);
+
+  const builtInItems = allFiltersById
+    .filter((f) => f.type === 'built-in')
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map(toFilterItem)
+    .filter((f): f is FilterItem => f !== null);
+
+  const tagItems = allFiltersById
+    .filter((f) => f.type === 'tag')
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map(toFilterItem)
+    .filter((f): f is FilterItem => f !== null);
+
+  const statusItems = STATUS_DISPLAY_ORDER.map(({ shortName, statusValue }) => {
+    const count = statusCounts[statusValue] ?? 0;
+    if (count === 0) return null;
+    const isIncluded = includedStatusFilters.includes(statusValue);
+    const isExcluded = excludedStatusFilters.includes(statusValue);
+    const isChecked = isIncluded || isExcluded;
+    const { icon: statusIconEl, iconColor } = getStatus(theme, statusValue);
+    const icon = statusIconEl ? <StatusIcon $color={iconColor}>{statusIconEl}</StatusIcon> : null;
+    return {
+      id: shortName,
+      type: 'status',
+      title: shortName,
+      count,
+      icon,
+      isIncluded,
+      isExcluded,
+      onCheckboxChange: () => toggleStatusFilter(statusValue, isChecked ? undefined : false),
+      onInvert: () => toggleStatusFilter(statusValue, !isExcluded),
+    };
+  }).filter((f): f is FilterItem => f !== null);
+
+  const hasItems = builtInItems.length > 0 || tagItems.length > 0;
+  const hasUserTags = tagItems.length > 0;
+  const hasStatusFilters = statusItems.length > 0;
+  const isNothingSelectedYet = useMemo(() => {
+    return (
+      includedFilters.length === 0 &&
+      excludedFilters.length === 0 &&
+      includedStatusFilters.length === 0 &&
+      excludedStatusFilters.length === 0
+    );
+  }, [includedFilters, excludedFilters, includedStatusFilters, excludedStatusFilters]);
 
   return (
     <Wrapper ref={ref}>
@@ -268,7 +379,10 @@ export const TagsFilterPanel = ({
                 ariaLabel={false}
                 id="deselect-all"
                 key="deselect-all"
-                onClick={() => setAllFilters(false)}
+                onClick={() => {
+                  setAllFilters(false);
+                  api.resetStatusFilters();
+                }}
               >
                 <SweepIcon />
                 <ActionList.Text>Clear filters</ActionList.Text>
@@ -289,13 +403,30 @@ export const TagsFilterPanel = ({
           </ActionList.Item>
         </ActionList>
       )}
-      {links.map((group) => (
-        <ActionList key={group.map((link) => link.id).join('_')}>
-          {group.map((link) => (
-            <Fragment key={link.id}>{link.content}</Fragment>
-          ))}
+      {builtInItems.length > 0 && (
+        <ActionList>
+          {builtInItems.map((item) => {
+            const link = renderLink(item);
+            return <Fragment key={link.id}>{link.content}</Fragment>;
+          })}
         </ActionList>
-      ))}
+      )}
+      {hasStatusFilters && (
+        <ActionList>
+          {statusItems.map((item) => {
+            const link = renderLink(item);
+            return <Fragment key={link.id}>{link.content}</Fragment>;
+          })}
+        </ActionList>
+      )}
+      {tagItems.length > 0 && (
+        <ActionList>
+          {tagItems.map((item) => {
+            const link = renderLink(item);
+            return <Fragment key={link.id}>{link.content}</Fragment>;
+          })}
+        </ActionList>
+      )}
       {!hasUserTags && (
         <ActionList as="div">
           <ActionList.Item as="div">

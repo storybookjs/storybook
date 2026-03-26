@@ -1,11 +1,14 @@
-import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
+import type {
+  DocsIndexEntry,
+  StoryIndex,
+  StoryIndexEntry,
+  StatusesByStoryIdAndTypeId,
+  StatusValue,
+} from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
-import { type API } from 'storybook/manager-api';
-
-import { MockAPIDecorator } from './TagsFilter.story-helpers';
-import { TagsFilterPanel } from './TagsFilterPanel';
+import { MockAPIDecorator } from './Filter.story-helpers';
+import { FilterPanel } from './FilterPanel';
+import { IconSymbols } from './IconSymbols';
 
 const getEntries = (includeUserTags: boolean) => {
   const entries = {
@@ -85,10 +88,20 @@ const getEntries = (includeUserTags: boolean) => {
 };
 
 const meta = {
-  component: TagsFilterPanel,
-  title: 'Sidebar/TagsFilterPanel',
+  component: FilterPanel,
+  title: 'Sidebar/FilterPanel',
   // Will provide api mock
-  decorators: [MockAPIDecorator],
+  decorators: [
+    MockAPIDecorator,
+    (storyFn: any) => {
+      return (
+        <>
+          <IconSymbols />
+          {storyFn()}
+        </>
+      );
+    },
+  ],
   tags: ['hoho'],
   args: {
     api: {} as API,
@@ -100,8 +113,11 @@ const meta = {
     defaultIncludedFilters: [],
     includedFilters: [],
     excludedFilters: [],
+    allStatuses: {},
+    includedStatusFilters: [],
+    excludedStatusFilters: [],
   },
-} satisfies Meta<typeof TagsFilterPanel>;
+} satisfies Meta<typeof FilterPanel>;
 
 export default meta;
 
@@ -119,7 +135,7 @@ export const BuiltInOnly: Story = {
 };
 
 /**
- * Production is equal to development now. We want to avoid a completely empty TagsFilterPanel and
+ * Production is equal to development now. We want to avoid a completely empty FilterPanel and
  * we can't easily detect if there'll be items matching the built-in filters. Plus, onboarding users
  * on custom tags is still useful in production.
  */
@@ -185,5 +201,133 @@ export const DefaultSelectionModified: Story = {
     includedFilters: ['tag1', 'tag2'],
     defaultIncludedFilters: ['tag1'],
     defaultExcludedFilters: ['tag2'],
+  },
+};
+
+// Helper to build an allStatuses map with one entry per status value
+const makeStatuses = (
+  ...values: Array<{ storyId: string; typeId: string; statusValue: StatusValue; title: string }>
+): StatusesByStoryIdAndTypeId =>
+  Object.fromEntries(
+    values.map(({ storyId, typeId, statusValue, title }) => [
+      storyId,
+      {
+        [typeId]: {
+          value: statusValue,
+          typeId,
+          storyId,
+          title,
+          description: '',
+        },
+      },
+    ])
+  );
+
+export const WithStatuses: Story = {
+  args: {
+    allStatuses: makeStatuses(
+      {
+        storyId: 'c1-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:new',
+        title: 'New',
+      },
+      {
+        storyId: 'c1-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:modified',
+        title: 'Modified',
+      },
+      {
+        storyId: 'c2-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:affected',
+        title: 'Affected',
+      },
+      {
+        storyId: 'c2-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:error',
+        title: 'Error',
+      },
+      {
+        storyId: 'c2-story3',
+        typeId: 'change-detection',
+        statusValue: 'status-value:warning',
+        title: 'Warning',
+      }
+    ),
+  },
+};
+
+export const WithStatusesIncluded: Story = {
+  args: {
+    ...WithStatuses.args,
+    includedStatusFilters: ['status-value:new', 'status-value:modified'],
+  },
+};
+
+export const WithStatusesExcluded: Story = {
+  args: {
+    ...WithStatuses.args,
+    excludedStatusFilters: ['status-value:error'],
+  },
+};
+
+export const OnlyErrorStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c2-story2',
+      typeId: 'change-detection',
+      statusValue: 'status-value:error',
+      title: 'Error',
+    }),
+  },
+};
+
+export const OnlyWarningStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c2-story3',
+      typeId: 'change-detection',
+      statusValue: 'status-value:warning',
+      title: 'Warning',
+    }),
+  },
+};
+
+export const OnlyNewStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c1-story1',
+      typeId: 'change-detection',
+      statusValue: 'status-value:new',
+      title: 'New',
+    }),
+  },
+};
+
+export const OnlyModifiedStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c1-story2',
+      typeId: 'change-detection',
+      statusValue: 'status-value:modified',
+      title: 'Modified',
+    }),
+  },
+};
+
+export const OnlyAffectedStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c2-story1',
+      typeId: 'change-detection',
+      statusValue: 'status-value:affected',
+      title: 'Affected',
+    }),
+  },
+  play() {
+    throw new Error('Affected status should not have a color or icon');
   },
 };

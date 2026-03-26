@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { transparentize } from 'polished';
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { srOnlyStyles, styled } from 'storybook/theming';
 
 import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
@@ -24,7 +24,6 @@ export interface Controls {
 }
 
 interface InteractionsPanelProps {
-  id?: string;
   storyUrl: string;
   status: PlayStatus;
   controls: Controls;
@@ -60,20 +59,7 @@ const InteractionsSection = styled.section({
   position: 'relative',
 });
 
-const srOnlyStyles = {
-  border: 0,
-  clip: 'rect(0, 0, 0, 0)',
-  clipPath: 'inset(50%)',
-  height: 1,
-  margin: -1,
-  overflow: 'hidden',
-  padding: 0,
-  position: 'absolute' as const,
-  whiteSpace: 'nowrap' as const,
-  width: 1,
-};
-
-const InteractionsHeading = styled.h2(srOnlyStyles);
+const InteractionsHeading = styled.h3(srOnlyStyles);
 
 const InteractionsList = styled.ol({
   margin: 0,
@@ -126,11 +112,15 @@ const StatusAnnouncementMapping: Record<PlayStatus, string> = {
   aborted: 'Component test was aborted.',
 } as const;
 
-let generatedHeadingId = 0;
+const getStatusAnnouncement = (status: PlayStatus, hasException?: boolean) => {
+  if (status === 'completed' && hasException) {
+    return StatusAnnouncementMapping.errored;
+  }
+  return StatusAnnouncementMapping[status];
+};
 
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
-    id,
     storyUrl,
     status,
     calls,
@@ -152,13 +142,9 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
-    const autoHeadingId = React.useRef(id || `interactions-panel-${generatedHeadingId++}`);
-    const headingId = id || autoHeadingId.current;
     const isListBusy = status === 'rendering' || status === 'playing';
-    const statusAnnouncement =
-      status === 'completed' && hasException
-        ? 'Component test completed with errors.'
-        : StatusAnnouncementMapping[status];
+    const statusAnnouncement = getStatusAnnouncement(status, hasException);
+    const isStatusAlert = status === 'errored' || (status === 'completed' && hasException);
 
     return (
       <Container>
@@ -177,14 +163,14 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           api={api}
         />
         <LiveStatus
-          role={status === 'errored' ? 'alert' : 'status'}
-          aria-live={status === 'errored' ? 'assertive' : 'polite'}
+          role={isStatusAlert ? 'alert' : 'status'}
+          aria-live={isStatusAlert ? 'assertive' : 'polite'}
           aria-atomic="true"
         >
           {statusAnnouncement}
         </LiveStatus>
-        <InteractionsSection aria-labelledby={headingId}>
-          <InteractionsHeading id={headingId}>Interaction steps</InteractionsHeading>
+        <InteractionsSection>
+          <InteractionsHeading>Interaction steps</InteractionsHeading>
           <InteractionsList aria-busy={isListBusy}>
             {interactions.map((call) => (
               <Interaction

@@ -133,7 +133,7 @@ const ErrorExplainer = styled.p(({ theme }) => ({
 }));
 
 /**
- * Short name for an interaction row and its accessible labels.
+ * Human-readable name for an interaction row (visible text and ARIA), matching instrumented data.
  *
  * Play-function `step('…')` calls are recorded with `method === 'step'` and the user-facing
  * description in `args[0]`. For a **top-level** step (`path` is empty) with a non-empty string
@@ -141,7 +141,7 @@ const ErrorExplainer = styled.p(({ theme }) => ({
  *
  * Otherwise we use `call.method` (e.g. `click`, `expect`, nested steps without their own title).
  */
-export const getInteractionLabel = (call: Call) => {
+export const extractStepName = (call: Call) => {
   if (call.method === 'step' && call.path?.length === 0 && typeof call.args?.[0] === 'string') {
     const label = call.args[0].trim();
     if (label.length > 0) {
@@ -151,6 +151,29 @@ export const getInteractionLabel = (call: Call) => {
 
   return call.method;
 };
+
+/**
+ * Accessible name for the main row control. Uses "interaction row" wording so we never combine
+ * "Interaction step" with a `stepName` of `step` (awkward "step … step" for screen readers).
+ */
+export const getRowAriaLabel = ({
+  isNavigationDisabled,
+  stepName,
+  statusText,
+}: {
+  isNavigationDisabled: boolean;
+  stepName: string;
+  statusText: string;
+}) =>
+  `${isNavigationDisabled ? 'Interaction row' : 'Go to interaction row'}: ${stepName}. Status: ${statusText}.`;
+
+export const getExpandButtonAriaLabel = ({
+  isCollapsed,
+  stepName,
+}: {
+  isCollapsed: boolean;
+  stepName: string;
+}) => `${isCollapsed ? 'Expand' : 'Collapse'} nested interaction steps for ${stepName}`;
 
 const stepStatusTextMap: Record<Exclude<Call['status'], undefined>, string> = {
   [CallStates.DONE]: 'passed',
@@ -229,7 +252,7 @@ export const Interaction = ({
   const [isHovered, setIsHovered] = React.useState(false);
   const isNavigationDisabled =
     !controlStates.goto || !call.interceptable || !!call.ancestors?.length;
-  const interactionLabel = getInteractionLabel(call);
+  const stepName = extractStepName(call);
   const interactionStatus = getInteractionStatusText(call);
 
   if (isHidden) {
@@ -244,9 +267,11 @@ export const Interaction = ({
     <RowContainer call={call} pausedAt={pausedAt}>
       <RowHeader $isNavigationDisabled={isNavigationDisabled}>
         <RowLabel
-          aria-label={`${
-            isNavigationDisabled ? 'Interaction step' : 'Go to interaction step'
-          }: ${interactionLabel}. Status: ${interactionStatus}.`}
+          aria-label={getRowAriaLabel({
+            isNavigationDisabled,
+            stepName,
+            statusText: interactionStatus,
+          })}
           call={call}
           onClick={() => controls.goto(call.id)}
           disabled={isNavigationDisabled}
@@ -264,9 +289,7 @@ export const Interaction = ({
               padding="small"
               variant="ghost"
               onClick={toggleCollapsed}
-              ariaLabel={`${
-                isCollapsed ? 'Expand' : 'Collapse'
-              } nested interaction steps for ${interactionLabel}`}
+              ariaLabel={getExpandButtonAriaLabel({ isCollapsed, stepName })}
               aria-expanded={!isCollapsed}
             >
               {isCollapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}

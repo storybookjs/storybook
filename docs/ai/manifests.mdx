@@ -5,9 +5,11 @@ sidebar:
 ---
 
 <Callout variant="info" icon="🧪">
-  While they are in [preview](../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the manifests and [MCP server](./mcp/overview.mdx)) are currently only supported for [React](?renderer=react) projects.
 
-  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+While they are in [preview](../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the manifests and [MCP server](./mcp/overview.mdx)) are currently only supported for [React](?renderer=react) projects.
+
+Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+
 </Callout>
 
 <If renderer={['react']}>
@@ -38,11 +40,15 @@ type ButtonProps = {
  * Button is used for user interactions that do not navigate to another route.
  * For navigation, use [Link](?path=/docs/link--default) instead.
  */
-export const Button: React.FC<ButtonProps> = ({ onClick }) => { /* ... */ };
+export const Button: React.FC<ButtonProps> = ({ onClick }) => {
+  //...
+};
 ```
 
 <Callout icon="💡">
-  Check the [best practices](./best-practices.mdx) guide for tips on writing effective JSDoc comments for your components and other ways to provide helpful context for the agents.
+
+Check the [best practices](./best-practices.mdx) guide for tips on writing effective JSDoc comments for your components and other ways to provide helpful context for the agents.
+
 </Callout>
 
 The raw JSON components manifest can be accessed at `http://localhost:6006/manifests/components.json` (your port may vary) when your Storybook is running or at the `/manifests/components.json` route in a built Storybook.
@@ -51,7 +57,9 @@ The raw JSON components manifest can be accessed at `http://localhost:6006/manif
 <summary>Example components manifest entry</summary>
 
 <Callout variant="info">
-  While in [preview](../releases/features.mdx#preview), this manifest schema is not yet stable and should not be considered a public API. We include it here only as an aid for understanding.
+
+While in [preview](../releases/features.mdx#preview), this manifest schema is not yet stable and should not be considered a public API. We include it here only as an aid for understanding.
+
 </Callout>
 
 ```json
@@ -74,9 +82,7 @@ The raw JSON components manifest can be accessed at `http://localhost:6006/manif
         }
       ],
       "import": "import { Button } from \"@mealdrop/ui\";",
-      "jsDocTags": {
-
-      },
+      "jsDocTags": {},
       "description": "Primary UI component for user interaction",
       "reactDocgen": {
         "description": "Primary UI component for user interaction",
@@ -217,6 +223,7 @@ The raw JSON components manifest can be accessed at `http://localhost:6006/manif
   }
 }
 ```
+
 </details>
 
 ## Docs (MDX) manifest
@@ -226,14 +233,18 @@ The docs manifest is generated from the [MDX files](../writing-docs/mdx.mdx) in 
 The raw JSON docs manifest can be accessed at `http://localhost:6006/manifests/docs.json` (your port may vary) when your Storybook is running or at the `/manifests/docs.json` route in a built Storybook.
 
 <Callout variant="info" icon="💡">
-  Check the [best practices](./best-practices.mdx) guide for tips on writing effective documentation and providing helpful context for the agents.
+
+Check the [best practices](./best-practices.mdx) guide for tips on writing effective documentation and providing helpful context for the agents.
+
 </Callout>
 
 <details>
 <summary>Example docs manifest entry</summary>
 
 <Callout variant="info">
-  While in [preview](../releases/features.mdx#preview), this manifest schema is not yet stable and should not be considered a public API. We include it here only as an aid for understanding.
+
+While in [preview](../releases/features.mdx#preview), this manifest schema is not yet stable and should not be considered a public API. We include it here only as an aid for understanding.
+
 </Callout>
 
 ```json
@@ -249,6 +260,7 @@ The raw JSON docs manifest can be accessed at `http://localhost:6006/manifests/d
   }
 }
 ```
+
 </details>
 
 ## Debugging
@@ -269,7 +281,7 @@ You can also remove an entire component from the manifest by removing the tag in
 
 Similarly, to exclude an entire MDX docs page from the manifests, you can remove the `manifest` tag from the page's metadata:
 
-```jsx title="DocForHumansOnly.mdx"
+```mdx title="DocForHumansOnly.mdx"
 import { Meta } from '@storybook/addon-docs/blocks';
 
 <Meta title="Doc for Humans Only" tags={['!manifest']} />

@@ -2,7 +2,6 @@
 title: Snapshot tests
 sidebar:
   order: 5
-  title: Snapshot tests
 ---
 
 ## Snapshot tests
@@ -78,10 +77,10 @@ In this example, we have a simple Button React component which for some reason a
 ```tsx title="Button.tsx"
 function Button(props) {
   if (props.doNotUseThisItWillThrowAnError) {
-    throw new Error("I tried to tell you...")
+    throw new Error('I tried to tell you...');
   }
 
-  return <button {...props} />
+  return <button {...props} />;
 }
 ```
 
@@ -93,7 +92,7 @@ export const ThrowError = {
   args: {
     doNotUseThisItWillThrowAnError: true,
   },
-}
+};
 ```
 
 Finally, we write a test in the test file which asserts that an error is thrown with a particular message.
@@ -101,15 +100,15 @@ Finally, we write a test in the test file which asserts that an error is thrown 
 ```ts title="Button.test.ts"
 // @vitest-environment jsdom
 
-import { expect, test } from "vitest";
+import { expect, test } from 'vitest';
 
-import { composeStories } from "@storybook/react";
+import { composeStories } from '@storybook/react';
 
-import * as stories from "./Button.stories";
+import * as stories from './Button.stories';
 
 const { ThrowError } = composeStories(stories);
 
-test("Button throws error", async () => {
+test('Button throws error', async () => {
   await expect(ThrowError.run()).rejects.toThrowError('I tried to tell you...');
 });
 ```
@@ -128,12 +127,12 @@ Visual tests capture images of stories and compare them against image baselines.
 
 **More testing resources**
 
-* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
-* [Interaction testing](./interaction-testing.mdx) for user behavior simulation
-* [Accessibility testing](./accessibility-testing.mdx) for accessibility
-* [Visual testing](./visual-testing.mdx) for appearance
-* [Test coverage](./test-coverage.mdx) for measuring code coverage
-* [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
-* [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
-* [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-* [Test runner](./integrations/test-runner.mdx) to automate test execution
+- [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
+- [Interaction testing](./interaction-testing.mdx) for user behavior simulation
+- [Accessibility testing](./accessibility-testing.mdx) for accessibility
+- [Visual testing](./visual-testing.mdx) for appearance
+- [Test coverage](./test-coverage.mdx) for measuring code coverage
+- [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
+- [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+- [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
+- [Test runner](./integrations/test-runner.mdx) to automate test execution

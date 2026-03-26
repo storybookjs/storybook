@@ -1,8 +1,7 @@
 ---
-title: 'features'
+title: features
 sidebar:
   order: 11
-  title: features
 ---
 
 Parent: [main.js|ts configuration](./main-config.mdx)
@@ -32,6 +31,7 @@ Type:
   viewport?: boolean;
 }
 ```
+
 </If>
 
 <If renderer="angular">
@@ -55,6 +55,7 @@ Type:
   viewport?: boolean;
 }
 ```
+
 </If>
 
 <If notRenderer={['react','angular']}>
@@ -77,8 +78,8 @@ Type:
   viewport?: boolean;
 }
 ```
-</If>
 
+</If>
 
 Enables Storybook's additional features.
 
@@ -110,11 +111,7 @@ Default: `true`
 
 Filter args with a "target" on the type from the render function.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-arg-type-targets-v7.md" />
-
-{/* prettier-ignore-end */}
 
 ## `backgrounds`
 
@@ -160,11 +157,7 @@ Type: `boolean`
 
 Set `NODE_ENV` to `'development'` in built Storybooks for better testing and debugging capabilities.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-development-mode-for-build.md" />
-
-{/* prettier-ignore-end */}
 
 <If renderer="react">
 
@@ -188,11 +181,7 @@ Type: `boolean`
 
 Enable the [experimental `.test` method with the CSF Next format](../csf/csf-next#storytest).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-experimental-test-syntax.md" />
-
-{/* prettier-ignore-end */}
 
 </If>
 
@@ -218,11 +207,7 @@ Type: `boolean`
 
 Apply decorators from preview.js before decorators from addons or frameworks. [More information](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changed-decorator-order-between-previewjs-and-addonsframeworks).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-legacy-decorator-file-order.md" />
-
-{/* prettier-ignore-end */}
 
 ## `measure`
 

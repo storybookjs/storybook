@@ -1,5 +1,5 @@
 ---
-title: 'Component Story Format (CSF)'
+title: Component Story Format (CSF)
 isTab: true
 tab:
   order: 2
@@ -9,7 +9,9 @@ tab:
 <If notRenderer={['react', 'vue', 'angular', 'web-components']}>
 
 <Callout variant="info">
-  CSF Next is currently only supported in [React](?renderer=react), [Vue](?renderer=vue), [Angular](?renderer=angular), and [Web Components](?renderer=web-components) projects.
+
+CSF Next is currently only supported in [React](?renderer=react), [Vue](?renderer=vue), [Angular](?renderer=angular), and [Web Components](?renderer=web-components) projects.
+
 </Callout>
 
 </If>
@@ -17,7 +19,9 @@ tab:
 <If renderer={['react', 'vue', 'angular', 'web-components']}>
 
 <Callout variant="warning" icon="🧪">
-  This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/30112) and contributions to help improve this feature.
+
+This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/30112) and contributions to help improve this feature.
+
 </Callout>
 
 CSF Next is the next evolution of Storybook's Component Story Format (CSF). This new API uses a pattern called factory functions to provide full type safety to your Storybook stories, making it easier to configure addons correctly and unlocking the full potential of Storybook's features.
@@ -69,7 +73,9 @@ export default definePreview({
 ```
 
 <Callout variant="info">
-  The preview configuration will be automatically updated to reference the [necessary addons](#preview-addons) when installing an addon via `npx storybook add <addon-name>` or running `storybook dev`.
+
+The preview configuration will be automatically updated to reference the [necessary addons](#preview-addons) when installing an addon via `npx storybook add <addon-name>` or running `storybook dev`.
+
 </Callout>
 
 ### `preview.meta`
@@ -86,7 +92,7 @@ const meta = preview.meta({
   parameters: {
     // type-safe!
     layout: 'centered',
-  }
+  },
 });
 ```
 
@@ -114,8 +120,8 @@ To configure subpath imports, add the following to your `package.json`:
 ```json title="package.json"
 {
   "imports": {
-    "#*": ["./*", "./*.ts", "./*.tsx"],
-  },
+    "#*": ["./*", "./*.ts", "./*.tsx"]
+  }
 }
 ```
 
@@ -147,7 +153,11 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
 const meta = preview.type<{ args: CustomProps }>().meta({
   component: Button,
   // 👇 Correct types
-  render: ({ customProp, ...args }) => <>{customProp} <Button {...args} /></>,
+  render: ({ customProp, ...args }) => (
+    <>
+      {customProp} <Button {...args} />
+    </>
+  ),
 });
 
 export const Primary = meta.story({
@@ -166,7 +176,9 @@ Finally, the `story` function on the `meta` object defines the stories. This fun
 
 ```ts title="Button.stories.js|ts"
 // ...from above
-const meta = preview.meta({ /* ... */ });
+const meta = preview.meta({
+  //...
+});
 
 export const Primary = meta.story({
   args: {
@@ -190,7 +202,9 @@ Properties are merged intelligently:
 
 ```ts title="Button.stories.js|ts"
 // ...from above
-const meta = preview.meta({ /* ... */ });
+const meta = preview.meta({
+  //...
+});
 
 export const Example = meta.story({
   args: {
@@ -205,7 +219,7 @@ export const Example = meta.story({
   tags: ['a'],
 });
 
-/* 
+/*
  * 👇 Final values applied:
  *    {
  *      args: {
@@ -240,7 +254,9 @@ export const ExtendedExample = Example.extend({
 
 ```ts title="Button.stories.js|ts"
 // ...from above
-const meta = preview.meta({ /* ... */ });
+const meta = preview.meta({
+  //...
+});
 
 export const Primary = meta.story({
   args: {
@@ -329,6 +345,7 @@ Update your `.storybook/main.js|ts` file to use the new [`defineMain`](#definema
 ```
 
 **2. Update your preview config file**
+
 <a name="preview-addons" />
 
 Update your `.storybook/preview.js|ts` file to use the new [`definePreview`](#definepreview) function.
@@ -374,7 +391,9 @@ Story files have been updated for improved usability. With the new format:
 - Stories are now created from the meta object, via the [`meta.story`](#metastory) function
 
 <Callout variant="info">
+
 The examples below show the changes needed to upgrade a story file from CSF 3 to CSF Next. You can also upgrade from CSF 1 or 2 using similar steps.
+
 </Callout>
 
 ```diff title="Button.stories.js|ts"
@@ -465,9 +484,11 @@ All of the story properties are now contained within a new property called `comp
 ```
 
 <Callout variant="info">
-  The property name "composed" was chosen because the values within are composed from the story, its component meta, and the preview configuration.
 
-  If you want to access the direct input to the story, you can use `Story.input` instead of `Story.composed`.
+The property name "composed" was chosen because the values within are composed from the story, its component meta, and the preview configuration.
+
+If you want to access the direct input to the story, you can use `Story.input` instead of `Story.composed`.
+
 </Callout>
 
 **4. Update your Vitest setup file**
@@ -477,7 +498,9 @@ If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vite
 If you are using [portable stories in Vitest](../portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF Next format.
 
 <Callout variant="warning">
+
 Note that this only applies if you use CSF Next for all your tested stories. If you use a mix of CSF 1, 2, or 3 and CSF Next, you must maintain two separate setup files.
+
 </Callout>
 
 ```diff title="vitest.setup.js|ts"
@@ -526,9 +549,7 @@ The `Story` object also provides a `Component` property, enabling you to render 
 
 Here's an example of how you can reuse a story in a test file by rendering its component:
 
-{/* prettier-ignore-start */}
 <CodeSnippets path="portable-stories-csf-factory-render.md" />
-{/* prettier-ignore-end */}
 
 ## Frequently asked questions (FAQ)
 

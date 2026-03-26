@@ -91,6 +91,14 @@ describe('Render Story', () => {
     expect(reactiveArgs).toEqual({ objectArg: { argFoo: 'bar' } });
   });
 
+  it('clears reactive Args when updateArgs() receives an empty object', () => {
+    const reactiveArgs = reactive({ argFoo: 'foo', argBar: 'bar' });
+
+    updateArgs<Args>(reactiveArgs, {});
+
+    expect(reactiveArgs).toEqual({});
+  });
+
   it('update reactive Globals', async () => {
     const reactiveGlobals = reactive<Globals>({ theme: 'light', locale: 'en' });
 

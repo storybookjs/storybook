@@ -239,6 +239,7 @@
     "open": "^10.2.0",
     "recast": "^0.23.5",
     "semver": "^7.7.3",
+    "tslib": "*",
     "use-sync-external-store": "^1.5.0",
     "ws": "^8.18.0"
   },

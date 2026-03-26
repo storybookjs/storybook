@@ -16,7 +16,7 @@ Examples of **incorrect** code for this rule:
 
 ```ts
 export default {
-  title: 'Button',
+  title: "Button",
   args: { primary: true },
   component: Button,
 };
@@ -24,7 +24,7 @@ export default {
 
 ```ts
 const meta: Meta<typeof Button> = {
-  title: 'Button',
+  title: "Button",
   args: { primary: true },
   component: Button,
 };
@@ -35,7 +35,7 @@ Examples of **correct** code for this rule:
 
 ```ts
 export default {
-  title: 'Button',
+  title: "Button",
   args: { primary: true },
   component: Button,
 } satisfies Meta<typeof Button>;
@@ -43,7 +43,7 @@ export default {
 
 ```ts
 const meta = {
-  title: 'Button',
+  title: "Button",
   args: { primary: true },
   component: Button,
 } satisfies Meta<typeof Button>;

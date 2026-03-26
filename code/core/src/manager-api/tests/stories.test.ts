@@ -23,11 +23,8 @@ import { EventEmitter } from 'events';
 
 import { getEventMetadata as getEventMetadataOriginal } from '../lib/events';
 import type { ModuleArgs } from '../lib/types';
-import {
-  init as initStories,
-  parseStatusesParam,
-  serializeStatusesParam,
-} from '../modules/stories';
+import { init as initStories } from '../modules/stories';
+import { parseStatusesParam, serializeStatusesParam } from '../modules/statuses';
 import type { API, State } from '../root';
 import type Store from '../store';
 import { fullStatusStore } from '../stores/status';

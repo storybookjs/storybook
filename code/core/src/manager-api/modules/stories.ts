@@ -30,7 +30,6 @@ import type {
   API_IndexHash,
   API_LeafEntry,
   API_LoadedRefData,
-  API_PreparedIndexEntry,
   API_PreparedStoryIndex,
   API_StoryEntry,
   API_TestEntry,
@@ -38,7 +37,6 @@ import type {
   Args,
   ComponentTitle,
   DocsPreparedPayload,
-  FilterFunction,
   SetStoriesPayload,
   StatusValue,
   StoryId,
@@ -52,11 +50,6 @@ import type {
 
 import { global } from '@storybook/global';
 
-import memoize from 'memoizerific';
-
-import { statusValueShortName, toStatusValue } from '../../shared/status-store';
-
-import { BUILT_IN_FILTERS, Tag as TagEnum, USER_TAG_FILTER } from '../../shared/constants/tags';
 import { getEventMetadata } from '../lib/events';
 import {
   addPreparedStories,
@@ -69,7 +62,14 @@ import type { ModuleFn } from '../lib/types';
 import { buildNavigationUrl } from '../lib/url';
 import type { ComposedRef } from '../root';
 import { fullStatusStore } from '../stores/status';
-import { parseTagsParam, serializeTagsParam } from './tags';
+import { computeStatusFilterFn, parseStatusesParam, serializeStatusesParam } from './statuses';
+import {
+  computeStaticFilterFn,
+  computeTagsFilterFn,
+  getDefaultTagsFromPreset,
+  parseTagsParam,
+  serializeTagsParam,
+} from './tags';
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
@@ -77,150 +77,6 @@ const STORY_INDEX_PATH = './index.json';
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
-
-export const parseStatusesParam = (
-  statusesParam: string | undefined
-): { included: StatusValue[]; excluded: StatusValue[] } => {
-  if (!statusesParam) {
-    return { included: [], excluded: [] };
-  }
-
-  const included: StatusValue[] = [];
-  const excluded: StatusValue[] = [];
-
-  statusesParam.split(';').forEach((rawStatus) => {
-    if (!rawStatus) {
-      return;
-    }
-
-    const isExcluded = rawStatus.startsWith('!');
-    const shortName = isExcluded ? rawStatus.slice(1) : rawStatus;
-    const statusValue = toStatusValue(shortName);
-
-    if (!statusValue) {
-      return; // silently ignore unknown short names
-    }
-
-    if (isExcluded) {
-      excluded.push(statusValue);
-    } else {
-      included.push(statusValue);
-    }
-  });
-
-  return { included, excluded };
-};
-
-export const serializeStatusesParam = (
-  included: StatusValue[],
-  excluded: StatusValue[]
-): string | undefined => {
-  if (!included.length && !excluded.length) {
-    return undefined;
-  }
-
-  const serializedIncluded = included.map((v) => statusValueShortName(v));
-  const serializedExcluded = excluded.map((v) => `!${statusValueShortName(v)}`);
-
-  return [...serializedIncluded, ...serializedExcluded].join(';');
-};
-
-const computeStatusFilterFn = (
-  includedStatusFilters: StatusValue[],
-  excludedStatusFilters: StatusValue[]
-): API_FilterFunction => {
-  return (entry: API_PreparedIndexEntry) => {
-    if (!includedStatusFilters.length && !excludedStatusFilters.length) {
-      return true;
-    }
-
-    const allStatuses = fullStatusStore.getAll() ?? {};
-    const storyStatuses = allStatuses[entry.id];
-    const storyStatusValues = storyStatuses ? Object.values(storyStatuses).map((s) => s.value) : [];
-
-    const passesInclude =
-      !includedStatusFilters.length ||
-      includedStatusFilters.some((v) => storyStatusValues.includes(v));
-
-    const passesExclude =
-      !excludedStatusFilters.length ||
-      excludedStatusFilters.every((v) => !storyStatusValues.includes(v));
-
-    return passesInclude && passesExclude;
-  };
-};
-
-export const getDefaultTagsFromPreset = memoize(1)((
-  presets: TagsOptions
-): {
-  included: Tag[];
-  excluded: Tag[];
-} => {
-  const presetEntries = Object.entries(presets);
-  return {
-    included: presetEntries
-      .filter(([, option]) => option.defaultFilterSelection === 'include')
-      .map(([tag]) => tag),
-    excluded: presetEntries
-      .filter(([, option]) => option.defaultFilterSelection === 'exclude')
-      .map(([tag]) => tag),
-  };
-});
-
-const computeStaticFilterFn = (tagPresets: TagsOptions) => {
-  const staticExcludeTags = Object.entries(tagPresets).reduce(
-    (acc, entry) => {
-      const [tag, option] = entry;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((option as any).excludeFromSidebar) {
-        acc[tag] = true;
-      }
-      return acc;
-    },
-    {} as Record<string, boolean>
-  );
-
-  return (item: API_PreparedIndexEntry) => {
-    const tags = item.tags ?? [];
-    return (
-      (tags.includes(TagEnum.DEV) || item.type === 'docs') &&
-      tags.filter((tag) => staticExcludeTags[tag]).length === 0
-    );
-  };
-};
-
-const computeTagsFilterFn = (
-  includedTagFilters: Tag[],
-  excludedTagFilters: Tag[]
-): ((item: API_PreparedIndexEntry) => boolean) => {
-  const computeFilterFunctions = (set: Tag[]): FilterFunction[][] => {
-    return Object.values(
-      set.reduce(
-        (acc, tag) => {
-          if (Object.hasOwn(BUILT_IN_FILTERS, tag)) {
-            acc['built-in'].push(BUILT_IN_FILTERS[tag as keyof typeof BUILT_IN_FILTERS]);
-          } else {
-            acc.user.push(USER_TAG_FILTER(tag));
-          }
-          return acc;
-        },
-        { 'built-in': [], user: [] } as { 'built-in': FilterFunction[]; user: FilterFunction[] }
-      )
-    ).filter((group) => group.length > 0);
-  };
-
-  return (item: API_PreparedIndexEntry) => {
-    const included = computeFilterFunctions(includedTagFilters);
-    const excluded = computeFilterFunctions(excludedTagFilters);
-
-    return (
-      (!included.length ||
-        included.every((group) => group.some((filterFn) => filterFn(item, false)))) &&
-      (!excluded.length ||
-        excluded.every((group) => group.every((filterFn) => filterFn(item, true))))
-    );
-  };
-};
 
 type Direction = -1 | 1;
 type ParameterName = string;

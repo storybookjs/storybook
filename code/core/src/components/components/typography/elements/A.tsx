@@ -31,4 +31,19 @@ export const A = styled(Link)(({ theme }) => ({
   '&.anchor:hover, &.anchor:focus': {
     textDecoration: 'underline',
   },
+  '& code': {
+    color: 'inherit',
+    textDecoration: 'underline',
+    textDecorationThickness: '0.03125rem',
+    paddingLeft: 0,
+    paddingRight: 0,
+    '&::before': {
+      content: '"\\00a0"',
+      fontSize: '0.5em',
+    },
+    '&::after': {
+      content: '"\\00a0"',
+      fontSize: '0.5em',
+    },
+  },
 }));

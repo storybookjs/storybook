@@ -9,6 +9,7 @@ import { Option, program } from 'commander';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
 import { initiate } from '../initiate';
+import { isAgent } from 'std-env';
 
 addToGlobalContext('cliVersion', version);
 
@@ -120,6 +121,11 @@ createStorybookProgram
     if (options.features === false) {
       // Ensure features are treated as empty when --no-features is set
       options.features = [];
+    }
+
+    if (isAgent) {
+      options.agent = true;
+      logger.log('This command is running via an AI agent. Enabling non-interactive defaults.');
     }
 
     await initiate(options as CommandOptions).catch(() => process.exit(1));

@@ -121,6 +121,8 @@ export type CommandOptions = {
   features?: Array<Feature>;
   type?: ProjectType;
   force?: any;
+  // Whether this is being run via an ai agent
+  agent?: boolean;
   html?: boolean;
   skipInstall?: boolean;
   language?: SupportedLanguage;

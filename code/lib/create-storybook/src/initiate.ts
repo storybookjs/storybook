@@ -39,6 +39,10 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   | { shouldRunDev: false }
 > {
+  if (options.agent) {
+    options.yes = true;
+  }
+
   // Initialize services
   const telemetryService = new TelemetryService(options.disableTelemetry);
 
@@ -107,6 +111,11 @@ export async function doInitiate(options: CommandOptions): Promise<
     storybookCommand,
   });
 
+  if (options.agent) {
+    const { aiInit } = await import('../../cli-storybook/src/ai');
+    await aiInit({ configDir: configDir ?? '.storybook' });
+  }
+
   // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
 
@@ -154,7 +163,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
     handleCommandFailure(options.logfile);
   });
 
-  if (initiateResult?.shouldRunDev) {
+  if (!options.agent && initiateResult?.shouldRunDev) {
     await runStorybookDev(initiateResult);
   }
 }

@@ -106,6 +106,46 @@ const meta = {
               excludedTagFilters: excluded,
             }));
           },
+          addStatusFilters: (statuses: string[], excluded: boolean) => {
+            setState((current: any) => {
+              const includedStatusFilters = new Set(current.includedStatusFilters ?? []);
+              const excludedStatusFilters = new Set(current.excludedStatusFilters ?? []);
+
+              statuses.forEach((status) => {
+                if (excluded) {
+                  includedStatusFilters.delete(status);
+                  excludedStatusFilters.add(status);
+                } else {
+                  includedStatusFilters.add(status);
+                  excludedStatusFilters.delete(status);
+                }
+              });
+
+              return {
+                ...current,
+                includedStatusFilters: Array.from(includedStatusFilters),
+                excludedStatusFilters: Array.from(excludedStatusFilters),
+              };
+            });
+          },
+          removeStatusFilters: (statuses: string[]) => {
+            setState((current: any) => ({
+              ...current,
+              includedStatusFilters: (current.includedStatusFilters ?? []).filter(
+                (s: string) => !statuses.includes(s)
+              ),
+              excludedStatusFilters: (current.excludedStatusFilters ?? []).filter(
+                (s: string) => !statuses.includes(s)
+              ),
+            }));
+          },
+          resetStatusFilters: () => {
+            setState((current: any) => ({
+              ...current,
+              includedStatusFilters: [],
+              excludedStatusFilters: [],
+            }));
+          },
           getDocsUrl: ({ subpath }: { subpath: string }) =>
             `https://storybook.js.org/docs/${subpath}`,
         }),

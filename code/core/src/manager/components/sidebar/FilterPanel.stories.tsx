@@ -9,6 +9,8 @@ import type {
 import { MockAPIDecorator } from './Filter.story-helpers';
 import { FilterPanel } from './FilterPanel';
 import { IconSymbols } from './IconSymbols';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { API } from '../../../manager-api';
 
 const getEntries = (includeUserTags: boolean) => {
   const entries = {

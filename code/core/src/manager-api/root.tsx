@@ -45,6 +45,7 @@ import type {
 
 import { isEqual } from 'es-toolkit/predicate';
 
+import { getAnonymousProjectId } from '../telemetry/anonymous-id';
 import { createContext } from './context';
 import getInitialState from './initial-state';
 import { types } from './lib/addons';
@@ -148,6 +149,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
     } = props;
 
     const store = new Store({
+      projectId: getAnonymousProjectId(),
       getState: () => this.state,
       setState: (stateChange: Partial<State>, callback) => {
         this.setState(stateChange, () => callback(this.state));

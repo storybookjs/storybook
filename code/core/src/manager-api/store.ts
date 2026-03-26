@@ -9,19 +9,23 @@ storeSetup(store._);
 
 export const STORAGE_KEY = '@storybook/manager/store';
 
-function get(storage: StoreAPI) {
-  const data = storage.get(STORAGE_KEY);
+function getStorageKey(projectId?: string) {
+  return projectId ? `${STORAGE_KEY}:${projectId}` : STORAGE_KEY;
+}
+
+function get(storage: StoreAPI, projectId?: string) {
+  const data = storage.get(getStorageKey(projectId));
   return data || {};
 }
 
-function set(storage: StoreAPI, value: Patch) {
-  return storage.set(STORAGE_KEY, value);
+function set(storage: StoreAPI, value: Patch, projectId?: string) {
+  return storage.set(getStorageKey(projectId), value);
 }
 
-function update(storage: StoreAPI, patch: Patch) {
-  const previous = get(storage);
+function update(storage: StoreAPI, patch: Patch, projectId?: string) {
+  const previous = get(storage, projectId);
   // Apply the same behaviour as react here
-  return set(storage, { ...previous, ...patch });
+  return set(storage, { ...previous, ...patch }, projectId);
 }
 
 type GetState = () => State;
@@ -33,6 +37,11 @@ export interface Upstream {
    * persistence in Storybook's own tests. True by default.
    */
   allowPersistence?: boolean;
+  /**
+   * Unique project identifier used to namespace localStorage/sessionStorage keys.
+   * Prevents state from being shared across different Storybook instances.
+   */
+  projectId?: string;
   getState: GetState;
   setState: SetState;
 }
@@ -60,10 +69,12 @@ export default class Store {
   upstreamPersistence: boolean;
   upstreamGetState: GetState;
   upstreamSetState: SetState;
+  projectId: string | undefined;
   private persistenceHandlers: Map<string, PersistenceHandler> = new Map();
 
-  constructor({ allowPersistence, setState, getState }: Upstream) {
+  constructor({ allowPersistence, projectId, setState, getState }: Upstream) {
     this.upstreamPersistence = allowPersistence ?? true;
+    this.projectId = projectId;
     this.upstreamSetState = setState;
     this.upstreamGetState = getState;
   }
@@ -79,18 +90,18 @@ export default class Store {
     // One-time migration: tag filter state moved from localStorage to URL persistence.
     // Remove the old keys so they no longer interfere with URL-derived initial state.
     for (const storage of [store.local, store.session] as const) {
-      const persisted = get(storage);
+      const persisted = get(storage, this.projectId);
       if ('includedTagFilters' in persisted || 'excludedTagFilters' in persisted) {
         const { includedTagFilters: _i, excludedTagFilters: _e, ...rest } = persisted;
-        set(storage, rest);
+        set(storage, rest, this.projectId);
       }
     }
 
     // We don't only merge at the very top level (the same way as React setState)
     // when you set keys, so it makes sense to do the same in combining the two storage modes
     // Really, you shouldn't store the same key in both places
-    const local = get(store.local);
-    const session = get(store.session);
+    const local = get(store.local, this.projectId);
+    const session = get(store.session, this.projectId);
 
     return { ...base, ...local, ...session };
   }
@@ -147,7 +158,7 @@ export default class Store {
         }
       } else {
         const storage = persistence === 'session' ? store.session : store.local;
-        await update(storage, delta);
+        await update(storage, delta, this.projectId);
       }
     }
 

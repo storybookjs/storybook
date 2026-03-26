@@ -7,9 +7,6 @@ declare var __DOCS_CONTEXT__: import('react').Context<
   | import('storybook/internal/types').DocsContextProps<import('storybook/internal/types').Renderer>
   | null
 >;
-declare var __DOCS_SLUGGER_CONTEXT__: import('react').Context<
-  import('./blocks/blocks/DocsSluggerContext').DocsSlugger | null
->;
 declare var PREVIEW_URL: string | undefined;
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;
 declare var TAGS_OPTIONS: import('storybook/internal/types').TagsOptions;

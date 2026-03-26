@@ -23,7 +23,10 @@ const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Pro
 
     // Replace @storybook/nextjs with @storybook/nextjs-vite, using a negative lookahead
     // to avoid corrupting references that are already @storybook/nextjs-vite
-    const transformedContent = content.replace(/@storybook\/nextjs(?!-vite)/g, '@storybook/nextjs-vite');
+    const transformedContent = content.replace(
+      /@storybook\/nextjs(?!-vite)/g,
+      '@storybook/nextjs-vite'
+    );
 
     if (transformedContent !== content && !dryRun) {
       await writeFile(mainConfigPath, transformedContent);

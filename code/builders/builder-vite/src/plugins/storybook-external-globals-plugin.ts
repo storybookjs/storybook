@@ -1,24 +1,27 @@
-import { existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
-import type { Options } from 'storybook/internal/types';
+import { globalsNameReferenceMap } from "storybook/internal/preview/globals";
+import type { Options } from "storybook/internal/types";
 
-import * as pkg from 'empathic/package';
-import { init, parse } from 'es-module-lexer';
-import MagicString from 'magic-string';
-import type { Alias, Plugin } from 'vite';
+import * as pkg from "empathic/package";
+import { init, parse } from "es-module-lexer";
+import MagicString from "magic-string";
+import type { Alias, Plugin } from "vite";
 
-const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-const defaultImportRegExp = 'import ([^*{}]+) from';
+const escapeKeys = (key: string) =>
+  key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+const defaultImportRegExp = "import ([^*{}]+) from";
+const emptyImportRegExp =
+  /^import(?:\s*\{\s*\}\s*from)?\s*['"][^'"]+['"]\s*;?$/;
 const replacementMap = new Map([
-  ['import ', 'const '],
-  ['import{', 'const {'],
-  ['* as ', ''],
-  [' as ', ': '],
-  [' from ', ' = '],
-  ['}from', '} ='],
+  ["import ", "const "],
+  ["import{", "const {"],
+  ["* as ", ""],
+  [" as ", ": "],
+  [" from ", " = "],
+  ["}from", "} ="],
 ]);
 
 /**
@@ -42,43 +45,59 @@ const replacementMap = new Map([
  * needs.
  */
 
-export async function storybookExternalGlobalsPlugin(options: Options): Promise<Plugin> {
-  const build = await options.presets.apply('build');
+export async function storybookExternalGlobalsPlugin(
+  options: Options,
+): Promise<Plugin> {
+  const build = await options.presets.apply("build");
 
   const externals: typeof globalsNameReferenceMap & Record<string, string> =
     globalsNameReferenceMap;
 
   if (build?.test?.disableBlocks) {
-    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+    externals["@storybook/addon-docs/blocks"] =
+      "__STORYBOOK_BLOCKS_EMPTY_MODULE__";
   }
 
   await init;
-  const { mergeAlias } = await import('vite');
+  const { mergeAlias } = await import("vite");
 
   return {
-    name: 'storybook:external-globals-plugin',
-    enforce: 'post',
+    name: "storybook:external-globals-plugin",
+    enforce: "post",
     // In dev (serve), we set up aliases to files that we write into node_modules/.cache.
     async config(config, { command }) {
-      if (command !== 'serve') {
+      if (command !== "serve") {
         return undefined;
       }
       const newAlias = mergeAlias([], config.resolve?.alias) as Alias[];
 
       const cachePath =
-        pkg.cache('sb-vite-plugin-externals', { create: true }) ??
-        join(process.cwd(), 'node_modules', '.cache', 'sb-vite-plugin-externals');
+        pkg.cache("sb-vite-plugin-externals", { create: true }) ??
+        join(
+          process.cwd(),
+          "node_modules",
+          ".cache",
+          "sb-vite-plugin-externals",
+        );
 
       await Promise.all(
-        (Object.keys(externals) as Array<keyof typeof externals>).map(async (externalKey) => {
-          const externalCachePath = join(cachePath, `${externalKey}.js`);
-          newAlias.push({ find: new RegExp(`^${externalKey}$`), replacement: externalCachePath });
-          if (!existsSync(externalCachePath)) {
-            const directory = dirname(externalCachePath);
-            await mkdir(directory, { recursive: true });
-          }
-          await writeFile(externalCachePath, `module.exports = ${externals[externalKey]};`);
-        })
+        (Object.keys(externals) as Array<keyof typeof externals>).map(
+          async (externalKey) => {
+            const externalCachePath = join(cachePath, `${externalKey}.js`);
+            newAlias.push({
+              find: new RegExp(`^${externalKey}$`),
+              replacement: externalCachePath,
+            });
+            if (!existsSync(externalCachePath)) {
+              const directory = dirname(externalCachePath);
+              await mkdir(directory, { recursive: true });
+            }
+            await writeFile(
+              externalCachePath,
+              `module.exports = ${externals[externalKey]};`,
+            );
+          },
+        ),
       );
 
       return {
@@ -101,7 +120,11 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
         const packageName = path;
         if (packageName && globalsList.includes(packageName)) {
           const importStatement = src.slice(startPosition, endPosition);
-          const transformedImport = rewriteImport(importStatement, externals, packageName);
+          const transformedImport = rewriteImport(
+            importStatement,
+            externals,
+            packageName,
+          );
           src.update(startPosition, endPosition, transformedImport);
         }
       });
@@ -119,22 +142,53 @@ function getDefaultImportReplacement(match: string) {
   return matched && `const {default: ${matched[1]}} =`;
 }
 
+function getEmptyImportReplacement(
+  importStatement: string,
+  globalReference: string,
+) {
+  if (!emptyImportRegExp.test(importStatement.trim())) {
+    return undefined;
+  }
+
+  const statementTerminator = importStatement.trimEnd().endsWith(";")
+    ? ";"
+    : "";
+  return `void ${globalReference}${statementTerminator}`;
+}
+
 function getSearchRegExp(packageName: string) {
   const staticKeys = [...replacementMap.keys()].map(escapeKeys);
   const packageNameLiteral = `.${packageName}.`;
   const dynamicImportExpression = `await import\\(.${packageName}.\\)`;
-  const lookup = [defaultImportRegExp, ...staticKeys, packageNameLiteral, dynamicImportExpression];
-  return new RegExp(`(${lookup.join('|')})`, 'g');
+  const lookup = [
+    defaultImportRegExp,
+    ...staticKeys,
+    packageNameLiteral,
+    dynamicImportExpression,
+  ];
+  return new RegExp(`(${lookup.join("|")})`, "g");
 }
 
 export function rewriteImport(
   importStatement: string,
   globs: Record<string, string>,
-  packageName: string
+  packageName: string,
 ): string {
+  const emptyImportReplacement = getEmptyImportReplacement(
+    importStatement,
+    globs[packageName],
+  );
+
+  if (emptyImportReplacement) {
+    return emptyImportReplacement;
+  }
+
   const search = getSearchRegExp(packageName);
   return importStatement.replace(
     search,
-    (match) => replacementMap.get(match) ?? getDefaultImportReplacement(match) ?? globs[packageName]
+    (match) =>
+      replacementMap.get(match) ??
+      getDefaultImportReplacement(match) ??
+      globs[packageName],
   );
 }

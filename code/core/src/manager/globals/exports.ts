@@ -669,7 +669,6 @@ export default {
     'CoreWebpackCompiler',
     'Feature',
     'SupportedBuilder',
-    'SupportedFramework',
     'SupportedLanguage',
     'SupportedRenderer',
   ],

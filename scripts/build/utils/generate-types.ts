@@ -1,68 +1,14 @@
-import { spawn } from 'child_process';
-import { existsSync } from 'node:fs';
+import { sep } from 'node:path';
+
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
+import { rolldown } from 'rolldown';
+import { dts } from 'rolldown-plugin-dts';
 
-import { ROOT_DIRECTORY } from '../../utils/constants';
 import type { BuildEntries } from './entry-utils';
+import { getExternal } from './entry-utils';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
-
-/** Split entries into N roughly equal batches using round-robin. */
-function splitIntoBatches(entries: string[], batchCount: number): string[][] {
-  const batches: string[][] = Array.from({ length: batchCount }, () => []);
-  for (let i = 0; i < entries.length; i++) {
-    batches[i % batchCount].push(entries[i]);
-  }
-  return batches.filter((b) => b.length > 0);
-}
-
-function spawnDtsBatch(
-  cwd: string,
-  entries: string[]
-): Promise<{ exitCode: number | null }> {
-  return new Promise((resolve) => {
-    const dtsProcess = spawn(
-      `"${join(ROOT_DIRECTORY, 'node_modules', '.bin', 'jiti')}"`,
-      [
-        `"${join(import.meta.dirname, 'dts-process.ts')}"`,
-        ...entries.map((e) => `"${e}"`),
-      ],
-      {
-        shell: true,
-        cwd,
-        stdio: ['ignore', 'inherit', 'pipe'],
-        env: {
-          ...process.env,
-          NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --max-old-space-size=8192`.trim(),
-        },
-      }
-    );
-
-    // Filter stderr to exclude ignorable rollup warnings
-    dtsProcess.stderr?.on('data', (data) => {
-      const message = data.toString();
-      if (!message.includes('are imported from external module')) {
-        process.stderr.write(data);
-      }
-    });
-
-    const timer = setTimeout(() => {
-      console.log('⌛ Timed out generating d.ts files');
-      dtsProcess.kill('SIGTERM');
-      resolve({ exitCode: 1 });
-    }, 600000); // 10 minutes
-
-    dtsProcess.on('exit', (code) => {
-      clearTimeout(timer);
-      resolve({ exitCode: code });
-    });
-    dtsProcess.on('error', () => {
-      clearTimeout(timer);
-      resolve({ exitCode: 1 });
-    });
-  });
-}
 
 export async function generateTypesFiles(cwd: string, data: BuildEntries) {
   const DIR_REL = relative(DIR_CODE, cwd);
@@ -76,38 +22,46 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
     return;
   }
 
-  // Batch entries so each process amortizes module loading and benefits from OS file cache.
-  // Each batch runs in its own process for multi-core utilization.
-  const BATCH_COUNT = dtsEntries.length <= 4 ? dtsEntries.length : 4;
-  const batches = splitIntoBatches(dtsEntries, BATCH_COUNT);
+  const { typesExternal: external } = await getExternal(cwd);
 
-  // Phase 1: Run all batches in parallel.
-  // Some entries may fail due to cross-batch dependencies (e.g. mocking-utils depends on babel's d.ts).
-  await Promise.allSettled(batches.map((batch) => spawnDtsBatch(cwd, batch)));
+  const externalFn = (id: string) =>
+    external.some(
+      (dep: string) =>
+        id === dep ||
+        id.startsWith(`${dep}/`) ||
+        id.includes(`${sep}node_modules${sep}${dep}${sep}`)
+    );
 
-  // Phase 2: Check which entries are still missing and retry them.
-  // By now all batches have completed, so cross-batch dependencies are resolved.
-  const missingEntries = dtsEntries.filter((entry) => {
-    const outputFile = join(cwd, entry.replace('src', 'dist').replace(/\.tsx?$/, '.d.ts'));
-    return !existsSync(outputFile);
+  // Build entry map: { 'client-logger/index': '/absolute/path/src/client-logger/index.ts', ... }
+  const entryMap: Record<string, string> = {};
+  for (const entry of dtsEntries) {
+    // ./src/client-logger/index.ts -> client-logger/index
+    const name = entry.replace(/^\.\/src\//, '').replace(/\.tsx?$/, '');
+    entryMap[name] = join(cwd, entry);
+  }
+
+  // Use rolldown + rolldown-plugin-dts with tsgo for fast d.ts generation.
+  // tsgo (Go-based TypeScript compiler) runs once for all entries (~7s),
+  // then rolldown bundles the declarations natively in Rust.
+  const out = await rolldown({
+    input: entryMap,
+    external: externalFn,
+    plugins: [
+      dts({
+        cwd,
+        tsconfig: join(cwd, 'tsconfig.json'),
+        tsgo: true,
+        emitDtsOnly: true,
+      }),
+    ],
+    logLevel: 'warn',
   });
 
-  if (missingEntries.length > 0) {
-    console.warn(
-      `⚠️ ${missingEntries.length} entries missing after initial pass, retrying:`,
-      missingEntries.map((e) => relative(cwd, e)).join(', ')
-    );
-    const { exitCode } = await spawnDtsBatch(cwd, missingEntries);
-
-    if (exitCode !== 0) {
-      console.error('\n❌ Generating types for', picocolors.cyan(DIR_REL), 'failed');
-      process.exit(exitCode || 1);
-    }
-  }
+  await out.write({ dir: join(cwd, 'dist'), format: 'es' });
 
   if (!process.env.CI) {
     for (const entry of dtsEntries) {
-      console.log('✅ Generated types for', picocolors.cyan(join(DIR_REL, entry)));
+      console.log('Generated types for', picocolors.cyan(join(DIR_REL, entry)));
     }
   }
 }

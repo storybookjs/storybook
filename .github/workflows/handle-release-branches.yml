@@ -10,8 +10,10 @@ jobs:
     steps:
       - id: get-branch
         run: |
-          BRANCH=($(echo ${{ github.ref }} | sed -E 's/refs\/heads\///'))
+          BRANCH=($(echo ${GIT_REF} | sed -E 's/refs\/heads\///'))
           echo "branch=$BRANCH" >> $GITHUB_ENV
+        env:
+          GIT_REF: ${{ github.ref }}
     outputs:
       branch: ${{ env.branch }}
       is-latest-branch: ${{ env.branch == 'main' }}
@@ -26,7 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: curl -X POST "https://api.netlify.com/build_hooks/${{ secrets.FRONTPAGE_HOOK }}"
+      - run: curl -X POST "https://api.netlify.com/build_hooks/${FRONTPAGE_HOOK}"
+        env:
+          FRONTPAGE_HOOK: ${{ secrets.FRONTPAGE_HOOK }}
 
   get-next-release-branch:
     needs: branch-checks
@@ -39,7 +43,7 @@ jobs:
           path: next
 
       - id: next-version
-        uses: notiz-dev/github-action-json-property@release
+        uses: notiz-dev/github-action-json-property@a5a9c668b16513c737c3e1f8956772c99c73f6e8 # release
         with:
           path: ${{ github.workspace }}/next/code/package.json
           prop_path: version
@@ -97,5 +101,8 @@ jobs:
         run: |
           curl -X POST https://api.github.com/repos/storybookjs/frontpage/dispatches \
           -H 'Accept: application/vnd.github.v3+json' \
-          -u ${{ secrets.FRONTPAGE_ACCESS_TOKEN }} \
+          -u ${FRONTPAGE_ACCESS_TOKEN} \
           --data '{"event_type": "request-create-frontpage-branch", "client_payload": { "branch": "${{ needs.create-next-release-branch.outputs.branch || needs.branch-checks.outputs.branch }}" }}'
+
+        env:
+          FRONTPAGE_ACCESS_TOKEN: ${{ secrets.FRONTPAGE_ACCESS_TOKEN }}

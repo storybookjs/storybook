@@ -51,7 +51,7 @@ jobs:
             fi
           fi
 
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/next" ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${GIT_REF}" == "refs/heads/next" ]]; then
             tags="merged"
           fi
 
@@ -60,6 +60,8 @@ jobs:
           fi
 
           echo "tag=$tags" >> "$GITHUB_OUTPUT"
+        env:
+          GIT_REF: ${{ github.ref }}
       - name: Select distribution config
         id: dist
         run: |
@@ -91,7 +93,7 @@ jobs:
           node-version: 22
           cache: 'yarn'
       - run: yarn install --immutable
-      - uses: nrwl/nx-set-shas@v4
+      - uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4
       - id: nx
         name: 'Run nx'
         run: |

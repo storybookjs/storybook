@@ -17,6 +17,7 @@ export * from './utils/get-storybook-configuration';
 export * from './utils/get-storybook-info';
 export * from './utils/get-storybook-refs';
 export * from './utils/glob-to-regexp';
+export * from './utils/docgen-resolver';
 export * from './utils/HandledError';
 export * from './utils/interpolate';
 export * from './utils/interpret-files';

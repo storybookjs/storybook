@@ -6,8 +6,12 @@ import { dedent } from 'ts-dedent';
 import { fsMocks } from '../fixtures';
 import { getComponentDocgen } from './extractReactDocgenInfo';
 
+vi.mock('node:fs');
+vi.mock('node:fs/promises');
+
 describe('getComponentDocgen', () => {
   beforeEach(() => {
+    vol.reset();
     vi.spyOn(process, 'cwd').mockReturnValue('/app');
     vol.fromJSON(fsMocks, '/app');
   });

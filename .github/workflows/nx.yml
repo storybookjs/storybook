@@ -32,7 +32,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress
+      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,7 +60,15 @@ jobs:
           fi
 
           echo "tag=$tags" >> "$GITHUB_OUTPUT"
-      - run: npx nx@latest start-ci-run --distribute-on="./.nx/workflows/distribution-config.yaml" --stop-agents-after="$ALL_TASKS"
+      - name: Select distribution config
+        id: dist
+        run: |
+          if [[ "${{ steps.tag.outputs.tag }}" == "daily" ]]; then
+            echo "config=./.nx/workflows/distribution-config-daily.yaml" >> "$GITHUB_OUTPUT"
+          else
+            echo "config=./.nx/workflows/distribution-config.yaml" >> "$GITHUB_OUTPUT"
+          fi
+      - run: npx nx-cloud@latest start-ci-run --distribute-on="${{ steps.dist.outputs.config }}" --stop-agents-after="$ALL_TASKS"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@v7
         with:

@@ -15,11 +15,37 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
 export default defineMain({
   framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async viteFinal(config, options) {
+    // Add your configuration here
+    return config;
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async viteFinal(config, options) {
+    // Add your configuration here
+    return config;
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   async viteFinal(config, options) {
     // Add your configuration here

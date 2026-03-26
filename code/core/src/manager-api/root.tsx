@@ -37,6 +37,7 @@ import type {
   API_TestEntry,
   ArgTypes,
   Args,
+  GlobalTypes,
   Globals,
   Parameters,
   StoryId,
@@ -105,6 +106,7 @@ export type API = addons.SubAPI &
   version.SubAPI &
   url.SubAPI &
   whatsnew.SubAPI &
+  openInEditor.SubAPI &
   Other;
 
 interface Other {
@@ -486,7 +488,7 @@ export function useGlobals(): [
   return [api.getGlobals(), api.updateGlobals, api.getStoryGlobals(), api.getUserGlobals()];
 }
 
-export function useGlobalTypes(): ArgTypes {
+export function useGlobalTypes(): GlobalTypes {
   return useStorybookApi().getGlobalTypes();
 }
 

@@ -45,13 +45,14 @@ export default preview;
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { Renderer, definePreview } from '@storybook/your-framework';
 
-import { withThemeByClassName } from '@storybook/addon-themes';
+import addonThemes from '@storybook/addon-themes';
 
 import '../src/index.css'; // Your application's global CSS file
 
 export default definePreview({
+  addons: [addonThemes()],
   decorators: [
-    withThemeByClassName<Renderer>({
+    addonThemes.withThemeByClassName<Renderer>({
       themes: {
         light: '',
         dark: 'dark',
@@ -68,13 +69,14 @@ export default definePreview({
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
-import { withThemeByClassName } from '@storybook/addon-themes';
+import addonThemes from '@storybook/addon-themes';
 
 import '../src/index.css'; // Your application's global CSS file
 
 export default definePreview({
+  addons: [addonThemes()],
   decorators: [
-    withThemeByClassName({
+    addonThemes.withThemeByClassName({
       themes: {
         light: '',
         dark: 'dark',

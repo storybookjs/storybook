@@ -1,5 +1,6 @@
 import { parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
+import type { Plugin } from 'vite';
 
 export async function injectExportOrderPlugin() {
   const { createFilter } = await import('vite');
@@ -35,5 +36,5 @@ export async function injectExportOrderPlugin() {
         map: s.generateMap({ hires: true, source: id }),
       };
     },
-  };
+  } satisfies Plugin;
 }

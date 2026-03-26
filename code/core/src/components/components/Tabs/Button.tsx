@@ -14,13 +14,17 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { isPropValid, styled } from 'storybook/theming';
 
-interface ButtonProps
-  extends DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {
+interface ButtonProps extends DetailedHTMLProps<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  HTMLButtonElement
+> {
   href?: never;
   target?: never;
 }
-interface LinkProps
-  extends DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement> {
+interface LinkProps extends DetailedHTMLProps<
+  AnchorHTMLAttributes<HTMLAnchorElement>,
+  HTMLAnchorElement
+> {
   disabled?: void;
   href: string;
 }

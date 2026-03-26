@@ -213,8 +213,10 @@ export interface Addon_BaseAnnotations<
   play?: (context: Addon_StoryContext<TRenderer>) => Promise<void> | void;
 }
 
-export interface Addon_Annotations<TArgs, StoryFnReturnType>
-  extends Addon_BaseAnnotations<TArgs, StoryFnReturnType> {
+export interface Addon_Annotations<TArgs, StoryFnReturnType> extends Addon_BaseAnnotations<
+  TArgs,
+  StoryFnReturnType
+> {
   /**
    * Used to only include certain named exports as stories. Useful when you want to have non-story
    * exports such as mock data or ignore a few stories.

@@ -1,11 +1,13 @@
 import type { FC, SyntheticEvent } from 'react';
 import React from 'react';
 
-import { Button, Toolbar as SharedToolbar, getStoryHref } from 'storybook/internal/components';
+import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components';
 
-import { ShareAltIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
+import { ShareAltIcon, SyncIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
+
+import { getStoryHref } from '../getStoryHref';
 
 interface ZoomProps {
   zoom: (val: number) => void;
@@ -14,7 +16,10 @@ interface ZoomProps {
 
 interface EjectProps {
   storyId?: string;
-  baseUrl?: string;
+}
+
+interface ReloadProps {
+  onReloadStory?: () => void;
 }
 
 interface BarProps {
@@ -25,7 +30,7 @@ interface LoadingProps {
   isLoading?: boolean;
 }
 
-export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps;
+export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps & ReloadProps;
 
 const AbsoluteBar = styled(SharedToolbar)({
   position: 'absolute',
@@ -55,9 +60,9 @@ const IconPlaceholder = styled.div(({ theme }) => ({
 export const Toolbar: FC<ToolbarProps> = ({
   isLoading,
   storyId,
-  baseUrl,
   zoom,
   resetZoom,
+  onReloadStory,
   ...rest
 }) => (
   <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }} {...rest}>
@@ -66,6 +71,17 @@ export const Toolbar: FC<ToolbarProps> = ({
         [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
       ) : (
         <>
+          {onReloadStory && (
+            <Button
+              padding="small"
+              variant="ghost"
+              key="reload"
+              onClick={onReloadStory}
+              ariaLabel="Reload story"
+            >
+              <SyncIcon />
+            </Button>
+          )}
           <Button
             padding="small"
             variant="ghost"
@@ -111,7 +127,6 @@ export const Toolbar: FC<ToolbarProps> = ({
         <IconPlaceholder />
       </Wrapper>
     ) : (
-      baseUrl &&
       storyId && (
         <Wrapper key="right">
           <Button
@@ -121,7 +136,7 @@ export const Toolbar: FC<ToolbarProps> = ({
             key="opener"
             ariaLabel="Open canvas in new tab"
           >
-            <a href={getStoryHref(baseUrl, storyId)} target="_blank" rel="noopener noreferrer">
+            <a href={getStoryHref(storyId)} target="_blank" rel="noopener noreferrer">
               <ShareAltIcon />
             </a>
           </Button>

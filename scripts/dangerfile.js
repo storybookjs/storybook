@@ -13,7 +13,7 @@
  * Why: We want Danger to run as fast as possible in CI without installing dependencies or running
  * build processes.
  */
-import { danger, fail } from 'danger';
+import { danger, fail, warn } from 'danger';
 
 /**
  * Returns the intersection of two arrays
@@ -42,6 +42,8 @@ const { labels } = danger.github.issue;
 const prLogConfig = pkg['pr-log'];
 
 const branchVersion = Versions.MINOR;
+const targetBranch = danger.github.pr.base.ref;
+const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
 
 /** @param {string[]} labels */
 const checkRequiredLabels = (labels) => {
@@ -66,18 +68,29 @@ const checkRequiredLabels = (labels) => {
     );
   }
 
-  const foundRequiredLabels = intersection(requiredLabels, labels);
-  if (foundRequiredLabels.length === 0) {
-    fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
-  } else if (foundRequiredLabels.length > 1) {
-    fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
-  }
+  if (isReleasePr) {
+    // Release PRs only need `ci:daily`.
+    if (!labels.includes('ci:daily')) {
+      fail(
+        'Release PRs targeting latest-release or next-release must include the "ci:daily" label.'
+      );
+    }
+    return;
+  } else {
+    // All other PRs to `next` to a qualifying change type and one of several applicable CI labels.
+    const foundRequiredLabels = intersection(requiredLabels, labels);
+    if (foundRequiredLabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
+    } else if (foundRequiredLabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
+    }
 
-  const foundCILabels = intersection(ciLabels, labels);
-  if (foundCILabels.length === 0) {
-    fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
-  } else if (foundCILabels.length > 1) {
-    fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
+    const foundCILabels = intersection(ciLabels, labels);
+    if (foundCILabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
+    } else if (foundCILabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
+    }
   }
 };
 
@@ -98,7 +111,84 @@ Bad examples:
   }
 };
 
+/** @param {string} body */
+const checkManualTestingSection = (body) => {
+  // Check if author is a core team member or maintainer
+  const author = danger.github.pr.user;
+  const authorAssociation = danger.github.pr.author_association;
+
+  // Bypass check for OWNER, MEMBER roles (but never for agent bots)
+  if (
+    (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
+    return;
+  }
+
+  // Check if manual testing section exists
+  const manualTestingMatch = body.match(/####\s*Manual testing/i);
+  if (!manualTestingMatch || manualTestingMatch.index === undefined) {
+    fail(
+      'PR description is missing the mandatory "#### Manual testing" section. Please add it so that reviewers know how to manually test your changes.'
+    );
+    return;
+  }
+
+  // Extract content after the manual testing section
+  const manualTestingSectionStart = manualTestingMatch.index + manualTestingMatch[0].length;
+  const restOfBody = body.substring(manualTestingSectionStart);
+
+  // Find the next section
+  const nextSectionMatch = restOfBody.match(/\n#+[^#]/);
+  const manualTestingContent = nextSectionMatch
+    ? restOfBody.substring(0, nextSectionMatch.index)
+    : restOfBody;
+
+  // Remove the initial message and check if there's any meaningful content left
+  const contentWithoutInitialMessage = manualTestingContent
+    .replace(/>\s*\[!CAUTION\][^]*?This section is mandatory[^]*?Thanks!/i, '')
+    .trim();
+
+  // Check if there's any substantial content (ignoring whitespace and template comments)
+  const contentWithoutComments = contentWithoutInitialMessage
+    .replace(/<!--[^]*?-->/g, '') // Remove HTML comments
+    .replace(/\s+/g, ''); // Remove all whitespace
+
+  if (!contentWithoutComments) {
+    fail(
+      'The "#### Manual testing" section must be filled in. Please describe how to test the changes you\'ve made, step by step, so that reviewers can confirm your PR works as intended.'
+    );
+  }
+};
+
+const checkTargetBranch = () => {
+  const targetBranch = danger.github.pr.base.ref;
+  const author = danger.github.pr.user;
+  const authorAssociation = danger.github.pr.author_association;
+
+  // Only check for non-team members (not OWNER, MEMBER) and skip GitHub Actions bot
+  if (
+    ['OWNER', 'MEMBER'].includes(authorAssociation) ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
+    return;
+  }
+
+  if (targetBranch === 'main' || targetBranch.includes('release')) {
+    fail(
+      `This PR targets \`${targetBranch}\`, but it should target \`next\`. Please update the base branch of your PR.`
+    );
+  } else if (targetBranch !== 'next') {
+    warn(
+      `This PR targets \`${targetBranch}\`. The default branch for contributions is \`next\`. Please make sure you are targeting the correct branch.`
+    );
+  }
+};
+
+checkTargetBranch();
+
 if (prLogConfig) {
   checkRequiredLabels(labels.map((l) => l.name));
   checkPrTitle(danger.github.pr.title);
+  checkManualTestingSection(danger.github.pr.body);
 }

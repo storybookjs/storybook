@@ -17,6 +17,10 @@ Sets a list of directories of [static files](../../configure/integration/images-
 
 {/* prettier-ignore-end */}
 
+<Callout variant="info">
+When using Vite-based frameworks, additional directories may be copied to your build directory because of Vite's own [static asset handling](https://vite.dev/guide/assets#the-public-directory). You can set Vite's `publicDir` option to `false` to disable this behavior.
+</Callout>
+
 ## With configuration objects
 
 You can also use a configuration object to define the directories:

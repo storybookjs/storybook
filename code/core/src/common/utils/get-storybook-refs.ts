@@ -58,7 +58,7 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   );
 };
 
-const checkRef = (url: string) =>
+export const checkRef = (url: string) =>
   fetch(`${url}/iframe.html`).then(
     async ({ ok, status }) => {
       if (ok) {

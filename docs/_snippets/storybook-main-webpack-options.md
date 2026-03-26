@@ -75,3 +75,21 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  core: {
+    builder: {
+      name: '@storybook/builder-webpack5',
+      options: {
+        fsCache: true,
+        lazyCompilation: true,
+      },
+    },
+  },
+});
+```

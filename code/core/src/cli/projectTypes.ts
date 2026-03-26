@@ -11,7 +11,6 @@ export enum ProjectType {
   REACT_NATIVE = 'react_native',
   REACT_NATIVE_AND_RNW = 'react_native_and_rnw',
   REACT_NATIVE_WEB = 'react_native_web',
-  REACT_PROJECT = 'react_project',
   REACT_SCRIPTS = 'react_scripts',
   SERVER = 'server',
   SOLID = 'solid',

@@ -1,7 +1,5 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { moduleMetadata } from '@storybook/angular';
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
@@ -27,6 +25,34 @@ export const Empty: Story = {
     template: `<app-list></app-list>`,
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { List } from './list.component';
+
+const meta = preview.meta({
+  component: List,
+  decorators: [
+    moduleMetadata({
+      declarations: [List],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: (args) => ({
+    props: args,
+    template: `<app-list></app-list>`,
+  }),
+});
 ```
 
 ```js filename="List.stories.js" renderer="html" language="js"
@@ -138,7 +164,7 @@ export const Empty: Story = {};
 <Story name="Empty" />
 ```
 
-```js filename="List.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="List.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import List from './List.svelte';
 
 export default {
@@ -164,7 +190,7 @@ export const Empty = {};
 <Story name="Empty" />
 ```
 
-```ts filename="List.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="List.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -181,7 +207,7 @@ type Story = StoryObj<typeof meta>;
 export const Empty: Story = {};
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import List from './ListComponent.vue';
 
 export default {
@@ -197,7 +223,7 @@ export const Empty = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './ListComponent.vue';
@@ -218,7 +244,45 @@ export const Empty: Story = {
 };
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './ListComponent.vue';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: () => ({
+    components: { List },
+    template: '<List/>',
+  }),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './ListComponent.vue';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: () => ({
+    components: { List },
+    template: '<List/>',
+  }),
+});
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -231,7 +295,7 @@ export const Empty = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -245,6 +309,36 @@ type Story = StoryObj;
 export const Empty: Story = {
   render: () => html`<demo-list></demo-list>`,
 };
+```
+
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: () => html`<demo-list></demo-list>`,
+});
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: () => html`<demo-list></demo-list>`,
+});
 ```
 
 ```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -264,6 +358,7 @@ export const Empty = meta.story();
 
 ```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { List } from './List';
 
 const meta = preview.meta({

@@ -3,6 +3,7 @@ import { expect, it, vi } from 'vitest';
 import { Channel } from 'storybook/internal/channels';
 import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from 'storybook/internal/types';
 
+import { Tag } from '../../../../shared/constants/tags';
 import type { StoryStore } from '../../store';
 import { csfFileParts } from '../docs-context/test-utils';
 import { CsfDocsRender } from './CsfDocsRender';
@@ -15,7 +16,7 @@ const entry = {
   title: 'Component',
   importPath: './Component.stories.ts',
   storiesImports: [],
-  tags: ['autodocs'],
+  tags: [Tag.AUTODOCS],
 } as DocsIndexEntry;
 
 const createGate = (): [Promise<any | undefined>, (_?: any) => void] => {

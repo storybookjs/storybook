@@ -6,24 +6,25 @@ import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
 import { FeatureCompatibilityService } from './FeatureCompatibilityService';
 
-vi.mock('storybook/internal/cli', async () => {
-  const actual = await vi.importActual('storybook/internal/cli');
-  return {
-    ...actual,
-    AddonVitestService: vi.fn().mockImplementation(() => ({
-      validateCompatibility: vi.fn(),
-    })),
-  };
-});
+vi.mock('storybook/internal/cli', { spy: true });
 
 describe('FeatureCompatibilityService', () => {
   let service: FeatureCompatibilityService;
   const mockPackageManager = {
     getInstalledVersion: vi.fn(),
   } as Partial<JsPackageManager> as JsPackageManager;
-  const mockAddonVitestService = new AddonVitestService(mockPackageManager);
+  let mockAddonVitestService: AddonVitestService;
 
   beforeEach(() => {
+    // Mock AddonVitestService constructor and methods
+    const mockValidateCompatibility = vi.fn().mockResolvedValue({ compatible: true });
+    vi.mocked(AddonVitestService).mockImplementation(function (this: any) {
+      return {
+        validateCompatibility: mockValidateCompatibility,
+      };
+    });
+
+    mockAddonVitestService = new AddonVitestService(mockPackageManager);
     service = new FeatureCompatibilityService(mockPackageManager, mockAddonVitestService);
   });
 

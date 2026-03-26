@@ -59,6 +59,21 @@ test('Default', () => {
   );
 });
 
+test('Synthesizes self-closing when no children', () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      component: Button,
+    };
+    export default meta;
+
+    export const NoChildren: Story = {};
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(`"const NoChildren = () => <Button />;"`);
+});
+
 test('Default satisfies or as', () => {
   const input = withCSF3(`
     export const Default = {} satisfies Story;
@@ -206,6 +221,38 @@ test('CSF2 - with args', () => {
   );
 });
 
+test('render: Template (identifier referencing local function)', () => {
+  const input = withCSF3(dedent`
+    const Template = (args) => <Button {...args} label="String"></Button>
+    export const Interactive: Story = { render: Template }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Interactive = () => <Button label="String">Click me</Button>;"`
+  );
+});
+
+test('render: Template (identifier referencing local function declaration)', () => {
+  const input = withCSF3(dedent`
+    function Template(args) { return <Button {...args} label="String"></Button> }
+    export const Interactive: Story = { render: Template }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "function Interactive() {
+        return <Button label="String">Click me</Button>;
+    }"
+  `);
+});
+
+test('render: Template (identifier referencing unresolvable function)', () => {
+  // When Template can't be resolved (e.g. imported), fall back to no-function JSX synthesis
+  const input = withCSF3(dedent`
+    export const Interactive: Story = { render: Template }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Interactive = () => <Button>Click me</Button>;"`
+  );
+});
+
 test('Custom Render', () => {
   const input = withCSF3(dedent`
     export const CustomRender: Story = { render: () => <Button label="String"></Button> }
@@ -224,6 +271,82 @@ test('CustomRenderWithOverideArgs only', async () => {
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
     `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Render</Button>;"`
+  );
+});
+
+test('Meta level render: Template (identifier referencing local function)', async () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const Template = (args) => <Button {...args} override="overide" />;
+
+    const meta: Meta<typeof Button> = {
+      render: Template,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+
+    export const CustomRenderWithOverideArgs = {
+      args: { foo: 'bar', override: 'value' }
+    };
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Click me</Button>;"`
+  );
+});
+
+test('Meta level render: Template (identifier referencing unresolvable function)', async () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      component: Button,
+      render: Template,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+
+    export const Fallback = {
+      args: { foo: 'bar' }
+    };
+  `;
+  // Falls back to no-function JSX synthesis using component name
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Fallback = () => <Button foo="bar">Click me</Button>;"`
+  );
+});
+
+test('Story unresolvable render does not fall back to meta render', async () => {
+  // When a story has `render: ImportedTemplate` (unresolvable) and meta has an inline render,
+  // the story's render should take precedence — fall through to no-function JSX synthesis,
+  // NOT use meta's render function.
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      component: Button,
+      render: (args) => <Button {...args} extra="from-meta" />,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+
+    export const StoryWithImportedRender = {
+      render: ImportedTemplate,
+      args: { label: 'hello' }
+    };
+  `;
+  // Should NOT contain extra="from-meta" — that would mean meta's render leaked through
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const StoryWithImportedRender = () => <Button label="hello">Click me</Button>;"`
   );
 });
 

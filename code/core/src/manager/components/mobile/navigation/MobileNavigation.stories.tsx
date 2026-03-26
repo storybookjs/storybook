@@ -114,7 +114,7 @@ export const Default: Story = {
 };
 export const Dark: Story = {
   globals: { sb_theme: 'dark' },
-  parameters: { chromatic: { disable: true } },
+  parameters: { chromatic: { disableSnapshot: true } },
 };
 
 export const LongStoryName: Story = {

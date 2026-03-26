@@ -13,23 +13,39 @@ export function outputStartupInformation(options: {
   name: string;
   address: string;
   networkAddress: string;
+  allowedHosts?: string[] | true;
   managerTotalTime?: [number, number];
   previewTotalTime?: [number, number];
 }) {
-  const { updateInfo, version, name, address, networkAddress, managerTotalTime, previewTotalTime } =
-    options;
+  const {
+    updateInfo,
+    version,
+    name,
+    address,
+    networkAddress,
+    allowedHosts,
+    managerTotalTime,
+    previewTotalTime,
+  } = options;
 
+  const otherAllowedHosts =
+    allowedHosts === true
+      ? 'all (insecure)'
+      : allowedHosts?.length
+        ? allowedHosts.join(', ')
+        : undefined;
   const updateMessage = createUpdateMessage(updateInfo, version);
 
   const serverMessages = [
-    `- Local:             ${address}`,
-    `- On your network:   ${networkAddress}`,
+    `- Local:                ${address}`,
+    `- On your network:      ${networkAddress}`,
+    otherAllowedHosts && `- Other allowed hosts:  ${otherAllowedHosts}`,
   ];
 
   logger.logBox(
     dedent`
       Storybook ready!
-      
+
       ${serverMessages.join('\n')}${updateMessage ? `\n\n${updateMessage}` : ''}
     `,
     {

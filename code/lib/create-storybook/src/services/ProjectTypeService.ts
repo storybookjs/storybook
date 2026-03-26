@@ -75,13 +75,6 @@ export class ProjectTypeService {
         },
       },
       {
-        preset: ProjectType.REACT_PROJECT,
-        peerDependencies: ['react'],
-        matcherFunction: ({ peerDependencies }) => {
-          return peerDependencies?.every(Boolean) ?? true;
-        },
-      },
-      {
         preset: ProjectType.REACT_NATIVE,
         dependencies: ['react-native', 'react-native-scripts'],
         matcherFunction: ({ dependencies }) => {

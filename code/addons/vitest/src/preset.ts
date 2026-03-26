@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -9,9 +8,11 @@ import {
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import {
+  type StoryIndexGenerator,
   experimental_UniversalStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type {
   Options,
@@ -29,6 +30,10 @@ import {
   COVERAGE_DIRECTORY,
   STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
+  TRIGGER_TEST_RUN_REQUEST,
+  TRIGGER_TEST_RUN_RESPONSE,
+  type TriggerTestRunRequestPayload,
+  type TriggerTestRunResponsePayload,
   storeOptions,
 } from './constants';
 import { log } from './logger';
@@ -69,13 +74,16 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   if (!resolvedPreviewBuilder?.includes('vite')) {
     if (framework.includes('nextjs')) {
       log(dedent`
-        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
+        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook's Vitest addon, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
 
-        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs?ref=upgrade#with-vite')}\n
+        Refer to the following documentation for more information: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs-vite?ref=upgrade#choose-between-vite-and-webpack')}\n
       `);
     }
     return channel;
   }
+
+  const storyIndexGenerator =
+    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
 
   const fsCache = createFileSystemCache({
     basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
@@ -94,6 +102,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     initialState: {
       ...storeOptions.initialState,
       previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
+      index: await storyIndexGenerator.getIndex(),
       ...selectCachedState(cachedState),
     },
     leader: true,
@@ -104,6 +113,16 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }
   });
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
+
+  storyIndexGenerator.onInvalidated(async () => {
+    try {
+      const index = await storyIndexGenerator.getIndex();
+      store.setState((s) => ({ ...s, index }));
+    } catch (error) {
+      logger.debug('Failed to update story index after invalidation, Error:');
+      logger.debug(error);
+    }
+  });
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
     testProviderStore.setState('test-provider-state:running');
@@ -182,6 +201,60 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       ...s,
       currentRun: { ...s.currentRun, coverageSummary: undefined, unhandledErrors: [] },
     }));
+  });
+
+  // Programmatic test run trigger API
+  channel.on(TRIGGER_TEST_RUN_REQUEST, async (payload: TriggerTestRunRequestPayload) => {
+    const { requestId, actor, storyIds, config: configOverride } = payload;
+
+    const sendResponse = (response: Omit<TriggerTestRunResponsePayload, 'requestId'>) => {
+      channel.emit(TRIGGER_TEST_RUN_RESPONSE, { requestId, ...response });
+    };
+
+    await store.untilReady();
+
+    const {
+      currentRun: { startedAt, finishedAt },
+      config,
+    } = store.getState();
+    if (startedAt && !finishedAt) {
+      sendResponse({
+        status: 'error',
+        error: { message: 'Tests are already running' },
+      });
+      return;
+    }
+
+    store.send({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds,
+        triggeredBy: `external:${actor}`,
+        ...(configOverride && {
+          configOverride: { ...config, ...configOverride },
+        }),
+      },
+    });
+
+    const unsubscribe = store.subscribe((event) => {
+      switch (event.type) {
+        case 'TEST_RUN_COMPLETED': {
+          unsubscribe();
+          sendResponse({ status: 'completed', result: event.payload });
+          return;
+        }
+        case 'FATAL_ERROR': {
+          unsubscribe();
+          sendResponse({ status: 'error', error: event.payload });
+          return;
+        }
+        case 'CANCEL_RUN': {
+          unsubscribe();
+          sendResponse({ status: 'cancelled' });
+          return;
+        }
+      }
+    });
   });
 
   if (!core.disableTelemetry) {

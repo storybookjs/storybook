@@ -34,6 +34,8 @@ export const Collapsible = Object.assign(
     summary,
     collapsed,
     disabled,
+    initialCollapsed,
+    storageKey,
     state: providedState,
     ...props
   }: {
@@ -41,9 +43,11 @@ export const Collapsible = Object.assign(
     summary?: ReactNode | ((state: ReturnType<typeof useCollapsible>) => ReactNode);
     collapsed?: boolean;
     disabled?: boolean;
+    initialCollapsed?: boolean;
+    storageKey?: string;
     state?: ReturnType<typeof useCollapsible>;
   } & ComponentProps<typeof CollapsibleContent>) {
-    const internalState = useCollapsible(collapsed, disabled);
+    const internalState = useCollapsible({ collapsed, disabled, initialCollapsed, storageKey });
     const state = providedState || internalState;
     return (
       <>
@@ -64,14 +68,47 @@ export const Collapsible = Object.assign(
   }
 );
 
-export const useCollapsible = (collapsed?: boolean, disabled?: boolean) => {
-  const [isCollapsed, setCollapsed] = useState(!!collapsed);
+const useSessionState = <T,>(key: string | undefined, initialValue: T) => {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      return (JSON.parse(sessionStorage.getItem(key!)!) as T) ?? initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (key) {
+        sessionStorage.setItem(key, JSON.stringify(value));
+      }
+    } catch {}
+  }, [key, value]);
+
+  return [value, setValue] as const;
+};
+
+export const useCollapsible = ({
+  collapsed,
+  disabled,
+  initialCollapsed = collapsed,
+  storageKey,
+}: {
+  collapsed?: boolean;
+  disabled?: boolean;
+  initialCollapsed?: boolean;
+  storageKey?: string;
+}) => {
+  const [isCollapsed, setCollapsed] = useSessionState(
+    storageKey && `useCollapsible:${storageKey}`,
+    !!initialCollapsed
+  );
 
   useEffect(() => {
     if (collapsed !== undefined) {
       setCollapsed(collapsed);
     }
-  }, [collapsed]);
+  }, [collapsed, setCollapsed]);
 
   const toggleCollapsed = useCallback(
     (event?: SyntheticEvent<Element, Event>) => {
@@ -80,7 +117,7 @@ export const useCollapsible = (collapsed?: boolean, disabled?: boolean) => {
         setCollapsed((value) => !value);
       }
     },
-    [disabled]
+    [disabled, setCollapsed]
   );
 
   const contentId = useId();

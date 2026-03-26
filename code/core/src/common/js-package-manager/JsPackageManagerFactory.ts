@@ -206,7 +206,9 @@ function hasNPM(cwd?: string) {
       command: 'npm',
       args: ['--version'],
       cwd,
-      env: process.env,
+      env: Object.fromEntries(
+        Object.entries(process.env).filter(([, value]) => value !== undefined)
+      ) as Record<string, string>,
     });
     return true;
   } catch (err) {
@@ -220,7 +222,9 @@ function hasBun(cwd?: string) {
       command: 'bun',
       args: ['--version'],
       cwd,
-      env: process.env,
+      env: Object.fromEntries(
+        Object.entries(process.env).filter(([, value]) => value !== undefined)
+      ) as Record<string, string>,
     });
     return true;
   } catch (err) {
@@ -234,7 +238,9 @@ function hasPNPM(cwd?: string) {
       command: 'pnpm',
       args: ['--version'],
       cwd,
-      env: process.env,
+      env: Object.fromEntries(
+        Object.entries(process.env).filter(([, value]) => value !== undefined)
+      ) as Record<string, string>,
     });
 
     return true;
@@ -249,9 +255,9 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
       command: 'yarn',
       args: ['--version'],
       cwd,
-      env: {
-        ...process.env,
-      },
+      env: Object.fromEntries(
+        Object.entries(process.env).filter(([, value]) => value !== undefined)
+      ) as Record<string, string>,
     });
     return /^1\.+/.test(yarnVersion.trim()) ? 1 : 2;
   } catch (err) {

@@ -16,7 +16,9 @@ export * from './sanitize';
 
 export * from './error-collector';
 
-export { getPrecedingUpgrade } from './event-cache';
+export { getPrecedingUpgrade, getLastEvents, type CacheEntry } from './event-cache';
+
+export { getSessionId } from './session-id';
 
 export { addToGlobalContext } from './telemetry';
 

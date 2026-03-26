@@ -9,7 +9,7 @@ const meta = {
 export default meta;
 
 export const before_each_and_loaders_can_extend_context = {
-  parameters: { chromatic: { disable: true } },
+  parameters: { chromatic: { disableSnapshot: true } },
   loaders(context) {
     context.foo = ['bar'];
   },
@@ -22,14 +22,14 @@ export const before_each_and_loaders_can_extend_context = {
 };
 
 export const context_prop_is_available = {
-  parameters: { chromatic: { disable: true } },
+  parameters: { chromatic: { disableSnapshot: true } },
   async play({ context, canvasElement }) {
     await expect(context.canvasElement).toEqual(canvasElement);
   },
 };
 
 export const step_and_canvas_element_can_be_used_in_loaders_and_before_each = {
-  parameters: { chromatic: { disable: true } },
+  parameters: { chromatic: { disableSnapshot: true } },
   loaders({ step, canvasElement }) {
     step('loaders', async () => {
       await expect(canvasElement).toBeInTheDocument();

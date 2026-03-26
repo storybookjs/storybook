@@ -23,6 +23,19 @@ ruleTester.run('no-title-property-in-meta', rule, {
     'export default { component: Button } as Meta<typeof Button>',
     'export default { component: Button } satisfies Meta<typeof Button>',
     'export default { ...props }',
+    // CSF4 factory pattern: meta is a function call result, not an object literal
+    // getMetaObjectExpression() returns null for CallExpressions, so the rule skips it
+    dedent`
+      const meta = preview.meta({ component: Button, title: 'Button' })
+      export default meta
+    `,
+    {
+      code: dedent`
+        const meta = preview.type<{ args: { theme: string } }>().meta({ component: Button, title: 'Button' })
+        export default meta
+      `,
+      filename: 'MyComponent.stories.ts',
+    },
   ],
 
   invalid: [

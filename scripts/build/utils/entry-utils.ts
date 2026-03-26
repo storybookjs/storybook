@@ -8,7 +8,8 @@ export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
 
 export type BuildEntry = {
   exportEntries?: ('.' | `./${string}`)[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
-  entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
+  entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts",
+  external?: string[]; // the list of external dependencies to exclude from the bundle
   dts?: false; // default to generating d.ts files for all entries, except if set to false
 };
 export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
@@ -78,6 +79,7 @@ export const getExternal = async (cwd: string) => {
     '@testing-library/user-event',
     'chai',
     '@vitest/expect',
+    '@vitest/mocker',
     '@vitest/spy',
     '@vitest/utils',
   ];

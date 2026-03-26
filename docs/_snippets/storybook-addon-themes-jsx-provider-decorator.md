@@ -63,7 +63,7 @@ export default preview;
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { Renderer, definePreview } from '@storybook/your-framework';
 
-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+import addonThemes from '@storybook/addon-themes';
 
 import { ThemeProvider, createGlobalStyle } from 'styled-components';
 
@@ -76,8 +76,9 @@ const GlobalStyles = createGlobalStyle`
 `;
 
 export default definePreview({
+  addons: [addonThemes()],
   decorators: [
-    withThemeFromJSXProvider<Renderer>({
+    addonThemes.withThemeFromJSXProvider<Renderer>({
       themes: {
         light: lightTheme,
         dark: darkTheme,
@@ -96,7 +97,7 @@ export default definePreview({
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+import addonThemes from '@storybook/addon-themes';
 
 import { ThemeProvider, createGlobalStyle } from 'styled-components';
 
@@ -109,8 +110,9 @@ const GlobalStyles = createGlobalStyle`
 `;
 
 export default definePreview({
+  addons: [addonThemes()],
   decorators: [
-    withThemeFromJSXProvider({
+    addonThemes.withThemeFromJSXProvider({
       themes: {
         light: lightTheme,
         dark: darkTheme,

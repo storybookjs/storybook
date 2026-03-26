@@ -24,3 +24,11 @@ export default {
 
 export const StoryOne = {};
 export const StoryTwo = {};
+
+export const DisabledInteractions = {
+  parameters: {
+    interactions: {
+      disable: true,
+    },
+  },
+};

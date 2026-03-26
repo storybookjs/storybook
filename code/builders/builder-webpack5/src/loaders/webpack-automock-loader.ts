@@ -19,8 +19,8 @@ interface AutomockLoaderOptions {
  * This loader is intended to be used by `WebpackMockPlugin` when no `__mocks__` file is found for a
  * module specified in `sb.mock()`.
  *
- * @param {string} source The original source code of the module.
  * @this {LoaderContext<AutomockLoaderOptions>} The Webpack loader context.
+ * @param {string} source The original source code of the module.
  */
 export default function webpackAutomockLoader(
   this: LoaderContext<AutomockLoaderOptions>,

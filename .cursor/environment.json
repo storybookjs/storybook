@@ -1,6 +1,6 @@
 {
   "snapshot": "snapshot-20250521-0222c8bd-0a11-48ab-a2a8-380203843e05",
-  "install": "cd /workspace/scripts && yarn && cd ../code && yarn && yarn task --task=compile --start-from=compile",
+  "install": "yarn && yarn task --task=compile --start-from=compile",
   "start": "cd /workspace/code && yarn test",
   "terminals": []
 }

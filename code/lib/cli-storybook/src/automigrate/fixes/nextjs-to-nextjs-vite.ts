@@ -5,6 +5,8 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { Fix } from '../types';
 
+export const VITE_DEFAULT_VERSION = '^7.0.0';
+
 interface NextjsToNextjsViteOptions {
   hasNextjsPackage: boolean;
   packageJsonFiles: string[];
@@ -19,8 +21,12 @@ const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Pro
       return false;
     }
 
-    // Replace @storybook/nextjs with @storybook/nextjs-vite in the content
-    const transformedContent = content.replace(/@storybook\/nextjs/g, '@storybook/nextjs-vite');
+    // Replace @storybook/nextjs with @storybook/nextjs-vite, using a negative lookahead
+    // to avoid corrupting references that are already @storybook/nextjs-vite
+    const transformedContent = content.replace(
+      /@storybook\/nextjs(?!-vite)/g,
+      '@storybook/nextjs-vite'
+    );
 
     if (transformedContent !== content && !dryRun) {
       await writeFile(mainConfigPath, transformedContent);
@@ -98,9 +104,11 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
       logger.debug('Dry run: Skipping package.json updates.');
     } else {
       logger.debug('Updating package.json files...');
+      const viteVersion = packageManager.getDependencyVersion('vite');
       await packageManager.removeDependencies(['@storybook/nextjs']);
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `@storybook/nextjs-vite@${storybookVersion}`,
+        ...(viteVersion ? [] : [`vite@${VITE_DEFAULT_VERSION}`]), // Add vite if it's not installed yet
       ]);
     }
 
@@ -135,7 +143,7 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
 
     logger.step('Migration completed successfully!');
     logger.log(
-      `For more information, see: https://storybook.js.org/docs/nextjs/get-started/nextjs-vite`
+      `For more information, see: https://storybook.js.org/docs/get-started/frameworks/nextjs-vite`
     );
   },
 };

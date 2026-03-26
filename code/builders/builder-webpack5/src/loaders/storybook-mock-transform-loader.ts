@@ -6,8 +6,8 @@ import type { LoaderDefinition } from 'webpack';
 /**
  * A Webpack loader that normalize sb.mock(import(...)) calls to sb.mock(...)
  *
- * @param source The original source code of the preview config file.
  * @this The Webpack loader context.
+ * @param source The original source code of the preview config file.
  */
 const storybookMockTransformLoader: LoaderDefinition = function mockTransformLoaderFn(
   source,

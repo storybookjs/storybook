@@ -209,3 +209,159 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="Vite (CSF Next 🧪)"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  viteFinal: async (config) => {
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve?.alias,
+        // 👇 External module
+        lodash: import.meta.resolve('./lodash.mock'),
+        // 👇 Internal modules
+        '@/api': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
+      };
+    }
+
+    return config;
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="Vite (CSF Next 🧪)"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  viteFinal: async (config) => {
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve?.alias,
+        // 👇 External module
+        lodash: import.meta.resolve('./lodash.mock'),
+        // 👇 Internal modules
+        '@/api': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
+      };
+    }
+
+    return config;
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="Webpack (CSF Next 🧪)"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  webpackFinal: async (config) => {
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        // 👇 External module
+        lodash: import.meta.resolve('./lodash.mock'),
+        // 👇 Internal modules
+        '@/api$': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions$': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session$': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db$': import.meta.resolve('./lib/db.mock.ts'),
+      };
+    }
+
+    return config;
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="Webpack (CSF Next 🧪)"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  webpackFinal: async (config) => {
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        // 👇 External module
+        lodash: import.meta.resolve('./lodash.mock'),
+        // 👇 Internal modules
+        '@/api$': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions$': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session$': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db$': import.meta.resolve('./lib/db.mock.ts'),
+      };
+    }
+
+    return config;
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="Vite (CSF Next 🧪)"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  viteFinal: async (config) => {
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve?.alias,
+        // 👇 External module
+        lodash: import.meta.resolve('./lodash.mock'),
+        // 👇 Internal modules
+        '@/api': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
+      };
+    }
+
+    return config;
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="Vite (CSF Next 🧪)"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  viteFinal: async (config) => {
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve?.alias,
+        // 👇 External module
+        lodash: import.meta.resolve('./lodash.mock'),
+        // 👇 Internal modules
+        '@/api': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
+      };
+    }
+
+    return config;
+  },
+});
+```

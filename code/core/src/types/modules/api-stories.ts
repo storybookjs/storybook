@@ -1,7 +1,7 @@
-import type { StatusByTypeId } from '../../../dist/types';
 import type { DocsOptions } from './core-common';
 import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf';
 import type { IndexEntry } from './indexer';
+import type { StatusByTypeId } from './status';
 
 export interface API_BaseEntry {
   id: StoryId;

@@ -12,6 +12,7 @@ import Fuse from 'fuse.js';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useLandmark } from '../../hooks/useLandmark';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status';
 import { scrollIntoView, searchItem } from '../../utils/tree';
 import { useLayout } from '../layout/LayoutProvider';
@@ -312,6 +313,9 @@ export const Search = React.memo<SearchProps>(function Search({
   );
   const { isMobile } = useLayout();
 
+  const searchLandmarkRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark({ role: 'search' }, searchLandmarkRef);
+
   return (
     // @ts-expect-error (non strict)
     <Downshift<DownshiftItem>
@@ -388,7 +392,7 @@ export const Search = React.memo<SearchProps>(function Search({
         return (
           <>
             <ScreenReaderLabel {...labelProps}>Search for components</ScreenReaderLabel>
-            <SearchBar>
+            <SearchBar ref={searchLandmarkRef} {...landmarkProps}>
               <SearchField
                 {...getRootProps({ refKey: '' }, { suppressRefError: true })}
                 isMobile={isMobile}
@@ -433,7 +437,9 @@ export const Search = React.memo<SearchProps>(function Search({
               {children({
                 query: input,
                 results,
-                isBrowsing: !isOpen && document.activeElement !== inputRef.current,
+                isNavVisible: !isOpen && document.activeElement !== inputRef.current,
+                isNavReachable: !isOpen || input.length === 0,
+                isSearchResultRendered: isOpen,
                 closeMenu,
                 getMenuProps,
                 getItemProps,

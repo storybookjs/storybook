@@ -83,7 +83,7 @@ export const Overlay = styled.div<{
   inset: 0,
   width: '100%',
   height: '100%',
-  zIndex: 90,
+  zIndex: 100000,
   '@media (prefers-reduced-motion: no-preference)': {
     animation:
       $status === 'exiting' || $status === 'preExit'
@@ -106,13 +106,13 @@ export const Container = styled.div<{
     boxShadow: '0px 4px 67px 0px #00000040',
     position: 'absolute',
     overflow: 'auto',
-    zIndex: 100,
+    zIndex: 100000,
 
     '&:focus-visible': {
       outline: 'none',
     },
   }),
-  ({ width, height, $variant, $status, $transitionDuration }) =>
+  ({ theme, width, height, $variant, $status, $transitionDuration }) =>
     $variant === 'dialog'
       ? {
           top: '50%',
@@ -138,9 +138,12 @@ export const Container = styled.div<{
           bottom: '0',
           left: '0',
           right: '0',
+          borderRadius: '10px 10px 0 0',
+          overflow: 'hidden',
           width: width ?? '100%',
           height: height ?? '80%',
           maxWidth: '100%',
+          background: theme.background.content,
           '@supports (interpolate-size: allow-keywords)': {
             interpolateSize: 'allow-keywords',
           },
@@ -187,6 +190,7 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
 
   return (
     <Button
+      type="button"
       padding="small"
       ariaLabel="Close modal"
       variant="ghost"

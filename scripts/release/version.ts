@@ -11,7 +11,7 @@ import { z } from 'zod';
 
 import { esMain } from '../utils/esmain';
 import type { Workspace } from '../utils/workspace';
-import { getWorkspaces } from '../utils/workspace';
+import { getCodeWorkspaces } from '../utils/workspace';
 
 program
   .name('version')
@@ -243,7 +243,7 @@ export const run = async (options: unknown) => {
 
   console.log(`🚛 Finding Storybook packages...`);
 
-  const [packages, currentVersion] = await Promise.all([getWorkspaces(), getCurrentVersion()]);
+  const [packages, currentVersion] = await Promise.all([getCodeWorkspaces(), getCurrentVersion()]);
 
   console.log(
     `📦 found ${packages.length} storybook packages at version ${picocolors.red(currentVersion)}`

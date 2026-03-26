@@ -9,7 +9,7 @@ import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import { logger } from '../../node-logger';
 import type { ExecuteCommandOptions } from '../utils/command';
@@ -100,11 +100,15 @@ export class Yarn2Proxy extends JsPackageManager {
 
   public runPackageCommand({
     args,
+    useRemotePkg = false,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     return executeCommand({
       command: 'yarn',
-      args: ['exec', ...args],
+      args: [useRemotePkg ? 'dlx' : 'exec', ...args],
       ...options,
     });
   }
@@ -139,12 +143,13 @@ export class Yarn2Proxy extends JsPackageManager {
         },
         cwd: this.instanceDir,
       });
-      const commandResult = childProcess.stdout ?? '';
+      const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
 
       logger.debug(`Installation found for ${pattern.join(', ')}: ${commandResult}`);
 
       return this.mapDependencies(commandResult, pattern);
     } catch (e) {
+      logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
       return undefined;
     }
   }
@@ -251,7 +256,7 @@ export class Yarn2Proxy extends JsPackageManager {
       args: ['config', 'get', 'npmRegistryServer'],
     });
     const result = await process;
-    const url = (result.stdout ?? '').trim();
+    const url = (typeof result.stdout === 'string' ? result.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -267,7 +272,7 @@ export class Yarn2Proxy extends JsPackageManager {
         args: ['npm', 'info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       return parsedOutput[field];

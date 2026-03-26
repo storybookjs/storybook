@@ -9,7 +9,7 @@ export default {
       //   for documentation purposes only.
       extractComponentDescription: () => 'component description',
     },
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

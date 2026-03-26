@@ -18,7 +18,7 @@ export class TelemetryService {
 
   /** Track a new user check step */
   async trackNewUserCheck(newUser: boolean): Promise<void> {
-    this.runTelemetryIfEnabled('init-step', {
+    await this.runTelemetryIfEnabled('init-step', {
       step: 'new-user-check',
       newUser,
     });
@@ -29,6 +29,16 @@ export class TelemetryService {
     await this.runTelemetryIfEnabled('init-step', {
       step: 'install-type',
       installType,
+    });
+  }
+
+  /** Track Playwright prompt decision (install | skip | aborted) */
+  async trackPlaywrightPromptDecision(
+    result: 'installed' | 'skipped' | 'aborted' | 'failed'
+  ): Promise<void> {
+    await this.runTelemetryIfEnabled('init-step', {
+      step: 'playwright-install',
+      result,
     });
   }
 

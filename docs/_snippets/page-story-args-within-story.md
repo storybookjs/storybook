@@ -66,8 +66,9 @@ export const Example = {
 ```
 
 ```tsx filename="my-component/component.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { useArgs } from 'storybook/preview-api';
+
+import preview from '../.storybook/preview';
 
 import { Checkbox } from './checkbox';
 
@@ -100,8 +101,9 @@ export const Example = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { useArgs } from 'storybook/preview-api';
+
+import preview from '../.storybook/preview';
 
 import { Checkbox } from './checkbox';
 

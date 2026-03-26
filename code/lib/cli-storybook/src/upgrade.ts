@@ -7,6 +7,7 @@ import {
   logger,
   prompt,
 } from 'storybook/internal/node-logger';
+import type { LogLevel } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -123,6 +124,7 @@ export type UpgradeOptions = {
   configDir?: string[];
   fixId?: string;
   skipInstall?: boolean;
+  loglevel?: LogLevel;
   logfile?: string | boolean;
 };
 

@@ -1,7 +1,6 @@
 import React from 'react';
 
-import { darken, transparentize } from 'polished';
-import { styled } from 'storybook/theming';
+import { ActionList } from '../..';
 
 export interface SelectOptionProps {
   /**
@@ -17,8 +16,11 @@ export interface SelectOptionProps {
   /** Secondary text or description not necessary to identify the option. */
   description?: string;
 
-  /** Decorative icon. */
+  /** Decorative icon, displayed to the left of the title and description. */
   icon?: React.ReactNode;
+
+  /** Extra content, displayed to the right of the title and description. */
+  aside?: React.ReactNode;
 
   /** Optional rendering of the option. Use sparingly. */
   children?: React.ReactNode;
@@ -40,67 +42,12 @@ export interface SelectOptionProps {
   shouldLookDisabled: boolean;
 }
 
-const Item = styled('li')(({ theme }) => ({
-  padding: '6px 12px',
-  fontSize: 12,
-  lineHeight: 1.5,
-  background: 'transparent',
-  color: theme.color.defaultText,
-  cursor: 'pointer',
-  borderRadius: 4,
-  '&[aria-disabled="true"]': {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
-  '&[aria-selected="true"]': {
-    color: theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
-    fontWeight: theme.typography.weight.bold,
-  },
-  ':hover': {
-    background: transparentize(0.93, theme.color.secondary),
-  },
-  ':focus-visible': {
-    background: theme.background.hoverable,
-    outline: `2px solid ${theme.barSelectedColor}`,
-    outlineOffset: 1,
-    borderRadius: 2,
-  },
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: 8,
-}));
-
-const Row = styled('div')({
-  display: 'flex',
-  flexDirection: 'row',
-  gap: 4,
-  alignItems: 'center',
-});
-
-const Col = styled('div')({
-  display: 'flex',
-  flexDirection: 'column',
-  flexGrow: 1,
-});
-
-const Icon = styled('span')(() => ({
-  display: 'block',
-  height: '1rem',
-  width: '1rem',
-}));
-
-const Title = styled('span')(({}) => ({}));
-
-const Description = styled('span')(({ theme }) => ({
-  fontSize: 11,
-  color: theme.textMutedColor,
-}));
-
 export const SelectOption: React.FC<SelectOptionProps> = ({
   id,
   title,
   description,
   icon,
+  aside,
   children,
   isSelected,
   isActive,
@@ -111,7 +58,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
   ...props
 }) => {
   return (
-    <Item
+    <ActionList.Item
       {...props}
       id={id}
       role="option"
@@ -123,15 +70,16 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
       onKeyDown={onKeyDown}
     >
       {children ?? (
-        <Row>
-          {icon && <Icon>{icon}</Icon>}
-          <Col>
-            <Title>{title}</Title>
-            {description && <Description>{description}</Description>}
-          </Col>
-        </Row>
+        <>
+          {icon && <ActionList.Icon>{icon}</ActionList.Icon>}
+          <ActionList.Text>
+            <p>{title}</p>
+            {description && <small>{description}</small>}
+          </ActionList.Text>
+          {aside}
+        </>
       )}
-    </Item>
+    </ActionList.Item>
   );
 };
 

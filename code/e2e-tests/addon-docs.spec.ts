@@ -1,5 +1,4 @@
 /* eslint-disable playwright/no-conditional-expect */
-
 /* eslint-disable playwright/no-conditional-in-test */
 import { expect, test } from '@playwright/test';
 import process from 'process';
@@ -30,9 +29,8 @@ test.describe('addon-docs', () => {
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
 
-    const basicStories = root.locator('#anchor--addons-docs-docspage-basic--basic');
-    const secondBasicStory = (await basicStories.all())[1];
-    await expect(secondBasicStory).toContainText('A basic button');
+    const basicStory = root.locator('#anchor--addons-docs-docspage-basic--basic');
+    await expect(basicStory).toContainText('A basic button');
 
     const anotherStory = root.locator('#anchor--addons-docs-docspage-basic--another');
     await expect(anotherStory).toContainText('Another button, just to show multiple stories');
@@ -147,8 +145,8 @@ test.describe('addon-docs', () => {
     await expect(storiesCode).toContainText('Basic');
 
     const labelControl = root.locator('textarea[name=label]');
-    labelControl.fill('Changed');
-    labelControl.blur();
+    await labelControl.fill('Changed');
+    await labelControl.blur();
 
     // Check the Primary one has changed
     await expect(primaryCode).toContainText('Changed');

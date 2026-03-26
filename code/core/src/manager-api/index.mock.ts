@@ -1,6 +1,7 @@
 import { fn } from 'storybook/test';
 
 export * from './root';
+export { Tag } from '../shared/constants/tags';
 
 export const openInEditor = fn();
 

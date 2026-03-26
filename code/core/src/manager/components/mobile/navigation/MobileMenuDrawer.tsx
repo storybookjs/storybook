@@ -3,8 +3,6 @@ import React from 'react';
 
 import { Modal } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
-
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 import { MobileAbout } from '../about/MobileAbout';
 
@@ -15,12 +13,6 @@ interface MobileMenuDrawerProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const StyledModal = styled(Modal)(({ theme }) => ({
-  background: theme.background.content,
-  borderRadius: '10px 10px 0 0',
-  border: 'none',
-}));
-
 export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({
   children,
   id,
@@ -28,7 +20,7 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({
   onOpenChange,
 }) => {
   return (
-    <StyledModal
+    <Modal
       ariaLabel="Menu"
       transitionDuration={MOBILE_TRANSITION_DURATION}
       variant="bottom-drawer"
@@ -39,6 +31,6 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({
     >
       {children}
       <MobileAbout />
-    </StyledModal>
+    </Modal>
   );
 };

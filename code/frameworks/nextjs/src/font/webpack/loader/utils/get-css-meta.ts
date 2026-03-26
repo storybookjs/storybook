@@ -15,7 +15,11 @@ export function getCSSMeta(options: Options) {
     .${className} {
       font-family: ${options.fontFamily};
       ${isNextCSSPropertyValid(options.styles) ? `font-style: ${options.styles[0]};` : ''}
-      ${isNextCSSPropertyValid(options.weights) ? `font-weight: ${options.weights[0]};` : ''}
+      ${
+        isNextCSSPropertyValid(options.weights) && !options.weights[0]?.includes(' ')
+          ? `font-weight: ${options.weights[0]};`
+          : ''
+      }
     }
 
     ${
@@ -39,8 +43,7 @@ export function getCSSMeta(options: Options) {
 function getClassName({ styles, weights, fontFamily }: Options) {
   const font = fontFamily.replaceAll(' ', '-').toLowerCase();
   const style = isNextCSSPropertyValid(styles) ? styles[0] : null;
-  const weight = isNextCSSPropertyValid(weights) ? weights[0] : null;
-
+  const weight = isNextCSSPropertyValid(weights) ? weights[0]?.replaceAll(' ', '-') : null;
   return `${font}${style ? `-${style}` : ''}${weight ? `-${weight}` : ''}`;
 }
 

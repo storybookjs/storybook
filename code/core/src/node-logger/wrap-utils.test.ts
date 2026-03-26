@@ -83,7 +83,7 @@ describe('wrap-utils', () => {
       // Note: execaSync mock is not actually used by the implementation
       // which reads process.env directly, but kept for compatibility
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(execaSync).mockImplementation((cmd: string, args: any) => {
+      vi.mocked(execaSync).mockImplementation((_cmd: string | URL, args: any) => {
         if (args && args[0] === '$TERM_PROGRAM') {
           return {
             stdout: 'iTerm.app',
@@ -346,7 +346,7 @@ describe('wrap-utils', () => {
       // Note: execaSync mock is not actually used by the implementation
       // which reads process.env directly, but kept for compatibility
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(execaSync).mockImplementation((cmd: string, args: any) => {
+      vi.mocked(execaSync).mockImplementation((_cmd: string | URL, args: any) => {
         if (args && args[0] === '$TERM_PROGRAM') {
           return {
             stdout: 'iTerm.app',

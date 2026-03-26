@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 
 import type { CheckOptions } from '.';
-import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite';
+import { VITE_DEFAULT_VERSION, nextjsToNextjsVite } from './nextjs-to-nextjs-vite';
 
 // Mock dependencies
 vi.mock('node:fs/promises', () => ({
@@ -40,12 +40,14 @@ describe('nextjs-to-nextjs-vite', () => {
     packageJsonPaths: ['/project/package.json'],
     removeDependencies: vi.fn().mockResolvedValue(undefined),
     addDependencies: vi.fn().mockResolvedValue(undefined),
+    getDependencyVersion: vi.fn(),
   } as unknown as JsPackageManager;
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
+    vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
   });
 
   describe('check function', () => {
@@ -125,7 +127,7 @@ describe('nextjs-to-nextjs-vite', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('should transform package.json files', async () => {
+    it('should transform package.json files and add vite if not installed', async () => {
       const result = {
         hasNextjsPackage: true,
         packageJsonFiles: ['/project/package.json'],
@@ -139,6 +141,41 @@ describe('nextjs-to-nextjs-vite', () => {
           },
         })
       );
+
+      await nextjsToNextjsVite.run!({
+        result,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.js',
+        storiesPaths: ['**/*.stories.*'],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
+      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
+        { type: 'devDependencies', skipInstall: true },
+        [`@storybook/nextjs-vite@9.0.0`, `vite@${VITE_DEFAULT_VERSION}`]
+      );
+    });
+
+    it('should transform package.json files without adding vite if already installed', async () => {
+      const result = {
+        hasNextjsPackage: true,
+        packageJsonFiles: ['/project/package.json'],
+      };
+
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          dependencies: {
+            '@storybook/nextjs': '^9.0.0',
+            '@storybook/react': '^9.0.0',
+          },
+        })
+      );
+
+      // Mock getDependencyVersion to return a version (vite is installed)
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('6.0.0');
 
       await nextjsToNextjsVite.run!({
         result,
@@ -170,6 +207,9 @@ describe('nextjs-to-nextjs-vite', () => {
         };
       `);
 
+      // Mock getDependencyVersion to return a version (vite is installed)
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('6.0.0');
+
       await nextjsToNextjsVite.run!({
         result,
         dryRun: false,
@@ -189,6 +229,37 @@ describe('nextjs-to-nextjs-vite', () => {
         '/project/.storybook/main.js',
         expect.stringContaining('@storybook/nextjs-vite')
       );
+    });
+
+    it('should not corrupt main config that already references @storybook/nextjs-vite', async () => {
+      // Regression: projects with both @storybook/nextjs and @storybook/nextjs-vite installed
+      // (valid in SB9) already use nextjs-vite in main.ts. Without the fix, the regex would
+      // rewrite @storybook/nextjs-vite to @storybook/nextjs-vite-vite.
+      const result = {
+        hasNextjsPackage: true,
+        packageJsonFiles: [],
+      };
+
+      mockReadFile.mockResolvedValue(`
+        import type { StorybookConfig } from '@storybook/nextjs-vite';
+        export default {
+          framework: { name: '@storybook/nextjs-vite', options: {} },
+        };
+      `);
+
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('7.0.0');
+
+      await nextjsToNextjsVite.run!({
+        result,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '10.0.0',
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalled();
     });
 
     it('should handle dry run mode', async () => {

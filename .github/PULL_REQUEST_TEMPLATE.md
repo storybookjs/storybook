@@ -27,7 +27,8 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 
 #### Manual testing
 
-_This section is mandatory for all contributions. If you believe no manual test is necessary, please state so explicitly. Thanks!_
+> [!CAUTION]
+> This section is mandatory for all contributions. If you believe no manual test is necessary, please state so explicitly. Thanks!
 
 <!-- Please include the steps to test your changes here. For example:
 

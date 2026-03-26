@@ -1,3 +1,6 @@
+import { Tag } from 'storybook/internal/core-server';
+import type { IndexEntry } from 'storybook/internal/types';
+
 import { dedent } from 'ts-dedent';
 
 export const fsMocks = {
@@ -8,6 +11,7 @@ export const fsMocks = {
         import { Button } from './Button';
         
         const meta = {
+          title: 'Example/Button',
           component: Button,
           args: { onClick: fn() },
         } satisfies Meta<typeof Button>;
@@ -62,6 +66,7 @@ export const fsMocks = {
           * @summary Component summary
           */
         const meta = {
+          title: 'Example/Header',
           component: Header,
           args: {
             onLogin: fn(),
@@ -118,7 +123,7 @@ export const indexJson = {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'Primary',
     },
     'example-button--secondary': {
@@ -129,7 +134,7 @@ export const indexJson = {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'Secondary',
     },
     'example-button--large': {
@@ -140,7 +145,7 @@ export const indexJson = {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'Large',
     },
     'example-button--small': {
@@ -151,7 +156,7 @@ export const indexJson = {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'Small',
     },
     'example-header--docs': {
@@ -160,7 +165,7 @@ export const indexJson = {
       name: 'Docs',
       importPath: './src/stories/Header.stories.ts',
       type: 'docs',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS],
       storiesImports: [],
     },
     'example-header--logged-in': {
@@ -171,7 +176,7 @@ export const indexJson = {
       title: 'Example/Header',
       importPath: './src/stories/Header.stories.ts',
       componentPath: './src/stories/Header.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'LoggedIn',
     },
     'example-header--logged-out': {
@@ -182,8 +187,8 @@ export const indexJson = {
       title: 'Example/Header',
       importPath: './src/stories/Header.stories.ts',
       componentPath: './src/stories/Header.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'LoggedOut',
     },
   },
-};
+} satisfies { v: number; entries: Record<string, IndexEntry> };

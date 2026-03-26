@@ -79,6 +79,7 @@ import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonDocs from '@storybook/addon-docs';
 import {
   Controls,
   Description,
@@ -89,6 +90,7 @@ import {
 } from '@storybook/addon-docs/blocks';
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -119,6 +121,7 @@ import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonDocs from '@storybook/addon-docs';
 import {
   Controls,
   Description,
@@ -129,6 +132,206 @@ import {
 } from '@storybook/addon-docs/blocks';
 
 export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      page: () => (
+        <>
+          <Title />
+          <Subtitle />
+          <Description />
+          <Primary />
+          <Controls />
+          <Stories />
+        </>
+      ),
+    },
+  },
+});
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from '@storybook/vue3-vite';
+import addonDocs from '@storybook/addon-docs';
+import {
+  Controls,
+  Description,
+  Primary,
+  Stories,
+  Subtitle,
+  Title,
+} from '@storybook/addon-docs/blocks';
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      page: () => (
+        <>
+          <Title />
+          <Subtitle />
+          <Description />
+          <Primary />
+          <Controls />
+          <Stories />
+        </>
+      ),
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.jsx" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from '@storybook/vue3-vite';
+import addonDocs from '@storybook/addon-docs';
+import {
+  Controls,
+  Description,
+  Primary,
+  Stories,
+  Subtitle,
+  Title,
+} from '@storybook/addon-docs/blocks';
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      page: () => (
+        <>
+          <Title />
+          <Subtitle />
+          <Description />
+          <Primary />
+          <Controls />
+          <Stories />
+        </>
+      ),
+    },
+  },
+});
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from '@storybook/angular';
+import addonDocs from '@storybook/addon-docs';
+import {
+  Controls,
+  Description,
+  Primary,
+  Stories,
+  Subtitle,
+  Title,
+} from '@storybook/addon-docs/blocks';
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      page: () => (
+        <>
+          <Title />
+          <Subtitle />
+          <Description />
+          <Primary />
+          <Controls />
+          <Stories />
+        </>
+      ),
+    },
+  },
+});
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
+import {
+  Controls,
+  Description,
+  Primary,
+  Stories,
+  Subtitle,
+  Title,
+} from '@storybook/addon-docs/blocks';
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      page: () => (
+        <>
+          <Title />
+          <Subtitle />
+          <Description />
+          <Primary />
+          <Controls />
+          <Stories />
+        </>
+      ),
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.jsx" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
+import {
+  Controls,
+  Description,
+  Primary,
+  Stories,
+  Subtitle,
+  Title,
+} from '@storybook/addon-docs/blocks';
+
+export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {

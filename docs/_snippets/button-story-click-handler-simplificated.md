@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -13,6 +13,20 @@ type Story = StoryObj<Button>;
 export const Text: Story = {
   args: {},
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {},
+});
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
@@ -43,6 +57,34 @@ type Story = StoryObj<typeof meta>;
 export const Text: Story = {
   args: {},
 };
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {},
+});
+```
+
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {},
+});
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
@@ -104,7 +146,7 @@ export const Text: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Button from './Button.vue';
 
 export default {
@@ -119,7 +161,7 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -140,7 +182,41 @@ export const Text: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    onClick: {},
+  },
+});
+
+export const Text = meta.story({
+  args: {},
+});
+```
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    onClick: {},
+  },
+});
+
+export const Text = meta.story({
+  args: {},
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'custom-button',
   argTypes: {
@@ -153,7 +229,7 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -171,13 +247,14 @@ export const Text: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Button } from './Button';
-
 const meta = preview.meta({
-  component: Button,
+  component: 'custom-button',
+  argTypes: {
+    onClick: { action: 'onClick' },
+  },
 });
 
 export const Text = meta.story({
@@ -185,14 +262,14 @@ export const Text = meta.story({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
-import { Button } from './Button';
 
 const meta = preview.meta({
-  component: Button,
+  component: 'custom-button',
+  argTypes: {
+    onClick: { action: 'onClick' },
+  },
 });
 
 export const Text = meta.story({

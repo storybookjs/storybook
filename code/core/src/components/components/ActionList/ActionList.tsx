@@ -1,5 +1,6 @@
 import React, { type ComponentProps, forwardRef } from 'react';
 
+import { darken, transparentize } from 'polished';
 import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
@@ -16,22 +17,53 @@ const ActionListItem = styled.li<{
     justifyContent: 'space-between',
     flex: '0 0 auto',
     overflow: 'hidden',
+    minHeight: 32,
     gap: 4,
 
     fontSize: theme.typography.size.s1,
     fontWeight: active ? theme.typography.weight.bold : theme.typography.weight.regular,
-    color: active ? theme.color.secondary : theme.color.defaultText,
-    '--listbox-item-muted-color': active ? theme.color.secondary : theme.color.mediumdark,
+    color: active ? 'var(--listbox-item-active-color)' : theme.color.defaultText,
+    '--listbox-item-active-color':
+      theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
+    '--listbox-item-muted-color': active
+      ? 'var(--listbox-item-active-color)'
+      : theme.color.mediumdark,
+
+    '&[aria-disabled="true"]': {
+      opacity: 0.5,
+      cursor: 'not-allowed',
+    },
+    '&[aria-selected="true"]': {
+      color: 'var(--listbox-item-active-color)',
+      fontWeight: theme.typography.weight.bold,
+      '--listbox-item-muted-color': 'var(--listbox-item-active-color)',
+    },
 
     '&:not(:hover, :has(:focus-visible)) svg + input': {
       position: 'absolute',
       opacity: 0,
     },
 
+    '&[role="option"]': {
+      cursor: 'pointer',
+      borderRadius: theme.input.borderRadius,
+      outlineOffset: -2,
+      padding: '0 9px',
+      gap: 8,
+
+      '&:hover': {
+        background: transparentize(0.86, theme.color.secondary),
+      },
+      '&:focus-visible': {
+        outline: `2px solid ${theme.color.secondary}`,
+      },
+    },
+
     '@supports (interpolate-size: allow-keywords)': {
       interpolateSize: 'allow-keywords',
-      transition: 'all var(--transition-duration, 0.2s)',
       transitionBehavior: 'allow-discrete',
+      transitionDuration: 'var(--transition-duration, 0.2s)',
+      transitionProperty: 'opacity, block-size, content-visibility',
     },
 
     '@media (prefers-reduced-motion: reduce)': {
@@ -83,12 +115,14 @@ const ActionListHoverItem = styled(ActionListItem)<{ targetId: string }>(({ targ
   },
 }));
 
-const StyledButton = styled(Button)({
+const StyledButton = styled(Button)(({ size }) => ({
+  gap: size === 'small' ? 6 : 8,
+
   '&:focus-visible': {
     // Prevent focus outline from being cut off by overflow: hidden
     outlineOffset: -2,
   },
-});
+}));
 
 const StyledToggleButton = styled(ToggleButton)({
   '&:focus-visible': {
@@ -116,6 +150,8 @@ const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof Sty
 );
 
 const ActionListAction = styled(ActionListButton)(({ theme }) => ({
+  height: 'auto',
+  minHeight: 32,
   flex: '0 1 100%',
   textAlign: 'start',
   justifyContent: 'space-between',
@@ -137,19 +173,27 @@ const ActionListLink = (
   props: ComponentProps<typeof ActionListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
 ) => <ActionListAction as="a" {...props} />;
 
-const ActionListText = styled.div({
+const ActionListText = styled.div(({ theme }) => ({
   display: 'flex',
-  alignItems: 'center',
-  gap: 8,
+  flexDirection: 'column',
+  justifyContent: 'center',
   flexGrow: 1,
   minWidth: 0,
   padding: '8px 0',
   lineHeight: '16px',
 
-  '& span': {
+  '& > *': {
+    margin: 0,
+    whiteSpace: 'normal',
+  },
+  '& > span': {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  },
+  '& small': {
+    fontSize: 'inherit',
+    color: theme.textMutedColor,
   },
   '&:first-child': {
     paddingLeft: 8,
@@ -157,13 +201,13 @@ const ActionListText = styled.div({
   '&:last-child': {
     paddingRight: 8,
   },
-  'button > &:first-child': {
+  'button > &:first-child, [role="option"] > &:first-child': {
     paddingLeft: 0,
   },
-  'button > &:last-child': {
+  'button > &:last-child, [role="option"] > &:last-child': {
     paddingRight: 0,
   },
-});
+}));
 
 const ActionListIcon = styled.div({
   display: 'flex',

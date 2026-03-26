@@ -13,7 +13,7 @@ export default {
   },
   parameters: {
     chromatic: {
-      disable: true,
+      disableSnapshot: true,
     },
   },
   beforeEach: () => {

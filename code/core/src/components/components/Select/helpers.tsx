@@ -14,6 +14,7 @@ export interface Option {
   title: string;
   description?: string;
   icon?: React.ReactNode;
+  aside?: React.ReactNode;
   value: Value;
 }
 export interface InternalOption extends Omit<Option, 'value'> {

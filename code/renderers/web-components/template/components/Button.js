@@ -52,7 +52,7 @@ export class SbButton extends LitElement {
       <button
         type="button"
         class=${['storybook-button', `storybook-button--${this.size ?? 'medium'}`, mode].join(' ')}
-        @click="${this.onClick}"
+        @click=${this.onClick}
       >
         ${this.label}
       </button>

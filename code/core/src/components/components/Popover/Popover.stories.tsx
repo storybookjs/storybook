@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Button, Modal, PopoverProvider } from 'storybook/internal/components';
 
 import { CloseAltIcon } from '@storybook/icons';
 
+import { screen } from 'storybook/test';
 import { fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
@@ -144,5 +145,35 @@ export const ColorWarning = meta.story({
 export const WithoutColor = meta.story({
   args: {
     color: 'none',
+  },
+});
+
+export const WithModal = meta.story({
+  render: () => {
+    const [isPopoverOpen] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    return (
+      <>
+        <PopoverProvider
+          visible={isPopoverOpen}
+          popover={
+            <div>
+              <Button ariaLabel={false} onClick={() => setIsModalOpen(true)}>
+                Open modal
+              </Button>
+              <Modal open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <div>Hello</div>
+              </Modal>
+            </div>
+          }
+        >
+          <Button ariaLabel={false}>Open popover</Button>
+        </PopoverProvider>
+        <div style={{ width: 100, height: 100, backgroundColor: 'thistle' }}></div>
+      </>
+    );
+  },
+  play: async ({ userEvent }) => {
+    await userEvent.click(screen.getByRole('button', { name: 'Open modal' }));
   },
 });

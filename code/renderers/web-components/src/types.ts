@@ -20,3 +20,5 @@ export interface ShowErrorArgs {
   title: string;
   description: string;
 }
+
+export interface WebComponentsTypes extends WebComponentsRenderer {}

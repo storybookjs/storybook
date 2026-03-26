@@ -8,15 +8,15 @@
 
 ## Rule Details
 
-This rule enforces writing `satisfies Meta` after the meta object definition. This is useful to ensure that stories use the correct properties in the metadata.
+This rule enforces writing `satisfies Meta` after the definition of the meta object. This is useful to ensure that stories use the correct properties in the metadata.
 
-Additionally, `satisfies` is preferred over type annotations (`const meta: Meta = {...}`) and type assertions (`const meta = {...} as Meta`). This is because other types like `StoryObj` will check to see which properties are defined in meta and use it for increased type safety. Using type annotations or assertions hides this information from the type-checker, so satisfies should be used instead.
+Additionally, `satisfies` is preferred over type annotations (`const meta: Meta = {...}`) and type assertions (`const meta = {...} as Meta`). This is because other types like `StoryObj` will check to see which properties are defined in meta and use them for increased type safety. Using type annotations or assertions hides this information from the type-checker, so `satisfies` should be used instead.
 
 Examples of **incorrect** code for this rule:
 
 ```ts
 export default {
-  title: 'Button',
+  title: "Button",
   args: { primary: true },
   component: Button,
 };
@@ -24,7 +24,7 @@ export default {
 
 ```ts
 const meta: Meta<typeof Button> = {
-  title: 'Button',
+  title: "Button",
   args: { primary: true },
   component: Button,
 };
@@ -35,7 +35,7 @@ Examples of **correct** code for this rule:
 
 ```ts
 export default {
-  title: 'Button',
+  title: "Button",
   args: { primary: true },
   component: Button,
 } satisfies Meta<typeof Button>;
@@ -43,7 +43,7 @@ export default {
 
 ```ts
 const meta = {
-  title: 'Button',
+  title: "Button",
   args: { primary: true },
   component: Button,
 } satisfies Meta<typeof Button>;
@@ -56,4 +56,4 @@ If you aren't using TypeScript or you're using a version older than TypeScript 4
 
 ## Further Reading
 
-- [Improved type safety in Storybook 7](https://storybook.js.org/blog/improved-type-safety-in-storybook-7/?ref=storybookblog.ghost.io)
+More information on writing stories with TypeScript: https://storybook.js.org/docs/writing-stories/typescript

@@ -9,6 +9,19 @@ interface Return {
   };
 }
 
+export const srOnlyStyles = {
+  position: 'absolute' as const,
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  whiteSpace: 'nowrap' as const,
+  clip: 'rect(0, 0, 0, 0)',
+  clipPath: 'inset(50%)',
+  border: 0,
+};
+
 export const createReset = memoize(1)(
   ({ typography }: { typography: Typography }): Return => ({
     body: {
@@ -99,9 +112,12 @@ export const createGlobal = memoize(1)(({
     ...resetStyles,
     body: {
       ...resetStyles.body,
+      position: 'fixed',
+      width: '100vw',
+      height: '100vh',
+      overflow: 'hidden',
       color: color.defaultText,
       background: background.app,
-      overflow: 'hidden',
     },
 
     hr: {
@@ -109,18 +125,7 @@ export const createGlobal = memoize(1)(({
       borderTop: `1px solid ${color.border}`,
     },
 
-    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': {
-      position: 'absolute',
-      width: 1,
-      height: 1,
-      padding: 0,
-      margin: -1,
-      overflow: 'hidden',
-      whiteSpace: 'nowrap',
-      clip: 'rect(0, 0, 0, 0)',
-      clipPath: 'inset(50%)',
-      border: 0,
-    },
+    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': srOnlyStyles,
 
     '.sb-hidden-until-focus': {
       opacity: 0,
@@ -129,6 +134,26 @@ export const createGlobal = memoize(1)(({
 
     '.sb-hidden-until-focus:focus': {
       opacity: 1,
+    },
+
+    '[data-sb-landmark]': {
+      position: 'relative',
+    },
+
+    '[data-sb-landmark]:focus-visible': {
+      outline: 'none',
+    },
+
+    '[data-sb-landmark]:focus-visible::after': {
+      outline: `2px solid ${color.primary}`,
+      outlineOffset: '-2px',
+    },
+
+    '[data-sb-landmark]::after': {
+      content: "''",
+      position: 'absolute',
+      inset: 0,
+      pointerEvents: 'none',
     },
 
     '.react-aria-Popover:focus-visible': {

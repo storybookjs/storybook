@@ -79,6 +79,7 @@ export const Example = meta.story({
 
 ```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import RouterBasedComponent from './RouterBasedComponent';
 
 const meta = preview.meta({

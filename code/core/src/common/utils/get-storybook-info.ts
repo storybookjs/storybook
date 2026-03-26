@@ -29,6 +29,7 @@ export const rendererPackages: Record<string, SupportedRenderer> = {
   '@storybook/svelte': SupportedRenderer.SVELTE,
   '@storybook/preact': SupportedRenderer.PREACT,
   '@storybook/server': SupportedRenderer.SERVER,
+  '@storybook/react-native': SupportedRenderer.REACT_NATIVE,
 
   // community (outside of monorepo)
   'storybook-framework-qwik': SupportedRenderer.QWIK,

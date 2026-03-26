@@ -42,7 +42,7 @@ export default {
     text: 'Testing the themes',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     themes: { disable: false },
   },
   globals: {

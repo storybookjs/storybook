@@ -72,6 +72,8 @@ export { createPlaywrightTest, getCsfFactoryAnnotations } from './modules/store/
 
 export type { PropDescriptor } from './store';
 
+export { Tag } from '../shared/constants/tags';
+
 /** STORIES API */
 export { StoryStore, type Report, ReporterAPI } from './store';
 export {

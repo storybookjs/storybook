@@ -16,9 +16,9 @@ const ExampleToolbar = () => {
     // Updates Storybook global value
     updateGlobals({
       ['my-param-key']: !isActive,
-    }),
-      // Invokes Storybook's addon API method (with the FORCE_RE_RENDER) event to trigger a UI refresh
-      addons.getChannel().emit(FORCE_RE_RENDER);
+    });
+    // Invokes Storybook's addon API method (with the FORCE_RE_RENDER) event to trigger a UI refresh
+    addons.getChannel().emit(FORCE_RE_RENDER);
   };
 
   const toggleOutline = useCallback(() => refreshAndUpdateGlobal(), [isActive]);

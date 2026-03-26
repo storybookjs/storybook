@@ -12,7 +12,7 @@ const prNumber = process.argv[3];
 const baseBranch = process.argv[4];
 
 const GCP_CREDENTIALS = JSON.parse(process.env.GCP_CREDENTIALS || '{}');
-const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
+const sandboxDir = SANDBOX_DIRECTORY;
 const templateSandboxDir = templateKey && join(sandboxDir, templateKey.replace('/', '-'));
 
 const defaults: Record<keyof BenchResults, null> = {

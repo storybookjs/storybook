@@ -96,7 +96,7 @@ const TooltipProvider = ({
         placement={placement}
         offset={offset}
         onOpenChange={onOpenChange}
-        style={{ outlineColor: 'transparent' }}
+        style={{ outline: 'none' }}
         {...props}
       >
         {tooltip}

@@ -8,7 +8,7 @@ import React from 'react';
 
 import { getRouter } from '@storybook/nextjs/router.mock';
 
-import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
+import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime.js';
 
 export const PageRouterProvider: React.FC<PropsWithChildren> = ({ children }) => (
   <RouterContext.Provider value={getRouter()}>{children}</RouterContext.Provider>

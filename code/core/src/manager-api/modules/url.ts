@@ -7,16 +7,18 @@ import {
 } from 'storybook/internal/core-events';
 import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { NavigateOptions } from 'storybook/internal/router';
-import type { API_Layout, API_UI, Args } from 'storybook/internal/types';
+import type { API_Layout, API_UI, API_ViewMode, Args } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import { dequal as deepEqual } from 'dequal';
+import { omit } from 'es-toolkit/object';
+import { stringify } from 'picoquery';
 
+import merge from '../lib/merge';
 import type { ModuleArgs, ModuleFn } from '../lib/types';
-import { defaultLayoutState } from './layout';
-
-const { window: globalWindow } = global;
+import { buildNavigationUrl } from '../lib/url';
+import { DEFAULT_BOTTOM_PANEL_HEIGHT, DEFAULT_NAV_SIZE, DEFAULT_RIGHT_PANEL_WIDTH } from './layout';
 
 export interface SubState {
   customQueryParams: QueryParams;
@@ -31,6 +33,24 @@ const parseBoolean = (value: string) => {
     return false;
   }
   return undefined;
+};
+
+const parseSerializedParam = (param: string) =>
+  Object.fromEntries(
+    param
+      .split(';')
+      .map((pair) => pair.split(':'))
+      // Encoding values ensures we don't break already encoded args/globals but also don't encode our own special characters like ; and :.
+      .map(([key, value]) => [key, encodeURIComponent(value)])
+      .filter(([key, value]) => key && value)
+  );
+
+const mergeSerializedParams = (params: string, extraParams: string) => {
+  const pairs = parseSerializedParam(params);
+  const extra = parseSerializedParam(extraParams);
+  return Object.entries({ ...pairs, ...extra })
+    .map(([key, value]) => `${key}:${value}`)
+    .join(';');
 };
 
 // Initialize the state based on the URL.
@@ -68,14 +88,14 @@ const initialUrlSupport = ({
     bottomPanelHeight = 0;
     rightPanelWidth = 0;
   } else if (parseBoolean(full) === false) {
-    navSize = defaultLayoutState.layout.navSize;
-    bottomPanelHeight = defaultLayoutState.layout.bottomPanelHeight;
-    rightPanelWidth = defaultLayoutState.layout.rightPanelWidth;
+    navSize = DEFAULT_NAV_SIZE;
+    bottomPanelHeight = DEFAULT_BOTTOM_PANEL_HEIGHT;
+    rightPanelWidth = DEFAULT_RIGHT_PANEL_WIDTH;
   }
   // set sizes based on nav
   if (!singleStory) {
     if (parseBoolean(nav) === true) {
-      navSize = defaultLayoutState.layout.navSize;
+      navSize = DEFAULT_NAV_SIZE;
     }
     if (parseBoolean(nav) === false) {
       navSize = 0;
@@ -111,6 +131,10 @@ export interface QueryParams {
   [key: string]: string | undefined;
 }
 
+interface QueryParamInput {
+  [key: string]: string | undefined | null;
+}
+
 /** SubAPI for managing URL navigation and state. */
 export interface SubAPI {
   /**
@@ -121,6 +145,33 @@ export interface SubAPI {
    * @returns {void}
    */
   navigateUrl: (url: string, options: NavigateOptions) => void;
+  /**
+   * Get the manager and preview hrefs for a story.
+   *
+   * @param {string} storyId - The ID of the story to get the URL for.
+   * @param {Object} options - Options for the URL.
+   * @param {string} [options.base] - Return an absolute href based on the current origin or network
+   *   address.
+   * @param {boolean} [options.inheritArgs] - Inherit args from the current URL. If storyId matches
+   *   current story, inheritArgs defaults to true.
+   * @param {boolean} [options.inheritGlobals] - Inherit globals from the current URL. Defaults to
+   *   true.
+   * @param {QueryParams} [options.queryParams] - Query params to add to the URL.
+   * @param {string} [options.refId] - ID of the ref to get the URL for (for composed Storybooks)
+   * @param {string} [options.viewMode] - The view mode to use, defaults to 'story'.
+   * @returns {Object} Manager and preview hrefs for the story.
+   */
+  getStoryHrefs(
+    storyId: string,
+    options?: {
+      base?: 'origin' | 'network';
+      inheritArgs?: boolean;
+      inheritGlobals?: boolean;
+      queryParams?: QueryParams;
+      refId?: string;
+      viewMode?: API_ViewMode;
+    }
+  ): { managerHref: string; previewHref: string };
   /**
    * Get the value of a query parameter from the current URL.
    *
@@ -155,7 +206,7 @@ export interface SubAPI {
    * @param {QueryParams} input - An object containing the query parameters to set.
    * @returns {void}
    */
-  setQueryParams: (input: QueryParams) => void;
+  setQueryParams: (input: QueryParamInput) => void;
   /**
    * Set the query parameters for the current URL & navigates.
    *
@@ -163,7 +214,7 @@ export interface SubAPI {
    * @param {NavigateOptions} options - Options for the navigation.
    * @returns {void}
    */
-  applyQueryParams: (input: QueryParams, options?: NavigateOptions) => void;
+  applyQueryParams: (input: QueryParamInput, options?: NavigateOptions) => void;
 }
 
 export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
@@ -171,18 +222,68 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
   const navigateTo = (
     path: string,
-    queryParams: Record<string, string> = {},
+    queryParams: Record<string, string | null | undefined> = {},
     options: NavigateOptions = {}
   ) => {
-    const params = Object.entries(queryParams)
-      .filter(([, v]) => v)
-      .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([k, v]) => `${k}=${v}`);
-    const to = [path, ...params].join('&');
-    return navigate(to, options);
+    return navigate(buildNavigationUrl(path, queryParams), options);
   };
 
   const api: SubAPI = {
+    getStoryHrefs(storyId, options = {}) {
+      const { id: currentStoryId, refId: currentRefId } = fullAPI.getCurrentStoryData() ?? {};
+      const isCurrentStory = storyId === currentStoryId && options.refId === currentRefId;
+
+      const { customQueryParams, location, refs } = store.getState();
+      const {
+        base,
+        inheritArgs = isCurrentStory,
+        inheritGlobals = true,
+        queryParams = {},
+        refId,
+        viewMode = 'story',
+      } = options;
+
+      if (refId && !refs[refId]) {
+        throw new Error(`Invalid refId: ${refId}`);
+      }
+
+      const pathname = location.pathname || '/';
+      const originAddress = global.window.location.origin + pathname;
+      const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
+      const managerBase =
+        base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
+      const previewBase = refId
+        ? refs[refId].url + '/iframe.html'
+        : global.PREVIEW_URL ||
+          `${managerBase.replace(/\/[^/]*\.html$/, '').replace(/\/?$/, '/')}iframe.html`;
+
+      const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
+      const { args = '', globals = '', ...otherParams } = queryParams;
+      let argsParam = inheritArgs
+        ? mergeSerializedParams(customQueryParams?.args ?? '', args)
+        : args;
+      let globalsParam = inheritGlobals
+        ? mergeSerializedParams(customQueryParams?.globals ?? '', globals)
+        : globals;
+      let customManagerParams = stringify(otherParams, {
+        nesting: true,
+        nestingSyntax: 'js',
+      });
+      let customPreviewParams = stringify(omit(otherParams, ['id', 'viewMode']), {
+        nesting: true,
+        nestingSyntax: 'js',
+      });
+
+      argsParam = argsParam && `&args=${argsParam}`;
+      globalsParam = globalsParam && `&globals=${globalsParam}`;
+      customManagerParams = customManagerParams && `&${customManagerParams}`;
+      customPreviewParams = customPreviewParams && `&${customPreviewParams}`;
+
+      return {
+        managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customManagerParams}`,
+        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}`,
+      };
+    },
     getQueryParam(key) {
       const { customQueryParams } = store.getState();
       return customQueryParams ? customQueryParams[key] : undefined;
@@ -191,7 +292,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const { location, path, customQueryParams, storyId, url, viewMode } = store.getState();
       return {
         path,
-        hash: location.hash ?? '',
+        hash: location?.hash ?? '',
         queryParams: customQueryParams,
         storyId,
         url,
@@ -200,16 +301,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
     },
     setQueryParams(input) {
       const { customQueryParams } = store.getState();
-      const queryParams: QueryParams = {};
-      const update = {
-        ...customQueryParams,
-        ...Object.entries(input).reduce((acc, [key, value]) => {
-          if (value !== null) {
-            acc[key] = value;
-          }
-          return acc;
-        }, queryParams),
-      };
+      const update: QueryParams = { ...customQueryParams };
+      for (const [key, value] of Object.entries(input)) {
+        if (value === null || value === undefined) {
+          delete update[key];
+        } else {
+          update[key] = value;
+        }
+      }
       if (!deepEqual(customQueryParams, update)) {
         store.setState({ customQueryParams: update });
         provider.channel?.emit(UPDATE_QUERY_PARAMS, update);
@@ -245,19 +344,19 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
     const { args, initialArgs } = currentStory;
     const argsString = buildArgsParam(initialArgs, args as Args);
-    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString }, { replace: true });
-    api.setQueryParams({ args: argsString });
+    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString || null }, { replace: true });
+    api.setQueryParams({ args: argsString || null });
   };
 
   provider.channel?.on(SET_CURRENT_STORY, () => updateArgsParam());
 
   let handleOrId: any;
   provider.channel?.on(STORY_ARGS_UPDATED, () => {
-    if ('requestIdleCallback' in globalWindow) {
+    if ('requestIdleCallback' in global.window) {
       if (handleOrId) {
-        globalWindow.cancelIdleCallback(handleOrId);
+        global.window.cancelIdleCallback(handleOrId);
       }
-      handleOrId = globalWindow.requestIdleCallback(updateArgsParam, { timeout: 1000 });
+      handleOrId = global.window.requestIdleCallback(updateArgsParam, { timeout: 1000 });
     } else {
       if (handleOrId) {
         clearTimeout(handleOrId);
@@ -268,9 +367,13 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
   provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
     const { path, hash = '', queryParams } = api.getUrlState();
-    const globalsString = buildArgsParam(initialGlobals, userGlobals);
-    navigateTo(`${path}${hash}`, { ...queryParams, globals: globalsString }, { replace: true });
-    api.setQueryParams({ globals: globalsString });
+    const globalsString = buildArgsParam(initialGlobals, merge(initialGlobals, userGlobals));
+    navigateTo(
+      `${path}${hash}`,
+      { ...queryParams, globals: globalsString || null },
+      { replace: true }
+    );
+    api.setQueryParams({ globals: globalsString || null });
   });
 
   provider.channel?.on(NAVIGATE_URL, (url: string, options: NavigateOptions) => {
@@ -280,5 +383,13 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   return {
     api,
     state: initialUrlSupport(moduleArgs),
+    init: () => {
+      store.registerPersistenceHandler('url', (_patch, serialize) => {
+        if (serialize) {
+          const params = serialize(store.getState());
+          api.applyQueryParams(params, { replace: true });
+        }
+      });
+    },
   };
 };

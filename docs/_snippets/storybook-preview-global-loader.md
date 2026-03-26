@@ -50,3 +50,67 @@ export default definePreview({
   ],
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  loaders: [
+    async () => ({
+      currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
+    }),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  loaders: [
+    async () => ({
+      currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
+    }),
+  ],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+export default definePreview({
+  loaders: [
+    async () => ({
+      currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
+    }),
+  ],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  loaders: [
+    async () => ({
+      currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
+    }),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  loaders: [
+    async () => ({
+      currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
+    }),
+  ],
+});
+```

@@ -1,7 +1,7 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
   component: MyComponent,
@@ -15,6 +15,22 @@ export const ExampleStory: Story = {
     propertyA: process.env.STORYBOOK_DATA_KEY,
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: process.env.STORYBOOK_DATA_KEY,
+  },
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -36,7 +52,7 @@ export const ExampleStory: Story = {
 />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -83,7 +99,7 @@ export const ExampleStory = {
 />
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -123,7 +139,7 @@ export const ExampleStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
 };
@@ -135,7 +151,7 @@ export const ExampleStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -150,6 +166,34 @@ export const ExampleStory: Story = {
     propertyA: process.env.STORYBOOK_DATA_KEY,
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: process.env.STORYBOOK_DATA_KEY,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: process.env.STORYBOOK_DATA_KEY,
+  },
+});
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -172,7 +216,40 @@ export const ExampleStory = meta.story({
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: process.env.STORYBOOK_DATA_KEY,
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: process.env.STORYBOOK_DATA_KEY,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
 
 const meta = preview.meta({
   component: MyComponent,

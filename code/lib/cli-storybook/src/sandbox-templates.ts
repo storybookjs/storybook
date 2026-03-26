@@ -4,6 +4,10 @@ import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/t
 import { ProjectType } from '../../../core/src/cli/projectTypes';
 import { SupportedBuilder } from '../../../core/src/types/modules/builders';
 
+export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
+export type AllTemplatesKey = keyof typeof allTemplates;
+export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;
+
 export type SkippableTask =
   | 'smoke-test'
   | 'test-runner'
@@ -18,6 +22,7 @@ export type TemplateKey =
   | keyof typeof baseTemplates
   | keyof typeof internalTemplates
   | keyof typeof benchTemplates;
+
 export type Cadence = keyof typeof templatesByCadence;
 
 // Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
@@ -90,6 +95,11 @@ export type Template = {
     extraDependencies?: string[];
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
+  };
+  /** Additional CI steps in case this template has special needs during CI. */
+  extraCiSteps?: {
+    // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
+    ensureMinNodeVersion?: boolean;
   };
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
@@ -369,7 +379,8 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types', '@types/prop-types'],
+      extraDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -491,7 +502,7 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['prop-types', 'storybook-react-rsbuild@^3.0.0-beta.1'],
+      extraDependencies: ['prop-types'],
       useCsfFactory: true,
       mainConfig: {
         features: {
@@ -502,25 +513,15 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'solid-vite/default-js': {
-    name: 'SolidJS Latest (Vite | JavaScript)',
-    script: 'npx degit solidjs/templates/js {{beforeDir}}',
-    expected: {
-      framework: 'storybook-solidjs-vite',
-      renderer: 'storybook-solidjs-vite',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-  },
   'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
-    script: 'npx degit solidjs/templates/ts {{beforeDir}}',
+    script: 'yarn create solid {{beforeDir}} --vanilla --ts --template=with-vitest',
     expected: {
       framework: 'storybook-solidjs-vite',
       renderer: 'storybook-solidjs-vite',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'bench'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'vue3-vite/default-js': {
     name: 'Vue v3 (Vite | JavaScript)',
@@ -529,6 +530,9 @@ export const baseTemplates = {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -539,6 +543,9 @@ export const baseTemplates = {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     skipTasks: ['bench'],
   },
@@ -580,7 +587,7 @@ export const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'bench'],
     initOptions: {
       type: ProjectType.HTML,
     },
@@ -594,7 +601,7 @@ export const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'bench'],
     initOptions: {
       type: ProjectType.HTML,
     },
@@ -608,10 +615,12 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['storybook-html-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.HTML,
+    },
   },
   'svelte-vite/default-js': {
     name: 'Svelte Latest (Vite | JavaScript)',
@@ -634,14 +643,27 @@ export const baseTemplates = {
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
   },
+  'svelte-kit/skeleton-ts': {
+    name: 'SvelteKit Latest (Vite | TypeScript)',
+    script:
+      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+    expected: {
+      framework: '@storybook/sveltekit',
+      renderer: '@storybook/svelte',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   'angular-cli/prerelease': {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // Angular 21 has introduced a peer dependency requirement on standard-schema via @angular/forms`
-      // TODO: use @angular/forms@next as soon as @angular/cli@next points to the same version
-      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@^21.0.0'],
+      // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
+      useCsfFactory: true,
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -656,6 +678,10 @@ export const baseTemplates = {
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
       extraDependencies: ['@angular/forms@latest'],
+      useCsfFactory: true,
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -663,17 +689,6 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['bench', 'vitest-integration'],
-  },
-  'svelte-kit/skeleton-ts': {
-    name: 'SvelteKit Latest (Vite | TypeScript)',
-    script:
-      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
-    expected: {
-      framework: '@storybook/sveltekit',
-      renderer: '@storybook/svelte',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests', 'bench'],
   },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',
@@ -684,8 +699,11 @@ export const baseTemplates = {
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      useCsfFactory: true,
+    },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
   },
   'lit-vite/default-ts': {
     name: 'Lit Latest (Vite | TypeScript)',
@@ -696,8 +714,11 @@ export const baseTemplates = {
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      useCsfFactory: true,
+    },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
   },
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',
@@ -708,7 +729,6 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['storybook-web-components-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
@@ -739,19 +759,20 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
-  'qwik-vite/default-ts': {
-    name: 'Qwik CLI Latest (Vite | TypeScript)',
-    script: 'npm create qwik playground {{beforeDir}}',
-    // TODO: The community template does not provide standard stories, which is required for e2e tests. Reenable once it does.
-    inDevelopment: true,
-    expected: {
-      framework: 'storybook-framework-qwik',
-      renderer: 'storybook-framework-qwik',
-      builder: 'storybook-framework-qwik',
-    },
-    // TODO: The community template does not provide standard stories, which is required for e2e tests.
-    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
-  },
+  /** This is currently broken, we generate components and stories that do not work */
+  // 'qwik-vite/default-ts': {
+  //   name: 'Qwik CLI Latest (Vite | TypeScript)',
+  //   script: 'npm create qwik playground {{beforeDir}}',
+  //   // TODO: The community template does not provide standard stories, which is required for e2e tests. Reenable once it does.
+  //   inDevelopment: true,
+  //   expected: {
+  //     framework: 'storybook-framework-qwik',
+  //     renderer: 'storybook-framework-qwik',
+  //     builder: 'storybook-framework-qwik',
+  //   },
+  //   // TODO: The community template does not provide standard stories, which is required for e2e tests.
+  //   skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration', 'chromatic'],
+  // },
   'ember/3-js': {
     name: 'Ember v3 (Webpack | JavaScript)',
     script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',
@@ -1008,7 +1029,7 @@ export const normal: TemplateKey[] = [
   'bench/react-vite-default-ts-nodocs',
   'bench/react-vite-default-ts-test-build',
   'bench/react-webpack-18-ts-test-build',
-  'ember/default-js',
+  // 'ember/default-js',
   'react-rsbuild/default-ts',
 ];
 
@@ -1020,6 +1041,7 @@ export const merged: TemplateKey[] = [
   'nextjs-vite/15-ts',
   'preact-vite/default-ts',
   'html-vite/default-ts',
+  'solid-vite/default-ts',
   'vue3-rsbuild/default-ts',
 ];
 
@@ -1037,7 +1059,7 @@ export const daily: TemplateKey[] = [
   'lit-vite/default-js',
   'svelte-vite/default-js',
   'nextjs/prerelease',
-  'qwik-vite/default-ts',
+  // 'qwik-vite/default-ts',
   'preact-vite/default-js',
   'html-vite/default-js',
   'internal/react16-webpack',

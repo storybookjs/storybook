@@ -179,6 +179,11 @@ export async function copyTemplateFiles({
   };
   const templatePath = async () => {
     const baseDir = await getRendererDir(packageManager, templateLocation);
+
+    if (!baseDir) {
+      return null;
+    }
+
     const assetsDir = join(baseDir, 'template', 'cli');
 
     const assetsLanguage = join(assetsDir, languageFolderMapping[language]);
@@ -209,7 +214,11 @@ export async function copyTemplateFiles({
   if (commonAssetsDir) {
     await cp(commonAssetsDir, destinationPath, { recursive: true, filter });
   }
-  await cp(await templatePath(), destinationPath, { recursive: true, filter });
+  const tmpPath = await templatePath();
+
+  if (tmpPath) {
+    await cp(tmpPath, destinationPath, { recursive: true, filter });
+  }
 
   if (commonAssetsDir && features.has(Feature.DOCS)) {
     const rendererType = frameworkToRenderer[templateLocation] || 'react';

@@ -14,3 +14,7 @@ type Story = StoryObj<typeof meta>;
 export const Input: Story = {
   render: (args) => <Component aria-label="Sample input" {...args} />,
 };
+
+export const WithSuffix: Story = {
+  render: (args) => <Component aria-label="Sample input" suffix="px" value="10" {...args} />,
+};

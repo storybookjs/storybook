@@ -116,7 +116,7 @@ export const WithSearchResultsAndError: Story = {
     fileSearchQuery: 'src',
     fileSearchQueryDeferred: 'src',
     isLoading: false,
-    error: { error: 'Some error occured', selectedItemId: 'src/module-multiple-exports.js' },
+    error: { error: 'Some error occurred', selectedItemId: 'src/module-multiple-exports.js' },
     searchResults: WithResults.args.searchResults,
   },
 };
@@ -130,7 +130,7 @@ export const WithSearchResultsAndMultiLineError: Story = {
     fileSearchQueryDeferred: 'src',
     isLoading: false,
     error: {
-      error: 'A very long error occured. A very long error occured. A very long error occured.',
+      error: 'A very long error occurred. A very long error occurred. A very long error occurred.',
       selectedItemId: 'src/module-multiple-exports.js',
     },
     searchResults: WithResults.args.searchResults,

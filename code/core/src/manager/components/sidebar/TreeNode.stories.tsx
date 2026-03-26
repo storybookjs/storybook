@@ -3,13 +3,20 @@ import React from 'react';
 import { HighlightStyles } from './HighlightStyles';
 import { IconSymbols } from './IconSymbols';
 import { LeafNodeStyleWrapper } from './Tree';
-import { ComponentNode, DocumentNode, GroupNode, StoryNode, TestNode } from './TreeNode';
+import {
+  ComponentNode,
+  DocumentNode,
+  GroupNode,
+  StoryBranchNode,
+  StoryLeafNode,
+  TestNode,
+} from './TreeNode';
 
 export default {
   title: 'Sidebar/TreeNode',
   parameters: { layout: 'padded' },
   globals: { sb_theme: 'side-by-side' },
-  component: StoryNode,
+  component: StoryLeafNode,
   decorators: [
     (StoryFn: any) => (
       <>
@@ -24,7 +31,8 @@ export const Types = () => (
   <>
     <ComponentNode>Component</ComponentNode>
     <GroupNode>Group</GroupNode>
-    <StoryNode>Story</StoryNode>
+    <StoryBranchNode>Story (with tests)</StoryBranchNode>
+    <StoryLeafNode>Story (leaf node)</StoryLeafNode>
     <TestNode>Test</TestNode>
     <DocumentNode docsMode={false}>Document</DocumentNode>
   </>
@@ -91,12 +99,12 @@ export const Nested = () => (
     <GroupNode isExpandable isExpanded depth={1}>
       One
     </GroupNode>
-    <StoryNode depth={2}>Two</StoryNode>
+    <StoryBranchNode depth={2}>Two</StoryBranchNode>
     <TestNode depth={3}>Three</TestNode>
     <ComponentNode isExpandable isExpanded depth={2}>
       Two
     </ComponentNode>
-    <StoryNode depth={3}>Three</StoryNode>
+    <StoryBranchNode depth={3}>Three</StoryBranchNode>
     <TestNode depth={4}>Four</TestNode>
   </>
 );
@@ -124,13 +132,13 @@ export const NestedLongName = () => (
       very very very veryvery very very very very very very very very veryvery very very very very
       very very very very veryvery very very very very very very very very very long name
     </GroupNode>
-    <StoryNode depth={2}>
+    <StoryBranchNode depth={2}>
       A very very very very very very very very very very very very very very very very very very
       very veryvery very very very very very very very very veryvery very very very very very very
       very very veryvery very very very very very very very very veryvery very very very very very
       very very very veryvery very very very very very very very very veryvery very very very very
       very very very very veryvery very very very very very very very very very long name
-    </StoryNode>
+    </StoryBranchNode>
     <TestNode depth={3}>
       A very very very very very very very very very very very very very very very very very very
       very veryvery very very very very very very very very veryvery very very very very very very
@@ -145,13 +153,13 @@ export const NestedLongName = () => (
       very very very veryvery very very very very very very very very veryvery very very very very
       very very very very veryvery very very very very very very very very very long name
     </ComponentNode>
-    <StoryNode depth={3}>
+    <StoryBranchNode depth={3}>
       A very very very very very very very very very very very very very very very very very very
       very veryvery very very very very very very very very veryvery very very very very very very
       very very veryvery very very very very very very very very veryvery very very very very very
       very very very veryvery very very very very very very very very veryvery very very very very
       very very very very veryvery very very very very very very very very very long name
-    </StoryNode>
+    </StoryBranchNode>
     <TestNode depth={4}>
       A very very very very very very very very very very very very very very very very very very
       very veryvery very very very very very very very very veryvery very very very very very very
@@ -172,7 +180,7 @@ export const Selection = () => (
       data-selected="false"
       className="sidebar-item"
     >
-      <StoryNode>Default story</StoryNode>
+      <StoryLeafNode>Default story</StoryLeafNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="baz"
@@ -181,7 +189,7 @@ export const Selection = () => (
       data-selected="true"
       className="sidebar-item"
     >
-      <StoryNode>Selected story</StoryNode>
+      <StoryLeafNode>Selected story</StoryLeafNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="foo"
@@ -190,7 +198,7 @@ export const Selection = () => (
       data-selected="false"
       className="sidebar-item"
     >
-      <StoryNode>Highlighted story</StoryNode>
+      <StoryLeafNode>Highlighted story</StoryLeafNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="foo"
@@ -199,7 +207,7 @@ export const Selection = () => (
       data-selected="true"
       className="sidebar-item"
     >
-      <StoryNode>Highlighted + Selected story</StoryNode>
+      <StoryLeafNode>Highlighted + Selected story</StoryLeafNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="baz"
@@ -250,14 +258,14 @@ export const SelectionWithLongName = () => (
       data-selected="false"
       className="sidebar-item"
     >
-      <StoryNode>
+      <StoryLeafNode>
         Default story with a very very very very very very very very very very very very very very
         very very very very very veryvery very very very very very very very very veryvery very very
         very very very very very very veryvery very very very very very very very very veryvery very
         very very very very very very very veryvery very very very very very very very very veryvery
         very very very very very very very very veryvery very very very very very very very very
         very long name
-      </StoryNode>
+      </StoryLeafNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="baz"
@@ -266,14 +274,14 @@ export const SelectionWithLongName = () => (
       data-selected="true"
       className="sidebar-item"
     >
-      <StoryNode>
+      <StoryLeafNode>
         Selected story with a very very very very very very very very very very very very very very
         very very very very very veryvery very very very very very very very very veryvery very very
         very very very very very very veryvery very very very very very very very very veryvery very
         very very very very very very very veryvery very very very very very very very very veryvery
         very very very very very very very very veryvery very very very very very very very very
         very long name
-      </StoryNode>
+      </StoryLeafNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="foo"
@@ -282,14 +290,14 @@ export const SelectionWithLongName = () => (
       data-selected="false"
       className="sidebar-item"
     >
-      <StoryNode>
+      <StoryLeafNode>
         Highlighted story with a very very very very very very very very very very very very very
         very very very very very very veryvery very very very very very very very very veryvery very
         very very very very very very very veryvery very very very very very very very very veryvery
         very very very very very very very very veryvery very very very very very very very very
         veryvery very very very very very very very very veryvery very very very very very very very
         very very long name
-      </StoryNode>
+      </StoryLeafNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="foo"
@@ -298,14 +306,14 @@ export const SelectionWithLongName = () => (
       data-selected="true"
       className="sidebar-item"
     >
-      <StoryNode>
+      <StoryLeafNode>
         Highlighted + Selected story with a very very very very very very very very very very very
         very very very very very very very very veryvery very very very very very very very very
         veryvery very very very very very very very very veryvery very very very very very very very
         very veryvery very very very very very very very very veryvery very very very very very very
         very very veryvery very very very very very very very very veryvery very very very very very
         very very very very long name
-      </StoryNode>
+      </StoryLeafNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="foo"

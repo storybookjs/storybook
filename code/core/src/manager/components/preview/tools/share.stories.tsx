@@ -5,7 +5,7 @@ import { global } from '@storybook/global';
 import type { StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, screen, waitFor } from 'storybook/test';
+import { expect, fn, screen, waitFor } from 'storybook/test';
 
 import { shareTool } from './share';
 
@@ -13,11 +13,17 @@ const managerContext = {
   state: {
     storyId: 'manager-preview-tools-share--default',
     refId: undefined,
-    refs: {},
-    customQueryParams: {},
   },
   api: {
-    getShortcutKeys: () => ({ copyStoryLink: ['alt', 'shift', 'k'] }),
+    emit: fn().mockName('api::emit'),
+    getShortcutKeys: () => ({
+      copyStoryLink: ['alt', 'shift', 'l'],
+      openInIsolation: ['alt', 'shift', 'i'],
+    }),
+    getStoryHrefs: () => ({
+      managerHref: '/?path=/story/manager-preview-tools-share--default',
+      previewHref: '/iframe.html?id=manager-preview-tools-share--default&viewMode=story',
+    }),
   },
 } as any;
 

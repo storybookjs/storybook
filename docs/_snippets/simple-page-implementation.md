@@ -1,4 +1,4 @@
-```ts filename="YourPage.component.ts" renderer="angular" language="ts"
+```ts filename="your-page.component.ts" renderer="angular" language="ts"
 import { Component, Input } from '@angular/core';
 
 @Component({

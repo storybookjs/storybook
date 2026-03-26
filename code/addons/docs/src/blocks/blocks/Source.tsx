@@ -174,22 +174,17 @@ export const useSourceProps = (
  * Story source doc block renders source code if provided, or the source for a story if `storyId` is
  * provided, or the source for the current story if nothing is provided.
  */
-const SourceWithStorySnippet = (props: SourceProps) => {
+const SourceImpl = (props: SourceProps) => {
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
-  const sourceProps = useSourceProps(props, docsContext, sourceContext);
-  return <PureSource {...sourceProps} />;
-};
-
-const SourceWithCode = (props: SourceProps) => {
-  const docsContext = useContext(DocsContext);
-  const sourceProps = useSourceProps(props, docsContext, EMPTY_SOURCE_CONTEXT);
-  return <PureSource {...sourceProps} />;
-};
-
-const SourceImpl = (props: SourceProps) => {
   const hasCodeProp = props.code !== undefined;
-  return hasCodeProp ? <SourceWithCode {...props} /> : <SourceWithStorySnippet {...props} />;
+  const sourceProps = useSourceProps(
+    props,
+    docsContext,
+    hasCodeProp ? EMPTY_SOURCE_CONTEXT : sourceContext
+  );
+
+  return <PureSource {...sourceProps} />;
 };
 
 export const Source = withMdxComponentOverride('Source', SourceImpl);

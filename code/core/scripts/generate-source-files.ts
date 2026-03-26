@@ -105,7 +105,7 @@ async function generateExportsFile(): Promise<void> {
   const require = createRequire(join(CORE_ROOT_DIR, 'package.json'));
 
   // Get the module list from the globals reference map (the source of truth)
-  const { globalPackages } = await import('../src/manager/globals/globals.ts');
+  const { globalPackages } = await import('../src/manager/globals/globals');
 
   // Extract named exports using a single rolldown build with virtual entry per module.
   // Rolldown statically resolves exports without evaluating any code.

@@ -8854,7 +8854,7 @@ __metadata:
     nx: "npm:^22.6.1"
     oxfmt: "npm:^0.41.0"
     rolldown: "npm:1.0.0-rc.12"
-    rolldown-plugin-dts: "npm:^0.23.0"
+    rolldown-plugin-dts: "patch:rolldown-plugin-dts@npm%3A0.23.0#~/.yarn/patches/rolldown-plugin-dts-npm-0.23.0-5a4e1b44e6.patch"
     std-env: "npm:^4.0.0"
     vite: "npm:^7.0.4"
     vitest: "npm:^4.1.0"
@@ -27310,7 +27310,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rolldown-plugin-dts@npm:^0.23.0":
+"rolldown-plugin-dts@npm:0.23.0":
   version: 0.23.0
   resolution: "rolldown-plugin-dts@npm:0.23.0"
   dependencies:
@@ -27339,6 +27339,38 @@ __metadata:
     vue-tsc:
       optional: true
   checksum: 10c0/5294f4d5f2e5ea02933a9239cd0bfd76223500e69cc7bfbea3fd1fdd0b1dd7d45da0945b5ba341e8bda8da12759f7e278ba6887109ebee563f27084c9dc323df
+  languageName: node
+  linkType: hard
+
+"rolldown-plugin-dts@patch:rolldown-plugin-dts@npm%3A0.23.0#~/.yarn/patches/rolldown-plugin-dts-npm-0.23.0-5a4e1b44e6.patch":
+  version: 0.23.0
+  resolution: "rolldown-plugin-dts@patch:rolldown-plugin-dts@npm%3A0.23.0#~/.yarn/patches/rolldown-plugin-dts-npm-0.23.0-5a4e1b44e6.patch::version=0.23.0&hash=a7529e"
+  dependencies:
+    "@babel/generator": "npm:8.0.0-rc.3"
+    "@babel/helper-validator-identifier": "npm:8.0.0-rc.3"
+    "@babel/parser": "npm:8.0.0-rc.3"
+    "@babel/types": "npm:8.0.0-rc.3"
+    ast-kit: "npm:^3.0.0-beta.1"
+    birpc: "npm:^4.0.0"
+    dts-resolver: "npm:^2.1.3"
+    get-tsconfig: "npm:^4.13.7"
+    obug: "npm:^2.1.1"
+  peerDependencies:
+    "@ts-macro/tsc": ^0.3.6
+    "@typescript/native-preview": ">=7.0.0-dev.20260325.1"
+    rolldown: ^1.0.0-rc.12
+    typescript: ^5.0.0 || ^6.0.0
+    vue-tsc: ~3.2.0
+  peerDependenciesMeta:
+    "@ts-macro/tsc":
+      optional: true
+    "@typescript/native-preview":
+      optional: true
+    typescript:
+      optional: true
+    vue-tsc:
+      optional: true
+  checksum: 10c0/802c4261c65f5f9a23ed0d79912af1cb365c8b285e7421241f501ecb7801e9b5e0de30c5f7fb79af3338b7e05d9425c67d54adf2de8ed6fc04fbbbc1a424df1a
   languageName: node
   linkType: hard
 

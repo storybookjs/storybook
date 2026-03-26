@@ -1,8 +1,6 @@
 import { expect, it, vi } from 'vitest';
 
-vi.mock('storybook/internal/preview/globals', () => ({
-  globalsNameReferenceMap: {},
-}));
+vi.mock('storybook/internal/preview/globals', { spy: true });
 
 import { rewriteImport } from './storybook-external-globals-plugin';
 
@@ -49,6 +47,12 @@ const cases = [
     packageName,
     input: `import {} from "${packageName}"`,
     output: `void ${globals[packageName]}`,
+  },
+  {
+    globals,
+    packageName,
+    input: `import {} from "${packageName}";`,
+    output: `void ${globals[packageName]};`,
   },
   {
     globals,

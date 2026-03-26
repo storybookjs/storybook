@@ -332,7 +332,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       const command = [
-        options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
+        options.skipInstall ? `@storybook/cli@${versions['@storybook/cli']}` : `storybook`,
         'automigrate',
         'addon-a11y-addon-test',
         '--loglevel',

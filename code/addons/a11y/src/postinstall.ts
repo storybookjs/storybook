@@ -4,7 +4,7 @@ import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 
 export default async function postinstall(options: PostinstallOptions) {
   const args = [
-    options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
+    options.skipInstall ? `@storybook/cli@${versions['@storybook/cli']}` : `storybook`,
     'automigrate',
     'addon-a11y-addon-test',
   ];

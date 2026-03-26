@@ -73,7 +73,7 @@
     "nx": "^22.6.1",
     "oxfmt": "^0.41.0",
     "rolldown": "1.0.0-rc.12",
-    "rolldown-plugin-dts": "patch:rolldown-plugin-dts@npm%3A0.23.0#~/.yarn/patches/rolldown-plugin-dts-npm-0.23.0-5a4e1b44e6.patch",
+    "rolldown-plugin-dts": "^0.23.0",
     "std-env": "^4.0.0",
     "vite": "^7.0.4",
     "vitest": "^4.1.0"

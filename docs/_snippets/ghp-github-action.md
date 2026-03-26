@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm' # Adjust caching strategy and configuration if using other package managers
       - name: Install dependencies
         run: npm ci # Replace with appropriate command if using other package managers

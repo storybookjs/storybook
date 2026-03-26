@@ -37,6 +37,11 @@ declare module '@vitest/expect' {
   interface Assertion<T> extends ToHaveLiveRegionMatchers<T> {}
 }
 
+declare module 'storybook/test' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Assertion<T> extends ToHaveLiveRegionMatchers<T> {}
+}
+
 export function toHaveLiveRegion(
   container: HTMLElement,
   options: LiveRegionMatcherOptions

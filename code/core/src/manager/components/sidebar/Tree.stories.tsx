@@ -321,7 +321,7 @@ export const WithContextContent: Story = {
 };
 
 const dualSlotStoryId = storyId;
-const dualSlotParentId = index[dualSlotStoryId].parent as string;
+const dualSlotParentId = (index[dualSlotStoryId] as any).parent as string;
 
 const dualSlotData: IndexHash = {
   [dualSlotParentId]: {

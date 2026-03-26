@@ -9,6 +9,25 @@ description: Guide for reviewing and maintaining documentation. Use this when as
 
 ONLY review and maintain documentation files, such as README.md, CONTRIBUTING.md, and docs/ directory. Do NOT review or edit code files, configuration files, or any non-documentation files.
 
+## Automated Docs Validation
+
+Storybook provides an automated script to check for these common documentation issues:
+
+- **Broken relative links**: All `[text](./path.mdx)` and `[text](../path.mdx)` links in `.mdx` files are checked to ensure the target file exists.
+- **Missing CodeSnippets paths**: All `<CodeSnippets path="..." />` usages are checked to ensure the referenced file exists in `docs/_snippets/`.
+- **Deprecated `<IfRenderer>` usage**: All `.mdx` files are checked for `<IfRenderer>` and should use `<If>` instead.
+
+### How to run the docs check
+
+- **From the root:**
+  ```bash
+  yarn docs:check
+  ```
+
+This runs the script at `scripts/docs/check-docs.ts`. It will print a summary and exit with an error if any issues are found.
+
+See `scripts/docs/check-docs.ts` for implementation details and to add new checks.
+
 ## Common gotchas
 
 - All relative links to other documentation files should point to the `.mdx` file and resolve correctly. If a link is broken, alert the author.

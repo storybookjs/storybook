@@ -44,6 +44,10 @@ export async function aiInit(options: AiInitOptions): Promise<void> {
     process.exit(1);
   }
 
+  if (projectInfo.framework !== '@storybook/react-vite') {
+    return;
+  }
+
   if (format === 'json') {
     // JSON output goes directly to stdout for machine consumption
     console.log(JSON.stringify(generateJsonOutput(projectInfo), null, 2));

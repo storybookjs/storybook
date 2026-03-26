@@ -11,7 +11,7 @@ import type {
 import { BeakerIcon, DocumentIcon, PlayHollowIcon } from '@storybook/icons';
 
 import type { Theme } from 'storybook/theming';
-import { color } from 'storybook/theming';
+import { color, styled } from 'storybook/theming';
 
 import { getStatus } from '../../utils/status';
 import {
@@ -151,7 +151,13 @@ interface UseStatusFilterItemsParams {
   theme: Theme;
 }
 
-const statusIconStyle = { display: 'contents' } as const;
+const StatusIcon = styled.span(({ iconColor }: { iconColor?: string | null }) => ({
+  display: 'contents',
+  color: iconColor ?? undefined,
+  '> svg': {
+    transform: 'scale(1.3)',
+  },
+}));
 
 export function useStatusFilterItems({
   allStatuses,
@@ -178,13 +184,9 @@ export function useStatusFilterItems({
       const isExcluded = excludedStatusFilters.includes(statusValue);
       const isChecked = isIncluded || isExcluded;
       const { icon: statusIconEl, iconColor } = getStatus(theme, statusValue);
-      const icon: React.ReactElement | null = statusIconEl
-        ? React.createElement(
-            'span',
-            { style: iconColor ? { ...statusIconStyle, color: iconColor } : statusIconStyle },
-            statusIconEl
-          )
-        : null;
+      const icon = statusIconEl ? (
+        <StatusIcon iconColor={iconColor}>{statusIconEl}</StatusIcon>
+      ) : null;
       const item: FilterItem = {
         id: shortName,
         type: 'status',

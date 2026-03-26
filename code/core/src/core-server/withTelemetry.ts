@@ -98,7 +98,11 @@ export async function sendTelemetryError(
   try {
     let errorLevel = 'error';
     try {
-      errorLevel = await getErrorLevel({ ...options, eventType });
+      errorLevel = await getErrorLevel({
+        ...options,
+        eventType,
+        skipPrompt: options.skipPrompt || (eventType === 'init' && !blocking),
+      });
     } catch (err) {
       // If this throws, eg. due to main.js breaking, we fall back to 'error'
     }

@@ -441,6 +441,64 @@ describe('sendTelemetryError', () => {
       })
     );
   });
+
+  it('does not prompt for non-blocking init errors without cached consent', async () => {
+    const options: any = {
+      cliOptions: {},
+      skipPrompt: false,
+    };
+    const mockError = new Error('Init non-blocking error');
+
+    vi.mocked(isCI).mockReturnValue(false);
+    vi.mocked(cache.get).mockResolvedValueOnce(undefined);
+    vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
+    setStdoutIsTTY(true);
+
+    await sendTelemetryError(mockError, 'init', options, false);
+
+    expect(prompt.confirm).not.toHaveBeenCalled();
+    expect(vi.mocked(cache.set).mock.calls).not.toContainEqual(['enableCrashReports', expect.anything()]);
+    expect(telemetry).toHaveBeenCalledWith(
+      'error',
+      expect.objectContaining({
+        eventType: 'init',
+        blocking: false,
+        error: undefined,
+        isErrorInstance: true,
+      }),
+      expect.objectContaining({
+        enableCrashReports: false,
+        immediate: true,
+      })
+    );
+  });
+
+  it('uses cached crash report consent for non-blocking init errors', async () => {
+    const options: any = {
+      cliOptions: {},
+      skipPrompt: false,
+    };
+    const mockError = new Error('Init non-blocking error');
+
+    vi.mocked(cache.get).mockResolvedValueOnce(true);
+
+    await sendTelemetryError(mockError, 'init', options, false);
+
+    expect(prompt.confirm).not.toHaveBeenCalled();
+    expect(telemetry).toHaveBeenCalledWith(
+      'error',
+      expect.objectContaining({
+        eventType: 'init',
+        blocking: false,
+        error: expect.objectContaining({ message: 'Init non-blocking error', name: 'Error' }),
+        isErrorInstance: true,
+      }),
+      expect.objectContaining({
+        enableCrashReports: true,
+        immediate: true,
+      })
+    );
+  });
 });
 
 describe('getErrorLevel', () => {

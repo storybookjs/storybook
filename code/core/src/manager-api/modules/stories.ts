@@ -54,6 +54,8 @@ import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 
+import { statusValueShortName, toStatusValue } from '../../shared/status-store';
+
 import { BUILT_IN_FILTERS, Tag as TagEnum, USER_TAG_FILTER } from '../../shared/constants/tags';
 import { getEventMetadata } from '../lib/events';
 import {
@@ -76,17 +78,6 @@ const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
 
-const STATUS_SHORT_NAME_MAP: Record<string, StatusValue> = {
-  new: 'status-value:new',
-  modified: 'status-value:modified',
-  affected: 'status-value:affected',
-  error: 'status-value:error',
-  warning: 'status-value:warning',
-  success: 'status-value:success',
-  pending: 'status-value:pending',
-  unknown: 'status-value:unknown',
-};
-
 export const parseStatusesParam = (
   statusesParam: string | undefined
 ): { included: StatusValue[]; excluded: StatusValue[] } => {
@@ -104,7 +95,7 @@ export const parseStatusesParam = (
 
     const isExcluded = rawStatus.startsWith('!');
     const shortName = isExcluded ? rawStatus.slice(1) : rawStatus;
-    const statusValue = STATUS_SHORT_NAME_MAP[shortName];
+    const statusValue = toStatusValue(shortName);
 
     if (!statusValue) {
       return; // silently ignore unknown short names
@@ -128,12 +119,8 @@ export const serializeStatusesParam = (
     return undefined;
   }
 
-  const reverseMap = Object.fromEntries(
-    Object.entries(STATUS_SHORT_NAME_MAP).map(([short, full]) => [full, short])
-  ) as Record<StatusValue, string>;
-
-  const serializedIncluded = included.map((v) => reverseMap[v] ?? v);
-  const serializedExcluded = excluded.map((v) => `!${reverseMap[v] ?? v}`);
+  const serializedIncluded = included.map((v) => statusValueShortName(v));
+  const serializedExcluded = excluded.map((v) => `!${statusValueShortName(v)}`);
 
   return [...serializedIncluded, ...serializedExcluded].join(';');
 };

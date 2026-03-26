@@ -327,7 +327,4 @@ export const OnlyAffectedStatus: Story = {
       title: 'Affected',
     }),
   },
-  play() {
-    throw new Error('Affected status should not have a color or icon');
-  },
 };

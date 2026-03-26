@@ -4,6 +4,8 @@ import type { FilterFunction, StatusValue, Tag } from 'storybook/internal/types'
 
 import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags';
 
+export { statusValueShortName, toStatusValue } from '../../../shared/status-store';
+
 export type FilterItem = {
   id: string;
   type: string;
@@ -28,15 +30,15 @@ export const BUILT_IN_TAGS = new Set([
   'manifest',
 ]);
 
-export const STATUS_DISPLAY_ORDER: Array<{ shortName: string; statusValue: StatusValue }> = [
-  { shortName: 'new', statusValue: 'status-value:new' },
-  { shortName: 'modified', statusValue: 'status-value:modified' },
-  { shortName: 'affected', statusValue: 'status-value:affected' },
-  { shortName: 'error', statusValue: 'status-value:error' },
-  { shortName: 'warning', statusValue: 'status-value:warning' },
-  { shortName: 'success', statusValue: 'status-value:success' },
-  { shortName: 'pending', statusValue: 'status-value:pending' },
-  { shortName: 'unknown', statusValue: 'status-value:unknown' },
+export const STATUS_DISPLAY_ORDER: StatusValue[] = [
+  'status-value:new',
+  'status-value:modified',
+  'status-value:affected',
+  'status-value:error',
+  'status-value:warning',
+  'status-value:success',
+  'status-value:pending',
+  'status-value:unknown',
 ];
 
 /**

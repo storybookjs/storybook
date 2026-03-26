@@ -12,7 +12,12 @@ import { BeakerIcon, DocumentIcon, PlayHollowIcon } from '@storybook/icons';
 
 import { color } from 'storybook/theming';
 
-import { BUILT_IN_TAGS, STATUS_DISPLAY_ORDER, getFilterFunction } from './FilterPanel.utils';
+import {
+  BUILT_IN_TAGS,
+  STATUS_DISPLAY_ORDER,
+  getFilterFunction,
+  statusValueShortName,
+} from './FilterPanel.utils';
 
 export interface TagFilterEntry {
   id: string;
@@ -84,10 +89,10 @@ export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) 
       });
     });
 
-    return STATUS_DISPLAY_ORDER.filter(({ statusValue }) => (counts[statusValue] ?? 0) > 0).map(
-      ({ shortName, statusValue }) => ({
+    return STATUS_DISPLAY_ORDER.filter((statusValue) => (counts[statusValue] ?? 0) > 0).map(
+      (statusValue) => ({
         statusValue,
-        shortName,
+        shortName: statusValueShortName(statusValue),
         count: counts[statusValue],
       })
     );

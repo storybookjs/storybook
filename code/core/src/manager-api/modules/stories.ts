@@ -64,6 +64,7 @@ import {
   transformStoryIndexToStoriesHash,
 } from '../lib/stories';
 import type { ModuleFn } from '../lib/types';
+import { buildNavigationUrl } from '../lib/url';
 import type { ComposedRef } from '../root';
 import { fullStatusStore } from '../stores/status';
 import { parseTagsParam, serializeTagsParam } from './tags';
@@ -550,12 +551,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 }) => {
   const navigateWithQueryParams = (path: string, options?: NavigateOptions) => {
     const { customQueryParams } = store.getState();
-    const params = Object.entries(customQueryParams ?? {})
-      .filter(([, v]) => v !== null && v !== undefined)
-      .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([k, v]) => `${k}=${v}`);
-    const to = [path, ...params].join('&');
-    navigate(to, options);
+    navigate(buildNavigationUrl(path, customQueryParams ?? {}), options);
   };
 
   const persistFilters = (inputPatch: Parameters<typeof store.setState>[0]) => {

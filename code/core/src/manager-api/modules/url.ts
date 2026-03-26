@@ -17,6 +17,7 @@ import { stringify } from 'picoquery';
 
 import merge from '../lib/merge';
 import type { ModuleArgs, ModuleFn } from '../lib/types';
+import { buildNavigationUrl } from '../lib/url';
 import { DEFAULT_BOTTOM_PANEL_HEIGHT, DEFAULT_NAV_SIZE, DEFAULT_RIGHT_PANEL_WIDTH } from './layout';
 
 export interface SubState {
@@ -224,12 +225,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
     queryParams: Record<string, string | null | undefined> = {},
     options: NavigateOptions = {}
   ) => {
-    const params = Object.entries(queryParams)
-      .filter(([, v]) => v !== null && v !== undefined)
-      .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([k, v]) => `${k}=${v}`);
-    const to = [path, ...params].join('&');
-    return navigate(to, options);
+    return navigate(buildNavigationUrl(path, queryParams), options);
   };
 
   const api: SubAPI = {

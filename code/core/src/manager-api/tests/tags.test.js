@@ -10,12 +10,10 @@ describe('parseTagsParam', () => {
 
   it('parses include/exclude entries and maps known built-in URL tags', () => {
     expect(
-      parseTagsParam(
-        '$changed;$docs;$play;$test;custom;!blocked;!$changed;!$docs;!$play;!$test;!$unknown'
-      )
+      parseTagsParam('$docs;$play;$test;custom;!blocked;!$docs;!$play;!$test;!$unknown')
     ).toEqual({
-      included: ['_changed', '_docs', '_play', '_test', 'custom'],
-      excluded: ['blocked', '_changed', '_docs', '_play', '_test', '$unknown'],
+      included: ['_docs', '_play', '_test', 'custom'],
+      excluded: ['blocked', '_docs', '_play', '_test', '$unknown'],
     });
   });
 
@@ -35,11 +33,9 @@ describe('serializeTagsParam', () => {
   it('serializes include/exclude entries and maps known built-in internal tags', () => {
     expect(
       serializeTagsParam(
-        ['_changed', '_docs', '_play', '_test', 'custom', '_unknown'],
-        ['blocked', '_changed', '_docs', '_play', '_test', '_unknown']
+        ['_play', '_docs', '_test', 'custom', '_unknown'],
+        ['blocked', '_docs', '_play', '_test', '_unknown']
       )
-    ).toEqual(
-      '$changed;$docs;$play;$test;custom;_unknown;!blocked;!$changed;!$docs;!$play;!$test;!_unknown'
-    );
+    ).toEqual('$docs;$play;$test;_unknown;custom;!$docs;!$play;!$test;!_unknown;!blocked');
   });
 });

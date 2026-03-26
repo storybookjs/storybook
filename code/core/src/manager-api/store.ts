@@ -75,6 +75,7 @@ export default class Store {
   // The assumption is that this will be called once, to initialize the React state
   // when the module is instantiated
   getInitialState(base: State) {
+    // TODO: Remove in SB 11
     // One-time migration: tag filter state moved from localStorage to URL persistence.
     // Remove the old keys so they no longer interfere with URL-derived initial state.
     for (const storage of [store.local, store.session] as const) {

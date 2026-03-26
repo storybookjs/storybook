@@ -1,9 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { toHaveLiveRegion } from './toHaveLiveRegion';
-
-expect.extend({ toHaveLiveRegion });
+import './toHaveLiveRegion';
 
 describe('toHaveLiveRegion', () => {
   afterEach(() => {

@@ -9,13 +9,10 @@ import { ManagerContext, addons } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { toHaveLiveRegion } from '../../../../core/src/manager/utils/toHaveLiveRegion';
 import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants';
 import { storeOptions } from '../constants';
 import { store as mockStore } from '../manager-store.mock';
 import { TestProviderRender } from './TestProviderRender';
-
-expect.extend({ toHaveLiveRegion });
 
 const managerContext: any = {
   api: {
@@ -331,18 +328,18 @@ export const InSidebarContextMenu: Story = {
 
 /** Verifies that clicking "Start test run" announces "Test run started." */
 export const AnnouncesTestRunStart: Story = {
+  tags: ['vitest'],
   args: {
     testProviderState: 'test-provider-state:pending',
   },
   render: function Render(args) {
     const [state, setState] = React.useState<TestProviderState>(args.testProviderState);
     React.useEffect(() => {
-      mockStore.send.mockImplementation(((action: { type: string }) => {
+      mockStore.send.mockImplementation((action: { type: string }) => {
         if (action.type === 'TRIGGER_RUN') {
           setState('test-provider-state:running');
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any);
+      });
       return () => {
         mockStore.send.mockReset();
       };
@@ -365,6 +362,7 @@ export const AnnouncesTestRunStart: Story = {
 
 /** Verifies that transitioning from running to succeeded announces results. */
 export const AnnouncesTestRunFinished: Story = {
+  tags: ['vitest'],
   args: {
     testProviderState: 'test-provider-state:running',
     componentTestStatusValueToStoryIds: {
@@ -396,6 +394,7 @@ export const AnnouncesTestRunFinished: Story = {
 
 /** Verifies that transitioning to crashed state announces the crash assertively. */
 export const AnnouncesTestRunCrashed: Story = {
+  tags: ['vitest'],
   args: {
     testProviderState: 'test-provider-state:running',
     storeState: {

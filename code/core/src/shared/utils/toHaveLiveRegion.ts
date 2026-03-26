@@ -13,12 +13,28 @@
  * expect(canvas).toHaveLiveRegion({ text: /3 tests/, level: 'assertive' });
  * ```
  */
+import { expect } from 'vitest';
 
 export interface LiveRegionMatcherOptions {
   /** Expected text content (string for exact match, RegExp for pattern). */
   text: string | RegExp;
   /** Expected `aria-live` politeness level. If omitted any level matches. */
   level?: 'polite' | 'assertive';
+}
+
+interface ToHaveLiveRegionMatchers<T> {
+  /**
+   * Assert whether given message was announced by ARIA live region.
+   *
+   * @param options - Matching options
+   * @returns An object with `pass` boolean and `message` function for failure message
+   */
+  toHaveLiveRegion(options: LiveRegionMatcherOptions): { pass: boolean; message: () => string };
+}
+
+declare module '@vitest/expect' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Assertion<T> extends ToHaveLiveRegionMatchers<T> {}
 }
 
 export function toHaveLiveRegion(
@@ -29,7 +45,13 @@ export function toHaveLiveRegion(
 
   // Find all live region elements: elements with explicit aria-live,
   // or implicit live-region roles (status → polite, alert → assertive).
-  const liveRegionSelectors = ['[aria-live]', '[role="status"]', '[role="alert"]', '[role="log"]'];
+  const liveRegionSelectors = [
+    '[aria-live]',
+    '[role="status"]',
+    '[role="alert"]',
+    '[role="log"]',
+    'output',
+  ];
   const candidates = container.querySelectorAll<HTMLElement>(liveRegionSelectors.join(','));
 
   const matchingRegions: HTMLElement[] = [];
@@ -89,3 +111,5 @@ export function toHaveLiveRegion(
         : `Expected container to have a live region matching ${JSON.stringify(options)}.\n\nFound live regions:\n${candidateDetails || '  (none)'}`,
   };
 }
+
+expect.extend({ toHaveLiveRegion });

@@ -190,9 +190,21 @@ const StatusIconMap: Record<StatusValue, React.ReactNode | null> = {
   'status-value:error': <ErrorStatusIcon />,
   'status-value:warning': <WarnStatusIcon />,
   'status-value:pending': <PendingStatusIcon />,
-  'status-value:new': null,
-  'status-value:modified': null,
-  'status-value:affected': null,
+  'status-value:new': (
+    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+      <UseSymbol type="new" />
+    </svg>
+  ),
+  'status-value:modified': (
+    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+      <UseSymbol type="modified" />
+    </svg>
+  ),
+  'status-value:affected': (
+    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+      <UseSymbol type="affected" />
+    </svg>
+  ),
   'status-value:unknown': null,
 };
 
@@ -200,13 +212,34 @@ export const ContextMenu = {
   ListItem,
 };
 
+const CHANGE_DETECTION_TYPE_ID = 'storybook/change-detection';
+
 const statusOrder: StatusValue[] = [
   'status-value:success',
-  'status-value:error',
+  'status-value:new',
+  'status-value:modified',
+  'status-value:affected',
   'status-value:warning',
+  'status-value:error',
   'status-value:pending',
   'status-value:unknown',
 ];
+
+export function getChangeDetectionStatus(statuses: StatusByTypeId): {
+  changeStatus: StatusValue;
+  testStatus: StatusValue;
+} {
+  const changeValues = Object.values(statuses)
+    .filter((status) => status.typeId === CHANGE_DETECTION_TYPE_ID)
+    .map((status) => status.value);
+  const testValues = Object.values(statuses)
+    .filter((status) => status.typeId !== CHANGE_DETECTION_TYPE_ID)
+    .map((status) => status.value);
+  return {
+    changeStatus: getMostCriticalStatusValue(changeValues),
+    testStatus: getMostCriticalStatusValue(testValues),
+  };
+}
 
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
@@ -267,10 +300,9 @@ const Node = React.memo<NodeProps>(function Node(props) {
   ) {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryLeafNode;
 
-    const statusValue = getMostCriticalStatusValue(
-      Object.values(statuses || {}).map((s) => s.value)
-    );
-    const { icon, textColor } = getStatus(theme, statusValue);
+    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses || {});
+    const { icon: changeIcon } = getStatus(theme, changeStatus);
+    const { icon: testIcon, textColor } = getStatus(theme, testStatus);
 
     return (
       <LeafNodeStyleWrapper
@@ -309,15 +341,26 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </SkipToContentLink>
         )}
         {contextMenu.node}
-        {icon ? (
+        {changeIcon ? (
           <StatusButton
-            ariaLabel={`Status: ${statusValue.replace('status-value:', '')}`}
-            data-testid="tree-status-button"
+            ariaLabel={`Change status: ${changeStatus.replace('status-value:', '')}`}
+            data-testid="tree-change-status-button"
             type="button"
-            status={statusValue}
+            status={changeStatus}
             selectedItem={isSelected}
           >
-            {icon}
+            {changeIcon}
+          </StatusButton>
+        ) : null}
+        {testIcon ? (
+          <StatusButton
+            ariaLabel={`Status: ${testStatus.replace('status-value:', '')}`}
+            data-testid="tree-status-button"
+            type="button"
+            status={testStatus}
+            selectedItem={isSelected}
+          >
+            {testIcon}
           </StatusButton>
         ) : null}
       </LeafNodeStyleWrapper>

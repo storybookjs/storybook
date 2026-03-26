@@ -4,6 +4,7 @@ import {
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
+  type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -317,4 +318,127 @@ export const WithContextContent: Story = {
     await expect(popover).toBeVisible();
     expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
   },
+};
+
+const dualSlotStoryId = storyId;
+const dualSlotParentId = index[dualSlotStoryId].parent as string;
+
+const dualSlotData: IndexHash = {
+  [dualSlotParentId]: {
+    ...(index[dualSlotParentId] as ComponentEntry),
+    children: [dualSlotStoryId],
+  },
+  [dualSlotStoryId]: index[dualSlotStoryId],
+};
+
+function makeDualSlotStory(allStatuses: StatusesByStoryIdAndTypeId): Story {
+  return {
+    args: {
+      docsMode: false,
+      isBrowsing: true,
+      isMain: true,
+      refId: DEFAULT_REF_ID,
+      setHighlightedItemId: action('setHighlightedItemId'),
+      allStatuses,
+    },
+    render: (args) => {
+      const [selectedId, setSelectedId] = useState(dualSlotStoryId);
+      return (
+        <Tree
+          {...args}
+          data={dualSlotData}
+          selectedStoryId={selectedId}
+          onSelectStoryId={setSelectedId}
+          highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
+        />
+      );
+    },
+  };
+}
+
+export const WithChangeDetectionOnly: Story = makeDualSlotStory({
+  [dualSlotStoryId]: {
+    'storybook/change-detection': {
+      storyId: dualSlotStoryId,
+      typeId: 'storybook/change-detection',
+      value: 'status-value:new',
+      title: 'Change Detection',
+      description: 'Story is new',
+    },
+  },
+});
+
+export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory({
+  [dualSlotStoryId]: {
+    'storybook/change-detection': {
+      storyId: dualSlotStoryId,
+      typeId: 'storybook/change-detection',
+      value: 'status-value:modified',
+      title: 'Change Detection',
+      description: 'Story is modified',
+    },
+    'storybook/vitest': {
+      storyId: dualSlotStoryId,
+      typeId: 'storybook/vitest',
+      value: 'status-value:error',
+      title: 'Vitest',
+      description: 'Test failed',
+    },
+  },
+});
+
+export const WithTestStatusOnly: Story = makeDualSlotStory({
+  [dualSlotStoryId]: {
+    'storybook/vitest': {
+      storyId: dualSlotStoryId,
+      typeId: 'storybook/vitest',
+      value: 'status-value:warning',
+      title: 'Vitest',
+      description: 'Test warning',
+    },
+  },
+});
+
+export const WithAffectedStatus: Story = makeDualSlotStory({
+  [dualSlotStoryId]: {
+    'storybook/change-detection': {
+      storyId: dualSlotStoryId,
+      typeId: 'storybook/change-detection',
+      value: 'status-value:affected',
+      title: 'Change Detection',
+      description: 'Story is affected',
+    },
+  },
+});
+
+export const BranchWithChangeDetectionPriority: Story = makeDualSlotStory({
+  [dualSlotStoryId]: {
+    'storybook/change-detection': {
+      storyId: dualSlotStoryId,
+      typeId: 'storybook/change-detection',
+      value: 'status-value:new',
+      title: 'Change Detection',
+      description: 'Story is new',
+    },
+    'storybook/vitest': {
+      storyId: dualSlotStoryId,
+      typeId: 'storybook/vitest',
+      value: 'status-value:error',
+      title: 'Vitest',
+      description: 'Test failed',
+    },
+  },
+});
+
+BranchWithChangeDetectionPriority.render = (args) => {
+  const [selectedId, setSelectedId] = useState(dualSlotParentId);
+  return (
+    <Tree
+      {...args}
+      data={dualSlotData}
+      selectedStoryId={selectedId}
+      onSelectStoryId={setSelectedId}
+      highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
+    />
+  );
 };

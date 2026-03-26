@@ -1,13 +1,13 @@
-import { expect, it, vi } from "vitest";
+import { expect, it, vi } from 'vitest';
 
-vi.mock("storybook/internal/preview/globals", () => ({
+vi.mock('storybook/internal/preview/globals', () => ({
   globalsNameReferenceMap: {},
 }));
 
-import { rewriteImport } from "./storybook-external-globals-plugin";
+import { rewriteImport } from './storybook-external-globals-plugin';
 
-const packageName = "@storybook/package";
-const globals = { [packageName]: "_STORYBOOK_PACKAGE_" };
+const packageName = '@storybook/package';
+const globals = { [packageName]: '_STORYBOOK_PACKAGE_' };
 
 const cases = [
   {
@@ -70,12 +70,8 @@ const cases = [
   },
 ];
 
-it("rewriteImport", () => {
-  cases.forEach(
-    ({ input, output, globals: caseGlobals, packageName: casePackage }) => {
-      expect(rewriteImport(input, caseGlobals, casePackage)).toStrictEqual(
-        output,
-      );
-    },
-  );
+it('rewriteImport', () => {
+  cases.forEach(({ input, output, globals: caseGlobals, packageName: casePackage }) => {
+    expect(rewriteImport(input, caseGlobals, casePackage)).toStrictEqual(output);
+  });
 });

@@ -64,7 +64,7 @@ export const testStory = ({
       storyAnnotations,
       annotations.meta!,
       { initialGlobals: (await getInitialGlobals?.()) ?? {} },
-      annotations.preview ?? globalThis.globalProjectAnnotations,
+      globalThis.globalProjectAnnotations ?? annotations.preview,
       exportName
     );
 

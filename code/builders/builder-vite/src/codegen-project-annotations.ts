@@ -59,11 +59,25 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
   if (options.isCsf4) {
     return dedent`
+      import { composeConfigs } from 'storybook/preview-api';
       ${previewFileImport}
 
       export function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
         const preview = hmrPreviewAnnotationModules[0] ?? ${previewFileVariable};
         return preview.default.composed;
+      }
+
+      /**
+       * Returns project annotations without getCoreAnnotations() pre-applied.
+       * Used by vitest's setup-file-with-project-annotations so that setProjectAnnotations()
+       * can add getCoreAnnotations() exactly once without doubling.
+       * Also composes any module-level named exports (e.g. loaders, parameters) defined
+       * outside of definePreview(), ensuring they are not silently dropped.
+       */
+      export function getProjectAnnotationsForVitest(hmrPreviewAnnotationModules = []) {
+        const previewModule = hmrPreviewAnnotationModules[0] ?? ${previewFileVariable};
+        const { addons = [], ...rest } = previewModule.default?.input ?? {};
+        return composeConfigs([...addons, rest, previewModule]);
       }
 
       if (import.meta.hot) {
@@ -93,6 +107,10 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
       )};
       return composeConfigs(configs);
     }
+
+    // For non-CSF4 previews, getProjectAnnotationsForVitest is equivalent to getProjectAnnotations.
+    // It is exported so that setup-file-with-project-annotations.ts can always import it.
+    export const getProjectAnnotationsForVitest = getProjectAnnotations;
 
     if (import.meta.hot) {
       import.meta.hot.accept(${JSON.stringify(previewAnnotationURLs)}, (previewAnnotationModules) => {

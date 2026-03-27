@@ -3,12 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ModuleNode as StorybookModuleNode, Options } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
-import { bail, buildModuleGraph, onModuleGraphChange, start } from './index';
+import { bail, onModuleGraphChange, start } from './index';
+import { buildModuleGraph } from './utils/build-module-graph';
 import { createViteServer } from './vite-server';
 
-vi.mock('./vite-server', () => ({
-  createViteServer: vi.fn(),
-}));
+vi.mock('./vite-server', { spy: true });
 
 type ViteModuleNodeLike = {
   file: string | null;
@@ -84,6 +83,7 @@ function createFakeViteServer() {
     middlewares: {
       handle: vi.fn(),
     },
+    warmupRequest: vi.fn().mockResolvedValue(undefined),
     transformIndexHtml: vi.fn().mockResolvedValue(''),
     waitForRequestsIdle: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
@@ -92,10 +92,22 @@ function createFakeViteServer() {
   };
 }
 
-function createStartArgs(): Parameters<typeof start>[0] {
+function createStartArgs(storyImportPaths: string[] = []): Parameters<typeof start>[0] {
+  const indexGenerator = {
+    getIndex: vi.fn().mockResolvedValue({
+      entries: Object.fromEntries(
+        storyImportPaths.map((importPath, index) => [`story-${index}`, { importPath }])
+      ),
+    }),
+  };
+
   return {
     startTime: process.hrtime(),
-    options: {} as Options,
+    options: {
+      presets: {
+        apply: vi.fn().mockResolvedValue(indexGenerator),
+      },
+    } as unknown as Options,
     router: {
       get: vi.fn(),
       use: vi.fn(),
@@ -196,6 +208,17 @@ describe('buildModuleGraph', () => {
 describe('onModuleGraphChange', () => {
   let fakeViteServer: ReturnType<typeof createFakeViteServer>;
 
+  async function startChangeDetection(
+    fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ])
+  ) {
+    fakeViteServer.moduleGraph.fileToModulesMap = fileToModulesMap;
+    await start(createStartArgs([...fileToModulesMap.keys()]));
+    await vi.advanceTimersByTimeAsync(1000);
+  }
+
   beforeEach(() => {
     vi.useFakeTimers();
     fakeViteServer = createFakeViteServer();
@@ -214,7 +237,9 @@ describe('onModuleGraphChange', () => {
 
     expect(unsubscribe).toEqual(expect.any(Function));
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -231,15 +256,14 @@ describe('onModuleGraphChange', () => {
 
   it('passes the module graph payload to listeners', async () => {
     const entry = createViteModuleNode('/src/Button.tsx');
-    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
-      '/src/Button.tsx',
-      new Set([entry]),
-    ]);
+    const fileToModulesMap = createFileToModulesMap(['/src/Button.tsx', new Set([entry])]);
 
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection(fileToModulesMap);
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -254,7 +278,9 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(50);
@@ -268,7 +294,9 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('add', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -280,7 +308,9 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('unlink', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -292,7 +322,9 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
     fakeViteServer.watcher.emit('add', '/src/Button.tsx');
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
@@ -309,7 +341,10 @@ describe('onModuleGraphChange', () => {
     onModuleGraphChange(cb1);
     onModuleGraphChange(cb2);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb1.mockClear();
+    cb2.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -322,14 +357,15 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
     expect(fakeViteServer.watcher.listenerCount('all')).toBe(1);
 
     await bail();
     expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
 
-    await start(createStartArgs());
-    expect(fakeViteServer.watcher.listenerCount('all')).toBe(1);
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
 
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
     await vi.advanceTimersByTimeAsync(100);
@@ -339,7 +375,10 @@ describe('onModuleGraphChange', () => {
   });
 
   it('clears the module-graph polling interval during bail', async () => {
+    onModuleGraphChange(vi.fn());
+
     await start(createStartArgs());
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(vi.getTimerCount()).toBe(1);
 

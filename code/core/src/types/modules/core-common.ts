@@ -1,8 +1,8 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { ChannelLike } from 'storybook/internal/channels';
 import type { FileSystemCache } from 'storybook/internal/common';
-import { type StoryIndexGenerator } from 'storybook/internal/core-server';
-import { type CsfFile } from 'storybook/internal/csf-tools';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';

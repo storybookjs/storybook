@@ -7,7 +7,9 @@ import compression from '@polka/compression';
 import polka from 'polka';
 
 import { telemetry } from '../telemetry';
-import { type StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { ChangeDetectionService, CHANGE_DETECTION_STATUS_TYPE_ID } from './change-detection';
+import { getStatusStoreByTypeId } from './stores/status';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
@@ -32,6 +34,7 @@ export async function storybookDevServer(
 
   const workingDir = process.cwd();
   const configDir = options.configDir;
+  const features = await options.presets.apply('features');
   const stories = await options.presets.apply('stories');
   // StoryIndexGenerator depends on these normalized stories to be referentially equal
   // So it's important that we only normalize them once here and pass the same reference around
@@ -111,6 +114,13 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
+    const changeDetectionService = new ChangeDetectionService({
+      storyIndexGeneratorPromise,
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      workingDir,
+    });
+    changeDetectionService.start(previewBuilder.onModuleGraphChange, features?.changeDetection);
+
     logger.debug('Starting preview..');
     previewResult = await previewBuilder
       .start({
@@ -120,10 +130,11 @@ export async function storybookDevServer(
         server,
         channel: options.channel,
       })
-      .catch(async (e: any) => {
+      .catch(async (e: unknown) => {
         logger.error('Failed to build the preview');
         process.exitCode = 1;
 
+        await changeDetectionService.dispose().catch();
         await managerBuilder?.bail().catch();
         // For some reason, even when Webpack fails e.g. wrong main.js config,
         // the preview may continue to print to stdout, which can affect output
@@ -156,7 +167,6 @@ export async function storybookDevServer(
     throw e;
   }
 
-  const features = await options.presets.apply('features');
   if (features?.componentsManifest) {
     registerManifests({ app, presets: options.presets });
   }
@@ -175,7 +185,7 @@ export async function storybookDevServer(
           storyStats: indexAndStats.stats,
         });
       }
-    } catch (err) {}
+    } catch {}
     await telemetry('canceled', payload, { immediate: true });
     process.exit(0);
   }

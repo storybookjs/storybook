@@ -11,6 +11,7 @@ import { build as viteBuild } from './build';
 import type { ViteBuilder } from './types';
 import { createViteServer } from './vite-server';
 import { buildModuleGraph } from './utils/build-module-graph';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 
 export { withoutVitePlugins } from './utils/without-vite-plugins';
 export { hasVitePlugins } from './utils/has-vite-plugins';
@@ -73,6 +74,31 @@ export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphCha
   };
 };
 
+const startChangeDetection = async (options: Options) => {
+  const startTime = process.hrtime();
+  const indexGenerator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  const storyIndex = await indexGenerator.getIndex();
+
+  // Warm up the module graph for all story files
+  await Promise.all(
+    Object.values(storyIndex.entries).map((entry) => server.warmupRequest(entry.importPath))
+  );
+
+  // Wait for the module graph to be ready by polling for it to be non-empty
+  waitForModuleGraph = setInterval(async () => {
+    if (!watcherChangeHandler || process.hrtime(startTime)[0] > 30) {
+      clearInterval(waitForModuleGraph);
+      waitForModuleGraph = undefined;
+    } else if (server.moduleGraph.fileToModulesMap.size > 0) {
+      clearInterval(waitForModuleGraph);
+      waitForModuleGraph = undefined;
+      await server.waitForRequestsIdle();
+      server.watcher.on('all', watcherChangeHandler);
+      watcherChangeHandler();
+    }
+  }, 1000);
+};
+
 export const start: ViteBuilder['start'] = async ({
   startTime,
   options,
@@ -84,24 +110,17 @@ export const start: ViteBuilder['start'] = async ({
   router.get('/iframe.html', iframeHandler(options as Options, server));
   router.use(server.middlewares);
 
-  // Debounce handler to prevent multiple callback invocations when multiple files are edited
-  watcherChangeHandler = () => {
-    clearTimeout(debounce);
-    debounce = setTimeout(() => {
-      notifyListeners(buildModuleGraph(server.moduleGraph.fileToModulesMap));
-    }, 100);
-  };
-
-  server.watcher.on('all', watcherChangeHandler);
-
-  waitForModuleGraph = setInterval(async () => {
-    if (server.moduleGraph.fileToModulesMap.size > 0) {
-      clearInterval(waitForModuleGraph);
-      waitForModuleGraph = undefined;
-      await server.waitForRequestsIdle();
-      watcherChangeHandler?.();
-    }
-  }, 1000);
+  if (listeners.size > 0) {
+    // Debounce handler to prevent multiple callback invocations when multiple files are edited
+    watcherChangeHandler = () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        notifyListeners(buildModuleGraph(server.moduleGraph.fileToModulesMap));
+      }, 100);
+    };
+    // We intentionally don't await this. Cleanup happens in bail().
+    startChangeDetection(options);
+  }
 
   return {
     bail,

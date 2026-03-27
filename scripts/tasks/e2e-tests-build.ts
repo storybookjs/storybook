@@ -19,10 +19,9 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
     return false;
   },
   async run({ codeDir, junitFilename, key, sandboxDir, selectedTask }, { dryRun, debug }) {
-    const port =
-      isNxTaskExecution()
-        ? getPort({ key, selectedTask: selectedTask === 'e2e-tests' ? 'serve' : 'dev' })
-        : this.port;
+    const port = isNxTaskExecution()
+      ? getPort({ key, selectedTask: selectedTask === 'e2e-tests' ? 'serve' : 'dev' })
+      : this.port;
 
     if (process.env.DEBUG) {
       console.log(dedent`

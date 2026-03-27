@@ -11,6 +11,8 @@ import type { TanStackTypes } from './types';
 export * from '@storybook/react';
 export * from './types';
 
+export { getRouter } from './routing/decorator';
+
 export function definePreview<Addons extends PreviewAddon<never>[]>(
   preview: {
     addons?: Addons;

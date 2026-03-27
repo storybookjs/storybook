@@ -1,95 +1,70 @@
-import { resolve } from 'node:path';
-import pc from 'picocolors';
-import { x } from 'tinyexec';
+import { resolve } from "node:path";
+import pc from "picocolors";
+import { x } from "tinyexec";
 
-/** Root of the storybook monorepo */
-export const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..');
+export const REPO_ROOT = resolve(import.meta.dirname, "..", "..", "..");
+export const EVAL_ROOT = resolve(REPO_ROOT, "..", "storybook-eval");
+export const CACHE_DIR = resolve(EVAL_ROOT, ".cache", "repos");
+export const TRIALS_DIR = resolve(EVAL_ROOT, "trials");
+export const PROMPTS_DIR = resolve(import.meta.dirname, "..", "prompts");
 
-/** Directory for eval trials and caches (outside the monorepo to avoid workspace interference) */
-export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
+// --- Logging ---
 
-/** Cached repo clones */
-export const CACHE_DIR = resolve(EVAL_ROOT, '.cache', 'repos');
+export const log = (msg: string) => console.log(msg);
+export const logStep = (msg: string) => console.log(`  ${pc.cyan(">")} ${msg}`);
+export const logSuccess = (msg: string) => console.log(`  ${pc.green("✓")} ${msg}`);
+export const logError = (msg: string) => console.log(`  ${pc.red("✗")} ${msg}`);
 
-/** Trial output base directory */
-export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
+export const formatDuration = (s: number) =>
+  s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m${Math.round(s % 60)}s`;
 
-/** Built-in prompts directory */
-export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
+export const formatCost = (cost?: number) => (cost == null ? "-" : `$${cost.toFixed(2)}`);
 
-export function log(msg: string) {
-  console.log(msg);
+export function generateTrialId(project: string, agent: string, model: string) {
+  return `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${project}-${agent}-${model}`;
 }
 
-export function logStep(msg: string) {
-  console.log(`  ${pc.cyan('>')} ${msg}`);
+// --- Clean npm env ---
+
+/**
+ * Process env with verdaccio registry overrides stripped.
+ * The storybook monorepo's .npmrc points to localhost:6002.
+ */
+export function cleanEnv(): Record<string, string | undefined> {
+  const env = { ...process.env };
+  env.npm_config_registry = "https://registry.npmjs.org/";
+  for (const key of Object.keys(env)) {
+    if (key.startsWith("npm_config_") && key !== "npm_config_registry") {
+      delete env[key];
+    }
+  }
+  return env;
 }
 
-export function logSuccess(msg: string) {
-  console.log(`  ${pc.green('✓')} ${msg}`);
-}
+// --- Exec ---
 
-export function logError(msg: string) {
-  console.log(`  ${pc.red('✗')} ${msg}`);
-}
-
-export function logWarn(msg: string) {
-  console.log(`  ${pc.yellow('!')} ${msg}`);
-}
-
-export function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${Math.round(seconds)}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.round(seconds % 60);
-  return `${mins}m${secs}s`;
-}
-
-export function formatCost(cost?: number): string {
-  if (cost == null) return '-';
-  return `$${cost.toFixed(2)}`;
-}
-
-export function generateTrialId(projectName: string, agent: string, model: string): string {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  return `${timestamp}-${projectName}-${agent}-${model}`;
-}
-
-/** Options for the exec helper */
-interface ExecOptions {
-  cwd?: string;
-  env?: Record<string, string | undefined>;
-  timeout?: number;
-  /** If true, don't throw on non-zero exit code (default: true = throw) */
-  throwOnError?: boolean;
-  /** Set to 'ignore' to suppress stdin */
-  stdin?: 'ignore';
-}
-
-/** Result from exec helper */
 export interface ExecResult {
   stdout: string;
   stderr: string;
   exitCode: number | null;
 }
 
-/**
- * Thin wrapper around tinyexec's `x()` with timeout support via AbortController.
- */
 export async function exec(
   command: string,
   args: string[],
-  options: ExecOptions = {}
+  options: {
+    cwd?: string;
+    env?: Record<string, string | undefined>;
+    timeout?: number;
+    throwOnError?: boolean;
+    stdin?: "ignore";
+  } = {},
 ): Promise<ExecResult> {
   const { cwd, env, timeout, throwOnError = true, stdin } = options;
-
   const controller = timeout ? new AbortController() : undefined;
-  const timer = timeout
-    ? setTimeout(() => controller!.abort(), timeout)
-    : undefined;
-
-  const stdio: ['ignore', 'pipe', 'pipe'] | undefined = stdin === 'ignore'
-    ? ['ignore', 'pipe', 'pipe']
-    : undefined;
+  const timer = timeout ? setTimeout(() => controller!.abort(), timeout) : undefined;
+  const stdio: ["ignore", "pipe", "pipe"] | undefined =
+    stdin === "ignore" ? ["ignore", "pipe", "pipe"] : undefined;
 
   try {
     const result = await x(command, args, {
@@ -103,15 +78,9 @@ export async function exec(
     });
 
     if (throwOnError && result.exitCode !== 0) {
-      const msg = `Command failed: ${command} ${args.join(' ')}\n${result.stderr}`;
-      throw new Error(msg);
+      throw new Error(`Command failed: ${command} ${args.join(" ")}\n${result.stderr}`);
     }
-
-    return {
-      stdout: result.stdout,
-      stderr: result.stderr,
-      exitCode: result.exitCode,
-    };
+    return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode };
   } finally {
     if (timer) clearTimeout(timer);
   }

@@ -1,77 +1,33 @@
 import { writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join } from "node:path";
 import type { TrialResult } from "../types";
-import { logStep, logSuccess, logError, exec, EVAL_ROOT } from "./utils";
+import { logStep, logSuccess, logError, exec } from "./utils";
 
-// Google Apps Script webhook URL for the Storybook Setup Eval spreadsheet.
-// To set up your own: see google-apps-script.js in this directory.
 const GOOGLE_SHEETS_URL = process.env.EVAL_GOOGLE_SHEETS_URL;
-
-interface SheetsData {
-  uploadId: string;
-  runId: string;
-  timestamp: string;
-  project: string;
-  agent: string;
-  model: string;
-  modelTier: string;
-  prompts: string;
-  buildSuccess: boolean;
-  typeCheckErrors: number;
-  ghostStoriesPassed: number | null;
-  ghostStoriesTotal: number | null;
-  ghostStoriesRate: number | null;
-  setupPatterns: string;
-  changedFiles: number;
-  storybookFiles: number;
-  qualityScore: number;
-  cost: number | "unknown";
-  duration: number;
-  turns: number;
-  gitBranch: string;
-  gitCommit: string;
-  trialPath: string;
-}
 
 export interface Environment {
   nodeVersion: string;
   gitBranch: string;
   gitCommit: string;
-  timestamp: string;
 }
 
-/**
- * Capture environment info for reproducibility.
- */
 export async function captureEnvironment(resultsDir: string): Promise<Environment> {
-  const nodeVersion = process.version;
-
   let gitBranch = "unknown";
   let gitCommit = "unknown";
   try {
     gitBranch = (await exec("git", ["rev-parse", "--abbrev-ref", "HEAD"])).stdout.trim();
     gitCommit = (await exec("git", ["rev-parse", "HEAD"])).stdout.trim();
   } catch {
-    // Not in a git repo
+    /* not in a git repo */
   }
-
-  const env: Environment = {
-    nodeVersion,
-    gitBranch,
-    gitCommit,
-    timestamp: new Date().toISOString(),
-  };
-
+  const env = { nodeVersion: process.version, gitBranch, gitCommit };
   writeFileSync(join(resultsDir, "environment.json"), JSON.stringify(env, null, 2));
   return env;
 }
 
-/**
- * Upload a trial result to Google Sheets.
- */
 export async function saveToGoogleSheets(
   result: TrialResult,
-  environment: Environment,
+  env: Environment,
   runId: string,
   uploadId: string,
 ): Promise<void> {
@@ -79,11 +35,10 @@ export async function saveToGoogleSheets(
     logStep("Skipping Google Sheets (set EVAL_GOOGLE_SHEETS_URL to enable)");
     return;
   }
-
   logStep("Uploading to Google Sheets...");
 
   const ghost = result.grading.ghostStories;
-  const data: SheetsData = {
+  const data = {
     uploadId,
     runId,
     timestamp: result.timestamp,
@@ -104,9 +59,8 @@ export async function saveToGoogleSheets(
     cost: result.execution.cost ?? "unknown",
     duration: result.execution.duration,
     turns: result.execution.turns,
-    gitBranch: environment.gitBranch,
-    gitCommit: environment.gitCommit,
-    trialPath: relative(EVAL_ROOT, ""),
+    gitBranch: env.gitBranch,
+    gitCommit: env.gitCommit,
   };
 
   try {
@@ -116,8 +70,6 @@ export async function saveToGoogleSheets(
       body: JSON.stringify(data),
       redirect: "manual",
     });
-
-    // Google Apps Script may return HTML on redirect — treat as success
     const contentType = response.headers.get("content-type");
     if (contentType?.includes("application/json")) {
       const body = (await response.json()) as { success: boolean; error?: string };
@@ -126,7 +78,6 @@ export async function saveToGoogleSheets(
         return;
       }
     }
-
     logSuccess("Uploaded to Google Sheets");
   } catch (error) {
     logError(`Google Sheets upload failed: ${error instanceof Error ? error.message : error}`);

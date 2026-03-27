@@ -5,12 +5,12 @@ import { Button } from 'storybook/internal/components';
 
 import { opacify, transparentize } from 'polished';
 import type { CSSObject, StorybookTheme } from 'storybook/theming';
-import { styled } from 'storybook/theming';
+import { srOnlyStyles, styled } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import type { BooleanConfig, BooleanValue, ControlProps } from './types';
 
-export const getBooleanControlStyles = (theme: StorybookTheme): CSSObject => ({
+const getBooleanControlStyles = (theme: StorybookTheme): CSSObject => ({
   lineHeight: '18px',
   alignItems: 'center',
   marginBottom: 8,
@@ -32,8 +32,8 @@ export const getBooleanControlStyles = (theme: StorybookTheme): CSSObject => ({
     outline: '1px solid ButtonText',
   },
   '&:focus-within': {
-    outline: 'none',
-    boxShadow: `${theme.color.secondary} 0 0 0 1px inset !important`,
+    outline: `1px solid ${theme.color.secondary}`,
+    outlineOffset: 1,
 
     '@media (forced-colors: active)': {
       outline: '1px solid Highlight',
@@ -42,20 +42,11 @@ export const getBooleanControlStyles = (theme: StorybookTheme): CSSObject => ({
   },
 
   input: {
+    ...srOnlyStyles,
     appearance: 'none',
-    width: 1,
-    height: 1,
-    position: 'absolute',
     left: 0,
     top: 0,
-    margin: 0,
-    padding: 0,
-    border: 'none',
     background: 'transparent',
-    clip: 'rect(0 0 0 0)',
-    clipPath: 'inset(50%)',
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
     cursor: 'pointer',
     borderRadius: '3em',
   },
@@ -74,10 +65,6 @@ export const getBooleanControlStyles = (theme: StorybookTheme): CSSObject => ({
 
     color: transparentize(0.5, theme.color.defaultText),
     background: 'transparent',
-
-    '&:hover': {
-      boxShadow: `${opacify(0.3, theme.appBorderColor)} 0 0 0 1px inset`,
-    },
 
     '&:active': {
       boxShadow: `${opacify(0.05, theme.appBorderColor)} 0 0 0 2px inset`,

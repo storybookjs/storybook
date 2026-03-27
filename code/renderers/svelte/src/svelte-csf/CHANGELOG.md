@@ -1,4 +1,6 @@
-# v5.1.1 (Wed Mar 25 2026)
+# @storybook/addon-svelte-csf
+
+## 5.1.1
 
 #### 🐛 Bug Fix
 
@@ -10,7 +12,7 @@
 
 ---
 
-# v5.1.0 (Mon Mar 23 2026)
+## 5.1.0
 
 #### 🚀 Enhancement
 
@@ -22,7 +24,7 @@
 
 ---
 
-# v5.0.12 (Wed Mar 18 2026)
+## 5.0.12
 
 #### ⚠️ Pushed to `main`
 
@@ -34,7 +36,7 @@
 
 ---
 
-# v5.0.11 (Fri Feb 13 2026)
+## 5.0.11
 
 #### 🐛 Bug Fix
 
@@ -48,7 +50,7 @@
 
 ---
 
-# v5.0.10 (Fri Oct 03 2025)
+## 5.0.10
 
 #### 🐛 Bug Fix
 
@@ -60,7 +62,7 @@
 
 ---
 
-# v5.0.9 (Thu Oct 02 2025)
+## 5.0.9
 
 #### 🐛 Bug Fix
 
@@ -72,7 +74,7 @@
 
 ---
 
-# v5.0.8 (Wed Aug 20 2025)
+## 5.0.8
 
 #### 🐛 Bug Fix
 
@@ -84,7 +86,7 @@
 
 ---
 
-# v5.0.7 (Mon Jul 14 2025)
+## 5.0.7
 
 #### 🐛 Bug Fix
 
@@ -96,7 +98,7 @@
 
 ---
 
-# v5.0.6 (Fri Jul 04 2025)
+## 5.0.6
 
 #### 🐛 Bug Fix
 
@@ -108,7 +110,7 @@
 
 ---
 
-# v5.0.5 (Thu Jul 03 2025)
+## 5.0.5
 
 #### 🐛 Bug Fix
 
@@ -120,7 +122,7 @@
 
 ---
 
-# v5.0.4 (Tue Jun 24 2025)
+## 5.0.4
 
 #### 🐛 Bug Fix
 
@@ -132,7 +134,7 @@
 
 ---
 
-# v5.0.3 (Wed May 28 2025)
+## 5.0.3
 
 #### 🐛 Bug Fix
 
@@ -144,7 +146,7 @@
 
 ---
 
-# v5.0.2 (Wed May 28 2025)
+## 5.0.2
 
 #### 🐛 Bug Fix
 
@@ -157,7 +159,7 @@
 
 ---
 
-# v5.0.1 (Sun May 18 2025)
+## 5.0.1
 
 #### 🐛 Bug Fix
 
@@ -169,7 +171,7 @@
 
 ---
 
-# v5.0.0 (Tue May 06 2025)
+## 5.0.0
 
 ### Release Notes
 
@@ -396,7 +398,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.2.0 (Thu Nov 28 2024)
+## 4.2.0
 
 #### 🚀 Enhancement
 
@@ -408,7 +410,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.1.7 (Sun Sep 01 2024)
+## 4.1.7
 
 #### 🐛 Bug Fix
 
@@ -420,7 +422,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.1.6 (Thu Aug 22 2024)
+## 4.1.6
 
 #### 🐛 Bug Fix
 
@@ -433,7 +435,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.1.5 (Tue Aug 06 2024)
+## 4.1.5
 
 #### 🐛 Bug Fix
 
@@ -445,7 +447,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.1.4 (Tue Jul 09 2024)
+## 4.1.4
 
 #### 🐛 Bug Fix
 
@@ -457,7 +459,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.1.3 (Thu May 16 2024)
+## 4.1.3
 
 #### 🐛 Bug Fix
 
@@ -475,7 +477,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.1.2 (Wed Mar 06 2024)
+## 4.1.2
 
 #### 🐛 Bug Fix
 
@@ -498,7 +500,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.1.1 (Wed Jan 31 2024)
+## 4.1.1
 
 #### 🐛 Bug Fix
 
@@ -515,7 +517,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.1.0 (Fri Dec 29 2023)
+## 4.1.0
 
 #### 🚀 Enhancement
 
@@ -527,7 +529,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.13 (Tue Nov 21 2023)
+## 4.0.13
 
 #### 🐛 Bug Fix
 
@@ -539,7 +541,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.12 (Fri Nov 17 2023)
+## 4.0.12
 
 #### 🐛 Bug Fix
 
@@ -551,7 +553,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.11 (Fri Nov 10 2023)
+## 4.0.11
 
 #### 🐛 Bug Fix
 
@@ -563,7 +565,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.10 (Thu Nov 09 2023)
+## 4.0.10
 
 #### 🐛 Bug Fix
 
@@ -583,7 +585,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.9 (Sat Sep 23 2023)
+## 4.0.9
 
 #### 🐛 Bug Fix
 
@@ -595,7 +597,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.8 (Thu Sep 21 2023)
+## 4.0.8
 
 #### 🐛 Bug Fix
 
@@ -607,7 +609,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.7 (Sat Sep 16 2023)
+## 4.0.7
 
 #### 🐛 Bug Fix
 
@@ -622,7 +624,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.6 (Fri Sep 15 2023)
+## 4.0.6
 
 #### 🐛 Bug Fix
 
@@ -634,7 +636,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.5 (Wed Sep 13 2023)
+## 4.0.5
 
 #### 🐛 Bug Fix
 
@@ -646,7 +648,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.4 (Wed Sep 13 2023)
+## 4.0.4
 
 #### 🐛 Bug Fix
 
@@ -658,7 +660,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.3 (Sat Sep 02 2023)
+## 4.0.3
 
 #### 🐛 Bug Fix
 
@@ -670,7 +672,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.2 (Sat Sep 02 2023)
+## 4.0.2
 
 #### 🐛 Bug Fix
 
@@ -682,7 +684,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.1 (Thu Aug 31 2023)
+## 4.0.1
 
 #### 🐛 Bug Fix
 
@@ -694,7 +696,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v4.0.0 (Tue Aug 29 2023)
+## 4.0.0
 
 #### 💥 Breaking Change
 
@@ -706,7 +708,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.10 (Tue Aug 29 2023)
+## 3.0.10
 
 #### 🐛 Bug Fix
 
@@ -718,7 +720,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.9 (Wed Aug 23 2023)
+## 3.0.9
 
 #### 🐛 Bug Fix
 
@@ -730,7 +732,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.8 (Wed Aug 23 2023)
+## 3.0.8
 
 #### 🐛 Bug Fix
 
@@ -742,7 +744,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.7 (Tue Aug 01 2023)
+## 3.0.7
 
 #### 🐛 Bug Fix
 
@@ -754,7 +756,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.6 (Tue Aug 01 2023)
+## 3.0.6
 
 #### 🐛 Bug Fix
 
@@ -766,7 +768,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.5 (Mon Jul 31 2023)
+## 3.0.5
 
 #### 🐛 Bug Fix
 
@@ -778,7 +780,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.4 (Wed Jul 19 2023)
+## 3.0.4
 
 #### 🐛 Bug Fix
 
@@ -790,7 +792,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.3 (Fri Jun 09 2023)
+## 3.0.3
 
 #### 🐛 Bug Fix
 
@@ -802,7 +804,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.2 (Fri Apr 21 2023)
+## 3.0.2
 
 #### 🐛 Bug Fix
 
@@ -814,7 +816,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.1 (Wed Apr 12 2023)
+## 3.0.1
 
 #### 🐛 Bug Fix
 
@@ -826,7 +828,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v3.0.0 (Mon Apr 03 2023)
+## 3.0.0
 
 #### 💥 Breaking Change
 
@@ -848,7 +850,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.11 (Tue Jan 17 2023)
+## 2.0.11
 
 #### 🐛 Bug Fix
 
@@ -860,7 +862,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.10 (Thu Oct 27 2022)
+## 2.0.10
 
 #### 🐛 Bug Fix
 
@@ -872,7 +874,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.9 (Thu Oct 27 2022)
+## 2.0.9
 
 #### 🐛 Bug Fix
 
@@ -885,7 +887,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.8 (Mon Oct 03 2022)
+## 2.0.8
 
 #### 🐛 Bug Fix
 
@@ -897,7 +899,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.7 (Fri Aug 12 2022)
+## 2.0.7
 
 #### 🐛 Bug Fix
 
@@ -909,7 +911,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.6 (Thu Jul 14 2022)
+## 2.0.6
 
 #### 🐛 Bug Fix
 
@@ -922,7 +924,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.5 (Thu Jul 07 2022)
+## 2.0.5
 
 #### 🐛 Bug Fix
 
@@ -934,7 +936,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.4 (Thu May 19 2022)
+## 2.0.4
 
 #### 🐛 Bug Fix
 
@@ -946,7 +948,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.3 (Wed Apr 20 2022)
+## 2.0.3
 
 #### 🐛 Bug Fix
 
@@ -958,7 +960,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.2 (Sun Apr 17 2022)
+## 2.0.2
 
 #### 🐛 Bug Fix
 
@@ -970,7 +972,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.1 (Fri Apr 08 2022)
+## 2.0.1
 
 #### 🐛 Bug Fix
 
@@ -982,7 +984,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v2.0.0 (Fri Apr 08 2022)
+## 2.0.0
 
 #### 💥 Breaking Change
 
@@ -994,7 +996,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v1.1.2 (Fri Apr 08 2022)
+## 1.1.2
 
 #### 🐛 Bug Fix
 
@@ -1006,7 +1008,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v1.1.1 (Fri Apr 08 2022)
+## 1.1.1
 
 #### 🐛 Bug Fix
 
@@ -1021,7 +1023,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v1.1.0 (Thu Jun 10 2021)
+## 1.1.0
 
 #### 🚀 Enhancement
 
@@ -1034,7 +1036,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v1.0.1 (Wed Jun 09 2021)
+## 1.0.1
 
 #### 🐛 Bug Fix
 
@@ -1058,7 +1060,7 @@ The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and
 
 ---
 
-# v1.0.0 (Sat Mar 06 2021)
+## 1.0.0
 
 #### 💥 Breaking Change
 

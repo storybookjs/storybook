@@ -36,7 +36,8 @@
     "*.yaml",
     "*.md",
     "*.mdx",
-    "!docs/_snippets/**"
+    "!docs/_snippets/**",
+    "!docs/versions/*.json"
   ],
   "overrides": [
     {

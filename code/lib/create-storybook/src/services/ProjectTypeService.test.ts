@@ -189,6 +189,17 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.REACT_NATIVE);
     });
 
+    it('detects REACT_NATIVE via expo dependency', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { expo: '^52.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT_NATIVE);
+    });
+
     it('detects NUXT via nuxt', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { nuxt: '^3.0.0' },

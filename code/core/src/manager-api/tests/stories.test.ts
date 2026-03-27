@@ -713,7 +713,7 @@ describe('stories API', () => {
       const { navigate, provider } = moduleArgs;
 
       provider.channel.emit(STORY_SPECIFIED, { storyId: 'a--1', viewMode: 'story' });
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('DOES not navigate if the story was already selected', async () => {
       const moduleArgs = createMockModuleArgs({ initialState: { path: '/story/a--1', index: {} } });
@@ -914,7 +914,7 @@ describe('stories API', () => {
       api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(1);
 
-      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
     it('works backwards', () => {
       const initialState = { path: '/story/a--2', storyId: 'a--2', viewMode: 'story' };
@@ -925,7 +925,7 @@ describe('stories API', () => {
       api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(-1);
 
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('does nothing if you are at the last story and go forward', () => {
       const initialState = {
@@ -1021,7 +1021,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToComponent(1);
-      expect(navigate).toHaveBeenCalledWith('/story/b-c--1');
+      expect(navigate).toHaveBeenCalledWith('/story/b-c--1', undefined);
     });
     it('works backwards', () => {
       const initialState = {
@@ -1035,7 +1035,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToComponent(-1);
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('does nothing if you are in the last component and go forward', () => {
       const initialState = {
@@ -1071,7 +1071,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--2');
-      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
     it('sets view mode to docs if doc-level component is selected', () => {
       const initialState = { path: '/docs/a--1', storyId: 'a--1', viewMode: 'docs' };
@@ -1094,7 +1094,7 @@ describe('stories API', () => {
         },
       });
       api.selectStory('intro');
-      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs');
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
     });
     it('updates lastTrackedStoryId', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1143,7 +1143,7 @@ describe('stories API', () => {
 
       // When selecting the component, it should select the first visible child (a--2)
       api.selectStory('a');
-      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
     describe('deprecated api', () => {
       it('allows navigating to a combination of title + name', () => {
@@ -1154,7 +1154,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('a', '2');
-        expect(navigate).toHaveBeenCalledWith('/story/a--2');
+        expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
       });
       it('allows navigating to a given name (in the current component)', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1164,7 +1164,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory(undefined, '2');
-        expect(navigate).toHaveBeenCalledWith('/story/a--2');
+        expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
       });
     });
     it('allows navigating away from the settings pages', () => {
@@ -1175,7 +1175,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--2');
-      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
     it('allows navigating to first story in component on call by component id', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1185,7 +1185,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a');
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('allows navigating to first story in group on call by group id', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1195,7 +1195,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('b');
-      expect(navigate).toHaveBeenCalledWith('/story/b-c--1');
+      expect(navigate).toHaveBeenCalledWith('/story/b-c--1', undefined);
     });
     it('allows navigating to first story in component on call by title', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1205,7 +1205,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('A');
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('allows navigating to the first story of the current component if passed nothing', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1215,7 +1215,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory();
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     describe('component permalinks', () => {
       it('allows navigating to kind/storyname (legacy api)', () => {
@@ -1226,7 +1226,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('b/e', '1');
-        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
+        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1', undefined);
       });
       it('allows navigating to component permalink/storyname (legacy api)', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1236,7 +1236,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('custom-id', '1');
-        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
+        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1', undefined);
       });
       it('allows navigating to first story in kind on call by kind', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1246,7 +1246,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('b/e');
-        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
+        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1', undefined);
       });
     });
   });

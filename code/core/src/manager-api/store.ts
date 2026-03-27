@@ -42,8 +42,14 @@ type Patch = Partial<State>;
 type InputFnPatch = (s: State) => Patch;
 type InputPatch = Patch | InputFnPatch;
 
+export type PersistenceHandler = (
+  patch: Partial<State>,
+  serialize: ((s: State) => Partial<Record<string, string | null | undefined>>) | undefined
+) => void | Promise<void>;
+
 export interface Options {
-  persistence: 'none' | 'session' | string;
+  persistence: 'none' | 'session' | 'url' | string;
+  serialize?: (s: State) => Partial<Record<string, string | null | undefined>>;
 }
 type CallBack = (s: State) => void;
 type CallbackOrOptions = CallBack | Options;
@@ -54,6 +60,7 @@ export default class Store {
   upstreamPersistence: boolean;
   upstreamGetState: GetState;
   upstreamSetState: SetState;
+  private persistenceHandlers: Map<string, PersistenceHandler> = new Map();
 
   constructor({ allowPersistence, setState, getState }: Upstream) {
     this.upstreamPersistence = allowPersistence ?? true;
@@ -61,13 +68,31 @@ export default class Store {
     this.upstreamGetState = getState;
   }
 
+  registerPersistenceHandler(key: string, handler: PersistenceHandler) {
+    this.persistenceHandlers.set(key, handler);
+  }
+
   // The assumption is that this will be called once, to initialize the React state
   // when the module is instantiated
   getInitialState(base: State) {
+    // TODO: Remove in SB 11
+    // One-time migration: tag filter state moved from localStorage to URL persistence.
+    // Remove the old keys so they no longer interfere with URL-derived initial state.
+    for (const storage of [store.local, store.session] as const) {
+      const persisted = get(storage);
+      if ('includedTagFilters' in persisted || 'excludedTagFilters' in persisted) {
+        const { includedTagFilters: _i, excludedTagFilters: _e, ...rest } = persisted;
+        set(storage, rest);
+      }
+    }
+
     // We don't only merge at the very top level (the same way as React setState)
     // when you set keys, so it makes sense to do the same in combining the two storage modes
     // Really, you shouldn't store the same key in both places
-    return { ...base, ...get(store.local), ...get(store.session) };
+    const local = get(store.local);
+    const session = get(store.session);
+
+    return { ...base, ...local, ...session };
   }
 
   getState() {
@@ -115,8 +140,15 @@ export default class Store {
     });
 
     if (persistence !== 'none' && this.upstreamPersistence) {
-      const storage = persistence === 'session' ? store.session : store.local;
-      await update(storage, delta);
+      if (persistence === 'url') {
+        const handler = this.persistenceHandlers.get('url');
+        if (handler) {
+          await handler(delta, (options as Options | undefined)?.serialize);
+        }
+      } else {
+        const storage = persistence === 'session' ? store.session : store.local;
+        await update(storage, delta);
+      }
     }
 
     if (callback) {

@@ -87,8 +87,8 @@ export async function exec(
     ? setTimeout(() => controller!.abort(), timeout)
     : undefined;
 
-  const stdio = stdin === 'ignore'
-    ? (['ignore', 'pipe', 'pipe'] as const)
+  const stdio: ['ignore', 'pipe', 'pipe'] | undefined = stdin === 'ignore'
+    ? ['ignore', 'pipe', 'pipe']
     : undefined;
 
   try {

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Command } from 'commander';
 import pc from 'picocolors';
 import type { TrialConfig, TrialResult, AgentName, SupportedModel } from './types';
@@ -15,6 +16,7 @@ const program = new Command()
   .option('--prompt <file>', 'custom prompt file path')
   .option('-n, --iterations <n>', 'number of iterations per project', '1')
   .option('-v, --verbose', 'verbose output')
+  .option('-u, --upload-id <id>', 'upload ID for grouping results in Google Sheets')
   .option('--list-projects', 'list available projects and exit')
   .option('--list-models', 'list supported models and exit');
 
@@ -71,9 +73,13 @@ if (projects.length === 0) {
 
 // --- Run evals ---
 
+const runId = randomUUID().slice(0, 8);
+const uploadId = (opts.uploadId as string) || `eval-${runId}`;
+
 log(pc.bold('\nStorybook Setup Eval'));
 log(`Agent: ${pc.cyan(agentName)} | Model: ${pc.cyan(model)} | Iterations: ${iterations}`);
 log(`Projects: ${projects.map((p) => p.name).join(', ')}`);
+log(`Run: ${runId} | Upload: ${uploadId}`);
 
 const allResults: TrialResult[] = [];
 
@@ -94,7 +100,7 @@ for (const project of projects) {
     };
 
     try {
-      const result = await runTask(config);
+      const result = await runTask(config, runId, uploadId);
       allResults.push(result);
     } catch (error) {
       log(pc.red(`\nFailed to evaluate ${project.name}: ${error instanceof Error ? error.message : error}`));

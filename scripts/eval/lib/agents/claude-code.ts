@@ -1,7 +1,73 @@
+import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Agent, ExecutionResult, SupportedModel } from "../../types";
+
+function logMessage(message: SDKMessage) {
+  const log = (prefix: string, text: string) => process.stderr.write(`${prefix} ${text}\n`);
+
+  switch (message.type) {
+    case "assistant": {
+      for (const block of message.message.content) {
+        if (block.type === "text") {
+          log("💬", block.text);
+        } else if (block.type === "tool_use") {
+          log("🔧", `${block.name}(${JSON.stringify(block.input).slice(0, 200)})`);
+        }
+      }
+      if (message.error) {
+        log("❌", `Assistant error: ${message.error}`);
+      }
+      break;
+    }
+    case "user": {
+      const content = message.message.content;
+      if (!Array.isArray(content)) break;
+      for (const block of content) {
+        if (block.type === "tool_result") {
+          const text =
+            typeof block.content === "string"
+              ? block.content.slice(0, 200)
+              : Array.isArray(block.content)
+                ? block.content
+                    .map((b: { type: string; text?: string }) =>
+                      "text" in b ? b.text : `[${b.type}]`,
+                    )
+                    .join("")
+                    .slice(0, 200)
+                : "[no content]";
+          log("📎", `tool_result(${block.tool_use_id?.slice(-8)}): ${text}`);
+        }
+      }
+      break;
+    }
+    case "result":
+      if (message.subtype === "success") {
+        log("✅", `Done — ${message.num_turns} turns, $${message.total_cost_usd?.toFixed(4)}`);
+      } else {
+        log("❌", `Error (${message.subtype}): ${message.errors?.join(", ")}`);
+      }
+      break;
+    case "system":
+      if (message.subtype === "init") {
+        log("🚀", `Session started — model: ${message.model}`);
+      } else if (message.subtype === "api_retry") {
+        log("🔄", `API retry: attempt ${message.attempt}/${message.max_retries}`);
+      } else if (message.subtype === "status") {
+        log("📊", `status: ${message.status ?? "unknown"}`);
+      }
+      break;
+    case "tool_use_summary":
+      log("📋", message.summary.slice(0, 200));
+      break;
+    case "rate_limit_event":
+      log("⏳", `Rate limited — status: ${message.rate_limit_info?.status}, resets at: ${message.rate_limit_info?.resetsAt}`);
+      break;
+    default:
+      break;
+  }
+}
 
 export const claudeCodeAgent: Agent = {
   name: "claude-code",
@@ -10,9 +76,9 @@ export const claudeCodeAgent: Agent = {
     prompt: string,
     projectPath: string,
     model: SupportedModel,
-    options?: { verbose?: boolean; resultsDir?: string },
+    options?: { resultsDir?: string },
   ): Promise<ExecutionResult> {
-    const { verbose, resultsDir } = options ?? {};
+    const { resultsDir } = options ?? {};
     const startTime = Date.now();
 
     let cost: number | undefined;
@@ -31,32 +97,14 @@ export const claudeCodeAgent: Agent = {
         systemPrompt: { type: "preset", preset: "claude_code" },
       },
     })) {
-      console.log(message);
+      logMessage(message);
       messages.push(message);
 
-      if ("type" in message && message.type === "assistant") {
-        const content = (message as Record<string, unknown>).content;
-        if (Array.isArray(content)) {
-          for (const block of content) {
-            console.log(block.text);
-            if (block.type === "text") {
-              process.stderr.write(block.text + "\n");
-            } else if (block.type === "tool_use") {
-              const tool = block as { name?: string; input?: unknown };
-              process.stderr.write(`  [tool] ${tool.name}\n`);
-            }
-          }
-        }
-      }
-
-      if ("type" in message && message.type === "result") {
-        const result = message as Record<string, unknown>;
-        if (result.subtype === "success") {
-          cost = result.total_cost_usd as number | undefined;
-          turns = (result.num_turns as number) ?? 0;
-          durationApi =
-            typeof result.duration_api_ms === "number" ? result.duration_api_ms / 1000 : undefined;
-        }
+      if (message.type === "result" && message.subtype === "success") {
+        cost = message.total_cost_usd as number | undefined;
+        turns = (message.num_turns as number) ?? 0;
+        durationApi =
+          typeof message.duration_api_ms === "number" ? message.duration_api_ms / 1000 : undefined;
       }
     }
 

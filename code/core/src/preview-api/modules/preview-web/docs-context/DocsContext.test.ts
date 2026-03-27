@@ -100,6 +100,47 @@ describe('referenceMeta', () => {
     expect(context.storyById()).toEqual(story);
   });
 
+  it('works with different module namespace objects when there is no default export', () => {
+    const { story, csfFile, storyExport } = csfFileParts('meta--story', 'meta', {
+      includeDefaultExport: false,
+    });
+    const store = {
+      componentStoriesFromCSFFile: () => [story],
+    } as unknown as StoryStore<Renderer>;
+    const context = new DocsContext(channel, store, renderStoryToElement, [csfFile]);
+
+    const differentModuleExports = { story: storyExport };
+
+    expect(() => context.referenceMeta(differentModuleExports, true)).not.toThrow();
+    expect(context.storyById()).toEqual(story);
+  });
+
+  it('throws for module objects whose story exports span multiple CSF files', () => {
+    const firstCsfParts = csfFileParts('first-meta--first-story', 'first-meta', {
+      includeDefaultExport: false,
+    });
+    const secondCsfParts = csfFileParts('second-meta--second-story', 'second-meta', {
+      includeDefaultExport: false,
+    });
+    const store = {
+      componentStoriesFromCSFFile: ({ csfFile }: { csfFile: CSFFile }) =>
+        csfFile === firstCsfParts.csfFile ? [firstCsfParts.story] : [secondCsfParts.story],
+    } as unknown as StoryStore<Renderer>;
+    const context = new DocsContext(channel, store, renderStoryToElement, [
+      firstCsfParts.csfFile,
+      secondCsfParts.csfFile,
+    ]);
+
+    const mixedModuleExports = {
+      first: firstCsfParts.storyExport,
+      second: secondCsfParts.storyExport,
+    };
+
+    expect(() => context.referenceMeta(mixedModuleExports, true)).toThrow(
+      '<Meta of={} /> must reference a CSF file module export or meta export. Did you mistakenly reference your component instead of your CSF file?'
+    );
+  });
+
   it('throws for non-module objects (components)', () => {
     const { story, csfFile, component } = csfFileParts();
     const store = {
@@ -149,10 +190,39 @@ describe('resolveOf', () => {
 
     it('works for module exports with different object identity but same default (Rolldown compatibility)', () => {
       // Simulate what happens in Rolldown: different namespace object but same default export
-      const differentModuleExports = { default: metaExport, story: storyExport };
+      const differentModuleExports = {
+        default: metaExport,
+        story: storyExport,
+      };
       expect(context.resolveOf(differentModuleExports)).toEqual({
         type: 'meta',
         csfFile,
+        preparedMeta: expect.any(Object),
+      });
+    });
+
+    it('works for module exports with different object identity and only shared story exports', () => {
+      const noDefaultCsfParts = csfFileParts(
+        'meta--story-without-default',
+        'meta-without-default',
+        {
+          includeDefaultExport: false,
+        }
+      );
+      const noDefaultStore = {
+        componentStoriesFromCSFFile: () => [noDefaultCsfParts.story],
+        preparedMetaFromCSFFile: () => ({ prepareMeta: 'preparedMeta' }),
+        projectAnnotations,
+      } as unknown as StoryStore<Renderer>;
+      const noDefaultContext = new DocsContext(channel, noDefaultStore, renderStoryToElement, [
+        noDefaultCsfParts.csfFile,
+      ]);
+
+      noDefaultContext.attachCSFFile(noDefaultCsfParts.csfFile);
+
+      expect(noDefaultContext.resolveOf({ story: noDefaultCsfParts.storyExport })).toEqual({
+        type: 'meta',
+        csfFile: noDefaultCsfParts.csfFile,
         preparedMeta: expect.any(Object),
       });
     });
@@ -187,7 +257,10 @@ describe('resolveOf', () => {
 
     describe('validation allowed', () => {
       it('works for story exports', () => {
-        expect(context.resolveOf(storyExport, ['story'])).toEqual({ type: 'story', story });
+        expect(context.resolveOf(storyExport, ['story'])).toEqual({
+          type: 'story',
+          story,
+        });
       });
 
       it('works for meta exports', () => {
@@ -215,7 +288,10 @@ describe('resolveOf', () => {
       });
 
       it('finds primary story', () => {
-        expect(context.resolveOf('story', ['story'])).toEqual({ type: 'story', story });
+        expect(context.resolveOf('story', ['story'])).toEqual({
+          type: 'story',
+          story,
+        });
       });
 
       it('finds attached CSF file', () => {

@@ -58,7 +58,9 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     this.exportsToCSFFile.set(csfFile.moduleExports, csfFile);
     // Also set the default export as the component's exports,
     // to allow `import ButtonStories from './Button.stories'`
-    this.exportsToCSFFile.set(csfFile.moduleExports.default, csfFile);
+    if ('default' in csfFile.moduleExports) {
+      this.exportsToCSFFile.set(csfFile.moduleExports.default, csfFile);
+    }
 
     const stories = this.store.componentStoriesFromCSFFile({ csfFile });
 
@@ -171,6 +173,38 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
       csfFile = this.exportsToCSFFile.get((moduleExportOrType as ModuleExports).default);
     }
 
+    if (!csfFile && moduleExportOrType && typeof moduleExportOrType === 'object') {
+      let matchedCSFFile: CSFFile<TRenderer> | undefined;
+
+      for (const exportValue of Object.values(moduleExportOrType as ModuleExports)) {
+        const story = this.exportToStory.get(
+          isStory(exportValue) ? exportValue.input : exportValue
+        );
+
+        if (!story) {
+          continue;
+        }
+
+        const storyCSFFile = this.storyIdToCSFFile.get(story.id);
+
+        if (!storyCSFFile) {
+          continue;
+        }
+
+        if (!matchedCSFFile) {
+          matchedCSFFile = storyCSFFile;
+          continue;
+        }
+
+        if (matchedCSFFile !== storyCSFFile) {
+          matchedCSFFile = undefined;
+          break;
+        }
+      }
+
+      csfFile = matchedCSFFile;
+    }
+
     if (csfFile) {
       return { type: 'meta', csfFile } as TResolvedExport;
     }
@@ -184,7 +218,10 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     }
 
     // If the export isn't a module, default or story export, we assume it is a component
-    return { type: 'component', component: moduleExportOrType } as TResolvedExport;
+    return {
+      type: 'component',
+      component: moduleExportOrType,
+    } as TResolvedExport;
   }
 
   resolveOf<TType extends ResolvedModuleExportType>(
@@ -221,7 +258,9 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
       case 'meta': {
         return {
           ...resolved,
-          preparedMeta: this.store.preparedMetaFromCSFFile({ csfFile: resolved.csfFile }),
+          preparedMeta: this.store.preparedMetaFromCSFFile({
+            csfFile: resolved.csfFile,
+          }),
         };
       }
       case 'story':

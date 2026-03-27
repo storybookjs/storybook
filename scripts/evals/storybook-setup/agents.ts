@@ -175,6 +175,8 @@ async function executeCodexCli({
     MODEL_CONFIGS[model].cliModel,
     '-c',
     'suppress_unstable_features_warning=true',
+    '-c',
+    `model_reasoning_effort="${MODEL_CONFIGS[model].reasoningEffort}"`,
     '-',
   ];
 

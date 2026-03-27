@@ -1,7 +1,7 @@
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -12,6 +12,7 @@ import { ROOT_DIRECTORY } from '../../utils/constants';
 import { getBenchmarkById } from './benchmarks';
 import { selectCandidateComponents } from './candidate-components';
 import { executeAgent } from './agents';
+import { runGhostStoriesEval } from './ghost-stories';
 import { resolveModel } from './models';
 import { detectSetupPatterns } from './setup-patterns';
 import type {
@@ -582,68 +583,12 @@ async function runGhostStories(
   }
 
   try {
-    const candidatesModule = await import(
-      pathToFileURL(
-        resolve(ROOT_DIRECTORY, 'code/core/src/core-server/utils/ghost-stories/get-candidates.ts')
-      ).href
-    );
-    const runStoryTestsModule = await import(
-      pathToFileURL(
-        resolve(ROOT_DIRECTORY, 'code/core/src/core-server/utils/ghost-stories/run-story-tests.ts')
-      ).href
-    );
-
-    const previousCwd = process.cwd();
-    process.chdir(projectRoot);
-
-    try {
-      const candidatesResult = await candidatesModule.getComponentCandidates({ sampleSize: 20 });
-      if (candidatesResult.error) {
-        return {
-          status: 'failed',
-          reason: candidatesResult.error,
-          summary: {
-            candidateCount: candidatesResult.candidates.length,
-            analyzedCount: candidatesResult.analyzedCount,
-            avgComplexity: candidatesResult.avgComplexity,
-            runError: candidatesResult.error,
-          },
-        };
-      }
-
-      if (candidatesResult.candidates.length === 0) {
-        return {
-          status: 'skipped',
-          reason: 'No candidate components found for ghost-stories.',
-          summary: {
-            candidateCount: 0,
-            analyzedCount: candidatesResult.analyzedCount,
-            avgComplexity: candidatesResult.avgComplexity,
-          },
-        };
-      }
-
-      const runResult = await runStoryTestsModule.runStoryTests(candidatesResult.candidates);
-      return {
-        status: runResult.runError ? 'failed' : 'passed',
-        reason: runResult.runError,
-        summary: {
-          candidateCount: candidatesResult.candidates.length,
-          analyzedCount: candidatesResult.analyzedCount,
-          avgComplexity: candidatesResult.avgComplexity,
-          total: runResult.summary?.total,
-          passed: runResult.summary?.passed,
-          passedButEmptyRender: runResult.summary?.passedButEmptyRender,
-          successRate: runResult.summary?.successRate,
-          successRateWithoutEmptyRender: runResult.summary?.successRateWithoutEmptyRender,
-          uniqueErrorCount: runResult.summary?.uniqueErrorCount,
-          categorizedErrors: runResult.summary?.categorizedErrors,
-          runError: runResult.runError,
-        },
-      };
-    } finally {
-      process.chdir(previousCwd);
-    }
+    const runResult = await runGhostStoriesEval(projectRoot);
+    return {
+      status: runResult.ok ? 'passed' : 'failed',
+      reason: runResult.summary.runError,
+      summary: runResult.summary,
+    };
   } catch (error) {
     return {
       status: 'skipped',

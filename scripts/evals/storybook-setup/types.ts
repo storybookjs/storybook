@@ -1,6 +1,7 @@
 export type AgentName = 'claude-code' | 'codex-cli';
 
 export type ModelTier = 'opus' | 'sonnet' | 'haiku';
+export type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh';
 
 export type PackageManager = 'npm' | 'pnpm' | 'yarn';
 
@@ -37,6 +38,7 @@ export type ModelConfig = {
   cliModel: string;
   tier: ModelTier;
   label: string;
+  reasoningEffort: ReasoningEffort;
   notes?: string;
 };
 

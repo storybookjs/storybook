@@ -7,6 +7,7 @@ export const MODEL_CONFIGS: Record<SupportedModel, ModelConfig> = {
     cliModel: 'opus',
     tier: 'opus',
     label: 'Claude Opus 4.6',
+    reasoningEffort: 'high',
   },
   'claude-sonnet-4.6': {
     id: 'claude-sonnet-4.6',
@@ -14,6 +15,7 @@ export const MODEL_CONFIGS: Record<SupportedModel, ModelConfig> = {
     cliModel: 'sonnet',
     tier: 'sonnet',
     label: 'Claude Sonnet 4.6',
+    reasoningEffort: 'medium',
   },
   'claude-haiku-4.5': {
     id: 'claude-haiku-4.5',
@@ -21,6 +23,7 @@ export const MODEL_CONFIGS: Record<SupportedModel, ModelConfig> = {
     cliModel: 'haiku',
     tier: 'haiku',
     label: 'Claude Haiku 4.5',
+    reasoningEffort: 'medium',
   },
   'gpt-5.4': {
     id: 'gpt-5.4',
@@ -28,6 +31,7 @@ export const MODEL_CONFIGS: Record<SupportedModel, ModelConfig> = {
     cliModel: 'gpt-5.4',
     tier: 'opus',
     label: 'GPT-5.4',
+    reasoningEffort: 'high',
     notes: 'Default highest-capability Codex tier.',
   },
   'gpt-5-codex': {
@@ -36,6 +40,7 @@ export const MODEL_CONFIGS: Record<SupportedModel, ModelConfig> = {
     cliModel: 'gpt-5-codex',
     tier: 'sonnet',
     label: 'GPT-5 Codex',
+    reasoningEffort: 'medium',
     notes: 'Balanced Codex coding model.',
   },
   'gpt-5-codex-mini': {
@@ -44,6 +49,7 @@ export const MODEL_CONFIGS: Record<SupportedModel, ModelConfig> = {
     cliModel: 'gpt-5-codex-mini',
     tier: 'haiku',
     label: 'GPT-5 Codex Mini',
+    reasoningEffort: 'medium',
     notes: 'Fastest low-cost Codex tier.',
   },
   'gpt-5.4-mini': {
@@ -52,6 +58,7 @@ export const MODEL_CONFIGS: Record<SupportedModel, ModelConfig> = {
     cliModel: 'gpt-5.4-mini',
     tier: 'sonnet',
     label: 'GPT-5.4 Mini',
+    reasoningEffort: 'medium',
     notes: 'Supported as an explicit override; not the default tier mapping.',
   },
   'gpt-5.2-codex': {
@@ -60,6 +67,7 @@ export const MODEL_CONFIGS: Record<SupportedModel, ModelConfig> = {
     cliModel: 'gpt-5.2-codex',
     tier: 'sonnet',
     label: 'GPT-5.2 Codex',
+    reasoningEffort: 'high',
     notes: 'Legacy Codex model retained for comparison runs.',
   },
 };

@@ -1,0 +1,43 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 997748ffae1819e26c71e54a23667bb318c82023..00ea03afb34ad48ef21d3a6da459914f4942b3f0 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -15,7 +15,7 @@ import { ResolverFactory, isolatedDeclarationSync } from "rolldown/experimental"
+ import { tmpdir } from "node:os";
+ import process from "node:process";
+ import { getTsconfig, parseTsconfig } from "get-tsconfig";
+-import { createResolver } from "dts-resolver";
++
+ //#region src/dts-input.ts
+ function createDtsInputPlugin({ sideEffects }) {
+ 	return {
+@@ -988,10 +989,12 @@ function isSourceFile(id) {
+ 	return RE_TS.test(id) || RE_VUE.test(id) || RE_JSON.test(id);
+ }
+ function createDtsResolvePlugin({ cwd, tsconfig, tsconfigRaw, resolver, sideEffects }) {
+-	const baseDtsResolver = createResolver({
+-		tsconfig,
+-		resolveNodeModules: true,
+-		ResolverFactory
++	const dtsResolver = new ResolverFactory({
++		mainFields: ['types', 'typings', 'module', 'main'],
++		conditionNames: ['types', 'typings', 'import', 'require'],
++		tsconfig: tsconfig
++			? { configFile: tsconfig, references: 'auto' }
++			: undefined,
+ 	});
+ 	const moduleSideEffects = sideEffects ? true : null;
+ 	return {
+@@ -1045,10 +1048,10 @@ function createDtsResolvePlugin({ cwd, tsconfig, tsconfigRaw, resolver, sideEffe
+ 		if (resolver === "tsc") {
+ 			const { tscResolve } = await import("./resolver-DkvdaW3s.mjs");
+ 			dtsPath = tscResolve(id, importer, cwd, tsconfig, tsconfigRaw);
+-		} else dtsPath = baseDtsResolver(id, importer);
++		} else dtsPath = dtsResolver.resolveDtsSync(importer, id).path;
+ 		debug$1("Using %s for dts import: %O -> %O", resolver, id, dtsPath);
+ 		if (dtsPath) dtsPath = path.normalize(dtsPath);
+-		if (!dtsPath || !isSourceFile(dtsPath)) {
++		if (!dtsPath || !isSourceFile(dtsPath) || /[/\\]node_modules[/\\]/.test(dtsPath)) {
+ 			if (rolldownResolution && isFilePath(rolldownResolution.id) && isSourceFile(rolldownResolution.id) && !rolldownResolution.external) return rolldownResolution.id;
+ 			return null;
+ 		}

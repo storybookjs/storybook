@@ -24,9 +24,10 @@ import { measure } from './utils/entry-utils';
 import { generateBundle } from './utils/generate-bundle';
 import { generatePackageJsonFile } from './utils/generate-package-json';
 import { generateTypesFiles } from './utils/generate-types';
+import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown';
 
 const {
-  values: { prod, production, optimized, watch, cwd },
+  values: { prod, production, optimized, watch, cwd, 'dts-bundler': dtsBundler },
 } = parseArgs({
   options: {
     prod: { type: 'boolean', default: false },
@@ -34,6 +35,7 @@ const {
     optimized: { type: 'boolean', default: false },
     watch: { type: 'boolean', default: false },
     cwd: { type: 'string' },
+    'dts-bundler': { type: 'string', default: 'rolldown-tsgo' },
   },
   allowNegative: true,
 });
@@ -85,7 +87,18 @@ async function run() {
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
     measure(async () => {
       if (isProduction) {
-        await generateTypesFiles(DIR_CWD, entry);
+        switch (dtsBundler) {
+          case 'rolldown':
+            await generateTypesFilesRolldown(DIR_CWD, entry, { tsgo: false });
+            break;
+          case 'rolldown-tsgo':
+            await generateTypesFilesRolldown(DIR_CWD, entry, { tsgo: true });
+            break;
+          case 'rollup':
+          default:
+            await generateTypesFiles(DIR_CWD, entry);
+            break;
+        }
       }
     }),
   ]);

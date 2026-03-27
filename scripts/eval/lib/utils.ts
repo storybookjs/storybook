@@ -24,23 +24,6 @@ export function generateTrialId(project: string, agent: string, model: string) {
   return `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${project}-${agent}-${model}`;
 }
 
-// --- Clean npm env ---
-
-/**
- * Process env with verdaccio registry overrides stripped.
- * The storybook monorepo's .npmrc points to localhost:6002.
- */
-export function cleanEnv(): Record<string, string | undefined> {
-  const env = { ...process.env };
-  env.npm_config_registry = "https://registry.npmjs.org/";
-  for (const key of Object.keys(env)) {
-    if (key.startsWith("npm_config_") && key !== "npm_config_registry") {
-      delete env[key];
-    }
-  }
-  return env;
-}
-
 // --- Exec ---
 
 export interface ExecResult {

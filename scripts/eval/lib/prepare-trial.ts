@@ -1,10 +1,9 @@
 import { existsSync, mkdirSync, cpSync } from "node:fs";
 import { join } from "node:path";
 import type { Project, TrialPaths } from "../types";
-import { CACHE_DIR, TRIALS_DIR, logStep, logSuccess, exec, cleanEnv } from "./utils";
+import { CACHE_DIR, TRIALS_DIR, logStep, logSuccess, exec } from "./utils";
 
 async function installDeps(dir: string) {
-  const env = cleanEnv();
   const has = (f: string) => existsSync(join(dir, f));
   const [cmd, args]: [string, string[]] = has("pnpm-lock.yaml") || has("pnpm-workspace.yaml")
     ? ["pnpm", ["install", "--no-frozen-lockfile"]]
@@ -15,7 +14,7 @@ async function installDeps(dir: string) {
         : ["npm", ["install", "--ignore-scripts"]];
 
   logStep(`Installing with ${cmd}...`);
-  await exec(cmd, args, { cwd: dir, timeout: 300_000, env });
+  await exec(cmd, args, { cwd: dir, timeout: 300_000 });
 }
 
 /**

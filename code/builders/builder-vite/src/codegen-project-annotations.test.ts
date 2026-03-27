@@ -39,6 +39,7 @@ describe('generateProjectAnnotationsCodeFromPreviews', () => {
       (match) => match[1]
     );
 
+    expect(importVariables[0]).toMatch(/^[A-Za-z_$][A-Za-z0-9_$]*$/);
     expect(importVariables).toEqual([
       importVariables[0],
       `${importVariables[0]}_2`,

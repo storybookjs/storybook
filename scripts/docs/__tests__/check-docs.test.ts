@@ -41,10 +41,42 @@ describe('check-docs', () => {
       expect(errors.length).toBe(1);
       expect(errors[0].link).toContain('missing.mdx');
     });
-    it('passes for links with #anchor to existing file', async () => {
+    it('passes for links with #anchor to existing heading', async () => {
       const target = path.join(docsDir, 'foo.mdx');
-      await writeFile(target, '# Foo');
-      await writeFile(path.join(docsDir, 'bar.mdx'), '[link](./foo.mdx#section)');
+      await writeFile(target, '## My section\n\nContent here.');
+      await writeFile(path.join(docsDir, 'bar.mdx'), '[link](./foo.mdx#my-section)');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for links with #anchor to non-existent heading', async () => {
+      const target = path.join(docsDir, 'foo.mdx');
+      await writeFile(target, '## Existing heading\n\nContent here.');
+      await writeFile(path.join(docsDir, 'bar.mdx'), '[link](./foo.mdx#non-existent)');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('Broken fragment');
+      expect(errors[0].message).toContain('#non-existent');
+    });
+    it('passes for links with #anchor to heading containing inline code', async () => {
+      const target = path.join(docsDir, 'foo.mdx');
+      await writeFile(target, '### `Story.test`\n\nContent here.');
+      await writeFile(path.join(docsDir, 'bar.mdx'), '[link](./foo.mdx#storytest)');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('passes for links with #anchor to heading containing escaped HTML', async () => {
+      const target = path.join(docsDir, 'foo.mdx');
+      await writeFile(target, '## Adding to \\<head>\n\nContent here.');
+      await writeFile(path.join(docsDir, 'bar.mdx'), '[link](./foo.mdx#adding-to-head)');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('passes for links with #anchor to heading containing markdown links', async () => {
+      const target = path.join(docsDir, 'foo.mdx');
+      const other = path.join(docsDir, 'other.mdx');
+      await writeFile(other, '# Other');
+      await writeFile(target, '### [Interaction tests](./other.mdx)\n\nContent here.');
+      await writeFile(path.join(docsDir, 'bar.mdx'), '[link](./foo.mdx#interaction-tests)');
       const errors = await checkRelativeLinks(docsDir);
       expect(errors).toEqual([]);
     });

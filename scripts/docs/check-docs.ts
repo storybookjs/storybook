@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'node:fs/promises';
-import { getMdxFiles, readFileLines } from './utils';
+import { getMdxFiles, readFileLines, getHeadingSlugs } from './utils';
 import { esMain } from '../utils/esmain';
 
 export interface RelativeLinkError {
@@ -32,14 +32,18 @@ export interface CalloutVariantError {
 export async function checkRelativeLinks(docsDir: string): Promise<RelativeLinkError[]> {
   const mdxFiles = await getMdxFiles(docsDir);
   const errors: RelativeLinkError[] = [];
-  const relLinkRegex = /\[[^\]]+\]\(((\.\.?\/)[^\)#]+)(#[^)]*)?\)/g;
   // Cross-version links point to docs on other release branches (e.g. ../../../release-8-6/docs/...)
   // and cannot be validated locally
   const crossVersionRegex = /^(?:\.\.\/)+release-[\w.-]+\//;
 
+  // Cache heading slugs per target file to avoid re-reading
+  const slugCache = new Map<string, Set<string>>();
+
   for (const file of mdxFiles) {
     const lines = await readFileLines(file);
     await Promise.all(lines.map(async (line, idx) => {
+      // Create a new regex per line to avoid shared lastIndex state across concurrent promises
+      const relLinkRegex = /\[[^\]]+\]\(((\.\.?\/)[^\)#]+)(#[^)]*)?\)/g;
       let match;
       while ((match = relLinkRegex.exec(line))) {
         const relPath = match[1];
@@ -55,6 +59,23 @@ export async function checkRelativeLinks(docsDir: string): Promise<RelativeLinkE
             link: match[0],
             message: `Broken relative link: ${relPath}${anchor || ''}`,
           });
+          continue;
+        }
+        // Validate the fragment if present
+        if (anchor) {
+          const fragment = anchor.slice(1); // Remove leading #
+          if (!slugCache.has(targetPath)) {
+            slugCache.set(targetPath, await getHeadingSlugs(targetPath));
+          }
+          const slugs = slugCache.get(targetPath)!;
+          if (!slugs.has(fragment)) {
+            errors.push({
+              file,
+              line: idx + 1,
+              link: match[0],
+              message: `Broken fragment: ${relPath}${anchor} (heading "#${fragment}" not found in target)`,
+            });
+          }
         }
       }
     }));

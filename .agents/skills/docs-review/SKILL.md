@@ -23,7 +23,7 @@ Follow these steps when running a docs review end-to-end:
 
 Storybook provides an automated script to check for these common documentation issues:
 
-- **Broken relative links**: All `[text](./path.mdx)` and `[text](../path.mdx)` links in `.mdx` files are checked to ensure the target file exists.
+- **Broken relative links**: All `[text](./path.mdx)` and `[text](../path.mdx)` links in `.mdx` files are checked to ensure the target file exists. When a link includes a URL fragment (e.g. `#section-name`), the target file is also checked to ensure it contains a matching heading.
 - **Missing CodeSnippets paths**: All `<CodeSnippets path="..." />` usages are checked to ensure the referenced file exists in `docs/_snippets/`.
 - **Deprecated `<IfRenderer>` usage**: All `.mdx` files are checked for `<IfRenderer>` and should use `<If>` instead.
 - **`<Callout>` missing variant prop**: All `<Callout>` tags must include a `variant` prop (`"info"` or `"warning"`).

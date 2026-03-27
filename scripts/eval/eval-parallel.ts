@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
+import { spawn } from "node:child_process";
+import { createInterface } from "node:readline";
 import { Command } from "commander";
 import pc from "picocolors";
-import { x } from "tinyexec";
 import { MODELS, effortForModel } from "./types.ts";
 import { PROJECTS } from "./config.ts";
 import { listPrompts } from "./lib/generate-prompt.ts";
@@ -40,37 +41,47 @@ console.log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
 console.log(`${runs.length} parallel processes: ${MODELS.map((m) => m.label).join(", ")} × ${prompts.join(", ")}`);
 console.log(`Run: ${runId}\n`);
 
-// Spawn each as a separate node process
-const promises = runs.map(({ model, prompt, label }) => {
-  const effort = effortForModel(model, "high");
-  const tag = pc.dim(`[${label}]`);
+/** Spawn a child, stream its output line-by-line with a prefix, return the TrialResult. */
+function spawnRun(model: string, prompt: string, label: string): Promise<TrialResult | null> {
+  return new Promise((resolve) => {
+    const effort = effortForModel(model, "high");
+    const tag = pc.dim(`[${label}]`);
 
-  return x("node", [evalScript, "-p", project.name, "-m", model, "-e", effort, "--prompt", prompt, "-u", uploadId], {
-    throwOnError: false,
-    nodeOptions: { stdio: ["ignore", "pipe", "pipe"] },
-  }).then((proc) => {
-    // Stream output with prefix
-    for (const line of proc.stdout.split("\n").filter(Boolean)) {
-      if (!line.startsWith("__RESULT__")) console.log(`${tag} ${line}`);
-    }
-    for (const line of proc.stderr.split("\n").filter(Boolean)) {
+    const child = spawn("node", [evalScript, "-p", project!.name, "-m", model, "-e", effort, "--prompt", prompt, "-u", uploadId], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let result: TrialResult | null = null;
+
+    // Live-stream stdout with prefix
+    const outRL = createInterface({ input: child.stdout! });
+    outRL.on("line", (line) => {
+      if (line.startsWith("__RESULT__")) {
+        try { result = JSON.parse(line.slice("__RESULT__".length)); } catch { /* skip */ }
+      } else {
+        console.log(`${tag} ${line}`);
+      }
+    });
+
+    // Live-stream stderr with prefix (agent logs go here)
+    const errRL = createInterface({ input: child.stderr! });
+    errRL.on("line", (line) => {
       console.log(`${tag} ${pc.dim(line)}`);
-    }
+    });
 
-    // Extract the result JSON
-    const resultLine = proc.stdout.split("\n").find((l) => l.startsWith("__RESULT__"));
-    if (resultLine) {
-      return JSON.parse(resultLine.slice("__RESULT__".length)) as TrialResult;
-    }
-    console.log(pc.red(`${tag} No result (exit ${proc.exitCode})`));
-    return null;
+    child.on("close", (code) => {
+      if (code !== 0 && !result) {
+        console.log(pc.red(`${tag} exited with code ${code}`));
+      }
+      resolve(result);
+    });
   });
-});
+}
 
-const settled = await Promise.allSettled(promises);
-const results = settled
-  .map((s) => (s.status === "fulfilled" ? s.value : null))
-  .filter((r): r is TrialResult => r != null);
+// Run all in parallel
+const results = (await Promise.all(runs.map((r) => spawnRun(r.model, r.prompt, r.label)))).filter(
+  (r): r is TrialResult => r != null,
+);
 
 // Summary table sorted by ghost stories rate
 if (results.length > 0) {

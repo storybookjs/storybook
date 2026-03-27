@@ -308,7 +308,6 @@ export const CodeDarkParameters: Story = {
 export const ManyStaticCodeBlocksBenchmark: Story = {
   render: () => <BenchmarkHarness blocks={75} />,
   parameters: { chromatic: { disableSnapshot: true } },
-  tags: ['!test'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

@@ -178,19 +178,22 @@ export class ChangeDetectionService {
           reason: error.message,
           error,
         });
+      } else if (error instanceof ChangeDetectionFailureError) {
+        logger.error(`Change detection failed: ${error.message}`);
+        this.resolveReadiness({
+          status: 'error',
+          error,
+        });
       } else {
-        const failure =
-          error instanceof ChangeDetectionFailureError
-            ? error
-            : new ChangeDetectionFailureError(
-                error instanceof Error ? error.message : String(error),
-                {
-                  cause: error instanceof Error ? error : undefined,
-                }
-              );
-
+        const failure = new ChangeDetectionFailureError(
+          error instanceof Error ? error.message : String(error),
+          { cause: error instanceof Error ? error : undefined }
+        );
         logger.error(`Change detection failed: ${failure.message}`);
-        this.resolveReadiness({ status: 'error', error: failure });
+        this.resolveReadiness({
+          status: 'error',
+          error: failure,
+        });
       }
     } finally {
       this.scanInFlight = false;

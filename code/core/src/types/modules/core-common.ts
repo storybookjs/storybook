@@ -376,7 +376,7 @@ export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
   meta?: {
-    docgen: 'react-docgen' | 'react-docgen-typescript';
+    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
     durationMs: number;
   };
 }
@@ -515,6 +515,15 @@ export interface StorybookConfigRaw {
     componentsManifest?: boolean;
 
     /**
+     * Use TypeScript LanguageService (react-component-meta) for extracting React component props
+     * instead of react-docgen / react-docgen-typescript.
+     *
+     * @default false
+     * @experimental
+     */
+    experimentalReactComponentMeta?: boolean;
+
+    /**
      * Enables the new code example generation for React components. You can see those examples when
      * clicking on the "Show code" button in the Storybook UI.
      *
@@ -526,6 +535,13 @@ export interface StorybookConfigRaw {
      * @experimental This feature is in early development and may change significantly in future releases.
      */
     experimentalCodeExamples?: boolean;
+
+    /**
+     * Enable change detection
+     * TODO: Turn to true before 10.4 release
+     * @default false
+     */
+    changeDetection?: boolean;
   };
 
   build?: TestBuildConfig;

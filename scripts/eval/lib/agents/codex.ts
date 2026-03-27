@@ -1,7 +1,7 @@
 import { Codex } from '@openai/codex-sdk';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Agent, ExecutionResult, SupportedModel } from '../../types';
+import type { Agent, ExecutionResult, SupportedModel } from '../../types.ts';
 
 export const codexAgent: Agent = {
   name: 'codex',

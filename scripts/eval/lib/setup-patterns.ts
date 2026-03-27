@@ -1,6 +1,6 @@
 import { readFileSync, existsSync, globSync } from "node:fs";
 import { join, relative } from "node:path";
-import type { SetupPattern } from "../types";
+import type { SetupPattern } from "../types.ts";
 
 const RULES: Array<[id: string, label: string, pattern: RegExp]> = [
   ["global-css", "Global CSS import", /import\s+['"][^'"]+\.(css|scss|sass|less)['"]|import\s+['"]tailwindcss/],

@@ -2,7 +2,7 @@ import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Agent, ExecutionResult, SupportedModel } from "../../types";
+import type { Agent, ExecutionResult, SupportedModel } from "../../types.ts";
 
 function logMessage(message: SDKMessage) {
   const log = (prefix: string, text: string) => process.stderr.write(`${prefix} ${text}\n`);

@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, globSync } from "node:fs";
 import { join } from "node:path";
-import type { GhostStoriesResult } from "../types";
-import { logStep, logSuccess, logError, exec } from "./utils";
+import type { GhostStoriesResult } from "../types.ts";
+import { logStep, logSuccess, logError, exec } from "./utils.ts";
 
 /**
  * Run ghost stories: discover candidate components, auto-generate stories

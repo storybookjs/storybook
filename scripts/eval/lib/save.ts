@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { TrialResult } from "../types";
-import { logStep, logSuccess, logError, exec } from "./utils";
+import type { TrialResult } from "../types.ts";
+import { logStep, logSuccess, logError, exec } from "./utils.ts";
 
 const GOOGLE_SHEETS_URL = process.env.EVAL_GOOGLE_SHEETS_URL;
 

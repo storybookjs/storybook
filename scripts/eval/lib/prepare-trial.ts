@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, cpSync } from "node:fs";
 import { join } from "node:path";
-import type { Project, TrialPaths } from "../types";
-import { CACHE_DIR, TRIALS_DIR, logStep, logSuccess, exec } from "./utils";
+import type { Project, TrialPaths } from "../types.ts";
+import { CACHE_DIR, TRIALS_DIR, logStep, logSuccess, exec } from "./utils.ts";
 
 async function installDeps(dir: string) {
   const has = (f: string) => existsSync(join(dir, f));

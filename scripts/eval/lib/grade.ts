@@ -1,9 +1,9 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { GradingResult, QualityResult, TrialPaths, ChangedFile } from "../types";
-import { logStep, logSuccess, logError, exec } from "./utils";
-import { detectSetupPatterns } from "./setup-patterns";
-import { runGhostStories } from "./ghost-stories";
+import type { GradingResult, QualityResult, TrialPaths, ChangedFile } from "../types.ts";
+import { logStep, logSuccess, logError, exec } from "./utils.ts";
+import { detectSetupPatterns } from "./setup-patterns.ts";
+import { runGhostStories } from "./ghost-stories.ts";
 
 export async function grade(paths: TrialPaths): Promise<{ grading: GradingResult; quality: QualityResult }> {
   const { repoRoot, projectPath, resultsDir, baselineCommit } = paths;

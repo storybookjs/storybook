@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { Command } from 'commander';
 import pc from 'picocolors';
-import type { TrialConfig, TrialResult, AgentName, SupportedModel } from './types';
-import { SUPPORTED_MODELS_BY_AGENT } from './types';
-import { PROJECTS, DEFAULT_AGENT, DEFAULT_MODEL } from './config';
-import { runTask } from './lib/run-task';
-import { listPrompts } from './lib/generate-prompt';
-import { log, formatDuration, formatCost } from './lib/utils';
+import type { TrialConfig, TrialResult, AgentName, SupportedModel } from './types.ts';
+import { SUPPORTED_MODELS_BY_AGENT } from './types.ts';
+import { PROJECTS, DEFAULT_AGENT, DEFAULT_MODEL } from './config.ts';
+import { runTask } from './lib/run-task.ts';
+import { listPrompts } from './lib/generate-prompt.ts';
+import { log, formatDuration, formatCost } from './lib/utils.ts';
 
 const program = new Command()
   .name('eval')

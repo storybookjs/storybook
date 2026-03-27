@@ -1,6 +1,6 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, basename } from "node:path";
-import { PROMPTS_DIR } from "./utils";
+import { PROMPTS_DIR } from "./utils.ts";
 
 /**
  * Build a prompt by concatenating one or more markdown files from prompts/.

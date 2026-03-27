@@ -1,13 +1,13 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { TrialConfig, TrialResult } from "../types";
-import { MODEL_TIERS } from "../types";
-import { agents } from "../config";
-import { prepareTrial } from "./prepare-trial";
-import { generatePrompt } from "./generate-prompt";
-import { grade } from "./grade";
-import { captureEnvironment, saveToGoogleSheets } from "./save";
-import { generateTrialId, log, logSuccess } from "./utils";
+import type { TrialConfig, TrialResult } from "../types.ts";
+import { MODEL_TIERS } from "../types.ts";
+import { agents } from "../config.ts";
+import { prepareTrial } from "./prepare-trial.ts";
+import { generatePrompt } from "./generate-prompt.ts";
+import { grade } from "./grade.ts";
+import { captureEnvironment, saveToGoogleSheets } from "./save.ts";
+import { generateTrialId, log, logSuccess } from "./utils.ts";
 
 /**
  * Run a full eval trial: prepare -> execute agent -> grade -> save.

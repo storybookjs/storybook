@@ -1,6 +1,6 @@
-import type { Project, AgentName, Agent } from './types';
-import { claudeCodeAgent } from './lib/agents/claude-code';
-import { codexAgent } from './lib/agents/codex';
+import type { Project, AgentName, Agent } from './types.ts';
+import { claudeCodeAgent } from './lib/agents/claude-code.ts';
+import { codexAgent } from './lib/agents/codex.ts';
 
 /**
  * Pre-prepared eval baseline repos.

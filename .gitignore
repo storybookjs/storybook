@@ -80,3 +80,7 @@ CLAUDE.local.md
 .vscode/mcp.json
 .mcp.json
 .nx/polygraph
+
+# Eval system
+scripts/eval/.cache
+scripts/eval/results

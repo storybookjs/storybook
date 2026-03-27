@@ -17,7 +17,7 @@ export async function runTask(
   runId: string,
   uploadId: string,
 ): Promise<TrialResult> {
-  const { project, agent: agentName, model, promptFile, verbose } = config;
+  const { project, agent: agentName, model, prompts: promptNames, verbose } = config;
   const trialId = generateTrialId(project.name, agentName, model);
   const timestamp = new Date().toISOString();
 
@@ -30,7 +30,7 @@ export async function runTask(
   const environment = await captureEnvironment(paths.resultsDir);
 
   // 3. Generate the prompt
-  const prompt = generatePrompt(promptFile);
+  const prompt = generatePrompt(promptNames);
   writeFileSync(join(paths.resultsDir, "prompt.md"), prompt);
 
   // 4. Execute the agent
@@ -55,7 +55,7 @@ export async function runTask(
     model,
     modelTier: MODEL_TIERS[model],
     timestamp,
-    promptFile: promptFile || "setup.md",
+    prompts: promptNames || ["setup"],
     baselineCommit: paths.baselineCommit,
     execution,
     grading,

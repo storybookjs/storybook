@@ -5,6 +5,7 @@ import type { TrialConfig, TrialResult, AgentName, SupportedModel } from './type
 import { SUPPORTED_MODELS_BY_AGENT } from './types';
 import { PROJECTS, DEFAULT_AGENT, DEFAULT_MODEL } from './config';
 import { runTask } from './lib/run-task';
+import { listPrompts } from './lib/generate-prompt';
 import { log, formatDuration, formatCost } from './lib/utils';
 
 const program = new Command()
@@ -13,12 +14,13 @@ const program = new Command()
   .option('-p, --project <name>', 'run only this project (by name)')
   .option('-a, --agent <name>', 'agent to use', DEFAULT_AGENT)
   .option('-m, --model <name>', 'model to use', DEFAULT_MODEL)
-  .option('--prompt <file>', 'custom prompt file path')
+  .option('--prompt <names...>', 'prompt names to compose (from prompts/ dir)', ['setup'])
   .option('-n, --iterations <n>', 'number of iterations per project', '1')
   .option('-v, --verbose', 'verbose output')
   .option('-u, --upload-id <id>', 'upload ID for grouping results in Google Sheets')
   .option('--list-projects', 'list available projects and exit')
-  .option('--list-models', 'list supported models and exit');
+  .option('--list-models', 'list supported models and exit')
+  .option('--list-prompts', 'list available prompts and exit');
 
 program.parse();
 
@@ -30,6 +32,14 @@ if (opts.listProjects) {
   log('Available projects:');
   for (const p of PROJECTS) {
     log(`  ${pc.bold(p.name)} - ${p.description || p.repo}`);
+  }
+  process.exit(0);
+}
+
+if (opts.listPrompts) {
+  log('Available prompts (compose with --prompt name1 name2):');
+  for (const name of listPrompts()) {
+    log(`  ${pc.bold(name)}`);
   }
   process.exit(0);
 }
@@ -95,7 +105,7 @@ for (const project of projects) {
       project,
       agent: agentName,
       model,
-      promptFile: opts.prompt as string | undefined,
+      prompts: opts.prompt as string[],
       verbose: opts.verbose as boolean | undefined,
     };
 

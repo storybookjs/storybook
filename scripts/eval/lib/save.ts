@@ -15,7 +15,7 @@ interface SheetsData {
   agent: string;
   model: string;
   modelTier: string;
-  promptFile: string;
+  prompts: string;
   buildSuccess: boolean;
   typeCheckErrors: number;
   ghostStoriesPassed: number | null;
@@ -91,7 +91,7 @@ export async function saveToGoogleSheets(
     agent: result.agent,
     model: result.model,
     modelTier: result.modelTier,
-    promptFile: result.promptFile,
+    prompts: result.prompts.join("+"),
     buildSuccess: result.grading.buildSuccess,
     typeCheckErrors: result.grading.typeCheckErrors,
     ghostStoriesPassed: ghost?.passed ?? null,

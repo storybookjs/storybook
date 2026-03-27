@@ -21,6 +21,7 @@ You are finishing Storybook setup for an existing React + Vite codebase.
 
 ## Verification
 
-- Run your own non-interactive verification commands.
+- Use `npx vitest run --project=storybook` to verify stories render correctly.
+- Use `npx storybook build` as a secondary check.
 - Fix the highest-signal Storybook problem first.
 - Iterate until the setup is stable enough that another user can keep writing stories without additional setup work.

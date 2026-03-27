@@ -49,7 +49,8 @@ export interface TrialConfig {
   project: Project;
   agent: AgentName;
   model: SupportedModel;
-  promptFile?: string;
+  /** Prompt names to compose (from prompts/ dir). Defaults to ["setup"]. */
+  prompts?: string[];
   verbose?: boolean;
 }
 
@@ -145,7 +146,7 @@ export interface TrialResult {
   model: string;
   modelTier: ModelTier;
   timestamp: string;
-  promptFile: string;
+  prompts: string[];
   baselineCommit: string;
   execution: ExecutionResult;
   grading: GradingResult;

@@ -201,7 +201,7 @@ module.exports = {
 
 [Next.js's router](https://nextjs.org/docs/pages/building-your-application/routing) is automatically stubbed for you so that when the router is interacted with, all of its interactions are automatically logged to the [Actions panel](../../essentials/actions.mdx).
 
-<Callout>
+<Callout variant="info">
 
 You should only use `next/router` in the `pages` directory. In the `app` directory, it is necessary to use `next/navigation`.
 
@@ -213,7 +213,7 @@ Per-story overrides can be done by adding a `nextjs.router` property onto the st
 
 <CodeSnippets path="nextjs-router-override-in-story.md" />
 
-<Callout>
+<Callout variant="info">
 
 These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
 
@@ -248,7 +248,7 @@ To override these defaults, you can use [parameters](../../writing-stories/param
 
 ### Next.js navigation
 
-<Callout>
+<Callout variant="info">
 
 Please note that [`next/navigation`](https://nextjs.org/docs/app/building-your-application/routing) can only be used in components/pages in the `app` directory.
 
@@ -270,7 +270,7 @@ Per-story overrides can be done by adding a `nextjs.navigation` property onto th
 
 <CodeSnippets path="nextjs-navigation-override-in-story.md" />
 
-<Callout>
+<Callout variant="info">
 
 These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
 
@@ -312,7 +312,7 @@ export default function ParamsBasedComponent() {
 }
 ```
 
-<Callout>
+<Callout variant="info">
 
 These overrides can also be applied to [a single story](../../api/parameters.mdx#story-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
 

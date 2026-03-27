@@ -2,6 +2,7 @@ import type { CompatibleString } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 import type { StorybookConfig as StorybookConfigReactVite } from '@storybook/react-vite';
+import type { QueryParameters } from './query/types';
 import type { RouterParameters } from './routing/types';
 
 type FrameworkName = CompatibleString<'@storybook/tanstack-react'>;
@@ -34,6 +35,8 @@ export type StorybookConfig = Omit<StorybookConfigReactVite, keyof StorybookConf
   StorybookConfigFramework;
 
 export interface TanStackPreviewOptions {
+  /** TanStack Query configuration for stories */
+  query?: QueryParameters;
   /** Router configuration for stories */
   router?: RouterParameters;
 }

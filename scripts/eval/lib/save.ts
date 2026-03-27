@@ -45,7 +45,7 @@ export async function saveToGoogleSheets(
     project: result.project,
     agent: result.agent,
     model: result.model,
-    modelTier: result.modelTier,
+    effort: result.effort,
     prompts: result.prompts.join("+"),
     buildSuccess: result.grading.buildSuccess,
     typeCheckErrors: result.grading.typeCheckErrors,

@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { Command } from 'commander';
 import pc from 'picocolors';
-import type { TrialConfig, TrialResult, AgentName, SupportedModel } from './types.ts';
-import { SUPPORTED_MODELS_BY_AGENT } from './types.ts';
+import type { TrialConfig, TrialResult, AgentName, SupportedModel, Effort } from './types.ts';
+import { MODELS_BY_AGENT, EFFORTS } from './types.ts';
 import { PROJECTS, DEFAULT_AGENT, DEFAULT_MODEL } from './config.ts';
 import { runTask } from './lib/run-task.ts';
 import { listPrompts } from './lib/generate-prompt.ts';
@@ -14,6 +14,7 @@ const program = new Command()
   .option('-p, --project <name>', 'run only this project (by name)')
   .option('-a, --agent <name>', 'agent to use', DEFAULT_AGENT)
   .option('-m, --model <name>', 'model to use', DEFAULT_MODEL)
+  .option('-e, --effort <level>', 'effort level: low, medium, high, max', 'high')
   .option('--prompt <names...>', 'prompt names to compose (from prompts/ dir)', ['setup'])
   .option('-n, --iterations <n>', 'number of iterations per project', '1')
   .option('-v, --verbose', 'verbose output')
@@ -45,13 +46,12 @@ if (opts.listPrompts) {
 }
 
 if (opts.listModels) {
-  log('Supported models by agent:');
-  for (const [agent, models] of Object.entries(SUPPORTED_MODELS_BY_AGENT)) {
+  log('Models by agent:');
+  for (const [agent, models] of Object.entries(MODELS_BY_AGENT)) {
     log(`\n  ${pc.bold(agent)}:`);
-    for (const m of models) {
-      log(`    - ${m}`);
-    }
+    for (const m of models) log(`    - ${m}`);
   }
+  log(`\n  Effort levels: ${EFFORTS.join(', ')}`);
   process.exit(0);
 }
 
@@ -59,15 +59,20 @@ if (opts.listModels) {
 
 const agentName = opts.agent as AgentName;
 const model = opts.model as SupportedModel;
+const effort = opts.effort as Effort;
 const iterations = parseInt(opts.iterations as string, 10);
 
-const supportedModels = SUPPORTED_MODELS_BY_AGENT[agentName];
+const supportedModels = MODELS_BY_AGENT[agentName];
 if (!supportedModels) {
   log(pc.red(`Unknown agent: ${agentName}. Use --list-models to see available agents.`));
   process.exit(1);
 }
 if (!supportedModels.includes(model)) {
   log(pc.red(`Model ${model} is not supported by agent ${agentName}. Use --list-models to see options.`));
+  process.exit(1);
+}
+if (!EFFORTS.includes(effort)) {
+  log(pc.red(`Unknown effort: ${effort}. Options: ${EFFORTS.join(', ')}`));
   process.exit(1);
 }
 
@@ -87,7 +92,7 @@ const runId = randomUUID().slice(0, 8);
 const uploadId = (opts.uploadId as string) || `eval-${runId}`;
 
 log(pc.bold('\nStorybook Setup Eval'));
-log(`Agent: ${pc.cyan(agentName)} | Model: ${pc.cyan(model)} | Iterations: ${iterations}`);
+log(`Agent: ${pc.cyan(agentName)} | Model: ${pc.cyan(model)} | Effort: ${pc.cyan(effort)} | Iterations: ${iterations}`);
 log(`Projects: ${projects.map((p) => p.name).join(', ')}`);
 log(`Run: ${runId} | Upload: ${uploadId}`);
 
@@ -105,6 +110,7 @@ for (const project of projects) {
       project,
       agent: agentName,
       model,
+      effort,
       prompts: opts.prompt as string[],
       verbose: opts.verbose as boolean | undefined,
     };

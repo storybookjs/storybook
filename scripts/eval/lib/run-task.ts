@@ -1,7 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { TrialConfig, TrialResult } from "../types.ts";
-import { MODEL_TIERS } from "../types.ts";
 import { agents } from "../config.ts";
 import { prepareTrial } from "./prepare-trial.ts";
 import { generatePrompt } from "./generate-prompt.ts";
@@ -17,7 +16,7 @@ export async function runTask(
   runId: string,
   uploadId: string,
 ): Promise<TrialResult> {
-  const { project, agent: agentName, model, prompts: promptNames, verbose } = config;
+  const { project, agent: agentName, model, effort, prompts: promptNames, verbose } = config;
   const trialId = generateTrialId(project.name, agentName, model);
   const timestamp = new Date().toISOString();
 
@@ -34,9 +33,10 @@ export async function runTask(
   writeFileSync(join(paths.resultsDir, "prompt.md"), prompt);
 
   // 4. Execute the agent
-  log(`  Running ${agentName} (${model})...`);
+  log(`  Running ${agentName} (${model}, effort=${effort})...`);
   const agent = agents[agentName];
   const execution = await agent.execute(prompt, paths.projectPath, model, {
+    effort,
     verbose,
     resultsDir: paths.resultsDir,
   });
@@ -53,7 +53,7 @@ export async function runTask(
     project: project.name,
     agent: agentName,
     model,
-    modelTier: MODEL_TIERS[model],
+    effort,
     timestamp,
     prompts: promptNames || ["setup"],
     baselineCommit: paths.baselineCommit,

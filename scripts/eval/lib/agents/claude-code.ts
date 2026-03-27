@@ -2,7 +2,7 @@ import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Agent, ExecutionResult, SupportedModel } from "../../types.ts";
+import type { Agent, Effort, ExecutionResult, SupportedModel } from "../../types.ts";
 
 function logMessage(message: SDKMessage) {
   const log = (prefix: string, text: string) => process.stderr.write(`${prefix} ${text}\n`);
@@ -76,9 +76,9 @@ export const claudeCodeAgent: Agent = {
     prompt: string,
     projectPath: string,
     model: SupportedModel,
-    options?: { resultsDir?: string },
+    options?: { effort?: Effort; resultsDir?: string },
   ): Promise<ExecutionResult> {
-    const { resultsDir } = options ?? {};
+    const { effort = "high", resultsDir } = options ?? {};
     const startTime = Date.now();
 
     let cost: number | undefined;
@@ -93,6 +93,7 @@ export const claudeCodeAgent: Agent = {
         cwd: projectPath,
         allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
         maxTurns: 50,
+        effort,
         debug: true,
         systemPrompt: { type: "preset", preset: "claude_code" },
       },
@@ -117,6 +118,7 @@ export const claudeCodeAgent: Agent = {
     return {
       agent: "claude-code",
       model,
+      effort,
       cost,
       duration,
       durationApi,

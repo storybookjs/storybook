@@ -20,7 +20,7 @@ export async function runTask(
 ): Promise<TrialResult> {
   const { project, agent: agentName, model, effort, prompt: promptName, verbose } = config;
   const { log, logSuccess } = logger ?? createLogger();
-  const trialId = generateTrialId(project.name, agentName, model);
+  const trialId = generateTrialId(project.name, agentName, model, promptName || "setup");
   const timestamp = new Date().toISOString();
 
   log(`Preparing ${project.name}...`);

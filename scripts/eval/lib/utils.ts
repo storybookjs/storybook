@@ -34,8 +34,10 @@ export const formatDuration = (s: number) =>
 
 export const formatCost = (cost?: number) => (cost == null ? "-" : `$${cost.toFixed(2)}`);
 
-export function generateTrialId(project: string, agent: string, model: string) {
-  return `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${project}-${agent}-${model}`;
+export function generateTrialId(project: string, agent: string, model: string, prompt: string) {
+  const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const rand = Math.random().toString(36).slice(2, 6);
+  return `${ts}-${project}-${model}-${prompt}-${rand}`;
 }
 
 // --- Exec ---

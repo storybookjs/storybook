@@ -36,8 +36,7 @@ export const formatCost = (cost?: number) => (cost == null ? "-" : `$${cost.toFi
 
 export function generateTrialId(project: string, agent: string, model: string, prompt: string) {
   const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const rand = Math.random().toString(36).slice(2, 6);
-  return `${ts}-${project}-${model}-${prompt}-${rand}`;
+  return `${ts}-${project}-${model}-${prompt}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 // --- Exec ---

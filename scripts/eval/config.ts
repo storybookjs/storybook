@@ -59,4 +59,8 @@ export const agents: Record<AgentName, Agent> = {
 };
 
 export const DEFAULT_AGENT: AgentName = 'claude-code';
-export const DEFAULT_MODEL = 'claude-sonnet-4-6' as const;
+
+export const DEFAULT_MODEL: Record<AgentName, string> = {
+  'claude-code': 'claude-sonnet-4-6',
+  codex: 'gpt-5.4',
+};

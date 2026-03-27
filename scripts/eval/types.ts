@@ -40,7 +40,7 @@ export interface TrialConfig {
   agent: AgentName;
   model: SupportedModel;
   effort: Effort;
-  prompts?: string[];
+  prompt?: string;
   verbose?: boolean;
 }
 
@@ -115,7 +115,7 @@ export interface TrialResult {
   model: string;
   effort: string;
   timestamp: string;
-  prompts: string[];
+  prompt: string;
   baselineCommit: string;
   execution: ExecutionResult;
   grading: GradingResult;

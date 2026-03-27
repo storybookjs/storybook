@@ -13,9 +13,9 @@ const program = new Command()
   .description('Evaluate AI agents on Storybook setup tasks')
   .option('-p, --project <name>', 'run only this project (by name)')
   .option('-a, --agent <name>', 'agent to use', DEFAULT_AGENT)
-  .option('-m, --model <name>', 'model to use', DEFAULT_MODEL)
+  .option('-m, --model <name>', 'model to use (default: per agent)')
   .option('-e, --effort <level>', 'effort level: low, medium, high, max', 'high')
-  .option('--prompt <names...>', 'prompt names to compose (from prompts/ dir)', ['setup'])
+  .option('--prompt <name>', 'prompt name (from prompts/ dir)', 'setup')
   .option('-n, --iterations <n>', 'number of iterations per project', '1')
   .option('-v, --verbose', 'verbose output')
   .option('-u, --upload-id <id>', 'upload ID for grouping results in Google Sheets')
@@ -38,7 +38,7 @@ if (opts.listProjects) {
 }
 
 if (opts.listPrompts) {
-  log('Available prompts (compose with --prompt name1 name2):');
+  log('Available prompts (use with --prompt <name>):');
   for (const name of listPrompts()) {
     log(`  ${pc.bold(name)}`);
   }
@@ -58,7 +58,7 @@ if (opts.listModels) {
 // --- Validate inputs ---
 
 const agentName = opts.agent as AgentName;
-const model = opts.model as SupportedModel;
+const model = (opts.model ?? DEFAULT_MODEL[agentName]) as SupportedModel;
 const effort = opts.effort as Effort;
 const iterations = parseInt(opts.iterations as string, 10);
 
@@ -111,7 +111,7 @@ for (const project of projects) {
       agent: agentName,
       model,
       effort,
-      prompts: opts.prompt as string[],
+      prompt: opts.prompt as string,
       verbose: opts.verbose as boolean | undefined,
     };
 

@@ -1,6 +1,8 @@
 import type { Options } from 'storybook/internal/types';
 
-export async function getFrameworkBuilderOptions(options: Options) {
+export async function getFrameworkBuilderOptions(
+  options: Options
+): Promise<Record<string, unknown>> {
   const framework = await options.presets.apply('framework');
 
   if (typeof framework === 'string') {

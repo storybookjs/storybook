@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { Command } from "commander";
 import pc from "picocolors";
-import type { TrialConfig, Effort } from "./types.ts";
-import { MODELS, agentForModel, effortForModel } from "./types.ts";
+import type { TrialConfig, AgentName, Effort } from "./types.ts";
+import { AGENTS } from "./types.ts";
 import { PROJECTS } from "./config.ts";
 import { runTask } from "./lib/run-task.ts";
 import { listPrompts } from "./lib/generate-prompt.ts";
@@ -12,7 +12,8 @@ const program = new Command()
   .name("eval")
   .description("Run a single Storybook setup eval")
   .option("-p, --project <name>", "project to evaluate")
-  .option("-m, --model <name>", "model to use", "claude-sonnet-4-6")
+  .option("-a, --agent <name>", "agent: claude-code, codex", "claude-code")
+  .option("-m, --model <name>", "model (default: per agent)")
   .option("-e, --effort <level>", "effort: low, medium, high, max", "high")
   .option("--prompt <name>", "prompt name", "setup")
   .option("-v, --verbose", "verbose output")
@@ -29,7 +30,10 @@ if (opts.listProjects) {
   process.exit(0);
 }
 if (opts.listModels) {
-  for (const m of MODELS) log(`  ${pc.bold(m.id)} (${m.agent}) — ${m.label}`);
+  for (const [agent, { models }] of Object.entries(AGENTS)) {
+    log(`\n  ${pc.bold(agent)}`);
+    for (const m of models) log(`    ${m}`);
+  }
   process.exit(0);
 }
 if (opts.listPrompts) {
@@ -43,14 +47,26 @@ if (!project) {
   process.exit(1);
 }
 
-const model = opts.model as string;
-const effort = effortForModel(model, opts.effort as Effort);
+const agent = opts.agent as AgentName;
+const agentConfig = AGENTS[agent];
+if (!agentConfig) {
+  log(pc.red(`Unknown agent: ${agent}. Options: ${Object.keys(AGENTS).join(", ")}`));
+  process.exit(1);
+}
+
+const model = (opts.model ?? agentConfig.defaultModel) as string;
+if (!agentConfig.models.includes(model)) {
+  log(pc.red(`Model ${model} not available for ${agent}. Options: ${agentConfig.models.join(", ")}`));
+  process.exit(1);
+}
+
+const effort = opts.effort as Effort;
 const runId = randomUUID().slice(0, 8);
 const uploadId = (opts.uploadId as string) || `eval-${runId}`;
 
 const config: TrialConfig = {
   project,
-  agent: agentForModel(model),
+  agent,
   model,
   effort,
   prompt: opts.prompt as string,
@@ -58,7 +74,7 @@ const config: TrialConfig = {
 };
 
 log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
-log(`Model: ${model} | Effort: ${effort} | Prompt: ${config.prompt}`);
+log(`Agent: ${agent} | Model: ${model} | Effort: ${effort} | Prompt: ${config.prompt}`);
 log(`Run: ${runId}\n`);
 
 try {
@@ -74,7 +90,6 @@ try {
   log(`  Time:    ${formatDuration(result.execution.duration)}`);
   log(`  Turns:   ${result.execution.turns}`);
 
-  // Machine-readable output for eval-parallel to parse
   console.log(`__RESULT__${JSON.stringify(result)}`);
 } catch (error) {
   log(pc.red(`\nFailed: ${error instanceof Error ? error.message : error}`));

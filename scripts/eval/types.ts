@@ -1,8 +1,7 @@
 /**
  * Core types for the Storybook setup eval system.
  *
- * Three independent axes: model × effort × prompt
- * Agent is derived from the model.
+ * Four independent axes: agent × model × effort × prompt
  */
 
 // --- Agent, Model, Effort ---
@@ -10,25 +9,18 @@
 export type AgentName = "claude-code" | "codex";
 export type Effort = "low" | "medium" | "high" | "max";
 
-export const MODELS = [
-  { id: "claude-sonnet-4-6", agent: "claude-code" as AgentName, label: "Sonnet 4.6" },
-  { id: "claude-opus-4-6", agent: "claude-code" as AgentName, label: "Opus 4.6" },
-  { id: "gpt-5.4-medium", agent: "codex" as AgentName, label: "GPT 5.4 Medium", effort: "medium" as Effort },
-  { id: "gpt-5.4-high", agent: "codex" as AgentName, label: "GPT 5.4 High", effort: "high" as Effort },
-] as const;
+export const AGENTS: Record<AgentName, { models: string[]; defaultModel: string }> = {
+  "claude-code": {
+    models: ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5"],
+    defaultModel: "claude-sonnet-4-6",
+  },
+  codex: {
+    models: ["gpt-5.4"],
+    defaultModel: "gpt-5.4",
+  },
+};
 
-export type SupportedModel = (typeof MODELS)[number]["id"];
-
-export function agentForModel(model: string): AgentName {
-  const entry = MODELS.find((m) => m.id === model);
-  if (!entry) throw new Error(`Unknown model: ${model}`);
-  return entry.agent;
-}
-
-export function effortForModel(model: string, defaultEffort: Effort): Effort {
-  const entry = MODELS.find((m) => m.id === model);
-  return (entry as { effort?: Effort })?.effort ?? defaultEffort;
-}
+export type SupportedModel = string;
 
 // --- Project Types ---
 

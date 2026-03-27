@@ -141,6 +141,7 @@ const config = defineMain({
     disableTelemetry: true,
   },
   features: {
+    changeDetection: true,
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
   },

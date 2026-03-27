@@ -73,6 +73,9 @@ try {
   log(`  Cost:    ${formatCost(result.execution.cost)}`);
   log(`  Time:    ${formatDuration(result.execution.duration)}`);
   log(`  Turns:   ${result.execution.turns}`);
+
+  // Machine-readable output for eval-parallel to parse
+  console.log(`__RESULT__${JSON.stringify(result)}`);
 } catch (error) {
   log(pc.red(`\nFailed: ${error instanceof Error ? error.message : error}`));
   process.exit(1);

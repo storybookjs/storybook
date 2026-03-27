@@ -47,17 +47,28 @@ if (!project) {
   process.exit(1);
 }
 
-const agent = opts.agent as AgentName;
-const agentConfig = AGENTS[agent];
-if (!agentConfig) {
-  log(pc.red(`Unknown agent: ${agent}. Options: ${Object.keys(AGENTS).join(", ")}`));
-  process.exit(1);
-}
+// Infer agent from model if model is specified, otherwise use --agent flag
+let agent: AgentName;
+let model: string;
 
-const model = (opts.model ?? agentConfig.defaultModel) as string;
-if (!agentConfig.models.includes(model)) {
-  log(pc.red(`Model ${model} not available for ${agent}. Options: ${agentConfig.models.join(", ")}`));
-  process.exit(1);
+if (opts.model) {
+  // Find which agent owns this model
+  const match = Object.entries(AGENTS).find(([, cfg]) => cfg.models.includes(opts.model as string));
+  if (!match) {
+    const all = Object.values(AGENTS).flatMap((cfg) => cfg.models);
+    log(pc.red(`Unknown model: ${opts.model}. Available: ${all.join(", ")}`));
+    process.exit(1);
+  }
+  agent = match[0] as AgentName;
+  model = opts.model as string;
+} else {
+  agent = opts.agent as AgentName;
+  const agentConfig = AGENTS[agent];
+  if (!agentConfig) {
+    log(pc.red(`Unknown agent: ${agent}. Options: ${Object.keys(AGENTS).join(", ")}`));
+    process.exit(1);
+  }
+  model = agentConfig.defaultModel;
 }
 
 const effort = opts.effort as Effort;

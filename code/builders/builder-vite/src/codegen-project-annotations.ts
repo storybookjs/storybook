@@ -50,15 +50,7 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
       genSafeVariableName(filename(previewAnnotation)).replace(/_(45|46|47)/g, '_') +
       '_' +
       hash(previewAnnotation);
-    let variable = baseVariable;
-    let duplicateCount = 2;
-
-    while (usedVariables.has(variable)) {
-      variable = `${baseVariable}_${duplicateCount}`;
-      duplicateCount += 1;
-    }
-
-    usedVariables.add(variable);
+    const variable = getUniqueImportVariable(baseVariable, usedVariables);
     variables.push(variable);
     imports.push(genImport(previewAnnotation, { name: '*', as: variable }));
   }
@@ -115,7 +107,20 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   `.trim();
 }
 
-/** djb2 hash — http://www.cse.yorku.ca/~oz/hash.html */
+function getUniqueImportVariable(baseVariable: string, usedVariables: Set<string>) {
+  let variable = baseVariable;
+  let duplicateCount = 2;
+
+  while (usedVariables.has(variable)) {
+    variable = `${baseVariable}_${duplicateCount}`;
+    duplicateCount += 1;
+  }
+
+  usedVariables.add(variable);
+  return variable;
+}
+
+/** djb2 hash - http://www.cse.yorku.ca/~oz/hash.html */
 function hash(value: string) {
   let acc = 5381;
   for (let i = 0; i < value.length; i++) {

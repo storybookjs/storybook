@@ -1,13 +1,12 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { GradingResult, QualityResult, TrialPaths, ChangedFile } from "../types";
-import { logStep, logSuccess, logError, exec, cleanEnv } from "./utils";
+import { logStep, logSuccess, logError, exec } from "./utils";
 import { detectSetupPatterns } from "./setup-patterns";
 import { runGhostStories } from "./ghost-stories";
 
 export async function grade(paths: TrialPaths): Promise<{ grading: GradingResult; quality: QualityResult }> {
   const { repoRoot, projectPath, resultsDir, baselineCommit } = paths;
-  const env = cleanEnv();
 
   // Changed files
   logStep("Collecting agent changes...");
@@ -27,7 +26,7 @@ export async function grade(paths: TrialPaths): Promise<{ grading: GradingResult
     cwd: projectPath,
     timeout: 300_000,
     throwOnError: false,
-    env: { ...env, STORYBOOK_DISABLE_TELEMETRY: "1", NODE_OPTIONS: "--max_old_space_size=4096" },
+    env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: "1", NODE_OPTIONS: "--max_old_space_size=4096" },
   });
   const buildSuccess = build.exitCode === 0;
   writeFileSync(join(resultsDir, "build-output.txt"), build.stdout + "\n" + build.stderr);
@@ -39,7 +38,7 @@ export async function grade(paths: TrialPaths): Promise<{ grading: GradingResult
 
   // TypeScript check
   logStep("Running typecheck...");
-  const tsc = await exec("npx", ["tsc", "--noEmit"], { cwd: projectPath, timeout: 120_000, throwOnError: false, env });
+  const tsc = await exec("npx", ["tsc", "--noEmit"], { cwd: projectPath, timeout: 120_000, throwOnError: false });
   const tscOutput = tsc.stdout + "\n" + tsc.stderr;
   writeFileSync(join(resultsDir, "typecheck-output.txt"), tscOutput);
   const typeCheckErrors = (tscOutput.match(/error TS\d+/g) || []).length;

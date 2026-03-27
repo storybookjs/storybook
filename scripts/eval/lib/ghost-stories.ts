@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, globSync } from "node:fs";
 import { join } from "node:path";
 import type { GhostStoriesResult } from "../types";
-import { logStep, logSuccess, logError, exec, cleanEnv } from "./utils";
+import { logStep, logSuccess, logError, exec } from "./utils";
 
 /**
  * Run ghost stories: discover candidate components, auto-generate stories
@@ -28,7 +28,7 @@ export async function runGhostStories(
       cwd: projectPath,
       timeout: 120_000,
       throwOnError: false,
-      env: { ...cleanEnv(), STORYBOOK_COMPONENT_PATHS: candidates.join(",") },
+      env: { ...process.env, STORYBOOK_COMPONENT_PATHS: candidates.join(",") },
     },
   );
 

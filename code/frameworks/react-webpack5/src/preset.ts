@@ -5,7 +5,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 
 import type { StorybookConfig } from './types';
-import { getBuilderOptions } from 'storybook/internal/common';
+import { getFrameworkBuilderOptions } from 'storybook/internal/common';
 
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
@@ -16,7 +16,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
     ...config,
     builder: {
       name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
-      options: await getBuilderOptions(options),
+      options: await getFrameworkBuilderOptions(options),
     },
     renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };

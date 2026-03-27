@@ -2,7 +2,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options';
 import { fileURLToPath } from 'node:url';
-import { getBuilderOptions } from 'storybook/internal/common';
+import { getFrameworkBuilderOptions } from 'storybook/internal/common';
 
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/angular/server/framework-preset-angular-cli')),
@@ -39,7 +39,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
     ...config,
     builder: {
       name: import.meta.resolve('@storybook/builder-webpack5'),
-      options: await getBuilderOptions(options),
+      options: await getFrameworkBuilderOptions(options),
     },
   };
 };

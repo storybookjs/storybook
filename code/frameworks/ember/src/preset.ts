@@ -1,7 +1,7 @@
 import {
   getProjectRoot,
   resolvePathInStorybookCache,
-  getBuilderOptions,
+  getFrameworkBuilderOptions,
 } from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -49,7 +49,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
     ...config,
     builder: {
       name: import.meta.resolve('@storybook/builder-webpack5'),
-      options: await getBuilderOptions(options),
+      options: await getFrameworkBuilderOptions(options),
     },
   };
 };

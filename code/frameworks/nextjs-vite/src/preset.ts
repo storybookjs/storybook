@@ -13,7 +13,7 @@ import semver from 'semver';
 import { normalizePostCssConfig } from './find-postcss-config';
 import type { FrameworkOptions } from './types';
 import { getNextjsVersion } from './utils';
-import { getBuilderOptions } from 'storybook/internal/common';
+import { getFrameworkBuilderOptions } from 'storybook/internal/common';
 
 const require = createRequire(import.meta.url);
 
@@ -25,7 +25,9 @@ export const core: PresetProperty<'core'> = async (config, options) => {
     ...config,
     builder: {
       name: fileURLToPath(import.meta.resolve('@storybook/builder-vite')),
-      options: await getBuilderOptions(options),
+      options: {
+        ...(await getFrameworkBuilderOptions(options)),
+      },
     },
     renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };

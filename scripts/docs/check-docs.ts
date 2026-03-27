@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'node:fs/promises';
 import { getMdxFiles, readFileLines } from './utils';
+import { esMain } from '../utils/esmain';
 
 export interface RelativeLinkError {
   file: string;
@@ -19,6 +20,11 @@ export interface DeprecatedIfRendererError {
   line: number;
   message: string;
 }
+export interface CalloutVariantError {
+  file: string;
+  line: number;
+  message: string;
+}
 
 /**
  * Checks all relative links in .mdx files for broken targets.
@@ -27,6 +33,9 @@ export async function checkRelativeLinks(docsDir: string): Promise<RelativeLinkE
   const mdxFiles = await getMdxFiles(docsDir);
   const errors: RelativeLinkError[] = [];
   const relLinkRegex = /\[[^\]]+\]\(((\.\.?\/)[^\)#]+)(#[^)]*)?\)/g;
+  // Cross-version links point to docs on other release branches (e.g. ../../../release-8-6/docs/...)
+  // and cannot be validated locally
+  const crossVersionRegex = /^(?:\.\.\/)+release-[\w.-]+\//;
 
   for (const file of mdxFiles) {
     const lines = await readFileLines(file);
@@ -35,6 +44,7 @@ export async function checkRelativeLinks(docsDir: string): Promise<RelativeLinkE
       while ((match = relLinkRegex.exec(line))) {
         const relPath = match[1];
         const anchor = match[3];
+        if (crossVersionRegex.test(relPath)) continue;
         const targetPath = path.resolve(path.dirname(file), relPath);
         try {
           await fs.access(targetPath);
@@ -108,18 +118,43 @@ export async function checkDeprecatedIfRenderer(docsDir: string): Promise<Deprec
 }
 
 /**
+ * Checks for <Callout> tags missing a variant prop.
+ */
+export async function checkCalloutVariant(docsDir: string): Promise<CalloutVariantError[]> {
+  const mdxFiles = await getMdxFiles(docsDir);
+  const errors: CalloutVariantError[] = [];
+  const calloutOpenRegex = /<Callout\b/;
+
+  for (const file of mdxFiles) {
+    const lines = await readFileLines(file);
+    lines.forEach((line, idx) => {
+      if (calloutOpenRegex.test(line) && !line.includes('variant=')) {
+        errors.push({
+          file,
+          line: idx + 1,
+          message: '<Callout> missing variant prop. Use variant="info" or variant="warning".',
+        });
+      }
+    });
+  }
+  return errors;
+}
+
+/**
  * Runs all checks and prints a summary. Exits 1 if any errors are found.
  */
 export async function runAllChecks(docsDir: string) {
-  const [rel, snippets, deprecated] = await Promise.all([
+  const [rel, snippets, deprecated, callout] = await Promise.all([
     checkRelativeLinks(docsDir),
     checkCodeSnippetPaths(docsDir),
     checkDeprecatedIfRenderer(docsDir),
+    checkCalloutVariant(docsDir),
   ]);
   const all = [
     ...rel.map(e => ({ ...e, type: 'relative-link' })),
     ...snippets.map(e => ({ ...e, type: 'snippet-path' })),
     ...deprecated.map(e => ({ ...e, type: 'deprecated-if-renderer' })),
+    ...callout.map(e => ({ ...e, type: 'callout-variant' })),
   ];
   if (all.length === 0) {
     console.log('✅ Docs check: no errors found.');
@@ -133,6 +168,8 @@ export async function runAllChecks(docsDir: string) {
       console.error(`[CodeSnippetPath] ${loc}: ${err.message}`);
     } else if (err.type === 'deprecated-if-renderer') {
       console.error(`[IfRenderer] ${loc}: ${err.message}`);
+    } else if (err.type === 'callout-variant') {
+      console.error(`[CalloutVariant] ${loc}: ${err.message}`);
     }
   }
   console.error(`\n❌ Docs check: ${all.length} error(s) found.`);
@@ -140,7 +177,7 @@ export async function runAllChecks(docsDir: string) {
 }
 
 // CLI entry point
-if (require.main === module || (typeof esmain !== 'undefined' && esmain(import.meta))) {
+if (esMain(import.meta.url)) {
   runAllChecks(path.resolve(__dirname, '../../docs')).catch((err) => {
     console.error(err);
     process.exit(1);

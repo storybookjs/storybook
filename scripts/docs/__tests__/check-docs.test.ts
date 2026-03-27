@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'node:fs/promises';
 import path from 'path';
 import os from 'os';
@@ -6,6 +6,7 @@ import {
   checkRelativeLinks,
   checkCodeSnippetPaths,
   checkDeprecatedIfRenderer,
+  checkCalloutVariant,
   runAllChecks,
 } from '../check-docs';
 
@@ -52,6 +53,14 @@ describe('check-docs', () => {
       const errors = await checkRelativeLinks(docsDir);
       expect(errors).toEqual([]);
     });
+    it('ignores cross-version links to other release branches', async () => {
+      await writeFile(
+        path.join(docsDir, 'sub', 'bar.mdx'),
+        '[old docs](../../../release-8-6/docs/migration-guide/index.mdx)\n[older docs](../../../release-6-5/docs/configure/babel.mdx)'
+      );
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
   });
 
   describe('checkCodeSnippetPaths', () => {
@@ -83,6 +92,26 @@ describe('check-docs', () => {
     });
   });
 
+  describe('checkCalloutVariant', () => {
+    it('passes for <Callout variant="info">', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '<Callout variant="info">\n\nContent\n\n</Callout>');
+      const errors = await checkCalloutVariant(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for bare <Callout>', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '<Callout>\n\nContent\n\n</Callout>');
+      const errors = await checkCalloutVariant(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('missing variant prop');
+    });
+    it('errors for <Callout icon="💡"> without variant', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '<Callout icon="💡">\n\nContent\n\n</Callout>');
+      const errors = await checkCalloutVariant(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('missing variant prop');
+    });
+  });
+
   describe('runAllChecks', () => {
     it('passes for clean docs', async () => {
       await writeFile(path.join(docsDir, 'foo.mdx'), '# Foo');
@@ -91,16 +120,20 @@ describe('check-docs', () => {
       await expect(runAllChecks(docsDir)).resolves.toBeUndefined();
     });
     it('aggregates mixed errors', async () => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+      const mockError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       await writeFile(path.join(docsDir, 'badlink.mdx'), '[link](./missing.mdx)');
       await writeFile(path.join(docsDir, 'badcode.mdx'), '<CodeSnippets path="missing.md" />');
       await writeFile(path.join(docsDir, 'badif.mdx'), '<IfRenderer>bad</IfRenderer>');
-      let error;
-      try {
-        await runAllChecks(docsDir);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).toBeDefined();
+
+      await runAllChecks(docsDir);
+
+      expect(mockExit).toHaveBeenCalledWith(1);
+      expect(mockError).toHaveBeenCalled();
+
+      mockExit.mockRestore();
+      mockError.mockRestore();
     });
   });
 });

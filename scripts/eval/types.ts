@@ -1,7 +1,8 @@
 /**
  * Core types for the Storybook setup eval system.
  *
- * Three independent axes: agent × model × effort
+ * Three independent axes: model × effort × prompt
+ * Agent is derived from the model.
  */
 
 // --- Agent, Model, Effort ---
@@ -9,19 +10,25 @@
 export type AgentName = "claude-code" | "codex";
 export type Effort = "low" | "medium" | "high" | "max";
 
-export const CLAUDE_MODELS = ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5"] as const;
-export const CODEX_MODELS = ["gpt-5.4"] as const;
-export const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS] as const;
-export const EFFORTS: Effort[] = ["low", "medium", "high", "max"];
+export const MODELS = [
+  { id: "claude-sonnet-4-6", agent: "claude-code" as AgentName, label: "Sonnet 4.6" },
+  { id: "claude-opus-4-6", agent: "claude-code" as AgentName, label: "Opus 4.6" },
+  { id: "gpt-5.4-medium", agent: "codex" as AgentName, label: "GPT 5.4 Medium", effort: "medium" as Effort },
+  { id: "gpt-5.4-high", agent: "codex" as AgentName, label: "GPT 5.4 High", effort: "high" as Effort },
+] as const;
 
-export type ClaudeModel = (typeof CLAUDE_MODELS)[number];
-export type CodexModel = (typeof CODEX_MODELS)[number];
-export type SupportedModel = ClaudeModel | CodexModel;
+export type SupportedModel = (typeof MODELS)[number]["id"];
 
-export const MODELS_BY_AGENT: Record<AgentName, readonly SupportedModel[]> = {
-  "claude-code": CLAUDE_MODELS,
-  codex: CODEX_MODELS,
-};
+export function agentForModel(model: string): AgentName {
+  const entry = MODELS.find((m) => m.id === model);
+  if (!entry) throw new Error(`Unknown model: ${model}`);
+  return entry.agent;
+}
+
+export function effortForModel(model: string, defaultEffort: Effort): Effort {
+  const entry = MODELS.find((m) => m.id === model);
+  return (entry as { effort?: Effort })?.effort ?? defaultEffort;
+}
 
 // --- Project Types ---
 
@@ -40,7 +47,7 @@ export interface TrialConfig {
   agent: AgentName;
   model: SupportedModel;
   effort: Effort;
-  prompt?: string;
+  prompt: string;
   verbose?: boolean;
 }
 
@@ -114,8 +121,8 @@ export interface TrialResult {
   agent: string;
   model: string;
   effort: string;
-  timestamp: string;
   prompt: string;
+  timestamp: string;
   baselineCommit: string;
   execution: ExecutionResult;
   grading: GradingResult;

@@ -49,7 +49,7 @@ export function createMockRouter({
   history.block({
     blockerFn: ({ currentLocation, nextLocation, action }) => {
       onNavigate({ to: nextLocation.href, from: currentLocation.href, action });
-      return false;
+      return true;
     },
   });
 

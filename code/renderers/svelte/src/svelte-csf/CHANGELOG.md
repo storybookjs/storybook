@@ -1,5 +1,11 @@
 # @storybook/addon-svelte-csf
 
+## 5.1.2
+
+### Patch Changes
+
+- [#344](https://github.com/storybookjs/addon-svelte-csf/pull/344) [`accce0f`](https://github.com/storybookjs/addon-svelte-csf/commit/accce0f4294534321a5d204f9b67cce14442f0fd) Thanks [@JReinhold](https://github.com/JReinhold)! - Add provenance to npm releases
+
 ## 5.1.1
 
 #### 🐛 Bug Fix

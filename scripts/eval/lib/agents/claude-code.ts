@@ -69,8 +69,15 @@ function logMessage(message: SDKMessage) {
   }
 }
 
-export const claudeCodeAgent: Agent = {
-  name: "claude-code",
+/** Map clean model names to Claude SDK model IDs */
+const CLAUDE_MODEL_MAP: Record<string, string> = {
+  "sonnet-4.6": "claude-sonnet-4-6",
+  "opus-4.6": "claude-opus-4-6",
+  "haiku-4.5": "claude-haiku-4-5",
+};
+
+export const claudeAgent: Agent = {
+  name: "claude",
 
   async execute(
     prompt: string,
@@ -89,7 +96,7 @@ export const claudeCodeAgent: Agent = {
     for await (const message of query({
       prompt,
       options: {
-        model,
+        model: CLAUDE_MODEL_MAP[model] ?? model,
         cwd: projectPath,
         allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
         maxTurns: 50,
@@ -116,7 +123,7 @@ export const claudeCodeAgent: Agent = {
     }
 
     return {
-      agent: "claude-code",
+      agent: "claude",
       model,
       effort,
       cost,

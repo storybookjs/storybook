@@ -1,6 +1,6 @@
 import type { AgentName, Agent } from "./types.ts";
 import type { Project } from "./types.ts";
-import { claudeCodeAgent } from "./lib/agents/claude-code.ts";
+import { claudeAgent } from "./lib/agents/claude-code.ts";
 import { codexAgent } from "./lib/agents/codex.ts";
 
 export const PROJECTS: Project[] = [
@@ -45,6 +45,6 @@ export const PROJECTS: Project[] = [
 ];
 
 export const agents: Record<AgentName, Agent> = {
-  "claude-code": claudeCodeAgent,
+  claude: claudeAgent,
   codex: codexAgent,
 };

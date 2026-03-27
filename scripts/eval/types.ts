@@ -6,13 +6,13 @@
 
 // --- Agent, Model, Effort ---
 
-export type AgentName = "claude-code" | "codex";
+export type AgentName = "claude" | "codex";
 export type Effort = "low" | "medium" | "high" | "max";
 
 export const AGENTS: Record<AgentName, { models: string[]; defaultModel: string }> = {
-  "claude-code": {
-    models: ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5"],
-    defaultModel: "claude-sonnet-4-6",
+  claude: {
+    models: ["sonnet-4.6", "opus-4.6", "haiku-4.5"],
+    defaultModel: "sonnet-4.6",
   },
   codex: {
     models: ["gpt-5.4"],

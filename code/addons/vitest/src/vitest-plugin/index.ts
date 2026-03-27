@@ -213,6 +213,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     previewLevelTags,
     core,
     features,
+    extraOptimizeDeps,
   ] = await Promise.all([
     presets.apply<PluginOption[]>('viteCorePlugins', []),
     getStoryGlobsAndFiles(presets, directories),
@@ -222,6 +223,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     extractTagsFromPreview(finalOptions.configDir),
     presets.apply('core'),
     presets.apply('features', {}),
+    presets.apply<string[]>('optimizeViteDeps', []),
   ]);
 
   const pluginsToIgnore = [
@@ -411,15 +413,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
 
         optimizeDeps: {
-          include: [
-            '@storybook/addon-vitest/internal/setup-file',
-            '@storybook/addon-vitest/internal/global-setup',
-            '@storybook/addon-vitest/internal/test-utils',
-            'storybook/preview-api',
-            ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
-              ? ['react-dom/test-utils']
-              : []),
-          ],
+          include: Array.from(
+            new Set([
+              '@storybook/addon-vitest/internal/setup-file',
+              '@storybook/addon-vitest/internal/global-setup',
+              '@storybook/addon-vitest/internal/test-utils',
+              'storybook/preview-api',
+              ...extraOptimizeDeps,
+            ])
+          ),
         },
 
         define: {

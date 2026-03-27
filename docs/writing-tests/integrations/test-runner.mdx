@@ -381,7 +381,7 @@ If you're running a specific set of tests (e.g., image snapshot testing), the te
 
 ### Index.json mode
 
-The test-runner transforms your story files into tests when testing a local Storybook. For a remote Storybook, it uses the Storybook's [index.json](../../configure/index.mdx#feature-flags) (formerly `stories.json`) file (a static index of all the stories) to run the tests.
+The test-runner transforms your story files into tests when testing a local Storybook. For a remote Storybook, it uses the Storybook's [index.json](../../configure/index.mdx) (formerly `stories.json`) file (a static index of all the stories) to run the tests.
 
 #### Why?
 
@@ -401,7 +401,7 @@ If you need to disable it, use the `--no-index-json` flag:
 
 #### How do I check if my Storybook has a `index.json` file?
 
-Index.json mode requires a `index.json` file. Open a browser window and navigate to your deployed Storybook instance (for example, `https://your-storybook-url-here.com/index.json`). You should see a JSON file that starts with a `"v": 3` key, immediately followed by another key called "stories", which contains a map of story IDs to JSON objects. If that is the case, your Storybook supports [index.json mode](../../configure/index.mdx#feature-flags).
+Index.json mode requires a `index.json` file. Open a browser window and navigate to your deployed Storybook instance (for example, `https://your-storybook-url-here.com/index.json`). You should see a JSON file that starts with a `"v": 3` key, immediately followed by another key called "stories", which contains a map of story IDs to JSON objects. If that is the case, your Storybook supports [index.json mode](../../configure/index.mdx).
 
 ## What's the difference between Chromatic and Test runner?
 

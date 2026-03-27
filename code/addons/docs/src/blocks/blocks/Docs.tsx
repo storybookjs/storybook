@@ -8,7 +8,6 @@ import type { Theme } from 'storybook/theming';
 import { DocsContainer } from './DocsContainer';
 import type { DocsContextProps } from './DocsContext';
 import { DocsPage } from './DocsPage';
-import { createDocsSlugger, DocsSluggerContext } from './DocsSluggerContext';
 
 export type DocsProps<TRenderer extends Renderer = Renderer> = {
   docsParameter: Parameters;
@@ -24,13 +23,10 @@ export function Docs<TRenderer extends Renderer = Renderer>({
   > = docsParameter.container || DocsContainer;
 
   const Page = docsParameter.page || DocsPage;
-  const slugger = createDocsSlugger();
 
   return (
-    <DocsSluggerContext.Provider value={slugger}>
-      <Container context={context} theme={docsParameter.theme}>
-        <Page />
-      </Container>
-    </DocsSluggerContext.Provider>
+    <Container context={context} theme={docsParameter.theme}>
+      <Page />
+    </Container>
   );
 }

@@ -10,6 +10,7 @@ import { DocsPageWrapper } from '../components';
 import { TableOfContents } from '../components/TableOfContents';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { createDocsSlugger, DocsSluggerContext } from './DocsSluggerContext';
 import { SourceContainer } from './SourceContainer';
 import { scrollToElement } from './utils';
 
@@ -25,6 +26,7 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   theme,
   children,
 }) => {
+  const slugger = createDocsSlugger();
   let toc;
 
   try {
@@ -54,24 +56,26 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   });
 
   return (
-    <DocsContext.Provider value={context}>
-      <SourceContainer channel={context.channel}>
-        <ThemeProvider theme={ensureTheme(theme as ThemeVars)}>
-          <DocsPageWrapper
-            toc={
-              toc ? (
-                <TableOfContents
-                  className="sbdocs sbdocs-toc--custom"
-                  channel={context.channel}
-                  {...toc}
-                />
-              ) : null
-            }
-          >
-            {children}
-          </DocsPageWrapper>
-        </ThemeProvider>
-      </SourceContainer>
-    </DocsContext.Provider>
+    <DocsSluggerContext.Provider value={slugger}>
+      <DocsContext.Provider value={context}>
+        <SourceContainer channel={context.channel}>
+          <ThemeProvider theme={ensureTheme(theme as ThemeVars)}>
+            <DocsPageWrapper
+              toc={
+                toc ? (
+                  <TableOfContents
+                    className="sbdocs sbdocs-toc--custom"
+                    channel={context.channel}
+                    {...toc}
+                  />
+                ) : null
+              }
+            >
+              {children}
+            </DocsPageWrapper>
+          </ThemeProvider>
+        </SourceContainer>
+      </DocsContext.Provider>
+    </DocsSluggerContext.Provider>
   );
 };

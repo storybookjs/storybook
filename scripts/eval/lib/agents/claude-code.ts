@@ -1,7 +1,7 @@
+import { query } from '@anthropic-ai/claude-agent-sdk';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Agent, ExecutionResult, SupportedModel } from '../../types';
-import { exec } from '../utils';
 
 export const claudeCodeAgent: Agent = {
   name: 'claude-code',
@@ -15,58 +15,51 @@ export const claudeCodeAgent: Agent = {
     const { verbose, resultsDir } = options ?? {};
     const startTime = Date.now();
 
-    const args = [
-      '--print',
-      '--model',
-      model,
-      '--output-format',
-      'stream-json',
-      '--verbose',
-      '--max-turns',
-      '50',
-      prompt,
-    ];
-
-    const result = await exec('claude', args, {
-      cwd: projectPath,
-      timeout: 600_000, // 10 minutes
-      throwOnError: false,
-      stdin: 'ignore',
-      env: {
-        ...process.env,
-        CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
-      },
-    });
-
-    const duration = (Date.now() - startTime) / 1000;
-
-    // Save raw output for debugging
-    if (resultsDir) {
-      writeFileSync(join(resultsDir, 'agent-stdout.txt'), result.stdout);
-      writeFileSync(join(resultsDir, 'agent-stderr.txt'), result.stderr);
-    }
-
-    // Parse stream-json output for metrics
     let cost: number | undefined;
     let turns = 0;
     let durationApi: number | undefined;
+    const messages: unknown[] = [];
 
-    const lines = result.stdout.split('\n').filter(Boolean);
-    for (const line of lines) {
-      try {
-        const msg = JSON.parse(line);
-        if (msg.type === 'result') {
-          cost = msg.total_cost_usd;
-          turns = msg.num_turns ?? 0;
-          durationApi = msg.duration_api_ms ? msg.duration_api_ms / 1000 : undefined;
+    for await (const message of query({
+      prompt,
+      options: {
+        model,
+        cwd: projectPath,
+        allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
+        maxTurns: 50,
+        systemPrompt: { type: 'preset', preset: 'claude_code' },
+      },
+    })) {
+      messages.push(message);
+
+      if (verbose && 'type' in message && message.type === 'assistant') {
+        const content = (message as Record<string, unknown>).content;
+        if (Array.isArray(content)) {
+          for (const block of content) {
+            if (block.type === 'text') {
+              process.stderr.write(block.text + '\n');
+            }
+          }
         }
-      } catch {
-        // Skip non-JSON lines
+      }
+
+      if ('type' in message && message.type === 'result') {
+        const result = message as Record<string, unknown>;
+        if (result.subtype === 'success') {
+          cost = result.total_cost_usd as number | undefined;
+          turns = (result.num_turns as number) ?? 0;
+          durationApi =
+            typeof result.duration_api_ms === 'number'
+              ? result.duration_api_ms / 1000
+              : undefined;
+        }
       }
     }
 
-    if (verbose && result.stderr) {
-      process.stderr.write(result.stderr);
+    const duration = (Date.now() - startTime) / 1000;
+
+    if (resultsDir) {
+      writeFileSync(join(resultsDir, 'transcript.json'), JSON.stringify(messages, null, 2));
     }
 
     return {

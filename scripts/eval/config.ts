@@ -1,6 +1,6 @@
 import type { Project, AgentName, Agent } from './types';
 import { claudeCodeAgent } from './lib/agents/claude-code';
-import { copilotAgent } from './lib/agents/copilot';
+import { codexAgent } from './lib/agents/codex';
 
 export const PROJECTS: Project[] = [
   {
@@ -41,7 +41,7 @@ export const PROJECTS: Project[] = [
 
 export const agents: Record<AgentName, Agent> = {
   'claude-code': claudeCodeAgent,
-  'copilot-cli': copilotAgent,
+  codex: codexAgent,
 };
 
 export const DEFAULT_AGENT: AgentName = 'claude-code';

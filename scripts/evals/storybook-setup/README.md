@@ -72,6 +72,7 @@ You can also override the exact model slug with `--model`.
 Each `run` trial does this:
 
 1. Clone the benchmark repo into a dedicated trial directory.
+   The harness now refreshes a cached source clone under `.cache/repos/` first, then copies that clean source into the trial.
 2. Remove existing Storybook files, sample stories, Storybook deps, and Storybook scripts.
 3. Install repository dependencies with the repo’s package manager.
 4. Run `npx storybook@latest init --yes` in the benchmark’s target directory.
@@ -95,6 +96,14 @@ List the configured benchmarks, variants, and model options:
 yarn --cwd scripts eval:storybook-setup list
 ```
 
+Run all configured benchmarks with one command:
+
+```bash
+yarn --cwd scripts eval:storybook-setup run \
+  --agent codex-cli \
+  --tier sonnet
+```
+
 Prepare a benchmark but stop before the agent run:
 
 ```bash
@@ -102,6 +111,15 @@ yarn --cwd scripts eval:storybook-setup run \
   --benchmark mealdrop \
   --agent codex-cli \
   --prepare-only
+```
+
+Run a benchmark multiple times:
+
+```bash
+yarn --cwd scripts eval:storybook-setup run \
+  --benchmark mealdrop \
+  --agent claude-code \
+  --iterations 3
 ```
 
 Run a full Codex trial:
@@ -122,6 +140,15 @@ yarn --cwd scripts eval:storybook-setup run \
   --agent claude-code \
   --tier opus \
   --variant strict-self-heal
+```
+
+Append a local prompt file after the selected prompt variant:
+
+```bash
+yarn --cwd scripts eval:storybook-setup run \
+  --benchmark edgy \
+  --agent codex-cli \
+  --prompt-file /absolute/path/to/extra-prompt.md
 ```
 
 ## Output format
@@ -158,3 +185,4 @@ High-value fields for prompt experiments include:
 - The ghost-stories grading step is intentionally best-effort. It runs in isolated grading copies and may skip when the benchmark environment cannot support the required Vitest/browser setup.
 - `storybook build` is treated as the hard pass/fail setup check because it validates the actual Storybook config left by the agent.
 - The prompt variants are deliberately file-based so future experiments can add or remove hints without changing the runner.
+- Package-manager commands are run with a sanitized public-registry environment so the Storybook monorepo's local registry config does not leak into benchmark repos.

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { x } from 'tinyexec';
 
 import { selectCandidateComponents } from './candidate-components';
+import { getPublicPackageManagerEnv } from './environment';
 import type { GhostStoriesSummary } from './types';
 
 type VitestAssertion = {
@@ -174,10 +175,9 @@ export async function runGhostStoriesEval(projectRoot: string): Promise<GhostSto
     {
       nodeOptions: {
         cwd: projectRoot,
-        env: {
-          ...process.env,
+        env: getPublicPackageManagerEnv({
           STORYBOOK_COMPONENT_PATHS: candidates.map((candidate) => candidate.path).join(';'),
-        },
+        }),
       },
     }
   );

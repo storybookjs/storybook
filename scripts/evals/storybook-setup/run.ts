@@ -12,6 +12,7 @@ import { ROOT_DIRECTORY } from '../../utils/constants';
 import { getBenchmarkById } from './benchmarks';
 import { selectCandidateComponents } from './candidate-components';
 import { executeAgent } from './agents';
+import { getPublicPackageManagerEnv } from './environment';
 import { runGhostStoriesEval } from './ghost-stories';
 import { resolveModel } from './models';
 import { detectSetupPatterns } from './setup-patterns';
@@ -36,6 +37,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROMPTS_DIRECTORY = join(__dirname, 'prompts');
 
 const DEFAULT_WORKSPACE_ROOT = resolve(ROOT_DIRECTORY, '../storybook-setup-evals');
+const CACHE_DIRECTORY_NAME = '.cache';
+const REPO_CACHE_DIRECTORY_NAME = 'repos';
 const STORYBOOK_STARTER_FILES = new Set([
   'Button.tsx',
   'Button.stories.ts',
@@ -86,13 +89,17 @@ function getWorkspaceRoot(workspaceRoot?: string) {
   return resolve(workspaceRoot ?? DEFAULT_WORKSPACE_ROOT);
 }
 
+function getRepoCacheRoot(workspaceRoot: string) {
+  return join(workspaceRoot, CACHE_DIRECTORY_NAME, REPO_CACHE_DIRECTORY_NAME);
+}
+
 async function runCommand(
   name: string,
   logsDir: string,
   command: string,
   args: string[],
   cwd: string,
-  env?: Record<string, string>
+  env?: Record<string, string | undefined>
 ): Promise<CommandRecord> {
   const logPath = join(logsDir, `${name}.log`);
   const startedAt = Date.now();
@@ -134,6 +141,26 @@ async function detectCliVersion(binary: string) {
   }
 }
 
+async function getDefaultBranch(repoRoot: string) {
+  const headRef = await x('git', ['symbolic-ref', 'refs/remotes/origin/HEAD'], {
+    nodeOptions: { cwd: repoRoot },
+  });
+
+  if (headRef.exitCode === 0) {
+    return headRef.stdout.trim().replace('refs/remotes/origin/', '');
+  }
+
+  const fallback = await x('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+    nodeOptions: { cwd: repoRoot },
+  });
+
+  if (fallback.exitCode !== 0) {
+    throw new Error(`Failed to detect default branch for ${repoRoot}.`);
+  }
+
+  return fallback.stdout.trim();
+}
+
 function detectPackageManager(repoRoot: string): PackageManager {
   if (existsSync(join(repoRoot, 'pnpm-lock.yaml'))) {
     return 'pnpm';
@@ -155,6 +182,60 @@ function getInstallCommand(packageManager: PackageManager): [string, string[]] {
     default:
       return ['npm', ['install']];
   }
+}
+
+async function ensureCachedBenchmarkClone(
+  benchmark: BenchmarkProject,
+  workspaceRoot: string,
+  logsDir: string
+) {
+  const cacheRoot = getRepoCacheRoot(workspaceRoot);
+  const cacheDir = join(cacheRoot, benchmark.id);
+
+  await ensureDir(cacheRoot);
+
+  if (!existsSync(cacheDir)) {
+    const cloneArgs = ['clone', '--depth', '1'];
+    if (benchmark.branch) {
+      cloneArgs.push('--branch', benchmark.branch);
+    }
+    cloneArgs.push(benchmark.repo, cacheDir);
+    await runCommand('cache-clone', logsDir, 'git', cloneArgs, cacheRoot);
+    return cacheDir;
+  }
+
+  const targetBranch = benchmark.branch ?? (await getDefaultBranch(cacheDir));
+  await runCommand('cache-fetch', logsDir, 'git', ['fetch', 'origin'], cacheDir);
+  await runCommand('cache-checkout', logsDir, 'git', ['checkout', targetBranch], cacheDir);
+  await runCommand(
+    'cache-reset',
+    logsDir,
+    'git',
+    ['reset', '--hard', `origin/${targetBranch}`],
+    cacheDir
+  );
+  await runCommand('cache-clean', logsDir, 'git', ['clean', '-fdx', '-e', 'node_modules'], cacheDir);
+
+  return cacheDir;
+}
+
+async function copyCachedBenchmarkToTrial(
+  cacheDir: string,
+  trialRepoDir: string
+) {
+  await cp(cacheDir, trialRepoDir, {
+    recursive: true,
+    filter: (source) => {
+      const relativePath = relative(cacheDir, source);
+      return (
+        relativePath.length === 0 ||
+        (!relativePath.startsWith('.git') &&
+          !relativePath.includes('/.git') &&
+          !relativePath.startsWith('node_modules') &&
+          !relativePath.includes('/node_modules/'))
+      );
+    },
+  });
 }
 
 async function findPackageJsonFiles(repoRoot: string) {
@@ -346,13 +427,18 @@ async function buildPrompt(
   benchmark: BenchmarkProject,
   projectRoot: string,
   targetDirLabel: string,
-  candidateComponents: Array<{ path: string; complexity: number }>
+  candidateComponents: Array<{ path: string; complexity: number }>,
+  promptFile?: string
 ) {
   const promptParts: string[] = [];
 
   for (const promptFile of variant.promptFiles) {
     const promptPath = join(PROMPTS_DIRECTORY, promptFile);
     promptParts.push(await readFile(promptPath, 'utf8'));
+  }
+
+  if (promptFile) {
+    promptParts.push(await readFile(resolve(promptFile), 'utf8'));
   }
 
   const candidateList =
@@ -384,21 +470,6 @@ ${candidateList}
   return `${promptParts.join('\n\n')}\n`;
 }
 
-async function cloneBenchmark(
-  benchmark: BenchmarkProject,
-  trialPaths: TrialPaths,
-  logsDir: string
-): Promise<string> {
-  const args = ['clone', '--depth', '1'];
-  if (benchmark.branch) {
-    args.push('--branch', benchmark.branch);
-  }
-  args.push(benchmark.repo, trialPaths.repoDir);
-
-  await runCommand('clone', logsDir, 'git', args, dirname(trialPaths.repoDir));
-  return trialPaths.repoDir;
-}
-
 async function captureGitCommit(repoRoot: string) {
   const commit = await x('git', ['rev-parse', 'HEAD'], {
     nodeOptions: { cwd: repoRoot },
@@ -427,6 +498,18 @@ async function createBaselineCommit(repoRoot: string, logsDir: string) {
   return captureGitCommit(repoRoot);
 }
 
+async function initializeTrialGitRepo(repoRoot: string, logsDir: string) {
+  await runCommand('git-init', logsDir, 'git', ['init'], repoRoot);
+  await runCommand('git-set-user-name', logsDir, 'git', ['config', 'user.name', 'storybook-eval'], repoRoot);
+  await runCommand(
+    'git-set-user-email',
+    logsDir,
+    'git',
+    ['config', 'user.email', 'storybook-eval@example.com'],
+    repoRoot
+  );
+}
+
 async function prepareProject(
   benchmark: BenchmarkProject,
   trialPaths: TrialPaths
@@ -437,7 +520,11 @@ async function prepareProject(
   await ensureDir(trialPaths.artifactsDir);
   await ensureDir(trialPaths.tempDir);
 
-  const repoRoot = await cloneBenchmark(benchmark, trialPaths, trialPaths.logsDir);
+  const workspaceRoot = dirname(dirname(trialPaths.trialDir));
+  const cachedRepoRoot = await ensureCachedBenchmarkClone(benchmark, workspaceRoot, trialPaths.logsDir);
+  await copyCachedBenchmarkToTrial(cachedRepoRoot, trialPaths.repoDir);
+
+  const repoRoot = trialPaths.repoDir;
   const packageManager = detectPackageManager(repoRoot);
   const projectRoot = resolve(repoRoot, benchmark.projectDir ?? '.');
   const targetDirLabel = relative(repoRoot, projectRoot) || '.';
@@ -445,10 +532,9 @@ async function prepareProject(
   const cleanup = await cleanupStorybookFiles(repoRoot);
 
   const [installCommandName, installArgs] = getInstallCommand(packageManager);
-  const installEnv = {
+  const installEnv = getPublicPackageManagerEnv({
     CI: '1',
-    YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
-  };
+  });
   const install = await runCommand(
     'install',
     trialPaths.logsDir,
@@ -464,7 +550,10 @@ async function prepareProject(
     'npx',
     ['storybook@latest', 'init', '--yes'],
     projectRoot,
-    { CI: '1' }
+    getPublicPackageManagerEnv({
+      CI: '1',
+      STORYBOOK_DISABLE_TELEMETRY: '1',
+    })
   );
 
   const postInitInstall = await runCommand(
@@ -476,6 +565,7 @@ async function prepareProject(
     installEnv
   );
 
+  await initializeTrialGitRepo(repoRoot, trialPaths.logsDir);
   const candidateComponents = await selectCandidateComponents(projectRoot);
   const baselineCommit = await createBaselineCommit(repoRoot, trialPaths.logsDir);
 
@@ -539,7 +629,10 @@ async function ensureAddonVitest(projectRoot: string, logsDir: string, label: st
     'npx',
     ['storybook@latest', 'add', '@storybook/addon-vitest', '--yes'],
     projectRoot,
-    { CI: '1' }
+    getPublicPackageManagerEnv({
+      CI: '1',
+      STORYBOOK_DISABLE_TELEMETRY: '1',
+    })
   );
 }
 
@@ -610,7 +703,10 @@ async function runStorybookBuild(
       commandName,
       commandArgs,
       projectRoot,
-      { CI: '1' }
+      getPublicPackageManagerEnv({
+        CI: '1',
+        STORYBOOK_DISABLE_TELEMETRY: '1',
+      })
     );
     return {
       status: 'passed',
@@ -674,7 +770,8 @@ export async function runEval(options: RunOptions) {
     benchmark,
     preparedProject.projectRoot,
     preparedProject.targetDirLabel,
-    preparedProject.candidateComponents
+    preparedProject.candidateComponents,
+    options.promptFile
   );
   await writeFile(trialPaths.promptPath, prompt);
 

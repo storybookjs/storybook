@@ -215,4 +215,5 @@ export type RunOptions = {
   variantId: string;
   workspaceRoot: string;
   prepareOnly?: boolean;
+  promptFile?: string;
 };

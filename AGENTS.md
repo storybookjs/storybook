@@ -128,6 +128,7 @@ yarn storybook:vitest
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
 | Run unit tests                  | `yarn test`                                                                    |
 | Run Storybook Vitest tests      | `yarn storybook:vitest`                                                        |
+| Run Storybook setup evals       | `yarn eval:storybook-setup run --benchmark mealdrop --agent codex-cli --tier sonnet` |
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
 | Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
@@ -229,6 +230,12 @@ When writing tests:
 - Test real behavior, not just syntax patterns
 - Use coverage when useful: `yarn vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
+
+For Storybook setup prompt work:
+
+- Use `yarn eval:storybook-setup list` to inspect the benchmark set, variants, and model options
+- Use `yarn eval:storybook-setup run --benchmark <id> --agent <claude-code|codex-cli> --prepare-only` to validate clone, cleanup, install, and `storybook init`
+- Full eval artifacts are written outside the repo by default to `../storybook-setup-evals/`
 
 ## Quality and Logging
 

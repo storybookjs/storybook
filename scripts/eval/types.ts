@@ -9,23 +9,22 @@
 
 export type AgentName = 'claude-code' | 'codex';
 
-export const CLAUDE_MODELS = ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'] as const;
+export const CLAUDE_MODELS = ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-haiku-4-5'] as const;
 
-export const CODEX_MODELS = ['o4-mini', 'o3', 'gpt-4.1'] as const;
+export const CODEX_MODELS = ['gpt-5.4-medium', 'gpt-5.4-high'] as const;
 
 export type ClaudeModel = (typeof CLAUDE_MODELS)[number];
 export type CodexModel = (typeof CODEX_MODELS)[number];
 export type SupportedModel = ClaudeModel | CodexModel;
 
-export type ModelTier = 'opus' | 'sonnet' | 'haiku' | 'codex';
+export type ModelTier = 'opus' | 'sonnet' | 'haiku' | 'codex-medium' | 'codex-high';
 
 export const MODEL_TIERS: Record<SupportedModel, ModelTier> = {
-  'claude-opus-4-6': 'opus',
   'claude-sonnet-4-6': 'sonnet',
+  'claude-opus-4-6': 'opus',
   'claude-haiku-4-5': 'haiku',
-  'o4-mini': 'codex',
-  o3: 'codex',
-  'gpt-4.1': 'codex',
+  'gpt-5.4-medium': 'codex-medium',
+  'gpt-5.4-high': 'codex-high',
 };
 
 export const SUPPORTED_MODELS_BY_AGENT: Record<AgentName, readonly SupportedModel[]> = {

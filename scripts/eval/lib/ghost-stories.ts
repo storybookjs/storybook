@@ -23,12 +23,12 @@ export async function runGhostStories(
   const reportPath = join(resultsDir, "ghost-stories-report.json");
   await exec(
     "npx",
-    ["vitest", "run", "--project=storybook", "--reporter=json", `--outputFile=${reportPath}`, "--testTimeout=10000"],
+    ["vitest", "run", "--project=storybook", "--reporter=json", `--outputFile=${reportPath}`, "--testTimeout=10000", ...candidates],
     {
       cwd: projectPath,
       timeout: 120_000,
       throwOnError: false,
-      env: { ...process.env, STORYBOOK_COMPONENT_PATHS: candidates.join(",") },
+      env: { ...process.env, STORYBOOK_COMPONENT_PATHS: candidates.join(";") },
     },
   );
 

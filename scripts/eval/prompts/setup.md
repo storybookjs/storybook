@@ -1,33 +1,26 @@
-# Complete Storybook Setup
+You are finishing Storybook setup for an existing React + Vite codebase.
 
-Storybook has just been initialized in this project with `npx storybook@latest init --yes`.
-The basic scaffolding is in place but the setup needs to be completed so that stories render correctly.
+## Starting state
 
-## Steps
+- Storybook was already installed with `npx storybook@latest init --yes`.
+- Do not rerun `storybook init`.
+- The goal is not to create a demo app. The goal is to make Storybook work for the actual project code.
 
-1. **Analyze the project**: Read `package.json` and source code to understand the tech stack — CSS framework, state management, routing, theming, and any global providers.
+## Objectives
 
-2. **Configure `.storybook/preview.ts`**: Make stories render like the real app by adding:
-   - Global CSS imports (Tailwind CSS, global stylesheets, CSS resets, font imports)
-   - Provider decorators wrapping every story (Redux store, React Router, Theme providers, i18n, etc.)
-   - Appropriate `parameters` (viewport, backgrounds, etc.)
+1. Make Storybook render the project's real components with the providers, globals, aliases, styles, mocks, and environment they need.
+2. Replace or remove init placeholder stories/components when they stop being useful.
+3. Add or update a small representative set of stories for existing components from the project.
+4. Prefer reusable setup in `.storybook` over per-story hacks.
 
-3. **Configure `.storybook/main.ts`**: Adjust if needed:
-   - `staticDirs` for public assets (images, fonts)
-   - Framework-specific overrides (e.g., `viteFinal` or `webpackFinal`)
-   - Autodocs if the project uses JSDoc or TSDoc
+## Constraints
 
-4. **Verify the setup**: Run `npx storybook build` to check for errors. If it fails:
-   - Read the error output carefully
-   - Fix the root cause (missing import, wrong config, etc.)
-   - Run the build again
-   - Repeat until the build succeeds
+- Keep changes focused on Storybook setup and the minimum related support files.
+- Avoid changing product source unless genuinely required.
+- Reuse existing app providers and styling entry points when possible.
 
-## Guidelines
+## Verification
 
-- Look at the app's entry point (`main.tsx`, `index.tsx`, `App.tsx`) to find providers and global setup
-- Check for CSS framework config files (`tailwind.config.*`, `postcss.config.*`, etc.)
-- Keep changes minimal — only modify what is needed to make stories render
-- Do NOT create new stories or components
-- Do NOT remove existing stories
-- Prefer importing existing app utilities over re-implementing them
+- Run your own non-interactive verification commands.
+- Fix the highest-signal Storybook problem first.
+- Iterate until the setup is stable enough that another user can keep writing stories without additional setup work.

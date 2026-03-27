@@ -24,7 +24,7 @@ export const MODEL_TIERS: Record<SupportedModel, ModelTier> = {
   'claude-sonnet-4-6': 'sonnet',
   'claude-haiku-4-5': 'haiku',
   'o4-mini': 'codex',
-  'o3': 'codex',
+  o3: 'codex',
   'gpt-4.1': 'codex',
 };
 
@@ -36,15 +36,10 @@ export const SUPPORTED_MODELS_BY_AGENT: Record<AgentName, readonly SupportedMode
 // --- Project Types ---
 
 export interface Project {
-  /** Display name */
   name: string;
-  /** Git repo URL */
   repo: string;
-  /** Branch to clone (defaults to repo default) */
   branch?: string;
-  /** Subdirectory within the repo where the project lives */
   projectDir?: string;
-  /** Human-readable description of the project's tech stack */
   description?: string;
 }
 
@@ -54,18 +49,19 @@ export interface TrialConfig {
   project: Project;
   agent: AgentName;
   model: SupportedModel;
-  /** Path to a custom prompt file (defaults to built-in setup.md) */
   promptFile?: string;
   verbose?: boolean;
 }
 
 export interface TrialPaths {
-  /** Root directory for this trial */
   trialDir: string;
-  /** Path to the project within the trial (where storybook is initialized) */
+  /** Root of the cloned repo (git root) */
+  repoRoot: string;
+  /** Working path where storybook lives (may differ from repoRoot for monorepos) */
   projectPath: string;
-  /** Path where grading outputs are saved */
   resultsDir: string;
+  /** The git commit hash of the post-init baseline */
+  baselineCommit: string;
 }
 
 // --- Execution Types ---
@@ -73,35 +69,67 @@ export interface TrialPaths {
 export interface ExecutionResult {
   agent: string;
   model: string;
-  /** Total API cost in USD */
   cost?: number;
-  /** Wall-clock duration in seconds */
   duration: number;
-  /** API-only duration in seconds */
   durationApi?: number;
-  /** Number of agent turns */
   turns: number;
+}
+
+// --- Changed Files ---
+
+export interface ChangedFile {
+  path: string;
+  status: 'A' | 'M' | 'D' | 'R';
+}
+
+// --- Setup Patterns ---
+
+export interface SetupPattern {
+  id: string;
+  label: string;
+  /** Files where this pattern was detected */
+  sourceFiles: string[];
 }
 
 // --- Grading Types ---
 
 export interface GradingResult {
-  /** Did `storybook build` exit with code 0? */
   buildSuccess: boolean;
-  /** Build error output (if failed) */
   buildError?: string;
-  /** Number of TypeScript errors from `tsc --noEmit` */
   typeCheckErrors: number;
-  /** TypeScript error output */
   typeCheckOutput?: string;
+  /** Files changed by the agent (diff from post-init baseline) */
+  changedFiles: ChangedFile[];
+  /** Storybook-related files changed by the agent */
+  storybookFiles: ChangedFile[];
+  /** Setup patterns the agent configured */
+  setupPatterns: SetupPattern[];
+  /** Ghost stories grading (placeholder until CLI command exists) */
+  ghostStories?: GhostStoriesResult;
+}
+
+/**
+ * Ghost stories result - measures actual story rendering success.
+ *
+ * Currently a placeholder. The Storybook ghost stories feature is triggered
+ * via channel events (ghostStoriesRequest), not a CLI command.
+ * A `storybook ghost-stories` command needs to be built first.
+ */
+export interface GhostStoriesResult {
+  /** How many candidate components were found */
+  candidateCount: number;
+  /** How many stories were generated and tested */
+  total: number;
+  /** How many stories rendered successfully */
+  passed: number;
+  /** Success rate (passed / total) */
+  successRate: number;
 }
 
 // --- Quality Score ---
 
 export interface QualityResult {
-  /** Composite score from 0 to 1 */
   score: number;
-  /** Individual metric scores */
   breakdown: {
     build: number;
     typecheck: number;
@@ -111,12 +139,14 @@ export interface QualityResult {
 // --- Final Result ---
 
 export interface TrialResult {
+  schemaVersion: 1;
   project: string;
   agent: string;
   model: string;
   modelTier: ModelTier;
   timestamp: string;
   promptFile: string;
+  baselineCommit: string;
   execution: ExecutionResult;
   grading: GradingResult;
   quality: QualityResult;

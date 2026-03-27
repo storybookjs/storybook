@@ -18,7 +18,7 @@ export async function runTask(config: TrialConfig): Promise<TrialResult> {
 
   log(`\nPreparing ${project.name}...`);
 
-  // 1. Prepare the trial (clone, clean, init storybook)
+  // 1. Prepare the trial (clone, clean, init storybook, baseline commit)
   const paths = await prepareTrial(project, trialId);
 
   // 2. Generate the prompt
@@ -32,25 +32,28 @@ export async function runTask(config: TrialConfig): Promise<TrialResult> {
     verbose,
     resultsDir: paths.resultsDir,
   });
-  logSuccess(`Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`);
+  logSuccess(
+    `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`
+  );
 
   // 4. Grade the results
   const { grading, quality } = await grade(paths);
 
   // 5. Assemble final result
   const result: TrialResult = {
+    schemaVersion: 1,
     project: project.name,
     agent: agentName,
     model,
     modelTier: MODEL_TIERS[model],
     timestamp,
     promptFile: promptFile || 'setup.md',
+    baselineCommit: paths.baselineCommit,
     execution,
     grading,
     quality,
   };
 
-  // Save summary
   writeFileSync(join(paths.resultsDir, 'summary.json'), JSON.stringify(result, null, 2));
   logSuccess(`Results saved to ${paths.resultsDir}`);
 

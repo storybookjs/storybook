@@ -109,29 +109,36 @@ for (const project of projects) {
 
 if (allResults.length > 0) {
   log(pc.bold('\n\nResults Summary'));
-  log('='.repeat(100));
+  log('='.repeat(120));
 
   // Header
   const header = [
     'Project'.padEnd(15),
     'Build'.padEnd(7),
     'TS Err'.padEnd(8),
+    'Ghost'.padEnd(12),
+    'Patterns'.padEnd(10),
     'Quality'.padEnd(9),
     'Cost'.padEnd(8),
     'Time'.padEnd(8),
     'Turns'.padEnd(7),
   ].join(' | ');
   log(header);
-  log('-'.repeat(100));
+  log('-'.repeat(120));
 
   // Rows
   for (const r of allResults) {
     const buildStr = r.grading.buildSuccess ? 'PASS' : 'FAIL';
     const buildColored = r.grading.buildSuccess ? pc.green(buildStr) : pc.red(buildStr);
+    const ghost = r.grading.ghostStories;
+    const ghostStr = ghost ? `${ghost.passed}/${ghost.total}` : '-';
+    const patternsStr = String(r.grading.setupPatterns.length);
     const row = [
       r.project.padEnd(15),
       buildStr.padEnd(7).replace(buildStr, buildColored),
       String(r.grading.typeCheckErrors).padEnd(8),
+      ghostStr.padEnd(12),
+      patternsStr.padEnd(10),
       String(r.quality.score).padEnd(9),
       formatCost(r.execution.cost).padEnd(8),
       formatDuration(r.execution.duration).padEnd(8),
@@ -140,7 +147,7 @@ if (allResults.length > 0) {
     log(row);
   }
 
-  log('-'.repeat(100));
+  log('-'.repeat(120));
 
   // Aggregate
   const avgQuality =

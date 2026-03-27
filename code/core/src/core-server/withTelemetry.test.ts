@@ -457,7 +457,10 @@ describe('sendTelemetryError', () => {
     await sendTelemetryError(mockError, 'init', options, false);
 
     expect(prompt.confirm).not.toHaveBeenCalled();
-    expect(vi.mocked(cache.set).mock.calls).not.toContainEqual(['enableCrashReports', expect.anything()]);
+    expect(vi.mocked(cache.set).mock.calls).not.toContainEqual([
+      'enableCrashReports',
+      expect.anything(),
+    ]);
     expect(telemetry).toHaveBeenCalledWith(
       'error',
       expect.objectContaining({

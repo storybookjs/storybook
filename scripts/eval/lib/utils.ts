@@ -10,10 +10,24 @@ export const PROMPTS_DIR = resolve(import.meta.dirname, "..", "prompts");
 
 // --- Logging ---
 
-export const log = (msg: string) => console.log(msg);
-export const logStep = (msg: string) => console.log(`  ${pc.cyan(">")} ${msg}`);
-export const logSuccess = (msg: string) => console.log(`  ${pc.green("✓")} ${msg}`);
-export const logError = (msg: string) => console.log(`  ${pc.red("✗")} ${msg}`);
+export function createLogger(prefix?: string) {
+  const p = prefix ? pc.dim(`[${prefix}]`) + " " : "";
+  return {
+    log: (msg: string) => console.log(`${p}${msg}`),
+    logStep: (msg: string) => console.log(`${p}  ${pc.cyan(">")} ${msg}`),
+    logSuccess: (msg: string) => console.log(`${p}  ${pc.green("✓")} ${msg}`),
+    logError: (msg: string) => console.log(`${p}  ${pc.red("✗")} ${msg}`),
+  };
+}
+
+export type Logger = ReturnType<typeof createLogger>;
+
+// Default logger (no prefix) for single-run mode
+const defaultLogger = createLogger();
+export const log = defaultLogger.log;
+export const logStep = defaultLogger.logStep;
+export const logSuccess = defaultLogger.logSuccess;
+export const logError = defaultLogger.logError;
 
 export const formatDuration = (s: number) =>
   s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m${Math.round(s % 60)}s`;

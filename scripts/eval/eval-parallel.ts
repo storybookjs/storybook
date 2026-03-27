@@ -6,7 +6,7 @@ import { MODELS, effortForModel } from "./types.ts";
 import { PROJECTS } from "./config.ts";
 import { runTask } from "./lib/run-task.ts";
 import { listPrompts } from "./lib/generate-prompt.ts";
-import { log, formatDuration, formatCost } from "./lib/utils.ts";
+import { log, formatDuration, formatCost, createLogger } from "./lib/utils.ts";
 
 const program = new Command()
   .name("eval-parallel")
@@ -46,7 +46,12 @@ log(`${configs.length} parallel runs: ${MODELS.map((m) => m.label).join(", ")} Ã
 log(`Run: ${runId}\n`);
 
 // Run all in parallel
-const settled = await Promise.allSettled(configs.map((c) => runTask(c, runId, uploadId)));
+const settled = await Promise.allSettled(
+  configs.map((c) => {
+    const tag = `${c.model.replace("claude-", "")}+${c.prompt}`;
+    return runTask(c, runId, uploadId, createLogger(tag));
+  }),
+);
 
 const results: TrialResult[] = [];
 for (let i = 0; i < settled.length; i++) {

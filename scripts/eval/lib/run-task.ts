@@ -6,7 +6,8 @@ import { prepareTrial } from "./prepare-trial.ts";
 import { generatePrompt } from "./generate-prompt.ts";
 import { grade } from "./grade.ts";
 import { captureEnvironment, saveToGoogleSheets } from "./save.ts";
-import { generateTrialId, log, logSuccess } from "./utils.ts";
+import { generateTrialId, createLogger } from "./utils.ts";
+import type { Logger } from "./utils.ts";
 
 /**
  * Run a full eval trial: prepare -> execute agent -> grade -> save.
@@ -15,12 +16,14 @@ export async function runTask(
   config: TrialConfig,
   runId: string,
   uploadId: string,
+  logger?: Logger,
 ): Promise<TrialResult> {
   const { project, agent: agentName, model, effort, prompt: promptName, verbose } = config;
+  const { log, logSuccess } = logger ?? createLogger();
   const trialId = generateTrialId(project.name, agentName, model);
   const timestamp = new Date().toISOString();
 
-  log(`\nPreparing ${project.name}...`);
+  log(`Preparing ${project.name}...`);
 
   // 1. Prepare the trial
   const paths = await prepareTrial(project, trialId);

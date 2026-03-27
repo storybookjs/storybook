@@ -6,6 +6,10 @@ import { logStep, logSuccess, logError, exec } from "./utils.ts";
 /**
  * Run ghost stories: discover candidate components, auto-generate stories
  * via the addon-vitest componentTransform, and measure rendering success.
+ *
+ * Mirrors the approach in core-server/utils/ghost-stories/run-story-tests.ts:
+ * - Pass component paths as both CLI args (so vitest runs them) and
+ *   STORYBOOK_COMPONENT_PATHS env var (so the transform plugin activates)
  */
 export async function runGhostStories(
   projectPath: string,
@@ -23,7 +27,13 @@ export async function runGhostStories(
   const reportPath = join(resultsDir, "ghost-stories-report.json");
   await exec(
     "npx",
-    ["vitest", "run", "--project=storybook", "--reporter=json", `--outputFile=${reportPath}`, "--testTimeout=10000", ...candidates],
+    [
+      "vitest", "run",
+      "--reporter=json",
+      `--outputFile=${reportPath}`,
+      "--testTimeout=1000",
+      ...candidates,
+    ],
     {
       cwd: projectPath,
       timeout: 120_000,

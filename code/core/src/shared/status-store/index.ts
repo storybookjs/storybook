@@ -30,6 +30,8 @@ export interface Status {
   sidebarContextMenu?: boolean;
 }
 
+export const CHANGE_DETECTION_STATUS_TYPE_ID = 'storybook/change-detection';
+
 export const UNIVERSAL_STATUS_STORE_OPTIONS: StoreOptions<StatusesByStoryIdAndTypeId> = {
   id: 'storybook/status',
   leader: true,

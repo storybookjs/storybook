@@ -5,4 +5,4 @@ export {
   resetChangeDetectionReadiness as internal_resetChangeDetectionReadiness,
   type ChangeDetectionReadiness,
 } from './readiness';
-export { CHANGE_DETECTION_STATUS_TYPE_ID, ChangeDetectionService } from './service';
+export { ChangeDetectionService } from './service';

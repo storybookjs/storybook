@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { Builder, ModuleGraph, Status, StatusStoreByTypeId } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
@@ -10,8 +11,6 @@ import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './re
 import { findAffectedStoryFiles } from './trace-changed';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
-
-export const CHANGE_DETECTION_STATUS_TYPE_ID = 'storybook/change-detection';
 
 function isSameStatus(a: Status | undefined, b: Status): boolean {
   if (!a) {

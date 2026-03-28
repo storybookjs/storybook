@@ -13,13 +13,14 @@
  * Usage: npx jiti scripts/eval/prepare-repos.ts
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
-import pc from 'picocolors';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import pc from "picocolors";
+import { exec } from "./lib/utils.ts";
 
-const EVAL_ROOT = join(import.meta.dirname, '..', '..', '..', '..', 'storybook-eval');
-const PREP_DIR = join(EVAL_ROOT, 'prepared-repos');
-const BASELINE_BRANCH = 'eval-baseline';
+const EVAL_ROOT = join(import.meta.dirname, "..", "..", "..", "..", "storybook-eval");
+const PREP_DIR = join(EVAL_ROOT, "prepared-repos");
+const BASELINE_BRANCH = "eval-baseline";
 
 /** Known storybook init starter files that are safe to remove. */
 const STARTER_FILES = new Set([
@@ -65,19 +66,7 @@ const GIT_ENV = {
 };
 
 async function run(cmd: string, args: string[], opts: { cwd?: string; env?: Record<string, string>; timeout?: number } = {}) {
-  const { x } = await import('tinyexec');
-  const result = await x(cmd, args, {
-    throwOnError: false,
-    nodeOptions: {
-      cwd: opts.cwd,
-      env: (opts.env ?? process.env) as NodeJS.ProcessEnv,
-      timeout: opts.timeout,
-    },
-  });
-  if (result.exitCode !== 0) {
-    throw new Error(`${cmd} ${args.join(' ')} failed (${result.exitCode}):\n${result.stderr}`);
-  }
-  return result;
+  return exec(cmd, args, { cwd: opts.cwd, env: opts.env, timeout: opts.timeout });
 }
 
 function stripStorybookDeps(pkgPath: string) {

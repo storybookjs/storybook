@@ -1,5 +1,5 @@
 /**
- * Core types for the Storybook setup eval system.
+ * Core types and config for the Storybook setup eval system.
  *
  * Four independent axes: agent × model × effort × prompt
  */
@@ -20,9 +20,7 @@ export const AGENTS: Record<AgentName, { models: string[]; defaultModel: string 
   },
 };
 
-export type SupportedModel = string;
-
-// --- Project Types ---
+// --- Projects ---
 
 export interface Project {
   name: string;
@@ -32,12 +30,53 @@ export interface Project {
   description?: string;
 }
 
+export const PROJECTS: Project[] = [
+  {
+    name: "mealdrop",
+    repo: "https://github.com/kasperpeulen/mealdrop",
+    branch: "eval-baseline",
+    description: "Styled components, Redux, React Router",
+  },
+  {
+    name: "edgy",
+    repo: "https://github.com/kasperpeulen/edgy",
+    branch: "eval-baseline",
+    description: "Tailwind, HeadlessUI, React Router",
+  },
+  {
+    name: "wikitok",
+    repo: "https://github.com/kasperpeulen/wikitok",
+    branch: "eval-baseline",
+    projectDir: "frontend",
+    description: "Simple project with Tailwind",
+  },
+  {
+    name: "baklava",
+    repo: "https://github.com/kasperpeulen/baklava",
+    branch: "eval-baseline",
+    description: "Component library with Zustand",
+  },
+  {
+    name: "echarts",
+    repo: "https://github.com/kasperpeulen/echarts-react",
+    branch: "eval-baseline",
+    description: "ECharts React wrapper",
+  },
+  {
+    name: "evergreen-ci",
+    repo: "https://github.com/kasperpeulen/ui",
+    branch: "eval-baseline",
+    projectDir: "packages/lib",
+    description: "GraphQL",
+  },
+];
+
 // --- Trial Types ---
 
 export interface TrialConfig {
   project: Project;
   agent: AgentName;
-  model: SupportedModel;
+  model: string;
   effort: Effort;
   prompt: string;
   verbose?: boolean;
@@ -102,7 +141,7 @@ export interface GhostStoriesResult {
 
 export interface QualityResult {
   score: number;
-  breakdown: { build: number; typecheck: number };
+  breakdown: { build: number; typecheck: number; ghostStories: number; performance: number };
 }
 
 // --- Final Result ---
@@ -128,7 +167,7 @@ export interface Agent {
   execute(
     prompt: string,
     projectPath: string,
-    model: SupportedModel,
+    model: string,
     options?: { effort?: Effort; verbose?: boolean; resultsDir?: string },
   ): Promise<ExecutionResult>;
 }

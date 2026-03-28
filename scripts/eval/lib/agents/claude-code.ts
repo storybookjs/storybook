@@ -2,7 +2,7 @@ import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Agent, Effort, ExecutionResult, SupportedModel } from "../../types.ts";
+import type { Agent, Effort, ExecutionResult } from "../../types.ts";
 
 function logMessage(message: SDKMessage) {
   const log = (prefix: string, text: string) => process.stderr.write(`${prefix} ${text}\n`);
@@ -69,6 +69,8 @@ function logMessage(message: SDKMessage) {
   }
 }
 
+const MAX_TURNS = 50;
+
 /** Map clean model names to Claude SDK model IDs */
 const CLAUDE_MODEL_MAP: Record<string, string> = {
   "sonnet-4.6": "claude-sonnet-4-6",
@@ -82,7 +84,7 @@ export const claudeAgent: Agent = {
   async execute(
     prompt: string,
     projectPath: string,
-    model: SupportedModel,
+    model: string,
     options?: { effort?: Effort; resultsDir?: string },
   ): Promise<ExecutionResult> {
     const { effort = "high", resultsDir } = options ?? {};
@@ -99,7 +101,7 @@ export const claudeAgent: Agent = {
         model: CLAUDE_MODEL_MAP[model] ?? model,
         cwd: projectPath,
         allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
-        maxTurns: 50,
+        maxTurns: MAX_TURNS,
         effort,
         debug: true,
         systemPrompt: { type: "preset", preset: "claude_code" },

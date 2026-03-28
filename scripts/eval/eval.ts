@@ -2,11 +2,12 @@ import { randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
 import pc from "picocolors";
 import type { TrialConfig, AgentName, Effort } from "./types.ts";
-import { AGENTS } from "./types.ts";
-import { PROJECTS } from "./config.ts";
+import { AGENTS, PROJECTS } from "./types.ts";
 import { runTask } from "./lib/run-task.ts";
-import { listPrompts } from "./lib/generate-prompt.ts";
-import { log, formatDuration, formatCost } from "./lib/utils.ts";
+import { log, formatDuration, formatCost, listPrompts } from "./lib/utils.ts";
+
+/** Sentinel for structured IPC with eval-parallel.ts. */
+export const RESULT_SENTINEL = "__EVAL_RESULT_d3f1a8b2__";
 
 const { values: opts } = parseArgs({
   options: {
@@ -50,7 +51,6 @@ let agent: AgentName;
 let model: string;
 
 if (opts.model) {
-  // Find which agent owns this model
   const match = Object.entries(AGENTS).find(([, cfg]) => cfg.models.includes(opts.model as string));
   if (!match) {
     const all = Object.values(AGENTS).flatMap((cfg) => cfg.models);
@@ -95,11 +95,12 @@ try {
   log(`  Build:   ${result.grading.buildSuccess ? pc.green("PASS") : pc.red("FAIL")}`);
   log(`  Ghost:   ${ghostStr}`);
   log(`  TS Err:  ${result.grading.typeCheckErrors}`);
+  log(`  Score:   ${result.quality.score}`);
   log(`  Cost:    ${formatCost(result.execution.cost)}`);
   log(`  Time:    ${formatDuration(result.execution.duration)}`);
   log(`  Turns:   ${result.execution.turns}`);
 
-  console.log(`__RESULT__${JSON.stringify(result)}`);
+  console.log(`${RESULT_SENTINEL}${JSON.stringify(result)}`);
 } catch (error) {
   log(pc.red(`\nFailed: ${error instanceof Error ? error.message : error}`));
   process.exit(1);

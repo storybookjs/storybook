@@ -1,4 +1,4 @@
-You are finishing Storybook setup for an existing React + Vite codebase.
+You are finishing Storybook setup for an existing codebase.
 
 ## Starting state
 

@@ -17,55 +17,52 @@
  * Click "Review Permissions" → Select account → "Advanced" → "Go to [project] (unsafe)" → "Allow"
  */
 
-function toTitleCase(key) {
-  return key
+const toTitleCase = (key) =>
+  key
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (str) => str.toUpperCase())
     .trim();
-}
 
-function ensureHeaders(sheet, keys) {
-  const firstHeaderCell = sheet.getRange(1, 1).getValue();
-  if (firstHeaderCell === "") {
+const ensureHeaders = (sheet, keys) => {
+  if (sheet.getRange(1, 1).getValue() === "") {
     const headers = keys.map(toTitleCase);
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
   }
-}
+};
 
-function appendRow(sheet, keys, rowData) {
-  var lock = LockService.getScriptLock();
+const appendRow = (sheet, rowData) => {
+  const lock = LockService.getScriptLock();
   try {
     lock.waitLock(120000);
-    var lastRow = sheet.getLastRow();
-    var targetRow = lastRow < 1 ? 2 : lastRow + 1;
+    const lastRow = sheet.getLastRow();
+    const targetRow = lastRow < 1 ? 2 : lastRow + 1;
     sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
     SpreadsheetApp.flush();
     return targetRow;
   } finally {
     lock.releaseLock();
   }
-}
+};
 
-function prepareRowData(keys, data) {
-  return keys.map(function (key) {
-    var value = data[key];
+const prepareRowData = (keys, data) =>
+  keys.map((key) => {
+    const value = data[key];
     if (typeof value === "boolean") return value ? "TRUE" : "FALSE";
     if (value === null || value === undefined) return "";
     return value;
   });
-}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function doPost(e) {
   try {
-    var data = JSON.parse(e.postData.contents);
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    var keys = Object.keys(data);
-    var rowData = prepareRowData(keys, data);
+    const data = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const keys = Object.keys(data);
+    const rowData = prepareRowData(keys, data);
 
     ensureHeaders(sheet, keys);
-    var targetRow = appendRow(sheet, keys, rowData);
+    const targetRow = appendRow(sheet, rowData);
 
     return ContentService.createTextOutput(
       JSON.stringify({ success: true, row: targetRow }),
@@ -79,7 +76,7 @@ function doPost(e) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function authorize() {
-  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var file = DriveApp.getFileById(spreadsheet.getId());
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const file = DriveApp.getFileById(spreadsheet.getId());
   console.log("Authorized! File:", file.getName());
 }

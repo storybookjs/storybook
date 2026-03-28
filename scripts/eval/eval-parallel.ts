@@ -4,11 +4,10 @@ import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import pc from "picocolors";
-import { AGENTS } from "./types.ts";
+import { AGENTS, PROJECTS } from "./types.ts";
 import type { TrialResult } from "./types.ts";
-import { PROJECTS } from "./config.ts";
-import { listPrompts } from "./lib/generate-prompt.ts";
-import { formatDuration, formatCost } from "./lib/utils.ts";
+import { formatDuration, formatCost, listPrompts } from "./lib/utils.ts";
+import { RESULT_SENTINEL } from "./eval.ts";
 
 const { values: opts } = parseArgs({
   options: {
@@ -58,8 +57,8 @@ function spawnRun(agent: string, model: string, prompt: string, label: string): 
     let result: TrialResult | null = null;
 
     createInterface({ input: child.stdout! }).on("line", (line) => {
-      if (line.startsWith("__RESULT__")) {
-        try { result = JSON.parse(line.slice("__RESULT__".length)); } catch { /* skip */ }
+      if (line.startsWith(RESULT_SENTINEL)) {
+        try { result = JSON.parse(line.slice(RESULT_SENTINEL.length)); } catch { /* skip */ }
       } else {
         console.log(`${tag} ${line}`);
       }
@@ -84,13 +83,13 @@ if (results.length > 0) {
   results.sort((a, b) => (b.grading.ghostStories?.successRate ?? -1) - (a.grading.ghostStories?.successRate ?? -1));
 
   console.log(pc.bold("\n\nResults (sorted by ghost stories rate)"));
-  console.log("=".repeat(120));
+  console.log("=".repeat(130));
   console.log(
-    ["Agent", "Model", "Prompt", "Build", "Ghost", "TS Err", "Cost", "Time", "Turns"]
+    ["Agent", "Model", "Prompt", "Build", "Ghost", "TS Err", "Score", "Cost", "Time", "Turns"]
       .map((h, i) => h.padEnd(i <= 1 ? 14 : i === 2 ? 12 : 10))
       .join(" | "),
   );
-  console.log("-".repeat(120));
+  console.log("-".repeat(130));
 
   for (const r of results) {
     const ghost = r.grading.ghostStories;
@@ -103,6 +102,7 @@ if (results.length > 0) {
         (r.grading.buildSuccess ? pc.green("PASS") : pc.red("FAIL")).padEnd(10 + 10),
         ghostStr.padEnd(10),
         String(r.grading.typeCheckErrors).padEnd(10),
+        String(r.quality.score).padEnd(10),
         formatCost(r.execution.cost).padEnd(10),
         formatDuration(r.execution.duration).padEnd(10),
         String(r.execution.turns).padEnd(10),
@@ -110,7 +110,7 @@ if (results.length > 0) {
     );
   }
 
-  console.log("-".repeat(120));
+  console.log("-".repeat(130));
   const totalCost = results.reduce((s, r) => s + (r.execution.cost || 0), 0);
   const ghostRates = results.map((r) => r.grading.ghostStories?.successRate).filter((r): r is number => r != null);
   const avgGhost = ghostRates.length > 0 ? ghostRates.reduce((s, r) => s + r, 0) / ghostRates.length : 0;

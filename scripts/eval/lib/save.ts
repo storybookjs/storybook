@@ -7,20 +7,22 @@ const GOOGLE_SHEETS_URL = process.env.EVAL_GOOGLE_SHEETS_URL;
 
 export interface Environment {
   nodeVersion: string;
-  gitBranch: string;
-  gitCommit: string;
+  /** Git branch of the eval harness (storybook monorepo), not the evaluated project. */
+  evalBranch: string;
+  /** Git commit of the eval harness (storybook monorepo), not the evaluated project. */
+  evalCommit: string;
 }
 
 export async function captureEnvironment(resultsDir: string): Promise<Environment> {
-  let gitBranch = "unknown";
-  let gitCommit = "unknown";
+  let evalBranch = "unknown";
+  let evalCommit = "unknown";
   try {
-    gitBranch = (await exec("git", ["rev-parse", "--abbrev-ref", "HEAD"])).stdout.trim();
-    gitCommit = (await exec("git", ["rev-parse", "HEAD"])).stdout.trim();
+    evalBranch = (await exec("git", ["rev-parse", "--abbrev-ref", "HEAD"])).stdout.trim();
+    evalCommit = (await exec("git", ["rev-parse", "HEAD"])).stdout.trim();
   } catch {
     /* not in a git repo */
   }
-  const env = { nodeVersion: process.version, gitBranch, gitCommit };
+  const env: Environment = { nodeVersion: process.version, evalBranch, evalCommit };
   writeFileSync(join(resultsDir, "environment.json"), JSON.stringify(env, null, 2));
   return env;
 }
@@ -59,8 +61,8 @@ export async function saveToGoogleSheets(
     cost: result.execution.cost ?? "unknown",
     duration: result.execution.duration,
     turns: result.execution.turns,
-    gitBranch: env.gitBranch,
-    gitCommit: env.gitCommit,
+    evalBranch: env.evalBranch,
+    evalCommit: env.evalCommit,
   };
 
   try {

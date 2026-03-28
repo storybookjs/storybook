@@ -1,13 +1,18 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { TrialConfig, TrialResult } from "../types.ts";
-import { agents } from "../config.ts";
+import type { AgentName, TrialConfig, TrialResult, Agent } from "../types.ts";
+import { claudeAgent } from "./agents/claude-code.ts";
+import { codexAgent } from "./agents/codex.ts";
 import { prepareTrial } from "./prepare-trial.ts";
-import { generatePrompt } from "./generate-prompt.ts";
 import { grade } from "./grade.ts";
 import { captureEnvironment, saveToGoogleSheets } from "./save.ts";
-import { generateTrialId, createLogger } from "./utils.ts";
+import { generateTrialId, generatePrompt, createLogger } from "./utils.ts";
 import type { Logger } from "./utils.ts";
+
+const agents: Record<AgentName, Agent> = {
+  claude: claudeAgent,
+  codex: codexAgent,
+};
 
 /**
  * Run a full eval trial: prepare -> execute agent -> grade -> save.
@@ -47,8 +52,8 @@ export async function runTask(
     `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : "cost N/A"}, ${execution.turns} turns)`,
   );
 
-  // 5. Grade the results
-  const { grading, quality } = await grade(paths);
+  // 5. Grade the results (pass agent duration for performance scoring)
+  const { grading, quality } = await grade(paths, execution.duration);
 
   // 6. Assemble final result
   const result: TrialResult = {

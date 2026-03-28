@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDuration, formatCost, generateTrialId } from './utils';
+import { formatDuration, formatCost, generateTrialId, generatePrompt, listPrompts } from './utils';
 
 describe('formatDuration', () => {
   it('formats seconds under a minute', () => {
@@ -52,5 +52,48 @@ describe('generateTrialId', () => {
     const a = generateTrialId('p', 'a', 'm', 'pr');
     const b = generateTrialId('p', 'a', 'm', 'pr');
     expect(a).not.toBe(b);
+  });
+});
+
+describe('listPrompts', () => {
+  it('lists available prompt names', () => {
+    const prompts = listPrompts();
+    expect(prompts).toContain('setup');
+    expect(prompts).toContain('self-heal');
+  });
+
+  it('returns only names without .md extension', () => {
+    for (const name of listPrompts()) {
+      expect(name).not.toContain('.md');
+    }
+  });
+});
+
+describe('generatePrompt', () => {
+  it('loads setup prompt by default', () => {
+    const prompt = generatePrompt();
+    expect(prompt).toContain('Storybook');
+    expect(prompt.length).toBeGreaterThan(0);
+  });
+
+  it('loads setup prompt by name', () => {
+    const prompt = generatePrompt('setup');
+    expect(prompt).toContain('Storybook setup');
+    expect(prompt).not.toContain('React + Vite');
+  });
+
+  it('loads self-heal prompt', () => {
+    const prompt = generatePrompt('self-heal');
+    expect(prompt).toContain('Self-healing');
+    expect(prompt).toContain('vitest');
+  });
+
+  it('throws for unknown prompt', () => {
+    expect(() => generatePrompt('nonexistent-prompt-xyz')).toThrow('Prompt not found');
+  });
+
+  it('returns trimmed content', () => {
+    const prompt = generatePrompt('setup');
+    expect(prompt).toBe(prompt.trim());
   });
 });

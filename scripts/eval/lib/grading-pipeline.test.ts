@@ -101,8 +101,8 @@ describe('grading pipeline', () => {
     // Total includes package.json
     expect(changedFiles).toHaveLength(storybookFiles.length + 1);
 
-    // Step 4: Build passed, no TS errors → perfect score
-    const quality = computeQualityScore(true, 0);
+    // Step 4: Build passed, no TS errors, 100% ghost stories, fast agent → perfect score
+    const quality = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 60 });
     expect(quality.score).toBe(1);
   });
 
@@ -133,8 +133,8 @@ describe('grading pipeline', () => {
     const errorCount = countTypeCheckErrors(tscLines.join('\n'));
     expect(errorCount).toBe(candidates.length + 1);
 
-    // Build failed + errors → low quality
-    const quality = computeQualityScore(false, errorCount);
+    // Build failed, no ghost stories, errors, slow → low quality
+    const quality = computeQualityScore({ buildSuccess: false, typeCheckErrors: errorCount, ghostSuccessRate: 0, durationSeconds: 600 });
     expect(quality.score).toBeLessThan(0.3);
     expect(quality.breakdown.build).toBe(0);
   });
@@ -167,8 +167,8 @@ describe('grading pipeline', () => {
     const storybookFiles = filterStorybookFiles(parseChangedFiles(gitOutput));
     expect(storybookFiles).toHaveLength(candidates.length);
 
-    // Clean build → perfect
-    expect(computeQualityScore(true, 0).score).toBe(1);
+    // Clean build + 100% ghost stories + fast → perfect
+    expect(computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 60 }).score).toBe(1);
   });
 });
 

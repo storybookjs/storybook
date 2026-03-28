@@ -16,25 +16,19 @@ vi.mock('./grade', () => ({
 vi.mock('./save', () => ({
   captureEnvironment: vi.fn().mockResolvedValue({
     nodeVersion: 'v22.21.1',
-    gitBranch: 'test-branch',
-    gitCommit: 'abc123',
+    evalBranch: 'test-branch',
+    evalCommit: 'abc123',
   }),
   saveToGoogleSheets: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('../config', () => ({
-  agents: {
-    claude: {
-      name: 'claude',
-      execute: vi.fn(),
-    },
-    codex: {
-      name: 'codex',
-      execute: vi.fn(),
-    },
-  },
+vi.mock('./agents/claude-code', () => ({
+  claudeAgent: { name: 'claude', execute: vi.fn() },
+}));
+vi.mock('./agents/codex', () => ({
+  codexAgent: { name: 'codex', execute: vi.fn() },
 }));
 
-import { agents } from '../config';
+import { claudeAgent } from './agents/claude-code';
 import { grade } from './grade';
 import { prepareTrial } from './prepare-trial';
 import { runTask } from './run-task';
@@ -67,7 +61,7 @@ function setupMocks(overrides?: {
     baselineCommit: 'deadbeef',
   });
 
-  vi.mocked(agents.claude.execute).mockResolvedValue({
+  vi.mocked(claudeAgent.execute).mockResolvedValue({
     agent: 'claude',
     model: 'sonnet-4.6',
     effort: 'high',
@@ -90,7 +84,7 @@ function setupMocks(overrides?: {
       ],
       setupPatterns: [{ id: 'tailwind', label: 'Tailwind CSS', sourceFiles: ['.storybook/preview.ts'] }],
     },
-    quality: { score: buildSuccess ? 1 : 0.3, breakdown: { build: buildSuccess ? 1 : 0, typecheck: 1 } },
+    quality: { score: buildSuccess ? 1 : 0.3, breakdown: { build: buildSuccess ? 1 : 0, typecheck: 1, ghostStories: 0, performance: 0 } },
   });
 }
 
@@ -152,7 +146,7 @@ describe('runTask pipeline', () => {
     expect(vi.mocked(captureEnvironment).mock.calls[0][0]).toBe(join(TMP, 'results'));
 
     // Agent receives real prompt content, the project path, model, and options
-    const [prompt, projectPath, model, options] = vi.mocked(agents.claude.execute).mock.calls[0];
+    const [prompt, projectPath, model, options] = vi.mocked(claudeAgent.execute).mock.calls[0];
     expect(prompt).toContain('Storybook setup');
     expect(projectPath).toBe(TMP);
     expect(model).toBe('sonnet-4.6');
@@ -167,7 +161,7 @@ describe('runTask pipeline', () => {
     const [savedResult, savedEnv, savedRunId, savedUploadId] =
       vi.mocked(saveToGoogleSheets).mock.calls[0];
     expect(savedResult.project).toBe('mealdrop');
-    expect(savedEnv.gitBranch).toBe('test-branch');
+    expect(savedEnv.evalBranch).toBe('test-branch');
     expect(savedRunId).toBe('run-1');
     expect(savedUploadId).toBe('upload-1');
   });
@@ -213,7 +207,7 @@ describe('runTask pipeline', () => {
       };
     });
 
-    vi.mocked(agents.claude.execute).mockImplementation(async () => {
+    vi.mocked(claudeAgent.execute).mockImplementation(async () => {
       callOrder.push('agent');
       return { agent: 'claude', model: 'sonnet-4.6', effort: 'high', cost: 0.1, duration: 10, turns: 3 };
     });
@@ -228,7 +222,7 @@ describe('runTask pipeline', () => {
           storybookFiles: [],
           setupPatterns: [],
         },
-        quality: { score: 1, breakdown: { build: 1, typecheck: 1 } },
+        quality: { score: 1, breakdown: { build: 1, typecheck: 1, ghostStories: 0, performance: 0 } },
       };
     });
 

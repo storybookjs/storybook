@@ -1,7 +1,28 @@
 import { Codex } from "@openai/codex-sdk";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Agent, Effort, ExecutionResult, SupportedModel } from "../../types.ts";
+import type { Agent, Effort, ExecutionResult } from "../../types.ts";
+
+/** Per-million-token pricing for Codex/OpenAI models (USD). */
+const OPENAI_PRICING: Record<string, { input: number; cachedInput: number; output: number }> = {
+  "gpt-5.4": { input: 2.50, cachedInput: 0.625, output: 10.00 },
+};
+
+function estimateCost(
+  model: string,
+  inputTokens: number,
+  cachedInputTokens: number,
+  outputTokens: number,
+): number | undefined {
+  const pricing = OPENAI_PRICING[model];
+  if (!pricing) return undefined;
+  const freshInput = inputTokens - cachedInputTokens;
+  return (
+    (freshInput / 1_000_000) * pricing.input +
+    (cachedInputTokens / 1_000_000) * pricing.cachedInput +
+    (outputTokens / 1_000_000) * pricing.output
+  );
+}
 
 const CODEX_EFFORT: Record<Effort, string> = {
   low: "low",
@@ -16,7 +37,7 @@ export const codexAgent: Agent = {
   async execute(
     prompt: string,
     projectPath: string,
-    model: SupportedModel,
+    model: string,
     options?: { effort?: Effort; verbose?: boolean; resultsDir?: string },
   ): Promise<ExecutionResult> {
     const { effort = "high", resultsDir } = options ?? {};
@@ -33,7 +54,10 @@ export const codexAgent: Agent = {
     const { events } = await thread.runStreamed(prompt);
 
     const items: unknown[] = [];
-    // Token tracking not yet exposed in result — logged per-turn for visibility
+    let totalInput = 0;
+    let totalCached = 0;
+    let totalOutput = 0;
+    let turns = 0;
 
     for await (const event of events) {
       switch (event.type) {
@@ -63,6 +87,10 @@ export const codexAgent: Agent = {
           break;
         }
         case "turn.completed":
+          totalInput += event.usage.input_tokens;
+          totalCached += event.usage.cached_input_tokens;
+          totalOutput += event.usage.output_tokens;
+          turns++;
           log("📊", `tokens: ${event.usage.input_tokens}in / ${event.usage.output_tokens}out (${event.usage.cached_input_tokens} cached)`);
           break;
         case "turn.failed":
@@ -75,12 +103,13 @@ export const codexAgent: Agent = {
     }
 
     const duration = (Date.now() - startTime) / 1000;
-    log("✅", `Done — ${items.length} items, ${Math.round(duration)}s`);
+    const cost = estimateCost(model, totalInput, totalCached, totalOutput);
+    log("✅", `Done — ${turns} turns, ${Math.round(duration)}s, ${totalInput}in/${totalOutput}out tokens${cost != null ? `, $${cost.toFixed(4)}` : ""}`);
 
     if (resultsDir) {
       writeFileSync(join(resultsDir, "transcript.json"), JSON.stringify(items, null, 2));
     }
 
-    return { agent: "codex", model, effort, duration, turns: items.length };
+    return { agent: "codex", model, effort, cost, duration, turns };
   },
 };

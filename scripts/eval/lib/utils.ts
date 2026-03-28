@@ -1,4 +1,5 @@
-import { resolve } from "node:path";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { resolve, basename } from "node:path";
 import pc from "picocolors";
 import { x } from "tinyexec";
 
@@ -29,6 +30,8 @@ export const logStep = defaultLogger.logStep;
 export const logSuccess = defaultLogger.logSuccess;
 export const logError = defaultLogger.logError;
 
+// --- Formatting ---
+
 export const formatDuration = (s: number) =>
   s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m${Math.round(s % 60)}s`;
 
@@ -37,6 +40,25 @@ export const formatCost = (cost?: number) => (cost == null ? "-" : `$${cost.toFi
 export function generateTrialId(project: string, agent: string, model: string, prompt: string) {
   const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   return `${ts}-${project}-${model}-${prompt}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+// --- Prompts ---
+
+/** Load a prompt by name from prompts/{name}.md. Defaults to "setup". */
+export function generatePrompt(name = "setup"): string {
+  const file = resolve(PROMPTS_DIR, `${name}.md`);
+  if (!existsSync(file)) {
+    throw new Error(`Prompt not found: ${file}\nAvailable: ${listPrompts().join(", ")}`);
+  }
+  return readFileSync(file, "utf-8").trim();
+}
+
+/** List available prompt names. */
+export function listPrompts(): string[] {
+  if (!existsSync(PROMPTS_DIR)) return [];
+  return readdirSync(PROMPTS_DIR)
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => basename(f, ".md"));
 }
 
 // --- Exec ---
@@ -55,31 +77,18 @@ export async function exec(
     env?: Record<string, string | undefined>;
     timeout?: number;
     throwOnError?: boolean;
-    stdin?: "ignore";
   } = {},
 ): Promise<ExecResult> {
-  const { cwd, env, timeout, throwOnError = true, stdin } = options;
-  const controller = timeout ? new AbortController() : undefined;
-  const timer = timeout ? setTimeout(() => controller!.abort(), timeout) : undefined;
-  const stdio: ["ignore", "pipe", "pipe"] | undefined =
-    stdin === "ignore" ? ["ignore", "pipe", "pipe"] : undefined;
+  const { cwd, env, timeout, throwOnError = true } = options;
 
-  try {
-    const result = await x(command, args, {
-      throwOnError: false,
-      nodeOptions: {
-        cwd,
-        env: env as NodeJS.ProcessEnv,
-        signal: controller?.signal,
-        ...(stdio ? { stdio } : {}),
-      },
-    });
+  const result = await x(command, args, {
+    throwOnError: false,
+    timeout,
+    nodeOptions: { cwd, env: env as NodeJS.ProcessEnv },
+  });
 
-    if (throwOnError && result.exitCode !== 0) {
-      throw new Error(`Command failed: ${command} ${args.join(" ")}\n${result.stderr}`);
-    }
-    return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode };
-  } finally {
-    if (timer) clearTimeout(timer);
+  if (throwOnError && result.exitCode !== 0) {
+    throw new Error(`Command failed: ${command} ${args.join(" ")}\n${result.stderr}`);
   }
+  return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode };
 }

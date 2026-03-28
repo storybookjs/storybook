@@ -29,8 +29,7 @@ describe('filterStorybookFiles', () => {
       { path: 'src/Button.tsx', status: 'M' },
       { path: 'src/Button.test.tsx', status: 'M' },
     ];
-    const result = filterStorybookFiles(files);
-    expect(result).toHaveLength(4);
+    expect(filterStorybookFiles(files)).toHaveLength(4);
   });
 
   it('returns empty for no storybook files', () => {
@@ -47,44 +46,86 @@ describe('filterStorybookFiles', () => {
 });
 
 describe('computeQualityScore', () => {
-  it('returns 1.0 for passing build and zero TS errors', () => {
-    const result = computeQualityScore(true, 0);
+  // Weights: 40% ghost, 25% build, 25% typecheck, 10% performance
+
+  it('returns 1.0 when everything passes and agent is fast', () => {
+    const result = computeQualityScore({
+      buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 60,
+    });
     expect(result.score).toBe(1);
-    expect(result.breakdown.build).toBe(1);
-    expect(result.breakdown.typecheck).toBe(1);
+    expect(result.breakdown).toEqual({ build: 1, typecheck: 1, ghostStories: 1, performance: 1 });
   });
 
-  it('returns 0.7 for passing build with many TS errors', () => {
-    const result = computeQualityScore(true, 100);
-    expect(result.score).toBe(0.7);
-    expect(result.breakdown.build).toBe(1);
-    expect(result.breakdown.typecheck).toBe(0);
+  it('ghost stories have 40% weight', () => {
+    const result = computeQualityScore({
+      buildSuccess: false, typeCheckErrors: 20, ghostSuccessRate: 1.0, durationSeconds: 600,
+    });
+    expect(result.score).toBe(0.4);
   });
 
-  it('returns 0.3 for failing build with zero TS errors', () => {
-    const result = computeQualityScore(false, 0);
-    expect(result.score).toBe(0.3);
-    expect(result.breakdown.build).toBe(0);
-    expect(result.breakdown.typecheck).toBe(1);
+  it('build has 25% weight', () => {
+    const result = computeQualityScore({
+      buildSuccess: true, typeCheckErrors: 20, ghostSuccessRate: 0, durationSeconds: 600,
+    });
+    expect(result.score).toBe(0.25);
   });
 
-  it('returns 0 for failing build with many TS errors', () => {
-    const result = computeQualityScore(false, 20);
+  it('performance has 10% weight', () => {
+    const result = computeQualityScore({
+      buildSuccess: false, typeCheckErrors: 20, ghostSuccessRate: 0, durationSeconds: 60,
+    });
+    expect(result.score).toBe(0.1);
+  });
+
+  it('returns 0 when everything fails', () => {
+    const result = computeQualityScore({
+      buildSuccess: false, typeCheckErrors: 20, ghostSuccessRate: 0, durationSeconds: 600,
+    });
     expect(result.score).toBe(0);
-    expect(result.breakdown.build).toBe(0);
-    expect(result.breakdown.typecheck).toBe(0);
   });
 
   it('scales typecheck score linearly', () => {
-    // 10 errors -> tcScore = 1 - 10/20 = 0.5
-    const result = computeQualityScore(true, 10);
-    expect(result.score).toBe(0.85); // 0.7 + 0.5*0.3
+    const result = computeQualityScore({
+      buildSuccess: true, typeCheckErrors: 10, ghostSuccessRate: 1.0, durationSeconds: 60,
+    });
     expect(result.breakdown.typecheck).toBe(0.5);
   });
 
   it('clamps typecheck score at 0 for >= 20 errors', () => {
-    expect(computeQualityScore(true, 20).breakdown.typecheck).toBe(0);
-    expect(computeQualityScore(true, 50).breakdown.typecheck).toBe(0);
+    const a = computeQualityScore({ buildSuccess: true, typeCheckErrors: 20, ghostSuccessRate: 1.0, durationSeconds: 60 });
+    const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 50, ghostSuccessRate: 1.0, durationSeconds: 60 });
+    expect(a.breakdown.typecheck).toBe(0);
+    expect(b.breakdown.typecheck).toBe(0);
+  });
+
+  it('treats undefined ghost stories as 0', () => {
+    const a = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 0, durationSeconds: 60 });
+    const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, durationSeconds: 60 });
+    expect(a.score).toBe(b.score);
+  });
+
+  it('performance: ≤120s scores 1.0', () => {
+    const a = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 0 });
+    const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 120 });
+    expect(a.breakdown.performance).toBe(1);
+    expect(b.breakdown.performance).toBe(1);
+  });
+
+  it('performance: 360s scores 0.5', () => {
+    const r = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 360 });
+    expect(r.breakdown.performance).toBe(0.5);
+  });
+
+  it('performance: ≥600s scores 0', () => {
+    const a = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 600 });
+    const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 1000 });
+    expect(a.breakdown.performance).toBe(0);
+    expect(b.breakdown.performance).toBe(0);
+  });
+
+  it('performance: undefined duration scores 0', () => {
+    const r = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0 });
+    expect(r.breakdown.performance).toBe(0);
   });
 });
 
@@ -104,8 +145,7 @@ describe('countTypeCheckErrors', () => {
   });
 
   it('counts multiple errors on the same line', () => {
-    const output = 'error TS1234 and error TS5678 on same line';
-    expect(countTypeCheckErrors(output)).toBe(2);
+    expect(countTypeCheckErrors('error TS1234 and error TS5678 on same line')).toBe(2);
   });
 
   it('does not count non-error TS references', () => {
@@ -117,8 +157,7 @@ describe('countTypeCheckErrors', () => {
 describe('parseChangedFiles', () => {
   it('parses added, modified, deleted, and renamed files', () => {
     const output = 'A\tsrc/new-file.ts\nM\tsrc/existing.ts\nD\tsrc/removed.ts\nR100\told.ts\tnew.ts';
-    const result = parseChangedFiles(output);
-    expect(result).toEqual([
+    expect(parseChangedFiles(output)).toEqual([
       { path: 'src/new-file.ts', status: 'A' },
       { path: 'src/existing.ts', status: 'M' },
       { path: 'src/removed.ts', status: 'D' },
@@ -132,7 +171,6 @@ describe('parseChangedFiles', () => {
   });
 
   it('handles single file', () => {
-    const result = parseChangedFiles('M\tpackage.json');
-    expect(result).toEqual([{ path: 'package.json', status: 'M' }]);
+    expect(parseChangedFiles('M\tpackage.json')).toEqual([{ path: 'package.json', status: 'M' }]);
   });
 });

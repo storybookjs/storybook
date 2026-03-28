@@ -103,6 +103,7 @@ describe('Preview', () => {
         return null;
       }
     );
+    // Feed Preview the current manager state/api without depending on the real provider tree.
     vi.mocked(ManagerApi.Consumer).mockImplementation(function ConsumerMock({
       filter,
       children,

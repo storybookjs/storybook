@@ -20,6 +20,18 @@ describe('AGENTS', () => {
     }
   });
 
+  it('each agent has a non-empty efforts list', () => {
+    for (const config of Object.values(AGENTS)) {
+      expect(config.efforts.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('each agent defaultEffort is in its efforts list', () => {
+    for (const config of Object.values(AGENTS)) {
+      expect(config.efforts).toContain(config.defaultEffort);
+    }
+  });
+
   it('no model is shared between agents', () => {
     const allModels = Object.values(AGENTS).flatMap((a) => a.models);
     expect(new Set(allModels).size).toBe(allModels.length);

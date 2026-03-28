@@ -1,7 +1,6 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, basename } from "node:path";
 import pc from "picocolors";
-import { x } from "tinyexec";
 import type { Logger } from "../types.ts";
 
 export const REPO_ROOT = resolve(import.meta.dirname, "..", "..", "..");
@@ -59,34 +58,3 @@ export function listPrompts(): string[] {
     .map((f) => basename(f, ".md"));
 }
 
-// --- Exec ---
-
-export interface ExecResult {
-  stdout: string;
-  stderr: string;
-  exitCode: number | null;
-}
-
-export async function exec(
-  command: string,
-  args: string[],
-  options: {
-    cwd?: string;
-    env?: Record<string, string | undefined>;
-    timeout?: number;
-    throwOnError?: boolean;
-  } = {},
-): Promise<ExecResult> {
-  const { cwd, env, timeout, throwOnError = true } = options;
-
-  const result = await x(command, args, {
-    throwOnError: false,
-    timeout,
-    nodeOptions: { cwd, env: env as NodeJS.ProcessEnv },
-  });
-
-  if (throwOnError && result.exitCode !== 0) {
-    throw new Error(`Command failed: ${command} ${args.join(" ")}\n${result.stderr}`);
-  }
-  return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode };
-}

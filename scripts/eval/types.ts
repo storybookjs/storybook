@@ -18,7 +18,6 @@ export interface Logger {
 // --- Agent, Model, Effort ---
 
 export type AgentName = "claude" | "codex";
-export type Effort = "low" | "medium" | "high" | "max";
 
 // --- Projects ---
 
@@ -36,7 +35,7 @@ export interface TrialConfig {
   project: Project;
   agent: AgentName;
   model: string;
-  effort: Effort;
+  effort: string;
   prompt: string;
   verbose?: boolean;
 }
@@ -141,7 +140,7 @@ export interface Agent {
     prompt: string;
     projectPath: string;
     model: string;
-    effort: Effort;
+    effort: string;
     resultsDir: string;
     logger: Logger;
   }): Promise<ExecutionResult>;

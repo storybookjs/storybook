@@ -16,7 +16,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import pc from "picocolors";
-import { exec } from "./lib/utils.ts";
+import { x } from "tinyexec";
 
 const EVAL_ROOT = join(import.meta.dirname, "..", "..", "..", "..", "storybook-eval");
 const PREP_DIR = join(EVAL_ROOT, "prepared-repos");
@@ -66,7 +66,7 @@ const GIT_ENV = {
 };
 
 async function run(cmd: string, args: string[], opts: { cwd?: string; env?: Record<string, string>; timeout?: number } = {}) {
-  return exec(cmd, args, { cwd: opts.cwd, env: opts.env, timeout: opts.timeout });
+  return x(cmd, args, { timeout: opts.timeout, nodeOptions: { cwd: opts.cwd, env: opts.env as NodeJS.ProcessEnv } });
 }
 
 function stripStorybookDeps(pkgPath: string) {

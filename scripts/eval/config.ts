@@ -6,14 +6,25 @@
 
 import type { AgentName, Project } from "./types.ts";
 
-export const AGENTS: Record<AgentName, { models: string[]; defaultModel: string }> = {
+export interface AgentConfig {
+  models: string[];
+  defaultModel: string;
+  efforts: string[];
+  defaultEffort: string;
+}
+
+export const AGENTS: Record<AgentName, AgentConfig> = {
   claude: {
     models: ["sonnet-4.6", "opus-4.6", "haiku-4.5"],
     defaultModel: "sonnet-4.6",
+    efforts: ["low", "medium", "high", "max"],
+    defaultEffort: "high",
   },
   codex: {
     models: ["gpt-5.4"],
     defaultModel: "gpt-5.4",
+    efforts: ["low", "medium", "high", "xhigh"],
+    defaultEffort: "high",
   },
 };
 

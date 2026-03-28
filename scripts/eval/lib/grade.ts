@@ -1,8 +1,8 @@
-import { writeFileSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { GradingResult, GhostStoriesResult, QualityResult, QualityWeights, TrialPaths, ChangedFile, Logger } from "../types.ts";
 import { DEFAULT_QUALITY_WEIGHTS } from "../types.ts";
-import { exec } from "./utils.ts";
+import { x } from "tinyexec";
 import { detectSetupPatterns } from "./setup-patterns.ts";
 import { getComponentCandidates } from "../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts";
 import { runGhostStories } from "../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts";
@@ -91,18 +91,20 @@ export async function grade(
   // Storybook build + TypeScript check in parallel
   logger.logStep("Running storybook build + typecheck...");
   const [build, tsc] = await Promise.all([
-    exec("npx", ["storybook", "build", "--quiet"], {
-      cwd: projectPath,
-      timeout: 300_000,
+    x("npx", ["storybook", "build", "--quiet"], {
       throwOnError: false,
-      env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: "1", NODE_OPTIONS: "--max_old_space_size=4096" },
+      timeout: 300_000,
+      nodeOptions: {
+        cwd: projectPath,
+        env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: "1", NODE_OPTIONS: "--max_old_space_size=4096" },
+      },
     }),
-    exec("npx", ["tsc", "--noEmit"], { cwd: projectPath, timeout: 120_000, throwOnError: false }),
+    x("npx", ["tsc", "--noEmit"], { throwOnError: false, timeout: 120_000, nodeOptions: { cwd: projectPath } }),
   ]);
 
   const buildSuccess = build.exitCode === 0;
   const buildOutput = build.stdout + "\n" + build.stderr;
-  writeFileSync(join(resultsDir, "build-output.txt"), buildOutput);
+  await writeFile(join(resultsDir, "build-output.txt"), buildOutput);
   if (buildSuccess) {
     logger.logSuccess("Storybook build succeeded");
   } else {
@@ -110,7 +112,7 @@ export async function grade(
   }
 
   const tscOutput = tsc.stdout + "\n" + tsc.stderr;
-  writeFileSync(join(resultsDir, "typecheck-output.txt"), tscOutput);
+  await writeFile(join(resultsDir, "typecheck-output.txt"), tscOutput);
   const typeCheckErrors = countTypeCheckErrors(tscOutput);
   if (typeCheckErrors === 0) {
     logger.logSuccess("No TypeScript errors");
@@ -145,10 +147,10 @@ export async function grade(
 async function getChangedFiles(repoRoot: string, baseline: string): Promise<ChangedFile[]> {
   // Stage all files so `git diff --cached` picks up new files the agent created.
   // Safe: this runs on an ephemeral trial copy, not the real repo.
-  await exec("git", ["add", "-A"], { cwd: repoRoot });
-  const { stdout } = await exec("git", ["diff", "--cached", "--name-status", baseline], {
-    cwd: repoRoot,
+  await x("git", ["add", "-A"], { nodeOptions: { cwd: repoRoot } });
+  const { stdout } = await x("git", ["diff", "--cached", "--name-status", baseline], {
     throwOnError: false,
+    nodeOptions: { cwd: repoRoot },
   });
   return parseChangedFiles(stdout);
 }

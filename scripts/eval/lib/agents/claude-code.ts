@@ -1,6 +1,6 @@
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { writeFileSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Agent, ExecutionResult, Logger } from "../../types.ts";
 
@@ -119,7 +119,7 @@ export const claudeAgent: Agent = {
 
     const duration = (Date.now() - startTime) / 1000;
 
-    writeFileSync(join(resultsDir, "transcript.json"), JSON.stringify(messages, null, 2));
+    await writeFile(join(resultsDir, "transcript.json"), JSON.stringify(messages, null, 2));
 
     return {
       agent: "claude",

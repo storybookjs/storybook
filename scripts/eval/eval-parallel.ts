@@ -1,11 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { resolve } from "node:path";
-import { fork } from "node:child_process";
-import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import pc from "picocolors";
 import { AGENTS, PROJECTS } from "./config.ts";
-import type { TrialResult } from "./types.ts";
+import type { AgentName, TrialConfig, TrialResult } from "./types.ts";
+import { runTask } from "./lib/run-task.ts";
 import { createLogger, formatDuration, formatCost, listPrompts } from "./lib/utils.ts";
 
 const logger = createLogger();
@@ -16,8 +14,7 @@ const { values: opts } = parseArgs({
     agent: { type: "string", short: "a" },
     model: { type: "string", short: "m" },
     prompt: { type: "string" },
-    effort: { type: "string", short: "e", default: "high" },
-    "upload-id": { type: "string", short: "u" },
+    effort: { type: "string", short: "e" },
   },
 });
 
@@ -30,10 +27,8 @@ if (!project) {
 const prompts = opts.prompt ? opts.prompt.split(",") : listPrompts();
 const modelFilter = opts.model ? opts.model.split(",") : null;
 const agentFilter = opts.agent ? opts.agent.split(",") : null;
-const effort = opts.effort as string;
+const effortOverride = opts.effort;
 const runId = randomUUID().slice(0, 8);
-const uploadId = opts["upload-id"] || `eval-${runId}`;
-const evalScript = resolve(import.meta.dirname, "eval.ts");
 
 // Build all combos: every agent x model x prompt (with optional filters)
 const runs: Array<{ agent: string; model: string; prompt: string; label: string }> = [];
@@ -53,7 +48,7 @@ if (runs.length === 0) {
 }
 
 logger.log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
-logger.log(`${runs.length} parallel processes | Effort: ${effort}`);
+logger.log(`${runs.length} parallel runs${effortOverride ? ` | Effort: ${effortOverride}` : ""}`);
 for (const [agent, { models }] of Object.entries(AGENTS)) {
   const filteredModels = models.filter((m) => runs.some((r) => r.model === m));
   if (filteredModels.length > 0) {
@@ -63,42 +58,27 @@ for (const [agent, { models }] of Object.entries(AGENTS)) {
 logger.log(`  prompts: ${[...new Set(runs.map((r) => r.prompt))].join(", ")}`);
 logger.log(`Run: ${runId}\n`);
 
-function spawnRun(agent: string, model: string, prompt: string, label: string): Promise<TrialResult | null> {
-  return new Promise((res) => {
-    const tag = pc.dim(`[${label}]`);
-    const child = fork(evalScript, [
-      "-p", project!.name, "-a", agent, "-m", model, "-e", effort, "--prompt", prompt, "-u", uploadId,
-    ], { stdio: ["ignore", "pipe", "pipe", "ipc"] });
-
-    let result: TrialResult | null = null;
-
-    // Receive structured result via IPC
-    child.on("message", (msg: TrialResult) => {
-      result = msg;
-    });
-
-    // Stream stdout/stderr with prefix for readability
-    if (child.stdout) {
-      createInterface({ input: child.stdout }).on("line", (line) => {
-        logger.log(`${tag} ${line}`);
-      });
-    }
-    if (child.stderr) {
-      createInterface({ input: child.stderr }).on("line", (line) => {
-        logger.log(`${tag} ${pc.dim(line)}`);
-      });
-    }
-
-    child.on("close", (code) => {
-      if (code !== 0 && !result) logger.logError(`${tag} exited with code ${code}`);
-      res(result);
-    });
-  });
-}
-
-const results = (await Promise.all(runs.map((r) => spawnRun(r.agent, r.model, r.prompt, r.label)))).filter(
-  (r): r is TrialResult => r != null,
+const settled = await Promise.allSettled(
+  runs.map((run) => {
+    const config: TrialConfig = {
+      project,
+      agent: run.agent as AgentName,
+      model: run.model,
+      effort: effortOverride ?? AGENTS[run.agent as AgentName].defaultEffort,
+      prompt: run.prompt,
+    };
+    return runTask(config, createLogger(run.label));
+  }),
 );
+
+const results: TrialResult[] = [];
+for (const [i, s] of settled.entries()) {
+  if (s.status === "fulfilled") {
+    results.push(s.value);
+  } else {
+    logger.logError(`${runs[i].label}: ${s.reason instanceof Error ? s.reason.message : s.reason}`);
+  }
+}
 
 if (results.length > 0) {
   results.sort((a, b) => (b.grading.ghostStories?.successRate ?? -1) - (a.grading.ghostStories?.successRate ?? -1));

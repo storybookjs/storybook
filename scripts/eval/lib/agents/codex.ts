@@ -1,7 +1,7 @@
 import { Codex, type ModelReasoningEffort } from "@openai/codex-sdk";
-import { writeFileSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Agent, Effort, ExecutionResult } from "../../types.ts";
+import type { Agent, ExecutionResult } from "../../types.ts";
 
 /** Per-million-token pricing for Codex/OpenAI models (USD). */
 const OPENAI_PRICING: Record<string, { input: number; cachedInput: number; output: number }> = {
@@ -24,13 +24,6 @@ function estimateCost(
   );
 }
 
-const CODEX_EFFORT: Record<Effort, ModelReasoningEffort> = {
-  low: "low",
-  medium: "medium",
-  high: "high",
-  max: "xhigh",
-};
-
 export const codexAgent: Agent = {
   name: "codex",
 
@@ -47,7 +40,7 @@ export const codexAgent: Agent = {
     const codex = new Codex();
     const thread = codex.startThread({
       model,
-      modelReasoningEffort: CODEX_EFFORT[effort],
+      modelReasoningEffort: effort as ModelReasoningEffort,
       workingDirectory: projectPath,
       approvalPolicy: "never",
     });
@@ -106,7 +99,7 @@ export const codexAgent: Agent = {
     const cost = estimateCost(model, totalInput, totalCached, totalOutput);
     logger.logSuccess(`Done — ${turns} turns, ${Math.round(duration)}s, ${totalInput}in/${totalOutput}out tokens${cost != null ? `, $${cost.toFixed(4)}` : ""}`);
 
-    writeFileSync(join(resultsDir, "transcript.json"), JSON.stringify(items, null, 2));
+    await writeFile(join(resultsDir, "transcript.json"), JSON.stringify(items, null, 2));
 
     return { agent: "codex", model, effort, cost, duration, turns };
   },

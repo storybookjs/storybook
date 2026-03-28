@@ -19,7 +19,6 @@ vi.mock('./save', () => ({
     evalBranch: 'test-branch',
     evalCommit: 'abc123',
   }),
-  saveToGoogleSheets: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./agents/claude-code', () => ({
   claudeAgent: { name: 'claude', execute: vi.fn() },
@@ -32,7 +31,7 @@ import { claudeAgent } from './agents/claude-code';
 import { grade } from './grade';
 import { prepareTrial } from './prepare-trial';
 import { runTask } from './run-task';
-import { captureEnvironment, saveToGoogleSheets } from './save';
+import { captureEnvironment } from './save';
 
 let TMP: string;
 
@@ -100,7 +99,7 @@ describe('runTask pipeline', () => {
   it('assembles a complete TrialResult from pipeline steps', async () => {
     setupMocks();
 
-    const result = await runTask(baseConfig, 'run-123', 'upload-456');
+    const result = await runTask(baseConfig);
 
     // Config fields mapped correctly
     expect(result.schemaVersion).toBe(1);
@@ -137,7 +136,7 @@ describe('runTask pipeline', () => {
       project: { name: 'mealdrop', repo: 'https://github.com/test/mealdrop', branch: 'eval-baseline' },
     };
 
-    await runTask(config, 'run-1', 'upload-1');
+    await runTask(config);
 
     // prepareTrial receives the project and a logger
     expect(vi.mocked(prepareTrial).mock.calls[0][0].name).toBe('mealdrop');
@@ -162,20 +161,12 @@ describe('runTask pipeline', () => {
     expect(gradePaths.projectPath).toBe(TMP);
     // Second arg is the logger
     expect(vi.mocked(grade).mock.calls[0][1]).toBeDefined();
-
-    // saveToGoogleSheets receives the assembled result + env + IDs + logger
-    const [savedResult, savedEnv, savedRunId, savedUploadId] =
-      vi.mocked(saveToGoogleSheets).mock.calls[0];
-    expect(savedResult.project).toBe('mealdrop');
-    expect(savedEnv.evalBranch).toBe('test-branch');
-    expect(savedRunId).toBe('run-1');
-    expect(savedUploadId).toBe('upload-1');
   });
 
   it('writes summary.json and prompt.md to results dir', async () => {
     setupMocks();
 
-    await runTask(baseConfig, 'run-1', 'upload-1');
+    await runTask(baseConfig);
 
     const resultsDir = join(TMP, 'results');
 
@@ -193,7 +184,7 @@ describe('runTask pipeline', () => {
   it('propagates failed build into result', async () => {
     setupMocks({ buildSuccess: false, typeCheckErrors: 5 });
 
-    const result = await runTask(baseConfig, 'run-1', 'upload-1');
+    const result = await runTask(baseConfig);
     expect(result.grading.buildSuccess).toBe(false);
     expect(result.quality.score).toBe(0.3);
   });
@@ -232,12 +223,8 @@ describe('runTask pipeline', () => {
       };
     });
 
-    vi.mocked(saveToGoogleSheets).mockImplementation(async () => {
-      callOrder.push('save');
-    });
+    await runTask(baseConfig);
 
-    await runTask(baseConfig, 'run-1', 'upload-1');
-
-    expect(callOrder).toEqual(['prepare', 'agent', 'grade', 'save']);
+    expect(callOrder).toEqual(['prepare', 'agent', 'grade']);
   });
 });

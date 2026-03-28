@@ -1,11 +1,11 @@
-import { writeFileSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { AgentName, Logger, TrialConfig, TrialResult, Agent } from "../types.ts";
 import { claudeAgent } from "./agents/claude-code.ts";
 import { codexAgent } from "./agents/codex.ts";
 import { prepareTrial } from "./prepare-trial.ts";
 import { grade } from "./grade.ts";
-import { captureEnvironment, saveToGoogleSheets } from "./save.ts";
+import { captureEnvironment } from "./save.ts";
 import { generateTrialId, generatePrompt, createLogger } from "./utils.ts";
 
 const agents: Record<AgentName, Agent> = {
@@ -18,8 +18,6 @@ const agents: Record<AgentName, Agent> = {
  */
 export async function runTask(
   config: TrialConfig,
-  runId: string,
-  uploadId: string,
   logger?: Logger,
 ): Promise<TrialResult> {
   const { project, agent: agentName, model, effort, prompt: promptName } = config;
@@ -33,7 +31,7 @@ export async function runTask(
   const paths = await prepareTrial(project, trialId, log);
 
   // 2. Capture environment
-  const environment = await captureEnvironment(paths.resultsDir);
+  await captureEnvironment(paths.resultsDir);
 
   // 3. Generate the prompt (with project-specific template variables)
   const prompt = generatePrompt(promptName, {
@@ -41,7 +39,7 @@ export async function runTask(
     description: project.description ?? "",
     projectDir: project.projectDir ?? ".",
   });
-  writeFileSync(join(paths.resultsDir, "prompt.md"), prompt);
+  await writeFile(join(paths.resultsDir, "prompt.md"), prompt);
 
   // 4. Execute the agent
   log.log(`  Running ${agentName} (${model}, effort=${effort})...`);
@@ -76,11 +74,8 @@ export async function runTask(
     quality,
   };
 
-  writeFileSync(join(paths.resultsDir, "summary.json"), JSON.stringify(result, null, 2));
+  await writeFile(join(paths.resultsDir, "summary.json"), JSON.stringify(result, null, 2));
   log.logSuccess(`Results saved to ${paths.resultsDir}`);
-
-  // 7. Upload to Google Sheets
-  await saveToGoogleSheets(result, environment, runId, uploadId, log);
 
   return result;
 }

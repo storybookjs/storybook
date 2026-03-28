@@ -1,7 +1,18 @@
+/**
+ * Eval harness entry point — single trial run.
+ *
+ * Runs with `node ./eval/eval.ts` (no jiti). Node 22+ supports .ts natively
+ * via type stripping, so no loader or transpiler is needed. The .npmrc in the
+ * monorepo root enables this. New scripts should follow this pattern instead
+ * of using jiti — we are migrating away from jiti toward native Node TS.
+ *
+ * Import specifiers use explicit .ts extensions, which is required by Node's
+ * native TS support and enabled by `allowImportingTsExtensions` in tsconfig.
+ */
 import { randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
 import pc from "picocolors";
-import type { TrialConfig, AgentName, Effort } from "./types.ts";
+import type { TrialConfig, AgentName } from "./types.ts";
 import { AGENTS, PROJECTS } from "./config.ts";
 import { runTask } from "./lib/run-task.ts";
 import { createLogger, formatDuration, formatCost, listPrompts } from "./lib/utils.ts";
@@ -13,10 +24,9 @@ const { values: opts } = parseArgs({
     project: { type: "string", short: "p" },
     agent: { type: "string", short: "a", default: "claude" },
     model: { type: "string", short: "m" },
-    effort: { type: "string", short: "e", default: "high" },
+    effort: { type: "string", short: "e" },
     prompt: { type: "string", default: "setup" },
     verbose: { type: "boolean", short: "v", default: false },
-    "upload-id": { type: "string", short: "u" },
     "list-projects": { type: "boolean", default: false },
     "list-models": { type: "boolean", default: false },
     "list-prompts": { type: "boolean", default: false },
@@ -68,9 +78,13 @@ if (opts.model) {
   model = agentConfig.defaultModel;
 }
 
-const effort = opts.effort as Effort;
+const agentCfg = AGENTS[agent];
+const effort = opts.effort ?? agentCfg.defaultEffort;
+if (!agentCfg.efforts.includes(effort)) {
+  logger.log(pc.red(`Unknown effort "${effort}" for ${agent}. Available: ${agentCfg.efforts.join(", ")}`));
+  process.exit(1);
+}
 const runId = randomUUID().slice(0, 8);
-const uploadId = opts["upload-id"] || `eval-${runId}`;
 
 const config: TrialConfig = {
   project,
@@ -86,7 +100,7 @@ logger.log(`Agent: ${agent} | Model: ${model} | Effort: ${effort} | Prompt: ${co
 logger.log(`Run: ${runId}\n`);
 
 try {
-  const result = await runTask(config, runId, uploadId, logger);
+  const result = await runTask(config, logger);
   const ghost = result.grading.ghostStories;
   const ghostStr = ghost ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)` : "-";
 
@@ -98,11 +112,6 @@ try {
   logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
   logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
   logger.log(`  Turns:   ${result.execution.turns}`);
-
-  // Send result via IPC when forked by eval-parallel, otherwise no-op
-  if (process.send) {
-    process.send(result);
-  }
 } catch (error) {
   logger.log(pc.red(`\nFailed: ${error instanceof Error ? error.message : error}`));
   process.exit(1);

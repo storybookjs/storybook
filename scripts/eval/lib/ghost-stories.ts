@@ -3,18 +3,15 @@ import { join } from "node:path";
 import type { GhostStoriesResult } from "../types.ts";
 import { logStep, logSuccess, logError, exec } from "./utils.ts";
 
-// Reuse core ghost-stories utilities via relative imports
+// component-analyzer has zero dependencies so it imports cleanly.
+// parse-vitest-report can't be imported — its transitive imports use
+// extensionless specifiers that fail under Node's native TS loader.
+// We read numPassedTests/numTotalTests from the vitest JSON directly instead.
 import { getComponentComplexity } from "../../../code/core/src/core-server/utils/ghost-stories/component-analyzer.ts";
-import { parseVitestResults } from "../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts";
 
 /**
  * Run ghost stories: discover candidate components, auto-generate stories
  * via the addon-vitest componentTransform, and measure rendering success.
- *
- * Reuses parseVitestResults and getComponentComplexity from core.
- * Candidate discovery uses a lightweight regex approach here because the
- * core's getComponentCandidates depends on storybook/internal/babel which
- * isn't resolvable from the scripts/ workspace.
  */
 export async function runGhostStories(
   projectPath: string,
@@ -54,13 +51,14 @@ export async function runGhostStories(
 
   try {
     const report = JSON.parse(readFileSync(reportPath, "utf-8"));
-    const { summary } = parseVitestResults(report);
-    if (!summary) {
+    const total: number = report.numTotalTests ?? 0;
+    const passed: number = report.numPassedTests ?? 0;
+    if (total === 0) {
       logError("Ghost stories: no test results in Vitest report");
       return { candidateCount: candidates.length, total: 0, passed: 0, successRate: 0 };
     }
-    const { total, passed, successRate } = summary;
-    if (total > 0) logSuccess(`Ghost stories: ${passed}/${total} passed (${Math.round(successRate * 100)}%)`);
+    const successRate = parseFloat((passed / total).toFixed(2));
+    logSuccess(`Ghost stories: ${passed}/${total} passed (${Math.round(successRate * 100)}%)`);
     return { candidateCount: candidates.length, total, passed, successRate };
   } catch {
     logError("Ghost stories: failed to parse Vitest report");

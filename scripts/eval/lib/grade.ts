@@ -4,8 +4,7 @@ import type { GradingResult, GhostStoriesResult, QualityResult, QualityWeights, 
 import { DEFAULT_QUALITY_WEIGHTS } from "../types.ts";
 import { x } from "tinyexec";
 import { detectSetupPatterns } from "./setup-patterns.ts";
-import { getComponentCandidates } from "../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts";
-import { runGhostStories } from "../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts";
+import { getComponentCandidates, runGhostStories } from "../../../code/core/src/core-server/index.ts";
 
 /** Filter changed files to only storybook-related ones. */
 export function filterStorybookFiles(changedFiles: ChangedFile[]): ChangedFile[] {
@@ -85,7 +84,7 @@ export async function grade(
   logger.logSuccess(`${changedFiles.length} files changed (${storybookFiles.length} storybook-related)`);
 
   // Setup patterns
-  const setupPatterns = detectSetupPatterns(projectPath);
+  const setupPatterns = await detectSetupPatterns(projectPath);
   if (setupPatterns.length > 0) logger.logSuccess(`Detected patterns: ${setupPatterns.map((p) => p.label).join(", ")}`);
 
   // Storybook build + TypeScript check in parallel

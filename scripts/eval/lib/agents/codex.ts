@@ -2,27 +2,7 @@ import { Codex, type ModelReasoningEffort } from "@openai/codex-sdk";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Agent, ExecutionResult } from "../../types.ts";
-
-/** Per-million-token pricing for Codex/OpenAI models (USD). */
-const OPENAI_PRICING: Record<string, { input: number; cachedInput: number; output: number }> = {
-  "gpt-5.4": { input: 2.50, cachedInput: 0.625, output: 10.00 },
-};
-
-function estimateCost(
-  model: string,
-  inputTokens: number,
-  cachedInputTokens: number,
-  outputTokens: number,
-): number | undefined {
-  const pricing = OPENAI_PRICING[model];
-  if (!pricing) return undefined;
-  const freshInput = inputTokens - cachedInputTokens;
-  return (
-    (freshInput / 1_000_000) * pricing.input +
-    (cachedInputTokens / 1_000_000) * pricing.cachedInput +
-    (outputTokens / 1_000_000) * pricing.output
-  );
-}
+import { estimateCost } from "../pricing.ts";
 
 export const codexAgent: Agent = {
   name: "codex",
@@ -96,7 +76,7 @@ export const codexAgent: Agent = {
     }
 
     const duration = (Date.now() - startTime) / 1000;
-    const cost = estimateCost(model, totalInput, totalCached, totalOutput);
+    const cost = estimateCost("codex", model, { inputTokens: totalInput, cachedInputTokens: totalCached, outputTokens: totalOutput });
     logger.logSuccess(`Done — ${turns} turns, ${Math.round(duration)}s, ${totalInput}in/${totalOutput}out tokens${cost != null ? `, $${cost.toFixed(4)}` : ""}`);
 
     await writeFile(join(resultsDir, "transcript.json"), JSON.stringify(items, null, 2));

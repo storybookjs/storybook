@@ -3,21 +3,8 @@ import { cp, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { Project, TrialPaths, Logger } from "../types.ts";
 import { x } from "tinyexec";
+import { installDeps } from "./package-manager.ts";
 import { CACHE_DIR, TRIALS_DIR } from "./utils.ts";
-
-async function installDeps(dir: string, logger: Logger) {
-  const has = (f: string) => existsSync(join(dir, f));
-  const [cmd, args]: [string, string[]] = has("pnpm-lock.yaml") || has("pnpm-workspace.yaml")
-    ? ["pnpm", ["install", "--no-frozen-lockfile"]]
-    : has("yarn.lock")
-      ? ["yarn", has(".yarnrc.yml") ? ["install", "--no-immutable"] : ["install"]]
-      : has("bun.lockb") || has("bun.lock")
-        ? ["bun", ["install"]]
-        : ["npm", ["install", "--ignore-scripts"]];
-
-  logger.logStep(`Installing with ${cmd}...`);
-  await x(cmd, args, { timeout: 300_000, nodeOptions: { cwd: dir } });
-}
 
 /**
  * First run: clone eval-baseline -> install deps -> cache it.

@@ -33,6 +33,30 @@ export function generateTrialId(project: string, agent: string, model: string, p
   return `${ts}-${project}-${agent}-${model}-${prompt}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+// --- Table formatting ---
+
+/** Strip ANSI escape codes for accurate width calculation. */
+const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, "");
+
+/** Format data as an aligned table with automatic column widths. */
+export function formatTable(headers: string[], rows: string[][]): string {
+  const widths = headers.map((h, i) =>
+    Math.max(h.length, ...rows.map((r) => stripAnsi(r[i] ?? "").length)),
+  );
+
+  const pad = (str: string, width: number) => {
+    const visible = stripAnsi(str).length;
+    return str + " ".repeat(Math.max(0, width - visible));
+  };
+
+  const sep = " | ";
+  return [
+    headers.map((h, i) => pad(h, widths[i])).join(sep),
+    widths.map((w) => "-".repeat(w)).join("-+-"),
+    ...rows.map((row) => row.map((cell, i) => pad(cell, widths[i])).join(sep)),
+  ].join("\n");
+}
+
 // --- Prompts ---
 
 /** Load a prompt by name from prompts/{name}.md, with optional template variables. */
@@ -57,4 +81,3 @@ export function listPrompts(): string[] {
     .filter((f) => f.endsWith(".md"))
     .map((f) => basename(f, ".md"));
 }
-

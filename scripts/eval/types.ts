@@ -1,12 +1,13 @@
 /**
  * Core types for the Storybook setup eval system.
  *
- * Four independent axes: agent x model x effort x prompt
- *
- * Runtime configuration (AGENTS, PROJECTS) lives in config.ts.
+ * Data types use Zod schemas for runtime validation.
+ * Behavioral interfaces (Logger, Agent) stay as plain TypeScript.
  */
 
-// --- Logger ---
+import { z } from "zod";
+
+// --- Logger (behavioral interface — not validated at runtime) ---
 
 export interface Logger {
   log: (msg: string) => void;
@@ -15,124 +16,140 @@ export interface Logger {
   logError: (msg: string) => void;
 }
 
-// --- Agent, Model, Effort ---
+// --- Agent Name ---
 
-export type AgentName = "claude" | "codex";
+export const AgentName = z.enum(["claude", "codex"]);
+export type AgentName = z.infer<typeof AgentName>;
 
-// --- Projects ---
+// --- Project ---
 
-export interface Project {
-  name: string;
-  repo: string;
-  branch?: string;
-  projectDir?: string;
-  description?: string;
-}
+export const Project = z.object({
+  name: z.string().min(1),
+  repo: z.string().url(),
+  branch: z.string().optional(),
+  projectDir: z.string().optional(),
+  description: z.string().optional(),
+});
+export type Project = z.infer<typeof Project>;
 
-// --- Trial Types ---
+// --- Trial Config ---
 
-export interface TrialConfig {
-  project: Project;
-  agent: AgentName;
-  model: string;
-  effort: string;
-  prompt: string;
-  verbose?: boolean;
-}
+export const TrialConfig = z.object({
+  project: Project,
+  agent: AgentName,
+  model: z.string(),
+  effort: z.string(),
+  prompt: z.string(),
+  verbose: z.boolean().optional(),
+});
+export type TrialConfig = z.infer<typeof TrialConfig>;
 
-export interface TrialPaths {
-  trialDir: string;
-  repoRoot: string;
-  projectPath: string;
-  resultsDir: string;
-  baselineCommit: string;
-}
+// --- Trial Paths ---
 
-// --- Execution Types ---
+export const TrialPaths = z.object({
+  trialDir: z.string(),
+  repoRoot: z.string(),
+  projectPath: z.string(),
+  resultsDir: z.string(),
+  baselineCommit: z.string(),
+});
+export type TrialPaths = z.infer<typeof TrialPaths>;
 
-export interface ExecutionResult {
-  agent: string;
-  model: string;
-  effort: string;
-  cost?: number;
-  duration: number;
-  durationApi?: number;
-  turns: number;
-}
+// --- Execution ---
+
+export const ExecutionResult = z.object({
+  agent: z.string(),
+  model: z.string(),
+  effort: z.string(),
+  cost: z.number().optional(),
+  duration: z.number(),
+  durationApi: z.number().optional(),
+  turns: z.number(),
+});
+export type ExecutionResult = z.infer<typeof ExecutionResult>;
 
 // --- Changed Files ---
 
-export interface ChangedFile {
-  path: string;
-  status: "A" | "M" | "D" | "R";
-}
+export const ChangedFile = z.object({
+  path: z.string(),
+  status: z.enum(["A", "M", "D", "R"]),
+});
+export type ChangedFile = z.infer<typeof ChangedFile>;
 
 // --- Setup Patterns ---
 
-export interface SetupPattern {
-  id: string;
-  label: string;
-  sourceFiles: string[];
-}
+export const SetupPattern = z.object({
+  id: z.string(),
+  label: z.string(),
+  sourceFiles: z.array(z.string()),
+});
+export type SetupPattern = z.infer<typeof SetupPattern>;
 
-// --- Grading Types ---
+// --- Ghost Stories ---
 
-export interface GradingResult {
-  buildSuccess: boolean;
-  buildError?: string;
-  typeCheckErrors: number;
-  typeCheckOutput?: string;
-  changedFiles: ChangedFile[];
-  storybookFiles: ChangedFile[];
-  setupPatterns: SetupPattern[];
-  ghostStories?: GhostStoriesResult;
-}
+export const GhostStoriesResult = z.object({
+  candidateCount: z.number(),
+  total: z.number(),
+  passed: z.number(),
+  successRate: z.number(),
+});
+export type GhostStoriesResult = z.infer<typeof GhostStoriesResult>;
 
-export interface GhostStoriesResult {
-  candidateCount: number;
-  total: number;
-  passed: number;
-  successRate: number;
-}
+// --- Grading ---
+
+export const GradingResult = z.object({
+  buildSuccess: z.boolean(),
+  buildError: z.string().optional(),
+  typeCheckErrors: z.number(),
+  typeCheckOutput: z.string().optional(),
+  changedFiles: z.array(ChangedFile),
+  storybookFiles: z.array(ChangedFile),
+  setupPatterns: z.array(SetupPattern),
+  ghostStories: GhostStoriesResult.optional(),
+});
+export type GradingResult = z.infer<typeof GradingResult>;
 
 // --- Quality Score ---
 
-export interface QualityWeights {
-  ghostStories: number;
-  build: number;
-  typecheck: number;
-  performance: number;
-}
+export const QualityWeights = z.object({
+  ghostStories: z.number().default(0.4),
+  build: z.number().default(0.25),
+  typecheck: z.number().default(0.25),
+  performance: z.number().default(0.1),
+});
+export type QualityWeights = z.infer<typeof QualityWeights>;
 
-export const DEFAULT_QUALITY_WEIGHTS: QualityWeights = {
-  ghostStories: 0.4,
-  build: 0.25,
-  typecheck: 0.25,
-  performance: 0.1,
-};
+export const DEFAULT_QUALITY_WEIGHTS: QualityWeights = QualityWeights.parse({});
 
-export interface QualityResult {
-  score: number;
-  breakdown: { build: number; typecheck: number; ghostStories: number; performance: number };
-}
+export const QualityResult = z.object({
+  score: z.number(),
+  breakdown: z.object({
+    build: z.number(),
+    typecheck: z.number(),
+    ghostStories: z.number(),
+    performance: z.number(),
+  }),
+});
+export type QualityResult = z.infer<typeof QualityResult>;
 
-// --- Final Result ---
+// --- Trial Result ---
 
-export interface TrialResult {
-  schemaVersion: 1;
-  project: string;
-  agent: string;
-  model: string;
-  effort: string;
-  prompt: string;
-  timestamp: string;
-  baselineCommit: string;
-  execution: ExecutionResult;
-  grading: GradingResult;
-  quality: QualityResult;
-}
+export const TrialResult = z.object({
+  schemaVersion: z.literal(1),
+  project: z.string(),
+  agent: z.string(),
+  model: z.string(),
+  effort: z.string(),
+  prompt: z.string(),
+  timestamp: z.string(),
+  baselineCommit: z.string(),
+  execution: ExecutionResult,
+  grading: GradingResult,
+  quality: QualityResult,
+});
+export type TrialResult = z.infer<typeof TrialResult>;
 
-// --- Agent Interface ---
+// --- Agent Interface (behavioral — not validated) ---
 
 export interface Agent {
   name: AgentName;

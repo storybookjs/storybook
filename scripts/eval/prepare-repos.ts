@@ -10,13 +10,21 @@
  * After this, each eval trial just does a fast shallow clone of the
  * prepared branch — no more storybook init during trials.
  *
- * Usage: npx jiti scripts/eval/prepare-repos.ts
+ * Usage: node scripts/eval/prepare-repos.ts
+ *
+ * NOTE: The REPOS list below contains the *original* upstream repos
+ * (e.g. "yannbf/mealdrop"), which is distinct from the *fork* URLs in
+ * config.ts PROJECTS (e.g. "kasperpeulen/mealdrop"). This script forks
+ * and pushes eval-baseline branches to those forks.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import pc from "picocolors";
 import { x } from "tinyexec";
+import { createLogger } from "./lib/utils.ts";
+import { installDeps } from "./lib/package-manager.ts";
+
+const logger = createLogger();
 
 const EVAL_ROOT = join(import.meta.dirname, "..", "..", "..", "..", "storybook-eval");
 const PREP_DIR = join(EVAL_ROOT, "prepared-repos");
@@ -118,43 +126,26 @@ function isStarterDirectory(dir: string): boolean {
   }
 }
 
-function detectPM(dir: string): string {
-  if (existsSync(join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
-  if (existsSync(join(dir, 'yarn.lock'))) return 'yarn';
-  if (existsSync(join(dir, 'bun.lockb')) || existsSync(join(dir, 'bun.lock'))) return 'bun';
-  return 'npm';
-}
-
-async function installDeps(dir: string) {
-  const env = cleanNpmEnv();
-  const pm = detectPM(dir);
-  console.log(`  > Installing with ${pm}...`);
-  const args = pm === 'pnpm' ? ['install', '--no-frozen-lockfile']
-    : pm === 'yarn' && existsSync(join(dir, '.yarnrc.yml')) ? ['install', '--no-immutable']
-    : ['install'];
-  await run(pm, args, { cwd: dir, env, timeout: 300_000 });
-}
-
 async function prepareRepo(repo: BenchmarkRepo) {
-  console.log(pc.bold(`\n=== ${repo.name} ===`));
+  logger.log(`\n=== ${repo.name} ===`);
   const repoDir = join(PREP_DIR, repo.name);
 
   // 1. Fork (idempotent — gh fork is a no-op if already forked)
-  console.log(`  > Forking ${repo.repo}...`);
+  logger.logStep(`Forking ${repo.repo}...`);
   try {
     await run('gh', ['repo', 'fork', repo.repo, '--clone=false']);
   } catch {
-    console.log(`  ! Fork may already exist, continuing...`);
+    logger.log(`  ! Fork may already exist, continuing...`);
   }
 
   // Figure out the fork name (gh forks to authenticated user)
   const whoami = (await run('gh', ['api', 'user', '--jq', '.login'])).stdout.trim();
   const forkSlug = `${whoami}/${repo.repo.split('/')[1]}`;
-  console.log(`  > Fork: ${forkSlug}`);
+  logger.logStep(`Fork: ${forkSlug}`);
 
   // 2. Clone (or pull) the fork
   if (existsSync(repoDir)) {
-    console.log(`  > Updating existing clone...`);
+    logger.logStep(`Updating existing clone...`);
     await run('git', ['fetch', 'origin'], { cwd: repoDir });
     const branch = repo.branch || (await run('git', ['remote', 'show', 'origin'], { cwd: repoDir }))
       .stdout.match(/HEAD branch:\s*(\S+)/)?.[1] || 'main';
@@ -162,14 +153,14 @@ async function prepareRepo(repo: BenchmarkRepo) {
     await run('git', ['reset', '--hard', `origin/${branch}`], { cwd: repoDir });
     await run('git', ['clean', '-fdx', '-e', 'node_modules'], { cwd: repoDir });
   } else {
-    console.log(`  > Cloning ${forkSlug}...`);
+    logger.logStep(`Cloning ${forkSlug}...`);
     const cloneArgs = ['clone', `https://github.com/${forkSlug}.git`, repoDir];
     if (repo.branch) cloneArgs.splice(1, 0, '--branch', repo.branch);
     await run('git', cloneArgs, { timeout: 120_000 });
   }
 
   // 3. Create eval-baseline branch
-  console.log(`  > Creating ${BASELINE_BRANCH} branch...`);
+  logger.logStep(`Creating ${BASELINE_BRANCH} branch...`);
   await run('git', ['checkout', '-B', BASELINE_BRANCH], { cwd: repoDir });
 
   // 4. Clean storybook files
@@ -177,10 +168,10 @@ async function prepareRepo(repo: BenchmarkRepo) {
   cleanStorybookFiles(projectDir);
 
   // 5. Install dependencies
-  await installDeps(projectDir);
+  await installDeps(projectDir, logger, cleanNpmEnv());
 
   // 6. Run storybook init
-  console.log(`  > Running storybook init...`);
+  logger.logStep(`Running storybook init...`);
   const env = cleanNpmEnv();
   await run('npx', ['storybook@latest', 'init', '--yes', '--no-dev'], {
     cwd: projectDir,
@@ -189,10 +180,10 @@ async function prepareRepo(repo: BenchmarkRepo) {
   });
 
   // 7. Post-init install
-  await installDeps(projectDir);
+  await installDeps(projectDir, logger, cleanNpmEnv());
 
   // 8. Commit everything
-  console.log(`  > Committing baseline...`);
+  logger.logStep(`Committing baseline...`);
   await run('git', ['add', '-A'], { cwd: repoDir, env: { ...cleanNpmEnv(), ...GIT_ENV } });
   await run('git', ['commit', '-m', 'eval baseline after storybook init', '--allow-empty'], {
     cwd: repoDir,
@@ -200,18 +191,18 @@ async function prepareRepo(repo: BenchmarkRepo) {
   });
 
   // 9. Force-push the baseline branch
-  console.log(`  > Pushing ${BASELINE_BRANCH}...`);
+  logger.logStep(`Pushing ${BASELINE_BRANCH}...`);
   await run('git', ['push', '-f', 'origin', BASELINE_BRANCH], { cwd: repoDir });
 
-  console.log(pc.green(`  ✓ ${repo.name} ready at ${forkSlug}#${BASELINE_BRANCH}`));
+  logger.logSuccess(`${repo.name} ready at ${forkSlug}#${BASELINE_BRANCH}`);
   return { name: repo.name, forkRepo: `https://github.com/${forkSlug}`, branch: BASELINE_BRANCH, projectDir: repo.projectDir };
 }
 
 // --- Main ---
 mkdirSync(PREP_DIR, { recursive: true });
 
-console.log(pc.bold('Preparing eval baseline repos'));
-console.log(`Output: ${PREP_DIR}\n`);
+logger.log(`Preparing eval baseline repos`);
+logger.log(`Output: ${PREP_DIR}\n`);
 
 const results = [];
 for (const repo of REPOS) {
@@ -219,11 +210,11 @@ for (const repo of REPOS) {
     const result = await prepareRepo(repo);
     results.push(result);
   } catch (error) {
-    console.log(pc.red(`  ✗ Failed: ${error instanceof Error ? error.message : error}`));
+    logger.logError(`Failed: ${error instanceof Error ? error.message : error}`);
   }
 }
 
-console.log(pc.bold('\n\nPrepared repos:'));
+logger.log(`\n\nPrepared repos:`);
 for (const r of results) {
-  console.log(`  ${r.name}: ${r.forkRepo}#${r.branch}${r.projectDir ? ` (${r.projectDir})` : ''}`);
+  logger.logSuccess(`${r.name}: ${r.forkRepo}#${r.branch}${r.projectDir ? ` (${r.projectDir})` : ''}`);
 }

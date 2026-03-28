@@ -22,73 +22,73 @@ function writeConfig(name: string, content: string) {
 }
 
 describe('detectSetupPatterns', () => {
-  it('returns empty when no .storybook dir', () => {
+  it('returns empty when no .storybook dir', async () => {
     rmSync(join(TMP, '.storybook'), { recursive: true });
-    expect(detectSetupPatterns(TMP)).toEqual([]);
+    expect(await detectSetupPatterns(TMP)).toEqual([]);
   });
 
-  it('returns empty when .storybook has no matching patterns', () => {
+  it('returns empty when .storybook has no matching patterns', async () => {
     writeConfig('main.ts', 'export default { stories: ["../src/**/*.stories.@(ts|tsx)"] };');
-    expect(detectSetupPatterns(TMP)).toEqual([]);
+    expect(await detectSetupPatterns(TMP)).toEqual([]);
   });
 
-  it('detects Tailwind CSS', () => {
+  it('detects Tailwind CSS', async () => {
     writeConfig('preview.ts', `import 'tailwindcss/tailwind.css';`);
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('tailwind');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('tailwind');
   });
 
-  it('detects global CSS imports', () => {
+  it('detects global CSS imports', async () => {
     writeConfig('preview.ts', `import '../src/styles/globals.css';`);
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('global-css');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('global-css');
   });
 
-  it('detects styled-components', () => {
+  it('detects styled-components', async () => {
     writeConfig('preview.tsx', `import { createGlobalStyle } from 'styled-components';`);
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('styled-components');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('styled-components');
   });
 
-  it('detects React Router', () => {
+  it('detects React Router', async () => {
     writeConfig('preview.tsx', `import { MemoryRouter } from 'react-router-dom';`);
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('router-provider');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('router-provider');
   });
 
-  it('detects Redux provider', () => {
+  it('detects Redux provider', async () => {
     writeConfig(
       'preview.tsx',
       `import { Provider } from 'react-redux';\n<Provider store={store}>`
     );
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('redux-provider');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('redux-provider');
   });
 
-  it('detects Zustand', () => {
+  it('detects Zustand', async () => {
     writeConfig('preview.ts', `import { create } from 'zustand';`);
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('zustand');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('zustand');
   });
 
-  it('detects GraphQL/Apollo', () => {
+  it('detects GraphQL/Apollo', async () => {
     writeConfig('preview.tsx', `import { MockedProvider } from '@apollo/client/testing';`);
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('graphql');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('graphql');
   });
 
-  it('detects theme providers', () => {
+  it('detects theme providers', async () => {
     writeConfig('preview.tsx', `import { ThemeProvider } from '@emotion/react';`);
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('theme-provider');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('theme-provider');
   });
 
-  it('detects staticDirs', () => {
+  it('detects staticDirs', async () => {
     writeConfig('main.ts', `export default { staticDirs: ['../public'] };`);
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('static-dirs');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('static-dirs');
   });
 
-  it('detects vite alias config', () => {
+  it('detects vite alias config', async () => {
     writeConfig(
       'main.ts',
       `export default { viteFinal: (config) => ({ ...config, resolve: { alias: { '@': './src' } } }) };`
     );
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).toContain('vite-alias');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('vite-alias');
   });
 
-  it('detects multiple patterns in the same file', () => {
+  it('detects multiple patterns in the same file', async () => {
     writeConfig(
       'preview.tsx',
       [
@@ -97,24 +97,24 @@ describe('detectSetupPatterns', () => {
         `import { ThemeProvider } from '@emotion/react';`,
       ].join('\n')
     );
-    const ids = detectSetupPatterns(TMP).map((p) => p.id);
+    const ids = (await detectSetupPatterns(TMP)).map((p) => p.id);
     expect(ids).toContain('global-css');
     expect(ids).toContain('router-provider');
     expect(ids).toContain('theme-provider');
   });
 
-  it('includes sourceFiles relative to project path', () => {
+  it('includes sourceFiles relative to project path', async () => {
     writeConfig('preview.ts', `import 'tailwindcss';`);
-    const tailwind = detectSetupPatterns(TMP).find((p) => p.id === 'tailwind');
+    const tailwind = (await detectSetupPatterns(TMP)).find((p) => p.id === 'tailwind');
     expect(tailwind?.sourceFiles).toEqual(['.storybook/preview.ts']);
   });
 
-  it('does not false-positive on unrelated React hooks', () => {
+  it('does not false-positive on unrelated React hooks', async () => {
     writeConfig('preview.ts', `import { useState, useEffect } from 'react';`);
-    expect(detectSetupPatterns(TMP)).toEqual([]);
+    expect(await detectSetupPatterns(TMP)).toEqual([]);
   });
 
-  it('does not detect patterns in files outside .storybook/', () => {
+  it('does not detect patterns in files outside .storybook/', async () => {
     // Write a router import in a source file, not in .storybook/
     mkdirSync(join(TMP, 'src'), { recursive: true });
     writeFileSync(
@@ -124,6 +124,6 @@ describe('detectSetupPatterns', () => {
     // .storybook/ has no patterns
     writeConfig('main.ts', `export default { stories: ['../src/**/*.stories.tsx'] };`);
 
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).not.toContain('router-provider');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).not.toContain('router-provider');
   });
 });

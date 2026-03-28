@@ -1,4 +1,5 @@
-import { readFileSync, existsSync, globSync } from "node:fs";
+import { readFile, readdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { SetupPattern } from "../types.ts";
 
@@ -16,23 +17,30 @@ const RULES = [
 ];
 
 /** Scan .storybook/ config files for known setup patterns. */
-export function detectSetupPatterns(projectPath: string): SetupPattern[] {
+export async function detectSetupPatterns(projectPath: string): Promise<SetupPattern[]> {
   const dir = join(projectPath, ".storybook");
   if (!existsSync(dir)) return [];
 
-  const files = globSync("**/*", { cwd: dir }).map((f) => join(dir, f));
-  const results: SetupPattern[] = [];
-
-  for (const { id, label, pattern } of RULES) {
-    const matches = files.filter((f) => {
+  // Read all entries recursively, then attempt to read each as a file
+  const entries = await readdir(dir, { recursive: true });
+  const fileContents = await Promise.all(
+    entries.map(async (entry) => {
+      const fullPath = join(dir, entry);
       try {
-        return pattern.test(readFileSync(f, "utf-8"));
+        return { path: fullPath, content: await readFile(fullPath, "utf-8") };
       } catch {
-        return false;
+        return null; // directories or unreadable files
       }
-    });
+    }),
+  );
+
+  const files = fileContents.filter((f): f is { path: string; content: string } => f !== null);
+
+  const results: SetupPattern[] = [];
+  for (const { id, label, pattern } of RULES) {
+    const matches = files.filter((f) => pattern.test(f.content));
     if (matches.length > 0) {
-      results.push({ id, label, sourceFiles: matches.map((f) => relative(projectPath, f)) });
+      results.push({ id, label, sourceFiles: matches.map((f) => relative(projectPath, f.path)) });
     }
   }
 

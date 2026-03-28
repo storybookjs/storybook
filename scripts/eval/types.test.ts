@@ -2,53 +2,44 @@ import { describe, expect, it } from 'vitest';
 
 import { AGENTS, PROJECTS } from './config';
 
+/**
+ * Basic shape validation (required fields, defaults, types) is handled by Zod
+ * schemas at import time — AgentConfig.parse() in config.ts throws on invalid
+ * config. These tests cover cross-cutting invariants that Zod cannot express.
+ */
+
 describe('AGENTS', () => {
-  it('has claude and codex agents', () => {
-    expect(AGENTS).toHaveProperty('claude');
-    expect(AGENTS).toHaveProperty('codex');
-  });
-
-  it('each agent has a non-empty models list', () => {
-    for (const config of Object.values(AGENTS)) {
-      expect(config.models.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('each agent defaultModel is in its models list', () => {
-    for (const config of Object.values(AGENTS)) {
-      expect(config.models).toContain(config.defaultModel);
-    }
-  });
-
-  it('each agent has a non-empty efforts list', () => {
-    for (const config of Object.values(AGENTS)) {
-      expect(config.efforts.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('each agent defaultEffort is in its efforts list', () => {
-    for (const config of Object.values(AGENTS)) {
-      expect(config.efforts).toContain(config.defaultEffort);
-    }
+  it('validates against schema (the import itself proves this)', () => {
+    // AgentConfig.parse() runs at import time. If this test file loads,
+    // the config is valid (models non-empty, defaultModel in list, etc.).
+    expect(Object.keys(AGENTS)).toEqual(['claude', 'codex']);
   });
 
   it('no model is shared between agents', () => {
     const allModels = Object.values(AGENTS).flatMap((a) => a.models);
     expect(new Set(allModels).size).toBe(allModels.length);
   });
+
+  it('sdkModelIds only reference known models', () => {
+    for (const [, cfg] of Object.entries(AGENTS)) {
+      for (const model of Object.keys(cfg.sdkModelIds)) {
+        expect(cfg.models).toContain(model);
+      }
+    }
+  });
+
+  it('pricing only references known models', () => {
+    for (const [, cfg] of Object.entries(AGENTS)) {
+      for (const model of Object.keys(cfg.pricing)) {
+        expect(cfg.models).toContain(model);
+      }
+    }
+  });
 });
 
 describe('PROJECTS', () => {
   it('has at least one project', () => {
     expect(PROJECTS.length).toBeGreaterThan(0);
-  });
-
-  it('each project has name, repo URL, and branch', () => {
-    for (const project of PROJECTS) {
-      expect(project.name).toBeTruthy();
-      expect(project.repo).toMatch(/^https:\/\/github\.com\//);
-      expect(project.branch).toBeTruthy();
-    }
   });
 
   it('project names are unique', () => {

@@ -2,6 +2,7 @@ import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { AGENTS } from "../../config.ts";
 import type { Agent, ExecutionResult, Logger } from "../../types.ts";
 
 function logMessage(message: SDKMessage, logger: Logger) {
@@ -69,13 +70,6 @@ function logMessage(message: SDKMessage, logger: Logger) {
 
 const MAX_TURNS = 50;
 
-/** Map clean model names to Claude SDK model IDs */
-const CLAUDE_MODEL_MAP: Record<string, string> = {
-  "sonnet-4.6": "claude-sonnet-4-6",
-  "opus-4.6": "claude-opus-4-6",
-  "haiku-4.5": "claude-haiku-4-5",
-};
-
 export const claudeAgent: Agent = {
   name: "claude",
 
@@ -88,6 +82,7 @@ export const claudeAgent: Agent = {
     logger,
   }): Promise<ExecutionResult> {
     const startTime = Date.now();
+    const sdkModel = AGENTS.claude.sdkModelIds[model] ?? model;
 
     let cost: number | undefined;
     let turns = 0;
@@ -97,7 +92,7 @@ export const claudeAgent: Agent = {
     for await (const message of query({
       prompt,
       options: {
-        model: CLAUDE_MODEL_MAP[model] ?? model,
+        model: sdkModel,
         cwd: projectPath,
         allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
         maxTurns: MAX_TURNS,

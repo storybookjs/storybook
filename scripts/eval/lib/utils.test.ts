@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDuration, formatCost, generateTrialId, generatePrompt, listPrompts } from './utils';
+import { formatDuration, formatCost, generateTrialId, generatePrompt, listPrompts, formatTable } from './utils';
 
 describe('formatDuration', () => {
   it('formats seconds under a minute', () => {
@@ -96,5 +96,52 @@ describe('generatePrompt', () => {
   it('returns trimmed content', () => {
     const prompt = generatePrompt('setup');
     expect(prompt).toBe(prompt.trim());
+  });
+});
+
+describe('formatTable', () => {
+  it('formats a simple table with aligned columns', () => {
+    const result = formatTable(
+      ['Name', 'Score'],
+      [['Alice', '100'], ['Bob', '95']],
+    );
+    const lines = result.split('\n');
+    expect(lines).toHaveLength(4); // header + divider + 2 rows
+    expect(lines[0]).toContain('Name');
+    expect(lines[0]).toContain('Score');
+    expect(lines[1]).toMatch(/^-+\+-+$/);
+    expect(lines[2]).toContain('Alice');
+    expect(lines[3]).toContain('Bob');
+  });
+
+  it('auto-sizes columns to fit content', () => {
+    const result = formatTable(
+      ['X', 'Y'],
+      [['short', 'a-much-longer-value']],
+    );
+    const lines = result.split('\n');
+    // Header column for Y should be padded to match the data width
+    const headerCols = lines[0].split(' | ');
+    const dataCols = lines[2].split(' | ');
+    expect(headerCols[1].trim().length).toBeLessThanOrEqual(dataCols[1].trim().length);
+  });
+
+  it('handles ANSI escape codes in cells', () => {
+    const green = '\x1b[32mPASS\x1b[39m';
+    const result = formatTable(
+      ['Status'],
+      [[green], ['FAIL']],
+    );
+    const lines = result.split('\n');
+    // Both rows should be the same visible width
+    // The ANSI row has extra invisible chars but should still align
+    expect(lines[2]).toContain('PASS');
+    expect(lines[3]).toContain('FAIL');
+  });
+
+  it('handles empty rows', () => {
+    const result = formatTable(['A', 'B'], []);
+    const lines = result.split('\n');
+    expect(lines).toHaveLength(2); // header + divider only
   });
 });

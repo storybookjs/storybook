@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates';
+import { getComponentCandidates } from '../../../code/core/src/core-server/index';
 import {
   computeQualityScore,
   countTypeCheckErrors,
@@ -84,7 +84,7 @@ describe('grading pipeline', () => {
     expect(candidates).toHaveLength(2);
 
     // Step 2: Detect patterns — config references CSS, theme, staticDirs
-    const patterns = detectSetupPatterns(TMP);
+    const patterns = await detectSetupPatterns(TMP);
     const patternIds = patterns.map((p) => p.id);
     expect(patternIds).toContain('global-css');
     expect(patternIds).toContain('theme-provider');
@@ -128,7 +128,7 @@ describe('grading pipeline', () => {
 
     // Agent didn't create any .storybook config
     rmSync(join(TMP, '.storybook'), { recursive: true });
-    expect(detectSetupPatterns(TMP)).toEqual([]);
+    expect(await detectSetupPatterns(TMP)).toEqual([]);
 
     // Simulate tsc output with errors proportional to candidate count
     const tscLines = candidates.map(
@@ -162,7 +162,7 @@ describe('grading pipeline', () => {
     const candidates = await findCandidates(TMP);
     expect(candidates).toHaveLength(5);
 
-    const patterns = detectSetupPatterns(TMP);
+    const patterns = await detectSetupPatterns(TMP);
     expect(patterns.map((p) => p.id)).toContain('router-provider');
 
     // Agent wrote one story per candidate — all storybook-related
@@ -178,7 +178,7 @@ describe('grading pipeline', () => {
 });
 
 describe('setup-patterns only scans .storybook/', () => {
-  it('does not detect patterns in component source files', () => {
+  it('does not detect patterns in component source files', async () => {
     // Router usage in a component should NOT be detected as a setup pattern
     writeFile(
       'src/App.tsx',
@@ -193,6 +193,6 @@ describe('setup-patterns only scans .storybook/', () => {
     // Empty .storybook config with no patterns
     writeFile('.storybook/main.ts', `export default { stories: ['../src/**/*.stories.tsx'] };`);
 
-    expect(detectSetupPatterns(TMP).map((p) => p.id)).not.toContain('router-provider');
+    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).not.toContain('router-provider');
   });
 });

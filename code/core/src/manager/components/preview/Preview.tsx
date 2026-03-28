@@ -15,6 +15,7 @@ import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-ap
 import { useLandmark } from '../../hooks/useLandmark';
 import { FramesRenderer } from './FramesRenderer';
 import { ToolbarComp } from './Toolbar';
+import { getPreviewSelectionKey, shouldSyncPreviewSelection } from './selection';
 import { ApplyWrappers } from './Wrappers';
 import { ZoomConsumer, ZoomProvider } from './tools/zoom';
 import * as S from './utils/components';
@@ -49,6 +50,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
     options,
     viewMode,
     storyId,
+    refId,
     entry = undefined,
     description,
     baseUrl,
@@ -90,16 +92,26 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
   const { showToolbar } = options;
   const customisedShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
 
-  const previousStoryId = useRef(storyId);
+  const selectionKey = getPreviewSelectionKey(storyId, refId);
+  const previousSelectionKey = useRef(selectionKey);
+  const hasInitializedSelection = useRef(Boolean(entry && !refId));
 
   useEffect(() => {
     if (entry && viewMode) {
-      // Don't emit the event on first ("real") render, only when entry changes
-      if (storyId === previousStoryId.current) {
+      const shouldSyncSelection = shouldSyncPreviewSelection({
+        currentSelectionKey: selectionKey,
+        previousSelectionKey: previousSelectionKey.current,
+        refId,
+        hasInitializedSelection: hasInitializedSelection.current,
+      });
+
+      hasInitializedSelection.current = true;
+
+      if (!shouldSyncSelection) {
         return;
       }
 
-      previousStoryId.current = storyId;
+      previousSelectionKey.current = selectionKey;
 
       if (viewMode.match(/docs|story/)) {
         const { refId, id } = entry;
@@ -110,7 +122,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
         });
       }
     }
-  }, [entry, viewMode, storyId, api]);
+  }, [entry, viewMode, selectionKey, refId, api]);
 
   const mainRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(

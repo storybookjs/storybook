@@ -116,6 +116,7 @@ const mapper = ({
     options: layout,
     description: getDescription(entry),
     viewMode,
+    refId,
     refs,
     storyId,
     baseUrl: PREVIEW_URL || 'iframe.html',

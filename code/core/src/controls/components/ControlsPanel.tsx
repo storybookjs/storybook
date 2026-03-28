@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 
 import type { ArgTypes } from 'storybook/internal/types';
 
@@ -21,6 +21,7 @@ import {
 } from '../../../../addons/docs/src/blocks/components/ArgsTable/ArgsTable';
 import type { PresetColor } from '../../../../addons/docs/src/blocks/controls/types';
 import { PARAM_KEY } from '../constants';
+import { getCurrentStoryPreviewInitialized } from './controlsPanelState';
 import { SaveStory } from './SaveStory';
 
 // Remove undefined values (top-level only)
@@ -55,7 +56,6 @@ interface ControlsPanelProps {
 
 export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) => {
   const api = useStorybookApi();
-  const [isLoading, setIsLoading] = useState(true);
   const [args, updateArgs, resetArgs, initialArgs] = useArgs();
   const [globals] = useGlobals();
   const rows = useArgTypes();
@@ -65,16 +65,9 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
     presetColors,
     disableSaveFromUI = false,
   } = useParameter<ControlsParameters>(PARAM_KEY, {});
-  const { path, previewInitialized } = useStorybookState();
+  const { path, previewInitialized, refs } = useStorybookState();
   const storyData = api.getCurrentStoryData();
-
-  // If the story is prepared, then show the args table
-  // and reset the loading states
-  useEffect(() => {
-    if (previewInitialized) {
-      setIsLoading(false);
-    }
-  }, [previewInitialized]);
+  const isLoading = !getCurrentStoryPreviewInitialized(previewInitialized, refs, storyData);
 
   const hasControls = Object.values(rows).some((arg) => arg?.control);
 

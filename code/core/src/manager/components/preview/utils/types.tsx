@@ -12,6 +12,7 @@ import type { API, LeafEntry, State } from 'storybook/manager-api';
 export interface PreviewProps {
   api: API;
   viewMode: API_ViewMode;
+  refId?: string;
   refs: State['refs'];
   storyId: StoryId;
   entry: LeafEntry;

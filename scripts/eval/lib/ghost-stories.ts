@@ -1,12 +1,11 @@
 import { readFileSync, existsSync, globSync } from "node:fs";
 import { join } from "node:path";
-import type { GhostStoriesResult } from "../types.ts";
-import { logStep, logSuccess, logError, exec } from "./utils.ts";
+import type { GhostStoriesResult, Logger } from "../types.ts";
+import { exec } from "./utils.ts";
 
-// Reuse core's complexity scorer (zero dependencies, imports cleanly).
-// Vitest report parsing is done inline — simpler than importing the full
-// parseVitestResults chain which pulls in error categorization we don't need.
+// Reuse core ghost-stories utilities via relative imports.
 import { getComponentComplexity } from "../../../code/core/src/core-server/utils/ghost-stories/component-analyzer.ts";
+import { parseVitestResults } from "../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts";
 
 /**
  * Run ghost stories: discover candidate components, auto-generate stories
@@ -15,15 +14,16 @@ import { getComponentComplexity } from "../../../code/core/src/core-server/utils
 export async function runGhostStories(
   projectPath: string,
   resultsDir: string,
+  logger: Logger,
 ): Promise<GhostStoriesResult | undefined> {
-  logStep("Running ghost stories...");
+  logger.logStep("Running ghost stories...");
 
   const candidates = findCandidates(projectPath);
   if (candidates.length === 0) {
-    logError("No candidate components found");
+    logger.logError("No candidate components found");
     return undefined;
   }
-  logStep(`Found ${candidates.length} candidate component(s)`);
+  logger.logStep(`Found ${candidates.length} candidate component(s)`);
 
   const reportPath = join(resultsDir, "ghost-stories-report.json");
   await exec(
@@ -44,23 +44,23 @@ export async function runGhostStories(
   );
 
   if (!existsSync(reportPath)) {
-    logError("Ghost stories: no Vitest report generated");
+    logger.logError("Ghost stories: no Vitest report generated");
     return { candidateCount: candidates.length, total: 0, passed: 0, successRate: 0 };
   }
 
   try {
     const report = JSON.parse(readFileSync(reportPath, "utf-8"));
-    const total: number = report.numTotalTests ?? 0;
-    const passed: number = report.numPassedTests ?? 0;
-    if (total === 0) {
-      logError("Ghost stories: no test results in Vitest report");
+    const { summary } = parseVitestResults(report);
+    if (!summary) {
+      logger.logError("Ghost stories: no test results in Vitest report");
       return { candidateCount: candidates.length, total: 0, passed: 0, successRate: 0 };
     }
-    const successRate = parseFloat((passed / total).toFixed(2));
-    logSuccess(`Ghost stories: ${passed}/${total} passed (${Math.round(successRate * 100)}%)`);
+    const { total, passed, successRate } = summary;
+    if (total > 0)
+      logger.logSuccess(`Ghost stories: ${passed}/${total} passed (${Math.round(successRate * 100)}%)`);
     return { candidateCount: candidates.length, total, passed, successRate };
   } catch {
-    logError("Ghost stories: failed to parse Vitest report");
+    logger.logError("Ghost stories: failed to parse Vitest report");
     return { candidateCount: candidates.length, total: 0, passed: 0, successRate: 0 };
   }
 }

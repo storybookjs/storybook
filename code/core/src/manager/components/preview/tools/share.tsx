@@ -1,19 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect } from 'react';
 
-import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
-import {
-  SHARE_ISOLATE_MODE,
-  SHARE_POPOVER_OPENED,
-  SHARE_STORY_LINK,
-} from 'storybook/internal/core-events';
-import type { Addon_BaseType } from 'storybook/internal/types';
+import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
+import { SHARE_ISOLATE_MODE, SHARE_POPOVER_OPENED } from 'storybook/internal/core-events';
+import type { Addon_BaseType, Addon_ShareSectionType } from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { LinkIcon, ShareAltIcon, ShareIcon } from '@storybook/icons';
+import { ShareAltIcon, ShareIcon } from '@storybook/icons';
 
-import copy from 'copy-to-clipboard';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
-import { Consumer, types } from 'storybook/manager-api';
+import { Consumer, addons, types } from 'storybook/manager-api';
 import type { API, Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
@@ -61,6 +57,10 @@ const QRDescription = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
+const ShareSectionWrapper = styled.div(({ theme }) => ({
+  borderBottom: `1px solid ${theme.appBorderColor}`,
+}));
+
 const ShareMenu = React.memo(function ShareMenu({
   api,
   storyId,
@@ -72,68 +72,62 @@ const ShareMenu = React.memo(function ShareMenu({
 }) {
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
-  const [copied, setCopied] = useState(false);
-  const copyStoryLink = shortcutKeys?.copyStoryLink;
   const openInIsolation = shortcutKeys?.openInIsolation;
 
   useEffect(() => {
     api.emit(SHARE_POPOVER_OPENED);
   }, [api]);
 
-  const links = useMemo(() => {
-    const copyTitle = copied ? 'Copied!' : 'Copy story link';
-    const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
-    const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
+  const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
+  const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
 
-    return [
-      [
-        {
-          id: 'copy-link',
-          title: copyTitle,
-          icon: <LinkIcon />,
-          right: enableShortcuts ? <Shortcut keys={copyStoryLink} /> : null,
-          onClick: () => {
-            api.emit(SHARE_STORY_LINK, originHrefs.managerHref);
-            copy(originHrefs.managerHref);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          },
-        },
-        {
-          id: 'open-new-tab',
-          title: 'Open in isolation mode',
-          icon: <ShareAltIcon />,
-          right: enableShortcuts ? <Shortcut keys={openInIsolation} /> : null,
-          onClick: () => {
-            api.emit(SHARE_ISOLATE_MODE, originHrefs.previewHref);
-          },
-          href: originHrefs.previewHref,
-          target: '_blank',
-          rel: 'noopener noreferrer',
-        },
-      ],
-      [
-        {
-          id: 'qr-section',
-          content: (
-            <QRContainer>
-              <QRImage value={networkHrefs.managerHref} />
-              <QRContent>
-                <QRTitle>Scan to open</QRTitle>
-                <QRDescription>
-                  {global.CONFIG_TYPE === 'DEVELOPMENT'
-                    ? 'Device must be on the same network.'
-                    : 'View story on another device.'}
-                </QRDescription>
-              </QRContent>
-            </QRContainer>
-          ),
-        },
-      ],
-    ];
-  }, [api, storyId, refId, copied, enableShortcuts, copyStoryLink, openInIsolation]);
+  const shareSections = addons.getElements(Addon_TypesEnum.experimental_SHARE_SECTION) as Record<
+    string,
+    Addon_ShareSectionType
+  >;
+  const ShareSection = Object.values(shareSections)[0]?.render ?? null;
 
-  return <TooltipLinkList links={links} style={{ width: 240 }} />;
+  return (
+    <div style={{ width: 240 }}>
+      {ShareSection && (
+        <ShareSectionWrapper>
+          <ShareSection storyId={storyId} api={api} />
+        </ShareSectionWrapper>
+      )}
+      <ActionList>
+        <ActionList.Item>
+          <ActionList.Link
+            href={originHrefs.previewHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            ariaLabel="Open in isolation mode"
+            onClick={() => api.emit(SHARE_ISOLATE_MODE, originHrefs.previewHref)}
+          >
+            <ActionList.Icon>
+              <ShareAltIcon />
+            </ActionList.Icon>
+            <ActionList.Text>Open in isolation mode</ActionList.Text>
+            {enableShortcuts && <Shortcut keys={openInIsolation} />}
+          </ActionList.Link>
+        </ActionList.Item>
+      </ActionList>
+      <ActionList>
+        <ActionList.Item>
+          <QRContainer>
+            <QRImage value={networkHrefs.managerHref} />
+            <QRContent>
+              <QRTitle>Scan to open</QRTitle>
+              <QRDescription>
+                {global.CONFIG_TYPE === 'DEVELOPMENT'
+                  ? 'Device must be on the same network.'
+                  : 'View story on another device.'}
+              </QRDescription>
+            </QRContent>
+          </QRContainer>
+        </ActionList.Item>
+      </ActionList>
+    </div>
+  );
 });
 
 export const shareTool: Addon_BaseType = {

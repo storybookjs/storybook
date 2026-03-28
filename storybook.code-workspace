@@ -6,6 +6,12 @@
     {
       "path": "../storybook-sandboxes",
     },
+    {
+      "path": "../addon-visual-tests",
+    },
+    {
+      "path": "../chromatic-cli",
+    },
   ],
   "settings": {
     "files.associations": {

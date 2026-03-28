@@ -4,7 +4,8 @@ import type { GradingResult, GhostStoriesResult, QualityResult, QualityWeights, 
 import { DEFAULT_QUALITY_WEIGHTS } from "../types.ts";
 import { exec } from "./utils.ts";
 import { detectSetupPatterns } from "./setup-patterns.ts";
-import { getComponentCandidates, runGhostStories } from "../../../code/core/src/core-server/index.ts";
+import { getComponentCandidates } from "../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts";
+import { runGhostStories } from "../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts";
 
 /** Filter changed files to only storybook-related ones. */
 export function filterStorybookFiles(changedFiles: ChangedFile[]): ChangedFile[] {

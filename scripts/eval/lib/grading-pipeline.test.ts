@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { getComponentCandidates } from '../../../code/core/src/core-server/index';
+import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates';
 import {
   computeQualityScore,
   countTypeCheckErrors,

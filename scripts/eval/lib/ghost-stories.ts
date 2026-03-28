@@ -3,13 +3,18 @@ import { join } from "node:path";
 import type { GhostStoriesResult } from "../types.ts";
 import { logStep, logSuccess, logError, exec } from "./utils.ts";
 
+// Reuse core ghost-stories utilities via relative imports
+import { getComponentComplexity } from "../../../code/core/src/core-server/utils/ghost-stories/component-analyzer.ts";
+import { parseVitestResults } from "../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts";
+
 /**
  * Run ghost stories: discover candidate components, auto-generate stories
  * via the addon-vitest componentTransform, and measure rendering success.
  *
- * Mirrors the approach in core-server/utils/ghost-stories/run-story-tests.ts:
- * - Pass component paths as both CLI args (so vitest runs them) and
- *   STORYBOOK_COMPONENT_PATHS env var (so the transform plugin activates)
+ * Reuses parseVitestResults and getComponentComplexity from core.
+ * Candidate discovery uses a lightweight regex approach here because the
+ * core's getComponentCandidates depends on storybook/internal/babel which
+ * isn't resolvable from the scripts/ workspace.
  */
 export async function runGhostStories(
   projectPath: string,
@@ -49,15 +54,12 @@ export async function runGhostStories(
 
   try {
     const report = JSON.parse(readFileSync(reportPath, "utf-8"));
-    let total = 0;
-    let passed = 0;
-    for (const suite of report.testResults ?? []) {
-      for (const test of suite.assertionResults ?? []) {
-        total++;
-        if (test.status === "passed") passed++;
-      }
+    const { summary } = parseVitestResults(report);
+    if (!summary) {
+      logError("Ghost stories: no test results in Vitest report");
+      return { candidateCount: candidates.length, total: 0, passed: 0, successRate: 0 };
     }
-    const successRate = total > 0 ? Math.round((passed / total) * 100) / 100 : 0;
+    const { total, passed, successRate } = summary;
     if (total > 0) logSuccess(`Ghost stories: ${passed}/${total} passed (${Math.round(successRate * 100)}%)`);
     return { candidateCount: candidates.length, total, passed, successRate };
   } catch {
@@ -66,8 +68,11 @@ export async function runGhostStories(
   }
 }
 
-/** Find .tsx/.jsx files that look like React components, sorted by simplicity. */
-function findCandidates(projectPath: string): string[] {
+/**
+ * Find .tsx/.jsx files that look like React components, sorted by complexity.
+ * Uses getComponentComplexity from core for consistent scoring.
+ */
+export function findCandidates(projectPath: string): string[] {
   const SKIP = new Set(["node_modules", ".storybook", "dist", "build", ".git"]);
   const files = globSync("**/*.{tsx,jsx}", {
     cwd: projectPath,
@@ -81,8 +86,7 @@ function findCandidates(projectPath: string): string[] {
         const content = readFileSync(join(projectPath, f), "utf-8");
         if (!/export\s/.test(content)) return null;
         if (!/<[A-Z]/.test(content) && !/return\s*\(?\s*</.test(content)) return null;
-        const lines = content.split("\n").filter((l) => l.trim()).length;
-        return { path: f, complexity: Math.min(1, lines / 100) };
+        return { path: f, complexity: getComponentComplexity(content) };
       } catch {
         return null;
       }

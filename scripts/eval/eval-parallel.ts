@@ -2,23 +2,21 @@ import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
-import { Command } from "commander";
+import { parseArgs } from "node:util";
 import pc from "picocolors";
 import { AGENTS } from "./types.ts";
-import type { AgentName, TrialResult } from "./types.ts";
+import type { TrialResult } from "./types.ts";
 import { PROJECTS } from "./config.ts";
 import { listPrompts } from "./lib/generate-prompt.ts";
 import { formatDuration, formatCost } from "./lib/utils.ts";
 
-const program = new Command()
-  .name("eval-parallel")
-  .description("Run all agent×model×prompt combos in parallel for one project")
-  .option("-p, --project <name>", "project to evaluate")
-  .option("-e, --effort <level>", "effort: low, medium, high, max", "high")
-  .option("-u, --upload-id <id>", "upload ID for Google Sheets");
-
-program.parse();
-const opts = program.opts();
+const { values: opts } = parseArgs({
+  options: {
+    project: { type: "string", short: "p" },
+    effort: { type: "string", short: "e", default: "high" },
+    "upload-id": { type: "string", short: "u" },
+  },
+});
 
 const project = PROJECTS.find((p) => p.name === opts.project);
 if (!project) {
@@ -29,7 +27,7 @@ if (!project) {
 const prompts = listPrompts();
 const effort = opts.effort as string;
 const runId = randomUUID().slice(0, 8);
-const uploadId = (opts.uploadId as string) || `eval-${runId}`;
+const uploadId = opts["upload-id"] || `eval-${runId}`;
 const evalScript = resolve(import.meta.dirname, "eval.ts");
 
 // Build all combos: every agent × model × prompt

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { Command } from "commander";
+import { parseArgs } from "node:util";
 import pc from "picocolors";
 import type { TrialConfig, AgentName, Effort } from "./types.ts";
 import { AGENTS } from "./types.ts";
@@ -8,35 +8,33 @@ import { runTask } from "./lib/run-task.ts";
 import { listPrompts } from "./lib/generate-prompt.ts";
 import { log, formatDuration, formatCost } from "./lib/utils.ts";
 
-const program = new Command()
-  .name("eval")
-  .description("Run a single Storybook setup eval")
-  .option("-p, --project <name>", "project to evaluate")
-  .option("-a, --agent <name>", "agent: claude, codex", "claude")
-  .option("-m, --model <name>", "model (default: per agent)")
-  .option("-e, --effort <level>", "effort: low, medium, high, max", "high")
-  .option("--prompt <name>", "prompt name", "setup")
-  .option("-v, --verbose", "verbose output")
-  .option("-u, --upload-id <id>", "upload ID for Google Sheets")
-  .option("--list-projects", "list projects")
-  .option("--list-models", "list models")
-  .option("--list-prompts", "list prompts");
+const { values: opts } = parseArgs({
+  options: {
+    project: { type: "string", short: "p" },
+    agent: { type: "string", short: "a", default: "claude" },
+    model: { type: "string", short: "m" },
+    effort: { type: "string", short: "e", default: "high" },
+    prompt: { type: "string", default: "setup" },
+    verbose: { type: "boolean", short: "v", default: false },
+    "upload-id": { type: "string", short: "u" },
+    "list-projects": { type: "boolean", default: false },
+    "list-models": { type: "boolean", default: false },
+    "list-prompts": { type: "boolean", default: false },
+  },
+});
 
-program.parse();
-const opts = program.opts();
-
-if (opts.listProjects) {
+if (opts["list-projects"]) {
   for (const p of PROJECTS) log(`  ${pc.bold(p.name)} — ${p.description}`);
   process.exit(0);
 }
-if (opts.listModels) {
+if (opts["list-models"]) {
   for (const [agent, { models }] of Object.entries(AGENTS)) {
     log(`\n  ${pc.bold(agent)}`);
     for (const m of models) log(`    ${m}`);
   }
   process.exit(0);
 }
-if (opts.listPrompts) {
+if (opts["list-prompts"]) {
   for (const name of listPrompts()) log(`  ${pc.bold(name)}`);
   process.exit(0);
 }
@@ -73,7 +71,7 @@ if (opts.model) {
 
 const effort = opts.effort as Effort;
 const runId = randomUUID().slice(0, 8);
-const uploadId = (opts.uploadId as string) || `eval-${runId}`;
+const uploadId = opts["upload-id"] || `eval-${runId}`;
 
 const config: TrialConfig = {
   project,
@@ -81,7 +79,7 @@ const config: TrialConfig = {
   model,
   effort,
   prompt: opts.prompt as string,
-  verbose: opts.verbose as boolean | undefined,
+  verbose: opts.verbose,
 };
 
 log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));

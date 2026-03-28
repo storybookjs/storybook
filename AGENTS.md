@@ -9,10 +9,11 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
 - **Base branch**: `next` (all PRs should target `next`, not `main`)
-- **Node.js**: `22.21.1` (see `.nvmrc`)
+- **Node.js**: `22.22.1` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
 - **CI environment**: Linux and Windows
+- **TS execution**: Migrating from `jiti` to native `node` for running `.ts` files. New scripts should use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions` in tsconfig). Legacy scripts still use `jiti` but should be migrated over time.
 
 ## Repository Structure
 

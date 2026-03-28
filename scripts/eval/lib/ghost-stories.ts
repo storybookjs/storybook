@@ -3,10 +3,9 @@ import { join } from "node:path";
 import type { GhostStoriesResult } from "../types.ts";
 import { logStep, logSuccess, logError, exec } from "./utils.ts";
 
-// component-analyzer has zero dependencies so it imports cleanly.
-// parse-vitest-report can't be imported — its transitive imports use
-// extensionless specifiers that fail under Node's native TS loader.
-// We read numPassedTests/numTotalTests from the vitest JSON directly instead.
+// Reuse core's complexity scorer (zero dependencies, imports cleanly).
+// Vitest report parsing is done inline — simpler than importing the full
+// parseVitestResults chain which pulls in error categorization we don't need.
 import { getComponentComplexity } from "../../../code/core/src/core-server/utils/ghost-stories/component-analyzer.ts";
 
 /**

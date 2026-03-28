@@ -42,13 +42,17 @@ export const createCanvasTab = (): Addon_BaseType => ({
   render: () => null,
 });
 
+const getSelectedEntryKey = (entry: PreviewProps['entry'], viewMode: PreviewProps['viewMode']) =>
+  entry && viewMode.match(/docs|story/)
+    ? `${viewMode}:${entry.refId ?? 'storybook_internal'}:${entry.id}`
+    : undefined;
+
 const Preview = React.memo<PreviewProps>(function Preview(props) {
   const {
     api,
     id: previewId,
     options,
     viewMode,
-    storyId,
     entry = undefined,
     description,
     baseUrl,
@@ -90,27 +94,24 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
   const { showToolbar } = options;
   const customisedShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
 
-  const previousStoryId = useRef(storyId);
+  const previousSelectionKey = useRef(getSelectedEntryKey(entry, viewMode));
 
   useEffect(() => {
-    if (entry && viewMode) {
-      // Don't emit the event on first ("real") render, only when entry changes
-      if (storyId === previousStoryId.current) {
-        return;
-      }
+    const selectionKey = getSelectedEntryKey(entry, viewMode);
 
-      previousStoryId.current = storyId;
-
-      if (viewMode.match(/docs|story/)) {
-        const { refId, id } = entry;
-        api.emit(SET_CURRENT_STORY, {
-          storyId: id,
-          viewMode,
-          options: { target: refId },
-        });
-      }
+    if (!entry || !selectionKey || selectionKey === previousSelectionKey.current) {
+      return;
     }
-  }, [entry, viewMode, storyId, api]);
+
+    previousSelectionKey.current = selectionKey;
+
+    const { refId, id } = entry;
+    api.emit(SET_CURRENT_STORY, {
+      storyId: id,
+      viewMode,
+      options: { target: refId },
+    });
+  }, [entry, viewMode, api]);
 
   const mainRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(

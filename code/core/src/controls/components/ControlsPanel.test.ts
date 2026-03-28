@@ -19,4 +19,20 @@ describe('getCurrentStoryPreviewInitialized', () => {
       )
     ).toBe(true);
   });
+
+  it('returns false when the composed ref does not exist', () => {
+    expect(getCurrentStoryPreviewInitialized(true, {}, { refId: 'nonexistent' })).toBe(false);
+  });
+
+  it('returns false when the composed ref is not initialized', () => {
+    expect(
+      getCurrentStoryPreviewInitialized(
+        true,
+        {
+          external: { previewInitialized: false },
+        },
+        { refId: 'external' }
+      )
+    ).toBe(false);
+  });
 });

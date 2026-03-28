@@ -32,3 +32,7 @@ export {
 } from './stores/test-provider';
 
 export { getServerPort } from './utils/server-address';
+
+export { getComponentCandidates } from './utils/ghost-stories/get-candidates';
+export { runGhostStories } from './utils/ghost-stories/run-story-tests';
+export type { TestRunSummary } from './utils/ghost-stories/types';

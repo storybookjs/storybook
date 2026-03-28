@@ -1,10 +1,10 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { GradingResult, QualityResult, QualityWeights, TrialPaths, ChangedFile, Logger } from "../types.ts";
+import type { GradingResult, GhostStoriesResult, QualityResult, QualityWeights, TrialPaths, ChangedFile, Logger } from "../types.ts";
 import { DEFAULT_QUALITY_WEIGHTS } from "../types.ts";
 import { exec } from "./utils.ts";
 import { detectSetupPatterns } from "./setup-patterns.ts";
-import { runGhostStories } from "./ghost-stories.ts";
+import { getComponentCandidates, runGhostStories } from "../../../code/core/src/core-server/index.ts";
 
 /** Filter changed files to only storybook-related ones. */
 export function filterStorybookFiles(changedFiles: ChangedFile[]): ChangedFile[] {
@@ -118,7 +118,7 @@ export async function grade(
   }
 
   // Ghost stories (only if build passed)
-  const ghostStories = buildSuccess ? await runGhostStories(projectPath, resultsDir, logger) : undefined;
+  const ghostStories = buildSuccess ? await gradeGhostStories(projectPath, logger) : undefined;
 
   const grading: GradingResult = {
     buildSuccess,
@@ -150,4 +150,26 @@ async function getChangedFiles(repoRoot: string, baseline: string): Promise<Chan
     throwOnError: false,
   });
   return parseChangedFiles(stdout);
+}
+
+async function gradeGhostStories(projectPath: string, logger: Logger): Promise<GhostStoriesResult | undefined> {
+  logger.logStep("Running ghost stories...");
+
+  const { candidates, error } = await getComponentCandidates({ sampleSize: 20, cwd: projectPath });
+  if (error || candidates.length === 0) {
+    logger.logError(error ?? "No candidate components found");
+    return undefined;
+  }
+  logger.logStep(`Found ${candidates.length} candidate component(s)`);
+
+  const result = await runGhostStories(candidates, { cwd: projectPath });
+  const { total, passed, successRate } = result.summary ?? { total: 0, passed: 0, successRate: 0 };
+
+  if (result.runError) {
+    logger.logError(`Ghost stories: ${result.runError}`);
+  } else if (total > 0) {
+    logger.logSuccess(`Ghost stories: ${passed}/${total} passed (${Math.round(successRate * 100)}%)`);
+  }
+
+  return { candidateCount: candidates.length, total, passed, successRate };
 }

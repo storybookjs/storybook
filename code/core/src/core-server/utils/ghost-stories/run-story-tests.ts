@@ -8,7 +8,18 @@ import { join } from 'pathe';
 import { parseVitestResults } from './parse-vitest-report';
 import type { TestRunSummary } from './types';
 
-export async function runStoryTests(componentFilePaths: string[]): Promise<TestRunSummary> {
+/**
+ * Run ghost stories: execute vitest on component file paths to auto-generate
+ * and test stories that don't exist on disk.
+ *
+ * @param componentFilePaths - Absolute paths to component files to test.
+ * @param options.cwd - Working directory for vitest. Defaults to process.cwd().
+ */
+export async function runGhostStories(
+  componentFilePaths: string[],
+  options?: { cwd?: string }
+): Promise<TestRunSummary> {
+  const cwd = options?.cwd;
   try {
     // Create the cache directory for story discovery tests
     const cacheDir = resolvePathInStorybookCache('ghost-stories-tests');
@@ -34,6 +45,7 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
           `--outputFile=${outputFile}`,
           ...componentFilePaths,
         ],
+        cwd,
         stdio: 'pipe',
         env: {
           STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';'),

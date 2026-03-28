@@ -7,8 +7,8 @@ import { glob } from 'glob';
 
 import { getComponentComplexity } from './component-analyzer.ts';
 
-/** Check whether source contains JSX and at least one export using AST. */
-export function isValidCandidate(source: string): boolean {
+// A valid candidate includes React code and at least one export
+function isValidCandidate(source: string): boolean {
   const ast = babelParse(source);
 
   let hasJSX = false;
@@ -59,15 +59,10 @@ export function isValidCandidate(source: string): boolean {
  * Based on a list of files, analyze them to find potential candidates to generate story files for.
  * this is based on whether the file has JSX and exports and how many runtime LOC and imports it
  * has.
- *
- * @param isCandidate - Validation function to check if source is a valid component.
- *   Defaults to AST-based {@link isValidCandidate}. Callers outside the storybook
- *   workspace can supply a lighter regex-based check instead.
  */
 export async function getCandidatesForStorybook(
   files: string[],
-  sampleCount: number,
-  isCandidate: (source: string) => boolean = isValidCandidate
+  sampleCount: number
 ): Promise<{
   candidates: string[];
   analyzedCount: number;
@@ -81,7 +76,7 @@ export async function getCandidatesForStorybook(
     try {
       source = await readFile(file, 'utf-8');
       // filter out non-React code or files without exports
-      if (!isCandidate(source)) {
+      if (!isValidCandidate(source)) {
         continue;
       }
     } catch {
@@ -132,13 +127,10 @@ export async function getCandidatesForStorybook(
 export async function getComponentCandidates({
   sampleSize = 20,
   globPattern = '**/*.{tsx,jsx}',
-  isCandidate = isValidCandidate,
   cwd = process.cwd(),
 }: {
   sampleSize?: number;
   globPattern?: string;
-  /** Validation function. Defaults to AST-based check; supply a regex version for lightweight usage. */
-  isCandidate?: (source: string) => boolean;
   /** Working directory for glob. Defaults to process.cwd(). */
   cwd?: string;
 } = {}): Promise<{
@@ -186,8 +178,7 @@ export async function getComponentCandidates({
 
     const { analyzedCount, avgComplexity, candidates } = await getCandidatesForStorybook(
       files,
-      sampleSize,
-      isCandidate
+      sampleSize
     );
 
     return {

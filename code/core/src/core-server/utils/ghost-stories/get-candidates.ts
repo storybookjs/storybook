@@ -1,15 +1,14 @@
 import { readFile } from 'node:fs/promises';
 
 import { babelParse, traverse } from 'storybook/internal/babel';
-import { logger } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 
-import { getComponentComplexity } from './component-analyzer';
+import { getComponentComplexity } from './component-analyzer.ts';
 
-// A valid candidate includes React code and at least one export
-function isValidCandidate(source: string): boolean {
+/** Check whether source contains JSX and at least one export using AST. */
+export function isValidCandidate(source: string): boolean {
   const ast = babelParse(source);
 
   let hasJSX = false;
@@ -60,10 +59,15 @@ function isValidCandidate(source: string): boolean {
  * Based on a list of files, analyze them to find potential candidates to generate story files for.
  * this is based on whether the file has JSX and exports and how many runtime LOC and imports it
  * has.
+ *
+ * @param isCandidate - Validation function to check if source is a valid component.
+ *   Defaults to AST-based {@link isValidCandidate}. Callers outside the storybook
+ *   workspace can supply a lighter regex-based check instead.
  */
 export async function getCandidatesForStorybook(
   files: string[],
-  sampleCount: number
+  sampleCount: number,
+  isCandidate: (source: string) => boolean = isValidCandidate
 ): Promise<{
   candidates: string[];
   analyzedCount: number;
@@ -77,7 +81,7 @@ export async function getCandidatesForStorybook(
     try {
       source = await readFile(file, 'utf-8');
       // filter out non-React code or files without exports
-      if (!isValidCandidate(source)) {
+      if (!isCandidate(source)) {
         continue;
       }
     } catch {
@@ -128,9 +132,15 @@ export async function getCandidatesForStorybook(
 export async function getComponentCandidates({
   sampleSize = 20,
   globPattern = '**/*.{tsx,jsx}',
+  isCandidate = isValidCandidate,
+  cwd = process.cwd(),
 }: {
   sampleSize?: number;
   globPattern?: string;
+  /** Validation function. Defaults to AST-based check; supply a regex version for lightweight usage. */
+  isCandidate?: (source: string) => boolean;
+  /** Working directory for glob. Defaults to process.cwd(). */
+  cwd?: string;
 } = {}): Promise<{
   candidates: string[];
   error?: string;
@@ -145,7 +155,7 @@ export async function getComponentCandidates({
 
     // Find files matching the glob pattern
     files = await glob(globPattern, {
-      cwd: process.cwd(),
+      cwd,
       absolute: true,
       ignore: [
         '**/node_modules/**',
@@ -176,7 +186,8 @@ export async function getComponentCandidates({
 
     const { analyzedCount, avgComplexity, candidates } = await getCandidatesForStorybook(
       files,
-      sampleSize
+      sampleSize,
+      isCandidate
     );
 
     return {

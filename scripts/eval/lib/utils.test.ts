@@ -36,9 +36,10 @@ describe('formatCost', () => {
 });
 
 describe('generateTrialId', () => {
-  it('contains project, model, and prompt', () => {
+  it('contains project, agent, model, and prompt', () => {
     const id = generateTrialId('mealdrop', 'claude', 'sonnet-4.6', 'setup');
     expect(id).toContain('mealdrop');
+    expect(id).toContain('claude');
     expect(id).toContain('sonnet-4.6');
     expect(id).toContain('setup');
   });

@@ -1,4 +1,4 @@
-import { Codex } from "@openai/codex-sdk";
+import { Codex, type ModelReasoningEffort } from "@openai/codex-sdk";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Agent, Effort, ExecutionResult } from "../../types.ts";
@@ -24,7 +24,7 @@ function estimateCost(
   );
 }
 
-const CODEX_EFFORT: Record<Effort, string> = {
+const CODEX_EFFORT: Record<Effort, ModelReasoningEffort> = {
   low: "low",
   medium: "medium",
   high: "high",
@@ -34,15 +34,15 @@ const CODEX_EFFORT: Record<Effort, string> = {
 export const codexAgent: Agent = {
   name: "codex",
 
-  async execute(
-    prompt: string,
-    projectPath: string,
-    model: string,
-    options?: { effort?: Effort; verbose?: boolean; resultsDir?: string },
-  ): Promise<ExecutionResult> {
-    const { effort = "high", resultsDir } = options ?? {};
+  async execute({
+    prompt,
+    projectPath,
+    model,
+    effort = "high",
+    resultsDir,
+    logger,
+  }): Promise<ExecutionResult> {
     const startTime = Date.now();
-    const log = (prefix: string, text: string) => process.stderr.write(`${prefix} ${text}\n`);
 
     const codex = new Codex();
     const thread = codex.startThread({
@@ -66,22 +66,22 @@ export const codexAgent: Agent = {
           items.push(item);
           switch (item.type) {
             case "agent_message":
-              log("💬", item.text.slice(0, 300));
+              logger.log(`💬 ${item.text.slice(0, 300)}`);
               break;
             case "command_execution":
-              log("🔧", `$ ${item.command} → exit ${item.exit_code ?? "?"}`);
+              logger.log(`🔧 $ ${item.command} → exit ${item.exit_code ?? "?"}`);
               if (item.exit_code !== 0 && item.aggregated_output) {
-                log("  ", item.aggregated_output.slice(-200));
+                logger.log(`   ${item.aggregated_output.slice(-200)}`);
               }
               break;
             case "file_change":
-              for (const c of item.changes) log("📝", `${c.kind} ${c.path}`);
+              for (const c of item.changes) logger.log(`📝 ${c.kind} ${c.path}`);
               break;
             case "reasoning":
-              log("🧠", item.text.slice(0, 200));
+              logger.log(`🧠 ${item.text.slice(0, 200)}`);
               break;
             case "error":
-              log("❌", item.message);
+              logger.logError(item.message);
               break;
           }
           break;
@@ -91,24 +91,22 @@ export const codexAgent: Agent = {
           totalCached += event.usage.cached_input_tokens;
           totalOutput += event.usage.output_tokens;
           turns++;
-          log("📊", `tokens: ${event.usage.input_tokens}in / ${event.usage.output_tokens}out (${event.usage.cached_input_tokens} cached)`);
+          logger.log(`📊 tokens: ${event.usage.input_tokens}in / ${event.usage.output_tokens}out (${event.usage.cached_input_tokens} cached)`);
           break;
         case "turn.failed":
-          log("❌", `Turn failed: ${event.error.message}`);
+          logger.logError(`Turn failed: ${event.error.message}`);
           break;
         case "error":
-          log("❌", `Error: ${event.message}`);
+          logger.logError(`Error: ${event.message}`);
           break;
       }
     }
 
     const duration = (Date.now() - startTime) / 1000;
     const cost = estimateCost(model, totalInput, totalCached, totalOutput);
-    log("✅", `Done — ${turns} turns, ${Math.round(duration)}s, ${totalInput}in/${totalOutput}out tokens${cost != null ? `, $${cost.toFixed(4)}` : ""}`);
+    logger.logSuccess(`Done — ${turns} turns, ${Math.round(duration)}s, ${totalInput}in/${totalOutput}out tokens${cost != null ? `, $${cost.toFixed(4)}` : ""}`);
 
-    if (resultsDir) {
-      writeFileSync(join(resultsDir, "transcript.json"), JSON.stringify(items, null, 2));
-    }
+    writeFileSync(join(resultsDir, "transcript.json"), JSON.stringify(items, null, 2));
 
     return { agent: "codex", model, effort, cost, duration, turns };
   },

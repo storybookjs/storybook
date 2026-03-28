@@ -1,24 +1,24 @@
 /**
- * Core types and config for the Storybook setup eval system.
+ * Core types for the Storybook setup eval system.
  *
- * Four independent axes: agent × model × effort × prompt
+ * Four independent axes: agent x model x effort x prompt
+ *
+ * Runtime configuration (AGENTS, PROJECTS) lives in config.ts.
  */
+
+// --- Logger ---
+
+export interface Logger {
+  log: (msg: string) => void;
+  logStep: (msg: string) => void;
+  logSuccess: (msg: string) => void;
+  logError: (msg: string) => void;
+}
 
 // --- Agent, Model, Effort ---
 
 export type AgentName = "claude" | "codex";
 export type Effort = "low" | "medium" | "high" | "max";
-
-export const AGENTS: Record<AgentName, { models: string[]; defaultModel: string }> = {
-  claude: {
-    models: ["sonnet-4.6", "opus-4.6", "haiku-4.5"],
-    defaultModel: "sonnet-4.6",
-  },
-  codex: {
-    models: ["gpt-5.4"],
-    defaultModel: "gpt-5.4",
-  },
-};
 
 // --- Projects ---
 
@@ -29,47 +29,6 @@ export interface Project {
   projectDir?: string;
   description?: string;
 }
-
-export const PROJECTS: Project[] = [
-  {
-    name: "mealdrop",
-    repo: "https://github.com/kasperpeulen/mealdrop",
-    branch: "eval-baseline",
-    description: "Styled components, Redux, React Router",
-  },
-  {
-    name: "edgy",
-    repo: "https://github.com/kasperpeulen/edgy",
-    branch: "eval-baseline",
-    description: "Tailwind, HeadlessUI, React Router",
-  },
-  {
-    name: "wikitok",
-    repo: "https://github.com/kasperpeulen/wikitok",
-    branch: "eval-baseline",
-    projectDir: "frontend",
-    description: "Simple project with Tailwind",
-  },
-  {
-    name: "baklava",
-    repo: "https://github.com/kasperpeulen/baklava",
-    branch: "eval-baseline",
-    description: "Component library with Zustand",
-  },
-  {
-    name: "echarts",
-    repo: "https://github.com/kasperpeulen/echarts-react",
-    branch: "eval-baseline",
-    description: "ECharts React wrapper",
-  },
-  {
-    name: "evergreen-ci",
-    repo: "https://github.com/kasperpeulen/ui",
-    branch: "eval-baseline",
-    projectDir: "packages/lib",
-    description: "GraphQL",
-  },
-];
 
 // --- Trial Types ---
 
@@ -139,6 +98,20 @@ export interface GhostStoriesResult {
 
 // --- Quality Score ---
 
+export interface QualityWeights {
+  ghostStories: number;
+  build: number;
+  typecheck: number;
+  performance: number;
+}
+
+export const DEFAULT_QUALITY_WEIGHTS: QualityWeights = {
+  ghostStories: 0.4,
+  build: 0.25,
+  typecheck: 0.25,
+  performance: 0.1,
+};
+
 export interface QualityResult {
   score: number;
   breakdown: { build: number; typecheck: number; ghostStories: number; performance: number };
@@ -164,10 +137,12 @@ export interface TrialResult {
 
 export interface Agent {
   name: AgentName;
-  execute(
-    prompt: string,
-    projectPath: string,
-    model: string,
-    options?: { effort?: Effort; verbose?: boolean; resultsDir?: string },
-  ): Promise<ExecutionResult>;
+  execute(params: {
+    prompt: string;
+    projectPath: string;
+    model: string;
+    effort: Effort;
+    resultsDir: string;
+    logger: Logger;
+  }): Promise<ExecutionResult>;
 }

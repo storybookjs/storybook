@@ -1,7 +1,8 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { GradingResult, QualityResult, TrialPaths, ChangedFile } from "../types.ts";
-import { logStep, logSuccess, logError, exec } from "./utils.ts";
+import type { GradingResult, QualityResult, QualityWeights, TrialPaths, ChangedFile, Logger } from "../types.ts";
+import { DEFAULT_QUALITY_WEIGHTS } from "../types.ts";
+import { exec } from "./utils.ts";
 import { detectSetupPatterns } from "./setup-patterns.ts";
 import { runGhostStories } from "./ghost-stories.ts";
 
@@ -13,24 +14,34 @@ export function filterStorybookFiles(changedFiles: ChangedFile[]): ChangedFile[]
 }
 
 /**
- * Compute quality score.
+ * Compute quality score with configurable weights.
  *
- * Weights: 40% ghost stories, 25% build, 25% typecheck, 10% performance.
+ * Default weights: 40% ghost stories, 25% build, 25% typecheck, 10% performance.
  *
- * Performance is scored on a curve: ≤120s → 1.0, 600s → 0, linear between.
+ * Performance is scored on a curve: <=120s -> 1.0, 600s -> 0, linear between.
  */
-export function computeQualityScore(opts: {
-  buildSuccess: boolean;
-  typeCheckErrors: number;
-  ghostSuccessRate?: number;
-  durationSeconds?: number;
-}): QualityResult {
+export function computeQualityScore(
+  opts: {
+    buildSuccess: boolean;
+    typeCheckErrors: number;
+    ghostSuccessRate?: number;
+    durationSeconds?: number;
+  },
+  weights: QualityWeights = DEFAULT_QUALITY_WEIGHTS,
+): QualityResult {
   const buildScore = opts.buildSuccess ? 1 : 0;
   const tcScore = Math.max(0, 1 - opts.typeCheckErrors / 20);
   const ghostScore = opts.ghostSuccessRate ?? 0;
   const d = opts.durationSeconds;
   const perfScore = d == null ? 0 : Math.max(0, Math.min(1, 1 - (d - 120) / 480));
-  const score = Math.round((ghostScore * 0.4 + buildScore * 0.25 + tcScore * 0.25 + perfScore * 0.1) * 100) / 100;
+  const score =
+    Math.round(
+      (ghostScore * weights.ghostStories +
+        buildScore * weights.build +
+        tcScore * weights.typecheck +
+        perfScore * weights.performance) *
+        100,
+    ) / 100;
   return {
     score,
     breakdown: {
@@ -61,51 +72,53 @@ export function parseChangedFiles(gitOutput: string): ChangedFile[] {
 
 export async function grade(
   paths: TrialPaths,
+  logger: Logger,
   agentDuration?: number,
 ): Promise<{ grading: GradingResult; quality: QualityResult }> {
   const { repoRoot, projectPath, resultsDir, baselineCommit } = paths;
 
   // Changed files
-  logStep("Collecting agent changes...");
+  logger.logStep("Collecting agent changes...");
   const changedFiles = await getChangedFiles(repoRoot, baselineCommit);
   const storybookFiles = filterStorybookFiles(changedFiles);
-  logSuccess(`${changedFiles.length} files changed (${storybookFiles.length} storybook-related)`);
+  logger.logSuccess(`${changedFiles.length} files changed (${storybookFiles.length} storybook-related)`);
 
   // Setup patterns
   const setupPatterns = detectSetupPatterns(projectPath);
-  if (setupPatterns.length > 0) logSuccess(`Detected patterns: ${setupPatterns.map((p) => p.label).join(", ")}`);
+  if (setupPatterns.length > 0) logger.logSuccess(`Detected patterns: ${setupPatterns.map((p) => p.label).join(", ")}`);
 
-  // Storybook build
-  logStep("Running storybook build...");
-  const build = await exec("npx", ["storybook", "build", "--quiet"], {
-    cwd: projectPath,
-    timeout: 300_000,
-    throwOnError: false,
-    env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: "1", NODE_OPTIONS: "--max_old_space_size=4096" },
-  });
+  // Storybook build + TypeScript check in parallel
+  logger.logStep("Running storybook build + typecheck...");
+  const [build, tsc] = await Promise.all([
+    exec("npx", ["storybook", "build", "--quiet"], {
+      cwd: projectPath,
+      timeout: 300_000,
+      throwOnError: false,
+      env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: "1", NODE_OPTIONS: "--max_old_space_size=4096" },
+    }),
+    exec("npx", ["tsc", "--noEmit"], { cwd: projectPath, timeout: 120_000, throwOnError: false }),
+  ]);
+
   const buildSuccess = build.exitCode === 0;
   const buildOutput = build.stdout + "\n" + build.stderr;
   writeFileSync(join(resultsDir, "build-output.txt"), buildOutput);
   if (buildSuccess) {
-    logSuccess("Storybook build succeeded");
+    logger.logSuccess("Storybook build succeeded");
   } else {
-    logError(`Storybook build failed (exit ${build.exitCode})`);
+    logger.logError(`Storybook build failed (exit ${build.exitCode})`);
   }
 
-  // TypeScript check
-  logStep("Running typecheck...");
-  const tsc = await exec("npx", ["tsc", "--noEmit"], { cwd: projectPath, timeout: 120_000, throwOnError: false });
   const tscOutput = tsc.stdout + "\n" + tsc.stderr;
   writeFileSync(join(resultsDir, "typecheck-output.txt"), tscOutput);
   const typeCheckErrors = countTypeCheckErrors(tscOutput);
   if (typeCheckErrors === 0) {
-    logSuccess("No TypeScript errors");
+    logger.logSuccess("No TypeScript errors");
   } else {
-    logError(`${typeCheckErrors} TypeScript error(s)`);
+    logger.logError(`${typeCheckErrors} TypeScript error(s)`);
   }
 
   // Ghost stories (only if build passed)
-  const ghostStories = buildSuccess ? await runGhostStories(projectPath, resultsDir) : undefined;
+  const ghostStories = buildSuccess ? await runGhostStories(projectPath, resultsDir, logger) : undefined;
 
   const grading: GradingResult = {
     buildSuccess,

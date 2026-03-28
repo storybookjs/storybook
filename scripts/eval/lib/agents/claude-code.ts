@@ -2,22 +2,20 @@ import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Agent, Effort, ExecutionResult } from "../../types.ts";
+import type { Agent, ExecutionResult, Logger } from "../../types.ts";
 
-function logMessage(message: SDKMessage) {
-  const log = (prefix: string, text: string) => process.stderr.write(`${prefix} ${text}\n`);
-
+function logMessage(message: SDKMessage, logger: Logger) {
   switch (message.type) {
     case "assistant": {
       for (const block of message.message.content) {
         if (block.type === "text") {
-          log("💬", block.text);
+          logger.log(`💬 ${block.text}`);
         } else if (block.type === "tool_use") {
-          log("🔧", `${block.name}(${JSON.stringify(block.input).slice(0, 200)})`);
+          logger.log(`🔧 ${block.name}(${JSON.stringify(block.input).slice(0, 200)})`);
         }
       }
       if (message.error) {
-        log("❌", `Assistant error: ${message.error}`);
+        logger.logError(`Assistant error: ${message.error}`);
       }
       break;
     }
@@ -37,32 +35,32 @@ function logMessage(message: SDKMessage) {
                     .join("")
                     .slice(0, 200)
                 : "[no content]";
-          log("📎", `tool_result(${block.tool_use_id?.slice(-8)}): ${text}`);
+          logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${text}`);
         }
       }
       break;
     }
     case "result":
       if (message.subtype === "success") {
-        log("✅", `Done — ${message.num_turns} turns, $${message.total_cost_usd?.toFixed(4)}`);
+        logger.logSuccess(`Done — ${message.num_turns} turns, $${message.total_cost_usd?.toFixed(4)}`);
       } else {
-        log("❌", `Error (${message.subtype}): ${message.errors?.join(", ")}`);
+        logger.logError(`Error (${message.subtype}): ${message.errors?.join(", ")}`);
       }
       break;
     case "system":
       if (message.subtype === "init") {
-        log("🚀", `Session started — model: ${message.model}`);
+        logger.log(`🚀 Session started — model: ${message.model}`);
       } else if (message.subtype === "api_retry") {
-        log("🔄", `API retry: attempt ${message.attempt}/${message.max_retries}`);
+        logger.log(`🔄 API retry: attempt ${message.attempt}/${message.max_retries}`);
       } else if (message.subtype === "status") {
-        log("📊", `status: ${message.status ?? "unknown"}`);
+        logger.log(`📊 status: ${message.status ?? "unknown"}`);
       }
       break;
     case "tool_use_summary":
-      log("📋", message.summary.slice(0, 200));
+      logger.log(`📋 ${message.summary.slice(0, 200)}`);
       break;
     case "rate_limit_event":
-      log("⏳", `Rate limited — status: ${message.rate_limit_info?.status}, resets at: ${message.rate_limit_info?.resetsAt}`);
+      logger.log(`⏳ Rate limited — status: ${message.rate_limit_info?.status}, resets at: ${message.rate_limit_info?.resetsAt}`);
       break;
     default:
       break;
@@ -81,13 +79,14 @@ const CLAUDE_MODEL_MAP: Record<string, string> = {
 export const claudeAgent: Agent = {
   name: "claude",
 
-  async execute(
-    prompt: string,
-    projectPath: string,
-    model: string,
-    options?: { effort?: Effort; resultsDir?: string },
-  ): Promise<ExecutionResult> {
-    const { effort = "high", resultsDir } = options ?? {};
+  async execute({
+    prompt,
+    projectPath,
+    model,
+    effort = "high",
+    resultsDir,
+    logger,
+  }): Promise<ExecutionResult> {
     const startTime = Date.now();
 
     let cost: number | undefined;
@@ -107,7 +106,7 @@ export const claudeAgent: Agent = {
         systemPrompt: { type: "preset", preset: "claude_code" },
       },
     })) {
-      logMessage(message);
+      logMessage(message, logger);
       messages.push(message);
 
       if (message.type === "result" && message.subtype === "success") {
@@ -120,9 +119,7 @@ export const claudeAgent: Agent = {
 
     const duration = (Date.now() - startTime) / 1000;
 
-    if (resultsDir) {
-      writeFileSync(join(resultsDir, "transcript.json"), JSON.stringify(messages, null, 2));
-    }
+    writeFileSync(join(resultsDir, "transcript.json"), JSON.stringify(messages, null, 2));
 
     return {
       agent: "claude",

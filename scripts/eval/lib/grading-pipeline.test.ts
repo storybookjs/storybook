@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { findCandidates } from './ghost-stories';
+import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates';
 import {
   computeQualityScore,
   countTypeCheckErrors,
@@ -37,8 +37,13 @@ function writeFile(relativePath: string, content: string) {
   writeFileSync(fullPath, content);
 }
 
+async function findCandidates(cwd: string) {
+  const { candidates } = await getComponentCandidates({ cwd, sampleSize: 20 });
+  return candidates.map((c) => c.replace(cwd + '/', ''));
+}
+
 describe('grading pipeline', () => {
-  it('grades a well-configured project: candidates found, patterns detected, high quality', () => {
+  it('grades a well-configured project: candidates found, patterns detected, high quality', async () => {
     // Set up a realistic project with components and storybook config
     writeFile(
       'src/components/Button.tsx',
@@ -75,7 +80,7 @@ describe('grading pipeline', () => {
     );
 
     // Step 1: Find candidates — both components should be discovered
-    const candidates = findCandidates(TMP);
+    const candidates = await findCandidates(TMP);
     expect(candidates).toHaveLength(2);
 
     // Step 2: Detect patterns — config references CSS, theme, staticDirs
@@ -106,7 +111,7 @@ describe('grading pipeline', () => {
     expect(quality.score).toBe(1);
   });
 
-  it('grades a broken project: candidates found but build fails, low quality', () => {
+  it('grades a broken project: candidates found but build fails, low quality', async () => {
     writeFile(
       'src/components/Widget.tsx',
       [
@@ -118,7 +123,7 @@ describe('grading pipeline', () => {
     );
 
     // Candidates still discoverable even when storybook setup is broken
-    const candidates = findCandidates(TMP);
+    const candidates = await findCandidates(TMP);
     expect(candidates).toHaveLength(1);
 
     // Agent didn't create any .storybook config
@@ -139,7 +144,7 @@ describe('grading pipeline', () => {
     expect(quality.breakdown.build).toBe(0);
   });
 
-  it('more candidates with setup patterns yields higher confidence in the grade', () => {
+  it('more candidates with setup patterns yields higher confidence in the grade', async () => {
     // Rich project: many simple components
     for (let i = 0; i < 5; i++) {
       writeFile(
@@ -154,7 +159,7 @@ describe('grading pipeline', () => {
     }
     writeFile('.storybook/preview.tsx', `import { MemoryRouter } from 'react-router-dom';`);
 
-    const candidates = findCandidates(TMP);
+    const candidates = await findCandidates(TMP);
     expect(candidates).toHaveLength(5);
 
     const patterns = detectSetupPatterns(TMP);

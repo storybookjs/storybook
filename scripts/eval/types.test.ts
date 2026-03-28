@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { AGENTS, PROJECTS } from './types';
+import { AGENTS, PROJECTS } from './config';
 
 describe('AGENTS', () => {
   it('has claude and codex agents', () => {

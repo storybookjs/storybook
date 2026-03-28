@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, cpSync } from "node:fs";
 import { join } from "node:path";
-import type { Project, TrialPaths } from "../types.ts";
-import { CACHE_DIR, TRIALS_DIR, logStep, logSuccess, exec } from "./utils.ts";
+import type { Project, TrialPaths, Logger } from "../types.ts";
+import { CACHE_DIR, TRIALS_DIR, exec } from "./utils.ts";
 
-async function installDeps(dir: string) {
+async function installDeps(dir: string, logger: Logger) {
   const has = (f: string) => existsSync(join(dir, f));
   const [cmd, args]: [string, string[]] = has("pnpm-lock.yaml") || has("pnpm-workspace.yaml")
     ? ["pnpm", ["install", "--no-frozen-lockfile"]]
@@ -13,33 +13,33 @@ async function installDeps(dir: string) {
         ? ["bun", ["install"]]
         : ["npm", ["install", "--ignore-scripts"]];
 
-  logStep(`Installing with ${cmd}...`);
+  logger.logStep(`Installing with ${cmd}...`);
   await exec(cmd, args, { cwd: dir, timeout: 300_000 });
 }
 
 /**
- * First run: clone eval-baseline → install deps → cache it.
+ * First run: clone eval-baseline -> install deps -> cache it.
  * Subsequent runs: copy from cache. Agent starts immediately.
  */
-export async function prepareTrial(project: Project, trialId: string): Promise<TrialPaths> {
+export async function prepareTrial(project: Project, trialId: string, logger: Logger): Promise<TrialPaths> {
   const cacheDir = join(CACHE_DIR, project.name);
   const trialDir = join(TRIALS_DIR, trialId);
   const repoRoot = join(trialDir, "project");
   mkdirSync(trialDir, { recursive: true });
 
   if (existsSync(join(cacheDir, ".git"))) {
-    logStep("Copying from cache...");
+    logger.logStep("Copying from cache...");
     cpSync(cacheDir, repoRoot, { recursive: true });
   } else {
-    logStep(`Cloning ${project.repo}#${project.branch}...`);
+    logger.logStep(`Cloning ${project.repo}#${project.branch}...`);
     mkdirSync(CACHE_DIR, { recursive: true });
     await exec("git", ["clone", "--depth", "1", "--branch", project.branch!, project.repo, repoRoot], {
       timeout: 120_000,
     });
     const projectPath = project.projectDir ? join(repoRoot, project.projectDir) : repoRoot;
-    await installDeps(projectPath);
-    logSuccess("Dependencies installed");
-    logStep("Caching for future runs...");
+    await installDeps(projectPath, logger);
+    logger.logSuccess("Dependencies installed");
+    logger.logStep("Caching for future runs...");
     cpSync(repoRoot, cacheDir, { recursive: true });
   }
 
@@ -48,6 +48,6 @@ export async function prepareTrial(project: Project, trialId: string): Promise<T
   const resultsDir = join(trialDir, "results");
   mkdirSync(resultsDir, { recursive: true });
 
-  logSuccess("Trial ready");
+  logger.logSuccess("Trial ready");
   return { trialDir, repoRoot, projectPath, resultsDir, baselineCommit };
 }

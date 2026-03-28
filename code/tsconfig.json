@@ -13,6 +13,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "Preserve",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "noImplicitAny": true,
     "noUnusedLocals": false,
     "skipLibCheck": true,

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -139,25 +139,31 @@ describe('runTask pipeline', () => {
 
     await runTask(config, 'run-1', 'upload-1');
 
-    // prepareTrial receives the project
+    // prepareTrial receives the project and a logger
     expect(vi.mocked(prepareTrial).mock.calls[0][0].name).toBe('mealdrop');
+    // Third arg is the logger
+    expect(vi.mocked(prepareTrial).mock.calls[0][2]).toBeDefined();
 
     // captureEnvironment receives the results dir
     expect(vi.mocked(captureEnvironment).mock.calls[0][0]).toBe(join(TMP, 'results'));
 
-    // Agent receives real prompt content, the project path, model, and options
-    const [prompt, projectPath, model, options] = vi.mocked(claudeAgent.execute).mock.calls[0];
-    expect(prompt).toContain('Storybook setup');
-    expect(projectPath).toBe(TMP);
-    expect(model).toBe('sonnet-4.6');
-    expect(options?.effort).toBe('high');
+    // Agent receives a params object with prompt, projectPath, model, effort, resultsDir, logger
+    const params = vi.mocked(claudeAgent.execute).mock.calls[0][0] as Record<string, unknown>;
+    expect(params.prompt).toContain('Storybook setup');
+    expect(params.projectPath).toBe(TMP);
+    expect(params.model).toBe('sonnet-4.6');
+    expect(params.effort).toBe('high');
+    expect(params.resultsDir).toBe(join(TMP, 'results'));
+    expect(params.logger).toBeDefined();
 
-    // grade receives the trial paths
+    // grade receives the trial paths and a logger
     const gradePaths = vi.mocked(grade).mock.calls[0][0];
     expect(gradePaths.baselineCommit).toBe('deadbeef');
     expect(gradePaths.projectPath).toBe(TMP);
+    // Second arg is the logger
+    expect(vi.mocked(grade).mock.calls[0][1]).toBeDefined();
 
-    // saveToGoogleSheets receives the assembled result + env + IDs
+    // saveToGoogleSheets receives the assembled result + env + IDs + logger
     const [savedResult, savedEnv, savedRunId, savedUploadId] =
       vi.mocked(saveToGoogleSheets).mock.calls[0];
     expect(savedResult.project).toBe('mealdrop');

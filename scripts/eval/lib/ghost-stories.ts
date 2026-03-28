@@ -1,10 +1,10 @@
-import { readFileSync, existsSync, globSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import type { GhostStoriesResult, Logger } from "../types.ts";
 import { exec } from "./utils.ts";
 
-// Reuse core ghost-stories utilities via relative imports.
-import { getComponentComplexity } from "../../../code/core/src/core-server/utils/ghost-stories/component-analyzer.ts";
+// Core ghost-stories utilities — requires `yarn nx run-many -t compile` first.
+import { getComponentCandidates } from "../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts";
 import { parseVitestResults } from "../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts";
 
 /**
@@ -18,9 +18,9 @@ export async function runGhostStories(
 ): Promise<GhostStoriesResult | undefined> {
   logger.logStep("Running ghost stories...");
 
-  const candidates = findCandidates(projectPath);
-  if (candidates.length === 0) {
-    logger.logError("No candidate components found");
+  const { candidates, error } = await getComponentCandidates({ sampleSize: 20, cwd: projectPath });
+  if (error || candidates.length === 0) {
+    logger.logError(error ?? "No candidate components found");
     return undefined;
   }
   logger.logStep(`Found ${candidates.length} candidate component(s)`);
@@ -63,33 +63,4 @@ export async function runGhostStories(
     logger.logError("Ghost stories: failed to parse Vitest report");
     return { candidateCount: candidates.length, total: 0, passed: 0, successRate: 0 };
   }
-}
-
-/**
- * Find .tsx/.jsx files that look like React components, sorted by complexity.
- * Uses getComponentComplexity from core for consistent scoring.
- */
-export function findCandidates(projectPath: string): string[] {
-  const SKIP = new Set(["node_modules", ".storybook", "dist", "build", ".git"]);
-  const files = globSync("**/*.{tsx,jsx}", {
-    cwd: projectPath,
-    exclude: (f) => SKIP.has(f.name),
-  });
-
-  return files
-    .filter((f) => !/\.(test|spec|stories|story)\./.test(f) && !/config\./.test(f))
-    .map((f) => {
-      try {
-        const content = readFileSync(join(projectPath, f), "utf-8");
-        if (!/export\s/.test(content)) return null;
-        if (!/<[A-Z]/.test(content) && !/return\s*\(?\s*</.test(content)) return null;
-        return { path: f, complexity: getComponentComplexity(content) };
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean)
-    .sort((a, b) => a!.complexity - b!.complexity)
-    .slice(0, 20)
-    .map((c) => c!.path);
 }

@@ -2,12 +2,11 @@ import { randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
 import pc from "picocolors";
 import type { TrialConfig, AgentName, Effort } from "./types.ts";
-import { AGENTS, PROJECTS } from "./types.ts";
+import { AGENTS, PROJECTS } from "./config.ts";
 import { runTask } from "./lib/run-task.ts";
-import { log, formatDuration, formatCost, listPrompts } from "./lib/utils.ts";
+import { createLogger, formatDuration, formatCost, listPrompts } from "./lib/utils.ts";
 
-/** Sentinel for structured IPC with eval-parallel.ts. */
-export const RESULT_SENTINEL = "__EVAL_RESULT_d3f1a8b2__";
+const logger = createLogger();
 
 const { values: opts } = parseArgs({
   options: {
@@ -25,24 +24,24 @@ const { values: opts } = parseArgs({
 });
 
 if (opts["list-projects"]) {
-  for (const p of PROJECTS) log(`  ${pc.bold(p.name)} — ${p.description}`);
+  for (const p of PROJECTS) logger.log(`  ${pc.bold(p.name)} — ${p.description}`);
   process.exit(0);
 }
 if (opts["list-models"]) {
   for (const [agent, { models }] of Object.entries(AGENTS)) {
-    log(`\n  ${pc.bold(agent)}`);
-    for (const m of models) log(`    ${m}`);
+    logger.log(`\n  ${pc.bold(agent)}`);
+    for (const m of models) logger.log(`    ${m}`);
   }
   process.exit(0);
 }
 if (opts["list-prompts"]) {
-  for (const name of listPrompts()) log(`  ${pc.bold(name)}`);
+  for (const name of listPrompts()) logger.log(`  ${pc.bold(name)}`);
   process.exit(0);
 }
 
 const project = PROJECTS.find((p) => p.name === opts.project);
 if (!project) {
-  log(pc.red(`Specify a project with -p. Available: ${PROJECTS.map((p) => p.name).join(", ")}`));
+  logger.log(pc.red(`Specify a project with -p. Available: ${PROJECTS.map((p) => p.name).join(", ")}`));
   process.exit(1);
 }
 
@@ -54,7 +53,7 @@ if (opts.model) {
   const match = Object.entries(AGENTS).find(([, cfg]) => cfg.models.includes(opts.model as string));
   if (!match) {
     const all = Object.values(AGENTS).flatMap((cfg) => cfg.models);
-    log(pc.red(`Unknown model: ${opts.model}. Available: ${all.join(", ")}`));
+    logger.log(pc.red(`Unknown model: ${opts.model}. Available: ${all.join(", ")}`));
     process.exit(1);
   }
   agent = match[0] as AgentName;
@@ -63,7 +62,7 @@ if (opts.model) {
   agent = opts.agent as AgentName;
   const agentConfig = AGENTS[agent];
   if (!agentConfig) {
-    log(pc.red(`Unknown agent: ${agent}. Options: ${Object.keys(AGENTS).join(", ")}`));
+    logger.log(pc.red(`Unknown agent: ${agent}. Options: ${Object.keys(AGENTS).join(", ")}`));
     process.exit(1);
   }
   model = agentConfig.defaultModel;
@@ -82,26 +81,29 @@ const config: TrialConfig = {
   verbose: opts.verbose,
 };
 
-log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
-log(`Agent: ${agent} | Model: ${model} | Effort: ${effort} | Prompt: ${config.prompt}`);
-log(`Run: ${runId}\n`);
+logger.log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
+logger.log(`Agent: ${agent} | Model: ${model} | Effort: ${effort} | Prompt: ${config.prompt}`);
+logger.log(`Run: ${runId}\n`);
 
 try {
-  const result = await runTask(config, runId, uploadId);
+  const result = await runTask(config, runId, uploadId, logger);
   const ghost = result.grading.ghostStories;
   const ghostStr = ghost ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)` : "-";
 
-  log(pc.bold("\nResult"));
-  log(`  Build:   ${result.grading.buildSuccess ? pc.green("PASS") : pc.red("FAIL")}`);
-  log(`  Ghost:   ${ghostStr}`);
-  log(`  TS Err:  ${result.grading.typeCheckErrors}`);
-  log(`  Score:   ${result.quality.score}`);
-  log(`  Cost:    ${formatCost(result.execution.cost)}`);
-  log(`  Time:    ${formatDuration(result.execution.duration)}`);
-  log(`  Turns:   ${result.execution.turns}`);
+  logger.log(pc.bold("\nResult"));
+  logger.log(`  Build:   ${result.grading.buildSuccess ? pc.green("PASS") : pc.red("FAIL")}`);
+  logger.log(`  Ghost:   ${ghostStr}`);
+  logger.log(`  TS Err:  ${result.grading.typeCheckErrors}`);
+  logger.log(`  Score:   ${result.quality.score}`);
+  logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
+  logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
+  logger.log(`  Turns:   ${result.execution.turns}`);
 
-  console.log(`${RESULT_SENTINEL}${JSON.stringify(result)}`);
+  // Send result via IPC when forked by eval-parallel, otherwise no-op
+  if (process.send) {
+    process.send(result);
+  }
 } catch (error) {
-  log(pc.red(`\nFailed: ${error instanceof Error ? error.message : error}`));
+  logger.log(pc.red(`\nFailed: ${error instanceof Error ? error.message : error}`));
   process.exit(1);
 }

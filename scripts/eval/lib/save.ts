@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { TrialResult } from "../types.ts";
-import { logStep, logSuccess, logError, exec } from "./utils.ts";
+import type { TrialResult, Logger } from "../types.ts";
+import { exec } from "./utils.ts";
 
 const GOOGLE_SHEETS_URL = process.env.EVAL_GOOGLE_SHEETS_URL;
 
@@ -32,12 +32,13 @@ export async function saveToGoogleSheets(
   env: Environment,
   runId: string,
   uploadId: string,
+  logger: Logger,
 ): Promise<void> {
   if (!GOOGLE_SHEETS_URL) {
-    logStep("Skipping Google Sheets (set EVAL_GOOGLE_SHEETS_URL to enable)");
+    logger.logStep("Skipping Google Sheets (set EVAL_GOOGLE_SHEETS_URL to enable)");
     return;
   }
-  logStep("Uploading to Google Sheets...");
+  logger.logStep("Uploading to Google Sheets...");
 
   const ghost = result.grading.ghostStories;
   const data = {
@@ -76,12 +77,12 @@ export async function saveToGoogleSheets(
     if (contentType?.includes("application/json")) {
       const body = (await response.json()) as { success: boolean; error?: string };
       if (!body.success) {
-        logError(`Google Sheets error: ${body.error}`);
+        logger.logError(`Google Sheets error: ${body.error}`);
         return;
       }
     }
-    logSuccess("Uploaded to Google Sheets");
+    logger.logSuccess("Uploaded to Google Sheets");
   } catch (error) {
-    logError(`Google Sheets upload failed: ${error instanceof Error ? error.message : error}`);
+    logger.logError(`Google Sheets upload failed: ${error instanceof Error ? error.message : error}`);
   }
 }

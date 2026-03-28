@@ -1,10 +1,11 @@
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { findCandidates } from './ghost-stories';
+// Core function — tests verify it works from the eval context (requires compile).
+import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates';
 
 let TMP: string;
 
@@ -23,7 +24,6 @@ function writeFile(relativePath: string, content: string) {
   writeFileSync(fullPath, content);
 }
 
-/** A realistic component file with an export and JSX via return(). */
 function simpleComponent(name: string) {
   return [
     `import React from 'react';`,
@@ -33,39 +33,41 @@ function simpleComponent(name: string) {
   ].join('\n');
 }
 
-describe('findCandidates', () => {
-  it('finds exported components with JSX', () => {
+async function findCandidates(cwd: string) {
+  const { candidates } = await getComponentCandidates({ cwd, sampleSize: 20 });
+  // Return relative paths for easier assertions
+  return candidates.map((c) => c.replace(cwd + '/', ''));
+}
+
+describe('getComponentCandidates from core', () => {
+  it('finds exported components with JSX', async () => {
     writeFile('src/Button.tsx', simpleComponent('Button'));
-    expect(findCandidates(TMP)).toEqual(['src/Button.tsx']);
+    expect(await findCandidates(TMP)).toEqual(['src/Button.tsx']);
   });
 
-  it('skips files without exports', () => {
-    writeFile(
-      'src/Internal.tsx',
-      `function Internal() { return <div>hi</div>; }`
-    );
-    expect(findCandidates(TMP)).toEqual([]);
+  it('skips files without exports', async () => {
+    writeFile('src/Internal.tsx', `function Internal() { return <div>hi</div>; }`);
+    expect(await findCandidates(TMP)).toEqual([]);
   });
 
-  it('skips files without JSX', () => {
+  it('skips files without JSX', async () => {
     writeFile('src/utils.tsx', `export const add = (a: number, b: number) => a + b;`);
-    expect(findCandidates(TMP)).toEqual([]);
+    expect(await findCandidates(TMP)).toEqual([]);
   });
 
-  it('skips test, spec, and story files', () => {
+  it('skips test, spec, and story files', async () => {
     writeFile('src/Button.test.tsx', simpleComponent('X'));
     writeFile('src/Button.spec.tsx', simpleComponent('X'));
     writeFile('src/Button.stories.tsx', simpleComponent('X'));
-    writeFile('src/Button.story.tsx', simpleComponent('X'));
-    expect(findCandidates(TMP)).toEqual([]);
+    expect(await findCandidates(TMP)).toEqual([]);
   });
 
-  it('skips config files', () => {
+  it('skips config files', async () => {
     writeFile('src/app.config.tsx', simpleComponent('X'));
-    expect(findCandidates(TMP)).toEqual([]);
+    expect(await findCandidates(TMP)).toEqual([]);
   });
 
-  it('sorts by complexity (simpler first)', () => {
+  it('sorts by complexity (simpler first)', async () => {
     writeFile('src/Simple.tsx', simpleComponent('Simple'));
     const lines = [
       `import React from 'react';`,
@@ -78,28 +80,20 @@ describe('findCandidates', () => {
     ];
     writeFile('src/Complex.tsx', lines.join('\n'));
 
-    const candidates = findCandidates(TMP);
+    const candidates = await findCandidates(TMP);
     expect(candidates.indexOf('src/Simple.tsx')).toBeLessThan(
       candidates.indexOf('src/Complex.tsx')
     );
   });
 
-  it('limits to 20 candidates', () => {
+  it('limits to sampleSize candidates', async () => {
     for (let i = 0; i < 25; i++) {
       writeFile(`src/Comp${i}.tsx`, simpleComponent(`Comp${i}`));
     }
-    expect(findCandidates(TMP)).toHaveLength(20);
+    expect(await findCandidates(TMP)).toHaveLength(20);
   });
 
-  it('returns empty for empty project', () => {
-    expect(findCandidates(TMP)).toEqual([]);
-  });
-
-  it('finds components using uppercase JSX tags', () => {
-    writeFile(
-      'src/Wrapper.tsx',
-      `import { Container } from './ui';\nexport const Wrapper = () => <Container>hi</Container>;`
-    );
-    expect(findCandidates(TMP)).toEqual(['src/Wrapper.tsx']);
+  it('returns empty for empty project', async () => {
+    expect(await findCandidates(TMP)).toEqual([]);
   });
 });

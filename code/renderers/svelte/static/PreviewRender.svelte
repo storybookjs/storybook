@@ -1,5 +1,9 @@
 <script>
-  import DecoratorHandler from './DecoratorHandler.svelte';
+  /*
+    ! DO NOT change this DecoratorHandler import to a relative path, it breaks Vite 8
+    ! Rolldown dependency scanning for the published static Svelte files.
+  */
+  import DecoratorHandler from '@storybook/svelte/internal/DecoratorHandler.svelte';
   import { dedent } from 'ts-dedent';
 
   const { name, title, storyFn, showError } = $props();

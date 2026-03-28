@@ -44,11 +44,9 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
   const variables: string[] = [];
   const imports: string[] = [];
+  const usedVariables = new Map<string, number>();
   for (const previewAnnotation of previewAnnotationURLs) {
-    const variable =
-      genSafeVariableName(filename(previewAnnotation)).replace(/_(45|46|47)/g, '_') +
-      '_' +
-      hash(previewAnnotation);
+    const variable = getUniquePreviewAnnotationVariableName(previewAnnotation, usedVariables);
     variables.push(variable);
     imports.push(genImport(previewAnnotation, { name: '*', as: variable }));
   }
@@ -103,6 +101,26 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
       });
     }
   `.trim();
+}
+
+function getUniquePreviewAnnotationVariableName(
+  previewAnnotation: string,
+  usedVariables: Map<string, number>
+) {
+  const baseVariableName = getPreviewAnnotationVariableName(previewAnnotation);
+  const duplicateCount = usedVariables.get(baseVariableName) ?? 0;
+  usedVariables.set(baseVariableName, duplicateCount + 1);
+
+  // Hash collisions are rare but possible, so suffix any repeated identifier.
+  return duplicateCount === 0 ? baseVariableName : `${baseVariableName}_${duplicateCount}`;
+}
+
+function getPreviewAnnotationVariableName(previewAnnotation: string) {
+  return (
+    genSafeVariableName(filename(previewAnnotation)).replace(/_(45|46|47)/g, '_') +
+    '_' +
+    hash(previewAnnotation)
+  );
 }
 
 /** djb2 hash — http://www.cse.yorku.ca/~oz/hash.html */

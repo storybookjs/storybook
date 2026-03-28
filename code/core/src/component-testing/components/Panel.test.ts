@@ -259,6 +259,101 @@ describe('Panel', () => {
       ]);
     });
 
+    it('does not hide waitFor after a collapsed step', () => {
+      const stepLog: LogItem[] = [
+        { callId: 'story--id [0] step', status: CallStates.DONE, ancestors: [] },
+        {
+          callId: 'story--id [0] step [0] click',
+          status: CallStates.DONE,
+          ancestors: ['story--id [0] step'],
+        },
+        { callId: 'story--id [1] waitFor', status: CallStates.DONE, ancestors: [] },
+        {
+          callId: 'story--id [1] waitFor [0] toHaveBeenCalledWith',
+          status: CallStates.DONE,
+          ancestors: ['story--id [1] waitFor'],
+        },
+      ];
+      const stepCalls = new Map<Call['id'], Call>(
+        [
+          {
+            id: 'story--id [0] step',
+            storyId: 'story--id',
+            ancestors: [],
+            cursor: 0,
+            path: [],
+            method: 'step',
+            args: ['Fill and submit form'],
+            interceptable: true,
+            retain: false,
+          },
+          {
+            id: 'story--id [0] step [0] click',
+            storyId: 'story--id',
+            ancestors: ['story--id [0] step'],
+            cursor: 0,
+            path: ['userEvent'],
+            method: 'click',
+            args: [],
+            interceptable: true,
+            retain: false,
+          },
+          {
+            id: 'story--id [1] waitFor',
+            storyId: 'story--id',
+            ancestors: [],
+            cursor: 1,
+            path: [],
+            method: 'waitFor',
+            args: [],
+            interceptable: true,
+            retain: false,
+          },
+          {
+            id: 'story--id [1] waitFor [0] toHaveBeenCalledWith',
+            storyId: 'story--id',
+            ancestors: ['story--id [1] waitFor'],
+            cursor: 0,
+            path: [],
+            method: 'toHaveBeenCalledWith',
+            args: [],
+            interceptable: true,
+            retain: false,
+          },
+        ].map((v) => [v.id, v])
+      );
+
+      const stepCollapsed = new Set<Call['id']>(['story--id [0] step']);
+
+      const result = getInteractions({
+        log: stepLog,
+        calls: stepCalls,
+        collapsed: stepCollapsed,
+        setCollapsed,
+      });
+
+      // Step's child should be hidden
+      expect(result).toEqual([
+        expect.objectContaining({ id: 'story--id [0] step', isHidden: false, isCollapsed: true }),
+        expect.objectContaining({
+          id: 'story--id [0] step [0] click',
+          isHidden: true,
+          isCollapsed: false,
+        }),
+        // waitFor and its children should NOT be hidden by the collapsed step
+        expect.objectContaining({
+          id: 'story--id [1] waitFor',
+          isHidden: false,
+          isCollapsed: false,
+        }),
+        expect.objectContaining({
+          id: 'story--id [1] waitFor [0] toHaveBeenCalledWith',
+          isHidden: false,
+          isCollapsed: false,
+        }),
+      ]);
+    });
+
     it('uses status from log', () => {
       const withError = log.slice(0, 4).concat({ ...log[4], status: CallStates.ERROR });
 

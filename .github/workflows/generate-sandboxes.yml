@@ -81,7 +81,7 @@ jobs:
       - name: Publish
         # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
         if: ${{ !cancelled() }}
-        run: yarn publish-sandboxes --remote=https://storybook-bot:${PAT_STORYBOOK_BOT}@github.com/storybookjs/sandboxes.git --push --branch=next
+        run: yarn publish-sandboxes --remote="https://storybook-bot:${PAT_STORYBOOK_BOT}@github.com/storybookjs/sandboxes.git" --push --branch=next
         env:
           PAT_STORYBOOK_BOT: ${{ secrets.PAT_STORYBOOK_BOT }}
 
@@ -152,7 +152,7 @@ jobs:
       - name: Publish
         # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
         if: ${{ !cancelled() }}
-        run: yarn publish-sandboxes --remote=https://storybook-bot:${PAT_STORYBOOK_BOT}@github.com/storybookjs/sandboxes.git --push --branch=main
+        run: yarn publish-sandboxes --remote="https://storybook-bot:${PAT_STORYBOOK_BOT}@github.com/storybookjs/sandboxes.git" --push --branch=main
         env:
           PAT_STORYBOOK_BOT: ${{ secrets.PAT_STORYBOOK_BOT }}
 

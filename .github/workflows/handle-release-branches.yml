@@ -10,7 +10,7 @@ jobs:
     steps:
       - id: get-branch
         run: |
-          BRANCH=($(echo ${GIT_REF} | sed -E 's/refs\/heads\///'))
+          BRANCH=($(echo "${GIT_REF}" | sed -E 's/refs\/heads\///'))
           echo "branch=$BRANCH" >> $GITHUB_ENV
         env:
           GIT_REF: ${{ github.ref }}
@@ -101,7 +101,7 @@ jobs:
         run: |
           curl -X POST https://api.github.com/repos/storybookjs/frontpage/dispatches \
           -H 'Accept: application/vnd.github.v3+json' \
-          -u ${FRONTPAGE_ACCESS_TOKEN} \
+          -u "${FRONTPAGE_ACCESS_TOKEN}" \
           --data '{"event_type": "request-create-frontpage-branch", "client_payload": { "branch": "${{ needs.create-next-release-branch.outputs.branch || needs.branch-checks.outputs.branch }}" }}'
 
         env:

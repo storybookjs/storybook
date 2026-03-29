@@ -8870,6 +8870,7 @@ __metadata:
     "@vitest/coverage-v8": "npm:^4.1.0"
     ansi-regex: "npm:^6.0.1"
     chromatic: "npm:^13.3.4"
+    citty: "npm:^0.2.1"
     codecov: "npm:^3.8.1"
     commander: "npm:^14.0.2"
     cross-env: "npm:^7.0.3"
@@ -13827,6 +13828,13 @@ __metadata:
     safe-buffer: "npm:^5.2.1"
     to-buffer: "npm:^1.2.2"
   checksum: 10c0/53c5046a9d9b60c586479b8f13fde263c3f905e13f11e8e04c7a311ce399c91d9c3ec96642332e0de077d356e1014ee12bba96f74fbaad0de750f49122258836
+  languageName: node
+  linkType: hard
+
+"citty@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "citty@npm:0.2.1"
+  checksum: 10c0/504ac5aeb076f750bf5f25d40c730083e8ed6112eac2f00dbe341a223c46ad16893ce73dfdb55b2d0da505100b9678968ee0443637c45b21917db48daa5a6977
   languageName: node
   linkType: hard
 

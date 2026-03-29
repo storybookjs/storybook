@@ -5,8 +5,7 @@ import { claudeAgent } from "./agents/claude-code.ts";
 import { codexAgent } from "./agents/codex.ts";
 import { prepareTrial } from "./prepare-trial.ts";
 import { grade } from "./grade.ts";
-import { captureEnvironment } from "./save.ts";
-import { generateTrialId, generatePrompt, createLogger } from "./utils.ts";
+import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from "./utils.ts";
 
 const agents: Record<AgentName, Agent> = {
   claude: claudeAgent,
@@ -33,12 +32,8 @@ export async function runTask(
   // 2. Capture environment
   await captureEnvironment(paths.resultsDir);
 
-  // 3. Generate the prompt (with project-specific template variables)
-  const prompt = generatePrompt(promptName, {
-    projectName: project.name,
-    description: project.description ?? "",
-    projectDir: project.projectDir ?? ".",
-  });
+  // 3. Load the prompt
+  const prompt = loadPrompt(promptName);
   await writeFile(join(paths.resultsDir, "prompt.md"), prompt);
 
   // 4. Execute the agent

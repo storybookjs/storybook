@@ -2,16 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { AGENTS, PROJECTS } from './config';
 
-/**
- * Basic shape validation (required fields, defaults, types) is handled by Zod
- * schemas at import time — AgentConfig.parse() in config.ts throws on invalid
- * config. These tests cover cross-cutting invariants that Zod cannot express.
- */
+/** Cross-cutting config invariants that TypeScript's type system cannot express. */
 
 describe('AGENTS', () => {
-  it('validates against schema (the import itself proves this)', () => {
-    // AgentConfig.parse() runs at import time. If this test file loads,
-    // the config is valid (models non-empty, defaultModel in list, etc.).
+  it('has expected agents', () => {
     expect(Object.keys(AGENTS)).toEqual(['claude', 'codex']);
   });
 

@@ -76,6 +76,7 @@
     "@vitest/coverage-v8": "^4.1.0",
     "ansi-regex": "^6.0.1",
     "chromatic": "^13.3.4",
+    "citty": "^0.2.1",
     "codecov": "^3.8.1",
     "commander": "^14.0.2",
     "cross-env": "^7.0.3",

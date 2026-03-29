@@ -4,7 +4,7 @@ import type { GradingResult, GhostStoriesResult, QualityResult, QualityWeights, 
 import { DEFAULT_QUALITY_WEIGHTS } from "../types.ts";
 import { x } from "tinyexec";
 import { detectSetupPatterns } from "./setup-patterns.ts";
-import { getComponentCandidates, runGhostStories } from "../../../code/core/src/core-server/index.ts";
+import { findComponentCandidates, runGhostStories } from "./ghost-stories.ts";
 
 /** Filter changed files to only storybook-related ones. */
 export function filterStorybookFiles(changedFiles: ChangedFile[]): ChangedFile[] {
@@ -157,7 +157,7 @@ async function getChangedFiles(repoRoot: string, baseline: string): Promise<Chan
 async function gradeGhostStories(projectPath: string, logger: Logger): Promise<GhostStoriesResult | undefined> {
   logger.logStep("Running ghost stories...");
 
-  const { candidates, error } = await getComponentCandidates({ sampleSize: 20, cwd: projectPath });
+  const { candidates, error } = await findComponentCandidates({ sampleSize: 20, cwd: projectPath });
   if (error || candidates.length === 0) {
     logger.logError(error ?? "No candidate components found");
     return undefined;
@@ -165,13 +165,12 @@ async function gradeGhostStories(projectPath: string, logger: Logger): Promise<G
   logger.logStep(`Found ${candidates.length} candidate component(s)`);
 
   const result = await runGhostStories(candidates, { cwd: projectPath });
-  const { total, passed, successRate } = result.summary ?? { total: 0, passed: 0, successRate: 0 };
 
   if (result.runError) {
     logger.logError(`Ghost stories: ${result.runError}`);
-  } else if (total > 0) {
-    logger.logSuccess(`Ghost stories: ${passed}/${total} passed (${Math.round(successRate * 100)}%)`);
+  } else if (result.total > 0) {
+    logger.logSuccess(`Ghost stories: ${result.passed}/${result.total} passed (${Math.round(result.successRate * 100)}%)`);
   }
 
-  return { candidateCount: candidates.length, total, passed, successRate };
+  return { candidateCount: candidates.length, total: result.total, passed: result.passed, successRate: result.successRate };
 }

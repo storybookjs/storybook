@@ -13,13 +13,17 @@ vi.mock('./prepare-trial', () => ({
 vi.mock('./grade', () => ({
   grade: vi.fn(),
 }));
-vi.mock('./save', () => ({
-  captureEnvironment: vi.fn().mockResolvedValue({
-    nodeVersion: 'v22.21.1',
-    evalBranch: 'test-branch',
-    evalCommit: 'abc123',
-  }),
-}));
+vi.mock('./utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./utils')>();
+  return {
+    ...actual,
+    captureEnvironment: vi.fn().mockResolvedValue({
+      nodeVersion: 'v22.21.1',
+      evalBranch: 'test-branch',
+      evalCommit: 'abc123',
+    }),
+  };
+});
 vi.mock('./agents/claude-code', () => ({
   claudeAgent: { name: 'claude', execute: vi.fn() },
 }));
@@ -31,7 +35,7 @@ import { claudeAgent } from './agents/claude-code';
 import { grade } from './grade';
 import { prepareTrial } from './prepare-trial';
 import { runTask } from './run-task';
-import { captureEnvironment } from './save';
+import { captureEnvironment } from './utils';
 
 let TMP: string;
 

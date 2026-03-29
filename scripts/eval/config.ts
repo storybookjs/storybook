@@ -1,48 +1,41 @@
 /**
  * Runtime configuration for the Storybook eval system.
  *
- * Types live in types.ts — this file holds the concrete agent configs,
- * model mappings, pricing, and benchmark project definitions.
- *
- * Agent configs are validated with Zod at import time — invalid config
- * (e.g. defaultModel not in models list) throws immediately.
+ * Agent configs, model mappings, pricing, benchmark project definitions,
+ * and cost estimation utilities.
  */
 
-import { z } from "zod";
 import type { AgentName, Project } from "./types.ts";
 
 // --- Pricing ---
 
-export const Pricing = z.object({
-  input: z.number(),
-  cachedInput: z.number(),
-  output: z.number(),
-});
-export type Pricing = z.infer<typeof Pricing>;
+export interface Pricing {
+  input: number;
+  cachedInput: number;
+  output: number;
+}
+
+export interface TokenUsage {
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+}
 
 // --- Agent Config ---
 
-export const AgentConfig = z
-  .object({
-    models: z.array(z.string()).min(1),
-    defaultModel: z.string(),
-    /** Map friendly model names to SDK-specific model IDs (e.g. "sonnet-4.6" → "claude-sonnet-4-6"). */
-    sdkModelIds: z.record(z.string(), z.string()).default({}),
-    /** Per-million-token pricing for manual cost estimation (agents that don't report cost natively). */
-    pricing: z.record(z.string(), Pricing).default({}),
-    efforts: z.array(z.string()).min(1),
-    defaultEffort: z.string(),
-  })
-  .refine((cfg) => cfg.models.includes(cfg.defaultModel), {
-    message: "defaultModel must be in models list",
-  })
-  .refine((cfg) => cfg.efforts.includes(cfg.defaultEffort), {
-    message: "defaultEffort must be in efforts list",
-  });
-export type AgentConfig = z.infer<typeof AgentConfig>;
+export interface AgentConfig {
+  models: string[];
+  defaultModel: string;
+  /** Map friendly model names to SDK-specific model IDs (e.g. "sonnet-4.6" → "claude-sonnet-4-6"). */
+  sdkModelIds: Record<string, string>;
+  /** Per-million-token pricing for manual cost estimation (agents that don't report cost natively). */
+  pricing: Record<string, Pricing>;
+  efforts: string[];
+  defaultEffort: string;
+}
 
 export const AGENTS: Record<AgentName, AgentConfig> = {
-  claude: AgentConfig.parse({
+  claude: {
     models: ["sonnet-4.6", "opus-4.6", "haiku-4.5"],
     defaultModel: "sonnet-4.6",
     sdkModelIds: {
@@ -50,19 +43,37 @@ export const AGENTS: Record<AgentName, AgentConfig> = {
       "opus-4.6": "claude-opus-4-6",
       "haiku-4.5": "claude-haiku-4-5",
     },
+    pricing: {},
     efforts: ["low", "medium", "high", "max"],
     defaultEffort: "high",
-  }),
-  codex: AgentConfig.parse({
+  },
+  codex: {
     models: ["gpt-5.4"],
     defaultModel: "gpt-5.4",
+    sdkModelIds: {},
     pricing: {
       "gpt-5.4": { input: 2.5, cachedInput: 0.625, output: 10.0 },
     },
     efforts: ["low", "medium", "high", "xhigh"],
     defaultEffort: "high",
-  }),
+  },
 };
+
+// --- Cost Estimation ---
+
+/** Estimate cost from token usage using the pricing table. */
+export function estimateCost(agent: AgentName, model: string, usage: TokenUsage): number | undefined {
+  const pricing = AGENTS[agent].pricing[model];
+  if (!pricing) return undefined;
+  const freshInput = usage.inputTokens - usage.cachedInputTokens;
+  return (
+    (freshInput / 1_000_000) * pricing.input +
+    (usage.cachedInputTokens / 1_000_000) * pricing.cachedInput +
+    (usage.outputTokens / 1_000_000) * pricing.output
+  );
+}
+
+// --- Projects ---
 
 export const PROJECTS: Project[] = [
   {

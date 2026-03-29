@@ -1,6 +1,8 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { resolve, basename } from "node:path";
+import { writeFile } from "node:fs/promises";
+import { resolve, basename, join } from "node:path";
 import pc from "picocolors";
+import { x } from "tinyexec";
 import type { Logger } from "../types.ts";
 
 export const REPO_ROOT = resolve(import.meta.dirname, "..", "..", "..");
@@ -59,19 +61,13 @@ export function formatTable(headers: string[], rows: string[][]): string {
 
 // --- Prompts ---
 
-/** Load a prompt by name from prompts/{name}.md, with optional template variables. */
-export function generatePrompt(name = "setup", vars?: Record<string, string>): string {
+/** Load a prompt by name from prompts/{name}.md. */
+export function loadPrompt(name = "setup"): string {
   const file = resolve(PROMPTS_DIR, `${name}.md`);
   if (!existsSync(file)) {
     throw new Error(`Prompt not found: ${file}\nAvailable: ${listPrompts().join(", ")}`);
   }
-  let content = readFileSync(file, "utf-8").trim();
-  if (vars) {
-    for (const [key, value] of Object.entries(vars)) {
-      content = content.replaceAll(`{{${key}}}`, value);
-    }
-  }
-  return content;
+  return readFileSync(file, "utf-8").trim();
 }
 
 /** List available prompt names. */
@@ -80,4 +76,28 @@ export function listPrompts(): string[] {
   return readdirSync(PROMPTS_DIR)
     .filter((f) => f.endsWith(".md"))
     .map((f) => basename(f, ".md"));
+}
+
+// --- Environment capture ---
+
+export interface Environment {
+  nodeVersion: string;
+  /** Git branch of the eval harness (storybook monorepo), not the evaluated project. */
+  evalBranch: string;
+  /** Git commit of the eval harness (storybook monorepo), not the evaluated project. */
+  evalCommit: string;
+}
+
+export async function captureEnvironment(resultsDir: string): Promise<Environment> {
+  let evalBranch = "unknown";
+  let evalCommit = "unknown";
+  try {
+    evalBranch = (await x("git", ["rev-parse", "--abbrev-ref", "HEAD"])).stdout.trim();
+    evalCommit = (await x("git", ["rev-parse", "HEAD"])).stdout.trim();
+  } catch {
+    /* not in a git repo */
+  }
+  const env: Environment = { nodeVersion: process.version, evalBranch, evalCommit };
+  await writeFile(join(resultsDir, "environment.json"), JSON.stringify(env, null, 2));
+  return env;
 }

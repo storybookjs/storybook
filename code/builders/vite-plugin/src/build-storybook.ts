@@ -1,6 +1,7 @@
 import { cp, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
@@ -33,6 +34,7 @@ export async function buildStorybookEnvironment(
 
   await builder.build(storybookEnv);
   await buildManagerStatic(options, outputDir);
+  await buildStoryIndex(options, outputDir);
 
   await cp(CORE_MANAGER_DIR, join(outputDir, 'sb-manager'), {
     filter: (src) => {
@@ -82,6 +84,13 @@ async function buildManagerStatic(options: Options, outputDir: string): Promise<
   );
 
   await writeFile(join(outputDir, 'index.html'), html);
+}
+
+async function buildStoryIndex(options: Options, outputDir: string): Promise<void> {
+  const storyIndexGenerator =
+    await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  const storyIndex = await storyIndexGenerator.getIndex();
+  await writeFile(join(outputDir, 'index.json'), JSON.stringify(storyIndex));
 }
 
 /**

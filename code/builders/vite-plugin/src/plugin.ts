@@ -31,7 +31,6 @@ export async function storybookPlugin(
     configDir = '.storybook',
     basePath = '/__storybook/',
     enableManager = true,
-    outputDir: userOutputDir,
   } = userOptions;
 
   const normalizedBasePath = basePath.endsWith('/') ? basePath : `${basePath}/`;
@@ -47,7 +46,9 @@ export async function storybookPlugin(
     name: 'storybook:main',
     enforce: 'pre',
 
-    config() {
+    config(_, { command }) {
+      options.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
+
       return {
         environments: {
           storybook: {
@@ -67,8 +68,7 @@ export async function storybookPlugin(
       if (name !== 'storybook') {
         return;
       }
-      const outputDir = userOutputDir ?? options.outputDir ?? 'storybook-static';
-      return getStorybookBuildConfig(options, outputDir);
+      return getStorybookBuildConfig(options, 'storybook-static');
     },
 
     async configureServer(server) {
@@ -147,16 +147,15 @@ export async function storybookPlugin(
     name: 'storybook:build',
     apply: 'build',
 
-    async config() {
-      const outputDir = userOutputDir ?? options.outputDir ?? 'storybook-static';
+    async config(_, { mode }) {
+      if (mode !== 'storybook') {
+        return;
+      }
 
       return {
         builder: {
           async buildApp(builder) {
-            if (builder.environments['client']) {
-              await builder.build(builder.environments['client']);
-            }
-            await buildStorybookEnvironment(builder, options, outputDir);
+            await buildStorybookEnvironment(builder, options, 'storybook-static');
           },
         },
       };

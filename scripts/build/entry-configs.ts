@@ -15,6 +15,8 @@ import vitestConfig from '../../../code/addons/vitest/build-config';
 // @ts-ignore
 import builderViteConfig from '../../../code/builders/builder-vite/build-config';
 // @ts-ignore
+import vitePluginConfig from '../../../code/builders/vite-plugin/build-config';
+// @ts-ignore
 import builderWebpack5Config from '../../../code/builders/builder-webpack5/build-config';
 // @ts-ignore
 import storybookConfig from '../../../code/core/build-config';
@@ -96,6 +98,7 @@ export const buildEntries = {
 
   // builders
   '@storybook/builder-vite': builderViteConfig,
+  '@storybook/vite-plugin': vitePluginConfig,
   '@storybook/builder-webpack5': builderWebpack5Config,
 
   // frameworks

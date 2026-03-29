@@ -8930,6 +8930,28 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/vite-plugin@workspace:code/builders/vite-plugin":
+  version: 0.0.0-use.local
+  resolution: "@storybook/vite-plugin@workspace:code/builders/vite-plugin"
+  dependencies:
+    "@storybook/csf-plugin": "workspace:*"
+    "@types/node": "npm:^22.19.1"
+    "@types/ws": "npm:^8.18.0"
+    es-module-lexer: "npm:^1.5.0"
+    knitwork: "npm:^1.1.0"
+    magic-string: "npm:^0.30.0"
+    pathe: "npm:^1.1.2"
+    sirv: "npm:^3.0.0"
+    telejson: "npm:8.0.0"
+    ts-dedent: "npm:^2.0.0"
+    vite: "npm:^7.0.4"
+    ws: "npm:^8.18.0"
+  peerDependencies:
+    storybook: "workspace:^"
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+  languageName: unknown
+  linkType: soft
+
 "@storybook/vue3-vite@workspace:*, @storybook/vue3-vite@workspace:code/frameworks/vue3-vite":
   version: 0.0.0-use.local
   resolution: "@storybook/vue3-vite@workspace:code/frameworks/vue3-vite"
@@ -10148,7 +10170,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ws@npm:^8, @types/ws@npm:^8.5.10":
+"@types/ws@npm:^8, @types/ws@npm:^8.18.0, @types/ws@npm:^8.5.10":
   version: 8.18.1
   resolution: "@types/ws@npm:8.18.1"
   dependencies:
@@ -28020,7 +28042,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sirv@npm:^3.0.1, sirv@npm:^3.0.2":
+"sirv@npm:^3.0.0, sirv@npm:^3.0.1, sirv@npm:^3.0.2":
   version: 3.0.2
   resolution: "sirv@npm:3.0.2"
   dependencies:

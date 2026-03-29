@@ -16,6 +16,7 @@ type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServ
 type ServerChannelTransportOptions = HostValidationOptions & {
   skipValidation?: boolean;
   token: string;
+  channelPath?: string;
 };
 
 /**
@@ -35,7 +36,8 @@ export class ServerChannelTransport {
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
       try {
         const url = request.url && new URL(request.url, options.localAddress);
-        if (!url || url.pathname !== '/storybook-server-channel') {
+        const expectedPath = options.channelPath ?? '/storybook-server-channel';
+        if (!url || url.pathname !== expectedPath) {
           return;
         }
 

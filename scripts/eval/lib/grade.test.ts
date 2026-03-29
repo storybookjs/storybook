@@ -6,11 +6,11 @@ import {
   countTypeCheckErrors,
   parseChangedFiles,
 } from './grade';
-import type { ChangedFile } from '../types';
+import type { FileChange } from '../types';
 
 describe('filterStorybookFiles', () => {
   it('matches files in .storybook/ directory', () => {
-    const files: ChangedFile[] = [
+    const files: FileChange[] = [
       { path: '.storybook/main.ts', status: 'M' },
       { path: '.storybook/preview.tsx', status: 'A' },
       { path: 'src/App.tsx', status: 'M' },
@@ -22,7 +22,7 @@ describe('filterStorybookFiles', () => {
   });
 
   it('matches story files with various extensions', () => {
-    const files: ChangedFile[] = [
+    const files: FileChange[] = [
       { path: 'src/Button.stories.tsx', status: 'A' },
       { path: 'src/Header.stories.ts', status: 'A' },
       { path: 'src/Page.story.jsx', status: 'A' },
@@ -34,7 +34,7 @@ describe('filterStorybookFiles', () => {
   });
 
   it('returns empty for no storybook files', () => {
-    const files: ChangedFile[] = [
+    const files: FileChange[] = [
       { path: 'src/App.tsx', status: 'M' },
       { path: 'package.json', status: 'M' },
     ];
@@ -46,7 +46,7 @@ describe('filterStorybookFiles', () => {
   });
 
   it('matches renamed files using either side of the rename', () => {
-    const files: ChangedFile[] = [
+    const files: FileChange[] = [
       { path: 'src/Button.tsx', previousPath: 'src/Button.stories.tsx', status: 'R' },
       { path: '.storybook/preview.tsx', previousPath: 'config/preview.tsx', status: 'R' },
       { path: 'src/App.tsx', previousPath: 'src/Main.tsx', status: 'R' },

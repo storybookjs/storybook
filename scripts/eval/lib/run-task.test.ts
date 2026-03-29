@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TrialConfig, TrialResult } from '../types';
+import type { TrialConfig, TrialReport } from '../types';
 
 // Mock external dependencies to avoid real git/storybook/vitest calls
 vi.mock('./prepare-trial', () => ({
@@ -65,38 +65,37 @@ function setupMocks(overrides?: {
   });
 
   vi.mocked(claudeAgent.execute).mockResolvedValue({
-    run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
     cost,
     duration: 45.2,
     turns: 12,
   });
 
   vi.mocked(grade).mockResolvedValue({
-    grading: {
+    grade: {
       buildSuccess,
       typeCheckErrors,
-      changedFiles: [
+      fileChanges: [
         { path: '.storybook/preview.tsx', status: 'A' },
         { path: 'src/Button.stories.tsx', status: 'A' },
       ],
-      storybookFiles: [
+      storybookChanges: [
         { path: '.storybook/preview.tsx', status: 'A' },
         { path: 'src/Button.stories.tsx', status: 'A' },
       ],
       setupPatterns: [{ id: 'tailwind', label: 'Tailwind CSS', sourceFiles: ['.storybook/preview.ts'] }],
     },
-    quality: { score: buildSuccess ? 1 : 0.3, breakdown: { build: buildSuccess ? 1 : 0, typecheck: 1, ghostStories: 0, performance: 0 } },
+    score: { score: buildSuccess ? 1 : 0.3, breakdown: { build: buildSuccess ? 1 : 0, typecheck: 1, ghostStories: 0, performance: 0 } },
   });
 }
 
 const baseConfig: TrialConfig = {
   project: { name: 'test-project', repo: 'https://github.com/test/repo', branch: 'main' },
-  run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
+  variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
   prompt: 'setup',
 };
 
 describe('runTask pipeline', () => {
-  it('assembles a complete TrialResult from pipeline steps', async () => {
+  it('assembles a complete TrialReport from pipeline steps', async () => {
     setupMocks();
 
     const result = await runTask(baseConfig);
@@ -104,19 +103,18 @@ describe('runTask pipeline', () => {
     expect(result).toMatchObject({
       schemaVersion: 1,
       project: 'test-project',
-      run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
+      variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       prompt: 'setup',
       baselineCommit: 'deadbeef',
       execution: {
-        run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
         cost: 0.42,
         duration: 45.2,
         turns: 12,
       },
-      grading: {
+      grade: {
         buildSuccess: true,
       },
-      quality: {
+      score: {
         score: 1,
       },
     });
@@ -146,14 +144,13 @@ describe('runTask pipeline', () => {
     expect(params).toMatchObject({
       prompt: expect.stringContaining('Storybook setup'),
       projectPath: TMP,
-      model: 'sonnet-4.6',
-      effort: 'high',
+      variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       resultsDir: join(TMP, 'results'),
     });
     expect(params.logger).toBeDefined();
 
-    const gradePaths = vi.mocked(grade).mock.calls[0][0];
-    expect(gradePaths).toMatchObject({
+    const gradeWorkspace = vi.mocked(grade).mock.calls[0][0];
+    expect(gradeWorkspace).toMatchObject({
       baselineCommit: 'deadbeef',
       projectPath: TMP,
       resultsDir: join(TMP, 'results'),
@@ -168,11 +165,11 @@ describe('runTask pipeline', () => {
 
     const resultsDir = join(TMP, 'results');
 
-    const summary: TrialResult = JSON.parse(readFileSync(join(resultsDir, 'summary.json'), 'utf-8'));
+    const summary: TrialReport = JSON.parse(readFileSync(join(resultsDir, 'summary.json'), 'utf-8'));
     expect(summary).toMatchObject({
       schemaVersion: 1,
       execution: { cost: 0.42 },
-      grading: { buildSuccess: true },
+      grade: { buildSuccess: true },
     });
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
@@ -183,8 +180,8 @@ describe('runTask pipeline', () => {
     setupMocks({ buildSuccess: false, typeCheckErrors: 5 });
 
     await expect(runTask(baseConfig)).resolves.toMatchObject({
-      grading: { buildSuccess: false, typeCheckErrors: 5 },
-      quality: { score: 0.3 },
+      grade: { buildSuccess: false, typeCheckErrors: 5 },
+      score: { score: 0.3 },
     });
   });
 
@@ -205,20 +202,20 @@ describe('runTask pipeline', () => {
 
     vi.mocked(claudeAgent.execute).mockImplementation(async () => {
       callOrder.push('agent');
-      return { run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' }, cost: 0.1, duration: 10, turns: 3 };
+      return { cost: 0.1, duration: 10, turns: 3 };
     });
 
     vi.mocked(grade).mockImplementation(async () => {
       callOrder.push('grade');
       return {
-        grading: {
+        grade: {
           buildSuccess: true,
           typeCheckErrors: 0,
-          changedFiles: [],
-          storybookFiles: [],
+          fileChanges: [],
+          storybookChanges: [],
           setupPatterns: [],
         },
-        quality: { score: 1, breakdown: { build: 1, typecheck: 1, ghostStories: 0, performance: 0 } },
+        score: { score: 1, breakdown: { build: 1, typecheck: 1, ghostStories: 0, performance: 0 } },
       };
     });
 

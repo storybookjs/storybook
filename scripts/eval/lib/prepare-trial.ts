@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { cp, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import type { Project, TrialPaths, Logger } from "../types.ts";
+import type { Project, TrialWorkspace, Logger } from "../types.ts";
 import { x } from "tinyexec";
 import { installDeps } from "./package-manager.ts";
 import { CACHE_DIR, TRIALS_DIR } from "./utils.ts";
@@ -10,7 +10,7 @@ import { CACHE_DIR, TRIALS_DIR } from "./utils.ts";
  * First run: clone eval-baseline -> install deps -> cache it.
  * Subsequent runs: copy from cache. Agent starts immediately.
  */
-export async function prepareTrial(project: Project, trialId: string, logger: Logger): Promise<TrialPaths> {
+export async function prepareTrial(project: Project, trialId: string, logger: Logger): Promise<TrialWorkspace> {
   const cacheDir = join(CACHE_DIR, project.name);
   const trialDir = join(TRIALS_DIR, trialId);
   const repoRoot = join(trialDir, "project");

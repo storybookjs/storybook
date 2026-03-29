@@ -16,7 +16,7 @@
 import { defineCommand, runMain } from "citty";
 import { randomUUID } from "node:crypto";
 import pc from "picocolors";
-import type { AgentName, TrialConfig, TrialResult } from "./types.ts";
+import type { AgentId, TrialConfig, TrialReport } from "./types.ts";
 import { AGENTS, PROJECTS } from "./config.ts";
 import { runTask } from "./lib/run-task.ts";
 import { createLogger, formatDuration, formatCost, formatTable, listPrompts } from "./lib/utils.ts";
@@ -72,7 +72,7 @@ const main = defineCommand({
     const allModels = Object.values(AGENTS).flatMap((cfg) => cfg.models);
 
     // Determine agent → model pairs
-    let agentModels: Array<{ agent: AgentName; model: string }>;
+    let agentModels: Array<{ agent: AgentId; model: string }>;
 
     if (args.model) {
       // Models specified — infer agent per model
@@ -82,7 +82,7 @@ const main = defineCommand({
           logger.log(pc.red(`Unknown model: ${model}. Available: ${allModels.join(", ")}`));
           process.exit(1);
         }
-        return { agent: entry[0] as AgentName, model };
+        return { agent: entry[0] as AgentId, model };
       });
       // If --agent is also specified, filter to matching agents
       if (args.agent) {
@@ -92,12 +92,12 @@ const main = defineCommand({
     } else if (args.agent) {
       // Agents specified — use default model per agent
       agentModels = args.agent.split(",").map((name) => {
-        const cfg = AGENTS[name as AgentName];
+        const cfg = AGENTS[name as AgentId];
         if (!cfg) {
           logger.log(pc.red(`Unknown agent: ${name}. Options: ${Object.keys(AGENTS).join(", ")}`));
           process.exit(1);
         }
-        return { agent: name as AgentName, model: cfg.defaultModel };
+        return { agent: name as AgentId, model: cfg.defaultModel };
       });
     } else {
       // Default: single claude run
@@ -113,7 +113,7 @@ const main = defineCommand({
         process.exit(1);
       }
       return promptNames.map((prompt) => ({
-        config: { project, run: { agent, model, effort }, prompt, verbose: args.verbose } as TrialConfig,
+        config: { project, variant: { agent, model, effort }, prompt, verbose: args.verbose } as TrialConfig,
         label: `${model}+${prompt}`,
       }));
     });
@@ -128,12 +128,12 @@ const main = defineCommand({
     const runId = randomUUID().slice(0, 8);
     logger.log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
     if (configs.length === 1) {
-      const { run: { agent, model, effort }, prompt } = configs[0].config;
+      const { variant: { agent, model, effort }, prompt } = configs[0].config;
       logger.log(`Agent: ${agent} | Model: ${model} | Effort: ${effort} | Prompt: ${prompt}`);
     } else {
       logger.log(`${configs.length} parallel runs`);
       for (const [agent, { models }] of Object.entries(AGENTS)) {
-        const active = models.filter((m) => configs.some((c) => c.config.run.model === m));
+        const active = models.filter((m) => configs.some((c) => c.config.variant.model === m));
         if (active.length > 0) logger.log(`  ${agent}: ${active.join(", ")}`);
       }
       logger.log(`  prompts: ${[...new Set(promptNames)].join(", ")}`);
@@ -146,7 +146,7 @@ const main = defineCommand({
       configs.map((c) => runTask(c.config, createLogger(configs.length > 1 ? c.label : undefined))),
     );
 
-    const results: TrialResult[] = [];
+    const results: TrialReport[] = [];
     for (const [i, s] of settled.entries()) {
       if (s.status === "fulfilled") {
         results.push(s.value);
@@ -163,32 +163,32 @@ const main = defineCommand({
 
     if (results.length === 1) {
       const r = results[0];
-      const ghost = r.grading.ghostStories;
+      const ghost = r.grade.ghostStories;
       const ghostStr = ghost ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)` : "-";
 
       logger.log(pc.bold("\nResult"));
-      logger.log(`  Build:   ${r.grading.buildSuccess ? pc.green("PASS") : pc.red("FAIL")}`);
+      logger.log(`  Build:   ${r.grade.buildSuccess ? pc.green("PASS") : pc.red("FAIL")}`);
       logger.log(`  Ghost:   ${ghostStr}`);
-      logger.log(`  TS Err:  ${r.grading.typeCheckErrors}`);
-      logger.log(`  Score:   ${r.quality.score}`);
+      logger.log(`  TS Err:  ${r.grade.typeCheckErrors}`);
+      logger.log(`  Score:   ${r.score.score}`);
       logger.log(`  Cost:    ${formatCost(r.execution.cost)}`);
       logger.log(`  Time:    ${formatDuration(r.execution.duration)}`);
       logger.log(`  Turns:   ${r.execution.turns}`);
     } else {
-      results.sort((a, b) => (b.grading.ghostStories?.successRate ?? -1) - (a.grading.ghostStories?.successRate ?? -1));
+      results.sort((a, b) => (b.grade.ghostStories?.successRate ?? -1) - (a.grade.ghostStories?.successRate ?? -1));
 
       const headers = ["Agent", "Model", "Prompt", "Build", "Ghost", "TS Err", "Score", "Cost", "Time", "Turns"];
       const rows = results.map((r) => {
-        const ghost = r.grading.ghostStories;
+        const ghost = r.grade.ghostStories;
         const ghostStr = ghost ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)` : "-";
         return [
-          r.run.agent,
-          r.run.model,
+          r.variant.agent,
+          r.variant.model,
           r.prompt,
-          r.grading.buildSuccess ? pc.green("PASS") : pc.red("FAIL"),
+          r.grade.buildSuccess ? pc.green("PASS") : pc.red("FAIL"),
           ghostStr,
-          String(r.grading.typeCheckErrors),
-          String(r.quality.score),
+          String(r.grade.typeCheckErrors),
+          String(r.score.score),
           formatCost(r.execution.cost),
           formatDuration(r.execution.duration),
           String(r.execution.turns),
@@ -199,7 +199,7 @@ const main = defineCommand({
       logger.log(formatTable(headers, rows));
 
       const totalCost = results.reduce((s, r) => s + (r.execution.cost || 0), 0);
-      const ghostRates = results.map((r) => r.grading.ghostStories?.successRate).filter((r): r is number => r != null);
+      const ghostRates = results.map((r) => r.grade.ghostStories?.successRate).filter((r): r is number => r != null);
       const avgGhost = ghostRates.length > 0 ? ghostRates.reduce((s, r) => s + r, 0) / ghostRates.length : 0;
 
       logger.log(`\nGhost stories avg: ${pc.bold(`${Math.round(avgGhost * 100)}%`)}`);

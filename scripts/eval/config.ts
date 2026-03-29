@@ -5,11 +5,11 @@
  * and cost estimation utilities.
  */
 
-import type { AgentName, Project } from "./types.ts";
+import type { AgentId, Project } from "./types.ts";
 
 // --- Pricing ---
 
-export interface Pricing {
+export interface TokenPricing {
   input: number;
   cachedInput: number;
   output: number;
@@ -21,20 +21,20 @@ export interface TokenUsage {
   outputTokens: number;
 }
 
-// --- Agent Config ---
+// --- Agent Definition ---
 
-export interface AgentConfig {
+export interface AgentDefinition {
   models: string[];
   defaultModel: string;
   /** Map friendly model names to SDK-specific model IDs (e.g. "sonnet-4.6" → "claude-sonnet-4-6"). */
   sdkModelIds: Record<string, string>;
   /** Per-million-token pricing for manual cost estimation (agents that don't report cost natively). */
-  pricing: Record<string, Pricing>;
+  pricing: Record<string, TokenPricing>;
   efforts: string[];
   defaultEffort: string;
 }
 
-export const AGENTS: Record<AgentName, AgentConfig> = {
+export const AGENTS: Record<AgentId, AgentDefinition> = {
   claude: {
     models: ["sonnet-4.6", "opus-4.6", "haiku-4.5"],
     defaultModel: "sonnet-4.6",
@@ -62,7 +62,7 @@ export const AGENTS: Record<AgentName, AgentConfig> = {
 // --- Cost Estimation ---
 
 /** Estimate cost from token usage using the pricing table. */
-export function estimateCost(agent: AgentName, model: string, usage: TokenUsage): number | undefined {
+export function estimateCost(agent: AgentId, model: string, usage: TokenUsage): number | undefined {
   const pricing = AGENTS[agent].pricing[model];
   if (!pricing) return undefined;
   const freshInput = usage.inputTokens - usage.cachedInputTokens;

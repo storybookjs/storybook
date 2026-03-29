@@ -80,7 +80,7 @@ export function listPrompts(): string[] {
 
 // --- Environment capture ---
 
-export interface Environment {
+export interface EvalEnvironment {
   nodeVersion: string;
   /** Git branch of the eval harness (storybook monorepo), not the evaluated project. */
   evalBranch: string;
@@ -88,7 +88,7 @@ export interface Environment {
   evalCommit: string;
 }
 
-export async function captureEnvironment(resultsDir: string): Promise<Environment> {
+export async function captureEnvironment(resultsDir: string): Promise<EvalEnvironment> {
   let evalBranch = "unknown";
   let evalCommit = "unknown";
   try {
@@ -97,7 +97,7 @@ export async function captureEnvironment(resultsDir: string): Promise<Environmen
   } catch {
     /* not in a git repo */
   }
-  const env: Environment = { nodeVersion: process.version, evalBranch, evalCommit };
+  const env: EvalEnvironment = { nodeVersion: process.version, evalBranch, evalCommit };
   await writeFile(join(resultsDir, "environment.json"), JSON.stringify(env, null, 2));
   return env;
 }

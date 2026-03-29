@@ -1,21 +1,21 @@
 import { Codex, type ModelReasoningEffort } from "@openai/codex-sdk";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Agent, ExecutionResult } from "../../types.ts";
+import type { AgentDriver, Execution } from "../../types.ts";
 import { estimateCost } from "../../config.ts";
 
-export const codexAgent: Agent = {
+export const codexAgent: AgentDriver = {
   name: "codex",
 
   async execute({
     prompt,
     projectPath,
-    model,
-    effort = "high",
+    variant,
     resultsDir,
     logger,
-  }): Promise<ExecutionResult> {
+  }): Promise<Execution> {
     const startTime = Date.now();
+    const { model, effort } = variant;
 
     const codex = new Codex();
     const thread = codex.startThread({
@@ -81,6 +81,6 @@ export const codexAgent: Agent = {
 
     await writeFile(join(resultsDir, "transcript.json"), JSON.stringify(items, null, 2));
 
-    return { run: { agent: "codex", model, effort }, cost, duration, turns };
+    return { cost, duration, turns };
   },
 };

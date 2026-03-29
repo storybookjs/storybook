@@ -1,17 +1,17 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { GradingResult, GhostStoriesResult, QualityResult, QualityWeights, TrialPaths, ChangedFile, Logger } from "../types.ts";
-import { DEFAULT_QUALITY_WEIGHTS } from "../types.ts";
+import type { Grade, GhostStoryGrade, QualityScore, ScoreWeights, TrialWorkspace, FileChange, Logger } from "../types.ts";
+import { DEFAULT_SCORE_WEIGHTS } from "../types.ts";
 import { x } from "tinyexec";
 import { detectSetupPatterns } from "./setup-patterns.ts";
 import { findComponentCandidates, runGhostStories } from "./ghost-stories.ts";
 
-/** Filter changed files to only storybook-related ones. */
-export function filterStorybookFiles(changedFiles: ChangedFile[]): ChangedFile[] {
+/** Filter file changes to only storybook-related ones. */
+export function filterStorybookFiles(fileChanges: FileChange[]): FileChange[] {
   const isStorybookPath = (path?: string) =>
     path != null && (path.includes(".storybook/") || /\.(stories|story)\.[tj]sx?$/.test(path));
 
-  return changedFiles.filter(
+  return fileChanges.filter(
     (f) => isStorybookPath(f.path) || isStorybookPath(f.previousPath),
   );
 }
@@ -30,8 +30,8 @@ export function computeQualityScore(
     ghostSuccessRate?: number;
     durationSeconds?: number;
   },
-  weights: QualityWeights = DEFAULT_QUALITY_WEIGHTS,
-): QualityResult {
+  weights: ScoreWeights = DEFAULT_SCORE_WEIGHTS,
+): QualityScore {
   const buildScore = opts.buildSuccess ? 1 : 0;
   const tcScore = Math.max(0, 1 - opts.typeCheckErrors / 20);
   const ghostScore = opts.ghostSuccessRate ?? 0;
@@ -61,15 +61,15 @@ export function countTypeCheckErrors(tscOutput: string): number {
   return (tscOutput.match(/error TS\d+/g) || []).length;
 }
 
-/** Parse git diff --name-status output into ChangedFile objects. */
-export function parseChangedFiles(gitOutput: string): ChangedFile[] {
+/** Parse git diff --name-status output into FileChange objects. */
+export function parseChangedFiles(gitOutput: string): FileChange[] {
   return gitOutput
     .trim()
     .split("\n")
     .filter(Boolean)
     .map((line) => {
       const [status, ...parts] = line.split("\t");
-      const normalizedStatus = (status?.charAt(0) || "M") as ChangedFile["status"];
+      const normalizedStatus = (status?.charAt(0) || "M") as FileChange["status"];
 
       if (normalizedStatus === "R" && parts.length >= 2) {
         const [previousPath, path] = parts;
@@ -81,17 +81,17 @@ export function parseChangedFiles(gitOutput: string): ChangedFile[] {
 }
 
 export async function grade(
-  paths: TrialPaths,
+  workspace: TrialWorkspace,
   logger: Logger,
   agentDuration?: number,
-): Promise<{ grading: GradingResult; quality: QualityResult }> {
-  const { repoRoot, projectPath, resultsDir, baselineCommit } = paths;
+): Promise<{ grade: Grade; score: QualityScore }> {
+  const { repoRoot, projectPath, resultsDir, baselineCommit } = workspace;
 
   // Changed files
   logger.logStep("Collecting agent changes...");
-  const changedFiles = await getChangedFiles(repoRoot, baselineCommit);
-  const storybookFiles = filterStorybookFiles(changedFiles);
-  logger.logSuccess(`${changedFiles.length} files changed (${storybookFiles.length} storybook-related)`);
+  const fileChanges = await getChangedFiles(repoRoot, baselineCommit);
+  const storybookChanges = filterStorybookFiles(fileChanges);
+  logger.logSuccess(`${fileChanges.length} files changed (${storybookChanges.length} storybook-related)`);
 
   // Setup patterns
   const setupPatterns = await detectSetupPatterns(projectPath);
@@ -132,28 +132,28 @@ export async function grade(
   // Ghost stories (only if build passed)
   const ghostStories = buildSuccess ? await gradeGhostStories(projectPath, logger) : undefined;
 
-  const grading: GradingResult = {
+  const trialGrade: Grade = {
     buildSuccess,
     buildError: buildSuccess ? undefined : buildOutput.slice(-2000),
     typeCheckErrors,
     typeCheckOutput: typeCheckErrors > 0 ? tscOutput.slice(-2000) : undefined,
-    changedFiles,
-    storybookFiles,
+    fileChanges,
+    storybookChanges,
     setupPatterns,
     ghostStories,
   };
 
-  const quality = computeQualityScore({
+  const score = computeQualityScore({
     buildSuccess,
     typeCheckErrors,
     ghostSuccessRate: ghostStories?.successRate,
     durationSeconds: agentDuration,
   });
 
-  return { grading, quality };
+  return { grade: trialGrade, score };
 }
 
-async function getChangedFiles(repoRoot: string, baseline: string): Promise<ChangedFile[]> {
+async function getChangedFiles(repoRoot: string, baseline: string): Promise<FileChange[]> {
   // Stage all files so `git diff --cached` picks up new files the agent created.
   // Safe: this runs on an ephemeral trial copy, not the real repo.
   await x("git", ["add", "-A"], { nodeOptions: { cwd: repoRoot } });
@@ -164,7 +164,7 @@ async function getChangedFiles(repoRoot: string, baseline: string): Promise<Chan
   return parseChangedFiles(stdout);
 }
 
-async function gradeGhostStories(projectPath: string, logger: Logger): Promise<GhostStoriesResult | undefined> {
+async function gradeGhostStories(projectPath: string, logger: Logger): Promise<GhostStoryGrade | undefined> {
   logger.logStep("Running ghost stories...");
 
   const { candidates, error } = await findComponentCandidates({ sampleSize: 20, cwd: projectPath });

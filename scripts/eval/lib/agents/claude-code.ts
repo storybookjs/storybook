@@ -3,7 +3,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { AGENTS } from "../../config.ts";
-import type { Agent, ExecutionResult, Logger } from "../../types.ts";
+import type { AgentDriver, Execution, Logger } from "../../types.ts";
 
 function logMessage(message: SDKMessage, logger: Logger) {
   switch (message.type) {
@@ -70,18 +70,18 @@ function logMessage(message: SDKMessage, logger: Logger) {
 
 const MAX_TURNS = 50;
 
-export const claudeAgent: Agent = {
+export const claudeAgent: AgentDriver = {
   name: "claude",
 
   async execute({
     prompt,
     projectPath,
-    model,
-    effort = "high",
+    variant,
     resultsDir,
     logger,
-  }): Promise<ExecutionResult> {
+  }): Promise<Execution> {
     const startTime = Date.now();
+    const { model, effort } = variant;
     const sdkModel = AGENTS.claude.sdkModelIds[model] ?? model;
 
     let cost: number | undefined;
@@ -117,7 +117,6 @@ export const claudeAgent: Agent = {
     await writeFile(join(resultsDir, "transcript.json"), JSON.stringify(messages, null, 2));
 
     return {
-      run: { agent: "claude", model, effort },
       cost,
       duration,
       durationApi,

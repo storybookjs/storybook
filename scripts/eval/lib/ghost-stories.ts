@@ -51,7 +51,7 @@ export async function findComponentCandidates(opts: {
   }
 }
 
-export interface GhostStoryRunResult {
+export interface GhostStoryOutput {
   total: number;
   passed: number;
   successRate: number;
@@ -68,7 +68,7 @@ export interface GhostStoryRunResult {
 export async function runGhostStories(
   candidates: string[],
   opts: { cwd: string },
-): Promise<GhostStoryRunResult> {
+): Promise<GhostStoryOutput> {
   const outputFile = join(tmpdir(), `ghost-stories-${Date.now()}.json`);
 
   const result = await x("npx", [

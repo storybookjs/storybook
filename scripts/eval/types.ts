@@ -16,27 +16,28 @@ export interface Logger {
 
 // --- Agent ---
 
-export type AgentName = "claude" | "codex";
+export type AgentId = "claude" | "codex";
 
 /** Agent + model + effort — the three values that define how the agent runs. */
-export interface AgentRunConfig {
-  agent: AgentName;
+export interface AgentVariant {
+  agent: AgentId;
   /** Friendly model name (e.g. "sonnet-4.6", "gpt-5.4"). Must exist in `AGENTS[agent].models`. */
   model: string;
   /** Reasoning effort level. Must exist in `AGENTS[agent].efforts`. */
   effort: string;
 }
 
-export interface Agent {
-  name: AgentName;
-  execute(params: {
-    prompt: string;
-    projectPath: string;
-    model: string;
-    effort: string;
-    resultsDir: string;
-    logger: Logger;
-  }): Promise<ExecutionResult>;
+export interface AgentExecuteParams {
+  prompt: string;
+  projectPath: string;
+  variant: AgentVariant;
+  resultsDir: string;
+  logger: Logger;
+}
+
+export interface AgentDriver {
+  name: AgentId;
+  execute(params: AgentExecuteParams): Promise<Execution>;
 }
 
 // --- Project ---
@@ -55,16 +56,16 @@ export interface TrialConfig {
   /** Which project to evaluate (cloned from its eval-baseline branch). */
   project: Project;
   /** Agent, model, and effort level. */
-  run: AgentRunConfig;
+  variant: AgentVariant;
   /** Prompt name — maps to `prompts/{name}.md` (e.g. "setup", "self-heal"). */
   prompt: string;
   /** Log agent messages to stdout. */
   verbose?: boolean;
 }
 
-// --- Trial Paths ---
+// --- Trial Workspace ---
 
-export interface TrialPaths {
+export interface TrialWorkspace {
   trialDir: string;
   repoRoot: string;
   projectPath: string;
@@ -74,17 +75,16 @@ export interface TrialPaths {
 
 // --- Execution ---
 
-export interface ExecutionResult {
-  run: AgentRunConfig;
+export interface Execution {
   cost?: number;
   duration: number;
   durationApi?: number;
   turns: number;
 }
 
-// --- Changed Files ---
+// --- File Changes ---
 
-export interface ChangedFile {
+export interface FileChange {
   path: string;
   status: "A" | "M" | "D" | "R";
   /** For renames, the original path before the move. */
@@ -101,7 +101,7 @@ export interface SetupPattern {
 
 // --- Ghost Stories ---
 
-export interface GhostStoriesResult {
+export interface GhostStoryGrade {
   candidateCount: number;
   total: number;
   passed: number;
@@ -110,34 +110,34 @@ export interface GhostStoriesResult {
 
 // --- Grading ---
 
-export interface GradingResult {
+export interface Grade {
   buildSuccess: boolean;
   buildError?: string;
   typeCheckErrors: number;
   typeCheckOutput?: string;
-  changedFiles: ChangedFile[];
-  storybookFiles: ChangedFile[];
+  fileChanges: FileChange[];
+  storybookChanges: FileChange[];
   setupPatterns: SetupPattern[];
-  ghostStories?: GhostStoriesResult;
+  ghostStories?: GhostStoryGrade;
 }
 
 // --- Quality Score ---
 
-export interface QualityWeights {
+export interface ScoreWeights {
   ghostStories: number;
   build: number;
   typecheck: number;
   performance: number;
 }
 
-export const DEFAULT_QUALITY_WEIGHTS: QualityWeights = {
+export const DEFAULT_SCORE_WEIGHTS: ScoreWeights = {
   ghostStories: 0.4,
   build: 0.25,
   typecheck: 0.25,
   performance: 0.1,
 };
 
-export interface QualityResult {
+export interface QualityScore {
   score: number;
   breakdown: {
     build: number;
@@ -147,16 +147,16 @@ export interface QualityResult {
   };
 }
 
-// --- Trial Result ---
+// --- Trial Report ---
 
-export interface TrialResult {
+export interface TrialReport {
   schemaVersion: 1;
   project: string;
-  run: AgentRunConfig;
+  variant: AgentVariant;
   prompt: string;
   timestamp: string;
   baselineCommit: string;
-  execution: ExecutionResult;
-  grading: GradingResult;
-  quality: QualityResult;
+  execution: Execution;
+  grade: Grade;
+  score: QualityScore;
 }

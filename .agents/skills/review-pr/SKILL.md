@@ -14,7 +14,7 @@ Generate a scrollable single-page HTML document that reviews a PR as a readable 
 
 1. **Two layers per area.** The top layer is a curated, readable walkthrough — API surface, key test assertions, and core implementation logic woven together with prose. Only the important parts. Below it, the full files are collapsed in `<details>` for reference.
 2. **High-level to low-level.** Order areas from entry points and orchestration down to utilities and types. The reader understands architecture before details.
-3. **API → Tests → Implementation.** Within each area's readable section, show the API first (types, interfaces, exports), then the tests (what does it do?), then the implementation (how?).
+3. **API → Tests → Implementation.** Within each area's readable section, show the API first (types, interfaces, exports), then the tests (what does it do?), then the implementation (how?). **Show full interface bodies** — not just names. The reader should see every field of `TrialResult`, `AgentConfig`, etc. in the walkthrough where they're first relevant. Don't defer to "see types.ts".
 4. **Review readability.** For each file, assess: logical order? Clear names? Comments where the *why* isn't obvious? Tests readable enough to serve as docs? Flag issues as smell-boxes. Call out well-written tests with note-boxes.
 5. **Cover everything.** Every changed file appears somewhere.
 
@@ -228,12 +228,33 @@ document.querySelectorAll('code[data-diff]').forEach(block => {
 ### Building blocks
 
 **Layer 1 — Readable walkthrough snippet** (curated excerpt with prose):
+
+Show full interface bodies where they're first relevant — not just names:
+
 ```html
 <div class="file-card">
   <div class="narrative">
-    <p><strong>API:</strong> The pipeline is typed as a single function returning <code>TrialResult</code>:</p>
+    <p><strong>API:</strong> The pipeline takes a config and returns a full result:</p>
   </div>
-  <pre><code class="language-typescript">export async function runTask(config: TrialConfig): Promise&lt;TrialResult&gt;</code></pre>
+  <pre><code class="language-typescript">export async function runTask(config: TrialConfig): Promise&lt;TrialResult&gt;
+
+export interface TrialConfig {
+  project: Project;
+  agent: AgentName;    // "claude" | "codex"
+  model: string;
+  effort: string;
+  prompt: string;
+}
+
+export interface TrialResult {
+  schemaVersion: 1;
+  project: string;
+  agent: string;
+  model: string;
+  execution: ExecutionResult;
+  grading: GradingResult;
+  quality: QualityResult;
+}</code></pre>
   <div class="narrative">
     <p><strong>Tests:</strong> The ordering test makes the sequential contract clear:</p>
   </div>

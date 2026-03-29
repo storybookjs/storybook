@@ -8,11 +8,10 @@
  */
 
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { glob, readFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { x } from "tinyexec";
-import { glob } from "glob";
 
 const COMPONENT_GLOB = "**/*.{tsx,jsx}";
 const IGNORE_PATTERNS = [
@@ -42,12 +41,11 @@ export async function findComponentCandidates(opts: {
 }): Promise<{ candidates: string[]; error?: string }> {
   const { cwd, sampleSize = 20 } = opts;
   try {
-    const files = await glob(COMPONENT_GLOB, {
+    const files = await Array.fromAsync(glob(COMPONENT_GLOB, {
       cwd,
-      absolute: true,
-      ignore: IGNORE_PATTERNS,
-    });
-    return { candidates: files.slice(0, sampleSize) };
+      exclude: IGNORE_PATTERNS,
+    }));
+    return { candidates: files.map((file) => resolve(cwd, file)).slice(0, sampleSize) };
   } catch {
     return { candidates: [], error: "Failed to find component candidates" };
   }

@@ -27,6 +27,12 @@ import type { StorybookPluginOptions } from './types';
 export async function storybookPlugin(
   userOptions: StorybookPluginOptions = {}
 ): Promise<PluginOption[]> {
+  if (process.env.STORYBOOK === 'true') {
+    // This is Storybook CLI mode.
+    // don't run the plugin
+    return [];
+  }
+
   const {
     configDir = '.storybook',
     basePath = '/__storybook/',

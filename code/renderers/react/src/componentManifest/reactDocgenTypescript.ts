@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 import {
   type ComponentDoc,
@@ -192,7 +192,12 @@ async function getParser(userOptions?: ParserOptions) {
   }
 
   if (!parser) {
-    const configPath = findTsconfigPath(process.cwd());
+    // If the user provided a tsconfigPath, use it instead of auto-detecting
+    const { tsconfigPath: customTsconfigPath, ...restUserOptions } = (userOptions ?? {}) as
+      ParserOptions & { tsconfigPath?: string };
+    const configPath = customTsconfigPath
+      ? resolve(process.cwd(), customTsconfigPath)
+      : findTsconfigPath(process.cwd());
     cachedCompilerOptions = { noErrorTruncation: true, strict: true };
 
     if (configPath) {
@@ -217,7 +222,7 @@ async function getParser(userOptions?: ParserOptions) {
     const parserOptions: ParserOptions = {
       shouldExtractLiteralValuesFromEnum: true,
       shouldRemoveUndefinedFromOptional: true,
-      ...userOptions,
+      ...restUserOptions,
       // Always force savePropValueAsString so default values are in a consistent format
       savePropValueAsString: true,
     };

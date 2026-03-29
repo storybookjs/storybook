@@ -42,6 +42,7 @@ export * from './utils/sync-main-preview-addons';
 export * from './utils/setup-addon-in-config';
 export * from './utils/wrap-getAbsolutePath-utils';
 export * from './js-package-manager';
+export * from './utils/preview-annotations';
 export * from './utils/scan-and-transform-files';
 export * from './utils/transform-imports';
 export * from '../shared/utils/module';

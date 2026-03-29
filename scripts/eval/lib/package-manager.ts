@@ -1,10 +1,9 @@
 /**
  * Shared package manager detection and dependency installation.
  *
- * Used by both the trial preparation (prepare-trial.ts) and the
- * one-time repo preparation script (prepare-repos.ts).
+ * Used by trial preparation and any other eval flows that need a
+ * package-manager-aware install step.
  */
-
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { x } from "tinyexec";

@@ -8,8 +8,11 @@ import { findComponentCandidates, runGhostStories } from "./ghost-stories.ts";
 
 /** Filter changed files to only storybook-related ones. */
 export function filterStorybookFiles(changedFiles: ChangedFile[]): ChangedFile[] {
+  const isStorybookPath = (path?: string) =>
+    path != null && (path.includes(".storybook/") || /\.(stories|story)\.[tj]sx?$/.test(path));
+
   return changedFiles.filter(
-    (f) => f.path.includes(".storybook/") || /\.(stories|story)\.[tj]sx?$/.test(f.path),
+    (f) => isStorybookPath(f.path) || isStorybookPath(f.previousPath),
   );
 }
 
@@ -66,7 +69,14 @@ export function parseChangedFiles(gitOutput: string): ChangedFile[] {
     .filter(Boolean)
     .map((line) => {
       const [status, ...parts] = line.split("\t");
-      return { path: parts.join("\t"), status: (status?.charAt(0) || "M") as ChangedFile["status"] };
+      const normalizedStatus = (status?.charAt(0) || "M") as ChangedFile["status"];
+
+      if (normalizedStatus === "R" && parts.length >= 2) {
+        const [previousPath, path] = parts;
+        return { path, previousPath, status: normalizedStatus };
+      }
+
+      return { path: parts.join("\t"), status: normalizedStatus };
     });
 }
 

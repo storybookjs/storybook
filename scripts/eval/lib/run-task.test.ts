@@ -105,31 +105,30 @@ describe('runTask pipeline', () => {
 
     const result = await runTask(baseConfig);
 
-    // Config fields mapped correctly
-    expect(result.schemaVersion).toBe(1);
-    expect(result.project).toBe('test-project');
-    expect(result.agent).toBe('claude');
-    expect(result.model).toBe('sonnet-4.6');
-    expect(result.effort).toBe('high');
-    expect(result.prompt).toBe('setup');
-    expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-
-    // prepareTrial output flows into result
-    expect(result.baselineCommit).toBe('deadbeef');
-
-    // Agent execution output flows into result
-    expect(result.execution).toEqual({
+    expect(result).toMatchObject({
+      schemaVersion: 1,
+      project: 'test-project',
       agent: 'claude',
       model: 'sonnet-4.6',
       effort: 'high',
-      cost: 0.42,
-      duration: 45.2,
-      turns: 12,
+      prompt: 'setup',
+      baselineCommit: 'deadbeef',
+      execution: {
+        agent: 'claude',
+        model: 'sonnet-4.6',
+        effort: 'high',
+        cost: 0.42,
+        duration: 45.2,
+        turns: 12,
+      },
+      grading: {
+        buildSuccess: true,
+      },
+      quality: {
+        score: 1,
+      },
     });
-
-    // Grade output flows into result
-    expect(result.grading.buildSuccess).toBe(true);
-    expect(result.quality.score).toBe(1);
+    expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   it('calls pipeline steps with correct arguments', async () => {
@@ -142,28 +141,31 @@ describe('runTask pipeline', () => {
 
     await runTask(config);
 
-    // prepareTrial receives the project and a logger
-    expect(vi.mocked(prepareTrial).mock.calls[0][0].name).toBe('mealdrop');
-    // Third arg is the logger
+    expect(vi.mocked(prepareTrial).mock.calls[0][0]).toMatchObject({
+      name: 'mealdrop',
+      repo: 'https://github.com/test/mealdrop',
+      branch: 'eval-baseline',
+    });
     expect(vi.mocked(prepareTrial).mock.calls[0][2]).toBeDefined();
 
-    // captureEnvironment receives the results dir
     expect(vi.mocked(captureEnvironment).mock.calls[0][0]).toBe(join(TMP, 'results'));
 
-    // Agent receives a params object with prompt, projectPath, model, effort, resultsDir, logger
     const params = vi.mocked(claudeAgent.execute).mock.calls[0][0] as Record<string, unknown>;
-    expect(params.prompt).toContain('Storybook setup');
-    expect(params.projectPath).toBe(TMP);
-    expect(params.model).toBe('sonnet-4.6');
-    expect(params.effort).toBe('high');
-    expect(params.resultsDir).toBe(join(TMP, 'results'));
+    expect(params).toMatchObject({
+      prompt: expect.stringContaining('Storybook setup'),
+      projectPath: TMP,
+      model: 'sonnet-4.6',
+      effort: 'high',
+      resultsDir: join(TMP, 'results'),
+    });
     expect(params.logger).toBeDefined();
 
-    // grade receives the trial paths and a logger
     const gradePaths = vi.mocked(grade).mock.calls[0][0];
-    expect(gradePaths.baselineCommit).toBe('deadbeef');
-    expect(gradePaths.projectPath).toBe(TMP);
-    // Second arg is the logger
+    expect(gradePaths).toMatchObject({
+      baselineCommit: 'deadbeef',
+      projectPath: TMP,
+      resultsDir: join(TMP, 'results'),
+    });
     expect(vi.mocked(grade).mock.calls[0][1]).toBeDefined();
   });
 
@@ -174,13 +176,13 @@ describe('runTask pipeline', () => {
 
     const resultsDir = join(TMP, 'results');
 
-    // summary.json is parseable and matches the returned result
     const summary: TrialResult = JSON.parse(readFileSync(join(resultsDir, 'summary.json'), 'utf-8'));
-    expect(summary.schemaVersion).toBe(1);
-    expect(summary.execution.cost).toBe(0.42);
-    expect(summary.grading.buildSuccess).toBe(true);
+    expect(summary).toMatchObject({
+      schemaVersion: 1,
+      execution: { cost: 0.42 },
+      grading: { buildSuccess: true },
+    });
 
-    // prompt.md contains the real setup prompt
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
     expect(promptContent).toContain('Storybook setup');
   });
@@ -188,9 +190,10 @@ describe('runTask pipeline', () => {
   it('propagates failed build into result', async () => {
     setupMocks({ buildSuccess: false, typeCheckErrors: 5 });
 
-    const result = await runTask(baseConfig);
-    expect(result.grading.buildSuccess).toBe(false);
-    expect(result.quality.score).toBe(0.3);
+    await expect(runTask(baseConfig)).resolves.toMatchObject({
+      grading: { buildSuccess: false, typeCheckErrors: 5 },
+      quality: { score: 0.3 },
+    });
   });
 
   it('does not call grade before agent finishes', async () => {

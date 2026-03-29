@@ -14,15 +14,15 @@ import {
 import { detectSetupPatterns } from './setup-patterns';
 
 /**
- * High-level test: simulate the grading pipeline on a fake project directory.
- * Data flows from one step to the next — candidate count feeds into the
- * quality assessment, patterns inform what we expect from the changed files, etc.
+ * Helper-level test: compose grading helpers on a fake project directory.
+ * This exercises candidate discovery, setup-pattern detection, git-output parsing,
+ * and quality-score calculation without pretending to cover the full grade() flow.
  */
 
 let TMP: string;
 
 beforeEach(() => {
-  TMP = join(tmpdir(), `eval-grading-pipeline-${Date.now()}`);
+  TMP = join(tmpdir(), `eval-grading-helpers-${Date.now()}`);
   mkdirSync(join(TMP, 'src', 'components'), { recursive: true });
   mkdirSync(join(TMP, '.storybook'), { recursive: true });
 });
@@ -42,8 +42,8 @@ async function findCandidates(cwd: string) {
   return candidates.map((c) => c.replace(cwd + '/', ''));
 }
 
-describe('grading pipeline', () => {
-  it('grades a well-configured project: candidates found, patterns detected, high quality', async () => {
+describe('grading helpers', () => {
+  it('composes helper signals for a well-configured project', async () => {
     // Set up a realistic project with components and storybook config
     writeFile(
       'src/components/Button.tsx',
@@ -111,7 +111,7 @@ describe('grading pipeline', () => {
     expect(quality.score).toBe(1);
   });
 
-  it('grades a broken project: candidates found but build fails, low quality', async () => {
+  it('composes helper signals for a broken project', async () => {
     writeFile(
       'src/components/Widget.tsx',
       [
@@ -144,7 +144,7 @@ describe('grading pipeline', () => {
     expect(quality.breakdown.build).toBe(0);
   });
 
-  it('more candidates with setup patterns yields higher confidence in the grade', async () => {
+  it('keeps helper output stable as candidate count grows', async () => {
     // Rich project: many simple components
     for (let i = 0; i < 5; i++) {
       writeFile(

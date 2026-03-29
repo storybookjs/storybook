@@ -66,6 +66,8 @@ export interface ExecutionResult {
 export interface ChangedFile {
   path: string;
   status: "A" | "M" | "D" | "R";
+  /** For renames, the original path before the move. */
+  previousPath?: string;
 }
 
 // --- Setup Patterns ---

@@ -15,9 +15,10 @@ describe('filterStorybookFiles', () => {
       { path: '.storybook/preview.tsx', status: 'A' },
       { path: 'src/App.tsx', status: 'M' },
     ];
-    const result = filterStorybookFiles(files);
-    expect(result).toHaveLength(2);
-    expect(result.map((f) => f.path)).toEqual(['.storybook/main.ts', '.storybook/preview.tsx']);
+    expect(filterStorybookFiles(files)).toMatchObject([
+      { path: '.storybook/main.ts', status: 'M' },
+      { path: '.storybook/preview.tsx', status: 'A' },
+    ]);
   });
 
   it('matches story files with various extensions', () => {
@@ -29,7 +30,7 @@ describe('filterStorybookFiles', () => {
       { path: 'src/Button.tsx', status: 'M' },
       { path: 'src/Button.test.tsx', status: 'M' },
     ];
-    expect(filterStorybookFiles(files)).toHaveLength(4);
+    expect(filterStorybookFiles(files)).toMatchObject(files.slice(0, 4));
   });
 
   it('returns empty for no storybook files', () => {
@@ -42,6 +43,16 @@ describe('filterStorybookFiles', () => {
 
   it('handles empty input', () => {
     expect(filterStorybookFiles([])).toHaveLength(0);
+  });
+
+  it('matches renamed files using either side of the rename', () => {
+    const files: ChangedFile[] = [
+      { path: 'src/Button.tsx', previousPath: 'src/Button.stories.tsx', status: 'R' },
+      { path: '.storybook/preview.tsx', previousPath: 'config/preview.tsx', status: 'R' },
+      { path: 'src/App.tsx', previousPath: 'src/Main.tsx', status: 'R' },
+    ];
+
+    expect(filterStorybookFiles(files)).toMatchObject(files.slice(0, 2));
   });
 });
 
@@ -157,11 +168,11 @@ describe('countTypeCheckErrors', () => {
 describe('parseChangedFiles', () => {
   it('parses added, modified, deleted, and renamed files', () => {
     const output = 'A\tsrc/new-file.ts\nM\tsrc/existing.ts\nD\tsrc/removed.ts\nR100\told.ts\tnew.ts';
-    expect(parseChangedFiles(output)).toEqual([
+    expect(parseChangedFiles(output)).toMatchObject([
       { path: 'src/new-file.ts', status: 'A' },
       { path: 'src/existing.ts', status: 'M' },
       { path: 'src/removed.ts', status: 'D' },
-      { path: 'old.ts\tnew.ts', status: 'R' },
+      { path: 'new.ts', previousPath: 'old.ts', status: 'R' },
     ]);
   });
 

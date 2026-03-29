@@ -22,7 +22,7 @@ export async function prepareTrial(project: Project, trialId: string, logger: Lo
   } else {
     logger.logStep(`Cloning ${project.repo}#${project.branch}...`);
     await mkdir(CACHE_DIR, { recursive: true });
-    await x("git", ["clone", "--depth", "1", "--branch", project.branch!, project.repo, repoRoot], {
+    await x("git", ["clone", "--depth", "1", "--branch", project.branch, project.repo, repoRoot], {
       timeout: 120_000,
     });
     const projectPath = project.projectDir ? join(repoRoot, project.projectDir) : repoRoot;

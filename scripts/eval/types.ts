@@ -45,7 +45,7 @@ export interface AgentDriver {
 export interface Project {
   name: string;
   repo: string;
-  branch?: string;
+  branch: string;
   projectDir?: string;
   description?: string;
 }

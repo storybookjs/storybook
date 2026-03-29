@@ -19,7 +19,8 @@ export async function runTask(
   config: TrialConfig,
   logger?: Logger,
 ): Promise<TrialResult> {
-  const { project, agent: agentName, model, effort, prompt: promptName } = config;
+  const { project, run, prompt: promptName } = config;
+  const { agent: agentName, model, effort } = run;
   const log = logger ?? createLogger();
   const trialId = generateTrialId(project.name, agentName, model, promptName || "setup");
   const timestamp = new Date().toISOString();
@@ -58,9 +59,7 @@ export async function runTask(
   const result: TrialResult = {
     schemaVersion: 1,
     project: project.name,
-    agent: agentName,
-    model,
-    effort,
+    run,
     timestamp,
     prompt: promptName || "setup",
     baselineCommit: paths.baselineCommit,

@@ -65,9 +65,7 @@ function setupMocks(overrides?: {
   });
 
   vi.mocked(claudeAgent.execute).mockResolvedValue({
-    agent: 'claude',
-    model: 'sonnet-4.6',
-    effort: 'high',
+    run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
     cost,
     duration: 45.2,
     turns: 12,
@@ -93,9 +91,7 @@ function setupMocks(overrides?: {
 
 const baseConfig: TrialConfig = {
   project: { name: 'test-project', repo: 'https://github.com/test/repo', branch: 'main' },
-  agent: 'claude',
-  model: 'sonnet-4.6',
-  effort: 'high',
+  run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
   prompt: 'setup',
 };
 
@@ -108,15 +104,11 @@ describe('runTask pipeline', () => {
     expect(result).toMatchObject({
       schemaVersion: 1,
       project: 'test-project',
-      agent: 'claude',
-      model: 'sonnet-4.6',
-      effort: 'high',
+      run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       prompt: 'setup',
       baselineCommit: 'deadbeef',
       execution: {
-        agent: 'claude',
-        model: 'sonnet-4.6',
-        effort: 'high',
+        run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
         cost: 0.42,
         duration: 45.2,
         turns: 12,
@@ -213,7 +205,7 @@ describe('runTask pipeline', () => {
 
     vi.mocked(claudeAgent.execute).mockImplementation(async () => {
       callOrder.push('agent');
-      return { agent: 'claude', model: 'sonnet-4.6', effort: 'high', cost: 0.1, duration: 10, turns: 3 };
+      return { run: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' }, cost: 0.1, duration: 10, turns: 3 };
     });
 
     vi.mocked(grade).mockImplementation(async () => {

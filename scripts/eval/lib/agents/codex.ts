@@ -81,6 +81,6 @@ export const codexAgent: Agent = {
 
     await writeFile(join(resultsDir, "transcript.json"), JSON.stringify(items, null, 2));
 
-    return { agent: "codex", model, effort, cost, duration, turns };
+    return { run: { agent: "codex", model, effort }, cost, duration, turns };
   },
 };

@@ -113,7 +113,7 @@ const main = defineCommand({
         process.exit(1);
       }
       return promptNames.map((prompt) => ({
-        config: { project, agent, model, effort, prompt, verbose: args.verbose } as TrialConfig,
+        config: { project, run: { agent, model, effort }, prompt, verbose: args.verbose } as TrialConfig,
         label: `${model}+${prompt}`,
       }));
     });
@@ -128,12 +128,12 @@ const main = defineCommand({
     const runId = randomUUID().slice(0, 8);
     logger.log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
     if (configs.length === 1) {
-      const { agent, model, effort, prompt } = configs[0].config;
+      const { run: { agent, model, effort }, prompt } = configs[0].config;
       logger.log(`Agent: ${agent} | Model: ${model} | Effort: ${effort} | Prompt: ${prompt}`);
     } else {
       logger.log(`${configs.length} parallel runs`);
       for (const [agent, { models }] of Object.entries(AGENTS)) {
-        const active = models.filter((m) => configs.some((c) => c.config.model === m));
+        const active = models.filter((m) => configs.some((c) => c.config.run.model === m));
         if (active.length > 0) logger.log(`  ${agent}: ${active.join(", ")}`);
       }
       logger.log(`  prompts: ${[...new Set(promptNames)].join(", ")}`);
@@ -182,8 +182,8 @@ const main = defineCommand({
         const ghost = r.grading.ghostStories;
         const ghostStr = ghost ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)` : "-";
         return [
-          r.agent,
-          r.model,
+          r.run.agent,
+          r.run.model,
           r.prompt,
           r.grading.buildSuccess ? pc.green("PASS") : pc.red("FAIL"),
           ghostStr,

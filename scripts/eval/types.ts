@@ -14,9 +14,30 @@ export interface Logger {
   logError: (msg: string) => void;
 }
 
-// --- Agent Name ---
+// --- Agent ---
 
 export type AgentName = "claude" | "codex";
+
+/** Agent + model + effort — the three values that define how the agent runs. */
+export interface AgentRunConfig {
+  agent: AgentName;
+  /** Friendly model name (e.g. "sonnet-4.6", "gpt-5.4"). Must exist in `AGENTS[agent].models`. */
+  model: string;
+  /** Reasoning effort level. Must exist in `AGENTS[agent].efforts`. */
+  effort: string;
+}
+
+export interface Agent {
+  name: AgentName;
+  execute(params: {
+    prompt: string;
+    projectPath: string;
+    model: string;
+    effort: string;
+    resultsDir: string;
+    logger: Logger;
+  }): Promise<ExecutionResult>;
+}
 
 // --- Project ---
 
@@ -31,11 +52,13 @@ export interface Project {
 // --- Trial Config ---
 
 export interface TrialConfig {
+  /** Which project to evaluate (cloned from its eval-baseline branch). */
   project: Project;
-  agent: AgentName;
-  model: string;
-  effort: string;
+  /** Agent, model, and effort level. */
+  run: AgentRunConfig;
+  /** Prompt name — maps to `prompts/{name}.md` (e.g. "setup", "self-heal"). */
   prompt: string;
+  /** Log agent messages to stdout. */
   verbose?: boolean;
 }
 
@@ -52,9 +75,7 @@ export interface TrialPaths {
 // --- Execution ---
 
 export interface ExecutionResult {
-  agent: string;
-  model: string;
-  effort: string;
+  run: AgentRunConfig;
   cost?: number;
   duration: number;
   durationApi?: number;
@@ -131,27 +152,11 @@ export interface QualityResult {
 export interface TrialResult {
   schemaVersion: 1;
   project: string;
-  agent: string;
-  model: string;
-  effort: string;
+  run: AgentRunConfig;
   prompt: string;
   timestamp: string;
   baselineCommit: string;
   execution: ExecutionResult;
   grading: GradingResult;
   quality: QualityResult;
-}
-
-// --- Agent Interface ---
-
-export interface Agent {
-  name: AgentName;
-  execute(params: {
-    prompt: string;
-    projectPath: string;
-    model: string;
-    effort: string;
-    resultsDir: string;
-    logger: Logger;
-  }): Promise<ExecutionResult>;
 }

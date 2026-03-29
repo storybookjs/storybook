@@ -117,9 +117,7 @@ export const claudeAgent: Agent = {
     await writeFile(join(resultsDir, "transcript.json"), JSON.stringify(messages, null, 2));
 
     return {
-      agent: "claude",
-      model,
-      effort,
+      run: { agent: "claude", model, effort },
       cost,
       duration,
       durationApi,

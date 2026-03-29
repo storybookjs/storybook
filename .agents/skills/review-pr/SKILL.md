@@ -6,56 +6,69 @@ allowed-tools: Bash, Read, Write, Edit, Agent, Grep, Glob
 
 # PR Review — Scrollable Single-Page
 
-Generate a scrollable single-page HTML document that walks through a PR as a narrative — big picture first, then every file grouped by area, tests before implementation.
+Generate a scrollable single-page HTML document that reviews a PR as a readable narrative.
 
-**Always generate the page immediately.** Never block on cleanup or fix discussions. Include issues as inline smell-boxes.
+**Always generate the page immediately.** Never block on cleanup or fix discussions.
 
 ## Principles
 
-1. **Big picture first.** Summary of what and why, then logical areas from most to least important.
-2. **Tests first.** Within each area, show tests before implementation.
-3. **Show whole files.** New files: complete content including imports. Modified files: diff. Use `<details>` for files over 100 lines.
-4. **Cover everything.** Every changed file appears somewhere.
-5. **Issues inline.** Flag problems as smell-boxes next to the relevant file. Never block page generation.
+1. **Two layers per area.** The top layer is a curated, readable walkthrough — API surface, key test assertions, and core implementation logic woven together with prose. Only the important parts. Below it, the full files are collapsed in `<details>` for reference.
+2. **High-level to low-level.** Order areas from entry points and orchestration down to utilities and types. The reader understands architecture before details.
+3. **API → Tests → Implementation.** Within each area's readable section, show the API first (types, interfaces, exports), then the tests (what does it do?), then the implementation (how?).
+4. **Review readability.** For each file, assess: logical order? Clear names? Comments where the *why* isn't obvious? Tests readable enough to serve as docs? Flag issues as smell-boxes. Call out well-written tests with note-boxes.
+5. **Cover everything.** Every changed file appears somewhere.
 
 ## Step 1 — Gather PR data
 
 ```bash
-# Get PR metadata (use gh pr view <number> if a PR number is given)
 gh pr view --json number,title,author,headRefName,baseRefName,body,additions,deletions,changedFiles
 gh pr diff --name-only
 gh pr diff
 ```
 
+If a PR number or URL is given as an argument, pass it to `gh pr view <arg>` and `gh pr diff <arg>`.
+
 ## Step 2 — Read all changed files
 
-For each changed file, read the full file content with the `Read` tool. Also read the full diff from `gh pr diff`. Classify each file as test, implementation, config, or docs.
+Read the full file content of every changed file with the `Read` tool. Also read the full diff. Classify each file as test, implementation, config, or docs.
 
 ## Step 3 — Generate the page
 
-Group changes into logical areas. Within each area: tests first, then implementation, then config.
+For each area, write two layers:
+
+### Layer 1: Readable walkthrough (always visible)
+
+A curated narrative that mixes prose with **short code snippets** — only the important parts. Structure it as:
+
+1. **API** — key types, interfaces, function signatures, exports. The contract.
+2. **Tests** — the most important test cases. What the behavior is. Cherry-pick the assertions that explain the module.
+3. **Implementation** — the core logic. Skip boilerplate, show the interesting parts.
+
+Use narrative `<p>` tags between snippets to explain what the reader is looking at and review readability.
+
+### Layer 2: Full files (always collapsed)
+
+Below the walkthrough, include every file in the area as a collapsed `<details>` block with the complete file content (or diff for modified files). The reader expands these for reference.
 
 Write to `~/life/slideshows/pr-<number>/index.html`.
 
-**Verify every file from `gh pr diff --name-only` appears in the page** — in an area, in supporting changes, or as a bullet point.
+**Verify every file from `gh pr diff --name-only` appears in the page.**
 
 ### HTML structure
 
-The page has this structure:
-
 ```
-Sticky topbar (nav links to each area)
-Header (title, author, branch, stats)
+Sticky topbar (nav links)
+Header (title, author, stats)
 Big picture section
-Area 1 (test files → impl files → config)
+Area 1
+  Readable walkthrough (API → Tests → Implementation snippets)
+  Full files (collapsed)
 Area 2
-...
-Supporting changes (config, lockfiles, docs)
+  ...
+Supporting changes
 ```
 
 ### Complete HTML template
-
-Copy this template exactly. Replace `{{PLACEHOLDERS}}` with actual content.
 
 ```html
 <!DOCTYPE html>
@@ -132,6 +145,8 @@ Copy this template exactly. Replace `{{PLACEHOLDERS}}` with actual content.
     details > summary { cursor: pointer; padding: 9px 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); background: var(--surface); border-top: 1px solid var(--card-border); user-select: none; }
     details > summary:hover { color: var(--fg); }
     details[open] > summary { border-bottom: 1px solid var(--card-border); }
+    .diff-line-add { display: block; background: var(--add-bg); margin: 0 -10px; padding: 0 10px; }
+    .diff-line-del { display: block; background: var(--del-bg); margin: 0 -10px; padding: 0 10px; }
     .area-divider { border: none; border-top: 2px solid var(--border); margin: 48px 0 40px; }
     @media (max-width: 768px), (max-height: 500px) {
       body { font-size: 14px; }
@@ -181,30 +196,59 @@ Copy this template exactly. Replace `{{PLACEHOLDERS}}` with actual content.
 <!-- Repeat per area -->
 <div class="section" id="area-{{id}}">
   <h2 class="section-head">{{N}}. {{Area Name}}</h2>
-  <p class="section-desc">{{What changed in this area}}</p>
-  <!-- file cards here -->
+  <p class="section-desc">{{What this area does}}</p>
+
+  <!-- Layer 1: readable walkthrough with curated snippets -->
+  <!-- Layer 2: full files collapsed -->
 </div>
 <hr class="area-divider">
-
-<!-- Supporting changes (last area) -->
 
 </div>
 
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/typescript.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/json.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/diff.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/markdown.min.js"></script>
-<script>hljs.highlightAll();</script>
+<script>
+hljs.highlightAll();
+// Post-process: apply line-level diff backgrounds on top of syntax highlighting
+document.querySelectorAll('code[data-diff]').forEach(block => {
+  block.innerHTML = block.innerHTML.split('\n').map(line => {
+    const stripped = line.replace(/<[^>]*>/g, '');
+    if (stripped.startsWith('+')) return '<span class="diff-line-add">' + line + '</span>';
+    if (stripped.startsWith('-')) return '<span class="diff-line-del">' + line + '</span>';
+    return line;
+  }).join('\n');
+});
+</script>
 </body>
 </html>
 ```
 
 ### Building blocks
 
-Copy-paste these patterns to build the page content.
+**Layer 1 — Readable walkthrough snippet** (curated excerpt with prose):
+```html
+<div class="file-card">
+  <div class="narrative">
+    <p><strong>API:</strong> The pipeline is typed as a single function returning <code>TrialResult</code>:</p>
+  </div>
+  <pre><code class="language-typescript">export async function runTask(config: TrialConfig): Promise&lt;TrialResult&gt;</code></pre>
+  <div class="narrative">
+    <p><strong>Tests:</strong> The ordering test makes the sequential contract clear:</p>
+  </div>
+  <pre><code class="language-typescript">await runTask(baseConfig);
+expect(callOrder).toEqual(['prepare', 'agent', 'grade']);</code></pre>
+  <div class="narrative">
+    <p><strong>Implementation:</strong> The pipeline is strictly sequential — grade needs the agent's file changes:</p>
+  </div>
+  <pre><code class="language-typescript">const paths = await prepareTrial(config.project, trialId, logger);
+const execution = await agent.execute({ prompt, projectPath, ... });
+const { grading, quality } = await grade(paths, logger, execution.duration);</code></pre>
+</div>
+```
 
-**New file — shown directly (use for files under ~100 lines):**
+**Layer 2 — Full file (collapsed, for new files):**
 ```html
 <div class="file-card">
   <div class="file-card-header">
@@ -212,41 +256,32 @@ Copy-paste these patterns to build the page content.
     <span class="badge badge-new">new</span>
     path/to/file.ts
   </div>
-  <div class="narrative"><p>What this file does.</p></div>
-  <pre><code class="language-typescript">{{FULL FILE CONTENT}}</code></pre>
-</div>
-```
-
-**New file — collapsed (use for files over ~100 lines):**
-```html
-<div class="file-card">
-  <div class="file-card-header">
-    <span class="badge badge-test">test</span>
-    <span class="badge badge-new">new</span>
-    path/to/file.test.ts
-  </div>
-  <div class="narrative"><p>What this test covers.</p></div>
   <details>
     <summary>Full file ({{N}} lines)</summary>
-    <pre><code class="language-typescript">{{FULL FILE CONTENT}}</code></pre>
+    <pre><code class="language-typescript">{{FULL FILE CONTENT, HTML-ESCAPED}}</code></pre>
   </details>
 </div>
 ```
 
-**Modified file — diff:**
+**Layer 2 — Full file (collapsed, for modified files with diff):**
+
+Use `language-typescript data-diff` — this gives TypeScript syntax highlighting plus line-level add/remove backgrounds via the post-processing script. Lines starting with `+` get green background, `-` get red.
+
 ```html
 <div class="file-card">
   <div class="file-card-header">
     <span class="badge badge-modified">modified</span>
     path/to/file.ts
   </div>
-  <div class="narrative"><p>What changed.</p></div>
-  <pre><code class="language-diff">-old line
+  <details>
+    <summary>Diff</summary>
+    <pre><code class="language-typescript" data-diff>-old line
 +new line</code></pre>
+  </details>
 </div>
 ```
 
-**Supporting change — no code block needed:**
+**Supporting change — no code needed:**
 ```html
 <div class="file-card">
   <div class="file-card-header">
@@ -258,14 +293,14 @@ Copy-paste these patterns to build the page content.
 </div>
 ```
 
-**Inline issue (place after a file card):**
+**Inline issue:**
 ```html
 <div class="smell-box">No unit tests for this file.</div>
 ```
 
-**Context note (place after a file card):**
+**Positive note:**
 ```html
-<div class="note-box">This is the only caller of the renamed function.</div>
+<div class="note-box">These test names read like a specification — good documentation.</div>
 ```
 
 ### Badge reference
@@ -278,33 +313,30 @@ Copy-paste these patterns to build the page content.
 | `new` | `badge-new` | New files (combine with test/impl/config) |
 | `modified` | `badge-modified` | Modified files |
 
-### Syntax highlighting languages
+### Syntax highlighting
 
-| Language | Class | Use for |
-|----------|-------|---------|
-| TypeScript | `language-typescript` | `.ts`, `.tsx`, `.js`, `.jsx` files |
-| Diff | `language-diff` | Modified file diffs (lines start with `+`/`-`) |
-| JSON | `language-json` | `.json` files |
-| Markdown | `language-markdown` | `.md` files |
+| Class | Use for |
+|-------|---------|
+| `language-typescript` | `.ts`, `.tsx`, `.js`, `.jsx` (new files) |
+| `language-typescript` + `data-diff` attribute | Modified file diffs — gets TS highlighting plus line-level add/remove backgrounds |
+| `language-json` | `.json` files |
+| `language-markdown` | `.md` files |
+
+**Important:** Do NOT use `language-diff` — it only does `+`/`-` coloring without syntax highlighting. Instead use `language-typescript` with the `data-diff` attribute for diffs. The post-processing script handles line backgrounds.
 
 ### HTML escaping
 
-All code content inside `<code>` blocks must be HTML-escaped:
-- `&` → `&amp;`
-- `<` → `&lt;`
-- `>` → `&gt;`
-
-Tip: use a Node script to read files and generate escaped HTML when there are many new files.
+All code inside `<code>` blocks must be escaped: `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`.
 
 ## Step 4 — Serve the page
 
-Kill any existing server on port 3000, write the server, start it:
+Kill any existing server, write a static server, start it:
 
 ```bash
 lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 ```
 
-Write this static server to `~/life/slideshows/pr-<number>/server.mjs`:
+Write to `~/life/slideshows/pr-<number>/server.mjs`:
 
 ```javascript
 import { createServer } from 'node:http';
@@ -332,8 +364,6 @@ createServer((req, res) => {
   console.log(`\n  PR Review: http://localhost:${port}\n`);
 });
 ```
-
-Then:
 
 ```bash
 node ~/life/slideshows/pr-<number>/server.mjs &   # run_in_background: true

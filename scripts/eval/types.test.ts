@@ -21,7 +21,7 @@ describe('AGENTS', () => {
       defaultModel: 'sonnet-4.6',
       defaultEffort: 'high',
       sdkModelIds: Object.fromEntries(
-        AGENTS.claude.models.map((model) => [model, expect.any(String)]),
+        AGENTS.claude.models.map((model) => [model, expect.any(String)])
       ),
     });
   });
@@ -38,7 +38,7 @@ describe('AGENTS', () => {
             cachedInput: expect.any(Number),
             output: expect.any(Number),
           },
-        ]),
+        ])
       ),
     });
   });

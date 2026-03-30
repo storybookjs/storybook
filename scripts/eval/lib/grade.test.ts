@@ -61,7 +61,10 @@ describe('computeQualityScore', () => {
 
   it('returns 1.0 when everything passes and agent is fast', () => {
     const result = computeQualityScore({
-      buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 60,
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 60,
     });
     expect(result.score).toBe(1);
     expect(result.breakdown).toEqual({ build: 1, typecheck: 1, ghostStories: 1, performance: 1 });
@@ -69,73 +72,132 @@ describe('computeQualityScore', () => {
 
   it('ghost stories have 40% weight', () => {
     const result = computeQualityScore({
-      buildSuccess: false, typeCheckErrors: 20, ghostSuccessRate: 1.0, durationSeconds: 600,
+      buildSuccess: false,
+      typeCheckErrors: 20,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 600,
     });
     expect(result.score).toBe(0.4);
   });
 
   it('build has 25% weight', () => {
     const result = computeQualityScore({
-      buildSuccess: true, typeCheckErrors: 20, ghostSuccessRate: 0, durationSeconds: 600,
+      buildSuccess: true,
+      typeCheckErrors: 20,
+      ghostSuccessRate: 0,
+      durationSeconds: 600,
     });
     expect(result.score).toBe(0.25);
   });
 
   it('performance has 10% weight', () => {
     const result = computeQualityScore({
-      buildSuccess: false, typeCheckErrors: 20, ghostSuccessRate: 0, durationSeconds: 60,
+      buildSuccess: false,
+      typeCheckErrors: 20,
+      ghostSuccessRate: 0,
+      durationSeconds: 60,
     });
     expect(result.score).toBe(0.1);
   });
 
   it('returns 0 when everything fails', () => {
     const result = computeQualityScore({
-      buildSuccess: false, typeCheckErrors: 20, ghostSuccessRate: 0, durationSeconds: 600,
+      buildSuccess: false,
+      typeCheckErrors: 20,
+      ghostSuccessRate: 0,
+      durationSeconds: 600,
     });
     expect(result.score).toBe(0);
   });
 
   it('scales typecheck score linearly', () => {
     const result = computeQualityScore({
-      buildSuccess: true, typeCheckErrors: 10, ghostSuccessRate: 1.0, durationSeconds: 60,
+      buildSuccess: true,
+      typeCheckErrors: 10,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 60,
     });
     expect(result.breakdown.typecheck).toBe(0.5);
   });
 
   it('clamps typecheck score at 0 for >= 20 errors', () => {
-    const a = computeQualityScore({ buildSuccess: true, typeCheckErrors: 20, ghostSuccessRate: 1.0, durationSeconds: 60 });
-    const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 50, ghostSuccessRate: 1.0, durationSeconds: 60 });
+    const a = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 20,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 60,
+    });
+    const b = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 50,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 60,
+    });
     expect(a.breakdown.typecheck).toBe(0);
     expect(b.breakdown.typecheck).toBe(0);
   });
 
   it('treats undefined ghost stories as 0', () => {
-    const a = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 0, durationSeconds: 60 });
+    const a = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 0,
+      durationSeconds: 60,
+    });
     const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, durationSeconds: 60 });
     expect(a.score).toBe(b.score);
   });
 
   it('performance: ≤120s scores 1.0', () => {
-    const a = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 0 });
-    const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 120 });
+    const a = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 0,
+    });
+    const b = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 120,
+    });
     expect(a.breakdown.performance).toBe(1);
     expect(b.breakdown.performance).toBe(1);
   });
 
   it('performance: 360s scores 0.5', () => {
-    const r = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 360 });
+    const r = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 360,
+    });
     expect(r.breakdown.performance).toBe(0.5);
   });
 
   it('performance: ≥600s scores 0', () => {
-    const a = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 600 });
-    const b = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 1000 });
+    const a = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 600,
+    });
+    const b = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 1000,
+    });
     expect(a.breakdown.performance).toBe(0);
     expect(b.breakdown.performance).toBe(0);
   });
 
   it('performance: undefined duration scores 0', () => {
-    const r = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0 });
+    const r = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 1.0,
+    });
     expect(r.breakdown.performance).toBe(0);
   });
 });
@@ -167,7 +229,8 @@ describe('countTypeCheckErrors', () => {
 
 describe('parseChangedFiles', () => {
   it('parses added, modified, deleted, and renamed files', () => {
-    const output = 'A\tsrc/new-file.ts\nM\tsrc/existing.ts\nD\tsrc/removed.ts\nR100\told.ts\tnew.ts';
+    const output =
+      'A\tsrc/new-file.ts\nM\tsrc/existing.ts\nD\tsrc/removed.ts\nR100\told.ts\tnew.ts';
     expect(parseChangedFiles(output)).toMatchObject([
       { path: 'src/new-file.ts', status: 'A' },
       { path: 'src/existing.ts', status: 'M' },

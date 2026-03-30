@@ -16,17 +16,17 @@ export interface Logger {
 
 // --- Agent ---
 
-export type ClaudeModel = "sonnet-4.6" | "opus-4.6" | "haiku-4.5";
-export type CodexModel = "gpt-5.4";
-export type ClaudeEffort = "low" | "medium" | "high" | "max";
-export type CodexEffort = "low" | "medium" | "high" | "xhigh";
+export type ClaudeModel = 'sonnet-4.6' | 'opus-4.6' | 'haiku-4.5';
+export type CodexModel = 'gpt-5.4';
+export type ClaudeEffort = 'low' | 'medium' | 'high' | 'max';
+export type CodexEffort = 'low' | 'medium' | 'high' | 'xhigh';
 
 /** Agent + model + effort — the three values that define how the agent runs. */
 export type AgentVariant =
-  | { agent: "claude"; model: ClaudeModel; effort: ClaudeEffort }
-  | { agent: "codex"; model: CodexModel; effort: CodexEffort };
+  | { agent: 'claude'; model: ClaudeModel; effort: ClaudeEffort }
+  | { agent: 'codex'; model: CodexModel; effort: CodexEffort };
 
-export type AgentId = AgentVariant["agent"];
+export type AgentId = AgentVariant['agent'];
 
 export interface AgentExecuteParams {
   prompt: string;
@@ -87,7 +87,7 @@ export interface Execution {
 
 export interface FileChange {
   path: string;
-  status: "A" | "M" | "D" | "R";
+  status: 'A' | 'M' | 'D' | 'R';
   /** For renames, the original path before the move. */
   previousPath?: string;
 }

@@ -107,7 +107,12 @@ describe('grading helpers', () => {
     expect(changedFiles).toHaveLength(storybookFiles.length + 1);
 
     // Step 4: Build passed, no TS errors, 100% ghost stories, fast agent → perfect score
-    const quality = computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 60 });
+    const quality = computeQualityScore({
+      buildSuccess: true,
+      typeCheckErrors: 0,
+      ghostSuccessRate: 1.0,
+      durationSeconds: 60,
+    });
     expect(quality.score).toBe(1);
   });
 
@@ -134,12 +139,17 @@ describe('grading helpers', () => {
     const tscLines = candidates.map(
       (c, i) => `${c}(${i + 1},1): error TS2304: Cannot find name 'React'.`
     );
-    tscLines.push("src/App.tsx(10,5): error TS2345: Argument not assignable.");
+    tscLines.push('src/App.tsx(10,5): error TS2345: Argument not assignable.');
     const errorCount = countTypeCheckErrors(tscLines.join('\n'));
     expect(errorCount).toBe(candidates.length + 1);
 
     // Build failed, no ghost stories, errors, slow → low quality
-    const quality = computeQualityScore({ buildSuccess: false, typeCheckErrors: errorCount, ghostSuccessRate: 0, durationSeconds: 600 });
+    const quality = computeQualityScore({
+      buildSuccess: false,
+      typeCheckErrors: errorCount,
+      ghostSuccessRate: 0,
+      durationSeconds: 600,
+    });
     expect(quality.score).toBeLessThan(0.3);
     expect(quality.breakdown.build).toBe(0);
   });
@@ -166,14 +176,19 @@ describe('grading helpers', () => {
     expect(patterns.map((p) => p.id)).toContain('router-provider');
 
     // Agent wrote one story per candidate — all storybook-related
-    const gitOutput = candidates
-      .map((c) => `A\t${c.replace(/\.tsx$/, '.stories.tsx')}`)
-      .join('\n');
+    const gitOutput = candidates.map((c) => `A\t${c.replace(/\.tsx$/, '.stories.tsx')}`).join('\n');
     const storybookFiles = filterStorybookFiles(parseChangedFiles(gitOutput));
     expect(storybookFiles).toHaveLength(candidates.length);
 
     // Clean build + 100% ghost stories + fast → perfect
-    expect(computeQualityScore({ buildSuccess: true, typeCheckErrors: 0, ghostSuccessRate: 1.0, durationSeconds: 60 }).score).toBe(1);
+    expect(
+      computeQualityScore({
+        buildSuccess: true,
+        typeCheckErrors: 0,
+        ghostSuccessRate: 1.0,
+        durationSeconds: 60,
+      }).score
+    ).toBe(1);
   });
 });
 

@@ -1,11 +1,11 @@
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import type { AgentId, Logger, TrialConfig, TrialReport, AgentDriver } from "../types.ts";
-import { claudeAgent } from "./agents/claude-code.ts";
-import { codexAgent } from "./agents/codex.ts";
-import { prepareTrial } from "./prepare-trial.ts";
-import { grade } from "./grade.ts";
-import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from "./utils.ts";
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import type { AgentId, Logger, TrialConfig, TrialReport, AgentDriver } from '../types.ts';
+import { claudeAgent } from './agents/claude-code.ts';
+import { codexAgent } from './agents/codex.ts';
+import { prepareTrial } from './prepare-trial.ts';
+import { grade } from './grade.ts';
+import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from './utils.ts';
 
 const drivers: Record<AgentId, AgentDriver> = {
   claude: claudeAgent,
@@ -15,14 +15,11 @@ const drivers: Record<AgentId, AgentDriver> = {
 /**
  * Run a full eval trial: prepare -> execute agent -> grade -> save.
  */
-export async function runTrial(
-  config: TrialConfig,
-  logger?: Logger,
-): Promise<TrialReport> {
+export async function runTrial(config: TrialConfig, logger?: Logger): Promise<TrialReport> {
   const { project, variant, prompt: promptName } = config;
   const { agent: agentName, model } = variant;
   const log = logger ?? createLogger();
-  const trialId = generateTrialId(project.name, agentName, model, promptName || "setup");
+  const trialId = generateTrialId(project.name, agentName, model, promptName || 'setup');
   const timestamp = new Date().toISOString();
 
   log.log(`Preparing ${project.name}...`);
@@ -35,7 +32,7 @@ export async function runTrial(
 
   // 3. Load the prompt
   const prompt = loadPrompt(promptName);
-  await writeFile(join(workspace.resultsDir, "prompt.md"), prompt);
+  await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
   // 4. Execute the agent
   log.log(`  Running ${agentName} (${model}, effort=${variant.effort})...`);
@@ -48,7 +45,7 @@ export async function runTrial(
     logger: log,
   });
   log.logSuccess(
-    `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : "cost N/A"}, ${execution.turns} turns)`,
+    `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`
   );
 
   // 5. Grade the results (pass agent duration for performance scoring)
@@ -60,14 +57,14 @@ export async function runTrial(
     project,
     variant,
     timestamp,
-    prompt: promptName || "setup",
+    prompt: promptName || 'setup',
     baselineCommit: workspace.baselineCommit,
     execution,
     grade: trialGrade,
     score,
   };
 
-  await writeFile(join(workspace.resultsDir, "summary.json"), JSON.stringify(report, null, 2));
+  await writeFile(join(workspace.resultsDir, 'summary.json'), JSON.stringify(report, null, 2));
   log.logSuccess(`Results saved to ${workspace.resultsDir}`);
 
   return report;

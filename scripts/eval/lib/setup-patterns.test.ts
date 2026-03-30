@@ -53,10 +53,7 @@ describe('detectSetupPatterns', () => {
   });
 
   it('detects Redux provider', async () => {
-    writeConfig(
-      'preview.tsx',
-      `import { Provider } from 'react-redux';\n<Provider store={store}>`
-    );
+    writeConfig('preview.tsx', `import { Provider } from 'react-redux';\n<Provider store={store}>`);
     expect((await detectSetupPatterns(TMP)).map((p) => p.id)).toContain('redux-provider');
   });
 
@@ -117,10 +114,7 @@ describe('detectSetupPatterns', () => {
   it('does not detect patterns in files outside .storybook/', async () => {
     // Write a router import in a source file, not in .storybook/
     mkdirSync(join(TMP, 'src'), { recursive: true });
-    writeFileSync(
-      join(TMP, 'src', 'App.tsx'),
-      `import { BrowserRouter } from 'react-router-dom';`
-    );
+    writeFileSync(join(TMP, 'src', 'App.tsx'), `import { BrowserRouter } from 'react-router-dom';`);
     // .storybook/ has no patterns
     writeConfig('main.ts', `export default { stories: ['../src/**/*.stories.tsx'] };`);
 

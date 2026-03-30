@@ -82,9 +82,14 @@ function setupMocks(overrides?: {
         { path: '.storybook/preview.tsx', status: 'A' },
         { path: 'src/Button.stories.tsx', status: 'A' },
       ],
-      setupPatterns: [{ id: 'tailwind', label: 'Tailwind CSS', sourceFiles: ['.storybook/preview.ts'] }],
+      setupPatterns: [
+        { id: 'tailwind', label: 'Tailwind CSS', sourceFiles: ['.storybook/preview.ts'] },
+      ],
     },
-    score: { score: buildSuccess ? 1 : 0.3, breakdown: { build: buildSuccess ? 1 : 0, typecheck: 1, ghostStories: 0, performance: 0 } },
+    score: {
+      score: buildSuccess ? 1 : 0.3,
+      breakdown: { build: buildSuccess ? 1 : 0, typecheck: 1, ghostStories: 0, performance: 0 },
+    },
   });
 }
 
@@ -126,7 +131,11 @@ describe('runTrial pipeline', () => {
 
     const config: TrialConfig = {
       ...baseConfig,
-      project: { name: 'mealdrop', repo: 'https://github.com/test/mealdrop', branch: 'eval-baseline' },
+      project: {
+        name: 'mealdrop',
+        repo: 'https://github.com/test/mealdrop',
+        branch: 'eval-baseline',
+      },
     };
 
     await runTrial(config);
@@ -140,7 +149,7 @@ describe('runTrial pipeline', () => {
 
     expect(vi.mocked(captureEnvironment).mock.calls[0][0]).toBe(join(TMP, 'results'));
 
-    const params = vi.mocked(claudeAgent.execute).mock.calls[0][0] as Record<string, unknown>;
+    const params = vi.mocked(claudeAgent.execute).mock.calls[0][0];
     expect(params).toMatchObject({
       prompt: expect.stringContaining('Storybook setup'),
       projectPath: TMP,
@@ -165,7 +174,9 @@ describe('runTrial pipeline', () => {
 
     const resultsDir = join(TMP, 'results');
 
-    const summary: TrialReport = JSON.parse(readFileSync(join(resultsDir, 'summary.json'), 'utf-8'));
+    const summary: TrialReport = JSON.parse(
+      readFileSync(join(resultsDir, 'summary.json'), 'utf-8')
+    );
     expect(summary).toMatchObject({
       schemaVersion: 1,
       execution: { cost: 0.42 },

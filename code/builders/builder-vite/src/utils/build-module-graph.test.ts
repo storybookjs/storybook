@@ -119,6 +119,27 @@ describe('buildModuleGraph', () => {
     expect(entryNode.importedModules.size).toBe(0);
   });
 
+  it('preserves edges for related vite module nodes discovered before their file path is known', () => {
+    const entry = createViteModuleNode('/src/entry.ts');
+    const component = createViteModuleNode(null);
+
+    entry.importedModules.add(component);
+    component.importers.add(entry);
+
+    const moduleGraph = buildModuleGraph(
+      createFileToModulesMap(
+        ['/src/entry.ts', new Set([entry])],
+        ['/src/component.ts', new Set([component])]
+      )
+    );
+
+    const entryNode = getFirstNode('/src/entry.ts', moduleGraph);
+    const componentNode = getFirstNode('/src/component.ts', moduleGraph);
+
+    expect(entryNode.importedModules).toEqual(new Set([componentNode]));
+    expect(componentNode.importers).toEqual(new Set([entryNode]));
+  });
+
   it('keeps multiple module identities for the same file', () => {
     const clientModule = createViteModuleNode('/src/shared.ts');
     const ssrModule = createViteModuleNode('/src/shared.ts');

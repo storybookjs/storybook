@@ -1,7 +1,13 @@
 import { relative, resolve } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { Builder, ModuleGraph, Status, StatusStoreByTypeId } from 'storybook/internal/types';
+import type {
+  Builder,
+  ModuleGraph,
+  ModuleGraphChangeEvent,
+  Status,
+  StatusStoreByTypeId,
+} from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator';
@@ -130,10 +136,19 @@ export class ChangeDetectionService {
     }
 
     logger.debug('Change detection enabled.');
-    this.unsubscribe = onModuleGraphChange((moduleGraph) => {
-      this.latestModuleGraph = moduleGraph;
-      this.scheduleScan(this.hasReceivedModuleGraph ? this.debounceMs : 0);
-      this.hasReceivedModuleGraph = true;
+    this.unsubscribe = onModuleGraphChange((event) => {
+      if (this.disposed) {
+        return;
+      }
+
+      if (event.type === 'moduleGraph') {
+        this.latestModuleGraph = event.moduleGraph;
+        this.scheduleScan(this.hasReceivedModuleGraph ? this.debounceMs : 0);
+        this.hasReceivedModuleGraph = true;
+        return;
+      }
+
+      this.handleBuilderStartupEvent(event);
     });
   }
 
@@ -193,6 +208,7 @@ export class ChangeDetectionService {
           reason: error.message,
           error,
         });
+        await this.dispose();
       } else if (error instanceof ChangeDetectionFailureError) {
         logger.error(`Change detection failed: ${error.message}`);
         this.resolveReadiness({
@@ -311,5 +327,26 @@ export class ChangeDetectionService {
 
     this.readinessResolved = true;
     setChangeDetectionReadiness(readiness);
+  }
+
+  private handleBuilderStartupEvent(
+    event: Exclude<ModuleGraphChangeEvent, { type: 'moduleGraph' }>
+  ): void {
+    if (event.type === 'unavailable') {
+      logger.warn(`Change detection unavailable: ${event.reason}`);
+      this.resolveReadiness({
+        status: 'unavailable',
+        reason: event.reason,
+        error: event.error,
+      });
+    } else {
+      logger.error(`Change detection failed: ${event.error.message}`);
+      this.resolveReadiness({
+        status: 'error',
+        error: event.error,
+      });
+    }
+
+    void this.dispose();
   }
 }

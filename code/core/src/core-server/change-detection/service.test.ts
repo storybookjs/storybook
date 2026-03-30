@@ -3,13 +3,19 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { Builder, ModuleGraph, ModuleNode, StoryIndex } from 'storybook/internal/types';
+import type {
+  Builder,
+  ModuleGraph,
+  ModuleGraphChangeEvent,
+  ModuleNode,
+  StoryIndex,
+} from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { createStatusStore, UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store';
 import { MockUniversalStore } from '../../shared/universal-store/mock';
 import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index';
-import { ChangeDetectionFailureError } from './errors';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
 import { ChangeDetectionService } from './service';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
@@ -56,10 +62,10 @@ function createStoryIndex(
 }
 
 function createBuilder() {
-  let onModuleGraphChange: ((moduleGraph: ModuleGraph) => void) | undefined;
+  let onModuleGraphChange: ((event: ModuleGraphChangeEvent) => void) | undefined;
 
   const builder = {
-    onModuleGraphChange: vi.fn((callback: (moduleGraph: ModuleGraph) => void) => {
+    onModuleGraphChange: vi.fn((callback: (event: ModuleGraphChangeEvent) => void) => {
       onModuleGraphChange = callback;
       return vi.fn(() => {
         onModuleGraphChange = undefined;
@@ -70,7 +76,13 @@ function createBuilder() {
   return {
     builder,
     emit(moduleGraph: ModuleGraph) {
-      onModuleGraphChange?.(moduleGraph);
+      onModuleGraphChange?.({ type: 'moduleGraph', moduleGraph });
+    },
+    emitUnavailable(reason: string, error?: Error) {
+      onModuleGraphChange?.({ type: 'unavailable', reason, error });
+    },
+    emitError(error: Error) {
+      onModuleGraphChange?.({ type: 'error', error });
     },
   };
 }
@@ -266,6 +278,40 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
+  it('resolves readiness when the builder reports change detection startup failure', async () => {
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = {
+      getChangedFiles: vi.fn(),
+      getRepoRoot: vi.fn(),
+    };
+    const { builder, emitError } = createBuilder();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn(),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      workingDir,
+    });
+
+    service.start(builder.onModuleGraphChange, true);
+    emitError(new Error('module graph warmup failed'));
+    await Promise.resolve();
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'Change detection failed: module graph warmup failed'
+    );
+    expect(await getChangeDetectionReadiness()).toEqual({
+      status: 'error',
+      error: expect.objectContaining({ message: 'module graph warmup failed' }),
+    });
+    expect(gitDiffProvider.getChangedFiles).not.toHaveBeenCalled();
+    await service.dispose();
+  });
+
   it('keeps the previous statuses when a live rescan fails', async () => {
     const storyIndex = createStoryIndex([
       { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
@@ -373,6 +419,44 @@ describe('ChangeDetectionService', () => {
         Promise.resolve('pending'),
       ])
     ).resolves.toBe('pending');
+  });
+
+  it('tears down after a permanently unavailable scan result', async () => {
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = {
+      getChangedFiles: vi
+        .fn()
+        .mockRejectedValue(new ChangeDetectionUnavailableError('not a git repository')),
+      getRepoRoot: vi.fn(),
+    };
+    const { builder, emit } = createBuilder();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn(),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      workingDir,
+      debounceMs: 0,
+    });
+
+    service.start(builder.onModuleGraphChange, true);
+    emit(new Map());
+    await vi.advanceTimersByTimeAsync(0);
+    emit(new Map());
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(gitDiffProvider.getChangedFiles).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith('Change detection unavailable: not a git repository');
+    expect(await getChangeDetectionReadiness()).toEqual({
+      status: 'unavailable',
+      reason: 'not a git repository',
+      error: expect.any(ChangeDetectionUnavailableError),
+    });
+    await service.dispose();
   });
 
   it('prefers modified over affected when the same story is reached by multiple changed files', async () => {

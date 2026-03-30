@@ -3,15 +3,21 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { StoryIndexGenerator } from 'storybook/internal/core-server';
-import type { Builder, Middleware, ModuleGraph, Options } from 'storybook/internal/types';
-
-import type { ViteDevServer } from 'vite';
-
 import {
   NoStatsForViteDevError,
   ViteModuleGraphSubscriptionError,
-} from '../../../core/src/server-errors';
+} from 'storybook/internal/server-errors';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import type {
+  Builder,
+  Middleware,
+  ModuleGraph,
+  ModuleGraphChangeEvent,
+  Options,
+} from 'storybook/internal/types';
+
+import type { ViteDevServer } from 'vite';
+
 import { build as viteBuild } from './build';
 import type { ViteBuilder } from './types';
 import { createViteServer } from './vite-server';
@@ -39,7 +45,7 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
 }
 
 let server: ViteDevServer;
-const listeners = new Set<(moduleGraph: ModuleGraph) => void>();
+const listeners = new Set<(event: ModuleGraphChangeEvent) => void>();
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let watcherChangeHandler: (() => void) | undefined;
 let waitForModuleGraph: ReturnType<typeof setInterval> | undefined;
@@ -54,7 +60,15 @@ function clearModuleGraphPolling(): void {
 
 function notifyListeners(moduleGraph: ModuleGraph): void {
   listeners.forEach((listener) => {
-    listener(moduleGraph);
+    listener({ type: 'moduleGraph', moduleGraph });
+  });
+}
+
+function notifyListenersOfStartupFailure(
+  event: Extract<ModuleGraphChangeEvent, { type: 'unavailable' | 'error' }>
+): void {
+  listeners.forEach((listener) => {
+    listener(event);
   });
 }
 
@@ -92,19 +106,36 @@ const startChangeDetection = async (options: Options) => {
   const startTime = process.hrtime();
   const indexGenerator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
   const storyIndex = await indexGenerator.getIndex();
+  const importPaths = new Set(Object.values(storyIndex.entries).map((entry) => entry.importPath));
 
   // Warm up the module graph for all story files
-  await Promise.all(
-    Object.values(storyIndex.entries).map((entry) => server.warmupRequest(entry.importPath))
-  );
+  await Promise.all(Array.from(importPaths, (importPath) => server.warmupRequest(importPath)));
 
   // Wait for the module graph to be ready by polling for it to be non-empty
   waitForModuleGraph = setInterval(() => {
     void (async () => {
       try {
-        if (!watcherChangeHandler || process.hrtime(startTime)[0] > 30) {
+        if (!watcherChangeHandler) {
           clearModuleGraphPolling();
-        } else if (server.moduleGraph.fileToModulesMap.size > 0) {
+          return;
+        }
+
+        if (process.hrtime(startTime)[0] > 30) {
+          clearModuleGraphPolling();
+          const error = new Error(
+            'Timed out while waiting for the Vite module graph to initialize'
+          );
+          logger.error('Failed to complete Vite change detection startup');
+          logger.error(error);
+          notifyListenersOfStartupFailure({
+            type: 'unavailable',
+            reason: error.message,
+            error,
+          });
+          return;
+        }
+
+        if (server.moduleGraph.fileToModulesMap.size > 0) {
           clearModuleGraphPolling();
           await server.waitForRequestsIdle();
           if (!watcherChangeHandler) {
@@ -118,6 +149,10 @@ const startChangeDetection = async (options: Options) => {
         clearModuleGraphPolling();
         logger.error('Failed to complete Vite change detection startup');
         logger.error(error instanceof Error ? error : String(error));
+        notifyListenersOfStartupFailure({
+          type: 'error',
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
       }
     })();
   }, 1000);
@@ -148,6 +183,10 @@ export const start: ViteBuilder['start'] = async ({
       clearModuleGraphPolling();
       logger.error('Failed to initialize Vite change detection');
       logger.error(error instanceof Error ? error : String(error));
+      notifyListenersOfStartupFailure({
+        type: 'error',
+        error: error instanceof Error ? error : new Error(String(error)),
+      });
     });
   }
 

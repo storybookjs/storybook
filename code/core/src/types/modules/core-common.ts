@@ -276,7 +276,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
-  onModuleGraphChange?(cb: (moduleGraph: ModuleGraph) => void): () => void;
+  onModuleGraphChange?(cb: (event: ModuleGraphChangeEvent) => void): () => void;
 }
 
 /**
@@ -285,6 +285,11 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
  * each representing a unique module identity, hence the value is a Set<ModuleNode>.
  */
 export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
+
+export type ModuleGraphChangeEvent =
+  | { type: 'moduleGraph'; moduleGraph: ModuleGraph }
+  | { type: 'unavailable'; reason: string; error?: Error }
+  | { type: 'error'; error: Error };
 
 export interface ModuleNode {
   file: string;

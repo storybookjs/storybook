@@ -171,9 +171,13 @@ describe('onModuleGraphChange', () => {
 
     await vi.advanceTimersByTimeAsync(100);
 
-    const moduleGraph = cb.mock.calls[0]?.[0];
+    const event = cb.mock.calls[0]?.[0];
+    const moduleGraph = event?.moduleGraph;
 
-    expect(cb).toHaveBeenCalledWith(expect.any(Map));
+    expect(cb).toHaveBeenCalledWith({
+      type: 'moduleGraph',
+      moduleGraph: expect.any(Map),
+    });
     expect(moduleGraph?.has('/src/Button.tsx')).toBe(true);
   });
 
@@ -336,7 +340,8 @@ describe('onModuleGraphChange', () => {
   });
 
   it('logs and swallows rejected startup work', async () => {
-    onModuleGraphChange(vi.fn());
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
 
     const args = createStartArgs();
     vi.mocked(args.options.presets.apply).mockResolvedValue({
@@ -348,11 +353,16 @@ describe('onModuleGraphChange', () => {
 
     expect(logger.error).toHaveBeenCalledWith('Failed to initialize Vite change detection');
     expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'index failed' }));
+    expect(cb).toHaveBeenCalledWith({
+      type: 'error',
+      error: expect.objectContaining({ message: 'index failed' }),
+    });
     expect(vi.getTimerCount()).toBe(0);
   });
 
   it('logs polling failures and clears the interval', async () => {
-    onModuleGraphChange(vi.fn());
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
     fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
       '/src/Button.tsx',
       new Set([createViteModuleNode('/src/Button.tsx')]),
@@ -364,7 +374,29 @@ describe('onModuleGraphChange', () => {
 
     expect(logger.error).toHaveBeenCalledWith('Failed to complete Vite change detection startup');
     expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'idle failed' }));
+    expect(cb).toHaveBeenCalledWith({
+      type: 'error',
+      error: expect.objectContaining({ message: 'idle failed' }),
+    });
     expect(vi.getTimerCount()).toBe(0);
     expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
+  });
+
+  it('notifies listeners when module graph startup times out', async () => {
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
+
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(31_000);
+
+    expect(logger.error).toHaveBeenCalledWith('Failed to complete Vite change detection startup');
+    expect(cb).toHaveBeenCalledWith({
+      type: 'unavailable',
+      reason: 'Timed out while waiting for the Vite module graph to initialize',
+      error: expect.objectContaining({
+        message: 'Timed out while waiting for the Vite module graph to initialize',
+      }),
+    });
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

@@ -201,14 +201,16 @@ async function getParser(userOptions?: ParserOptions) {
     cachedCompilerOptions = { noErrorTruncation: true, strict: true };
 
     if (configPath) {
-      const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-      const parsed = typescript.parseJsonConfigFileContent(
-        config,
-        typescript.sys,
-        dirname(configPath)
-      );
-      cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
-      cachedFileNames = parsed.fileNames;
+      const { config, error } = typescript.readConfigFile(configPath, typescript.sys.readFile);
+      if (!error && config) {
+        const parsed = typescript.parseJsonConfigFileContent(
+          config,
+          typescript.sys,
+          dirname(configPath)
+        );
+        cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
+        cachedFileNames = parsed.fileNames;
+      }
     }
 
     const program = typescript.createProgram(

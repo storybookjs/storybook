@@ -8,11 +8,10 @@ export default defineGeneratorModule({
     projectType: ProjectType.EMBER,
     renderer: SupportedRenderer.EMBER,
     framework: SupportedFramework.EMBER,
-    builderOverride: SupportedBuilder.WEBPACK5,
   },
   configure: async () => {
     return {
-      staticDir: 'dist',
+      extensions: ['js', 'ts', 'gts', 'gjs'],
     };
   },
 });

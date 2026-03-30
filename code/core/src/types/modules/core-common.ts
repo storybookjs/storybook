@@ -535,6 +535,13 @@ export interface StorybookConfigRaw {
      * @experimental This feature is in early development and may change significantly in future releases.
      */
     experimentalCodeExamples?: boolean;
+
+    /**
+     * Enable change detection
+     * TODO: Turn to true before 10.4 release
+     * @default false
+     */
+    changeDetection?: boolean;
   };
 
   build?: TestBuildConfig;

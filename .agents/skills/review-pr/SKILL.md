@@ -12,11 +12,43 @@ Generate a scrollable single-page HTML document that reviews a PR as a readable 
 
 ## Principles
 
-1. **Two layers per area.** The top layer is a curated, readable walkthrough — API surface, key test assertions, and core implementation logic woven together with prose. Only the important parts. Below it, the full files are collapsed in `<details>` for reference.
-2. **High-level to low-level.** Order areas from entry points and orchestration down to utilities and types. The reader understands architecture before details.
-3. **API → Tests → Implementation.** Within each area's readable section, show the API first (types, interfaces, exports), then the tests (what does it do?), then the implementation (how?). **Show full interface bodies** — not just names. The reader should see every field of key interfaces in the walkthrough where they're first relevant. Don't defer to "see types.ts".
-4. **Review readability.** For each file, assess: logical order? Clear names? Comments where the *why* isn't obvious? Tests readable enough to serve as docs? Flag issues as smell-boxes. Call out well-written tests with note-boxes.
-5. **Cover everything.** Every changed file appears somewhere.
+The purpose of this page is to help the **human reviewer** understand and review a PR quickly. The page is a reading aid — it presents the code clearly so the reviewer can form their own opinion.
+
+### Optimize for the reviewer's time
+
+The reviewer should be able to:
+- **Skim** the page and grasp what the PR does in 30 seconds (big picture section).
+- **Read** any area and understand what that code does without opening their editor.
+- **Zoom in** to full files or diffs when they want to inspect details.
+
+### Two layers per area
+
+Each area has two layers:
+- **Layer 1 (always visible):** A curated walkthrough — prose explanation with cherry-picked code snippets. Only the parts that matter for understanding.
+- **Layer 2 (collapsed):** Full file contents or diffs in `<details>` blocks. The reviewer expands these to zoom in.
+
+### High-level to low-level
+
+Order areas following the **call graph** from entry points down. The reviewer understands the big picture before details. For example: CLI entry point → orchestration → each pipeline step → helpers → utilities → types.
+
+### Within each area: Explain → Contract → Tests → Implementation
+
+Structure each area's walkthrough in this order:
+
+1. **Explanation** — Plain prose first. What does this module do? Why does it exist? How does it fit into the bigger picture? The reviewer should understand the *purpose* before seeing any code.
+2. **Functions & data structures** — Show function signatures and the key types/interfaces they use. This is the contract — what goes in, what comes out. Show full interface bodies inline where they're first relevant. Don't defer to "see types.ts".
+3. **Tests** — Cherry-pick the test cases that make the behavior concrete. Tests are executable documentation — they turn abstract descriptions into specific examples.
+4. **Implementation** — The interesting parts of *how* it works. Skip boilerplate, show the core logic.
+
+Use narrative `<p>` tags between snippets to guide the reviewer through each transition.
+
+### Flag obvious issues, but don't force opinions
+
+If you notice something clearly wrong (bug, missing error handling, naming mismatch), flag it with a smell-box. If something is notably well done, use a note-box. But don't manufacture opinions — if the code is fine, just present it clearly. The reviewer will decide what matters.
+
+### Cover everything
+
+Every changed file appears somewhere — either in a walkthrough snippet or in a collapsed full-file block.
 
 ## Step 1 — Gather PR data
 
@@ -38,13 +70,14 @@ For each area, write two layers:
 
 ### Layer 1: Readable walkthrough (always visible)
 
-A curated narrative that mixes prose with **short code snippets** — only the important parts. Structure it as:
+A curated narrative that mixes prose with **short code snippets**. Structure it following the principle order:
 
-1. **API** — key types, interfaces, function signatures, exports. The contract.
-2. **Tests** — the most important test cases. What the behavior is. Cherry-pick the assertions that explain the module.
-3. **Implementation** — the core logic. Skip boilerplate, show the interesting parts.
+1. **Explanation** — plain prose describing what this area does, why it exists, and how it fits.
+2. **Functions & data structures** — key function signatures and the types they use. Show the contract.
+3. **Tests** — cherry-picked test cases that make the behavior concrete with specific examples.
+4. **Implementation** — the core logic. Skip boilerplate, show the interesting parts.
 
-Use narrative `<p>` tags between snippets to explain what the reader is looking at and review readability.
+Use narrative `<p>` tags between snippets to guide the reviewer through each transition. Add smell-boxes or note-boxes only when something genuinely stands out.
 
 ### Layer 2: Full files (always collapsed)
 
@@ -67,7 +100,7 @@ Sticky topbar (nav links)
 Header (title, author, stats)
 Big picture section
 Area 1
-  Readable walkthrough (API → Tests → Implementation snippets)
+  Readable walkthrough (Explain → Contract → Tests → Implementation)
   Full files (collapsed)
 Area 2
   ...
@@ -235,12 +268,14 @@ document.querySelectorAll('code[data-diff]').forEach(block => {
 
 **Layer 1 — Readable walkthrough snippet** (curated excerpt with prose):
 
-Show full interface bodies where they're first relevant — not just names:
+Start with explanation, then show the contract (function + types), then tests, then implementation. Show full interface bodies inline — not just names:
 
 ```html
 <div class="file-card">
   <div class="narrative">
-    <p><strong>API:</strong> The entry point takes a config and returns a result:</p>
+    <p><code>processStory</code> is the core rendering pipeline. It takes a story config, prepares the
+    rendering context, mounts the component, and returns a result with status and timing.</p>
+    <p>The function signature and the types it uses:</p>
   </div>
   <pre><code class="language-typescript">export async function processStory(config: StoryConfig): Promise&lt;StoryResult&gt;
 
@@ -259,13 +294,13 @@ export interface StoryResult {
   errors: string[];
 }</code></pre>
   <div class="narrative">
-    <p><strong>Tests:</strong> The happy-path test shows the expected flow:</p>
+    <p>The happy-path test shows the expected flow concretely:</p>
   </div>
   <pre><code class="language-typescript">const result = await processStory(baseConfig);
 expect(result.status).toBe('success');
 expect(result.rendered).toBe(true);</code></pre>
   <div class="narrative">
-    <p><strong>Implementation:</strong> The pipeline is sequential — rendering depends on preparation:</p>
+    <p>The implementation is a sequential pipeline — rendering depends on preparation:</p>
   </div>
   <pre><code class="language-typescript">const context = await prepare(config);
 const canvas = await render(context);
@@ -327,6 +362,7 @@ Use `language-typescript data-diff` — this gives TypeScript syntax highlightin
 ```html
 <div class="note-box">These test names read like a specification — good documentation.</div>
 ```
+
 
 ### Badge reference
 

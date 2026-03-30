@@ -49,6 +49,11 @@
       "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",
       "default": "./dist/preview.js"
+    },
+    "./start": {
+      "types": "./dist/export-mocks/start.d.ts",
+      "code": "./src/export-mocks/start.ts",
+      "default": "./dist/export-mocks/start.js"
     }
   },
   "files": [

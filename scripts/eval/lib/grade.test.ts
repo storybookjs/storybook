@@ -6,7 +6,7 @@ import {
   countTypeCheckErrors,
   parseChangedFiles,
 } from './grade';
-import type { FileChange } from '../types';
+import type { FileChange } from './grade';
 
 describe('filterStorybookFiles', () => {
   it('matches files in .storybook/ directory', () => {

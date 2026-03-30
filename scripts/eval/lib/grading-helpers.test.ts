@@ -11,11 +11,9 @@ import {
   filterStorybookFiles,
   parseChangedFiles,
 } from './grade';
-import { detectSetupPatterns } from './setup-patterns';
-
 /**
  * Helper-level test: compose grading helpers on a fake project directory.
- * This exercises candidate discovery, setup-pattern detection, git-output parsing,
+ * This exercises candidate discovery, git-output parsing,
  * and quality-score calculation without pretending to cover the full grade() flow.
  */
 
@@ -83,14 +81,7 @@ describe('grading helpers', () => {
     const candidates = await findCandidates(TMP);
     expect(candidates).toHaveLength(2);
 
-    // Step 2: Detect patterns — config references CSS, theme, staticDirs
-    const patterns = await detectSetupPatterns(TMP);
-    const patternIds = patterns.map((p) => p.id);
-    expect(patternIds).toContain('global-css');
-    expect(patternIds).toContain('theme-provider');
-    expect(patternIds).toContain('static-dirs');
-
-    // Step 3: Simulate git output where the agent added storybook config + one
+    // Step 2: Simulate git output where the agent added storybook config + one
     // story per discovered candidate, plus modified package.json
     const gitLines = [
       'A\t.storybook/preview.tsx',
@@ -106,7 +97,7 @@ describe('grading helpers', () => {
     // Total includes package.json
     expect(changedFiles).toHaveLength(storybookFiles.length + 1);
 
-    // Step 4: Build passed, no TS errors, 100% ghost stories, fast agent → perfect score
+    // Step 3: Build passed, no TS errors, 100% ghost stories, fast agent → perfect score
     const quality = computeQualityScore({
       buildSuccess: true,
       typeCheckErrors: 0,
@@ -130,10 +121,6 @@ describe('grading helpers', () => {
     // Candidates still discoverable even when storybook setup is broken
     const candidates = await findCandidates(TMP);
     expect(candidates).toHaveLength(1);
-
-    // Agent didn't create any .storybook config
-    rmSync(join(TMP, '.storybook'), { recursive: true });
-    expect(await detectSetupPatterns(TMP)).toEqual([]);
 
     // Simulate tsc output with errors proportional to candidate count
     const tscLines = candidates.map(
@@ -172,9 +159,6 @@ describe('grading helpers', () => {
     const candidates = await findCandidates(TMP);
     expect(candidates).toHaveLength(5);
 
-    const patterns = await detectSetupPatterns(TMP);
-    expect(patterns.map((p) => p.id)).toContain('router-provider');
-
     // Agent wrote one story per candidate — all storybook-related
     const gitOutput = candidates.map((c) => `A\t${c.replace(/\.tsx$/, '.stories.tsx')}`).join('\n');
     const storybookFiles = filterStorybookFiles(parseChangedFiles(gitOutput));
@@ -189,25 +173,5 @@ describe('grading helpers', () => {
         durationSeconds: 60,
       }).score
     ).toBe(1);
-  });
-});
-
-describe('setup-patterns only scans .storybook/', () => {
-  it('does not detect patterns in component source files', async () => {
-    // Router usage in a component should NOT be detected as a setup pattern
-    writeFile(
-      'src/App.tsx',
-      [
-        `import React from 'react';`,
-        `import { BrowserRouter } from 'react-router-dom';`,
-        `export function App() {`,
-        `  return <BrowserRouter><div /></BrowserRouter>;`,
-        `}`,
-      ].join('\n')
-    );
-    // Empty .storybook config with no patterns
-    writeFile('.storybook/main.ts', `export default { stories: ['../src/**/*.stories.tsx'] };`);
-
-    expect((await detectSetupPatterns(TMP)).map((p) => p.id)).not.toContain('router-provider');
   });
 });

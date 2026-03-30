@@ -1,8 +1,7 @@
 import { Codex, type ModelReasoningEffort } from '@openai/codex-sdk';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { AgentDriver, Execution } from '../../types.ts';
-import { estimateCost } from '../../config.ts';
+import { estimateCost, type AgentDriver, type Execution } from './config.ts';
 
 export const codexAgent: AgentDriver = {
   name: 'codex',

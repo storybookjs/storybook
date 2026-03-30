@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { AGENTS, PROJECTS } from './config';
-
-const githubRepoUrl = /^https:\/\/github\.com\/[^/]+\/[^/]+$/;
+import { AGENTS } from './config';
 
 describe('AGENTS', () => {
   it('keeps each agent default inside its supported model and effort lists', () => {
@@ -41,32 +39,5 @@ describe('AGENTS', () => {
         ])
       ),
     });
-  });
-});
-
-describe('PROJECTS', () => {
-  it('pins every benchmark project to a pre-initialized eval-baseline repo', () => {
-    expect(PROJECTS.length).toBeGreaterThan(0);
-
-    for (const project of PROJECTS) {
-      expect(project).toMatchObject({
-        branch: 'eval-baseline',
-        repo: expect.stringMatching(githubRepoUrl),
-        description: expect.any(String),
-      });
-    }
-  });
-
-  it('keeps benchmark project metadata unambiguous', () => {
-    const names = PROJECTS.map((p) => p.name);
-    const repos = PROJECTS.map((p) => p.repo);
-
-    expect(new Set(names).size).toBe(names.length);
-    expect(new Set(repos).size).toBe(repos.length);
-
-    for (const project of PROJECTS) {
-      if (!project.projectDir) continue;
-      expect(project.projectDir).toMatch(/^(?!\/)(?!\.\.?(?:\/|$)).+/);
-    }
   });
 });

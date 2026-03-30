@@ -1,10 +1,19 @@
 import { existsSync } from 'node:fs';
 import { cp, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { Project, TrialWorkspace, Logger } from '../types.ts';
+import type { Logger } from './utils.ts';
+import type { Project } from './projects.ts';
 import { x } from 'tinyexec';
 import { installDeps } from './package-manager.ts';
 import { CACHE_DIR, TRIALS_DIR } from './utils.ts';
+
+export interface TrialWorkspace {
+  trialDir: string;
+  repoRoot: string;
+  projectPath: string;
+  resultsDir: string;
+  baselineCommit: string;
+}
 
 /**
  * First run: clone eval-baseline -> install deps -> cache it.

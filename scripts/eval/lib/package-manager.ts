@@ -7,7 +7,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { x } from 'tinyexec';
-import type { Logger } from '../types.ts';
+import type { Logger } from './utils.ts';
 
 /** Detect the package manager from lock files in a directory. */
 export function detectPackageManager(dir: string): string {

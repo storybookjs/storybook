@@ -3,15 +3,19 @@ import { writeFile } from 'node:fs/promises';
 import { resolve, basename, join } from 'node:path';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
-import type { Logger } from '../types.ts';
+
+export interface Logger {
+  log: (msg: string) => void;
+  logStep: (msg: string) => void;
+  logSuccess: (msg: string) => void;
+  logError: (msg: string) => void;
+}
 
 export const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..');
 export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
 export const CACHE_DIR = resolve(EVAL_ROOT, '.cache', 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
 export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
-
-// --- Logging ---
 
 export function createLogger(prefix?: string): Logger {
   const p = prefix ? pc.dim(`[${prefix}]`) + ' ' : '';
@@ -23,8 +27,6 @@ export function createLogger(prefix?: string): Logger {
   };
 }
 
-// --- Formatting ---
-
 export const formatDuration = (s: number) =>
   s < 60 ? `${Math.round(s)}s` : `${Math.floor(s / 60)}m${Math.round(s % 60)}s`;
 
@@ -34,8 +36,6 @@ export function generateTrialId(project: string, agent: string, model: string, p
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   return `${ts}-${project}-${agent}-${model}-${prompt}-${crypto.randomUUID().slice(0, 8)}`;
 }
-
-// --- Table formatting ---
 
 /** Strip ANSI escape codes for accurate width calculation. */
 const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, '');
@@ -59,8 +59,6 @@ export function formatTable(headers: string[], rows: string[][]): string {
   ].join('\n');
 }
 
-// --- Prompts ---
-
 /** Load a prompt by name from prompts/{name}.md. */
 export function loadPrompt(name = 'setup'): string {
   const file = resolve(PROMPTS_DIR, `${name}.md`);
@@ -77,8 +75,6 @@ export function listPrompts(): string[] {
     .filter((f) => f.endsWith('.md'))
     .map((f) => basename(f, '.md'));
 }
-
-// --- Environment capture ---
 
 export interface EvalEnvironment {
   nodeVersion: string;

@@ -1,18 +1,57 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type {
-  Grade,
-  GhostStoryGrade,
-  QualityScore,
-  ScoreWeights,
-  TrialWorkspace,
-  FileChange,
-  Logger,
-} from '../types.ts';
-import { DEFAULT_SCORE_WEIGHTS } from '../types.ts';
 import { x } from 'tinyexec';
-import { detectSetupPatterns } from './setup-patterns.ts';
+import type { Logger } from './utils.ts';
+import type { TrialWorkspace } from './prepare-trial.ts';
 import { getComponentCandidates, runGhostStories } from 'storybook/internal/core-server';
+
+export interface FileChange {
+  path: string;
+  status: 'A' | 'M' | 'D' | 'R';
+  /** For renames, the original path before the move. */
+  previousPath?: string;
+}
+
+export interface GhostStoryGrade {
+  candidateCount: number;
+  total: number;
+  passed: number;
+  successRate: number;
+}
+
+export interface ScoreWeights {
+  ghostStories: number;
+  build: number;
+  typecheck: number;
+  performance: number;
+}
+
+export const DEFAULT_SCORE_WEIGHTS: ScoreWeights = {
+  ghostStories: 0.4,
+  build: 0.25,
+  typecheck: 0.25,
+  performance: 0.1,
+};
+
+export interface QualityScore {
+  score: number;
+  breakdown: {
+    build: number;
+    typecheck: number;
+    ghostStories: number;
+    performance: number;
+  };
+}
+
+export interface Grade {
+  buildSuccess: boolean;
+  buildError?: string;
+  typeCheckErrors: number;
+  typeCheckOutput?: string;
+  fileChanges: FileChange[];
+  storybookChanges: FileChange[];
+  ghostStories?: GhostStoryGrade;
+}
 
 /** Maximum TypeScript errors before the typecheck score reaches 0. */
 const MAX_TYPECHECK_ERRORS = 20;
@@ -125,11 +164,6 @@ export async function grade(
     `${fileChanges.length} files changed (${storybookChanges.length} storybook-related)`
   );
 
-  // Setup patterns
-  const setupPatterns = await detectSetupPatterns(projectPath);
-  if (setupPatterns.length > 0)
-    logger.logSuccess(`Detected patterns: ${setupPatterns.map((p) => p.label).join(', ')}`);
-
   // Storybook build + TypeScript check in parallel
   logger.logStep('Running storybook build + typecheck...');
   const [build, tsc] = await Promise.all([
@@ -180,7 +214,6 @@ export async function grade(
     typeCheckOutput: typeCheckErrors > 0 ? truncateEnd(tscOutput, 2000) : undefined,
     fileChanges,
     storybookChanges,
-    setupPatterns,
     ghostStories,
   };
 

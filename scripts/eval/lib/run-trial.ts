@@ -1,11 +1,36 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { AgentId, Logger, TrialConfig, TrialReport, AgentDriver } from '../types.ts';
+import type { Logger } from './utils.ts';
+import type { AgentId, AgentDriver, AgentVariant, Execution } from './agents/config.ts';
+import type { Project } from './projects.ts';
+import { grade, type Grade, type QualityScore } from './grade.ts';
 import { claudeAgent } from './agents/claude-code.ts';
 import { codexAgent } from './agents/codex.ts';
 import { prepareTrial } from './prepare-trial.ts';
-import { grade } from './grade.ts';
 import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from './utils.ts';
+
+export interface TrialConfig {
+  /** Which project to evaluate (cloned from its eval-baseline branch). */
+  project: Project;
+  /** Agent, model, and effort level. */
+  variant: AgentVariant;
+  /** Prompt name — maps to `prompts/{name}.md` (e.g. "setup"). */
+  prompt: string;
+  /** Log agent messages to stdout. */
+  verbose?: boolean;
+}
+
+export interface TrialReport {
+  schemaVersion: 1;
+  project: Project;
+  variant: AgentVariant;
+  prompt: string;
+  timestamp: string;
+  baselineCommit: string;
+  execution: Execution;
+  grade: Grade;
+  score: QualityScore;
+}
 
 const drivers: Record<AgentId, AgentDriver> = {
   claude: claudeAgent,

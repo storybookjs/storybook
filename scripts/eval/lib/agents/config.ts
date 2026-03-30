@@ -1,20 +1,50 @@
 /**
- * Runtime configuration for the Storybook eval system.
- *
- * Agent configs, model mappings, pricing, benchmark project definitions,
- * and cost estimation utilities.
+ * Agent definitions, model mappings, pricing, and cost estimation.
  */
 
-import {
-  CLAUDE_MODELS,
-  CODEX_MODELS,
-  CLAUDE_EFFORTS,
-  CODEX_EFFORTS,
-  type AgentId,
-  type Project,
-} from './types.ts';
+import type { Logger } from '../utils.ts';
 
-// --- Pricing ---
+export const CLAUDE_MODELS = ['sonnet-4.6', 'opus-4.6', 'haiku-4.5'] as const;
+export const CODEX_MODELS = ['gpt-5.4'] as const;
+export const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS] as const;
+
+export const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'max'] as const;
+export const CODEX_EFFORTS = ['low', 'medium', 'high', 'xhigh'] as const;
+export const ALL_EFFORTS = ['low', 'medium', 'high', 'max', 'xhigh'] as const;
+
+export const AGENT_IDS = ['claude', 'codex'] as const;
+
+export type ClaudeModel = (typeof CLAUDE_MODELS)[number];
+export type CodexModel = (typeof CODEX_MODELS)[number];
+export type ClaudeEffort = (typeof CLAUDE_EFFORTS)[number];
+export type CodexEffort = (typeof CODEX_EFFORTS)[number];
+
+/** Agent + model + effort — validated as a discriminated union at the CLI boundary. */
+export type AgentVariant =
+  | { agent: 'claude'; model: ClaudeModel; effort: ClaudeEffort }
+  | { agent: 'codex'; model: CodexModel; effort: CodexEffort };
+
+export type AgentId = AgentVariant['agent'];
+
+export interface Execution {
+  cost?: number;
+  duration: number;
+  durationApi?: number;
+  turns: number;
+}
+
+export interface AgentExecuteParams {
+  prompt: string;
+  projectPath: string;
+  variant: AgentVariant;
+  resultsDir: string;
+  logger: Logger;
+}
+
+export interface AgentDriver {
+  name: AgentId;
+  execute(params: AgentExecuteParams): Promise<Execution>;
+}
 
 export interface TokenPricing {
   input: number;
@@ -27,8 +57,6 @@ export interface TokenUsage {
   cachedInputTokens: number;
   outputTokens: number;
 }
-
-// --- Agent Definition ---
 
 export interface AgentDefinition {
   models: readonly string[];
@@ -66,8 +94,6 @@ export const AGENTS: Record<AgentId, AgentDefinition> = {
   },
 };
 
-// --- Cost Estimation ---
-
 /** Estimate cost from token usage using the pricing table. */
 export function estimateCost(agent: AgentId, model: string, usage: TokenUsage): number | undefined {
   const pricing = AGENTS[agent].pricing[model];
@@ -79,46 +105,3 @@ export function estimateCost(agent: AgentId, model: string, usage: TokenUsage): 
     (usage.outputTokens / 1_000_000) * pricing.output
   );
 }
-
-// --- Projects ---
-
-export const PROJECTS: Project[] = [
-  {
-    name: 'mealdrop',
-    repo: 'https://github.com/kasperpeulen/mealdrop',
-    branch: 'eval-baseline',
-    description: 'Styled components, Redux, React Router',
-  },
-  {
-    name: 'edgy',
-    repo: 'https://github.com/kasperpeulen/edgy',
-    branch: 'eval-baseline',
-    description: 'Tailwind, HeadlessUI, React Router',
-  },
-  {
-    name: 'wikitok',
-    repo: 'https://github.com/kasperpeulen/wikitok',
-    branch: 'eval-baseline',
-    projectDir: 'frontend',
-    description: 'Simple project with Tailwind',
-  },
-  {
-    name: 'baklava',
-    repo: 'https://github.com/kasperpeulen/baklava',
-    branch: 'eval-baseline',
-    description: 'Component library with Zustand',
-  },
-  {
-    name: 'echarts',
-    repo: 'https://github.com/kasperpeulen/echarts-react',
-    branch: 'eval-baseline',
-    description: 'ECharts React wrapper',
-  },
-  {
-    name: 'evergreen-ci',
-    repo: 'https://github.com/kasperpeulen/ui',
-    branch: 'eval-baseline',
-    projectDir: 'packages/lib',
-    description: 'GraphQL',
-  },
-];

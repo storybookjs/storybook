@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TrialConfig, TrialReport } from '../types';
+import type { TrialConfig, TrialReport } from './run-trial';
 
 // Mock external dependencies to avoid real git/storybook/vitest calls
 vi.mock('./prepare-trial', () => ({
@@ -82,9 +82,6 @@ function setupMocks(overrides?: {
         { path: '.storybook/preview.tsx', status: 'A' },
         { path: 'src/Button.stories.tsx', status: 'A' },
       ],
-      setupPatterns: [
-        { id: 'tailwind', label: 'Tailwind CSS', sourceFiles: ['.storybook/preview.ts'] },
-      ],
     },
     score: {
       score: buildSuccess ? 1 : 0.3,
@@ -151,7 +148,7 @@ describe('runTrial pipeline', () => {
 
     const params = vi.mocked(claudeAgent.execute).mock.calls[0][0];
     expect(params).toMatchObject({
-      prompt: expect.stringContaining('Storybook setup'),
+      prompt: expect.stringContaining('set up Storybook'),
       projectPath: TMP,
       variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       resultsDir: join(TMP, 'results'),
@@ -184,7 +181,7 @@ describe('runTrial pipeline', () => {
     });
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
-    expect(promptContent).toContain('Storybook setup');
+    expect(promptContent).toContain('set up Storybook');
   });
 
   it('propagates failed build into result', async () => {
@@ -224,7 +221,6 @@ describe('runTrial pipeline', () => {
           typeCheckErrors: 0,
           fileChanges: [],
           storybookChanges: [],
-          setupPatterns: [],
         },
         score: { score: 1, breakdown: { build: 1, typecheck: 1, ghostStories: 0, performance: 0 } },
       };

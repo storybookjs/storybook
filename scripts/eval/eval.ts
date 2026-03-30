@@ -25,12 +25,12 @@ import {
   CLAUDE_EFFORTS,
   CODEX_MODELS,
   CODEX_EFFORTS,
+  AGENTS,
   type AgentId,
   type AgentVariant,
-  type TrialConfig,
-} from './types.ts';
-import { AGENTS, PROJECTS } from './config.ts';
-import { runTrial } from './lib/run-trial.ts';
+} from './lib/agents/config.ts';
+import { PROJECTS } from './lib/projects.ts';
+import { runTrial, type TrialConfig } from './lib/run-trial.ts';
 import { prepareTrial } from './lib/prepare-trial.ts';
 import {
   createLogger,
@@ -41,8 +41,6 @@ import {
   generateTrialId,
   captureEnvironment,
 } from './lib/utils.ts';
-
-// --- Helpers ---
 
 const PROJECT_NAMES = PROJECTS.map((p) => p.name) as [string, ...string[]];
 
@@ -59,11 +57,8 @@ function buildManualCommand(variant: AgentVariant, promptPath: string): string {
     const sdkModel = AGENTS.claude.sdkModelIds[variant.model] ?? variant.model;
     return `claude --model ${sdkModel} ${promptArg}`;
   }
-  // codex
   return `codex --model ${variant.model} --reasoning-effort ${variant.effort} ${promptArg}`;
 }
-
-// --- CLI schema: base options + discriminated union on agent ---
 
 const base = {
   project: z.enum(PROJECT_NAMES).optional(),
@@ -89,8 +84,6 @@ const argsSchema = z.discriminatedUnion('agent', [
     effort: z.enum(CODEX_EFFORTS).default('high'),
   }),
 ]);
-
-// --- Parse CLI ---
 
 const { values } = parseArgs({
   options: {
@@ -130,8 +123,6 @@ if (!parsed.success) {
 const args = parsed.data;
 const logger = createLogger();
 
-// --- List commands ---
-
 if (args.listProjects) {
   for (const p of PROJECTS) logger.log(`  ${pc.bold(p.name)} — ${p.description}`);
   process.exit(0);
@@ -148,15 +139,11 @@ if (args.listPrompts) {
   process.exit(0);
 }
 
-// --- Validate project ---
-
 if (!args.project) {
   logger.log(pc.red(`Specify a project with -p. Available: ${PROJECT_NAMES.join(', ')}`));
   process.exit(1);
 }
 const project = PROJECTS.find((p) => p.name === args.project)!;
-
-// --- Run trial ---
 
 const variant: AgentVariant =
   args.agent === 'claude'
@@ -169,8 +156,6 @@ logger.log(
 );
 
 if (args.manual) {
-  // --- Manual mode: prepare only, print instructions ---
-
   const trialId = generateTrialId(project.name, variant.agent, variant.model, args.prompt);
   const workspace = await prepareTrial(project, trialId, logger);
   await captureEnvironment(workspace.resultsDir);
@@ -189,14 +174,10 @@ if (args.manual) {
   logger.log(`  ${pc.green('cd')} ${workspace.projectPath}`);
   logger.log(`  ${pc.green(cliCommand)}\n`);
 } else {
-  // --- Automatic mode: run trial end-to-end ---
-
   const result = await runTrial(
     { project, variant, prompt: args.prompt, verbose: args.verbose } satisfies TrialConfig,
     logger
   );
-
-  // --- Print result ---
 
   const ghost = result.grade.ghostStories;
   const ghostStr = ghost

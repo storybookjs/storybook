@@ -2,8 +2,8 @@ import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { AGENTS } from '../../config.ts';
-import type { AgentDriver, Execution, Logger } from '../../types.ts';
+import { AGENTS, type AgentDriver, type Execution } from './config.ts';
+import type { Logger } from '../utils.ts';
 
 function logMessage(message: SDKMessage, logger: Logger) {
   switch (message.type) {

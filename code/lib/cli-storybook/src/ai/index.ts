@@ -23,12 +23,19 @@ export async function aiInit(options: AiInitOptions): Promise<void> {
       ? parseMajorVersion(data.versionInstalled)
       : undefined;
 
+    if (!data.frameworkPackage || !data.rendererPackage || !data.builderPackage) {
+      logger.error(
+        'Could not detect framework, renderer, or builder from your Storybook config. Make sure you are running this command from your project root, or specify --config-dir.'
+      );
+      return;
+    }
+
     projectInfo = {
       storybookVersion: data.versionInstalled,
       majorVersion,
-      framework: data.frameworkPackage ?? 'unknown',
-      renderer: data.rendererPackage ?? 'unknown',
-      builder: data.builderPackage ?? 'unknown',
+      framework: data.frameworkPackage,
+      renderer: data.rendererPackage,
+      builder: data.builderPackage,
       addons: data.addons ?? [],
       configDir: data.configDir,
       storiesPaths: data.storiesPaths,
@@ -41,7 +48,7 @@ export async function aiInit(options: AiInitOptions): Promise<void> {
     logger.log(
       'Make sure you are running this command from your project root, or specify --config-dir.'
     );
-    process.exit(1);
+    return;
   }
 
   if (projectInfo.framework !== '@storybook/react-vite') {
@@ -50,9 +57,9 @@ export async function aiInit(options: AiInitOptions): Promise<void> {
 
   if (format === 'json') {
     // JSON output goes directly to stdout for machine consumption
-    console.log(JSON.stringify(generateJsonOutput(projectInfo), null, 2));
+    logger.log(JSON.stringify(generateJsonOutput(projectInfo), null, 2));
   } else {
-    console.log(generateMarkdownOutput(projectInfo));
+    logger.log(generateMarkdownOutput(projectInfo));
   }
 }
 

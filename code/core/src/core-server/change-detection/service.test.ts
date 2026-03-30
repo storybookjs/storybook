@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -158,7 +160,7 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('marks new story files as new and unsets them after they are reverted', async () => {
+  it('marks new story files from the git new set and unsets them after they are reverted', async () => {
     const storyIndex = createStoryIndex([
       {
         storyId: 'new-button--primary',
@@ -174,7 +176,7 @@ describe('ChangeDetectionService', () => {
       getChangedFiles: vi
         .fn()
         .mockResolvedValueOnce({
-          changed: new Set(['src/NewButton.stories.tsx']),
+          changed: new Set(),
           new: new Set(['src/NewButton.stories.tsx']),
         })
         .mockResolvedValueOnce({
@@ -368,6 +370,65 @@ describe('ChangeDetectionService', () => {
           description: '',
           data: {
             changedFiles: ['src/direct.ts', 'src/indirect.ts'],
+          },
+          sidebarContextMenu: false,
+        },
+      },
+    });
+    await service.dispose();
+  });
+
+  it('stores changed files as normalized repo-relative paths', async () => {
+    const buttonCss = createModuleNode(join(workingDir, 'src', 'Button.module.css'));
+    const buttonComponent = createModuleNode(join(workingDir, 'src', 'Button.tsx'));
+    const buttonStory = createModuleNode(join(workingDir, 'src', 'Button.stories.tsx'));
+
+    buttonCss.importers.add(buttonComponent);
+    buttonComponent.importers.add(buttonStory);
+
+    const moduleGraph: ModuleGraph = new Map([
+      [join(workingDir, 'src', 'Button.module.css'), new Set([buttonCss])],
+      [join(workingDir, 'src', 'Button.tsx'), new Set([buttonComponent])],
+      [join(workingDir, 'src', 'Button.stories.tsx'), new Set([buttonStory])],
+    ]);
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = {
+      getChangedFiles: vi.fn().mockResolvedValue({
+        changed: new Set(['src/Button.module.css']),
+        new: new Set(),
+      }),
+      getRepoRoot: vi.fn().mockResolvedValue(workingDir),
+    };
+    const { builder, emit } = createBuilder();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      workingDir,
+    });
+
+    service.start(builder.onModuleGraphChange, true);
+    emit(moduleGraph);
+    await vi.runAllTimersAsync();
+
+    expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
+      'button--primary': {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+          storyId: 'button--primary',
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value: 'status-value:modified',
+          title: '',
+          description: '',
+          data: {
+            changedFiles: ['src/Button.module.css'],
           },
           sidebarContextMenu: false,
         },

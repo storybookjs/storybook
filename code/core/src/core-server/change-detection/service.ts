@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { Builder, ModuleGraph, Status, StatusStoreByTypeId } from 'storybook/internal/types';
@@ -66,6 +66,11 @@ function mergeStatusValues(
   }
 
   return nextValue;
+}
+
+function toRepoRelativePath(repoRoot: string, filePath: string): string {
+  const relativePath = relative(repoRoot, filePath);
+  return relativePath.startsWith('\\\\?\\') ? relativePath : relativePath.replace(/\\/g, '/');
 }
 
 export class ChangeDetectionService {
@@ -212,15 +217,20 @@ export class ChangeDetectionService {
       this.options.storyIndexGeneratorPromise,
     ]);
 
-    const changedFiles = Array.from(changes.changed).map((filePath) => resolve(repoRoot, filePath));
-    const newFiles = Array.from(changes.new).map((filePath) => resolve(repoRoot, filePath));
+    const changedFiles = new Set(
+      Array.from(changes.changed).map((filePath) => resolve(repoRoot, filePath))
+    );
+    const newFiles = new Set(
+      Array.from(changes.new).map((filePath) => resolve(repoRoot, filePath))
+    );
+    const scannedFiles = new Set([...changedFiles, ...newFiles]);
 
     const storyIndex = await storyIndexGenerator.getIndex();
     const workingDir = this.getWorkingDir();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, workingDir);
     const statuses = new Map<string, Status>();
 
-    for (const changedFile of changedFiles) {
+    for (const changedFile of scannedFiles) {
       const affectedStoryFiles = findAffectedStoryFiles(changedFile, moduleGraph, storyIdsByFile);
       const lowestDistance = Math.min(
         ...Array.from(affectedStoryFiles.values(), ({ distance }) => distance)
@@ -232,7 +242,7 @@ export class ChangeDetectionService {
           continue;
         }
 
-        const value = newFiles.includes(storyFile)
+        const value = newFiles.has(storyFile)
           ? 'status-value:new'
           : distance === lowestDistance
             ? 'status-value:modified'
@@ -241,7 +251,7 @@ export class ChangeDetectionService {
         storyIds.forEach((storyId) => {
           const existingStatus = statuses.get(storyId);
           const changedStoryFiles = new Set<string>(existingStatus?.data?.changedFiles ?? []);
-          changedStoryFiles.add(changedFile.replace(`${repoRoot}/`, ''));
+          changedStoryFiles.add(toRepoRelativePath(repoRoot, changedFile));
 
           statuses.set(storyId, {
             storyId,

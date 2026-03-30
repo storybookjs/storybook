@@ -1,8 +1,4 @@
-import {
-  getProjectRoot,
-  resolvePathInStorybookCache,
-  getFrameworkBuilderOptions,
-} from 'storybook/internal/common';
+import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { getVirtualModules } from '@storybook/builder-webpack5';
@@ -44,12 +40,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   };
 };
 
-export const core: PresetProperty<'core'> = async (config, options) => {
-  return {
-    ...config,
-    builder: {
-      name: import.meta.resolve('@storybook/builder-webpack5'),
-      options: await getFrameworkBuilderOptions(options),
-    },
-  };
+export const core: PresetProperty<'core'> = {
+  builder: import.meta.resolve('@storybook/builder-webpack5'),
 };

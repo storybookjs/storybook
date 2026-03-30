@@ -3,7 +3,6 @@ import versions from './versions';
 /// <reference types="@types/compression" />
 
 export * from './presets';
-
 export * from './utils/cache';
 export * from './utils/cli';
 export * from './utils/check-addon-order';
@@ -11,7 +10,6 @@ export * from './utils/envs';
 export * from './utils/common-glob-options';
 export * from './utils/framework';
 export * from './utils/get-builder-options';
-export * from './utils/get-framework-builder-options';
 export * from './utils/get-framework-name';
 export * from './utils/get-renderer-name';
 export * from './utils/get-storybook-configuration';

@@ -193,8 +193,8 @@ async function getParser(userOptions?: ParserOptions) {
 
   if (!parser) {
     // If the user provided a tsconfigPath, use it instead of auto-detecting
-    const { tsconfigPath: customTsconfigPath, ...restUserOptions } = (userOptions ?? {}) as
-      ParserOptions & { tsconfigPath?: string };
+    const { tsconfigPath: customTsconfigPath, ...restUserOptions } = (userOptions ??
+      {}) as ParserOptions & { tsconfigPath?: string };
     const configPath = customTsconfigPath
       ? resolve(process.cwd(), customTsconfigPath)
       : findTsconfigPath(process.cwd());

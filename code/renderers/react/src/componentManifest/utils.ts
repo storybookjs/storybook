@@ -183,12 +183,6 @@ export const findTsconfigPath = cached(
     for (const candidate of TSCONFIG_CANDIDATES) {
       const found = find.up(candidate, { cwd, last: projectRoot });
       if (found) {
-        if (candidate !== 'tsconfig.json') {
-          logger.warn(
-            `No tsconfig.json found. Using "${candidate}" instead. ` +
-              `To silence this warning, create a tsconfig.json that extends "${candidate}".`
-          );
-        }
         return found;
       }
     }

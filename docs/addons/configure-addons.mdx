@@ -11,7 +11,7 @@ The addon API is designed for customization. It offers addon authors different w
 
 Presets offload the burden of configuration from the user to the addon. Preset options are global and are accessible from NodeJS. They're ideal for pre-configuring Webpack loaders, Babel plugins, and other library or framework-specific configurations.
 
-For example, many libraries require that the app be wrapped by a `Provider` which _provides_ data to components down the tree. Presets can describe behavior like adding wrappers automatically, without users having to do any manual configuration. If a user installs an addon that has Presets, the addon can instruct Storybook to wrap all stories in `Provider`. This allows folks to start using your library with Storybook, with just 1 line of config!
+For example, many libraries require that the app be wrapped by a `Provider` which _provides_ data to components down the tree. Presets can describe behavior like adding wrappers automatically, without users having to do any manual configuration. If a user installs an addon that has Presets, the addon can instruct Storybook to wrap all stories in `Provider`. This allows folks to start using your library with Storybook with a single line of config.
 
 For more on presets, see: [Write a preset addon](./writing-presets.mdx)
 

@@ -9,10 +9,13 @@
  *   node eval/eval.ts -p mealdrop -a codex              # codex defaults
  *   node eval/eval.ts -p mealdrop -m gpt-5.4            # codex (inferred)
  *   node eval/eval.ts -p mealdrop -a claude -e max      # claude with max effort
+ *   node eval/eval.ts -p mealdrop --manual          # prepare only, print instructions
  *   node eval/eval.ts --list-projects
  *   node eval/eval.ts --list-models
  *   node eval/eval.ts --list-prompts
  */
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
 import pc from 'picocolors';
@@ -28,7 +31,16 @@ import {
 } from './types.ts';
 import { AGENTS, PROJECTS } from './config.ts';
 import { runTrial } from './lib/run-trial.ts';
-import { createLogger, formatDuration, formatCost, listPrompts } from './lib/utils.ts';
+import { prepareTrial } from './lib/prepare-trial.ts';
+import {
+  createLogger,
+  formatDuration,
+  formatCost,
+  listPrompts,
+  loadPrompt,
+  generateTrialId,
+  captureEnvironment,
+} from './lib/utils.ts';
 
 // --- Helpers ---
 
@@ -41,12 +53,23 @@ function inferAgent(model: string): AgentId {
   throw new Error(`No agent found for model: ${model}`);
 }
 
+function buildManualCommand(variant: AgentVariant, promptPath: string): string {
+  const promptArg = `"$(cat ${promptPath})"`;
+  if (variant.agent === 'claude') {
+    const sdkModel = AGENTS.claude.sdkModelIds[variant.model] ?? variant.model;
+    return `claude --model ${sdkModel} ${promptArg}`;
+  }
+  // codex
+  return `codex --model ${variant.model} --reasoning-effort ${variant.effort} ${promptArg}`;
+}
+
 // --- CLI schema: base options + discriminated union on agent ---
 
 const base = {
   project: z.enum(PROJECT_NAMES).optional(),
   prompt: z.string().default('setup'),
   verbose: z.boolean().default(false),
+  manual: z.boolean().default(false),
   listProjects: z.boolean().default(false),
   listModels: z.boolean().default(false),
   listPrompts: z.boolean().default(false),
@@ -77,6 +100,7 @@ const { values } = parseArgs({
     effort: { type: 'string', short: 'e' },
     prompt: { type: 'string' },
     verbose: { type: 'boolean', short: 'v' },
+    manual: { type: 'boolean' },
     'list-projects': { type: 'boolean' },
     'list-models': { type: 'boolean' },
     'list-prompts': { type: 'boolean' },
@@ -144,25 +168,49 @@ logger.log(
   `Agent: ${variant.agent} | Model: ${variant.model} | Effort: ${variant.effort} | Prompt: ${args.prompt}\n`
 );
 
-const result = await runTrial(
-  { project, variant, prompt: args.prompt, verbose: args.verbose } satisfies TrialConfig,
-  logger
-);
+if (args.manual) {
+  // --- Manual mode: prepare only, print instructions ---
 
-// --- Print result ---
+  const trialId = generateTrialId(project.name, variant.agent, variant.model, args.prompt);
+  const workspace = await prepareTrial(project, trialId, logger);
+  await captureEnvironment(workspace.resultsDir);
 
-const ghost = result.grade.ghostStories;
-const ghostStr = ghost
-  ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)`
-  : '-';
+  const prompt = loadPrompt(args.prompt);
+  const promptPath = join(workspace.resultsDir, 'prompt.md');
+  await writeFile(promptPath, prompt);
 
-logger.log(pc.bold('\nResult'));
-logger.log(`  Build:   ${result.grade.buildSuccess ? pc.green('PASS') : pc.red('FAIL')}`);
-logger.log(`  Ghost:   ${ghostStr}`);
-logger.log(`  TS Err:  ${result.grade.typeCheckErrors}`);
-logger.log(`  Score:   ${result.score.score}`);
-logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
-logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
-logger.log(`  Turns:   ${result.execution.turns}`);
+  const cliCommand = buildManualCommand(variant, promptPath);
 
-logger.log('\nDone.');
+  logger.log(pc.bold('\n── Manual mode ──'));
+  logger.log(`\n  Trial dir:    ${pc.cyan(workspace.trialDir)}`);
+  logger.log(`  Project dir:  ${pc.cyan(workspace.projectPath)}`);
+  logger.log(`  Prompt file:  ${pc.cyan(promptPath)}`);
+  logger.log(pc.bold('\nRun the agent yourself:\n'));
+  logger.log(`  ${pc.green('cd')} ${workspace.projectPath}`);
+  logger.log(`  ${pc.green(cliCommand)}\n`);
+} else {
+  // --- Automatic mode: run trial end-to-end ---
+
+  const result = await runTrial(
+    { project, variant, prompt: args.prompt, verbose: args.verbose } satisfies TrialConfig,
+    logger
+  );
+
+  // --- Print result ---
+
+  const ghost = result.grade.ghostStories;
+  const ghostStr = ghost
+    ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)`
+    : '-';
+
+  logger.log(pc.bold('\nResult'));
+  logger.log(`  Build:   ${result.grade.buildSuccess ? pc.green('PASS') : pc.red('FAIL')}`);
+  logger.log(`  Ghost:   ${ghostStr}`);
+  logger.log(`  TS Err:  ${result.grade.typeCheckErrors}`);
+  logger.log(`  Score:   ${result.score.score}`);
+  logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
+  logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
+  logger.log(`  Turns:   ${result.execution.turns}`);
+
+  logger.log('\nDone.');
+}

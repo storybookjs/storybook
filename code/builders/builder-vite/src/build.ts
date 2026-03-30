@@ -93,7 +93,7 @@ export async function build(options: Options) {
   logger.info('Building storybook with Vite...');
 
   finalConfig.customLogger ??= await createViteLogger();
-  const result = 
+  const result = await viteBuild(finalConfig);
 
   if (finalConfig.build?.watch && 'on' in result) {
     const watcher = result as RollupWatcher;

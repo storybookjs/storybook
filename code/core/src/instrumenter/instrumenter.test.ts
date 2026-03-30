@@ -396,6 +396,60 @@ describe('Instrumenter', () => {
     );
   });
 
+  it('does not nest calls after an interceptable step into that step', async () => {
+    // Simulate the step function (intercept: true, async, takes a callback)
+    const { step } = instrument(
+      {
+        step: async (label: string, play: Function) => play(),
+      },
+      { intercept: true }
+    );
+
+    // Simulate waitFor (intercept: true, takes a callback, calls it synchronously)
+    const { waitFor } = instrument(
+      {
+        waitFor: (callback: Function) => callback(),
+      },
+      { intercept: true }
+    );
+
+    // Simulate an inner instrumented function (like expect().toHaveBeenCalledWith())
+    const { fn1, fn2 } = instrument({ fn1: () => {}, fn2: () => {} });
+
+    setRenderPhase('playing');
+
+    // step("label", async () => { fn1() })
+    await step('label', async () => {
+      fn1();
+    });
+
+    // waitFor(() => { fn2() }) — should NOT be nested inside step
+    waitFor(() => {
+      fn2();
+    });
+
+    // step itself should have ancestors: []
+    expect(mocks.callSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'step', ancestors: [] })
+    );
+    // fn1 inside step callback should have ancestors: [step_id]
+    const stepCall = mocks.callSpy.mock.calls.find((c: any) => c[0].method === 'step');
+    const stepCallId = stepCall![0].id;
+    expect(mocks.callSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'fn1', ancestors: [stepCallId] })
+    );
+    // waitFor should have ancestors: [] (NOT nested inside step)
+    expect(mocks.callSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'waitFor', ancestors: [] })
+    );
+    // fn2 inside waitFor callback should have ancestors: [waitFor_id] only
+    const waitForCall = mocks.callSpy.mock.calls.find((c: any) => c[0].method === 'waitFor');
+    const waitForCallId = waitForCall![0].id;
+    expect(mocks.callSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'fn2', ancestors: [waitForCallId] })
+    );
+  });
+
   it('instruments the call result to support chaining', () => {
     const { fn1 } = instrument({
       fn1: () => ({

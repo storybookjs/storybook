@@ -8,6 +8,9 @@
     "source.fixAll.oxc": "explicit"
   },
   "editor.formatOnSave": true,
+  "[mdx]": {
+    "editor.formatOnSave": false
+  },
   "editor.tabSize": 2,
   "eslint.options": {
     "cache": true,

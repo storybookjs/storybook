@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url';
 
 import { SupportedLanguage } from 'storybook/internal/types';
 
-const ENTRYPOINT_TEMPLATE_DIR = join(dirname(fileURLToPath(import.meta.url)), 'templates');
+const ENTRYPOINT_TEMPLATE_DIR = join(
+  dirname(fileURLToPath(import.meta.resolve('create-storybook/package.json'))),
+  'templates',
+  'react-native'
+);
 const RN_STORYBOOK_DIR = '.rnstorybook';
 
 export const getEntrypointExtension = (language: SupportedLanguage) => {

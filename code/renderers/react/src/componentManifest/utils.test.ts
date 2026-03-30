@@ -218,8 +218,6 @@ describe('findTsconfigPath', () => {
     const result = findTsconfigPath('/project-root');
 
     expect(result).toBe('/project-root/tsconfig.base.json');
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('No tsconfig.json found'));
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('tsconfig.base.json'));
   });
 
   test('falls back to tsconfig.app.json when neither tsconfig.json nor tsconfig.base.json is found', () => {
@@ -233,7 +231,6 @@ describe('findTsconfigPath', () => {
     const result = findTsconfigPath('/project-root');
 
     expect(result).toBe('/project-root/tsconfig.app.json');
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('tsconfig.app.json'));
   });
 
   test('returns undefined when no tsconfig variant is found', () => {

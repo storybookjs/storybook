@@ -1,4 +1,4 @@
-import type { AnyRootRoute, Router } from '@tanstack/react-router';
+import type { AnyRootRoute, AnyRoute, Router } from '@tanstack/react-router';
 import {
   createMemoryHistory,
   createRootRoute,
@@ -12,7 +12,7 @@ import React, { type ComponentType } from 'react';
 import type { RouteParameters, RouterParameters } from '../routing/types';
 import { useEffect } from 'storybook/internal/preview-api';
 import type { Navigate as _Navigate } from '@tanstack/react-router';
-import type { RootRoute } from '@tanstack/router-core';
+
 export type MockRouterOptions = {
   routeTree?: AnyRootRoute;
   initialPath?: string;
@@ -29,6 +29,7 @@ export function createStoryRoute(
       component: () => <Story />,
     });
 
+    // @ts-expect-error why createRoute returns a RootRoute ???
     return routeParameter;
   } else {
     // @ts-expect-error route options. HARD to make it work when spreading obj.

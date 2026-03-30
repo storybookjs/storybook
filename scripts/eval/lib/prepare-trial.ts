@@ -39,7 +39,7 @@ export async function prepareTrial(
       timeout: 120_000,
     });
     const projectPath = project.projectDir ? join(repoRoot, project.projectDir) : repoRoot;
-    await installDeps(projectPath, logger);
+    await installDeps(projectPath, logger, undefined, { stopAt: repoRoot });
     logger.logSuccess('Dependencies installed');
     logger.logStep('Caching for future runs...');
     await cp(repoRoot, cacheDir, { recursive: true });

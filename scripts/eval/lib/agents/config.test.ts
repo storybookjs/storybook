@@ -28,16 +28,13 @@ describe('AGENTS', () => {
     expect(AGENTS.codex).toMatchObject({
       defaultModel: 'gpt-5.4',
       defaultEffort: 'high',
-      pricing: Object.fromEntries(
-        AGENTS.codex.models.map((model) => [
-          model,
-          {
-            input: expect.any(Number),
-            cachedInput: expect.any(Number),
-            output: expect.any(Number),
-          },
-        ])
-      ),
+      pricing: {
+        'gpt-5.4': {
+          input: 2.5,
+          cachedInput: 0.25,
+          output: 15,
+        },
+      },
     });
   });
 });

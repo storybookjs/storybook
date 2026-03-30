@@ -87,7 +87,7 @@ export const AGENTS: Record<AgentId, AgentDefinition> = {
     defaultModel: 'gpt-5.4',
     sdkModelIds: {},
     pricing: {
-      'gpt-5.4': { input: 2.5, cachedInput: 0.625, output: 10.0 },
+      'gpt-5.4': { input: 2.5, cachedInput: 0.25, output: 15.0 },
     },
     efforts: CODEX_EFFORTS,
     defaultEffort: 'high',

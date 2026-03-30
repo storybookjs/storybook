@@ -166,6 +166,10 @@ const checkTargetBranch = () => {
   const author = danger.github.pr.user;
   const authorAssociation = danger.github.pr.author_association;
 
+  console.log('authorAssociation', authorAssociation);
+  console.log('author', author);
+  console.log(JSON.stringify(danger.github.pr, null, 2));
+
   // Only check for non-team members (not OWNER, MEMBER) and skip GitHub Actions bot
   if (
     ['OWNER', 'MEMBER'].includes(authorAssociation) ||
@@ -173,6 +177,8 @@ const checkTargetBranch = () => {
   ) {
     return;
   }
+
+  fail(JSON.stringify(danger.github.pr, null, 2));
 
   if (targetBranch === 'main' || targetBranch.includes('release')) {
     fail(

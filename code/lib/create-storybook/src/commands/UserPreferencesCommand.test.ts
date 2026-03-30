@@ -91,7 +91,15 @@ describe('UserPreferencesCommand', () => {
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(isCI).mockReturnValue(false);
 
+    // Reset isTTY to avoid leaking between tests
+    Object.defineProperty(process.stdout, 'isTTY', { value: undefined, configurable: true });
+
     vi.clearAllMocks();
+
+    // Re-apply mocks after clearAllMocks (which clears call history but not implementations,
+    // however mockResolvedValueOnce queues may leak between tests, so reset prompt mocks)
+    vi.mocked(prompt.select).mockReset();
+    vi.mocked(prompt.confirm).mockReset();
   });
 
   describe('execute', () => {
@@ -108,11 +116,22 @@ describe('UserPreferencesCommand', () => {
       expect(result.selectedFeatures).toContain('onboarding');
     });
 
+    it('should include AI feature by default in non-interactive mode', async () => {
+      const result = await command.execute({
+        framework: null,
+        builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+    });
+
     it('should prompt for new user in interactive mode', async () => {
       // Mock TTY
       Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup
 
       const result = await command.execute({
         framework: null,
@@ -136,6 +155,7 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // no AI setup
 
       const result = await command.execute({
         framework: null,
@@ -155,6 +175,7 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // no AI setup
 
       const result = await command.execute({
         framework: null,
@@ -171,6 +192,7 @@ describe('UserPreferencesCommand', () => {
       Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup
       const featureService = (command as unknown as CommandWithPrivates).featureService;
       vi.mocked(featureService.validateTestFeatureCompatibility).mockResolvedValue({
         compatible: true,
@@ -198,7 +220,9 @@ describe('UserPreferencesCommand', () => {
         compatible: false,
         reasons: ['React version is too old'],
       });
-      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // continue without test
+      vi.mocked(prompt.confirm)
+        .mockResolvedValueOnce(true) // continue without test
+        .mockResolvedValueOnce(true); // AI setup
 
       const result = await command.execute({
         framework: null,
@@ -209,6 +233,107 @@ describe('UserPreferencesCommand', () => {
       expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
       expect(result.selectedFeatures.has(Feature.DOCS)).toBe(true);
       expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
+    });
+  });
+
+  describe('AI setup prompt', () => {
+    it('should include AI feature when user accepts AI setup in interactive mode', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
+
+      const result = await command.execute({
+        framework: null,
+        builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(prompt.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining(
+            'Would you like to improve your Storybook setup with AI?'
+          ),
+        })
+      );
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+    });
+
+    it('should not include AI feature when user declines AI setup', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // AI setup: no
+
+      const result = await command.execute({
+        framework: null,
+        builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
+    });
+
+    it('should default AI to true when prompts are skipped (non-interactive)', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', { value: undefined, configurable: true });
+
+      const result = await command.execute({
+        framework: null,
+        builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(prompt.confirm).not.toHaveBeenCalled();
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+    });
+
+    it('should default AI to true when --yes flag is used', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+
+      const commandOptions: CommandOptions = {
+        packageManager: PackageManagerName.NPM,
+        disableTelemetry: true,
+        yes: true,
+      };
+      const yesCommand = new UserPreferencesCommand(commandOptions, mockPackageManager);
+
+      // Inject mocked services
+      (yesCommand as unknown as CommandWithPrivates).telemetryService = {
+        trackNewUserCheck: vi.fn(),
+        trackInstallType: vi.fn(),
+      };
+      (yesCommand as unknown as CommandWithPrivates).featureService = {
+        validateTestFeatureCompatibility: vi.fn().mockResolvedValue({ compatible: true }),
+      };
+
+      const result = await yesCommand.execute({
+        framework: null,
+        builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(prompt.confirm).not.toHaveBeenCalled();
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+    });
+
+    it('should include AI feature even with minimal install if user wants it', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+
+      vi.mocked(prompt.select)
+        .mockResolvedValueOnce(false) // not new user
+        .mockResolvedValueOnce('light'); // minimal install
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
+
+      const result = await command.execute({
+        framework: null,
+        builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+      // Other recommended features should NOT be present with light install
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
     });
   });
 });

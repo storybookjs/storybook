@@ -42,33 +42,31 @@ export class GitDiffProvider {
 
   async getChangedFiles(): Promise<GitDiffResult> {
     const repoRoot = await this.getRepoRoot();
+    const runGitCommand = async (args: string[]) => {
+      try {
+        return await execa('git', args, { cwd: repoRoot, stdio: 'pipe' });
+      } catch (error) {
+        throw this.toGitError(error, `git ${args.join(' ')}`);
+      }
+    };
 
-    try {
-      const [staged, unstaged, untracked] = await Promise.all([
-        execa('git', ['diff', '--name-only', '--diff-filter=d', '--cached'], {
-          cwd: repoRoot,
-          stdio: 'pipe',
-        }),
-        execa('git', ['diff', '--name-only', '--diff-filter=d'], {
-          cwd: repoRoot,
-          stdio: 'pipe',
-        }),
-        execa('git', ['ls-files', '--others', '--exclude-standard'], {
-          cwd: repoRoot,
-          stdio: 'pipe',
-        }),
-      ]);
+    const [staged, unstaged, untracked, stagedAdded] = await Promise.all([
+      runGitCommand(['diff', '--name-only', '--diff-filter=d', '--cached']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=d']),
+      runGitCommand(['ls-files', '--others', '--exclude-standard']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=A', '--cached']),
+    ]);
 
-      return {
-        changed: new Set([
-          ...parseChangedFiles(staged.stdout),
-          ...parseChangedFiles(unstaged.stdout),
-        ]),
-        new: parseChangedFiles(untracked.stdout),
-      };
-    } catch (error) {
-      throw this.toGitError(error, 'git diff');
-    }
+    return {
+      changed: new Set([
+        ...parseChangedFiles(staged.stdout),
+        ...parseChangedFiles(unstaged.stdout),
+      ]),
+      new: new Set([
+        ...parseChangedFiles(untracked.stdout),
+        ...parseChangedFiles(stagedAdded.stdout),
+      ]),
+    };
   }
 
   private toGitError(error: unknown, command: string): Error {

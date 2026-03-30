@@ -18,17 +18,14 @@ export function findAffectedStoryFiles(
 
   const visited = new Map<ModuleNode, number>();
   const queue = Array.from(startingNodes, (node) => ({ node, distance: 0 }));
+  let queueIndex = 0;
 
   startingNodes.forEach((node) => {
     visited.set(node, 0);
   });
 
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current) {
-      continue;
-    }
-
+  while (queueIndex < queue.length) {
+    const current = queue[queueIndex++];
     current.node.importers.forEach((importer) => {
       const distance = current.distance + 1;
       const previousDistance = visited.get(importer);

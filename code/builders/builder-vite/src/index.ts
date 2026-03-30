@@ -2,16 +2,20 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
+import { logger } from 'storybook/internal/node-logger';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Builder, Middleware, ModuleGraph, Options } from 'storybook/internal/types';
 
 import type { ViteDevServer } from 'vite';
 
+import {
+  NoStatsForViteDevError,
+  ViteModuleGraphSubscriptionError,
+} from '../../../core/src/server-errors';
 import { build as viteBuild } from './build';
 import type { ViteBuilder } from './types';
 import { createViteServer } from './vite-server';
 import { buildModuleGraph } from './utils/build-module-graph';
-import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 
 export { withoutVitePlugins } from './utils/without-vite-plugins';
 export { hasVitePlugins } from './utils/has-vite-plugins';
@@ -39,6 +43,14 @@ const listeners = new Set<(moduleGraph: ModuleGraph) => void>();
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let watcherChangeHandler: (() => void) | undefined;
 let waitForModuleGraph: ReturnType<typeof setInterval> | undefined;
+let moduleGraphRegistrationClosed = false;
+
+function clearModuleGraphPolling(): void {
+  if (waitForModuleGraph) {
+    clearInterval(waitForModuleGraph);
+    waitForModuleGraph = undefined;
+  }
+}
 
 function notifyListeners(moduleGraph: ModuleGraph): void {
   listeners.forEach((listener) => {
@@ -52,21 +64,23 @@ export async function bail(): Promise<void> {
     watcherChangeHandler = undefined;
   }
 
-  if (waitForModuleGraph) {
-    clearInterval(waitForModuleGraph);
-    waitForModuleGraph = undefined;
-  }
+  clearModuleGraphPolling();
 
   if (debounce) {
     clearTimeout(debounce);
     debounce = undefined;
   }
 
+  moduleGraphRegistrationClosed = false;
   listeners.clear();
   return server?.close();
 }
 
 export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphChange']> = (cb) => {
+  if (moduleGraphRegistrationClosed) {
+    throw new ViteModuleGraphSubscriptionError();
+  }
+
   listeners.add(cb);
 
   return () => {
@@ -85,17 +99,27 @@ const startChangeDetection = async (options: Options) => {
   );
 
   // Wait for the module graph to be ready by polling for it to be non-empty
-  waitForModuleGraph = setInterval(async () => {
-    if (!watcherChangeHandler || process.hrtime(startTime)[0] > 30) {
-      clearInterval(waitForModuleGraph);
-      waitForModuleGraph = undefined;
-    } else if (server.moduleGraph.fileToModulesMap.size > 0) {
-      clearInterval(waitForModuleGraph);
-      waitForModuleGraph = undefined;
-      await server.waitForRequestsIdle();
-      server.watcher.on('all', watcherChangeHandler);
-      watcherChangeHandler();
-    }
+  waitForModuleGraph = setInterval(() => {
+    void (async () => {
+      try {
+        if (!watcherChangeHandler || process.hrtime(startTime)[0] > 30) {
+          clearModuleGraphPolling();
+        } else if (server.moduleGraph.fileToModulesMap.size > 0) {
+          clearModuleGraphPolling();
+          await server.waitForRequestsIdle();
+          if (!watcherChangeHandler) {
+            return;
+          }
+
+          server.watcher.on('all', watcherChangeHandler);
+          watcherChangeHandler();
+        }
+      } catch (error) {
+        clearModuleGraphPolling();
+        logger.error('Failed to complete Vite change detection startup');
+        logger.error(error instanceof Error ? error : String(error));
+      }
+    })();
   }, 1000);
 };
 
@@ -105,6 +129,7 @@ export const start: ViteBuilder['start'] = async ({
   router,
   server: devServer,
 }) => {
+  moduleGraphRegistrationClosed = true;
   server = await createViteServer(options as Options, devServer);
 
   router.get('/iframe.html', iframeHandler(options as Options, server));
@@ -119,7 +144,11 @@ export const start: ViteBuilder['start'] = async ({
       }, 100);
     };
     // We intentionally don't await this. Cleanup happens in bail().
-    startChangeDetection(options);
+    void startChangeDetection(options).catch((error) => {
+      clearModuleGraphPolling();
+      logger.error('Failed to initialize Vite change detection');
+      logger.error(error instanceof Error ? error : String(error));
+    });
   }
 
   return {

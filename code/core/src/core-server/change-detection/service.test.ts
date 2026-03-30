@@ -4,14 +4,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { Builder, ModuleGraph, ModuleNode, StoryIndex } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { createStatusStore, UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store';
 import { MockUniversalStore } from '../../shared/universal-store/mock';
 import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index';
 import { ChangeDetectionFailureError } from './errors';
-import { CHANGE_DETECTION_STATUS_TYPE_ID, ChangeDetectionService } from './service';
+import { ChangeDetectionService } from './service';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+
+  return {
+    promise: new Promise<T>((fulfill) => {
+      resolve = fulfill;
+    }),
+    resolve,
+  };
+}
 
 function createModuleNode(file: string): ModuleNode {
   return {
@@ -306,6 +318,61 @@ describe('ChangeDetectionService', () => {
     });
     expect(logger.error).toHaveBeenCalledWith('Change detection failed: scan blew up');
     await service.dispose();
+  });
+
+  it('does not apply scan results or rerun after disposal', async () => {
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const buttonStory = createModuleNode('/repo/src/Button.stories.tsx');
+    const moduleGraph: ModuleGraph = new Map([
+      ['/repo/src/Button.stories.tsx', new Set([buttonStory])],
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const changedFilesDeferred = createDeferred<{
+      changed: Set<string>;
+      new: Set<string>;
+    }>();
+    const gitDiffProvider = {
+      getChangedFiles: vi.fn().mockImplementation(() => changedFilesDeferred.promise),
+      getRepoRoot: vi.fn().mockResolvedValue(workingDir),
+    };
+    const { builder, emit } = createBuilder();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      workingDir,
+      debounceMs: 0,
+    });
+
+    service.start(builder.onModuleGraphChange, true);
+    emit(moduleGraph);
+    await vi.advanceTimersByTimeAsync(0);
+    emit(moduleGraph);
+    await vi.advanceTimersByTimeAsync(0);
+    await service.dispose();
+
+    changedFilesDeferred.resolve({
+      changed: new Set(['src/Button.stories.tsx']),
+      new: new Set(),
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(gitDiffProvider.getChangedFiles).toHaveBeenCalledTimes(1);
+    expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({});
+    await expect(
+      Promise.race([
+        getChangeDetectionReadiness().then(() => 'resolved'),
+        Promise.resolve('pending'),
+      ])
+    ).resolves.toBe('pending');
   });
 
   it('prefers modified over affected when the same story is reached by multiple changed files', async () => {

@@ -73,7 +73,13 @@ function toRepoRelativePath(repoRoot: string, filePath: string): string {
   return relativePath.startsWith('\\\\?\\') ? relativePath : relativePath.replace(/\\/g, '/');
 }
 
+/**
+ * Coordinates change detection by listening to builder module-graph updates, resolving changed
+ * files from git, mapping those changes to affected stories, and publishing the resulting story
+ * statuses to the status store.
+ */
 export class ChangeDetectionService {
+  private disposed = false;
   private unsubscribe: (() => void) | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private latestModuleGraph: ModuleGraph | undefined;
@@ -82,6 +88,9 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private previousStatuses = new Map<string, Status>();
+  private readonly gitDiffProvider: Pick<GitDiffProvider, 'getChangedFiles' | 'getRepoRoot'>;
+  private readonly workingDir: string;
+  private readonly debounceMs: number;
 
   constructor(
     private readonly options: {
@@ -92,6 +101,9 @@ export class ChangeDetectionService {
       debounceMs?: number;
     }
   ) {
+    this.gitDiffProvider = options.gitDiffProvider ?? new GitDiffProvider(options.workingDir);
+    this.workingDir = options.workingDir ?? process.cwd();
+    this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
     resetChangeDetectionReadiness();
   }
 
@@ -120,12 +132,15 @@ export class ChangeDetectionService {
     logger.debug('Change detection enabled.');
     this.unsubscribe = onModuleGraphChange((moduleGraph) => {
       this.latestModuleGraph = moduleGraph;
-      this.scheduleScan(this.hasReceivedModuleGraph ? this.getDebounceMs() : 0);
+      this.scheduleScan(this.hasReceivedModuleGraph ? this.debounceMs : 0);
       this.hasReceivedModuleGraph = true;
     });
   }
 
   async dispose(): Promise<void> {
+    this.disposed = true;
+    this.rerunAfterCurrentScan = false;
+
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = undefined;
@@ -133,18 +148,6 @@ export class ChangeDetectionService {
 
     this.unsubscribe?.();
     this.unsubscribe = undefined;
-  }
-
-  private getGitDiffProvider(): Pick<GitDiffProvider, 'getChangedFiles' | 'getRepoRoot'> {
-    return this.options.gitDiffProvider ?? new GitDiffProvider(this.getWorkingDir());
-  }
-
-  private getWorkingDir(): string {
-    return this.options.workingDir ?? process.cwd();
-  }
-
-  private getDebounceMs(): number {
-    return this.options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
   }
 
   private scheduleScan(delayMs: number): void {
@@ -159,7 +162,7 @@ export class ChangeDetectionService {
   }
 
   private async scan(): Promise<void> {
-    if (!this.latestModuleGraph) {
+    if (this.disposed || !this.latestModuleGraph) {
       return;
     }
 
@@ -172,9 +175,17 @@ export class ChangeDetectionService {
 
     try {
       const nextStatuses = await this.buildStatuses(this.latestModuleGraph);
-      this.applyPatch(nextStatuses);
+      if (this.disposed) {
+        return;
+      }
+
+      this.applyStatusStorePatch(nextStatuses);
       this.resolveReadiness({ status: 'ready' });
     } catch (error) {
+      if (this.disposed) {
+        return;
+      }
+
       if (error instanceof ChangeDetectionUnavailableError) {
         logger.warn(`Change detection unavailable: ${error.message}`);
         this.resolveReadiness({
@@ -202,7 +213,7 @@ export class ChangeDetectionService {
     } finally {
       this.scanInFlight = false;
 
-      if (this.rerunAfterCurrentScan) {
+      if (!this.disposed && this.rerunAfterCurrentScan) {
         this.rerunAfterCurrentScan = false;
         void this.scan();
       }
@@ -210,10 +221,9 @@ export class ChangeDetectionService {
   }
 
   private async buildStatuses(moduleGraph: ModuleGraph): Promise<Map<string, Status>> {
-    const gitDiffProvider = this.getGitDiffProvider();
     const [changes, repoRoot, storyIndexGenerator] = await Promise.all([
-      gitDiffProvider.getChangedFiles(),
-      gitDiffProvider.getRepoRoot(),
+      this.gitDiffProvider.getChangedFiles(),
+      this.gitDiffProvider.getRepoRoot(),
       this.options.storyIndexGeneratorPromise,
     ]);
 
@@ -226,8 +236,7 @@ export class ChangeDetectionService {
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
 
     const storyIndex = await storyIndexGenerator.getIndex();
-    const workingDir = this.getWorkingDir();
-    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, workingDir);
+    const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {
@@ -271,7 +280,7 @@ export class ChangeDetectionService {
     return statuses;
   }
 
-  private applyPatch(nextStatuses: Map<string, Status>): void {
+  private applyStatusStorePatch(nextStatuses: Map<string, Status>): void {
     const removedStoryIds = Array.from(this.previousStatuses.keys()).filter(
       (storyId) => !nextStatuses.has(storyId)
     );

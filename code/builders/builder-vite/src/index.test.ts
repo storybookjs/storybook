@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
 import type { ModuleNode as StorybookModuleNode, Options } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
 import { bail, onModuleGraphChange, start } from './index';
 import { createViteServer } from './vite-server';
 
+vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./vite-server', { spy: true });
 
 type ViteModuleNodeLike = {
@@ -123,6 +125,7 @@ describe('onModuleGraphChange', () => {
     vi.useFakeTimers();
     fakeViteServer = createFakeViteServer();
     vi.mocked(createViteServer).mockResolvedValue(fakeViteServer);
+    vi.mocked(logger.error).mockImplementation(() => undefined);
   });
 
   afterEach(async () => {
@@ -293,5 +296,75 @@ describe('onModuleGraphChange', () => {
 
     expect(vi.getTimerCount()).toBe(0);
     expect(fakeViteServer.waitForRequestsIdle).not.toHaveBeenCalled();
+  });
+
+  it('rejects listeners registered after start', async () => {
+    await start(createStartArgs());
+
+    expect(() => onModuleGraphChange(vi.fn())).toThrow(
+      'Vite module graph listeners must be registered before the builder starts.'
+    );
+  });
+
+  it('does not reattach the watcher if bail runs while waiting for idle requests', async () => {
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
+
+    let resolveIdle: (() => void) | undefined;
+    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ]);
+    fakeViteServer.waitForRequestsIdle = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveIdle = resolve;
+        })
+    );
+
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await bail();
+    resolveIdle?.();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
+    expect(fakeViteServer.watcher.on).not.toHaveBeenCalledWith('all', expect.any(Function));
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('logs and swallows rejected startup work', async () => {
+    onModuleGraphChange(vi.fn());
+
+    const args = createStartArgs();
+    vi.mocked(args.options.presets.apply).mockResolvedValue({
+      getIndex: vi.fn().mockRejectedValue(new Error('index failed')),
+    } as never);
+
+    await expect(start(args)).resolves.toBeDefined();
+    await Promise.resolve();
+
+    expect(logger.error).toHaveBeenCalledWith('Failed to initialize Vite change detection');
+    expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'index failed' }));
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('logs polling failures and clears the interval', async () => {
+    onModuleGraphChange(vi.fn());
+    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ]);
+    fakeViteServer.waitForRequestsIdle = vi.fn().mockRejectedValue(new Error('idle failed'));
+
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(logger.error).toHaveBeenCalledWith('Failed to complete Vite change detection startup');
+    expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'idle failed' }));
+    expect(vi.getTimerCount()).toBe(0);
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
   });
 });

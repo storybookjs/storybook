@@ -9,7 +9,7 @@ import { Option, program } from 'commander';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
 import { initiate } from '../initiate';
-import { isAgent, detectAgent } from './detect-agent';
+import { isAgent, detectAgent } from 'std-env';
 
 addToGlobalContext('cliVersion', version);
 

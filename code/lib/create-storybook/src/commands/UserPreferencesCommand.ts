@@ -79,11 +79,15 @@ export class UserPreferencesCommand {
         ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
         : 'recommended';
 
+    // Ask about AI setup
+    const useAiForSetup = await this.promptAiSetup(skipPrompt);
+
     const selectedFeatures = this.determineFeatures(
       installType,
       newUser,
       isTestFeatureAvailable,
-      options.projectType
+      options.projectType,
+      useAiForSetup
     );
 
     return { newUser, selectedFeatures };
@@ -179,12 +183,25 @@ export class UserPreferencesCommand {
     return installType;
   }
 
+  /** Prompt user about AI-assisted Storybook setup */
+  private async promptAiSetup(skipPrompt: boolean): Promise<boolean> {
+    if (skipPrompt) {
+      return true;
+    }
+
+    return prompt.confirm({
+      message: dedent`Would you like to improve your Storybook setup with AI?
+      We will provide you with a prompt that you can use with your LLM to fully set up Storybook with best practices, tailored to your project.`,
+    });
+  }
+
   /** Determine features based on install type and user status */
   private determineFeatures(
     installType: InstallType,
     newUser: boolean,
     isTestFeatureAvailable: boolean,
-    projectType: ProjectType
+    projectType: ProjectType,
+    useAiForSetup: boolean
   ): Set<Feature> {
     const features = new Set<Feature>();
 
@@ -198,6 +215,11 @@ export class UserPreferencesCommand {
       if (newUser && FeatureCompatibilityService.supportsOnboarding(projectType)) {
         features.add(Feature.ONBOARDING);
       }
+    }
+
+    // If user has asked for AI setup, we provide the MCP addon
+    if (useAiForSetup) {
+      features.add(Feature.AI);
     }
 
     return features;

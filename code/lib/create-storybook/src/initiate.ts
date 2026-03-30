@@ -5,7 +5,8 @@ import {
   executeCommand,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
+import { Feature } from 'storybook/internal/types';
 
 import {
   executeAddonConfiguration,
@@ -22,6 +23,7 @@ import { registerAllGenerators } from './generators';
 import type { CommandOptions } from './generators/types';
 import { FeatureCompatibilityService } from './services/FeatureCompatibilityService';
 import { TelemetryService } from './services/TelemetryService';
+import { dedent } from 'ts-dedent';
 
 /**
  * Main entry point for Storybook initialization
@@ -111,9 +113,16 @@ export async function doInitiate(options: CommandOptions): Promise<
     storybookCommand,
   });
 
-  if (options.agent) {
-    const { aiInit } = await import('../../cli-storybook/src/ai');
-    await aiInit({ configDir: configDir ?? '.storybook' });
+  if (selectedFeatures.has(Feature.AI)) {
+    if (options.agent) {
+      const { aiInit } = await import('../../cli-storybook/src/ai');
+      await aiInit({ configDir: configDir ?? '.storybook' });
+    } else {
+      logger.step(
+        CLI_COLORS.storybook(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
+        Run \`npx storybook ai init\` and follow its instructions precisely.`)
+      );
+    }
   }
 
   // Step 9: Track telemetry

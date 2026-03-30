@@ -7,6 +7,54 @@ import { glob } from 'glob';
 
 import { getComponentComplexity } from './component-analyzer.ts';
 
+// A valid candidate includes React code and at least one export
+function isValidCandidate(source: string): boolean {
+  const ast = babelParse(source);
+
+  let hasJSX = false;
+  let hasExport = false;
+
+  traverse(ast, {
+    JSXElement(path) {
+      hasJSX = true;
+
+      if (hasExport) {
+        path.stop();
+      }
+    },
+    JSXFragment(path) {
+      hasJSX = true;
+
+      if (hasExport) {
+        path.stop();
+      }
+    },
+    ExportNamedDeclaration(path) {
+      hasExport = true;
+
+      if (hasJSX) {
+        path.stop();
+      }
+    },
+    ExportDefaultDeclaration(path) {
+      hasExport = true;
+
+      if (hasJSX) {
+        path.stop();
+      }
+    },
+    ExportAllDeclaration(path) {
+      hasExport = true;
+
+      if (hasJSX) {
+        path.stop();
+      }
+    },
+  });
+
+  return hasJSX && hasExport;
+}
+
 /**
  * Based on a list of files, analyze them to find potential candidates to generate story files for.
  * this is based on whether the file has JSX and exports and how many runtime LOC and imports it
@@ -146,52 +194,4 @@ export async function getComponentCandidates({
       globMatchCount,
     };
   }
-}
-
-// A valid candidate includes React code and at least one export
-function isValidCandidate(source: string): boolean {
-  const ast = babelParse(source);
-
-  let hasJSX = false;
-  let hasExport = false;
-
-  traverse(ast, {
-    JSXElement(path) {
-      hasJSX = true;
-
-      if (hasExport) {
-        path.stop();
-      }
-    },
-    JSXFragment(path) {
-      hasJSX = true;
-
-      if (hasExport) {
-        path.stop();
-      }
-    },
-    ExportNamedDeclaration(path) {
-      hasExport = true;
-
-      if (hasJSX) {
-        path.stop();
-      }
-    },
-    ExportDefaultDeclaration(path) {
-      hasExport = true;
-
-      if (hasJSX) {
-        path.stop();
-      }
-    },
-    ExportAllDeclaration(path) {
-      hasExport = true;
-
-      if (hasJSX) {
-        path.stop();
-      }
-    },
-  });
-
-  return hasJSX && hasExport;
 }

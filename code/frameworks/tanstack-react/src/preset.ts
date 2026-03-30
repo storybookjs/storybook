@@ -1,9 +1,13 @@
 import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
+
+const INTERCEPTED_PATTERNS = ['virtual:cloudflare', 'server-entry', 'worker-entry'];
+const INTERCEPTED_MODULES = ['@tanstack/react-start', '@tanstack/start-server-core'];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -22,8 +26,6 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
   ...entry,
   fileURLToPath(import.meta.resolve('@storybook/tanstack-react/preview')),
 ];
-
-export const optimizeViteDeps = [];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
   const reactConfig = await reactViteFinal(config, options);
@@ -48,8 +50,43 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
     );
   };
 
+  const stubPath = fileURLToPath(import.meta.resolve('./export-mocks/start.js'));
   const basePlugins = reactConfig.plugins ?? [];
-  const plugins = [...basePlugins.filter((plugin) => !isTanStackStartPlugin(plugin))];
+  const plugins = [
+    ...basePlugins.filter((p) => !isTanStackStartPlugin(p)),
+    {
+      name: 'tanstack-start-plugin-remover',
+      enforce: 'pre' as const,
+      resolveId: {
+        order: 'pre' as const,
+        handler(id: string, importer: string | undefined) {
+          // Intercept TanStack Start packages and sub-paths
+          for (const mod of INTERCEPTED_MODULES) {
+            if (id === mod || id.startsWith(`${mod}/`)) {
+              return stubPath;
+            }
+          }
+
+          // Intercept virtual/server/worker entries
+          for (const pattern of INTERCEPTED_PATTERNS) {
+            if (id.includes(pattern)) {
+              return stubPath;
+            }
+          }
+
+          return null;
+        },
+      },
+
+      config() {
+        return {
+          optimizeDeps: {
+            exclude: ['@storybook/tanstack-react'],
+          },
+        };
+      },
+    },
+  ];
 
   return {
     ...reactConfig,

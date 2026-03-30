@@ -28,15 +28,33 @@ export const getActualPackageVersion = async (packageName: string) => {
 export const getActualPackageJson = async (
   packageName: string
 ): Promise<PackageJson | undefined> => {
+  // Use a proper file URL as the resolution parent so that import.meta.resolve
+  // behaves consistently across Node.js and Vitest environments.
+  const parentUrl = pathToFileURL(process.cwd() + '/').href;
+
   try {
-    let resolvedPackageJsonPath = pkg.up({
-      cwd: fileURLToPath(import.meta.resolve(packageName, process.cwd())),
-    });
-    if (!resolvedPackageJsonPath) {
-      resolvedPackageJsonPath = import.meta.resolve(`${packageName}/package.json`, process.cwd());
+    // Resolve to a file URL that can be passed to import().
+    // We always store a file URL (not a plain path) so the final import() call is consistent.
+    let resolvedPackageJsonUrl: string | undefined;
+
+    try {
+      const filePath = pkg.up({
+        cwd: fileURLToPath(import.meta.resolve(packageName, parentUrl)),
+      });
+      if (filePath) {
+        resolvedPackageJsonUrl = pathToFileURL(filePath).href;
+      }
+    } catch {
+      // Primary resolution failed (e.g. package has no default "." export).
+      // Fall through to the package.json subpath fallback below.
     }
 
-    const { default: packageJson } = await import(pathToFileURL(resolvedPackageJsonPath).href, {
+    if (!resolvedPackageJsonUrl) {
+      // import.meta.resolve already returns a file URL string, so use it directly.
+      resolvedPackageJsonUrl = import.meta.resolve(`${packageName}/package.json`, parentUrl);
+    }
+
+    const { default: packageJson } = await import(resolvedPackageJsonUrl, {
       with: { type: 'json' },
     });
     return packageJson;

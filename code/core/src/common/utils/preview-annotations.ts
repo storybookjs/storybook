@@ -17,7 +17,9 @@ export function createPreviewAnnotations(
 
     return (input as string[])
       .concat([fileURLToPath(import.meta.resolve(`${packageName}/entry-preview`))])
-      .concat(extraEntries.map((entry) => fileURLToPath(import.meta.resolve(`${packageName}/${entry}`))))
+      .concat(
+        extraEntries.map((entry) => fileURLToPath(import.meta.resolve(`${packageName}/${entry}`)))
+      )
       .concat(
         docsEnabled ? [fileURLToPath(import.meta.resolve(`${packageName}/entry-preview-docs`))] : []
       );

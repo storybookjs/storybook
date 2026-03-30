@@ -11,6 +11,10 @@ const config: BuildEntries = {
         exportEntries: ['./preview'],
         entryPoint: './src/preview.tsx',
       },
+      {
+        exportEntries: ['./start'],
+        entryPoint: './src/export-mocks/start.ts',
+      },
     ],
     node: [
       {

@@ -235,7 +235,7 @@ When writing tests:
 
 After changing files:
 
-1. Format with `cd code && oxfmt`
+1. Format with `yarn fmt:write` (run from the repo root)
 2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 

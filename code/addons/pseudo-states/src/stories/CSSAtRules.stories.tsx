@@ -7,6 +7,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useChannel, useStoryContext } from 'storybook/preview-api';
 
 import { Button } from './CSSAtRules';
+import { createDynamicStylesPlay } from './dynamicStylesPlay';
 import './grid.css';
 import { PseudoStateGrid } from './PseudoStateGrid';
 
@@ -50,21 +51,7 @@ export const DynamicStyles: Story = {
   render: (args, context) => {
     return All.render!({ className: 'dynamic' }, context);
   },
-  play: async ({ id: storyId }) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // @ts-expect-error We're adding this nonstandard property below
-        if (globalThis[`__dynamicRuleInjected_${storyId}`]) {
-          return;
-        }
-        // @ts-expect-error We're adding this nonstandard property
-        globalThis[`__dynamicRuleInjected_${storyId}`] = true;
-        const sheet = Array.from(document.styleSheets).at(-1);
-        sheet?.insertRule(
-          '@layer foo { .dynamic.button:hover { background-color: tomato!important } }'
-        );
-        resolve();
-      }, 100);
-    });
-  },
+  play: createDynamicStylesPlay(
+    '@layer foo { .dynamic.button:hover { background-color: tomato!important } }'
+  ),
 };

@@ -9,7 +9,7 @@ In Storybook, your stories render in a particular “preview” iframe (also cal
 
 ## Running code for every story
 
-Code executed in the preview file (`.storybook/preview.js|ts`) runs for every story in your Storybook. This is useful for setting up global styles, initializing libraries, or anything else required to render your components.
+Code executed in the preview file (`.storybook/preview.jsx|tsx`) runs for every story in your Storybook. This is useful for setting up global styles, initializing libraries, or anything else required to render your components.
 
 <If notRenderer={['angular', 'vue']}>
   Here's an example of how you might use the preview file to initialize a library that must run before your components render:

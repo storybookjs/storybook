@@ -209,7 +209,7 @@ describe('get-new-story-file', () => {
 
   it('should create a new story file (CSF factory)', async () => {
     const configDir = join(__dirname, '.storybook');
-    const previewConfigPath = join(configDir, 'preview.ts');
+    const previewConfigPath = join(configDir, 'preview.tsx');
 
     vi.mocked(findConfigFile).mockReturnValue(
       previewConfigPath as unknown as ReturnType<typeof findConfigFile>

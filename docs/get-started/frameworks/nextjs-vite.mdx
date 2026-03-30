@@ -264,7 +264,7 @@ If your story imports components that use `next/navigation`, you need to set the
 
 {/* prettier-ignore-end */}
 
-If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.js|ts`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
+If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.jsx|tsx`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
 
 {/* prettier-ignore-start */}
 
@@ -438,9 +438,9 @@ export default function HomePage() {
 }
 ```
 
-Also OK for global styles in `.storybook/preview.js|ts`!
+Also OK for global styles in `.storybook/preview.jsx|tsx`!
 
-```js title=".storybook/preview.js|ts"
+```js title=".storybook/preview.jsx|tsx"
 import 'styles/globals.scss';
 
 // ...

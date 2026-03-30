@@ -51,7 +51,7 @@ Importantly, by specifying addons here, their types will be available throughout
 
 You will import the result of this function, `preview`, in your story files to define the component meta.
 
-```ts title=".storybook/preview.js|ts"
+```ts title=".storybook/preview.jsx|tsx"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonA11y from '@storybook/addon-a11y';
@@ -309,7 +309,7 @@ You must be using CSF 3 to automatically upgrade to CSF Next. If you are using C
 
 ### Manual
 
-You can also upgrade your project's story files to CSF Next manually. Before using CSF Next in a story file, you must upgrade your `.storybook/main.js|ts` and `.storybook/preview.js|ts` files.
+You can also upgrade your project's story files to CSF Next manually. Before using CSF Next in a story file, you must upgrade your `.storybook/main.js|ts` and `.storybook/preview.jsx|tsx` files.
 
 **1. Update your main Storybook config file**
 
@@ -331,7 +331,7 @@ Update your `.storybook/main.js|ts` file to use the new [`defineMain`](#definema
 **2. Update your preview config file**
 <a name="preview-addons" />
 
-Update your `.storybook/preview.js|ts` file to use the new [`definePreview`](#definepreview) function.
+Update your `.storybook/preview.jsx|tsx` file to use the new [`definePreview`](#definepreview) function.
 
 <details>
 <summary>Which addons should be specified in `preview`?</summary>
@@ -348,7 +348,7 @@ If an addon provides annotations (i.e. it distributes a `./preview` export), it 
 
 </details>
 
-```diff title=".storybook/preview.js|ts"
+```diff title=".storybook/preview.jsx|tsx"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 + import { definePreview } from '@storybook/your-framework';
 - import type { Preview } from '@storybook/your-framework';

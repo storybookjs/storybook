@@ -76,7 +76,7 @@ Internal exports include:
 ### Key flow
 
 - `.storybook/main.ts` is loaded at startup
-- `.storybook/preview.ts` is bundled into preview
+- `.storybook/preview.tsx` is bundled into preview
 - `.storybook/manager.ts` is bundled into manager
 - `*.stories.*` files are indexed by AST before runtime
 - Story selection loads the module, prepares the story, and renders it

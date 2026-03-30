@@ -1,4 +1,4 @@
-```js filename=".storybook/preview.js" renderer="vue" language="js"
+```js filename=".storybook/preview.jsx" renderer="vue" language="js"
 import { computed } from 'vue';
 
 export default {
@@ -23,7 +23,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
+```ts filename=".storybook/preview.tsx" renderer="vue" language="ts"
 import { computed } from 'vue';
 import type { Preview } from '@storybook/vue3-vite';
 

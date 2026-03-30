@@ -1,4 +1,4 @@
-```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
 import * as React from 'react';
 
 import { normal as NavigationNormal } from '../components/Navigation.stories';
@@ -17,7 +17,7 @@ const AppDecorator = (storyFn) => {
 export default { decorators: [AppDecorator] };
 ```
 
-```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import * as React from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
@@ -43,7 +43,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.js" renderer="solid" language="js"
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js"
 import { normal as NavigationNormal } from '../components/Navigation.stories';
 import GlobalContainerContext from '../components/lib/GlobalContainerContext';
 
@@ -59,7 +59,7 @@ const AppDecorator = (storyFn) => {
 export const decorators = [AppDecorator];
 ```
 
-```tsx filename=".storybook/preview.ts" renderer="solid" language="ts"
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts"
 import { normal as NavigationNormal } from '../components/Navigation.stories';
 import GlobalContainerContext from '../components/lib/GlobalContainerContext';
 
@@ -80,7 +80,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
@@ -106,7 +106,7 @@ export default definePreview({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)

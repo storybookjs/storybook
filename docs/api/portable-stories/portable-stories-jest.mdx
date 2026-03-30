@@ -172,7 +172,7 @@ sidebar:
   This API should be called once, before the tests run, typically in a [setup file](https://jestjs.io/docs/configuration#setupfiles-array). This will make sure that whenever `composeStories` or `composeStory` are called, the project annotations are taken into account as well.
 
   These are the configurations needed in the setup file:
-  - preview annotations: those defined in `.storybook/preview.ts`
+  - preview annotations: those defined in `.storybook/preview.tsx`
   - addon annotations (optional): those exported by addons
   - beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
 
@@ -184,7 +184,7 @@ sidebar:
 
   Sometimes a story can require an addon's [decorator](../../writing-stories/decorators.mdx) or [loader](../../writing-stories/loaders.mdx) to render properly. For example, an addon can apply a decorator that wraps your story in the necessary router context. In this case, you must include that addon's `preview` export in the project annotations set. See `addonAnnotations` in the example above.
 
-  Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.js|ts` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
+  Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.jsx|tsx` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
 
   If you need to configure Testing Library's `render` or use a different render function, please let us know in [this discussion](https://github.com/storybookjs/storybook/discussions/28532) so we can learn more about your needs.
 
@@ -202,7 +202,7 @@ sidebar:
 
   Type: `ProjectAnnotation | ProjectAnnotation[]`
 
-  A set of project [annotations](#annotations) (those defined in `.storybook/preview.js|ts`) or an array of sets of project annotations, which will be applied to all composed stories.
+  A set of project [annotations](#annotations) (those defined in `.storybook/preview.jsx|tsx`) or an array of sets of project annotations, which will be applied to all composed stories.
 
   ## Annotations
 
@@ -218,7 +218,7 @@ sidebar:
 
   ### 1. Apply project-level annotations
 
-  [Annotations](#annotations) come from the story itself, that story's component, and the project. The project-level annotations are those defined in your `.storybook/preview.js` file and by addons you're using. In portable stories, these annotations are not applied automatically — you must apply them yourself.
+  [Annotations](#annotations) come from the story itself, that story's component, and the project. The project-level annotations are those defined in your `.storybook/preview.jsx` file and by addons you're using. In portable stories, these annotations are not applied automatically — you must apply them yourself.
 
   👉 For this, you use the [`setProjectAnnotations`](#setprojectannotations) API.
 

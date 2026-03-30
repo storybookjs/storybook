@@ -85,7 +85,7 @@ By default, Storybook disables the [region rule](https://dequeuniversity.com/rul
 
 We’ll share examples to show how to use some of these configuration properties.
 
-Here, they are applied to all stories in a project, in `.storybook/preview.ts`:
+Here, they are applied to all stories in a project, in `.storybook/preview.tsx`:
 
 <CodeSnippets path="addon-a11y-config-in-preview.md" />
 
@@ -123,7 +123,7 @@ You can configure accessibility tests with the `parameters.a11y.test` [parameter
 | `'todo'`  | Run accessibility tests; violations return a warning in the Storybook UI                 |
 | `'error'` | Run accessibility tests; violations return a failing test in the Storybook UI and CLI/CI |
 
-Like other parameters, you can define it at the project level in `.storybook/preview.js|ts`, the component level in the meta (or default export) of the story file, or the individual story level. For example, to fail on accessibility tests for all stories in a file except one:
+Like other parameters, you can define it at the project level in `.storybook/preview.jsx|tsx`, the component level in the meta (or default export) of the story file, or the individual story level. For example, to fail on accessibility tests for all stories in a file except one:
 
 <CodeSnippets path="addon-a11y-parameter-example.md" />
 

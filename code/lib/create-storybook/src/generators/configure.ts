@@ -110,7 +110,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
   const { prefix: frameworkPrefix = '' } = options.frameworkPreviewParts || {};
   const isTypescript = options.language === SupportedLanguage.TYPESCRIPT;
 
-  const previewConfigPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
+  const previewConfigPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'tsx' : 'jsx'}`;
 
   // If the framework template included a preview then we have nothing to do
   if (await pathExists(previewConfigPath)) {

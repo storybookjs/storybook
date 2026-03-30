@@ -1,12 +1,11 @@
-// eslint-disable-next-line depend/ban-dependencies
-import fg from 'fast-glob';
+import { glob } from 'tinyglobby';
 import fs from 'node:fs/promises';
 
 /**
  * Recursively collects all .mdx files in the given docs directory.
  */
 export async function getMdxFiles(docsDir: string): Promise<string[]> {
-  return fg(['**/*.mdx'], { cwd: docsDir, absolute: true });
+  return glob(['**/*.mdx'], { cwd: docsDir, absolute: true });
 }
 
 /**

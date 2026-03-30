@@ -29,17 +29,6 @@ afterEach(() => {
   rmSync(TMP, { recursive: true, force: true });
 });
 
-function writeFile(relativePath: string, content: string) {
-  const fullPath = join(TMP, relativePath);
-  mkdirSync(join(fullPath, '..'), { recursive: true });
-  writeFileSync(fullPath, content);
-}
-
-async function findCandidates(cwd: string) {
-  const { candidates } = await getComponentCandidates({ cwd, sampleSize: 20 });
-  return candidates.map((c) => c.replace(cwd + '/', ''));
-}
-
 describe('grading helpers', () => {
   it('composes helper signals for a well-configured project', async () => {
     // Set up a realistic project with components and storybook config
@@ -175,3 +164,14 @@ describe('grading helpers', () => {
     ).toBe(1);
   });
 });
+
+function writeFile(relativePath: string, content: string) {
+  const fullPath = join(TMP, relativePath);
+  mkdirSync(join(fullPath, '..'), { recursive: true });
+  writeFileSync(fullPath, content);
+}
+
+async function findCandidates(cwd: string) {
+  const { candidates } = await getComponentCandidates({ cwd, sampleSize: 20 });
+  return candidates.map((c) => c.replace(cwd + '/', ''));
+}

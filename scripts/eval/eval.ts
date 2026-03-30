@@ -44,22 +44,6 @@ import {
 
 const PROJECT_NAMES = PROJECTS.map((p) => p.name) as [string, ...string[]];
 
-function inferAgent(model: string): AgentId {
-  for (const id of AGENT_IDS) {
-    if (AGENTS[id].models.includes(model)) return id;
-  }
-  throw new Error(`No agent found for model: ${model}`);
-}
-
-function buildManualCommand(variant: AgentVariant, promptPath: string): string {
-  const promptArg = `"$(cat ${promptPath})"`;
-  if (variant.agent === 'claude') {
-    const sdkModel = AGENTS.claude.sdkModelIds[variant.model] ?? variant.model;
-    return `claude --model ${sdkModel} ${promptArg}`;
-  }
-  return `codex --model ${variant.model} --reasoning-effort ${variant.effort} ${promptArg}`;
-}
-
 const base = {
   project: z.enum(PROJECT_NAMES).optional(),
   prompt: z.string().default('setup'),
@@ -194,4 +178,20 @@ if (args.manual) {
   logger.log(`  Turns:   ${result.execution.turns}`);
 
   logger.log('\nDone.');
+}
+
+function inferAgent(model: string): AgentId {
+  for (const id of AGENT_IDS) {
+    if (AGENTS[id].models.includes(model)) return id;
+  }
+  throw new Error(`No agent found for model: ${model}`);
+}
+
+function buildManualCommand(variant: AgentVariant, promptPath: string): string {
+  const promptArg = `"$(cat ${promptPath})"`;
+  if (variant.agent === 'claude') {
+    const sdkModel = AGENTS.claude.sdkModelIds[variant.model] ?? variant.model;
+    return `claude --model ${sdkModel} ${promptArg}`;
+  }
+  return `codex --model ${variant.model} --reasoning-effort ${variant.effort} ${promptArg}`;
 }

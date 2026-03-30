@@ -37,9 +37,6 @@ export function generateTrialId(project: string, agent: string, model: string, p
   return `${ts}-${project}-${agent}-${model}-${prompt}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-/** Strip ANSI escape codes for accurate width calculation. */
-const stripAnsi = (str: string) => str.replace(/\x1b\[[0-9;]*m/g, '');
-
 /** Format data as an aligned table with automatic column widths. */
 export function formatTable(headers: string[], rows: string[][]): string {
   const widths = headers.map((h, i) =>
@@ -96,4 +93,9 @@ export async function captureEnvironment(resultsDir: string): Promise<EvalEnviro
   const env: EvalEnvironment = { nodeVersion: process.version, evalBranch, evalCommit };
   await writeFile(join(resultsDir, 'environment.json'), JSON.stringify(env, null, 2));
   return env;
+}
+
+/** Strip ANSI escape codes for accurate width calculation. */
+function stripAnsi(str: string) {
+  return str.replace(/\x1b\[[0-9;]*m/g, '');
 }

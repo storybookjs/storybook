@@ -6,61 +6,6 @@ import {
   type TestRunSummary,
 } from './types.ts';
 
-/**
- * For a given list of test results:
- *
- * - Go through failures
- * - Categorize errors into categories
- * - Return structured data about the run, with categorized errors instead of the actual error
- *   messages
- */
-function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategorizationResult {
-  const failed = testResults.filter((r) => r.status === 'FAIL' && r.error);
-
-  // Map: category -> { count, uniqueErrors: Set<string>, matchedDependencies }
-  const map = new Map<
-    ErrorCategory,
-    { count: number; uniqueErrors: Set<string>; matchedDependencies: Set<string> }
-  >();
-
-  // To count unique error messages (by their message, not by category)
-  const uniqueErrorMessages = new Set<string>();
-
-  for (const r of failed) {
-    const { category, matchedDependencies } = categorizeError(r.error!, r.stack);
-
-    if (!map.has(category)) {
-      map.set(category, { count: 0, uniqueErrors: new Set(), matchedDependencies: new Set() });
-    }
-
-    const data = map.get(category)!;
-    data.count++;
-    matchedDependencies.forEach((dep) => data.matchedDependencies.add(dep));
-
-    // Use the full error message for unique error message counting
-    uniqueErrorMessages.add(r.error!);
-    data.uniqueErrors.add(r.error!);
-  }
-
-  const categorizedErrors = Array.from(map.entries()).reduce<Record<string, any>>(
-    (acc, [category, data]) => {
-      acc[category] = {
-        uniqueCount: data.uniqueErrors.size,
-        count: data.count,
-        matchedDependencies: Array.from(data.matchedDependencies).sort(),
-      };
-      return acc;
-    },
-    {}
-  );
-
-  return {
-    totalErrors: failed.length,
-    uniqueErrorCount: uniqueErrorMessages.size,
-    categorizedErrors,
-  };
-}
-
 /** Transform the Vitest test results to our expected format and return a TestRunSummary */
 export function parseVitestResults(report: any): TestRunSummary {
   // Transform the Vitest test results to our expected format
@@ -121,5 +66,60 @@ export function parseVitestResults(report: any): TestRunSummary {
       uniqueErrorCount: errorClassification.uniqueErrorCount,
       categorizedErrors,
     },
+  };
+}
+
+/**
+ * For a given list of test results:
+ *
+ * - Go through failures
+ * - Categorize errors into categories
+ * - Return structured data about the run, with categorized errors instead of the actual error
+ *   messages
+ */
+function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategorizationResult {
+  const failed = testResults.filter((r) => r.status === 'FAIL' && r.error);
+
+  // Map: category -> { count, uniqueErrors: Set<string>, matchedDependencies }
+  const map = new Map<
+    ErrorCategory,
+    { count: number; uniqueErrors: Set<string>; matchedDependencies: Set<string> }
+  >();
+
+  // To count unique error messages (by their message, not by category)
+  const uniqueErrorMessages = new Set<string>();
+
+  for (const r of failed) {
+    const { category, matchedDependencies } = categorizeError(r.error!, r.stack);
+
+    if (!map.has(category)) {
+      map.set(category, { count: 0, uniqueErrors: new Set(), matchedDependencies: new Set() });
+    }
+
+    const data = map.get(category)!;
+    data.count++;
+    matchedDependencies.forEach((dep) => data.matchedDependencies.add(dep));
+
+    // Use the full error message for unique error message counting
+    uniqueErrorMessages.add(r.error!);
+    data.uniqueErrors.add(r.error!);
+  }
+
+  const categorizedErrors = Array.from(map.entries()).reduce<Record<string, any>>(
+    (acc, [category, data]) => {
+      acc[category] = {
+        uniqueCount: data.uniqueErrors.size,
+        count: data.count,
+        matchedDependencies: Array.from(data.matchedDependencies).sort(),
+      };
+      return acc;
+    },
+    {}
+  );
+
+  return {
+    totalErrors: failed.length,
+    uniqueErrorCount: uniqueErrorMessages.size,
+    categorizedErrors,
   };
 }

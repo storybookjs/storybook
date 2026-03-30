@@ -45,14 +45,6 @@ const CodeWrapper = styled.div(({ theme }) => ({
   },
 }));
 
-const CodeSnippet = (props: ComponentProps<typeof SyntaxHighlighter>) => (
-  <ThemeProvider theme={convert(themes.dark)}>
-    <CodeWrapper>
-      <SyntaxHighlighter {...props} />
-    </CodeWrapper>
-  </ThemeProvider>
-);
-
 type ItemId = keyof (typeof initialState)['items'];
 
 export interface ChecklistData {
@@ -120,29 +112,6 @@ export interface ChecklistData {
     }[];
   }[];
 }
-
-const isExample = (id: string) =>
-  id.startsWith('example-') || id.startsWith('configure-your-project--');
-
-const subscribeToIndex: (
-  condition: (entries: Record<string, API_PreparedIndexEntry>) => boolean
-) => ChecklistData['sections'][number]['items'][number]['subscribe'] =
-  (condition) =>
-  ({ api, done }) => {
-    const check = () =>
-      condition(
-        Object.entries(api.getIndex()?.entries || {}).reduce(
-          (acc, [id, entry]) => (isExample(entry.id) ? acc : Object.assign(acc, { [id]: entry })),
-          {} as Record<string, API_PreparedIndexEntry>
-        )
-      );
-    if (check()) {
-      done();
-    } else {
-      api.once(PREVIEW_INITIALIZED, () => check() && done());
-      return api.on(STORY_INDEX_INVALIDATED, () => check() && done());
-    }
-  };
 
 export const checklistData = {
   sections: [
@@ -1272,3 +1241,37 @@ npm install @my/awesome-project
     },
   ],
 } as const satisfies ChecklistData;
+
+function CodeSnippet(props: ComponentProps<typeof SyntaxHighlighter>) {
+  return (
+    <ThemeProvider theme={convert(themes.dark)}>
+      <CodeWrapper>
+        <SyntaxHighlighter {...props} />
+      </CodeWrapper>
+    </ThemeProvider>
+  );
+}
+
+function isExample(id: string) {
+  return id.startsWith('example-') || id.startsWith('configure-your-project--');
+}
+
+function subscribeToIndex(
+  condition: (entries: Record<string, API_PreparedIndexEntry>) => boolean
+): ChecklistData['sections'][number]['items'][number]['subscribe'] {
+  return ({ api, done }) => {
+    const check = () =>
+      condition(
+        Object.entries(api.getIndex()?.entries || {}).reduce(
+          (acc, [id, entry]) => (isExample(entry.id) ? acc : Object.assign(acc, { [id]: entry })),
+          {} as Record<string, API_PreparedIndexEntry>
+        )
+      );
+    if (check()) {
+      done();
+    } else {
+      api.once(PREVIEW_INITIALIZED, () => check() && done());
+      return api.on(STORY_INDEX_INVALIDATED, () => check() && done());
+    }
+  };
+}

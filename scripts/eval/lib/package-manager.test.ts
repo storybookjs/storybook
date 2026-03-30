@@ -8,19 +8,6 @@ import { detectPackageManager, resolveInstallRoot } from './package-manager';
 
 const TEMP_DIRS: string[] = [];
 
-function createTempDir(name: string) {
-  const dir = join(tmpdir(), `storybook-eval-${name}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
-  mkdirSync(dir, { recursive: true });
-  TEMP_DIRS.push(dir);
-  return dir;
-}
-
-function writeFile(relativePath: string, root: string) {
-  const fullPath = join(root, relativePath);
-  mkdirSync(dirname(fullPath), { recursive: true });
-  writeFileSync(fullPath, '');
-}
-
 afterEach(() => {
   for (const dir of TEMP_DIRS.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
@@ -66,3 +53,19 @@ describe('resolveInstallRoot', () => {
     expect(resolveInstallRoot(projectDir, repoRoot)).toBe(projectDir);
   });
 });
+
+function createTempDir(name: string) {
+  const dir = join(
+    tmpdir(),
+    `storybook-eval-${name}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  );
+  mkdirSync(dir, { recursive: true });
+  TEMP_DIRS.push(dir);
+  return dir;
+}
+
+function writeFile(relativePath: string, root: string) {
+  const fullPath = join(root, relativePath);
+  mkdirSync(dirname(fullPath), { recursive: true });
+  writeFileSync(fullPath, '');
+}

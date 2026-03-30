@@ -41,34 +41,6 @@ interface CategorizationRule {
   match: (ctx: ErrorContext) => boolean;
 }
 
-// From a message and stack, return a context for each category matchers
-function buildErrorContext(message: string, stack?: string): ErrorContext {
-  const normalizedMessage = message.toLowerCase();
-  const normalizedStack = (stack ?? '').toLowerCase();
-
-  const stackDeps = new Set<string>();
-  const stackLines = normalizedStack.split('\n').filter(Boolean);
-
-  for (const line of stackLines) {
-    // Extracts any module name between '/deps/' and '.js'
-    // e.g. http://localhost:63315/node_modules/.cache/storybook/490ab5/sb-vitest/deps/@emotion/react.js:500:10
-    // would become '@emotion/react'
-    // NOTE this is Vite dependent for now.
-    const depMatch = line.match(/\/deps\/([^:]+)\.js/);
-    if (depMatch) {
-      stackDeps.add(depMatch[1]);
-    }
-  }
-
-  return {
-    message,
-    stack,
-    normalizedMessage,
-    normalizedStack,
-    stackDeps,
-  };
-}
-
 /**
  * Each rule is a category matcher with a priority. The higher the priority, the more specific the
  * rule is. For instance you might have an error message that matches two categories
@@ -216,21 +188,6 @@ export function categorizeError(
   return { category: rule.category, matchedDependencies };
 }
 
-function getMatchedDependencies(category: ErrorCategory, ctx: ErrorContext): string[] {
-  switch (category) {
-    case ERROR_CATEGORIES.MISSING_STATE_PROVIDER:
-      return Array.from(ctx.stackDeps).filter(isStateManagementPackage);
-    case ERROR_CATEGORIES.MISSING_ROUTER_PROVIDER:
-      return Array.from(ctx.stackDeps).filter(isRouterPackage);
-    case ERROR_CATEGORIES.MISSING_THEME_PROVIDER:
-      return Array.from(ctx.stackDeps).filter(isStylingPackage);
-    case ERROR_CATEGORIES.MISSING_TRANSLATION_PROVIDER:
-      return Array.from(ctx.stackDeps).filter(isI18nPackage);
-    default:
-      return [];
-  }
-}
-
 /** For a given category, return a description of the error for better legibility. */
 export function getCategoryDescription(category: ErrorCategory): string {
   switch (category) {
@@ -273,4 +230,47 @@ export function getCategoryDescription(category: ErrorCategory): string {
     default:
       return 'Error could not be categorized';
   }
+}
+
+function getMatchedDependencies(category: ErrorCategory, ctx: ErrorContext): string[] {
+  switch (category) {
+    case ERROR_CATEGORIES.MISSING_STATE_PROVIDER:
+      return Array.from(ctx.stackDeps).filter(isStateManagementPackage);
+    case ERROR_CATEGORIES.MISSING_ROUTER_PROVIDER:
+      return Array.from(ctx.stackDeps).filter(isRouterPackage);
+    case ERROR_CATEGORIES.MISSING_THEME_PROVIDER:
+      return Array.from(ctx.stackDeps).filter(isStylingPackage);
+    case ERROR_CATEGORIES.MISSING_TRANSLATION_PROVIDER:
+      return Array.from(ctx.stackDeps).filter(isI18nPackage);
+    default:
+      return [];
+  }
+}
+
+// From a message and stack, return a context for each category matchers
+function buildErrorContext(message: string, stack?: string): ErrorContext {
+  const normalizedMessage = message.toLowerCase();
+  const normalizedStack = (stack ?? '').toLowerCase();
+
+  const stackDeps = new Set<string>();
+  const stackLines = normalizedStack.split('\n').filter(Boolean);
+
+  for (const line of stackLines) {
+    // Extracts any module name between '/deps/' and '.js'
+    // e.g. http://localhost:63315/node_modules/.cache/storybook/490ab5/sb-vitest/deps/@emotion/react.js:500:10
+    // would become '@emotion/react'
+    // NOTE this is Vite dependent for now.
+    const depMatch = line.match(/\/deps\/([^:]+)\.js/);
+    if (depMatch) {
+      stackDeps.add(depMatch[1]);
+    }
+  }
+
+  return {
+    message,
+    stack,
+    normalizedMessage,
+    normalizedStack,
+    stackDeps,
+  };
 }

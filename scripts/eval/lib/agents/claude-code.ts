@@ -5,6 +5,58 @@ import { join } from 'node:path';
 import { AGENTS, type AgentDriver, type Execution } from './config.ts';
 import type { Logger } from '../utils.ts';
 
+const MAX_TURNS = 50;
+
+export const claudeAgent: AgentDriver = {
+  name: 'claude',
+
+  async execute({ prompt, projectPath, variant, resultsDir, logger }): Promise<Execution> {
+    const startTime = Date.now();
+    const { model } = variant;
+    const effort = variant.effort as 'low' | 'medium' | 'high' | 'max';
+    const sdkModel = AGENTS.claude.sdkModelIds[model] ?? model;
+
+    let cost: number | undefined;
+    let turns = 0;
+    let durationApi: number | undefined;
+    const messages: unknown[] = [];
+
+    for await (const message of query({
+      prompt,
+      options: {
+        model: sdkModel,
+        cwd: projectPath,
+        allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
+        maxTurns: MAX_TURNS,
+        effort,
+        debug: true,
+        systemPrompt: { type: 'preset', preset: 'claude_code' },
+      },
+    })) {
+      logMessage(message, logger);
+      messages.push(message);
+
+      if (message.type === 'result' && message.subtype === 'success') {
+        cost = message.total_cost_usd as number | undefined;
+        turns = (message.num_turns as number) ?? 0;
+        durationApi =
+          typeof message.duration_api_ms === 'number' ? message.duration_api_ms / 1000 : undefined;
+      }
+    }
+
+    const duration = (Date.now() - startTime) / 1000;
+
+    await writeFile(join(resultsDir, 'transcript.json'), JSON.stringify(messages, null, 2));
+
+    return {
+      cost,
+      duration,
+      durationApi,
+      turns,
+    };
+  },
+};
+
 function logMessage(message: SDKMessage, logger: Logger) {
   switch (message.type) {
     case 'assistant': {
@@ -71,55 +123,3 @@ function logMessage(message: SDKMessage, logger: Logger) {
       break;
   }
 }
-
-const MAX_TURNS = 50;
-
-export const claudeAgent: AgentDriver = {
-  name: 'claude',
-
-  async execute({ prompt, projectPath, variant, resultsDir, logger }): Promise<Execution> {
-    const startTime = Date.now();
-    const { model } = variant;
-    const effort = variant.effort as 'low' | 'medium' | 'high' | 'max';
-    const sdkModel = AGENTS.claude.sdkModelIds[model] ?? model;
-
-    let cost: number | undefined;
-    let turns = 0;
-    let durationApi: number | undefined;
-    const messages: unknown[] = [];
-
-    for await (const message of query({
-      prompt,
-      options: {
-        model: sdkModel,
-        cwd: projectPath,
-        allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
-        maxTurns: MAX_TURNS,
-        effort,
-        debug: true,
-        systemPrompt: { type: 'preset', preset: 'claude_code' },
-      },
-    })) {
-      logMessage(message, logger);
-      messages.push(message);
-
-      if (message.type === 'result' && message.subtype === 'success') {
-        cost = message.total_cost_usd as number | undefined;
-        turns = (message.num_turns as number) ?? 0;
-        durationApi =
-          typeof message.duration_api_ms === 'number' ? message.duration_api_ms / 1000 : undefined;
-      }
-    }
-
-    const duration = (Date.now() - startTime) / 1000;
-
-    await writeFile(join(resultsDir, 'transcript.json'), JSON.stringify(messages, null, 2));
-
-    return {
-      cost,
-      duration,
-      durationApi,
-      turns,
-    };
-  },
-};

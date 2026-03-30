@@ -49,47 +49,6 @@ afterEach(() => {
   rmSync(TMP, { recursive: true, force: true });
 });
 
-function setupMocks(overrides?: {
-  buildSuccess?: boolean;
-  typeCheckErrors?: number;
-  cost?: number;
-}) {
-  const { buildSuccess = true, typeCheckErrors = 0, cost = 0.42 } = overrides ?? {};
-
-  vi.mocked(prepareTrial).mockResolvedValue({
-    trialDir: TMP,
-    repoRoot: TMP,
-    projectPath: TMP,
-    resultsDir: join(TMP, 'results'),
-    baselineCommit: 'deadbeef',
-  });
-
-  vi.mocked(claudeAgent.execute).mockResolvedValue({
-    cost,
-    duration: 45.2,
-    turns: 12,
-  });
-
-  vi.mocked(grade).mockResolvedValue({
-    grade: {
-      buildSuccess,
-      typeCheckErrors,
-      fileChanges: [
-        { path: '.storybook/preview.tsx', status: 'A' },
-        { path: 'src/Button.stories.tsx', status: 'A' },
-      ],
-      storybookChanges: [
-        { path: '.storybook/preview.tsx', status: 'A' },
-        { path: 'src/Button.stories.tsx', status: 'A' },
-      ],
-    },
-    score: {
-      score: buildSuccess ? 1 : 0.3,
-      breakdown: { build: buildSuccess ? 1 : 0, typecheck: 1, ghostStories: 0, performance: 0 },
-    },
-  });
-}
-
 const baseConfig: TrialConfig = {
   project: { name: 'test-project', repo: 'https://github.com/test/repo', branch: 'main' },
   variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
@@ -231,3 +190,44 @@ describe('runTrial pipeline', () => {
     expect(callOrder).toEqual(['prepare', 'agent', 'grade']);
   });
 });
+
+function setupMocks(overrides?: {
+  buildSuccess?: boolean;
+  typeCheckErrors?: number;
+  cost?: number;
+}) {
+  const { buildSuccess = true, typeCheckErrors = 0, cost = 0.42 } = overrides ?? {};
+
+  vi.mocked(prepareTrial).mockResolvedValue({
+    trialDir: TMP,
+    repoRoot: TMP,
+    projectPath: TMP,
+    resultsDir: join(TMP, 'results'),
+    baselineCommit: 'deadbeef',
+  });
+
+  vi.mocked(claudeAgent.execute).mockResolvedValue({
+    cost,
+    duration: 45.2,
+    turns: 12,
+  });
+
+  vi.mocked(grade).mockResolvedValue({
+    grade: {
+      buildSuccess,
+      typeCheckErrors,
+      fileChanges: [
+        { path: '.storybook/preview.tsx', status: 'A' },
+        { path: 'src/Button.stories.tsx', status: 'A' },
+      ],
+      storybookChanges: [
+        { path: '.storybook/preview.tsx', status: 'A' },
+        { path: 'src/Button.stories.tsx', status: 'A' },
+      ],
+    },
+    score: {
+      score: buildSuccess ? 1 : 0.3,
+      breakdown: { build: buildSuccess ? 1 : 0, typecheck: 1, ghostStories: 0, performance: 0 },
+    },
+  });
+}

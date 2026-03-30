@@ -141,14 +141,6 @@ export function parseChangedFiles(gitOutput: string): FileChange[] {
     });
 }
 
-/** Truncate text to approximately maxChars, snapping to a line boundary. */
-function truncateEnd(text: string, maxChars: number): string {
-  if (text.length <= maxChars) return text;
-  const truncated = text.slice(-maxChars);
-  const firstNewline = truncated.indexOf('\n');
-  return firstNewline >= 0 ? truncated.slice(firstNewline + 1) : truncated;
-}
-
 export async function grade(
   workspace: TrialWorkspace,
   logger: Logger,
@@ -278,4 +270,12 @@ async function gradeGhostStories(
     logger.logError(`Ghost stories: ${error instanceof Error ? error.message : String(error)}`);
     return undefined;
   }
+}
+
+/** Truncate text to approximately maxChars, snapping to a line boundary. */
+function truncateEnd(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  const truncated = text.slice(-maxChars);
+  const firstNewline = truncated.indexOf('\n');
+  return firstNewline >= 0 ? truncated.slice(firstNewline + 1) : truncated;
 }

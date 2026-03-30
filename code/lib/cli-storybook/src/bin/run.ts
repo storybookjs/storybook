@@ -28,67 +28,6 @@ import { type UpgradeOptions, upgrade } from '../upgrade';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
-// Return a failed exit code but write the logs to a file first
-const handleCommandFailure =
-  (logFilePath: string | boolean | undefined) =>
-  async (error: unknown): Promise<never> => {
-    if (!(error instanceof HandledError)) {
-      logger.error(String(error));
-    }
-
-    try {
-      const logFile = await logTracker.writeToFile(logFilePath);
-      logger.log(`Debug logs are written to: ${logFile}`);
-    } catch {}
-    logger.outro('');
-    process.exit(1);
-  };
-
-const command = (name: string) =>
-  program
-    .command(name)
-    .option(
-      '--disable-telemetry',
-      'Disable sending telemetry data',
-      optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
-    )
-    .option('--debug', 'Get more logs in debug mode', false)
-    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
-    .option(
-      '--logfile [path]',
-      'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
-    )
-    .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
-    .hook('preAction', async (self) => {
-      const options = self.opts();
-      if (options.debug) {
-        logger.setLogLevel('debug');
-      }
-
-      if (options.loglevel) {
-        logger.setLogLevel(options.loglevel);
-      }
-
-      if (options.logfile) {
-        logTracker.enableLogWriting();
-      }
-
-      try {
-        await globalSettings();
-      } catch (e) {
-        logger.error('Error loading global settings:\n' + String(e));
-      }
-    })
-    .hook('postAction', async (command) => {
-      if (logTracker.shouldWriteLogsToFile) {
-        try {
-          const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
-          logger.log(`Debug logs are written to: ${logFile}`);
-        } catch {}
-        logger.outro(CLI_COLORS.success('Done!'));
-      }
-    });
-
 command('init')
   .description('Initialize Storybook into your project')
   .option('-f --force', 'Force add Storybook')
@@ -330,5 +269,67 @@ program.on('command:*', ([invalidCmd]) => {
   logger.error(errorMessage);
   process.exit(1);
 });
+
+function command(name: string) {
+  return program
+    .command(name)
+    .option(
+      '--disable-telemetry',
+      'Disable sending telemetry data',
+      optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
+    )
+    .option('--debug', 'Get more logs in debug mode', false)
+    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
+    .option(
+      '--logfile [path]',
+      'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
+    )
+    .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
+    .hook('preAction', async (self) => {
+      const options = self.opts();
+      if (options.debug) {
+        logger.setLogLevel('debug');
+      }
+
+      if (options.loglevel) {
+        logger.setLogLevel(options.loglevel);
+      }
+
+      if (options.logfile) {
+        logTracker.enableLogWriting();
+      }
+
+      try {
+        await globalSettings();
+      } catch (e) {
+        logger.error('Error loading global settings:\n' + String(e));
+      }
+    })
+    .hook('postAction', async (command) => {
+      if (logTracker.shouldWriteLogsToFile) {
+        try {
+          const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
+          logger.log(`Debug logs are written to: ${logFile}`);
+        } catch {}
+        logger.outro(CLI_COLORS.success('Done!'));
+      }
+    });
+}
+
+// Return a failed exit code but write the logs to a file first
+function handleCommandFailure(logFilePath: string | boolean | undefined) {
+  return async (error: unknown): Promise<never> => {
+    if (!(error instanceof HandledError)) {
+      logger.error(String(error));
+    }
+
+    try {
+      const logFile = await logTracker.writeToFile(logFilePath);
+      logger.log(`Debug logs are written to: ${logFile}`);
+    } catch {}
+    logger.outro('');
+    process.exit(1);
+  };
+}
 
 program.usage('<command> [options]').version(String(version)).parse(process.argv);

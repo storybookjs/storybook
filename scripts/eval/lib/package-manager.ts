@@ -16,12 +16,6 @@ const PACKAGE_MANAGER_MARKERS = {
   npm: ['package-lock.json', 'npm-shrinkwrap.json'],
 } as const;
 
-function hasAnyMarker(dir: string): boolean {
-  return Object.values(PACKAGE_MANAGER_MARKERS).some((files) =>
-    files.some((file) => existsSync(join(dir, file)))
-  );
-}
-
 /** Detect the package manager from lock files in a directory. */
 export function detectPackageManager(dir: string): string {
   if (PACKAGE_MANAGER_MARKERS.pnpm.some((file) => existsSync(join(dir, file)))) return 'pnpm';
@@ -61,22 +55,6 @@ export function resolveInstallRoot(dir: string, stopAt?: string): string {
   }
 }
 
-function getInstallArgs(pm: string, dir: string): [string, string[]] {
-  switch (pm) {
-    case 'pnpm':
-      return ['pnpm', ['install', '--no-frozen-lockfile']];
-    case 'yarn':
-      return [
-        'yarn',
-        existsSync(join(dir, '.yarnrc.yml')) ? ['install', '--no-immutable'] : ['install'],
-      ];
-    case 'bun':
-      return ['bun', ['install']];
-    default:
-      return ['npm', ['install', '--ignore-scripts']];
-  }
-}
-
 /** Install dependencies using the detected package manager. */
 export async function installDeps(
   dir: string,
@@ -96,4 +74,26 @@ export async function installDeps(
     timeout: 300_000,
     nodeOptions: { cwd: installRoot, ...(env && { env: env as NodeJS.ProcessEnv }) },
   });
+}
+
+function hasAnyMarker(dir: string): boolean {
+  return Object.values(PACKAGE_MANAGER_MARKERS).some((files) =>
+    files.some((file) => existsSync(join(dir, file)))
+  );
+}
+
+function getInstallArgs(pm: string, dir: string): [string, string[]] {
+  switch (pm) {
+    case 'pnpm':
+      return ['pnpm', ['install', '--no-frozen-lockfile']];
+    case 'yarn':
+      return [
+        'yarn',
+        existsSync(join(dir, '.yarnrc.yml')) ? ['install', '--no-immutable'] : ['install'],
+      ];
+    case 'bun':
+      return ['bun', ['install']];
+    default:
+      return ['npm', ['install', '--ignore-scripts']];
+  }
 }

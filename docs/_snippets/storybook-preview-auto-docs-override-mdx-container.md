@@ -1,4 +1,4 @@
-```jsx filename=".storybook/preview.jsx" renderer="common" language="js" tabTitle="CSF 3"
+```jsx filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
@@ -32,7 +32,7 @@ export default {
 };
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```tsx filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
@@ -148,7 +148,7 @@ export default definePreview({
 });
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
@@ -187,7 +187,7 @@ export default definePreview({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename=".storybook/preview.jsx" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```jsx filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
@@ -224,7 +224,7 @@ export default definePreview({
 });
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
@@ -261,7 +261,7 @@ export default definePreview({
 });
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
@@ -300,7 +300,7 @@ export default definePreview({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename=".storybook/preview.jsx" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```jsx filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 

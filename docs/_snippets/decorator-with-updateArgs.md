@@ -1,4 +1,4 @@
-```js filename=".storybook/preview.jsx" renderer="vue" language="js"
+```js filename=".storybook/preview.js" renderer="vue" language="js"
 import { useArgs } from 'storybook/preview-api';
 
 const WithIncrementDecorator = {
@@ -27,7 +27,7 @@ const WithIncrementDecorator = {
 };
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="vue" language="ts"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
 import { useArgs } from 'storybook/preview-api';
 import type { Meta, StoryObj } from '@storybook/vue3';
 

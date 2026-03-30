@@ -16,7 +16,7 @@ sidebar:
 
   ### Import bundled CSS (Recommended)
 
-  All Storybooks are pre-configured to recognize imports for CSS files. To add global CSS for all your stories, import it in [`.storybook/preview.tsx`](./index.mdx#configure-story-rendering). These files will be subject to HMR, so you can see your changes without restarting your Storybook server.
+  All Storybooks are pre-configured to recognize imports for CSS files. To add global CSS for all your stories, import it in [`.storybook/preview.ts|tsx`](./index.mdx#configure-story-rendering). These files will be subject to HMR, so you can see your changes without restarting your Storybook server.
 
   {/* prettier-ignore-start */}
 
@@ -95,9 +95,9 @@ sidebar:
 
   If you need webfonts to be available, you may need to add some code to the [`.storybook/preview-head.html`](./story-rendering.mdx#adding-to-head) file. We recommend including any assets with your Storybook if possible, in which case you likely want to configure the [static file location](./integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration).
 
-  ### `.storybook/preview.tsx`
+  ### `.storybook/preview.ts|tsx`
 
-  If you're using something like [`fontsource`](https://fontsource.org/) for your fonts, you can import the needed css files in your [`.storybook/preview.tsx`](./index.mdx#configure-story-rendering) file.
+  If you're using something like [`fontsource`](https://fontsource.org/) for your fonts, you can import the needed css files in your [`.storybook/preview.ts|tsx`](./index.mdx#configure-story-rendering) file.
 </If>
 
 {/* Angular only */}

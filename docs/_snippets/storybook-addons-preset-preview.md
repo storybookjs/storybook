@@ -1,4 +1,4 @@
-```js filename="example-addon/src/preview.jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="example-addon/src/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { PARAM_KEY } from './constants';
 
 import { CustomDecorator } from './decorators';
@@ -13,7 +13,7 @@ const preview = {
 export default preview;
 ```
 
-```ts filename="example-addon/src/preview.tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="example-addon/src/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 import type { Renderer, ProjectAnnotations } from 'storybook/internal/types';
 import { PARAM_KEY } from './constants';
 import { CustomDecorator } from './decorators';

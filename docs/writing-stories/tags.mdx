@@ -32,8 +32,8 @@ You're not limited to the built-in tags. Custom tags enable a flexible layer of 
 
 There are two ways to create a custom tag:
 
-1. Apply it to a story, component (meta), or project (preview.jsx|tsx) as described below.
-2. Define it in your Storybook configuration file (`.storybook/main.js|ts`) to provide more configuration options, like default [filter selection](#filtering-the-sidebar-by-tags).
+1. Apply it to a story, component (meta), or project (`.storybook/preview.*`) as described below.
+2. Define it in your Storybook configuration file (`.storybook/main.*`) to provide more configuration options, like default [filter selection](#filtering-the-sidebar-by-tags).
 
 For example, to define an "experimental" tag that is excluded by default in the sidebar, you can add this to your Storybook config:
 
@@ -47,7 +47,7 @@ You can also use the [`tags` configuration](../api/main-config/main-config-tags.
 
 A tag can be any static (i.e. not created dynamically) string, either the [built-in tags](#built-in-tags) or [custom tags](#custom-tags) of your own design. To apply tags to a story, assign an array of strings to the `tags` property. Tags may be applied at the project, component (meta), or story levels.
 
-For example, to apply the `autodocs` tag to all stories in your project, you can use `.storybook/preview.jsx|tsx`:
+For example, to apply the `autodocs` tag to all stories in your project, you can use `.storybook/preview.*`:
 
 {/* prettier-ignore-start */}
 
@@ -73,7 +73,7 @@ To remove a tag from a story, prefix it with `!`. For example:
 
 {/* prettier-ignore-end */}
 
-Tags can be removed for all stories in your project (in `.storybook/preview.jsx|tsx`), all stories for a component (in the CSF file meta), or a single story (as above).
+Tags can be removed for all stories in your project (in `.storybook/preview.*`), all stories for a component (in the CSF file meta), or a single story (as above).
 
 ## Filtering the sidebar by tags
 

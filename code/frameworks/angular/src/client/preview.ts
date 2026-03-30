@@ -33,7 +33,7 @@ import { type AngularRenderer } from './types';
  * @example
  *
  * ```ts
- * // .storybook/preview.tsx
+ * // .storybook/preview.ts
  * import { definePreview } from '@storybook/angular';
  *
  * export const preview = definePreview({

@@ -78,7 +78,7 @@ canvas.getAllByRole('listitem');
 
 If your components use the shadow DOM, you can query elements within a shadow root with the help of [`shadow-dom-testing-library`](https://github.com/konnorrogers/shadow-dom-testing-library), which provides versions of the queries above that can pierce the shadow boundary. For example, `findByRole` → `findByShadowRole`, `getByText` → `getByShadowText`, and so on.
 
-With a bit of configuration, you can use these queries in your play function. Add the following code to your `.storybook/preview.jsx|tsx` file:
+With a bit of configuration, you can use these queries in your play function. Add the following code to your `.storybook/preview.*` file:
 
 <CodeSnippets path="shadow-dom-testing-library-in-preview.md" />
 
@@ -219,7 +219,7 @@ There are two options for resetting state, `beforeAll` and `beforeEach`.
 
 #### `beforeAll`
 
-The `beforeAll` function in the preview file (`.storybook/preview.jsx|tsx`) will run once before any stories in the project and will _not_ re-run between stories. Beyond its initial run when kicking off a test run, it will not run again unless the preview file is updated. This is a good place to bootstrap your project or run any setup that your entire project depends on, as in the example below.
+The `beforeAll` function in the preview file (`.storybook/preview.*`) will run once before any stories in the project and will _not_ re-run between stories. Beyond its initial run when kicking off a test run, it will not run again unless the preview file is updated. This is a good place to bootstrap your project or run any setup that your entire project depends on, as in the example below.
 
 You can return a cleanup function from the `beforeAll` function, which will run before re-running the `beforeAll` function or during the teardown process in the test runner.
 
@@ -227,7 +227,7 @@ You can return a cleanup function from the `beforeAll` function, which will run 
 
 #### `beforeEach`
 
-Unlike `beforeAll`, which runs only once, the `beforeEach` function in the preview file (`.storybook/preview.jsx|tsx`) will run before each story in the project. This is best used for resetting state or modules that are used by all or most of your stories. In the example below, we use it to reset the mocked Date.
+Unlike `beforeAll`, which runs only once, the `beforeEach` function in the preview file (`.storybook/preview.*`) will run before each story in the project. This is best used for resetting state or modules that are used by all or most of your stories. In the example below, we use it to reset the mocked Date.
 
 You can return a cleanup function from the `beforeEach` function, which will run **after** each story, when the story is remounted or navigated away from.
 
@@ -245,7 +245,7 @@ Sometimes, you may need to make assertions or run code after the component has b
 
 #### `afterEach`
 
-`afterEach` runs after the story is rendered and the play function has completed. It can be used at the project level in the preview file (`.storybook/preview.jsx|tsx`), at the component level in the component meta, or at the story level in the story definition. This is useful for making assertions after the component has been rendered and interacted with, such as running checks on the final rendered output or logging information.
+`afterEach` runs after the story is rendered and the play function has completed. It can be used at the project level in the preview file (`.storybook/preview.*`), at the component level in the component meta, or at the story level in the story definition. This is useful for making assertions after the component has been rendered and interacted with, such as running checks on the final rendered output or logging information.
 
 Like the `play` function, `afterEach` receives the `context` object, which contains the `args`, `canvas`, and other properties related to the story. You can use this to make assertions or run code after the story has been rendered.
 

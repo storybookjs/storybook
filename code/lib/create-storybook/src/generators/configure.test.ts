@@ -3,7 +3,7 @@ import * as fsp from 'node:fs/promises';
 
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { Feature, SupportedLanguage } from 'storybook/internal/types';
+import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -146,11 +146,12 @@ describe('configureMain', () => {
 });
 
 describe('configurePreview', () => {
-  it('should generate preview.jsx', async () => {
+  it('should generate preview.jsx for react-like renderers', async () => {
     await configurePreview({
       language: SupportedLanguage.JAVASCRIPT,
       storybookConfigFolder: '.storybook',
       frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.REACT_NATIVE,
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -174,11 +175,26 @@ describe('configurePreview', () => {
     `);
   });
 
-  it('should generate preview.tsx', async () => {
+  it('should generate preview.js for non-react renderers', async () => {
+    await configurePreview({
+      language: SupportedLanguage.JAVASCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.VUE3,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [previewConfigPath] = calls[0];
+
+    expect(previewConfigPath).toEqual('./.storybook/preview.js');
+  });
+
+  it('should generate preview.tsx for TypeScript and react-like renderers', async () => {
     await configurePreview({
       language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
       frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.PREACT,
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -203,12 +219,27 @@ describe('configurePreview', () => {
     `);
   });
 
+  it('should generate preview.ts for TypeScript and non-react renderers', async () => {
+    await configurePreview({
+      language: SupportedLanguage.TYPESCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.ANGULAR,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [previewConfigPath] = calls[0];
+
+    expect(previewConfigPath).toEqual('./.storybook/preview.ts');
+  });
+
   it('should not do anything if the framework template already included a preview', async () => {
     vi.mocked(fsp.stat).mockResolvedValueOnce({} as Stats);
     await configurePreview({
       language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
       frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.NUXT,
     });
     expect(fsp.writeFile).not.toHaveBeenCalled();
   });
@@ -225,6 +256,7 @@ describe('configurePreview', () => {
         setCompodocJson(docJson);
       `,
       },
+      renderer: SupportedRenderer.SVELTE,
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;

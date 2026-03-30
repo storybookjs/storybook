@@ -1,4 +1,4 @@
-```js filename=".storybook/preview.jsx" renderer="web-components" language="js"
+```js filename=".storybook/preview.js" renderer="web-components" language="js"
 import { setCustomElementsManifest } from '@storybook/web-components-vite';
 
 import customElements from '../custom-elements.json';
@@ -17,7 +17,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="web-components" language="ts"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts"
 import type { Preview } from '@storybook/web-components-vite';
 
 import { setCustomElementsManifest } from '@storybook/web-components-vite';
@@ -40,7 +40,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview, setCustomElementsManifest } from '@storybook/web-components-vite';
 
 import customElements from '../custom-elements.json';
@@ -61,7 +61,7 @@ export default definePreview({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename=".storybook/preview.jsx" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview, setCustomElementsManifest } from '@storybook/web-components-vite';
 
 import customElements from '../custom-elements.json';

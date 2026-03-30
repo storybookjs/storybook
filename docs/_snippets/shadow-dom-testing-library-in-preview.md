@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.tsx" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Preview } from '@storybook/web-components-vite';
 
 import { within as withinShadow } from 'shadow-dom-testing-library';
@@ -22,7 +22,7 @@ declare module 'storybook/internal/csf' {
 export default preview;
 ```
 
-```js filename=".storybook/preview.jsx" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { within as withinShadow } from 'shadow-dom-testing-library';
 
 export default {
@@ -34,7 +34,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 
 import { within as withinShadow } from 'shadow-dom-testing-library';
@@ -58,7 +58,7 @@ export default definePreview({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename=".storybook/preview.jsx" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 
 import { within as withinShadow } from 'shadow-dom-testing-library';

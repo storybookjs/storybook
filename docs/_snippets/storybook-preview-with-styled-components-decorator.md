@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.tsx" renderer="angular" language="ts"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts"
 import { type Preview, componentWrapperDecorator } from '@storybook/angular';
 
 import { ThemeProvider } from './theme-provider.component';
@@ -26,7 +26,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="vue" language="ts" tabTitle="Preview"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="Preview"
 import { type Preview, setup } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';
@@ -79,7 +79,7 @@ export default preview;
 </script>
 ```
 
-```js filename=".storybook/preview.jsx" renderer="vue" language="js" tabTitle="Preview"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="Preview"
 import { setup } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';
@@ -140,7 +140,7 @@ export default preview;
 </script>
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="svelte" language="ts" tabTitle="Preview"
+```ts filename=".storybook/preview.ts" renderer="svelte" language="ts" tabTitle="Preview"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Preview } from '@storybook/your-framework';
 
@@ -183,7 +183,7 @@ export default preview;
 </BitsConfig>
 ```
 
-```js filename=".storybook/preview.jsx" renderer="svelte" language="js" tabTitle="Preview"
+```js filename=".storybook/preview.js" renderer="svelte" language="js" tabTitle="Preview"
 import ThemeProvider from './ThemeProvider.svelte';
 
 const preview = {
@@ -218,7 +218,7 @@ export default preview;
 </BitsConfig>
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="web-components" language="ts" tabTitle="Preview (CSF 3)"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 3)"
 import { html } from 'lit';
 
 import type { Preview } from '@storybook/web-components-vite';
@@ -260,7 +260,7 @@ export class ThemeProvider extends LitElement {
 }
 ```
 
-```js filename=".storybook/preview.jsx" renderer="web-components" language="js" tabTitle="Preview (CSF 3)"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="Preview (CSF 3)"
 import { html } from 'lit';
 
 const preview = {
@@ -307,7 +307,7 @@ if (!customElements.get('theme-provider')) {
 }
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
 import { html } from 'lit';
 
 import { definePreview } from '@storybook/web-components-vite';
@@ -323,7 +323,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
 import { html } from 'lit';
 
 import { definePreview } from '@storybook/web-components-vite';
@@ -378,7 +378,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.jsx" renderer="solid" language="js"
+```jsx filename=".storybook/preview.js" renderer="solid" language="js"
 import { ThemeProvider } from 'solid-styled-components';
 
 const theme = {
@@ -396,7 +396,7 @@ export const decorators = [
 ];
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts"
+```tsx filename=".storybook/preview.ts" renderer="solid" language="ts"
 import type { Preview } from 'storybook-solidjs-vite';
 
 import { ThemeProvider, DefaultTheme } from 'solid-styled-components';
@@ -462,7 +462,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';
@@ -497,7 +497,7 @@ export default definePreview({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename=".storybook/preview.jsx" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';

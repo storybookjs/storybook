@@ -34,6 +34,66 @@ export function slugify(text: string): string {
     .replace(/^-|-$/g, ''); // Trim leading/trailing hyphens
 }
 
+export type LineContext = 'frontmatter' | 'codeblock' | 'content';
+
+/**
+ * Returns a per-line context array indicating whether each line is inside
+ * frontmatter, a fenced code block, or normal content.
+ */
+export function getLineContexts(lines: string[]): LineContext[] {
+  const contexts: LineContext[] = [];
+  let inFrontmatter = false;
+  let frontmatterSeen = false;
+  let inCodeBlock = false;
+  let openFenceLen = 0;
+  let openFenceChar = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (!frontmatterSeen && !inFrontmatter && i === 0 && line.trim() === '---') {
+      inFrontmatter = true;
+      contexts.push('frontmatter');
+      continue;
+    }
+    if (inFrontmatter) {
+      if (line.trim() === '---') {
+        inFrontmatter = false;
+        frontmatterSeen = true;
+      }
+      contexts.push('frontmatter');
+      continue;
+    }
+
+    const fenceMatch = line.match(/^(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      if (!inCodeBlock) {
+        inCodeBlock = true;
+        openFenceLen = fenceMatch[1].length;
+        openFenceChar = fenceMatch[1][0];
+        contexts.push('codeblock');
+        continue;
+      } else if (
+        fenceMatch[1][0] === openFenceChar &&
+        fenceMatch[1].length >= openFenceLen &&
+        line.trim() === fenceMatch[1]
+      ) {
+        inCodeBlock = false;
+        contexts.push('codeblock');
+        continue;
+      }
+    }
+    if (inCodeBlock) {
+      contexts.push('codeblock');
+      continue;
+    }
+
+    contexts.push('content');
+  }
+
+  return contexts;
+}
+
 /**
  * Extracts all heading slugs from an MDX file.
  * Returns a Set of slug strings (without the leading #).

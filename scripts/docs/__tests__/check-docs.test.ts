@@ -7,6 +7,13 @@ import {
   checkCodeSnippetPaths,
   checkDeprecatedIfRenderer,
   checkCalloutVariant,
+  checkNoBodyH1,
+  checkHeadingHierarchy,
+  checkCalloutVariantPositive,
+  checkCalloutIconMismatch,
+  checkFrontmatterQuotes,
+  checkRedundantSidebarTitle,
+  checkBareUrls,
   runAllChecks,
 } from '../check-docs';
 
@@ -126,7 +133,10 @@ describe('check-docs', () => {
 
   describe('checkCalloutVariant', () => {
     it('passes for <Callout variant="info">', async () => {
-      await writeFile(path.join(docsDir, 'foo.mdx'), '<Callout variant="info">\n\nContent\n\n</Callout>');
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '<Callout variant="info">\n\nContent\n\n</Callout>'
+      );
       const errors = await checkCalloutVariant(docsDir);
       expect(errors).toEqual([]);
     });
@@ -137,18 +147,210 @@ describe('check-docs', () => {
       expect(errors[0].message).toContain('missing variant prop');
     });
     it('errors for <Callout icon="💡"> without variant', async () => {
-      await writeFile(path.join(docsDir, 'foo.mdx'), '<Callout icon="💡">\n\nContent\n\n</Callout>');
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '<Callout icon="💡">\n\nContent\n\n</Callout>'
+      );
       const errors = await checkCalloutVariant(docsDir);
       expect(errors.length).toBe(1);
       expect(errors[0].message).toContain('missing variant prop');
     });
   });
 
+  describe('checkNoBodyH1', () => {
+    it('passes when no H1 in body', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '---\ntitle: Foo\n---\n\n## Section');
+      const errors = await checkNoBodyH1(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for H1 in body', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '---\ntitle: Foo\n---\n\n# Bad heading');
+      const errors = await checkNoBodyH1(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('H1 heading found in body');
+    });
+    it('ignores H1 inside code blocks', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\n```md\n# This is fine\n```'
+      );
+      const errors = await checkNoBodyH1(docsDir);
+      expect(errors).toEqual([]);
+    });
+  });
+
+  describe('checkHeadingHierarchy', () => {
+    it('passes for sequential heading levels', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\n## H2\n\n### H3\n\n#### H4'
+      );
+      const errors = await checkHeadingHierarchy(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors when skipping heading levels', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '---\ntitle: Foo\n---\n\n## H2\n\n#### H4');
+      const errors = await checkHeadingHierarchy(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('jumped from H2 to H4');
+    });
+    it('ignores headings inside code blocks', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\n## H2\n\n```md\n#### H4\n```\n\n### H3'
+      );
+      const errors = await checkHeadingHierarchy(docsDir);
+      expect(errors).toEqual([]);
+    });
+  });
+
+  describe('checkCalloutVariantPositive', () => {
+    it('passes for standard variants', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '<Callout variant="info">\n\nContent\n\n</Callout>'
+      );
+      const errors = await checkCalloutVariantPositive(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for variant="positive"', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '<Callout variant="positive">\n\nContent\n\n</Callout>'
+      );
+      const errors = await checkCalloutVariantPositive(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('variant="positive"');
+    });
+  });
+
+  describe('checkCalloutIconMismatch', () => {
+    it('passes for ⚠️ with variant="warning"', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '<Callout variant="warning" icon="⚠️">\n\nContent\n\n</Callout>'
+      );
+      const errors = await checkCalloutIconMismatch(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for ⚠️ with variant="info"', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '<Callout variant="info" icon="⚠️">\n\nContent\n\n</Callout>'
+      );
+      const errors = await checkCalloutIconMismatch(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('⚠️');
+    });
+  });
+
+  describe('checkFrontmatterQuotes', () => {
+    it('passes for unquoted title', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '---\ntitle: My page\n---\n\nContent');
+      const errors = await checkFrontmatterQuotes(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('passes for quoted title with special characters', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '---\ntitle: "Props & Args"\n---\n\nContent');
+      const errors = await checkFrontmatterQuotes(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for unnecessarily quoted title', async () => {
+      await writeFile(path.join(docsDir, 'foo.mdx'), '---\ntitle: "ArgTypes"\n---\n\nContent');
+      const errors = await checkFrontmatterQuotes(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('unnecessarily quoted');
+    });
+  });
+
+  describe('checkRedundantSidebarTitle', () => {
+    it('passes when sidebar.title differs from title', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Component Story Format (CSF)\nsidebar:\n  title: CSF\n---\n\nContent'
+      );
+      const errors = await checkRedundantSidebarTitle(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors when sidebar.title matches title', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: ArgTypes\nsidebar:\n  title: ArgTypes\n---\n\nContent'
+      );
+      const errors = await checkRedundantSidebarTitle(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('Redundant sidebar.title');
+    });
+    it('passes when no sidebar.title exists', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: ArgTypes\nsidebar:\n  order: 1\n---\n\nContent'
+      );
+      const errors = await checkRedundantSidebarTitle(docsDir);
+      expect(errors).toEqual([]);
+    });
+  });
+
+  describe('checkBareUrls', () => {
+    it('passes for URLs in markdown link syntax', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\n[link](https://example.com)'
+      );
+      const errors = await checkBareUrls(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for bare URLs in prose', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\nVisit https://example.com for details.'
+      );
+      const errors = await checkBareUrls(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('Bare URL');
+    });
+    it('ignores URLs in code blocks', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\n```\nhttps://example.com\n```'
+      );
+      const errors = await checkBareUrls(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('ignores URLs in backticks', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\nRun `https://example.com` in browser.'
+      );
+      const errors = await checkBareUrls(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('ignores URLs in import statements', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\nimport Foo from "https://example.com"'
+      );
+      const errors = await checkBareUrls(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('ignores URLs in JSX props', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '---\ntitle: Foo\n---\n\n<Video src="https://example.com/video.mp4" />'
+      );
+      const errors = await checkBareUrls(docsDir);
+      expect(errors).toEqual([]);
+    });
+  });
+
   describe('runAllChecks', () => {
     it('passes for clean docs', async () => {
-      await writeFile(path.join(docsDir, 'foo.mdx'), '# Foo');
+      await writeFile(path.join(docsDir, 'foo.mdx'), '---\ntitle: Foo\n---\n\n## Section');
       await writeFile(path.join(snippetsDir, 'foo.md'), 'snippet');
-      await writeFile(path.join(docsDir, 'bar.mdx'), '[link](./foo.mdx)\n<CodeSnippets path="foo.md" />\n<If>ok</If>');
+      await writeFile(
+        path.join(docsDir, 'bar.mdx'),
+        '---\ntitle: Bar\n---\n\n[link](./foo.mdx)\n<CodeSnippets path="foo.md" />\n<If>ok</If>'
+      );
       await expect(runAllChecks(docsDir)).resolves.toBeUndefined();
     });
     it('aggregates mixed errors', async () => {

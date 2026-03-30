@@ -146,7 +146,7 @@ describe('configureMain', () => {
 });
 
 describe('configurePreview', () => {
-  it('should generate preview.js', async () => {
+  it('should generate preview.jsx', async () => {
     await configurePreview({
       language: SupportedLanguage.JAVASCRIPT,
       storybookConfigFolder: '.storybook',
@@ -156,7 +156,7 @@ describe('configurePreview', () => {
     const { calls } = vi.mocked(fsp.writeFile).mock;
     const [previewConfigPath, previewConfigContent] = calls[0];
 
-    expect(previewConfigPath).toEqual('./.storybook/preview.js');
+    expect(previewConfigPath).toEqual('./.storybook/preview.jsx');
     expect(previewConfigContent).toMatchInlineSnapshot(`
       "/** @type { import('@storybook/react-vite').Preview } */
       const preview = {
@@ -174,7 +174,7 @@ describe('configurePreview', () => {
     `);
   });
 
-  it('should generate preview.ts', async () => {
+  it('should generate preview.tsx', async () => {
     await configurePreview({
       language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
@@ -184,7 +184,7 @@ describe('configurePreview', () => {
     const { calls } = vi.mocked(fsp.writeFile).mock;
     const [previewConfigPath, previewConfigContent] = calls[0];
 
-    expect(previewConfigPath).toEqual('./.storybook/preview.ts');
+    expect(previewConfigPath).toEqual('./.storybook/preview.tsx');
     expect(previewConfigContent).toMatchInlineSnapshot(`
       "import type { Preview } from '@storybook/react-vite'
 
@@ -230,7 +230,7 @@ describe('configurePreview', () => {
     const { calls } = vi.mocked(fsp.writeFile).mock;
     const [previewConfigPath, previewConfigContent] = calls[0];
 
-    expect(previewConfigPath).toEqual('./.storybook/preview.ts');
+    expect(previewConfigPath).toEqual('./.storybook/preview.tsx');
     expect(previewConfigContent).toMatchInlineSnapshot(`
       "import type { Preview } from '@storybook/angular'
       import { setCompodocJson } from "@storybook/addon-docs/angular";

@@ -178,6 +178,8 @@ const checkTargetBranch = () => {
     return;
   }
 
+  fail(JSON.stringify(danger.github.pr, null, 2));
+
   if (targetBranch === 'main' || targetBranch.includes('release')) {
     fail(
       `This PR targets \`${targetBranch}\`, but it should target \`next\`. Please update the base branch of your PR.`

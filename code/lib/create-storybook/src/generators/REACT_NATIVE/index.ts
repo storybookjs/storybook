@@ -42,8 +42,19 @@ export default defineGeneratorModule({
       'react-native-svg',
     ].filter((dep) => !packageManager.getDependencyVersion(dep));
 
+    const existingScripts = packageManager.primaryPackageJson.packageJson.scripts;
+    const scriptDerivationResult = deriveStorybookPlatformScripts(
+      existingScripts as Record<string, unknown> | undefined
+    );
+    lastScriptDerivationResult = scriptDerivationResult;
+
+    const needsCrossEnv =
+      Object.keys(scriptDerivationResult.scriptsToAdd).length > 0 &&
+      !packageManager.getDependencyVersion('cross-env');
+
     const packagesToResolve = [
       ...peerDependencies,
+      ...(needsCrossEnv ? ['cross-env'] : []),
       '@storybook/addon-ondevice-controls',
       '@storybook/addon-ondevice-actions',
       '@storybook/react-native',
@@ -60,12 +71,6 @@ export default defineGeneratorModule({
     ];
 
     dependencyCollector.addDependencies(packages);
-
-    const existingScripts = packageManager.primaryPackageJson.packageJson.scripts;
-    const scriptDerivationResult = deriveStorybookPlatformScripts(
-      existingScripts as Record<string, unknown> | undefined
-    );
-    lastScriptDerivationResult = scriptDerivationResult;
 
     // Add React Native specific scripts
     packageManager.addScripts({

@@ -62,6 +62,9 @@ describe('REACT_NATIVE generator module', () => {
     expect(generateReactNativeEntrypoint).toHaveBeenCalledWith({
       language: SupportedLanguage.JAVASCRIPT,
     });
+    expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
+      expect.arrayContaining(['cross-env'])
+    );
     expect(packageManager.addScripts).toHaveBeenCalledWith({
       'storybook-generate': 'sb-rn-get-stories',
       'storybook:ios': 'cross-env STORYBOOK_ENABLED=true react-native run-ios',
@@ -138,9 +141,36 @@ describe('REACT_NATIVE generator module', () => {
     expect(packageManager.addScripts).toHaveBeenCalledWith({
       'storybook-generate': 'sb-rn-get-stories',
     });
+    expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
+      expect.not.arrayContaining(['cross-env'])
+    );
 
     const logged = String(vi.mocked(logger.log).mock.calls.at(-1)?.[0] ?? '');
     expect(logged).toContain('STORYBOOK_ENABLED=true');
     expect(logged).toContain('Could not infer');
+  });
+
+  it('does not add cross-env when it is already a dependency', async () => {
+    const packageManager = createPackageManager({
+      ios: 'react-native run-ios',
+      android: 'react-native run-android',
+    });
+    packageManager.getDependencyVersion = vi.fn((dep: string) =>
+      dep === 'cross-env' ? '^7.0.3' : null
+    );
+
+    await reactNativeGenerator.configure(packageManager, {
+      framework: null,
+      renderer: reactNativeGenerator.metadata.renderer,
+      builder: reactNativeGenerator.metadata.builderOverride as any,
+      language: SupportedLanguage.JAVASCRIPT,
+      features: new Set(),
+      dependencyCollector: new DependencyCollector(),
+      yes: true,
+    });
+
+    expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
+      expect.not.arrayContaining(['cross-env'])
+    );
   });
 });

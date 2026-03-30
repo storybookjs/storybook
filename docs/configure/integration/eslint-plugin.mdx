@@ -75,12 +75,12 @@ Optionally, you can override, add to, or disable individual rules. You likely do
   "overrides": [
     {
       // 👇 This should match the `stories` property in .storybook/main.js|ts
-      "files": ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)'],
+      "files": ["**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)"],
       "rules": {
         // 👇 Enable this rule
-        'storybook/csf-component': 'error',
+        "storybook/csf-component": "error",
         // 👇 Disable this rule
-        'storybook/default-exports': 'off',
+        "storybook/default-exports": "off",
       }
     }
   ]

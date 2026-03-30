@@ -31,6 +31,13 @@ const IGNORE_PATTERNS = [
   "**/stories/{button,header,page}.*",
 ];
 
+export class GhostStoryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GhostStoryError";
+  }
+}
+
 /**
  * Find component files that are candidates for ghost story testing.
  * Uses glob-based discovery — sufficient for eval grading purposes.
@@ -38,24 +45,19 @@ const IGNORE_PATTERNS = [
 export async function findComponentCandidates(opts: {
   cwd: string;
   sampleSize?: number;
-}): Promise<{ candidates: string[]; error?: string }> {
+}): Promise<string[]> {
   const { cwd, sampleSize = 20 } = opts;
-  try {
-    const files = await Array.fromAsync(glob(COMPONENT_GLOB, {
-      cwd,
-      exclude: IGNORE_PATTERNS,
-    }));
-    return { candidates: files.map((file) => resolve(cwd, file)).slice(0, sampleSize) };
-  } catch {
-    return { candidates: [], error: "Failed to find component candidates" };
-  }
+  const files = await Array.fromAsync(glob(COMPONENT_GLOB, {
+    cwd,
+    exclude: IGNORE_PATTERNS,
+  }));
+  return files.map((file) => resolve(cwd, file)).slice(0, sampleSize);
 }
 
 export interface GhostStoryOutput {
   total: number;
   passed: number;
   successRate: number;
-  runError?: string;
 }
 
 /**
@@ -91,26 +93,28 @@ export async function runGhostStories(
 
   const stderr = (result.stderr ?? "").toLowerCase();
   if (stderr.includes("browsertype.launch")) {
-    return { total: 0, passed: 0, successRate: 0, runError: "Playwright not installed" };
+    throw new GhostStoryError("Playwright not installed");
   }
   if (stderr.includes("no tests found")) {
-    return { total: 0, passed: 0, successRate: 0, runError: "No tests found" };
+    throw new GhostStoryError("No tests found");
   }
 
   if (!existsSync(outputFile)) {
-    return { total: 0, passed: 0, successRate: 0, runError: "JSON report not found" };
+    throw new GhostStoryError("JSON report not found");
   }
 
+  let report: any;
   try {
-    const report = JSON.parse(await readFile(outputFile, "utf-8"));
-    if (!report.testResults?.length) {
-      return { total: 0, passed: 0, successRate: 0, runError: "No test results in report" };
-    }
-    const total: number = report.numTotalTests ?? 0;
-    const passed: number = report.numPassedTests ?? 0;
-    const successRate = total > 0 ? parseFloat((passed / total).toFixed(2)) : 0;
-    return { total, passed, successRate };
+    report = JSON.parse(await readFile(outputFile, "utf-8"));
   } catch {
-    return { total: 0, passed: 0, successRate: 0, runError: "Failed to parse vitest report" };
+    throw new GhostStoryError("Failed to parse vitest report");
   }
+
+  if (!report.testResults?.length) {
+    throw new GhostStoryError("No test results in report");
+  }
+  const total: number = report.numTotalTests ?? 0;
+  const passed: number = report.numPassedTests ?? 0;
+  const successRate = total > 0 ? Math.round((passed / total) * 100) / 100 : 0;
+  return { total, passed, successRate };
 }

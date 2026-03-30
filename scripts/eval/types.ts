@@ -1,8 +1,8 @@
 /**
  * Core types for the Storybook setup eval system.
  *
- * Plain TypeScript interfaces — no runtime validation library.
- * Validation happens at the boundaries (CLI parsing via citty).
+ * Plain TypeScript interfaces — runtime validation at the CLI boundary
+ * uses zod (see eval.ts).
  */
 
 // --- Logger ---
@@ -16,16 +16,17 @@ export interface Logger {
 
 // --- Agent ---
 
-export type AgentId = "claude" | "codex";
+export type ClaudeModel = "sonnet-4.6" | "opus-4.6" | "haiku-4.5";
+export type CodexModel = "gpt-5.4";
+export type ClaudeEffort = "low" | "medium" | "high" | "max";
+export type CodexEffort = "low" | "medium" | "high" | "xhigh";
 
 /** Agent + model + effort — the three values that define how the agent runs. */
-export interface AgentVariant {
-  agent: AgentId;
-  /** Friendly model name (e.g. "sonnet-4.6", "gpt-5.4"). Must exist in `AGENTS[agent].models`. */
-  model: string;
-  /** Reasoning effort level. Must exist in `AGENTS[agent].efforts`. */
-  effort: string;
-}
+export type AgentVariant =
+  | { agent: "claude"; model: ClaudeModel; effort: ClaudeEffort }
+  | { agent: "codex"; model: CodexModel; effort: CodexEffort };
+
+export type AgentId = AgentVariant["agent"];
 
 export interface AgentExecuteParams {
   prompt: string;
@@ -151,7 +152,7 @@ export interface QualityScore {
 
 export interface TrialReport {
   schemaVersion: 1;
-  project: string;
+  project: Project;
   variant: AgentVariant;
   prompt: string;
   timestamp: string;

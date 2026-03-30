@@ -34,14 +34,14 @@ vi.mock('./agents/codex', () => ({
 import { claudeAgent } from './agents/claude-code';
 import { grade } from './grade';
 import { prepareTrial } from './prepare-trial';
-import { runTask } from './run-task';
+import { runTrial } from './run-trial';
 import { captureEnvironment } from './utils';
 
 let TMP: string;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  TMP = join(tmpdir(), `eval-run-task-${Date.now()}`);
+  TMP = join(tmpdir(), `eval-run-trial-${Date.now()}`);
   mkdirSync(join(TMP, 'results'), { recursive: true });
 });
 
@@ -94,15 +94,15 @@ const baseConfig: TrialConfig = {
   prompt: 'setup',
 };
 
-describe('runTask pipeline', () => {
+describe('runTrial pipeline', () => {
   it('assembles a complete TrialReport from pipeline steps', async () => {
     setupMocks();
 
-    const result = await runTask(baseConfig);
+    const result = await runTrial(baseConfig);
 
     expect(result).toMatchObject({
       schemaVersion: 1,
-      project: 'test-project',
+      project: { name: 'test-project', repo: 'https://github.com/test/repo', branch: 'main' },
       variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       prompt: 'setup',
       baselineCommit: 'deadbeef',
@@ -129,7 +129,7 @@ describe('runTask pipeline', () => {
       project: { name: 'mealdrop', repo: 'https://github.com/test/mealdrop', branch: 'eval-baseline' },
     };
 
-    await runTask(config);
+    await runTrial(config);
 
     expect(vi.mocked(prepareTrial).mock.calls[0][0]).toMatchObject({
       name: 'mealdrop',
@@ -161,7 +161,7 @@ describe('runTask pipeline', () => {
   it('writes summary.json and prompt.md to results dir', async () => {
     setupMocks();
 
-    await runTask(baseConfig);
+    await runTrial(baseConfig);
 
     const resultsDir = join(TMP, 'results');
 
@@ -179,7 +179,7 @@ describe('runTask pipeline', () => {
   it('propagates failed build into result', async () => {
     setupMocks({ buildSuccess: false, typeCheckErrors: 5 });
 
-    await expect(runTask(baseConfig)).resolves.toMatchObject({
+    await expect(runTrial(baseConfig)).resolves.toMatchObject({
       grade: { buildSuccess: false, typeCheckErrors: 5 },
       score: { score: 0.3 },
     });
@@ -219,7 +219,7 @@ describe('runTask pipeline', () => {
       };
     });
 
-    await runTask(baseConfig);
+    await runTrial(baseConfig);
 
     expect(callOrder).toEqual(['prepare', 'agent', 'grade']);
   });

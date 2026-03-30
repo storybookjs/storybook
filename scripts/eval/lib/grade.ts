@@ -6,6 +6,13 @@ import { x } from "tinyexec";
 import { detectSetupPatterns } from "./setup-patterns.ts";
 import { findComponentCandidates, runGhostStories } from "./ghost-stories.ts";
 
+/** Maximum TypeScript errors before the typecheck score reaches 0. */
+const MAX_TYPECHECK_ERRORS = 20;
+/** Agent duration (seconds) at or below which performance scores 1.0. */
+const PERFECT_DURATION_S = 120;
+/** Agent duration (seconds) at or above which performance scores 0. */
+const ZERO_SCORE_DURATION_S = 600;
+
 /** Filter file changes to only storybook-related ones. */
 export function filterStorybookFiles(fileChanges: FileChange[]): FileChange[] {
   const isStorybookPath = (path?: string) =>
@@ -33,10 +40,10 @@ export function computeQualityScore(
   weights: ScoreWeights = DEFAULT_SCORE_WEIGHTS,
 ): QualityScore {
   const buildScore = opts.buildSuccess ? 1 : 0;
-  const tcScore = Math.max(0, 1 - opts.typeCheckErrors / 20);
+  const tcScore = Math.max(0, 1 - opts.typeCheckErrors / MAX_TYPECHECK_ERRORS);
   const ghostScore = opts.ghostSuccessRate ?? 0;
   const d = opts.durationSeconds;
-  const perfScore = d == null ? 0 : Math.max(0, Math.min(1, 1 - (d - 120) / 480));
+  const perfScore = d == null ? 0 : Math.max(0, Math.min(1, 1 - (d - PERFECT_DURATION_S) / (ZERO_SCORE_DURATION_S - PERFECT_DURATION_S)));
   const score =
     Math.round(
       (ghostScore * weights.ghostStories +
@@ -69,7 +76,8 @@ export function parseChangedFiles(gitOutput: string): FileChange[] {
     .filter(Boolean)
     .map((line) => {
       const [status, ...parts] = line.split("\t");
-      const normalizedStatus = (status?.charAt(0) || "M") as FileChange["status"];
+      const firstChar = status?.charAt(0) ?? "";
+      const normalizedStatus = (["A", "M", "D", "R"].includes(firstChar) ? firstChar : "M") as FileChange["status"];
 
       if (normalizedStatus === "R" && parts.length >= 2) {
         const [previousPath, path] = parts;
@@ -78,6 +86,14 @@ export function parseChangedFiles(gitOutput: string): FileChange[] {
 
       return { path: parts.join("\t"), status: normalizedStatus };
     });
+}
+
+/** Truncate text to approximately maxChars, snapping to a line boundary. */
+function truncateEnd(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  const truncated = text.slice(-maxChars);
+  const firstNewline = truncated.indexOf('\n');
+  return firstNewline >= 0 ? truncated.slice(firstNewline + 1) : truncated;
 }
 
 export async function grade(
@@ -134,9 +150,9 @@ export async function grade(
 
   const trialGrade: Grade = {
     buildSuccess,
-    buildError: buildSuccess ? undefined : buildOutput.slice(-2000),
+    buildError: buildSuccess ? undefined : truncateEnd(buildOutput, 2000),
     typeCheckErrors,
-    typeCheckOutput: typeCheckErrors > 0 ? tscOutput.slice(-2000) : undefined,
+    typeCheckOutput: typeCheckErrors > 0 ? truncateEnd(tscOutput, 2000) : undefined,
     fileChanges,
     storybookChanges,
     setupPatterns,
@@ -167,20 +183,22 @@ async function getChangedFiles(repoRoot: string, baseline: string): Promise<File
 async function gradeGhostStories(projectPath: string, logger: Logger): Promise<GhostStoryGrade | undefined> {
   logger.logStep("Running ghost stories...");
 
-  const { candidates, error } = await findComponentCandidates({ sampleSize: 20, cwd: projectPath });
-  if (error || candidates.length === 0) {
-    logger.logError(error ?? "No candidate components found");
+  try {
+    const candidates = await findComponentCandidates({ sampleSize: 20, cwd: projectPath });
+    if (candidates.length === 0) {
+      logger.logError("No candidate components found");
+      return undefined;
+    }
+    logger.logStep(`Found ${candidates.length} candidate component(s)`);
+
+    const result = await runGhostStories(candidates, { cwd: projectPath });
+    if (result.total > 0) {
+      logger.logSuccess(`Ghost stories: ${result.passed}/${result.total} passed (${Math.round(result.successRate * 100)}%)`);
+    }
+
+    return { candidateCount: candidates.length, total: result.total, passed: result.passed, successRate: result.successRate };
+  } catch (error) {
+    logger.logError(`Ghost stories: ${error instanceof Error ? error.message : String(error)}`);
     return undefined;
   }
-  logger.logStep(`Found ${candidates.length} candidate component(s)`);
-
-  const result = await runGhostStories(candidates, { cwd: projectPath });
-
-  if (result.runError) {
-    logger.logError(`Ghost stories: ${result.runError}`);
-  } else if (result.total > 0) {
-    logger.logSuccess(`Ghost stories: ${result.passed}/${result.total} passed (${Math.round(result.successRate * 100)}%)`);
-  }
-
-  return { candidateCount: candidates.length, total: result.total, passed: result.passed, successRate: result.successRate };
 }

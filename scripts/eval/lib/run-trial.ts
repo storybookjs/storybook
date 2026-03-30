@@ -15,7 +15,7 @@ const drivers: Record<AgentId, AgentDriver> = {
 /**
  * Run a full eval trial: prepare -> execute agent -> grade -> save.
  */
-export async function runTask(
+export async function runTrial(
   config: TrialConfig,
   logger?: Logger,
 ): Promise<TrialReport> {
@@ -57,7 +57,7 @@ export async function runTask(
   // 6. Assemble final report
   const report: TrialReport = {
     schemaVersion: 1,
-    project: project.name,
+    project,
     variant,
     timestamp,
     prompt: promptName || "setup",

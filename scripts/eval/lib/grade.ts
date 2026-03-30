@@ -12,7 +12,7 @@ import type {
 import { DEFAULT_SCORE_WEIGHTS } from '../types.ts';
 import { x } from 'tinyexec';
 import { detectSetupPatterns } from './setup-patterns.ts';
-import { findComponentCandidates, runGhostStories } from './ghost-stories.ts';
+import { getComponentCandidates, runGhostStories } from 'storybook/internal/core-server';
 
 /** Maximum TypeScript errors before the typecheck score reaches 0. */
 const MAX_TYPECHECK_ERRORS = 20;
@@ -212,7 +212,7 @@ async function gradeGhostStories(
   logger.logStep('Running ghost stories...');
 
   try {
-    const candidates = await findComponentCandidates({ sampleSize: 20, cwd: projectPath });
+    const { candidates } = await getComponentCandidates({ sampleSize: 20, cwd: projectPath });
     if (candidates.length === 0) {
       logger.logError('No candidate components found');
       return undefined;
@@ -220,17 +220,26 @@ async function gradeGhostStories(
     logger.logStep(`Found ${candidates.length} candidate component(s)`);
 
     const result = await runGhostStories(candidates, { cwd: projectPath });
-    if (result.total > 0) {
+
+    if (result.runError) {
+      logger.logError(`Ghost stories: ${result.runError}`);
+      return undefined;
+    }
+
+    const summary = 'summary' in result ? result.summary : undefined;
+
+    if (summary && summary.total > 0) {
+      const realPassed = summary.passed - summary.passedButEmptyRender;
       logger.logSuccess(
-        `Ghost stories: ${result.passed}/${result.total} passed (${Math.round(result.successRate * 100)}%)`
+        `Ghost stories: ${realPassed}/${summary.total} passed (${Math.round(summary.successRateWithoutEmptyRender * 100)}%)${summary.passedButEmptyRender > 0 ? ` (${summary.passedButEmptyRender} empty renders excluded)` : ''}`
       );
     }
 
     return {
       candidateCount: candidates.length,
-      total: result.total,
-      passed: result.passed,
-      successRate: result.successRate,
+      total: summary?.total ?? 0,
+      passed: (summary?.passed ?? 0) - (summary?.passedButEmptyRender ?? 0),
+      successRate: summary?.successRateWithoutEmptyRender ?? 0,
     };
   } catch (error) {
     logger.logError(`Ghost stories: ${error instanceof Error ? error.message : String(error)}`);

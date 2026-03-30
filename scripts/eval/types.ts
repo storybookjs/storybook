@@ -1,8 +1,9 @@
 /**
  * Core types for the Storybook setup eval system.
  *
- * Plain TypeScript interfaces — runtime validation at the CLI boundary
- * uses zod (see eval.ts).
+ * Pure TypeScript — no runtime validation. The CLI boundary (eval.ts) uses
+ * Zod with a discriminated union to parse args; after that, these types flow
+ * through the system via normal TypeScript narrowing.
  */
 
 // --- Logger ---
@@ -14,14 +15,24 @@ export interface Logger {
   logError: (msg: string) => void;
 }
 
-// --- Agent ---
+// --- Agent (const arrays → derived types) ---
 
-export type ClaudeModel = 'sonnet-4.6' | 'opus-4.6' | 'haiku-4.5';
-export type CodexModel = 'gpt-5.4';
-export type ClaudeEffort = 'low' | 'medium' | 'high' | 'max';
-export type CodexEffort = 'low' | 'medium' | 'high' | 'xhigh';
+export const CLAUDE_MODELS = ['sonnet-4.6', 'opus-4.6', 'haiku-4.5'] as const;
+export const CODEX_MODELS = ['gpt-5.4'] as const;
+export const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS] as const;
 
-/** Agent + model + effort — the three values that define how the agent runs. */
+export const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'max'] as const;
+export const CODEX_EFFORTS = ['low', 'medium', 'high', 'xhigh'] as const;
+export const ALL_EFFORTS = ['low', 'medium', 'high', 'max', 'xhigh'] as const;
+
+export const AGENT_IDS = ['claude', 'codex'] as const;
+
+export type ClaudeModel = (typeof CLAUDE_MODELS)[number];
+export type CodexModel = (typeof CODEX_MODELS)[number];
+export type ClaudeEffort = (typeof CLAUDE_EFFORTS)[number];
+export type CodexEffort = (typeof CODEX_EFFORTS)[number];
+
+/** Agent + model + effort — validated as a discriminated union at the CLI boundary. */
 export type AgentVariant =
   | { agent: 'claude'; model: ClaudeModel; effort: ClaudeEffort }
   | { agent: 'codex'; model: CodexModel; effort: CodexEffort };
@@ -58,7 +69,7 @@ export interface TrialConfig {
   project: Project;
   /** Agent, model, and effort level. */
   variant: AgentVariant;
-  /** Prompt name — maps to `prompts/{name}.md` (e.g. "setup", "self-heal"). */
+  /** Prompt name — maps to `prompts/{name}.md` (e.g. "setup"). */
   prompt: string;
   /** Log agent messages to stdout. */
   verbose?: boolean;

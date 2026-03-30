@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { findComponentCandidates } from './ghost-stories';
+import { getComponentCandidates } from 'storybook/internal/core-server';
 import {
   computeQualityScore,
   countTypeCheckErrors,
@@ -38,7 +38,7 @@ function writeFile(relativePath: string, content: string) {
 }
 
 async function findCandidates(cwd: string) {
-  const candidates = await findComponentCandidates({ cwd, sampleSize: 20 });
+  const { candidates } = await getComponentCandidates({ cwd, sampleSize: 20 });
   return candidates.map((c) => c.replace(cwd + '/', ''));
 }
 

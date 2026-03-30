@@ -5,7 +5,14 @@
  * and cost estimation utilities.
  */
 
-import type { AgentId, Project } from './types.ts';
+import {
+  CLAUDE_MODELS,
+  CODEX_MODELS,
+  CLAUDE_EFFORTS,
+  CODEX_EFFORTS,
+  type AgentId,
+  type Project,
+} from './types.ts';
 
 // --- Pricing ---
 
@@ -24,19 +31,19 @@ export interface TokenUsage {
 // --- Agent Definition ---
 
 export interface AgentDefinition {
-  models: string[];
+  models: readonly string[];
   defaultModel: string;
   /** Map friendly model names to SDK-specific model IDs (e.g. "sonnet-4.6" → "claude-sonnet-4-6"). */
   sdkModelIds: Record<string, string>;
   /** Per-million-token pricing for manual cost estimation (agents that don't report cost natively). */
   pricing: Record<string, TokenPricing>;
-  efforts: string[];
+  efforts: readonly string[];
   defaultEffort: string;
 }
 
 export const AGENTS: Record<AgentId, AgentDefinition> = {
   claude: {
-    models: ['sonnet-4.6', 'opus-4.6', 'haiku-4.5'],
+    models: CLAUDE_MODELS,
     defaultModel: 'sonnet-4.6',
     sdkModelIds: {
       'sonnet-4.6': 'claude-sonnet-4-6',
@@ -44,17 +51,17 @@ export const AGENTS: Record<AgentId, AgentDefinition> = {
       'haiku-4.5': 'claude-haiku-4-5',
     },
     pricing: {},
-    efforts: ['low', 'medium', 'high', 'max'],
+    efforts: CLAUDE_EFFORTS,
     defaultEffort: 'high',
   },
   codex: {
-    models: ['gpt-5.4'],
+    models: CODEX_MODELS,
     defaultModel: 'gpt-5.4',
     sdkModelIds: {},
     pricing: {
       'gpt-5.4': { input: 2.5, cachedInput: 0.625, output: 10.0 },
     },
-    efforts: ['low', 'medium', 'high', 'xhigh'],
+    efforts: CODEX_EFFORTS,
     defaultEffort: 'high',
   },
 };

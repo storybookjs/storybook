@@ -67,7 +67,6 @@ describe('listPrompts', () => {
   it('lists available prompt names', () => {
     const prompts = listPrompts();
     expect(prompts).toContain('setup');
-    expect(prompts).toContain('self-heal');
   });
 
   it('returns only names without .md extension', () => {
@@ -86,14 +85,8 @@ describe('loadPrompt', () => {
 
   it('loads setup prompt by name', () => {
     const prompt = loadPrompt('setup');
-    expect(prompt).toContain('Storybook setup');
-    expect(prompt).not.toContain('React + Vite');
-  });
-
-  it('loads self-heal prompt', () => {
-    const prompt = loadPrompt('self-heal');
-    expect(prompt).toContain('Self-healing');
-    expect(prompt).toContain('vitest');
+    expect(prompt).toContain('Storybook');
+    expect(prompt).toContain('### Step 1');
   });
 
   it('throws for unknown prompt', () => {

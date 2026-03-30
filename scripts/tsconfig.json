@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "customConditions": ["code"],
     "baseUrl": ".",
     "noEmit": true,
     "incremental": false,

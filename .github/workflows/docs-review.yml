@@ -1,0 +1,23 @@
+name: Docs Review
+
+on:
+  schedule:
+    # Sunday 10pm EST = Monday 3am UTC
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-check:
+    if: github.repository_owner == 'storybookjs'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+
+      - name: Run docs check
+        run: yarn docs:check

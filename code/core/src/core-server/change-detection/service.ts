@@ -267,7 +267,7 @@ export class ChangeDetectionService {
           continue;
         }
 
-        const value = newFiles.has(storyFile)
+        const value: Status['value'] = newFiles.has(storyFile)
           ? 'status-value:new'
           : distance === lowestDistance
             ? 'status-value:modified'

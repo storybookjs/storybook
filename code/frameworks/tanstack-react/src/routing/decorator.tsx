@@ -1,8 +1,8 @@
 import React from 'react';
 import type { Decorator, Loader } from '@storybook/react-vite';
-import { RouterProvider } from '@tanstack/react-router';
+import { createRootRoute, FileRoute, Route, RouterProvider } from '@tanstack/react-router';
 import type { Router, AnyRootRoute } from '@tanstack/react-router';
-import { createMockRootRouteFromStory, createMockRouter } from '../export-mocks';
+import { createStoryRoute, createMockRouter as createStoryRouter } from '../export-mocks';
 import type { RouterParameters } from './types';
 
 let currentRouter: Router<AnyRootRoute> | null = null;
@@ -35,15 +35,12 @@ export function getRouter(): Router<AnyRootRoute> {
  * Loader that creates the mock router per story render.
  * Runs before `beforeEach`, so the router is accessible via `getRouter()`.
  */
-export const tanstackRouteLoader: Loader = ({ parameters }) => {
+export const tanstackRouteLoader: Loader = async ({ parameters }) => {
   const routerParams: RouterParameters = parameters.tanstack?.router ?? {};
 
-  // We pass a placeholder component — the decorator will provide RouterProvider
-  // which renders the actual Story via the route tree.
-  const route = createMockRootRouteFromStory(() => null, routerParams.route);
-
-  currentRouter = createMockRouter({
-    routeTree: route,
+  // If no explicit routeTree is provided, createMockRouter will
+  // dynamically import the user's #/routeTree.gen.
+  currentRouter = await createStoryRouter({
     initialPath: routerParams.path,
   });
 };
@@ -51,21 +48,14 @@ export const tanstackRouteLoader: Loader = ({ parameters }) => {
 export const tanstackRouteDecorator: Decorator = (Story, context) => {
   const routerParams: RouterParameters = context.parameters.tanstack?.router ?? {};
 
-  // Recreate the route tree with the actual Story component
-  const route = createMockRootRouteFromStory(Story, routerParams.route);
+  const routeOptions = routerParams.route;
 
-  const router = createMockRouter({
+  const route = createStoryRoute(Story, routeOptions);
+
+  const router = createStoryRouter({
     routeTree: route,
     initialPath: routerParams.path,
   });
-
-  currentRouter = router;
-
-  React.useEffect(() => {
-    return () => {
-      currentRouter = null;
-    };
-  }, []);
 
   return <RouterProvider router={router}></RouterProvider>;
 };

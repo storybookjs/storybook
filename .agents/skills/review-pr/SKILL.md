@@ -14,7 +14,7 @@ Generate a scrollable single-page HTML document that reviews a PR as a readable 
 
 1. **Two layers per area.** The top layer is a curated, readable walkthrough — API surface, key test assertions, and core implementation logic woven together with prose. Only the important parts. Below it, the full files are collapsed in `<details>` for reference.
 2. **High-level to low-level.** Order areas from entry points and orchestration down to utilities and types. The reader understands architecture before details.
-3. **API → Tests → Implementation.** Within each area's readable section, show the API first (types, interfaces, exports), then the tests (what does it do?), then the implementation (how?). **Show full interface bodies** — not just names. The reader should see every field of `TrialResult`, `AgentConfig`, etc. in the walkthrough where they're first relevant. Don't defer to "see types.ts".
+3. **API → Tests → Implementation.** Within each area's readable section, show the API first (types, interfaces, exports), then the tests (what does it do?), then the implementation (how?). **Show full interface bodies** — not just names. The reader should see every field of key interfaces in the walkthrough where they're first relevant. Don't defer to "see types.ts".
 4. **Review readability.** For each file, assess: logical order? Clear names? Comments where the *why* isn't obvious? Tests readable enough to serve as docs? Flag issues as smell-boxes. Call out well-written tests with note-boxes.
 5. **Cover everything.** Every changed file appears somewhere.
 
@@ -50,7 +50,13 @@ Use narrative `<p>` tags between snippets to explain what the reader is looking 
 
 Below the walkthrough, include every file in the area as a collapsed `<details>` block with the complete file content (or diff for modified files). The reader expands these for reference.
 
-Write to `~/life/slideshows/pr-<number>/index.html`.
+First create the output directory:
+
+```bash
+mkdir -p .pr-review/pr-<number>
+```
+
+Write to `.pr-review/pr-<number>/index.html` (relative to the repo root).
 
 **Verify every file from `gh pr diff --name-only` appears in the page.**
 
@@ -234,38 +240,36 @@ Show full interface bodies where they're first relevant — not just names:
 ```html
 <div class="file-card">
   <div class="narrative">
-    <p><strong>API:</strong> The pipeline takes a config and returns a full result:</p>
+    <p><strong>API:</strong> The entry point takes a config and returns a result:</p>
   </div>
-  <pre><code class="language-typescript">export async function runTask(config: TrialConfig): Promise&lt;TrialResult&gt;
+  <pre><code class="language-typescript">export async function processStory(config: StoryConfig): Promise&lt;StoryResult&gt;
 
-export interface TrialConfig {
-  project: Project;
-  agent: AgentName;    // "claude" | "codex"
-  model: string;
-  effort: string;
-  prompt: string;
+export interface StoryConfig {
+  id: string;
+  title: string;
+  component: ComponentType;
+  args: Record&lt;string, unknown&gt;;
+  parameters: Parameters;
 }
 
-export interface TrialResult {
-  schemaVersion: 1;
-  project: string;
-  agent: string;
-  model: string;
-  execution: ExecutionResult;
-  grading: GradingResult;
-  quality: QualityResult;
+export interface StoryResult {
+  status: 'success' | 'error';
+  rendered: boolean;
+  duration: number;
+  errors: string[];
 }</code></pre>
   <div class="narrative">
-    <p><strong>Tests:</strong> The ordering test makes the sequential contract clear:</p>
+    <p><strong>Tests:</strong> The happy-path test shows the expected flow:</p>
   </div>
-  <pre><code class="language-typescript">await runTask(baseConfig);
-expect(callOrder).toEqual(['prepare', 'agent', 'grade']);</code></pre>
+  <pre><code class="language-typescript">const result = await processStory(baseConfig);
+expect(result.status).toBe('success');
+expect(result.rendered).toBe(true);</code></pre>
   <div class="narrative">
-    <p><strong>Implementation:</strong> The pipeline is strictly sequential — grade needs the agent's file changes:</p>
+    <p><strong>Implementation:</strong> The pipeline is sequential — rendering depends on preparation:</p>
   </div>
-  <pre><code class="language-typescript">const paths = await prepareTrial(config.project, trialId, logger);
-const execution = await agent.execute({ prompt, projectPath, ... });
-const { grading, quality } = await grade(paths, logger, execution.duration);</code></pre>
+  <pre><code class="language-typescript">const context = await prepare(config);
+const canvas = await render(context);
+return summarize(canvas, config);</code></pre>
 </div>
 ```
 
@@ -357,7 +361,7 @@ Kill any existing server, write a static server, start it:
 lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 ```
 
-Write to `~/life/slideshows/pr-<number>/server.mjs`:
+Write to `.pr-review/pr-<number>/server.mjs`:
 
 ```javascript
 import { createServer } from 'node:http';
@@ -387,7 +391,7 @@ createServer((req, res) => {
 ```
 
 ```bash
-node ~/life/slideshows/pr-<number>/server.mjs &   # run_in_background: true
+node .pr-review/pr-<number>/server.mjs &   # run_in_background: true
 open http://localhost:3000
 ```
 

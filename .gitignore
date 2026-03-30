@@ -84,3 +84,6 @@ CLAUDE.local.md
 # Eval system
 scripts/eval/.cache
 scripts/eval/results
+
+# PR review output
+.pr-review

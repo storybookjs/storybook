@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
-
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { dedent } from 'ts-dedent';
-
+import { formatFileContent } from 'storybook/internal/common';
 import { configToCsfFactory } from './config-to-csf-factory';
 
+vi.mock('storybook/internal/common', { spy: true });
+
+beforeEach(() => {
+  vi.mocked(formatFileContent).mockImplementation(async (_path, content) => content);
+});
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
   test: () => true,
@@ -28,12 +32,11 @@ describe('main/preview codemod: general parsing functionality', () => {
         };
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from '@storybook/react-vite/node';
-
+      import { defineMain } from "@storybook/react-vite/node";
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
         addons: ['@storybook/addon-essentials'],
-        framework: '@storybook/react-vite',
+        framework: '@storybook/react-vite'
       });
     `);
   });
@@ -49,7 +52,7 @@ describe('main/preview codemod: general parsing functionality', () => {
         export default config;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from '@storybook/react-vite/node';
+      import { defineMain } from "@storybook/react-vite/node";
 
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -72,11 +75,11 @@ describe('main/preview codemod: general parsing functionality', () => {
     ).resolves.toMatchInlineSnapshot(`
       // @ts-check
       /** @license MIT */
-      import { defineMain } from '@storybook/react-vite/node';
+      import { defineMain } from "@storybook/react-vite/node";
 
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-        framework: '@storybook/react-vite',
+        framework: '@storybook/react-vite'
       });
     `);
   });
@@ -100,7 +103,7 @@ describe('main/preview codemod: general parsing functionality', () => {
           ${variant}
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { defineMain } from '@storybook/react-vite/node';
+        import { defineMain } from "@storybook/react-vite/node";
 
         export default defineMain({
           stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -123,14 +126,12 @@ describe('main/preview codemod: general parsing functionality', () => {
         export default config;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from '@storybook/react-vite/node';
+      import { defineMain } from "@storybook/react-vite/node";
 
       export default defineMain({
         tags: [],
-        viteFinal: () => {
-          return config;
-        },
-        framework: '@storybook/react-vite',
+        viteFinal: () => { return config },
+        framework: '@storybook/react-vite'
       });
     `);
   });
@@ -143,29 +144,25 @@ describe('main/preview codemod: general parsing functionality', () => {
         export const framework = '@storybook/react-vite';
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from '@storybook/react-vite/node';
+      import { defineMain } from "@storybook/react-vite/node";
 
       export default defineMain({
-        stories: () => {
-          return ['../src/**/*.stories.@(js|jsx|ts|tsx)'];
-        },
+        stories: () => { return ['../src/**/*.stories.@(js|jsx|ts|tsx)'] },
         addons: ['@storybook/addon-essentials'],
-        viteFinal: () => {
-          return config;
-        },
-        framework: '@storybook/react-vite',
+        viteFinal: () => { return config },
+        framework: '@storybook/react-vite'
       });
     `);
   });
   it('should not add additional imports if there is already one', async () => {
     const transformed = await transform(dedent`
-        import { defineMain } from '@storybook/react-vite/node';
+        import { defineMain } from "@storybook/react-vite/node";
         const config = {};
 
         export default config;
     `);
     expect(
-      transformed.match(/import { defineMain } from '@storybook\/react-vite\/node'/g)
+      transformed.match(/import { defineMain } from "@storybook\/react-vite\/node"/g)
     ).toHaveLength(1);
   });
 
@@ -179,6 +176,31 @@ describe('main/preview codemod: general parsing functionality', () => {
     expect(transformed).toEqual(original);
   });
 
+  it('should add missing import when already transformed but import is absent', async () => {
+    await expect(
+      transform(dedent`
+        export default defineMain({});
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { defineMain } from "@storybook/react-vite/node";
+      export default defineMain({});
+    `);
+  });
+
+  it('should add missing specifier when already transformed but defineMain is not in existing import', async () => {
+    await expect(
+      transform(dedent`
+        import { someHelper } from '@storybook/react-vite/node';
+
+        export default defineMain({});
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { someHelper, defineMain } from '@storybook/react-vite/node';
+
+      export default defineMain({});
+    `);
+  });
+
   it('should remove legacy main config type imports if unused', async () => {
     await expect(
       transform(dedent`
@@ -190,10 +212,9 @@ describe('main/preview codemod: general parsing functionality', () => {
         export default config;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from '@storybook/react-vite/node';
-
+      import { defineMain } from "@storybook/react-vite/node";
       export default defineMain({
-        stories: [],
+        stories: []
       });
     `);
   });
@@ -214,15 +235,15 @@ describe('main/preview codemod: general parsing functionality', () => {
         export default config;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { type StorybookConfig } from '@storybook/react-vite';
-      import { defineMain } from '@storybook/react-vite/node';
+      import { defineMain } from "@storybook/react-vite/node";
+      import { type StorybookConfig } from '@storybook/react-vite'
 
       const features: StorybookConfig['features'] = {
         foo: true,
       };
 
       export default defineMain({
-        stories: [],
+        stories: []
       });
     `);
   });
@@ -245,10 +266,9 @@ describe('preview specific functionality', () => {
         };
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react-vite';
-
+      import { definePreview } from "@storybook/react-vite";
       export default definePreview({
-        tags: ['test'],
+        tags: ['test']
       });
     `);
   });
@@ -264,10 +284,9 @@ describe('preview specific functionality', () => {
         export default preview;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react-vite';
-
+      import { definePreview } from "@storybook/react-vite";
       export default definePreview({
-        tags: [],
+        tags: []
       });
     `);
   });
@@ -285,12 +304,12 @@ describe('preview specific functionality', () => {
         export default preview;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react-vite';
+      import { definePreview } from "@storybook/react-vite";
 
-      export const withStore: Decorator = () => {};
+      export const withStore: Decorator = () => {}
 
       export default definePreview({
-        tags: [],
+        tags: []
       });
     `);
   });
@@ -303,11 +322,10 @@ describe('preview specific functionality', () => {
         }
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react-vite';
-
+      import { definePreview } from "@storybook/react-vite";
       export default definePreview({
         decorators: [1],
-        parameters: {},
+        parameters: {}
       });
     `);
   });
@@ -333,10 +351,10 @@ describe('preview specific functionality', () => {
 
       export default definePreview({
         decorators: [],
-
+        
         parameters: {
-          options: {},
-        },
+          options: {}
+        }
       });
     `);
   });
@@ -363,8 +381,8 @@ describe('preview specific functionality', () => {
         decorators: [],
 
         parameters: {
-          options: {},
-        },
+          options: {}
+        }
       });
     `);
   });
@@ -375,18 +393,15 @@ describe('preview specific functionality', () => {
         import './preview.scss'
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react-vite';
-
-      import './preview.scss';
-
+      import { definePreview } from "@storybook/react-vite";
+      import './preview.scss'
       export default definePreview({});
     `);
   });
 
   it('should add default export when preview file is empty', async () => {
     await expect(transform('')).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react-vite';
-
+      import { definePreview } from "@storybook/react-vite";
       export default definePreview({});
     `);
   });
@@ -398,11 +413,9 @@ describe('preview specific functionality', () => {
         import './global.css'
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react-vite';
-
-      import './global.css';
-      import './preview.scss';
-
+      import { definePreview } from "@storybook/react-vite";
+      import './preview.scss'
+      import './global.css'
       export default definePreview({});
     `);
   });

@@ -76,3 +76,7 @@ code/core/report
 .junie
 CLAUDE.local.md
 .claude
+.cursor/mcp.json
+.vscode/mcp.json
+.mcp.json
+.nx/polygraph

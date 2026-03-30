@@ -1,3 +1,93 @@
+## 10.4.0-alpha.5
+
+- Addon-a11y: Clear status transition timer on unmount to prevent test flake - [#34203](https://github.com/storybookjs/storybook/pull/34203), thanks @mixelburg!
+- Builder-Vite: Use djb2 hash to prevent variable name collisions in builder-vite - [#34274](https://github.com/storybookjs/storybook/pull/34274), thanks @chida09!
+- CLI: Fix Next.js Vite automigration corrupting configs already using `@storybook/nextjs-vite` - [#34249](https://github.com/storybookjs/storybook/pull/34249), thanks @nathanjessen!
+- Core: Add changeDetection feature flag - [#34314](https://github.com/storybookjs/storybook/pull/34314), thanks @valentinpalkovic!
+- Manager: URL-based tag filter state + filter-aware initial story selection - [#34283](https://github.com/storybookjs/storybook/pull/34283), thanks @valentinpalkovic!
+- React-Vite: Upgrade @joshwooding/vite-plugin-react-docgen-typescript to 0.7.0 - [#34335](https://github.com/storybookjs/storybook/pull/34335), thanks @beeswhacks!
+- Refactor: Extract shared `PseudoStateGrid` component in pseudo-states stories - [#34334](https://github.com/storybookjs/storybook/pull/34334), thanks @copilot-swe-agent!
+
+## 10.4.0-alpha.4
+
+- Addon-Docs: Add Reset story button to re-render stories in docs - [#34086](https://github.com/storybookjs/storybook/pull/34086), thanks @6810779s!
+- Code: Fix inline code blocks inside links removing link affordance - [#33903](https://github.com/storybookjs/storybook/pull/33903), thanks @yatishgoel!
+- Controls: Add maxPresetColors option to ColorControl - [#33998](https://github.com/storybookjs/storybook/pull/33998), thanks @mixelburg!
+- Core: Fix WebSocket connection for StackBlitz/WebContainers - [#34281](https://github.com/storybookjs/storybook/pull/34281), thanks @ghengeveld!
+- Dependencies: Update `vite-plugin-storybook-nextjs` to ^3.2.4 - [#34280](https://github.com/storybookjs/storybook/pull/34280), thanks @k35o!
+- React: Add component metadata extraction via Volar-style LanguageService - [#33914](https://github.com/storybookjs/storybook/pull/33914), thanks @kasperpeulen!
+- StatusValue: Add 'status-value:<new|modified|affected>' - [#34305](https://github.com/storybookjs/storybook/pull/34305), thanks @valentinpalkovic!
+- UI: Ensure Controls panel can scroll horizontally for now - [#34248](https://github.com/storybookjs/storybook/pull/34248), thanks @Sidnioulz!
+
+## 10.4.0-alpha.3
+
+- Addon-Vitest: Streamline vite(st) config detection across init and postinstall - [#34193](https://github.com/storybookjs/storybook/pull/34193), thanks @valentinpalkovic!
+- Angular: Use Story ID for renderer IDs (including standalone stories) - [#33982](https://github.com/storybookjs/storybook/pull/33982), thanks @ValentinFunk!
+- Bug: Skip re-processing already transformed config files for CSF factories - [#34273](https://github.com/storybookjs/storybook/pull/34273), thanks @huang-julien!
+- CLI: Shorten CTA link messages - [#34236](https://github.com/storybookjs/storybook/pull/34236), thanks @shilman!
+- React Native Web: Fix vite8 support by bumping vite-plugin-rnw - [#34231](https://github.com/storybookjs/storybook/pull/34231), thanks @dannyhw!
+
+## 10.4.0-alpha.2
+
+- CLI: Use npm info to fetch versions in repro command - [#34214](https://github.com/storybookjs/storybook/pull/34214), thanks @yannbf!
+- Core: Prevent story-local viewport from persisting in URL - [#34153](https://github.com/storybookjs/storybook/pull/34153), thanks @ghengeveld!
+- Maintenance: Remove dead-code copy of wrap-getAbsolutePath-utils - [#34168](https://github.com/storybookjs/storybook/pull/34168), thanks @mixelburg!
+- Security: Makes sure `serialize-javascript` is at latest version - [#34034](https://github.com/storybookjs/storybook/pull/34034), thanks @50bbx!
+
+## 10.4.0-alpha.1
+
+- Docs: Ensure unique control id attributes across multiple Controls blocks - [#34021](https://github.com/storybookjs/storybook/pull/34021), thanks @TheSeydiCharyyev!
+
+## 10.4.0-alpha.0
+
+
+## 10.3.0-beta.3
+
+- Addon-Vitest: Handle additional vitest config export patterns in postinstall - [#34106](https://github.com/storybookjs/storybook/pull/34106), thanks @copilot-swe-agent!
+- CLI: Add vike CLI metadata - [#34189](https://github.com/storybookjs/storybook/pull/34189), thanks @yannbf!
+- Maintenance: Revert pull request #33930 HMR events - [#34190](https://github.com/storybookjs/storybook/pull/34190), thanks @yannbf!
+- UI: Ensure Link without href is keyboard-reachable - [#34163](https://github.com/storybookjs/storybook/pull/34163), thanks @Sidnioulz!
+- UI: Zoom faster when pressing shift - [#34185](https://github.com/storybookjs/storybook/pull/34185), thanks @Sidnioulz!
+- Vite: Add mock entries to optimizeDeps.entries - [#34167](https://github.com/storybookjs/storybook/pull/34167), thanks @valentinpalkovic!
+
+## 10.3.0-beta.2
+
+- UI: Hide addon panel Drag on pages without a panel - [#34162](https://github.com/storybookjs/storybook/pull/34162), thanks @Sidnioulz!
+- UI: Hide manifest tag for now - [#34165](https://github.com/storybookjs/storybook/pull/34165), thanks @Sidnioulz!
+- UI: Make disabled Buttons keyboard-focusable - [#34166](https://github.com/storybookjs/storybook/pull/34166), thanks @Sidnioulz!
+- UI: Use correct selector for addon panel focus check - [#34164](https://github.com/storybookjs/storybook/pull/34164), thanks @Sidnioulz!
+- Vue: Make globals reactive in decorators - [#34116](https://github.com/storybookjs/storybook/pull/34116), thanks @Sidnioulz!
+
+## 10.3.0-beta.1
+
+- Addon-Docs: Add React as optimizeDeps entry - [#34176](https://github.com/storybookjs/storybook/pull/34176), thanks @valentinpalkovic!
+- CLI: Avoid hanging of postinstall during init - [#34175](https://github.com/storybookjs/storybook/pull/34175), thanks @valentinpalkovic!
+
+## 10.3.0-beta.0
+
+- Test: Fix clearing mocks in Vitest [#34078](https://github.com/storybookjs/storybook/pull/34078)
+- Core: Fix event source URL based on refId when multiple iframes share the same origin [#34105](https://github.com/storybookjs/storybook/pull/34105)
+- UI: Make TagsFilter state persistent [#33374](https://github.com/storybookjs/storybook/pull/33374)
+- A11y: Make resize handles for addon panel and sidebar accessible [#33980](https://github.com/storybookjs/storybook/pull/33980)
+- Maintenance: Use std-env for AI agent detection in telemetry [#34114](https://github.com/storybookjs/storybook/pull/34114)
+- Addon-Vitest: Make Playwright `--with-deps` platform-aware to avoid `sudo` prompt on Linux [#34121](https://github.com/storybookjs/storybook/pull/34121)
+- Addon-docs: Restore `docs.components` overrides for doc blocks [#34111](https://github.com/storybookjs/storybook/pull/34111)
+- Maintenance: Support vite-plugin-svelte7 which supports Vite 8 [#34115](https://github.com/storybookjs/storybook/pull/34115)
+- Core: Fix handling complex viewport sizes [#33615](https://github.com/storybookjs/storybook/pull/33615)
+- Core: Fix iframe reference for composed Storybook on a subpath [#34100](https://github.com/storybookjs/storybook/pull/34100)
+- Manifest: Rename `experimentalComponentsManifest` → `componentsManifest`, default to `true` [#33974](https://github.com/storybookjs/storybook/pull/33974)
+- Manifests: Fix Attached MDX causing wrong component entries [#34101](https://github.com/storybookjs/storybook/pull/34101)
+- Vue3-Vite: Allow paths in docgen tsconfig option [#32310](https://github.com/storybookjs/storybook/pull/32310), thanks @Thomaash!
+- Next.js: Move image configuration from FrameworkOptions to parameters [#32639](https://github.com/storybookjs/storybook/pull/32639), thanks @y-hsgw!
+- Docs: Make CSS ordering in DocsContainer more predictable [#34015](https://github.com/storybookjs/storybook/pull/34015)
+
+## 10.3.0-alpha.17
+
+- Core: Correctly fallback to first detected vitest config file - [#33865](https://github.com/storybookjs/storybook/pull/33865), thanks @yannbf!
+- ESLint-plugin: Disallow extra properties in eslint plugin rule options - [#32056](https://github.com/storybookjs/storybook/pull/32056), thanks @andreww2012!
+- ESLint: bail out config setup if eslint-plugin-storybook is already imported - [#34089](https://github.com/storybookjs/storybook/pull/34089), thanks @copilot-swe-agent!
+- Revert "Toolbar: Remove extra toolbar divider when zoom controls not shown" - [#34099](https://github.com/storybookjs/storybook/pull/34099), thanks @valentinpalkovic!
+
 ## 10.3.0-alpha.16
 
 - A11y: Underline MDX links for WCAG SC 1.4.1 compliance - [#33139](https://github.com/storybookjs/storybook/pull/33139), thanks @NikhilChowdhury27!

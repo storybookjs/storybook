@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "10.3.0-alpha.16",
+  "version": "10.4.0-alpha.5",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -13,49 +13,28 @@
     "url": "https://opencollective.com/storybook"
   },
   "scripts": {
-    "affected:test": "nx show projects --affected -t test | xargs -I # echo --project # | xargs yarn test:watch",
     "await-serve-storybooks": "wait-on http://localhost:8001",
     "build": "NODE_ENV=production yarn --cwd ../scripts build-package",
     "changelog": "pr-log --sloppy --cherry-pick",
     "changelog:next": "pr-log --sloppy --since-prerelease",
     "check": "NODE_ENV=production yarn --cwd ../scripts check-package",
-    "ci-tests": "yarn task --task check --no-link --start-from=install && yarn lint && yarn test && cd ../scripts && yarn test",
+    "ci-tests": "yarn task --task check --no-link --start-from=install && yarn lint && cd .. && yarn test",
     "danger": "danger",
     "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
     "github-release": "github-release-from-changelog",
     "i": "yarn --cwd .. i",
     "knip": "knip --config ../scripts/knip.config.ts",
-    "lint": "yarn lint:js && yarn lint:other",
+    "lint": "yarn lint:js",
     "lint:ejs": "ejslint **/*.ejs",
     "lint:js": "yarn lint:js:cmd . --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
-    "lint:other": "yarn lint:prettier '**/*.{css,html,json,md,yml}'",
     "lint:package": "yarn --cwd ../scripts lint:package",
-    "lint:prettier": "prettier --write",
     "local-registry": "yarn --cwd ../scripts local-registry",
     "publish-sandboxes": "yarn --cwd ../scripts publish",
     "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
-    "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=4096\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
+    "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=5120\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
     "storybook:ui:chromatic": "chromatic --storybook-build-dir storybook-static --exit-zero-on-changes --exit-once-uploaded",
-    "storybook:vitest": "yarn test:watch --project storybook-ui",
-    "storybook:vitest:inspect": "INSPECT=true yarn test --project storybook-ui",
-    "task": "yarn --cwd ../scripts task",
-    "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
-    "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
-  },
-  "lint-staged": {
-    "*.{html,js,json,jsx,mjs,ts,tsx}": [
-      "yarn lint:js:cmd --fix"
-    ],
-    "*.ejs": [
-      "yarn --cwd ../scripts ejslint"
-    ],
-    "*.{css,html,json,md,yml}": [
-      "yarn lint:prettier"
-    ],
-    "package.json": [
-      "yarn lint:package"
-    ]
+    "task": "yarn --cwd ../scripts task"
   },
   "browserslist": [
     "chrome >= 131",
@@ -70,7 +49,7 @@
   ],
   "dependencies": {
     "@chromatic-com/storybook": "^5.0.0",
-    "@playwright/test": "1.52.0",
+    "@playwright/test": "1.58.2",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.3",
     "@storybook/addon-docs": "workspace:*",
@@ -115,10 +94,10 @@
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-vue": "^4.4.0",
-    "@vitest/browser": "^4.0.14",
-    "@vitest/browser-playwright": "^4.0.14",
-    "@vitest/coverage-istanbul": "^4.0.14",
-    "@vitest/coverage-v8": "^4.0.14",
+    "@vitest/browser": "^4.1.0",
+    "@vitest/browser-playwright": "^4.1.0",
+    "@vitest/coverage-istanbul": "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.0",
     "chromatic": "^13.3.4",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
@@ -130,7 +109,6 @@
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
     "knip": "^5.70.2",
-    "lint-staged": "^16.2.7",
     "mock-require": "^3.0.3",
     "prettier": "^3.7.1",
     "process": "^0.11.10",
@@ -146,8 +124,11 @@
     "uuid": "^11.1.0",
     "vite": "^7.0.4",
     "vite-plugin-inspect": "^11.0.0",
-    "vitest": "^4.0.14",
+    "vitest": "^4.1.0",
     "wait-on": "^8.0.3"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.41.0"
   },
   "dependenciesMeta": {
     "ejs": {

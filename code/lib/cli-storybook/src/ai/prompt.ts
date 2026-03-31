@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
 
-import type { ProjectInfo, AiPrompt, AiPromptJsonOutput } from './types';
+import type { ProjectInfo, AiPrompt } from './types';
 
 export function getDocsUrl(majorVersion: number | undefined): string {
   // Use {major}.0 format since /10 doesn't work on the docs site but /10.0 does. If not identified, link to the latest docs at / route.
@@ -143,7 +143,7 @@ function getPreviewConfigExample(projectInfo: ProjectInfo): string {
 
       import { definePreview } from 'storybook/preview';
 
-      export const config = definePreview({
+      export default definePreview({
         decorators: [
           (Story) => (
             <ThemeProvider theme={theme}>
@@ -214,10 +214,10 @@ function getCsfFactoryExample(): string {
   return dedent`
     Story format (CSF Factory — this project uses CSF factories):
     \`\`\`ts
-    import { config } from '#.storybook/preview';
+    import preview from '#.storybook/preview';
     import { Button } from './Button';
 
-    const meta = config.meta({
+    const meta = preview.meta({
       title: 'AI Generated/Simple/Button',
       component: Button,
     });
@@ -272,15 +272,4 @@ export function generateMarkdownOutput(projectInfo: ProjectInfo): string {
   }
 
   return sections.join('\n\n');
-}
-
-export function generateJsonOutput(projectInfo: ProjectInfo): AiPromptJsonOutput {
-  const docsUrl = getDocsUrl(projectInfo.majorVersion);
-  const aiPrompts = getPrompts(projectInfo);
-
-  return {
-    project: projectInfo,
-    docsUrl,
-    aiPrompts,
-  };
 }

@@ -1,7 +1,6 @@
 export interface AiPrepareOptions {
   configDir?: string;
   packageManager?: string;
-  format?: 'markdown' | 'json';
 }
 
 export interface ProjectInfo {
@@ -24,10 +23,4 @@ export interface AiPrompt {
   name: string;
   description: string;
   instructions: string;
-}
-
-export interface AiPromptJsonOutput {
-  project: ProjectInfo;
-  docsUrl: string;
-  aiPrompts: AiPrompt[];
 }

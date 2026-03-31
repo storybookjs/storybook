@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AddonVitestService, ProjectType, globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -23,12 +23,26 @@ interface CommandWithPrivates {
     trackNewUserCheck: ReturnType<typeof vi.fn>;
     trackInstallType: ReturnType<typeof vi.fn>;
   };
-  featureService: { validateTestFeatureCompatibility: ReturnType<typeof vi.fn> };
+  featureService: {
+    validateTestFeatureCompatibility: ReturnType<typeof vi.fn>;
+  };
 }
 
 describe('UserPreferencesCommand', () => {
   let command: UserPreferencesCommand;
   const mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
+  const originalIsTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+
+  afterAll(() => {
+    if (originalIsTTYDescriptor) {
+      Object.defineProperty(process.stdout, 'isTTY', originalIsTTYDescriptor);
+    } else {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: undefined,
+        configurable: true,
+      });
+    }
+  });
 
   beforeEach(() => {
     // Provide required CommandOptions to avoid undefined access
@@ -92,7 +106,10 @@ describe('UserPreferencesCommand', () => {
     vi.mocked(isCI).mockReturnValue(false);
 
     // Reset isTTY to avoid leaking between tests
-    Object.defineProperty(process.stdout, 'isTTY', { value: undefined, configurable: true });
+    Object.defineProperty(process.stdout, 'isTTY', {
+      value: undefined,
+      configurable: true,
+    });
 
     vi.clearAllMocks();
 
@@ -128,7 +145,10 @@ describe('UserPreferencesCommand', () => {
 
     it('should prompt for new user in interactive mode', async () => {
       // Mock TTY
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup
@@ -150,7 +170,10 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should prompt for install type when not a new user', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user
@@ -170,7 +193,10 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should not include test feature in minimal install', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user
@@ -189,7 +215,10 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should validate test feature compatibility in interactive mode', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup
@@ -212,7 +241,10 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should remove test feature if user chooses to continue without it', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       const featureService = (command as unknown as CommandWithPrivates).featureService;
@@ -238,7 +270,10 @@ describe('UserPreferencesCommand', () => {
 
   describe('AI setup prompt', () => {
     it('should include AI feature when user accepts AI setup in interactive mode', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
@@ -260,7 +295,10 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should not include AI feature when user declines AI setup', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // AI setup: no
@@ -275,7 +313,10 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should default AI to true when prompts are skipped (non-interactive)', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: undefined, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: undefined,
+        configurable: true,
+      });
 
       const result = await command.execute({
         framework: null,
@@ -288,7 +329,10 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should default AI to true when --yes flag is used', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       const commandOptions: CommandOptions = {
         packageManager: PackageManagerName.NPM,
@@ -317,7 +361,10 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should include AI feature even with minimal install if user wants it', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
 
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user

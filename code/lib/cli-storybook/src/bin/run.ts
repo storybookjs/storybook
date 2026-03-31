@@ -315,9 +315,6 @@ aiCommand
     )
   )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .addOption(
-    new Option('--format <type>', 'Output format').choices(['markdown', 'json']).default('markdown')
-  )
   .action(async (options) => {
     await withTelemetry('ai-prepare', { cliOptions: options }, async () => {
       await aiPrepare(options);

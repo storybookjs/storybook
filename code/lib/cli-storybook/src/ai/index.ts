@@ -2,15 +2,11 @@ import type { PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
-import { generateJsonOutput, generateMarkdownOutput } from './prompt';
+import { generateMarkdownOutput } from './prompt';
 import type { ProjectInfo, AiPrepareOptions } from './types';
 
 export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
-  const {
-    configDir: userConfigDir,
-    packageManager: packageManagerName,
-    format = 'markdown',
-  } = options;
+  const { configDir: userConfigDir, packageManager: packageManagerName } = options;
 
   let projectInfo: ProjectInfo;
 
@@ -55,12 +51,7 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
     return;
   }
 
-  if (format === 'json') {
-    // JSON output goes directly to stdout for machine consumption
-    logger.log(JSON.stringify(generateJsonOutput(projectInfo), null, 2));
-  } else {
-    logger.log(generateMarkdownOutput(projectInfo));
-  }
+  logger.log(generateMarkdownOutput(projectInfo));
 }
 
 function parseMajorVersion(version: string): number | undefined {

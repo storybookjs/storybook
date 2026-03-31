@@ -262,7 +262,7 @@ describe('configurePreview', () => {
     const { calls } = vi.mocked(fsp.writeFile).mock;
     const [previewConfigPath, previewConfigContent] = calls[0];
 
-    expect(previewConfigPath).toEqual('./.storybook/preview.tsx');
+    expect(previewConfigPath).toEqual('./.storybook/preview.ts');
     expect(previewConfigContent).toMatchInlineSnapshot(`
       "import type { Preview } from '@storybook/angular'
       import { setCompodocJson } from "@storybook/addon-docs/angular";

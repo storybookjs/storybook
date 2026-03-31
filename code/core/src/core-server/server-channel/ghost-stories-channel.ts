@@ -9,7 +9,7 @@ import {
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates';
-import { runStoryTests } from '../utils/ghost-stories/run-story-tests';
+import { runGhostStories } from '../utils/ghost-stories/run-story-tests';
 
 export function initGhostStoriesChannel(
   channel: Channel,
@@ -91,7 +91,7 @@ export function initGhostStoriesChannel(
 
       // Phase 2: Run tests on those candidates Vitest. The components will be transformed directly to tests
       // If they pass, it means that creating a story file for them would succeed.
-      const testRunResult = await runStoryTests(candidatesResult.candidates);
+      const testRunResult = await runGhostStories(candidatesResult.candidates);
       stats.totalRunDuration = Date.now() - ghostRunStart;
       stats.testRunDuration = testRunResult.duration;
       if (testRunResult.runError) {

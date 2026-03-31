@@ -436,6 +436,44 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@anthropic-ai/claude-agent-sdk@npm:^0.2.85":
+  version: 0.2.85
+  resolution: "@anthropic-ai/claude-agent-sdk@npm:0.2.85"
+  dependencies:
+    "@img/sharp-darwin-arm64": "npm:^0.34.2"
+    "@img/sharp-darwin-x64": "npm:^0.34.2"
+    "@img/sharp-linux-arm": "npm:^0.34.2"
+    "@img/sharp-linux-arm64": "npm:^0.34.2"
+    "@img/sharp-linux-x64": "npm:^0.34.2"
+    "@img/sharp-linuxmusl-arm64": "npm:^0.34.2"
+    "@img/sharp-linuxmusl-x64": "npm:^0.34.2"
+    "@img/sharp-win32-arm64": "npm:^0.34.2"
+    "@img/sharp-win32-x64": "npm:^0.34.2"
+  peerDependencies:
+    zod: ^4.0.0
+  dependenciesMeta:
+    "@img/sharp-darwin-arm64":
+      optional: true
+    "@img/sharp-darwin-x64":
+      optional: true
+    "@img/sharp-linux-arm":
+      optional: true
+    "@img/sharp-linux-arm64":
+      optional: true
+    "@img/sharp-linux-x64":
+      optional: true
+    "@img/sharp-linuxmusl-arm64":
+      optional: true
+    "@img/sharp-linuxmusl-x64":
+      optional: true
+    "@img/sharp-win32-arm64":
+      optional: true
+    "@img/sharp-win32-x64":
+      optional: true
+  checksum: 10c0/5bb31712460b03b264b489c38a2ddcac62ba60aad50da8cd6d3cebdaf46fae84c37473f25b7a4e20a6bda6f2310b4cc9f3574bc3f2e8f73a4a6e6bd0e04bd827
+  languageName: node
+  linkType: hard
+
 "@aw-web-design/x-default-browser@npm:1.4.126":
   version: 1.4.126
   resolution: "@aw-web-design/x-default-browser@npm:1.4.126"
@@ -2972,7 +3010,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-darwin-arm64@npm:0.34.5":
+"@img/sharp-darwin-arm64@npm:0.34.5, @img/sharp-darwin-arm64@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-darwin-arm64@npm:0.34.5"
   dependencies:
@@ -2984,7 +3022,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-darwin-x64@npm:0.34.5":
+"@img/sharp-darwin-x64@npm:0.34.5, @img/sharp-darwin-x64@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-darwin-x64@npm:0.34.5"
   dependencies:
@@ -3066,7 +3104,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-linux-arm64@npm:0.34.5":
+"@img/sharp-linux-arm64@npm:0.34.5, @img/sharp-linux-arm64@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-linux-arm64@npm:0.34.5"
   dependencies:
@@ -3078,7 +3116,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-linux-arm@npm:0.34.5":
+"@img/sharp-linux-arm@npm:0.34.5, @img/sharp-linux-arm@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-linux-arm@npm:0.34.5"
   dependencies:
@@ -3126,7 +3164,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-linux-x64@npm:0.34.5":
+"@img/sharp-linux-x64@npm:0.34.5, @img/sharp-linux-x64@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-linux-x64@npm:0.34.5"
   dependencies:
@@ -3138,7 +3176,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-linuxmusl-arm64@npm:0.34.5":
+"@img/sharp-linuxmusl-arm64@npm:0.34.5, @img/sharp-linuxmusl-arm64@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-linuxmusl-arm64@npm:0.34.5"
   dependencies:
@@ -3150,7 +3188,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-linuxmusl-x64@npm:0.34.5":
+"@img/sharp-linuxmusl-x64@npm:0.34.5, @img/sharp-linuxmusl-x64@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-linuxmusl-x64@npm:0.34.5"
   dependencies:
@@ -3171,7 +3209,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-win32-arm64@npm:0.34.5":
+"@img/sharp-win32-arm64@npm:0.34.5, @img/sharp-win32-arm64@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-win32-arm64@npm:0.34.5"
   conditions: os=win32 & cpu=arm64
@@ -3185,7 +3223,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@img/sharp-win32-x64@npm:0.34.5":
+"@img/sharp-win32-x64@npm:0.34.5, @img/sharp-win32-x64@npm:^0.34.2":
   version: 0.34.5
   resolution: "@img/sharp-win32-x64@npm:0.34.5"
   conditions: os=win32 & cpu=x64
@@ -4662,6 +4700,86 @@ __metadata:
   version: 0.1.1
   resolution: "@one-ini/wasm@npm:0.1.1"
   checksum: 10c0/54700e055037f1a63bfcc86d24822203b25759598c2c3e295d1435130a449108aebc119c9c2e467744767dbe0b6ab47a182c61aa1071ba7368f5e20ab197ba65
+  languageName: node
+  linkType: hard
+
+"@openai/codex-darwin-arm64@npm:@openai/codex@0.117.0-darwin-arm64":
+  version: 0.117.0-darwin-arm64
+  resolution: "@openai/codex@npm:0.117.0-darwin-arm64"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@openai/codex-darwin-x64@npm:@openai/codex@0.117.0-darwin-x64":
+  version: 0.117.0-darwin-x64
+  resolution: "@openai/codex@npm:0.117.0-darwin-x64"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@openai/codex-linux-arm64@npm:@openai/codex@0.117.0-linux-arm64":
+  version: 0.117.0-linux-arm64
+  resolution: "@openai/codex@npm:0.117.0-linux-arm64"
+  conditions: os=linux & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@openai/codex-linux-x64@npm:@openai/codex@0.117.0-linux-x64":
+  version: 0.117.0-linux-x64
+  resolution: "@openai/codex@npm:0.117.0-linux-x64"
+  conditions: os=linux & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@openai/codex-sdk@npm:^0.117.0":
+  version: 0.117.0
+  resolution: "@openai/codex-sdk@npm:0.117.0"
+  dependencies:
+    "@openai/codex": "npm:0.117.0"
+  checksum: 10c0/96f86890fd45a4030a8e9b6f8466389a015d0ee534b1661b56463a1fd210c6fc3af0ea1f3ce57306a13a9b6ff6197d6409a4d5af7f6d7c90e672009eee15e3fd
+  languageName: node
+  linkType: hard
+
+"@openai/codex-win32-arm64@npm:@openai/codex@0.117.0-win32-arm64":
+  version: 0.117.0-win32-arm64
+  resolution: "@openai/codex@npm:0.117.0-win32-arm64"
+  conditions: os=win32 & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@openai/codex-win32-x64@npm:@openai/codex@0.117.0-win32-x64":
+  version: 0.117.0-win32-x64
+  resolution: "@openai/codex@npm:0.117.0-win32-x64"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@openai/codex@npm:0.117.0":
+  version: 0.117.0
+  resolution: "@openai/codex@npm:0.117.0"
+  dependencies:
+    "@openai/codex-darwin-arm64": "npm:@openai/codex@0.117.0-darwin-arm64"
+    "@openai/codex-darwin-x64": "npm:@openai/codex@0.117.0-darwin-x64"
+    "@openai/codex-linux-arm64": "npm:@openai/codex@0.117.0-linux-arm64"
+    "@openai/codex-linux-x64": "npm:@openai/codex@0.117.0-linux-x64"
+    "@openai/codex-win32-arm64": "npm:@openai/codex@0.117.0-win32-arm64"
+    "@openai/codex-win32-x64": "npm:@openai/codex@0.117.0-win32-x64"
+  dependenciesMeta:
+    "@openai/codex-darwin-arm64":
+      optional: true
+    "@openai/codex-darwin-x64":
+      optional: true
+    "@openai/codex-linux-arm64":
+      optional: true
+    "@openai/codex-linux-x64":
+      optional: true
+    "@openai/codex-win32-arm64":
+      optional: true
+    "@openai/codex-win32-x64":
+      optional: true
+  bin:
+    codex: bin/codex.js
+  checksum: 10c0/a5104a396f0f33558c9a402012bf2dd954f5d3465d3b0bb5fe780d265760a3c72b64af4a2d42a0012f661b7e4a274a42c5d4f5582de115613557f480dbec3b5b
   languageName: node
   linkType: hard
 
@@ -8717,10 +8835,12 @@ __metadata:
   resolution: "@storybook/scripts@workspace:scripts"
   dependencies:
     "@actions/core": "npm:^1.11.1"
+    "@anthropic-ai/claude-agent-sdk": "npm:^0.2.85"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@google-cloud/bigquery": "npm:^6.2.1"
     "@octokit/graphql": "npm:^5.0.6"
     "@octokit/request": "npm:^8.4.1"
+    "@openai/codex-sdk": "npm:^0.117.0"
     "@polka/parse": "npm:^1.0.0-next.28"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:^6.9.1"
@@ -8750,6 +8870,7 @@ __metadata:
     "@vitest/coverage-v8": "npm:^4.1.0"
     ansi-regex: "npm:^6.0.1"
     chromatic: "npm:^13.3.4"
+    citty: "npm:^0.2.1"
     codecov: "npm:^3.8.1"
     commander: "npm:^14.0.2"
     cross-env: "npm:^7.0.3"
@@ -13707,6 +13828,13 @@ __metadata:
     safe-buffer: "npm:^5.2.1"
     to-buffer: "npm:^1.2.2"
   checksum: 10c0/53c5046a9d9b60c586479b8f13fde263c3f905e13f11e8e04c7a311ce399c91d9c3ec96642332e0de077d356e1014ee12bba96f74fbaad0de750f49122258836
+  languageName: node
+  linkType: hard
+
+"citty@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "citty@npm:0.2.1"
+  checksum: 10c0/504ac5aeb076f750bf5f25d40c730083e8ed6112eac2f00dbe341a223c46ad16893ce73dfdb55b2d0da505100b9678968ee0443637c45b21917db48daa5a6977
   languageName: node
   linkType: hard
 

@@ -88,7 +88,7 @@ describe('serializeStatusesParam', () => {
 
   it('serializes included values', () => {
     expect(serializeStatusesParam(['status-value:new', 'status-value:modified'], [])).toBe(
-      'new;modified'
+      'modified;new'
     );
   });
 

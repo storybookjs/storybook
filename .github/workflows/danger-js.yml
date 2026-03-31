@@ -24,6 +24,6 @@ jobs:
       - name: Danger JS
         uses: docker://ghcr.io/danger/danger-js:13.0.5
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
         with:
           args: --dangerfile scripts/dangerfile.js

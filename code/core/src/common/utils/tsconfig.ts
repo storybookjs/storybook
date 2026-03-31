@@ -36,6 +36,15 @@ export const findTsconfigPath = (cwd: string): string | undefined => {
   return undefined;
 };
 
+/**
+ * Pick the tsconfig that actually applies to a given file, following project references when the
+ * nearest root config is just a references shell (for example Vite's `files: []` root tsconfig).
+ *
+ * This intentionally follows the same idea as the Volar-inspired selection logic used by
+ * `ComponentMetaManager`: prefer the config that really owns the file instead of stopping at the
+ * first config filename we discover. It extends the simpler fallback-chain fix from #34353 so
+ * docgen-style callers can handle project references too.
+ */
 export const findTsconfigPathForFile = (cwd: string, filePath: string): string | undefined => {
   const rootTsconfigPath = findTsconfigPath(cwd);
   if (!rootTsconfigPath) {

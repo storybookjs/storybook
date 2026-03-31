@@ -187,6 +187,9 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
   ]);
   const optionsKey = JSON.stringify(userOptions ?? {});
 
+  // Mirror the Volar-inspired project selection we already use in react-component-meta:
+  // if the nearest root tsconfig is only a project-references shell, follow references and pick
+  // the config that actually includes this file. This is the manifest-side extension of #34353.
   const configPath =
     findTsconfigPathForFile(typescript, process.cwd(), filePath) ?? findTsconfigPath(process.cwd());
   const configKey = configPath ?? '<no-tsconfig>';

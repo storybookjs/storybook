@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
 import { expect, userEvent, within } from 'storybook/test';
 
@@ -29,5 +29,26 @@ export const LoggedIn: Story = {
 
     const logoutButton = canvas.getByRole('button', { name: /Log out/i });
     await expect(logoutButton).toBeInTheDocument();
+  },
+};
+
+// Use the tanstack.router.path parameter to set the initial route for a story
+export const WithRouterPath: Story = {
+  parameters: {
+    tanstack: {
+      router: {
+        path: '/settings?tab=profile',
+      },
+    },
+  },
+};
+
+/** Clicking a TanStack Router <Link> logs the navigation in the Actions panel. */
+export const NavigateToAbout: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const aboutLink = canvas.getByRole('link', { name: /About/i });
+    await expect(aboutLink).toBeInTheDocument();
+    await userEvent.click(aboutLink);
   },
 };

@@ -6,10 +6,10 @@
  *
  * Usage:
  *   node eval/eval.ts -p mealdrop                       # claude defaults
- *   node eval/eval.ts -p mealdrop -a codex              # codex defaults
- *   node eval/eval.ts -p mealdrop -m gpt-5.4            # codex (inferred)
- *   node eval/eval.ts -p mealdrop -a claude -e max      # claude with max effort
- *   node eval/eval.ts -p mealdrop --manual          # prepare only, print instructions
+ *   node eval/eval.ts -p mealdrop -a codex             # codex defaults
+ *   node eval/eval.ts -p mealdrop -m gpt-5.4           # codex (inferred)
+ *   node eval/eval.ts -p mealdrop -a claude -e max     # claude with max effort
+ *   node eval/eval.ts -p mealdrop --manual             # prepare only, print instructions
  *   node eval/eval.ts --list-projects
  *   node eval/eval.ts --list-models
  *   node eval/eval.ts --list-prompts
@@ -22,72 +22,51 @@ import pc from 'picocolors';
 import {
   AGENT_IDS,
   AGENTS,
-  CLAUDE_MODELS,
   CLAUDE_EFFORTS,
-  CODEX_MODELS,
+  CLAUDE_MODELS,
   CODEX_EFFORTS,
-  resolveClaudeSdkModel,
+  CODEX_MODELS,
   type AgentId,
   type AgentVariant,
 } from './lib/agents/config.ts';
+import { prepareTrial } from './lib/prepare-trial.ts';
 import { PROJECTS } from './lib/projects.ts';
 import { runTrial, type TrialConfig } from './lib/run-trial.ts';
-import { prepareTrial } from './lib/prepare-trial.ts';
 import {
+  captureEnvironment,
   createLogger,
-  formatDuration,
   formatCost,
+  formatDuration,
+  generateTrialId,
   listPrompts,
   loadPrompt,
-  generateTrialId,
-  captureEnvironment,
 } from './lib/utils.ts';
 
 const PROJECT_NAMES = PROJECTS.map((p) => p.name) as [string, ...string[]];
-const LIST_MODE_FLAGS = [
-  ['listProjects', 'list-projects'],
-  ['listModels', 'list-models'],
-  ['listPrompts', 'list-prompts'],
-] as const;
-type ListMode = (typeof LIST_MODE_FLAGS)[number][0];
-const LIST_MODE_NAMES = LIST_MODE_FLAGS.map(([name]) => name) as [
-  ListMode,
-  ...ListMode[],
-];
 
-const runArgsBase = {
-  kind: z.literal('run'),
-  project: z.enum(PROJECT_NAMES),
+const base = {
+  project: z.enum(PROJECT_NAMES).optional(),
   prompt: z.string().default('setup'),
   verbose: z.boolean().default(false),
   manual: z.boolean().default(false),
+  listProjects: z.boolean().default(false),
+  listModels: z.boolean().default(false),
+  listPrompts: z.boolean().default(false),
 };
 
-const listArgsSchema = z.object({
-  kind: z.literal('list'),
-  listMode: z.enum(LIST_MODE_NAMES),
-});
-
-const claudeRunArgsSchema = z.object({
-  ...runArgsBase,
-  agent: z.literal('claude'),
-  model: z.enum(CLAUDE_MODELS).default(AGENTS.claude.defaultModel),
-  effort: z.enum(CLAUDE_EFFORTS).default(AGENTS.claude.defaultEffort),
-});
-
-const codexRunArgsSchema = z.object({
-  ...runArgsBase,
-  agent: z.literal('codex'),
-  model: z.enum(CODEX_MODELS).default(AGENTS.codex.defaultModel),
-  effort: z.enum(CODEX_EFFORTS).default(AGENTS.codex.defaultEffort),
-});
-
-type RunArgs = z.infer<typeof claudeRunArgsSchema> | z.infer<typeof codexRunArgsSchema>;
-
-const cliArgsSchema = z.discriminatedUnion('kind', [
-  listArgsSchema,
-  claudeRunArgsSchema,
-  codexRunArgsSchema,
+const argsSchema = z.discriminatedUnion('agent', [
+  z.object({
+    ...base,
+    agent: z.literal('claude'),
+    model: z.enum(CLAUDE_MODELS).default(AGENTS.claude.defaultModel),
+    effort: z.enum(CLAUDE_EFFORTS).default(AGENTS.claude.defaultEffort),
+  }),
+  z.object({
+    ...base,
+    agent: z.literal('codex'),
+    model: z.enum(CODEX_MODELS).default(AGENTS.codex.defaultModel),
+    effort: z.enum(CODEX_EFFORTS).default(AGENTS.codex.defaultEffort),
+  }),
 ]);
 
 const { values } = parseArgs({
@@ -107,13 +86,16 @@ const { values } = parseArgs({
   strict: true,
 });
 
-const cliInput = resolveCliInput(values);
-if ('error' in cliInput) {
-  console.error(pc.red(`  ${cliInput.error}`));
-  process.exit(1);
-}
+// Resolve the discriminator: explicit --agent, inferred from --model, or default to claude.
+const agent = values.agent ?? (values.model ? inferAgent(values.model) : 'claude');
 
-const parsed = cliArgsSchema.safeParse(cliInput);
+const parsed = argsSchema.safeParse({
+  ...values,
+  agent,
+  listProjects: values['list-projects'],
+  listModels: values['list-models'],
+  listPrompts: values['list-prompts'],
+});
 
 if (!parsed.success) {
   for (const issue of parsed.error.issues) {
@@ -125,26 +107,42 @@ if (!parsed.success) {
 const args = parsed.data;
 const logger = createLogger();
 
-if (args.kind === 'list') {
-  runListMode(args.listMode, logger);
+if (args.listProjects) {
+  for (const project of PROJECTS) {
+    logger.log(`  ${pc.bold(project.name)} — ${project.description}`);
+  }
+  process.exit(0);
+}
+if (args.listModels) {
+  for (const [name, { models }] of Object.entries(AGENTS)) {
+    logger.log(`\n  ${pc.bold(name)}`);
+    for (const model of models) logger.log(`    ${model}`);
+  }
+  process.exit(0);
+}
+if (args.listPrompts) {
+  for (const name of listPrompts()) logger.log(`  ${pc.bold(name)}`);
   process.exit(0);
 }
 
-const runArgs: RunArgs = args;
+if (!args.project) {
+  logger.log(pc.red(`Specify a project with -p. Available: ${PROJECT_NAMES.join(', ')}`));
+  process.exit(1);
+}
 const project = PROJECTS.find((p) => p.name === args.project)!;
-const variant = toVariant(runArgs);
+const variant = toVariant(args);
 
 logger.log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
 logger.log(
-  `Agent: ${variant.agent} | Model: ${variant.model} | Effort: ${variant.effort} | Prompt: ${runArgs.prompt}\n`
+  `Agent: ${variant.agent} | Model: ${variant.model} | Effort: ${variant.effort} | Prompt: ${args.prompt}\n`
 );
 
-if (runArgs.manual) {
-  const trialId = generateTrialId(project.name, variant.agent, variant.model, runArgs.prompt);
+if (args.manual) {
+  const trialId = generateTrialId(project.name, variant.agent, variant.model, args.prompt);
   const workspace = await prepareTrial(project, trialId, logger);
   await captureEnvironment(workspace.resultsDir);
 
-  const prompt = loadPrompt(runArgs.prompt);
+  const prompt = loadPrompt(args.prompt);
   const promptPath = join(workspace.resultsDir, 'prompt.md');
   await writeFile(promptPath, prompt);
 
@@ -159,7 +157,7 @@ if (runArgs.manual) {
   logger.log(`  ${pc.green(cliCommand)}\n`);
 } else {
   const result = await runTrial(
-    { project, variant, prompt: runArgs.prompt, verbose: runArgs.verbose } satisfies TrialConfig,
+    { project, variant, prompt: args.prompt, verbose: args.verbose } satisfies TrialConfig,
     logger
   );
 
@@ -190,57 +188,13 @@ function inferAgent(model: string): AgentId {
 function buildManualCommand(variant: AgentVariant, promptPath: string): string {
   const promptArg = `"$(cat ${promptPath})"`;
   if (variant.agent === 'claude') {
-    return `claude --model ${resolveClaudeSdkModel(variant.model)} ${promptArg}`;
+    const sdkModel = AGENTS.claude.sdkModelIds[variant.model] ?? variant.model;
+    return `claude --model ${sdkModel} ${promptArg}`;
   }
   return `codex --model ${variant.model} --reasoning-effort ${variant.effort} ${promptArg}`;
 }
 
-function resolveCliInput(values: Record<string, string | boolean | undefined>) {
-  const listModes = LIST_MODE_FLAGS.filter(([, flag]) => values[flag]).map(([name]) => name);
-  if (listModes.length > 1) {
-    return {
-      error: `Choose only one list mode at a time: ${listModes.join(', ')}`,
-    } as const;
-  }
-  if (listModes.length === 1) {
-    return {
-      kind: 'list',
-      listMode: listModes[0],
-    } as const;
-  }
-
-  const agent: AgentId =
-    values.agent === 'claude' || values.agent === 'codex'
-      ? values.agent
-      : values.model
-        ? inferAgent(values.model as string)
-        : 'claude';
-
-  return {
-    kind: 'run',
-    ...values,
-    agent,
-  } as const;
-}
-
-function runListMode(listMode: ListMode, logger: ReturnType<typeof createLogger>) {
-  switch (listMode) {
-    case 'listProjects':
-      for (const p of PROJECTS) logger.log(`  ${pc.bold(p.name)} — ${p.description}`);
-      break;
-    case 'listModels':
-      for (const [name, { models }] of Object.entries(AGENTS)) {
-        logger.log(`\n  ${pc.bold(name)}`);
-        for (const model of models) logger.log(`    ${model}`);
-      }
-      break;
-    case 'listPrompts':
-      for (const name of listPrompts()) logger.log(`  ${pc.bold(name)}`);
-      break;
-  }
-}
-
-function toVariant(args: RunArgs): AgentVariant {
+function toVariant(args: z.infer<typeof argsSchema>): AgentVariant {
   return args.agent === 'claude'
     ? { agent: 'claude', model: args.model, effort: args.effort }
     : { agent: 'codex', model: args.model, effort: args.effort };

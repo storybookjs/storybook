@@ -47,7 +47,10 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
     return;
   }
 
-  if (projectInfo.framework !== '@storybook/react-vite') {
+  if (
+    projectInfo.renderer !== '@storybook/react' &&
+    projectInfo.builder !== '@storybook/builder-vite'
+  ) {
     return;
   }
 

@@ -4,8 +4,8 @@ import type { ProjectInfo, AiPrompt } from './types';
 
 export function getDocsUrl(majorVersion: number | undefined): string {
   // Use {major}.0 format since /10 doesn't work on the docs site but /10.0 does. If not identified, link to the latest docs at / route.
-  const versionPath = majorVersion ? `${majorVersion}.0` : '';
-  return `https://storybook.js.org/docs/${versionPath}`;
+  const versionPath = majorVersion ? `/${majorVersion}.0` : '';
+  return `https://storybook.js.org/docs${versionPath}`;
 }
 
 export function getPrompts(projectInfo: ProjectInfo): AiPrompt[] {

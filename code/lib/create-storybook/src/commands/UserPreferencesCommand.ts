@@ -2,8 +2,8 @@ import type { ProjectType } from 'storybook/internal/cli';
 import { globalSettings } from 'storybook/internal/cli';
 import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
-import { Feature } from 'storybook/internal/types';
+import type { SupportedFramework } from 'storybook/internal/types';
+import { Feature, SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -28,6 +28,7 @@ export interface UserPreferencesOptions {
   skipPrompt?: boolean;
   framework: SupportedFramework | null;
   builder: SupportedBuilder;
+  renderer: SupportedRenderer;
   projectType: ProjectType;
 }
 
@@ -79,9 +80,13 @@ export class UserPreferencesCommand {
         ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
         : 'recommended';
 
-    // Ask about AI setup
+    // AI setup is only available for React + Vite projects for now
+    const isAiSetupEligible =
+      options.renderer === SupportedRenderer.REACT && options.builder === SupportedBuilder.VITE;
     const useAiForSetup =
-      installType === 'recommended' ? await this.promptAiSetup(skipPrompt) : false;
+      installType === 'recommended' && isAiSetupEligible
+        ? await this.promptAiSetup(skipPrompt)
+        : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,

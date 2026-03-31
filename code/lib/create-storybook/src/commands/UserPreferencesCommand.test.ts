@@ -4,7 +4,7 @@ import { AddonVitestService, ProjectType, globalSettings } from 'storybook/inter
 import type { JsPackageManager } from 'storybook/internal/common';
 import { PackageManagerName, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedBuilder } from 'storybook/internal/types';
+import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
 
 import type { CommandOptions } from '../generators/types';
@@ -124,6 +124,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -137,6 +138,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -156,6 +158,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -183,6 +186,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -206,6 +210,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -230,6 +235,7 @@ describe('UserPreferencesCommand', () => {
       await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -259,6 +265,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -281,6 +288,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -306,6 +314,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -321,6 +330,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
@@ -353,11 +363,50 @@ describe('UserPreferencesCommand', () => {
       const result = await yesCommand.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+    });
+
+    it('should not prompt for AI setup when renderer is not react', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+
+      const result = await command.execute({
+        framework: null,
+        builder: 'vite' as SupportedBuilder,
+        renderer: 'vue3' as SupportedRenderer,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(prompt.confirm).not.toHaveBeenCalled();
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
+    });
+
+    it('should not prompt for AI setup when builder is not vite', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+
+      const result = await command.execute({
+        framework: null,
+        builder: 'webpack5' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(prompt.confirm).not.toHaveBeenCalled();
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
     });
 
     it('should not include AI feature in minimal installs', async () => {
@@ -374,6 +423,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
         projectType: ProjectType.REACT,
       });
 

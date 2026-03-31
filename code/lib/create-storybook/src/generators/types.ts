@@ -121,13 +121,13 @@ export type CommandOptions = {
   features?: Array<Feature>;
   type?: ProjectType;
   force?: any;
-  // Whether this is being run via an ai agent
+  /** Whether this is being run via an ai agent */
   agent?: boolean;
   html?: boolean;
   skipInstall?: boolean;
   language?: SupportedLanguage;
   parser?: string;
-  // Automatically answer yes to prompts
+  /** Automatically answer yes to prompts */
   yes?: boolean;
   builder?: SupportedBuilder;
   linkable?: boolean;

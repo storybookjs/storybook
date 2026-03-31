@@ -6,9 +6,8 @@ import type {
   StatusValue,
 } from 'storybook/internal/types';
 
-import { MockAPIDecorator } from './Filter.story-helpers';
+import { IconSymbolsDecorator, MockAPIDecorator } from './Filter.story-helpers';
 import { FilterPanel } from './FilterPanel';
-import { IconSymbols } from './IconSymbols';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { API } from '../../../manager-api';
 
@@ -89,21 +88,27 @@ const getEntries = (includeUserTags: boolean) => {
   return entries;
 };
 
+// Helper to build an allStatuses map with one entry per status value
+const makeStatuses = (
+  ...values: Array<{ storyId: string; typeId: string; statusValue: StatusValue; title: string }>
+): StatusesByStoryIdAndTypeId =>
+  values.reduce<StatusesByStoryIdAndTypeId>((acc, { storyId, typeId, statusValue, title }) => {
+    acc[storyId] ??= {};
+    acc[storyId][typeId] = {
+      value: statusValue,
+      typeId,
+      storyId,
+      title,
+      description: '',
+    };
+    return acc;
+  }, {});
+
 const meta = {
   component: FilterPanel,
   title: 'Sidebar/FilterPanel',
   // Will provide api mock
-  decorators: [
-    MockAPIDecorator,
-    (storyFn: any) => {
-      return (
-        <>
-          <IconSymbols />
-          {storyFn()}
-        </>
-      );
-    },
-  ],
+  decorators: [MockAPIDecorator, IconSymbolsDecorator],
   tags: ['hoho'],
   args: {
     api: {} as API,
@@ -133,6 +138,38 @@ export const BuiltInOnly: Story = {
       v: 6,
       entries: getEntries(false),
     } as StoryIndex,
+    allStatuses: makeStatuses(
+      {
+        storyId: 'c1-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:new',
+        title: 'New',
+      },
+      {
+        storyId: 'c1-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:modified',
+        title: 'Modified',
+      },
+      {
+        storyId: 'c2-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:affected',
+        title: 'Affected',
+      },
+      {
+        storyId: 'c2-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:error',
+        title: 'Error',
+      },
+      {
+        storyId: 'c2-story3',
+        typeId: 'change-detection',
+        statusValue: 'status-value:warning',
+        title: 'Warning',
+      }
+    ),
   },
 };
 
@@ -143,10 +180,7 @@ export const BuiltInOnly: Story = {
  */
 export const BuiltInOnlyProduction: Story = {
   args: {
-    indexJson: {
-      v: 6,
-      entries: getEntries(false),
-    } as StoryIndex,
+    ...BuiltInOnly.args,
   },
 };
 
@@ -205,25 +239,6 @@ export const DefaultSelectionModified: Story = {
     defaultExcludedFilters: ['tag2'],
   },
 };
-
-// Helper to build an allStatuses map with one entry per status value
-const makeStatuses = (
-  ...values: Array<{ storyId: string; typeId: string; statusValue: StatusValue; title: string }>
-): StatusesByStoryIdAndTypeId =>
-  Object.fromEntries(
-    values.map(({ storyId, typeId, statusValue, title }) => [
-      storyId,
-      {
-        [typeId]: {
-          value: statusValue,
-          typeId,
-          storyId,
-          title,
-          description: '',
-        },
-      },
-    ])
-  );
 
 export const WithStatuses: Story = {
   args: {

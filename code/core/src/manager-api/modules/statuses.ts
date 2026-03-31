@@ -48,8 +48,8 @@ export const serializeStatusesParam = (
     return undefined;
   }
 
-  const serializedIncluded = included.map((v) => statusValueShortName(v));
-  const serializedExcluded = excluded.map((v) => `!${statusValueShortName(v)}`);
+  const serializedIncluded = included.map((v) => statusValueShortName(v)).sort();
+  const serializedExcluded = excluded.map((v) => `!${statusValueShortName(v)}`).sort();
 
   return [...serializedIncluded, ...serializedExcluded].join(';');
 };

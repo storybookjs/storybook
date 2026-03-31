@@ -1,6 +1,6 @@
 import { watch, type FSWatcher } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { readFile, stat } from 'node:fs/promises';
+import { join, resolve as resolvePath } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execa, type ExecaError } from 'execa';
@@ -17,6 +17,7 @@ type WatcherKey = 'branch' | 'head' | 'packedRefs';
 type GitFileSystem = {
   watch: typeof watch;
   readFile: typeof readFile;
+  stat: typeof stat;
 };
 
 function parseChangedFiles(stdout: string): Set<string> {
@@ -33,10 +34,11 @@ export class GitDiffProvider {
   private readonly gitStateCallbacks = new Set<GitStateChangeCallback>();
   private readonly watchers: Partial<Record<WatcherKey, FSWatcher>> = {};
   private watcherSetupInFlight: Promise<void> | undefined;
+  private watcherSetupGeneration = 0;
 
   constructor(
     private readonly cwd = process.cwd(),
-    private readonly fileSystem: GitFileSystem = { watch, readFile }
+    private readonly fileSystem: GitFileSystem = { watch, readFile, stat }
   ) {}
 
   async getRepoRoot(): Promise<string> {
@@ -94,41 +96,38 @@ export class GitDiffProvider {
       this.gitStateCallbacks.delete(callback);
 
       if (this.gitStateCallbacks.size === 0) {
+        this.watcherSetupGeneration += 1;
         this.clearAllWatchers();
       }
     };
   }
 
   private async ensureWatchers(): Promise<void> {
-    if (this.watcherSetupInFlight) {
+    while (this.gitStateCallbacks.size > 0 && Object.keys(this.watchers).length === 0) {
+      if (!this.watcherSetupInFlight) {
+        this.watcherSetupInFlight = this.setupWatchers(this.watcherSetupGeneration);
+      }
+
       await this.watcherSetupInFlight;
-      return;
     }
-
-    if (Object.keys(this.watchers).length > 0) {
-      return;
-    }
-
-    this.watcherSetupInFlight = this.setupWatchers();
-    await this.watcherSetupInFlight;
   }
 
-  private async setupWatchers(): Promise<void> {
+  private async setupWatchers(generation: number): Promise<void> {
     try {
       const gitDir = await this.getGitDir();
 
-      if (this.gitStateCallbacks.size === 0) {
+      if (!this.isWatcherSetupCurrent(generation)) {
         return;
       }
 
-      this.watchFile('head', join(gitDir, 'HEAD'), () => {
+      this.watchFile(generation, 'head', join(gitDir, 'HEAD'), () => {
         this.emitGitStateChange();
-        void this.configureBranchWatcher(gitDir);
+        void this.configureBranchWatcher(gitDir, generation);
       });
-      this.watchFile('packedRefs', join(gitDir, 'packed-refs'), () => {
+      this.watchFile(generation, 'packedRefs', join(gitDir, 'packed-refs'), () => {
         this.emitGitStateChange();
       });
-      await this.configureBranchWatcher(gitDir);
+      await this.configureBranchWatcher(gitDir, generation);
     } catch {
       // Watching git state is opportunistic; scanning still runs from module graph updates.
     } finally {
@@ -143,16 +142,26 @@ export class GitDiffProvider {
   }
 
   private watchFile(
+    generation: number,
     key: WatcherKey,
     filePath: string,
     onChange: GitStateChangeCallback
   ): FSWatcher | undefined {
+    if (!this.isWatcherSetupCurrent(generation)) {
+      return undefined;
+    }
+
     try {
       const watcher = this.fileSystem.watch(filePath, { persistent: false }, () => {
-        if (this.gitStateCallbacks.size > 0) {
+        if (this.isWatcherSetupCurrent(generation)) {
           onChange();
         }
       });
+
+      if (!this.isWatcherSetupCurrent(generation)) {
+        watcher.close();
+        return undefined;
+      }
 
       watcher.on('error', () => {
         watcher.close();
@@ -173,24 +182,35 @@ export class GitDiffProvider {
     }
   }
 
-  private async configureBranchWatcher(gitDir: string): Promise<void> {
-    if (this.gitStateCallbacks.size === 0) {
+  private async configureBranchWatcher(gitDir: string, generation: number): Promise<void> {
+    if (!this.isWatcherSetupCurrent(generation)) {
       return;
     }
 
     const branchRef = await this.readHeadRef(gitDir);
 
-    if (this.gitStateCallbacks.size === 0) {
+    if (!this.isWatcherSetupCurrent(generation)) {
       return;
     }
 
     this.clearWatcher('branch');
 
     if (branchRef?.startsWith('refs/heads/')) {
-      this.watchFile('branch', join(gitDir, branchRef), () => {
+      const branchWatcher = this.watchFile(generation, 'branch', join(gitDir, branchRef), () => {
         this.emitGitStateChange();
       });
+
+      if (!branchWatcher) {
+        this.watchFile(generation, 'branch', join(gitDir, 'refs', 'heads'), () => {
+          this.emitGitStateChange();
+          void this.configureBranchWatcher(gitDir, generation);
+        });
+      }
     }
+  }
+
+  private isWatcherSetupCurrent(generation: number): boolean {
+    return this.gitStateCallbacks.size > 0 && generation === this.watcherSetupGeneration;
   }
 
   private clearWatcher(key: WatcherKey): void {
@@ -205,7 +225,30 @@ export class GitDiffProvider {
   }
 
   private async getGitDir(): Promise<string> {
-    return join(await this.getRepoRoot(), '.git');
+    const repoRoot = await this.getRepoRoot();
+    const gitPath = join(repoRoot, '.git');
+
+    try {
+      const gitStat = await this.fileSystem.stat(gitPath);
+      if (gitStat.isDirectory()) {
+        return gitPath;
+      }
+
+      if (gitStat.isFile()) {
+        const gitPointer = await this.fileSystem.readFile(gitPath, 'utf8');
+        const match = /^gitdir:\s+(.+)$/m.exec(gitPointer.trim());
+
+        if (match) {
+          return resolvePath(repoRoot, match[1]);
+        }
+      }
+    } catch (error) {
+      if (!this.isEnoentError(error)) {
+        throw error;
+      }
+    }
+
+    return gitPath;
   }
 
   private async readHeadRef(gitDir: string): Promise<string | undefined> {

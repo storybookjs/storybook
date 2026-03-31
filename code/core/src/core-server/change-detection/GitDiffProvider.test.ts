@@ -1,5 +1,5 @@
 import type { FSWatcher } from 'node:fs';
-import type { readFile } from 'node:fs/promises';
+import type { readFile, stat } from 'node:fs/promises';
 import type { watch } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,9 +21,22 @@ type MockWatcherRecord = {
 type GitDiffProviderTestContext = {
   headReads: string[];
   watchRecords: MockWatcherRecord[];
+  mockReadFile: ReturnType<typeof vi.fn>;
   createProvider: () => GitDiffProvider;
   getWatchedPaths: () => string[];
 };
+type SetupGitWatchProviderOptions = {
+  gitDirFileContents?: string;
+  headReadDelay?: Promise<unknown>;
+  missingWatchPaths?: string[];
+};
+
+function mockStats(isDirectory: boolean) {
+  return {
+    isDirectory: () => isDirectory,
+    isFile: () => !isDirectory,
+  } as Awaited<ReturnType<typeof stat>>;
+}
 
 function resolved(stdout: string): ExecaMockResult {
   return { stdout };
@@ -33,10 +46,29 @@ function rejected(error: Error): ExecaMockResult {
   return { error };
 }
 
-function setupGitWatchProvider(): GitDiffProviderTestContext {
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+
+  return {
+    promise: new Promise<T>((fulfill) => {
+      resolve = fulfill;
+    }),
+    resolve,
+  };
+}
+
+function setupGitWatchProvider(
+  options: SetupGitWatchProviderOptions = {}
+): GitDiffProviderTestContext {
   const watchRecords: MockWatcherRecord[] = [];
   const headReads: string[] = ['ref: refs/heads/main\n'];
+  const gitDirPath = options.gitDirFileContents ? '/actual/git-dir' : '/repo/.git';
+  const missingWatchPaths = new Set(options.missingWatchPaths ?? []);
   const mockWatch = ((path, _options, listener) => {
+    if (missingWatchPaths.has(String(path))) {
+      throw Object.assign(new Error(`Missing watch path: ${String(path)}`), { code: 'ENOENT' });
+    }
+
     const watcher = {
       close: vi.fn(),
       on: vi.fn().mockReturnThis(),
@@ -53,20 +85,34 @@ function setupGitWatchProvider(): GitDiffProviderTestContext {
     return watcher;
   }) as typeof watch;
   const mockReadFile = vi.fn(async (path) => {
-    if (String(path) === '/repo/.git/HEAD') {
+    if (String(path) === '/repo/.git' && options.gitDirFileContents) {
+      return options.gitDirFileContents;
+    }
+
+    if (String(path) === `${gitDirPath}/HEAD`) {
+      await options.headReadDelay;
       return headReads.shift() ?? headReads[0] ?? 'ref: refs/heads/main\n';
     }
 
     throw Object.assign(new Error(`Unexpected read: ${String(path)}`), { code: 'ENOENT' });
   }) as unknown as typeof readFile;
+  const mockStat = vi.fn(async (path) => {
+    if (String(path) === '/repo/.git') {
+      return mockStats(!options.gitDirFileContents);
+    }
+
+    throw Object.assign(new Error(`Unexpected stat: ${String(path)}`), { code: 'ENOENT' });
+  }) as unknown as typeof stat;
 
   return {
     headReads,
     watchRecords,
+    mockReadFile: mockReadFile as ReturnType<typeof vi.fn>,
     createProvider: () =>
       new GitDiffProvider('/repo', {
         watch: mockWatch,
         readFile: mockReadFile,
+        stat: mockStat,
       }),
     getWatchedPaths: () => watchRecords.map(({ path }) => path),
   };
@@ -204,6 +250,44 @@ describe('GitDiffProvider', () => {
     expect(onGitStateChange).toHaveBeenCalledTimes(2);
   });
 
+  it('resolves gitdir pointers for worktrees', async () => {
+    const { createProvider, getWatchedPaths } = setupGitWatchProvider({
+      gitDirFileContents: 'gitdir: ../actual/git-dir\n',
+    });
+    const provider = createProvider();
+
+    provider.onGitStateChange(vi.fn());
+    await vi.waitFor(() => {
+      expect(getWatchedPaths()).toEqual([
+        '/actual/git-dir/HEAD',
+        '/actual/git-dir/packed-refs',
+        '/actual/git-dir/refs/heads/main',
+      ]);
+    });
+  });
+
+  it('falls back to watching refs/heads when the branch ref file is missing', async () => {
+    const { createProvider, getWatchedPaths, headReads, watchRecords } = setupGitWatchProvider({
+      missingWatchPaths: ['/repo/.git/refs/heads/release'],
+    });
+    headReads.splice(0, headReads.length, 'ref: refs/heads/release\n', 'ref: refs/heads/release\n');
+    const onGitStateChange = vi.fn();
+    const provider = createProvider();
+
+    provider.onGitStateChange(onGitStateChange);
+    await vi.waitFor(() => {
+      expect(getWatchedPaths()).toEqual([
+        '/repo/.git/HEAD',
+        '/repo/.git/packed-refs',
+        '/repo/.git/refs/heads',
+      ]);
+    });
+
+    watchRecords[2].emitChange();
+
+    expect(onGitStateChange).toHaveBeenCalledTimes(1);
+  });
+
   it('cleans up all git watchers when the last callback unsubscribes', async () => {
     const { createProvider, watchRecords } = setupGitWatchProvider();
     const onGitStateChange = vi.fn();
@@ -258,5 +342,25 @@ describe('GitDiffProvider', () => {
     initialWatchers.forEach((watcher) => {
       expect(watcher.close).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('does not leave watchers behind when unsubscribing during setup', async () => {
+    const headReadDeferred = createDeferred<void>();
+    const { createProvider, getWatchedPaths } = setupGitWatchProvider({
+      headReadDelay: headReadDeferred.promise,
+    });
+    const provider = createProvider();
+
+    const unsubscribe = provider.onGitStateChange(vi.fn());
+    await vi.waitFor(() => {
+      expect(getWatchedPaths()).toEqual(['/repo/.git/HEAD', '/repo/.git/packed-refs']);
+    });
+
+    unsubscribe();
+    headReadDeferred.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(getWatchedPaths()).toEqual(['/repo/.git/HEAD', '/repo/.git/packed-refs']);
   });
 });

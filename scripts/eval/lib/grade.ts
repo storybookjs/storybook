@@ -1,13 +1,17 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { x } from 'tinyexec';
+import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts';
+import { runGhostStories } from '../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts';
 import type { Logger } from './utils.ts';
 import type { TrialWorkspace } from './prepare-trial.ts';
-import { getComponentCandidates, runGhostStories } from 'storybook/internal/core-server';
+
+/** Git `--name-status` codes: A=added, M=modified, D=deleted, R=renamed. */
+export type GitDiffStatus = 'A' | 'M' | 'D' | 'R';
 
 export interface FileChange {
   path: string;
-  status: 'A' | 'M' | 'D' | 'R';
+  gitStatus: GitDiffStatus;
   /** For renames, the original path before the move. */
   previousPath?: string;
 }
@@ -127,17 +131,14 @@ export function parseChangedFiles(gitOutput: string): FileChange[] {
     .filter(Boolean)
     .map((line) => {
       const [status, ...parts] = line.split('\t');
-      const firstChar = status?.charAt(0) ?? '';
-      const normalizedStatus = (
-        ['A', 'M', 'D', 'R'].includes(firstChar) ? firstChar : 'M'
-      ) as FileChange['status'];
+      const gitStatus = parseGitDiffStatus(status);
 
-      if (normalizedStatus === 'R' && parts.length >= 2) {
+      if (gitStatus === 'R' && parts.length >= 2) {
         const [previousPath, path] = parts;
-        return { path, previousPath, status: normalizedStatus };
+        return { path, previousPath, gitStatus };
       }
 
-      return { path: parts.join('\t'), status: normalizedStatus };
+      return { path: parts.join('\t'), gitStatus };
     });
 }
 
@@ -278,4 +279,11 @@ function truncateEnd(text: string, maxChars: number): string {
   const truncated = text.slice(-maxChars);
   const firstNewline = truncated.indexOf('\n');
   return firstNewline >= 0 ? truncated.slice(firstNewline + 1) : truncated;
+}
+
+function parseGitDiffStatus(rawStatus?: string): GitDiffStatus {
+  const firstChar = rawStatus?.charAt(0);
+  return firstChar === 'A' || firstChar === 'M' || firstChar === 'D' || firstChar === 'R'
+    ? firstChar
+    : 'M';
 }

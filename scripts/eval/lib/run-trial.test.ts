@@ -217,12 +217,12 @@ function setupMocks(overrides?: {
       buildSuccess,
       typeCheckErrors,
       fileChanges: [
-        { path: '.storybook/preview.tsx', status: 'A' },
-        { path: 'src/Button.stories.tsx', status: 'A' },
+        { path: '.storybook/preview.tsx', gitStatus: 'A' },
+        { path: 'src/Button.stories.tsx', gitStatus: 'A' },
       ],
       storybookChanges: [
-        { path: '.storybook/preview.tsx', status: 'A' },
-        { path: 'src/Button.stories.tsx', status: 'A' },
+        { path: '.storybook/preview.tsx', gitStatus: 'A' },
+        { path: 'src/Button.stories.tsx', gitStatus: 'A' },
       ],
     },
     score: {

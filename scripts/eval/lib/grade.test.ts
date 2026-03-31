@@ -1,4 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts', () => ({
+  getComponentCandidates: vi.fn(),
+}));
+
+vi.mock('../../../code/core/src/core-server/utils/ghost-stories/run-story-tests.ts', () => ({
+  runGhostStories: vi.fn(),
+}));
 
 import {
   filterStorybookFiles,
@@ -11,32 +19,32 @@ import type { FileChange } from './grade';
 describe('filterStorybookFiles', () => {
   it('matches files in .storybook/ directory', () => {
     const files: FileChange[] = [
-      { path: '.storybook/main.ts', status: 'M' },
-      { path: '.storybook/preview.tsx', status: 'A' },
-      { path: 'src/App.tsx', status: 'M' },
+      { path: '.storybook/main.ts', gitStatus: 'M' },
+      { path: '.storybook/preview.tsx', gitStatus: 'A' },
+      { path: 'src/App.tsx', gitStatus: 'M' },
     ];
     expect(filterStorybookFiles(files)).toMatchObject([
-      { path: '.storybook/main.ts', status: 'M' },
-      { path: '.storybook/preview.tsx', status: 'A' },
+      { path: '.storybook/main.ts', gitStatus: 'M' },
+      { path: '.storybook/preview.tsx', gitStatus: 'A' },
     ]);
   });
 
   it('matches story files with various extensions', () => {
     const files: FileChange[] = [
-      { path: 'src/Button.stories.tsx', status: 'A' },
-      { path: 'src/Header.stories.ts', status: 'A' },
-      { path: 'src/Page.story.jsx', status: 'A' },
-      { path: 'src/utils.stories.js', status: 'A' },
-      { path: 'src/Button.tsx', status: 'M' },
-      { path: 'src/Button.test.tsx', status: 'M' },
+      { path: 'src/Button.stories.tsx', gitStatus: 'A' },
+      { path: 'src/Header.stories.ts', gitStatus: 'A' },
+      { path: 'src/Page.story.jsx', gitStatus: 'A' },
+      { path: 'src/utils.stories.js', gitStatus: 'A' },
+      { path: 'src/Button.tsx', gitStatus: 'M' },
+      { path: 'src/Button.test.tsx', gitStatus: 'M' },
     ];
     expect(filterStorybookFiles(files)).toMatchObject(files.slice(0, 4));
   });
 
   it('returns empty for no storybook files', () => {
     const files: FileChange[] = [
-      { path: 'src/App.tsx', status: 'M' },
-      { path: 'package.json', status: 'M' },
+      { path: 'src/App.tsx', gitStatus: 'M' },
+      { path: 'package.json', gitStatus: 'M' },
     ];
     expect(filterStorybookFiles(files)).toHaveLength(0);
   });
@@ -47,9 +55,9 @@ describe('filterStorybookFiles', () => {
 
   it('matches renamed files using either side of the rename', () => {
     const files: FileChange[] = [
-      { path: 'src/Button.tsx', previousPath: 'src/Button.stories.tsx', status: 'R' },
-      { path: '.storybook/preview.tsx', previousPath: 'config/preview.tsx', status: 'R' },
-      { path: 'src/App.tsx', previousPath: 'src/Main.tsx', status: 'R' },
+      { path: 'src/Button.tsx', previousPath: 'src/Button.stories.tsx', gitStatus: 'R' },
+      { path: '.storybook/preview.tsx', previousPath: 'config/preview.tsx', gitStatus: 'R' },
+      { path: 'src/App.tsx', previousPath: 'src/Main.tsx', gitStatus: 'R' },
     ];
 
     expect(filterStorybookFiles(files)).toMatchObject(files.slice(0, 2));
@@ -232,10 +240,10 @@ describe('parseChangedFiles', () => {
     const output =
       'A\tsrc/new-file.ts\nM\tsrc/existing.ts\nD\tsrc/removed.ts\nR100\told.ts\tnew.ts';
     expect(parseChangedFiles(output)).toMatchObject([
-      { path: 'src/new-file.ts', status: 'A' },
-      { path: 'src/existing.ts', status: 'M' },
-      { path: 'src/removed.ts', status: 'D' },
-      { path: 'new.ts', previousPath: 'old.ts', status: 'R' },
+      { path: 'src/new-file.ts', gitStatus: 'A' },
+      { path: 'src/existing.ts', gitStatus: 'M' },
+      { path: 'src/removed.ts', gitStatus: 'D' },
+      { path: 'new.ts', previousPath: 'old.ts', gitStatus: 'R' },
     ]);
   });
 
@@ -245,6 +253,8 @@ describe('parseChangedFiles', () => {
   });
 
   it('handles single file', () => {
-    expect(parseChangedFiles('M\tpackage.json')).toEqual([{ path: 'package.json', status: 'M' }]);
+    expect(parseChangedFiles('M\tpackage.json')).toEqual([
+      { path: 'package.json', gitStatus: 'M' },
+    ]);
   });
 });

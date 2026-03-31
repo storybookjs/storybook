@@ -58,18 +58,48 @@ export interface TokenUsage {
   outputTokens: number;
 }
 
-export interface AgentDefinition {
-  models: readonly string[];
-  defaultModel: string;
-  /** Map friendly model names to SDK-specific model IDs (e.g. "sonnet-4.6" → "claude-sonnet-4-6"). */
-  sdkModelIds: Record<string, string>;
-  /** Per-million-token pricing for manual cost estimation (agents that don't report cost natively). */
-  pricing: Record<string, TokenPricing>;
-  efforts: readonly string[];
-  defaultEffort: string;
+export type ClaudeTool = 'Read' | 'Write' | 'Edit' | 'Bash' | 'Glob' | 'Grep';
+
+export interface ClaudeExecutionConfig {
+  maxTurns: number;
+  /**
+   * Bash is toggled here at the harness level, but individual shell commands still execute through
+   * Claude's Bash tool rather than through a separate command allowlist.
+   */
+  allowedTools: readonly ClaudeTool[];
+  debug: boolean;
+  systemPrompt: { type: 'preset'; preset: 'claude_code' };
+  /** Claude access is controlled through the explicit tool allowlist above. */
+  permissionModel: 'tool-allowlist';
 }
 
-export const AGENTS: Record<AgentId, AgentDefinition> = {
+export interface CodexExecutionConfig {
+  /** Codex runs non-interactively so benchmark runs never block on approval prompts. */
+  approvalPolicy: 'never';
+  permissionModel: 'approval-policy-never';
+}
+
+export interface AgentDefinition<TModel extends string, TEffort extends string, TExecution> {
+  models: readonly TModel[];
+  defaultModel: TModel;
+  /** Map friendly model names to SDK-specific model IDs (e.g. "sonnet-4.6" → "claude-sonnet-4-6"). */
+  sdkModelIds: Partial<Record<TModel, string>>;
+  /** Per-million-token pricing for manual cost estimation (agents that don't report cost natively). */
+  pricing: Partial<Record<TModel, TokenPricing>>;
+  efforts: readonly TEffort[];
+  defaultEffort: TEffort;
+  execution: TExecution;
+}
+
+export type ClaudeDefinition = AgentDefinition<ClaudeModel, ClaudeEffort, ClaudeExecutionConfig>;
+export type CodexDefinition = AgentDefinition<CodexModel, CodexEffort, CodexExecutionConfig>;
+
+export interface AgentDefinitions {
+  claude: ClaudeDefinition;
+  codex: CodexDefinition;
+}
+
+export const AGENTS: AgentDefinitions = {
   claude: {
     models: CLAUDE_MODELS,
     defaultModel: 'sonnet-4.6',
@@ -81,6 +111,13 @@ export const AGENTS: Record<AgentId, AgentDefinition> = {
     pricing: {},
     efforts: CLAUDE_EFFORTS,
     defaultEffort: 'medium',
+    execution: {
+      maxTurns: 50,
+      allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
+      debug: true,
+      systemPrompt: { type: 'preset', preset: 'claude_code' },
+      permissionModel: 'tool-allowlist',
+    },
   },
   codex: {
     models: CODEX_MODELS,
@@ -91,12 +128,34 @@ export const AGENTS: Record<AgentId, AgentDefinition> = {
     },
     efforts: CODEX_EFFORTS,
     defaultEffort: 'medium',
+    execution: {
+      approvalPolicy: 'never',
+      permissionModel: 'approval-policy-never',
+    },
   },
 };
 
+export function getDefaultVariant<T extends AgentId>(
+  agent: T
+): Extract<AgentVariant, { agent: T }> {
+  const definition = AGENTS[agent];
+  return {
+    agent,
+    model: definition.defaultModel,
+    effort: definition.defaultEffort,
+  } as Extract<AgentVariant, { agent: T }>;
+}
+
+export function resolveClaudeSdkModel(model: ClaudeModel): string {
+  return AGENTS.claude.sdkModelIds[model] ?? model;
+}
+
 /** Estimate cost from token usage using the pricing table. */
 export function estimateCost(agent: AgentId, model: string, usage: TokenUsage): number | undefined {
-  const pricing = AGENTS[agent].pricing[model];
+  const pricing =
+    agent === 'claude'
+      ? AGENTS.claude.pricing[model as ClaudeModel]
+      : AGENTS.codex.pricing[model as CodexModel];
   if (!pricing) return undefined;
   const freshInput = usage.inputTokens - usage.cachedInputTokens;
   return (

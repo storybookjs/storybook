@@ -85,5 +85,5 @@ CLAUDE.local.md
 scripts/eval/.cache
 scripts/eval/results
 
-# PR review output
+# review-pr skill output
 .pr-review

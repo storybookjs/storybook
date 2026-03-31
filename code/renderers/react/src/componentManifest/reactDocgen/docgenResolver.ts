@@ -38,9 +38,16 @@ export function defaultLookupModule(filename: string, basedir: string): string {
     switch (ext) {
       case '.js':
       case '.mjs':
-      case '.cjs':
-        newFilename = `${filename.slice(0, -2)}ts`;
+      case '.cjs': {
+        // Try .ts first, then fall back to .tsx (for React components using ESM-style .js imports)
+        const base = filename.slice(0, -2); // removes "js" keeping the dot, e.g. "Chip." or "Chip.m"
+        try {
+          return resolve.sync(`${base}ts`, { ...resolveOptions, extensions: [] });
+        } catch {
+          newFilename = `${base}tsx`;
+        }
         break;
+      }
 
       case '.jsx':
         newFilename = `${filename.slice(0, -3)}tsx`;

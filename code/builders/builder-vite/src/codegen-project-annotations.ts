@@ -1,5 +1,4 @@
 import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
-import { STORY_HOT_UPDATED } from 'storybook/internal/core-events';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
@@ -69,8 +68,6 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
       if (import.meta.hot) {
         import.meta.hot.accept([${JSON.stringify(previewFileURL)}], (previewAnnotationModules) => {
-          // Cancel any running play function before patching in the new getProjectAnnotations
-          window?.__STORYBOOK_PREVIEW__?.channel?.emit('${STORY_HOT_UPDATED}');
           // getProjectAnnotations has changed so we need to patch the new one in
           window?.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({
             getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules),
@@ -99,8 +96,6 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
     if (import.meta.hot) {
       import.meta.hot.accept(${JSON.stringify(previewAnnotationURLs)}, (previewAnnotationModules) => {
-        // Cancel any running play function before patching in the new getProjectAnnotations
-        window?.__STORYBOOK_PREVIEW__?.channel?.emit('${STORY_HOT_UPDATED}');
         // getProjectAnnotations has changed so we need to patch the new one in
         window?.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({
           getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules),
@@ -110,6 +105,11 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   `.trim();
 }
 
+/** djb2 hash — http://www.cse.yorku.ca/~oz/hash.html */
 function hash(value: string) {
-  return value.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  let acc = 5381;
+  for (let i = 0; i < value.length; i++) {
+    acc = ((acc << 5) + acc + value.charCodeAt(i)) >>> 0;
+  }
+  return acc;
 }

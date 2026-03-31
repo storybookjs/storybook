@@ -15,7 +15,11 @@ const meta = preview.meta({
   args: { onClick: fn() },
 });
 
-const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
+const Stack = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '1rem',
+});
 
 const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 
@@ -291,6 +295,32 @@ export const Disabled = meta.story({
     ariaLabel: false,
     disabled: true,
     children: 'Disabled Button',
+    onClick: fn(),
+  },
+  render: (args) => (
+    <Row>
+      <Button variant="solid" {...args}>
+        Disabled Button
+      </Button>
+    </Row>
+  ),
+  play: async ({ args, canvas, step }) => {
+    const button = canvas.getByRole('button', { name: 'Disabled Button' });
+
+    await step('Disabled button should be aria-disabled', async () => {
+      expect(button).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    await step('Disabled button should not be clickable', async () => {
+      button.click();
+      expect(args.onClick).not.toHaveBeenCalled();
+    });
+
+    await step('Disabled button should be focusable for accessibility', async () => {
+      const button = canvas.getByRole('button', { name: 'Disabled Button' });
+      button.focus();
+      expect(button).toHaveFocus();
+    });
   },
 });
 
@@ -433,8 +463,12 @@ export const SharedAriaDescription = meta.story({
     const canvas = within(canvasElement);
 
     await step('generate unique describedby IDs for repeated descriptions', async () => {
-      const firstButton = canvas.getByRole('button', { name: 'First button' });
-      const secondButton = canvas.getByRole('button', { name: 'Second button' });
+      const firstButton = canvas.getByRole('button', {
+        name: 'First button',
+      });
+      const secondButton = canvas.getByRole('button', {
+        name: 'Second button',
+      });
       const firstDescriptionId = firstButton.getAttribute('aria-describedby');
       const secondDescriptionId = secondButton.getAttribute('aria-describedby');
 

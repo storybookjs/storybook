@@ -180,9 +180,7 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
 
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
-export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
-  const controlId = getControlId(name);
-  const jsonErrorId = `${controlId}-error`;
+export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange, argType }) => {
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
@@ -190,6 +188,9 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
+  const controlId = getControlId(name, storyId);
+  const jsonErrorId = `${controlId}-error`;
+
   const validateRaw = useCallback((raw: string) => {
     try {
       if (raw) {
@@ -250,7 +251,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
       <Button
         ariaLabel={false}
         disabled={readonly}
-        id={getControlSetterButtonId(name)}
+        id={getControlSetterButtonId(name, storyId)}
         onClick={onForceVisible}
       >
         Set object

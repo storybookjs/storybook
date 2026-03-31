@@ -31,6 +31,7 @@ export type PreviewProps = PropsWithChildren<{
   withToolbar?: boolean;
   className?: string;
   additionalActions?: ActionItem[];
+  onReloadStory?: () => void;
 }>;
 
 export type Layout = 'padded' | 'fullscreen' | 'centered';
@@ -150,6 +151,7 @@ export const Preview: FC<PreviewProps> = ({
   className,
   layout = 'padded',
   inline = false,
+  onReloadStory,
   ...props
 }) => {
   const [expanded, setExpanded] = useState(isExpanded);
@@ -200,6 +202,7 @@ export const Preview: FC<PreviewProps> = ({
             zoom={(z: number) => setScale(scale * z)}
             resetZoom={() => setScale(1)}
             storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}
+            onReloadStory={onReloadStory}
           />
         )}
         <ZoomContext.Provider value={{ scale }}>

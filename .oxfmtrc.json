@@ -1,0 +1,69 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "bracketSpacing": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "arrowParens": "always",
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "*.bundle.js",
+    "*.js.map",
+    ".yarn",
+    ".vscode",
+    ".nx/cache",
+    ".nx/workspace-data",
+    "dist",
+    "build",
+    "bench",
+    "coverage",
+    "node_modules",
+    "storybook-static",
+    "built-storybooks",
+    "ember-output",
+    "code/core/assets",
+    "code/core/report",
+    "code/core/src/core-server/presets/common-manager.ts",
+    "code/core/src/core-server/utils/__search-files-tests__",
+    "code/core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
+    "code/lib/codemod/src/transforms/__testfixtures__",
+    "code/frameworks/angular/template/**",
+    "code/lib/eslint-plugin",
+    "docs/versions/*.json",
+    ".prettierrc",
+    "test-storybooks",
+    "*.yml",
+    "*.yaml",
+    "*.md",
+    "*.mdx",
+    "!docs/_snippets/**"
+  ],
+  "overrides": [
+    {
+      "files": ["docs/_snippets/**"],
+      "options": {
+        "trailingComma": "all"
+      }
+    },
+    {
+      "files": ["*.md", "*.mdx"],
+      "options": {
+        "importOrderSeparation": false,
+        "importOrderSortSpecifiers": false
+      }
+    },
+    {
+      "files": ["*.component.html"],
+      "options": {
+        "parser": "angular"
+      }
+    },
+    {
+      "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
+      "options": {
+        "parser": "babel-ts"
+      }
+    }
+  ]
+}

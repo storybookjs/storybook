@@ -1,95 +1,65 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { detectAgent } from './detect-agent';
 
 describe('detectAgent', () => {
-  it('detects amp via AGENT=amp (highest precedence)', () => {
-    expect(
-      detectAgent({
-        stdoutIsTTY: true,
-        env: {
-          AGENT: 'amp',
-          CLAUDECODE: '1',
-          GEMINI_CLI: '1',
-          CODEX_SANDBOX: '1',
-          CURSOR_AGENT: '1',
-        },
-      })
-    ).toEqual({ name: 'amp' });
-
-    expect(
-      detectAgent({
-        stdoutIsTTY: true,
-        env: {
-          CLAUDECODE: '1',
-          GEMINI_CLI: '1',
-          CODEX_SANDBOX: '1',
-          CURSOR_AGENT: '1',
-          AGENT: 'something',
-        },
-      })
-    ).toEqual({ name: 'claude-code' });
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
-  it('detects Gemini CLI via GEMINI_CLI', () => {
-    expect(detectAgent({ stdoutIsTTY: true, env: { GEMINI_CLI: '1' } })).toEqual({
-      name: 'gemini-cli',
-    });
+  it('detects claude via CLAUDECODE', () => {
+    vi.stubEnv('CLAUDECODE', '1');
+    expect(detectAgent()).toEqual({ name: 'claude' });
   });
 
-  it('detects OpenAI Codex via CODEX_SANDBOX', () => {
-    expect(detectAgent({ stdoutIsTTY: true, env: { CODEX_SANDBOX: '1' } })).toEqual({
-      name: 'codex',
-    });
+  it('detects claude via CLAUDE_CODE', () => {
+    vi.stubEnv('CLAUDE_CODE', '1');
+    expect(detectAgent()).toEqual({ name: 'claude' });
   });
 
-  it('detects Cursor Agent via CURSOR_AGENT (even if AGENT is also set)', () => {
-    expect(
-      detectAgent({ stdoutIsTTY: true, env: { CURSOR_AGENT: '1', AGENT: 'something' } })
-    ).toEqual({
-      name: 'cursor',
-    });
+  it('detects gemini via GEMINI_CLI', () => {
+    vi.stubEnv('GEMINI_CLI', '1');
+    expect(detectAgent()).toEqual({ name: 'gemini' });
   });
 
-  it('treats generic AGENT as unknown', () => {
-    expect(detectAgent({ stdoutIsTTY: true, env: { AGENT: 'some-agent' } })).toEqual({
-      name: 'unknown',
-    });
+  it('detects codex via CODEX_SANDBOX', () => {
+    vi.stubEnv('CODEX_SANDBOX', '1');
+    expect(detectAgent()).toEqual({ name: 'codex' });
   });
 
-  it('does not use heuristics when stdout is a TTY', () => {
-    expect(detectAgent({ stdoutIsTTY: true, env: { TERM: 'dumb' } })).toEqual(undefined);
-    expect(detectAgent({ stdoutIsTTY: true, env: { GIT_PAGER: 'cat' } })).toEqual(undefined);
+  it('detects codex via CODEX_THREAD_ID', () => {
+    vi.stubEnv('CODEX_THREAD_ID', '1');
+    expect(detectAgent()).toEqual({ name: 'codex' });
   });
 
-  it('detects unknown agent via TERM=dumb when stdout is not a TTY', () => {
-    expect(detectAgent({ stdoutIsTTY: false, env: { TERM: 'dumb' } })).toEqual({
-      name: 'unknown',
-    });
+  it('detects cursor via CURSOR_AGENT', () => {
+    vi.stubEnv('CURSOR_AGENT', '1');
+    expect(detectAgent()).toEqual({ name: 'cursor' });
   });
 
-  it('detects unknown agent via GIT_PAGER=cat when stdout is not a TTY', () => {
-    expect(detectAgent({ stdoutIsTTY: false, env: { GIT_PAGER: 'cat' } })).toEqual({
-      name: 'unknown',
-    });
+  it('detects opencode via OPENCODE', () => {
+    vi.stubEnv('OPENCODE', '1');
+    expect(detectAgent()).toEqual({ name: 'opencode' });
   });
 
-  it('returns isAgent=false when there are no signals', () => {
-    expect(detectAgent({ stdoutIsTTY: false, env: {} })).toEqual(undefined);
+  it('detects explicit agent via AI_AGENT env var', () => {
+    vi.stubEnv('AI_AGENT', 'copilot');
+    expect(detectAgent()).toEqual({ name: 'copilot' });
   });
 
-  it('applies heuristics even when CI is set (no CI special-casing)', () => {
-    expect(
-      detectAgent({
-        stdoutIsTTY: false,
-        env: { CI: 'true', TERM: 'dumb' },
-      })
-    ).toEqual({ name: 'unknown' });
+  it('normalizes AI_AGENT to lowercase', () => {
+    vi.stubEnv('AI_AGENT', 'Copilot');
+    expect(detectAgent()).toEqual({ name: 'copilot' });
   });
 
-  it('still detects explicit agents in CI', () => {
-    expect(detectAgent({ stdoutIsTTY: false, env: { CI: 'true', CODEX_SANDBOX: '1' } })).toEqual({
-      name: 'codex',
-    });
+  it('AI_AGENT takes precedence over other env vars', () => {
+    vi.stubEnv('AI_AGENT', 'copilot');
+    vi.stubEnv('CLAUDECODE', '1');
+    vi.stubEnv('GEMINI_CLI', '1');
+    expect(detectAgent()).toEqual({ name: 'copilot' });
+  });
+
+  it('returns undefined when there are no signals', () => {
+    expect(detectAgent()).toEqual(undefined);
   });
 });

@@ -1,6 +1,10 @@
 import React from 'react';
 
-import type { DecoratorFunction, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type {
+  DecoratorFunction,
+  StatusValue,
+  StatusesByStoryIdAndTypeId,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -33,13 +37,14 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
 
-const managerContext: any = {
+const managerContext: any = (args: Meta<typeof Sidebar>['args']) => ({
   state: {
     docsOptions: {
       defaultName: 'Docs',
       autodocs: 'tag',
       docsMode: false,
     },
+    internal_index: args?.indexJson,
   },
   api: {
     emit: fn().mockName('api::emit'),
@@ -66,7 +71,7 @@ const managerContext: any = {
     }),
     applyQueryParams: fn().mockName('api::applyQueryParams'),
   },
-};
+});
 
 const meta = {
   component: Sidebar,
@@ -100,8 +105,8 @@ const meta = {
     isDevelopment: true,
   },
   decorators: [
-    (storyFn, { globals, title }) => (
-      <ManagerContext.Provider value={managerContext}>
+    (storyFn, { args, globals, title }) => (
+      <ManagerContext.Provider value={managerContext(args)}>
         <LayoutProvider
           forceDesktop={
             globals.viewport?.value === 'desktop' ||
@@ -134,8 +139,8 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const mobileLayoutDecorator: DecoratorFunction = (storyFn, { globals, title }) => (
-  <ManagerContext.Provider value={managerContext}>
+const mobileLayoutDecorator: DecoratorFunction = (storyFn, { args, globals, title }) => (
+  <ManagerContext.Provider value={managerContext(args)}>
     <LayoutProvider
       forceDesktop={
         globals.viewport?.value === 'desktop' ||
@@ -528,4 +533,127 @@ export const Scrolled: Story = {
     // @ts-expect-error (non strict)
     await expect(scrollable.scrollTop).toBe(scrollable.scrollHeight - scrollable.clientHeight);
   },
+};
+
+export const StatusesNew: Story = {
+  args: {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
+      if (item.type !== 'story') return acc;
+      return {
+        ...acc,
+        [id]: {
+          addonA: {
+            typeId: 'addonA',
+            storyId: id,
+            value: 'status-value:new' as StatusValue,
+            title: 'Change Detection',
+            description: 'This story is new',
+          },
+        },
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
+  },
+  play: waitForChecklistWidget,
+};
+
+export const StatusesModified: Story = {
+  args: {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
+      if (item.type !== 'story') return acc;
+      return {
+        ...acc,
+        [id]: {
+          addonA: {
+            typeId: 'addonA',
+            storyId: id,
+            value: 'status-value:modified' as StatusValue,
+            title: 'Change Detection',
+            description: 'This story was modified',
+          },
+        },
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
+  },
+  play: waitForChecklistWidget,
+};
+
+export const StatusesAffected: Story = {
+  args: {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
+      if (item.type !== 'story') return acc;
+      return {
+        ...acc,
+        [id]: {
+          addonA: {
+            typeId: 'addonA',
+            storyId: id,
+            value: 'status-value:affected' as StatusValue,
+            title: 'Change Detection',
+            description: 'This story is affected by a change',
+          },
+        },
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
+  },
+  play: waitForChecklistWidget,
+};
+
+export const StatusesMixed: Story = {
+  args: {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
+      if (item.type !== 'story') return acc;
+      const values: StatusValue[] = [
+        'status-value:new',
+        'status-value:modified',
+        'status-value:affected',
+        'status-value:success',
+        'status-value:warning',
+      ];
+      const value = values[Object.keys(acc).length % values.length];
+      return {
+        ...acc,
+        [id]: {
+          addonA: {
+            typeId: 'addonA',
+            storyId: id,
+            value,
+            title: 'Change Detection',
+            description: '',
+          },
+        },
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
+  },
+  play: waitForChecklistWidget,
+};
+
+export const StatusesChangeDetectionPriority: Story = {
+  args: {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
+      if (item.type !== 'story') return acc;
+      // Cycles through all change-detection variants + warning/error to verify
+      // priority ordering (most critical wins): error > warning > affected > modified > new
+      const priorityValues: StatusValue[] = [
+        'status-value:new',
+        'status-value:modified',
+        'status-value:affected',
+        'status-value:warning',
+        'status-value:error',
+      ];
+      const value = priorityValues[Object.keys(acc).length % priorityValues.length];
+      return {
+        ...acc,
+        [id]: {
+          addonA: {
+            typeId: 'addonA',
+            storyId: id,
+            value,
+            title: 'Change Detection',
+            description: `Priority test: ${value}`,
+          },
+        },
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
+  },
+  play: waitForChecklistWidget,
 };

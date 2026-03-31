@@ -409,7 +409,7 @@ describe('UserPreferencesCommand', () => {
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
     });
 
-    it('should not include AI feature in minimal installs', async () => {
+    it('should include test feature in minimal installs when user accepts AI setup', async () => {
       Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         configurable: true,
@@ -427,10 +427,33 @@ describe('UserPreferencesCommand', () => {
         projectType: ProjectType.REACT,
       });
 
-      expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+      expect(result.selectedFeatures.has(Feature.TEST)).toBe(true);
       // Other recommended features should NOT be present with light install
       expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+    });
+
+    it('should not include test feature in minimal installs when user declines AI setup', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select)
+        .mockResolvedValueOnce(false) // not new user
+        .mockResolvedValueOnce('light'); // minimal install
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // AI setup: no
+
+      const result = await command.execute({
+        framework: null,
+        builder: 'vite' as SupportedBuilder,
+        renderer: 'react' as SupportedRenderer,
+        projectType: ProjectType.REACT,
+      });
+
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
       expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
     });
   });
 });

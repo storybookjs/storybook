@@ -80,13 +80,9 @@ export class UserPreferencesCommand {
         ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
         : 'recommended';
 
-    // AI setup is only available for React + Vite projects for now
-    const isAiSetupEligible =
-      options.renderer === SupportedRenderer.REACT && options.builder === SupportedBuilder.VITE;
-    const useAiForSetup =
-      installType === 'recommended' && isAiSetupEligible
-        ? await this.promptAiSetup(skipPrompt)
-        : false;
+    // Ask about AI setup (only available for React + Vite projects)
+    const isAiFeatureAvailable = this.isAiFeatureAvailable(options.renderer, options.builder);
+    const useAiForSetup = isAiFeatureAvailable ? await this.promptAiSetup(skipPrompt) : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,
@@ -223,12 +219,20 @@ export class UserPreferencesCommand {
       }
     }
 
-    // If user has asked for AI setup, we provide the MCP addon
+    // If user has asked for AI setup, we provide the MCP addon and ensure test is included
     if (useAiForSetup) {
       features.add(Feature.AI);
+      if (isTestFeatureAvailable) {
+        features.add(Feature.TEST);
+      }
     }
 
     return features;
+  }
+
+  /** Check if AI feature is available based on renderer and builder */
+  private isAiFeatureAvailable(renderer: SupportedRenderer, builder: SupportedBuilder): boolean {
+    return renderer === SupportedRenderer.REACT && builder === SupportedBuilder.VITE;
   }
 
   /** Validate test feature compatibility and prompt user if issues found */

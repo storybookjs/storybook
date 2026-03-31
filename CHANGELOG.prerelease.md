@@ -1,3 +1,24 @@
+## 10.4.0-alpha.5
+
+- Addon-a11y: Clear status transition timer on unmount to prevent test flake - [#34203](https://github.com/storybookjs/storybook/pull/34203), thanks @mixelburg!
+- Builder-Vite: Use djb2 hash to prevent variable name collisions in builder-vite - [#34274](https://github.com/storybookjs/storybook/pull/34274), thanks @chida09!
+- CLI: Fix Next.js Vite automigration corrupting configs already using `@storybook/nextjs-vite` - [#34249](https://github.com/storybookjs/storybook/pull/34249), thanks @nathanjessen!
+- Core: Add changeDetection feature flag - [#34314](https://github.com/storybookjs/storybook/pull/34314), thanks @valentinpalkovic!
+- Manager: URL-based tag filter state + filter-aware initial story selection - [#34283](https://github.com/storybookjs/storybook/pull/34283), thanks @valentinpalkovic!
+- React-Vite: Upgrade @joshwooding/vite-plugin-react-docgen-typescript to 0.7.0 - [#34335](https://github.com/storybookjs/storybook/pull/34335), thanks @beeswhacks!
+- Refactor: Extract shared `PseudoStateGrid` component in pseudo-states stories - [#34334](https://github.com/storybookjs/storybook/pull/34334), thanks @copilot-swe-agent!
+
+## 10.4.0-alpha.4
+
+- Addon-Docs: Add Reset story button to re-render stories in docs - [#34086](https://github.com/storybookjs/storybook/pull/34086), thanks @6810779s!
+- Code: Fix inline code blocks inside links removing link affordance - [#33903](https://github.com/storybookjs/storybook/pull/33903), thanks @yatishgoel!
+- Controls: Add maxPresetColors option to ColorControl - [#33998](https://github.com/storybookjs/storybook/pull/33998), thanks @mixelburg!
+- Core: Fix WebSocket connection for StackBlitz/WebContainers - [#34281](https://github.com/storybookjs/storybook/pull/34281), thanks @ghengeveld!
+- Dependencies: Update `vite-plugin-storybook-nextjs` to ^3.2.4 - [#34280](https://github.com/storybookjs/storybook/pull/34280), thanks @k35o!
+- React: Add component metadata extraction via Volar-style LanguageService - [#33914](https://github.com/storybookjs/storybook/pull/33914), thanks @kasperpeulen!
+- StatusValue: Add 'status-value:<new|modified|affected>' - [#34305](https://github.com/storybookjs/storybook/pull/34305), thanks @valentinpalkovic!
+- UI: Ensure Controls panel can scroll horizontally for now - [#34248](https://github.com/storybookjs/storybook/pull/34248), thanks @Sidnioulz!
+
 ## 10.4.0-alpha.3
 
 - Addon-Vitest: Streamline vite(st) config detection across init and postinstall - [#34193](https://github.com/storybookjs/storybook/pull/34193), thanks @valentinpalkovic!

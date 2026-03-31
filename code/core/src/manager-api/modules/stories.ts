@@ -20,6 +20,8 @@ import {
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { sanitize, toId } from 'storybook/internal/csf';
+import type { NavigateOptions } from 'storybook/internal/router';
+import { queryFromLocation } from 'storybook/internal/router';
 import type {
   API_ComposedRef,
   API_DocsEntry,
@@ -61,8 +63,10 @@ import {
   transformStoryIndexToStoriesHash,
 } from '../lib/stories';
 import type { ModuleFn } from '../lib/types';
+import { buildNavigationUrl } from '../lib/url';
 import type { ComposedRef } from '../root';
 import { fullStatusStore } from '../stores/status';
+import { parseTagsParam, serializeTagsParam } from './tags';
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
@@ -426,10 +430,26 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   store,
   navigate,
   provider,
+  state: { location } = {} as any,
   storyId: initialStoryId,
   viewMode: initialViewMode,
   docsOptions = {},
 }) => {
+  const navigateWithQueryParams = (path: string, options?: NavigateOptions) => {
+    const { customQueryParams } = store.getState();
+    navigate(buildNavigationUrl(path, customQueryParams ?? {}), options);
+  };
+
+  const persistFilters = (inputPatch: Parameters<typeof store.setState>[0]) => {
+    return store.setState(inputPatch, {
+      persistence: 'url' as const,
+      serialize: (s: ReturnType<typeof store.getState>) => {
+        const tagsValue = serializeTagsParam(s.includedTagFilters, s.excludedTagFilters);
+        return { tags: tagsValue ?? null };
+      },
+    });
+  };
+
   const api: SubAPI = {
     storyId: toId,
     getData: (storyId, refId): any => {
@@ -532,10 +552,27 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
     },
     selectFirstStory: () => {
-      const { index } = store.getState();
+      const { index, filteredIndex, includedTagFilters, excludedTagFilters } = store.getState();
+      const hasActiveFilters = includedTagFilters.length > 0 || excludedTagFilters.length > 0;
+
+      if (hasActiveFilters) {
+        if (!filteredIndex) {
+          return;
+        }
+
+        const firstStory = Object.keys(filteredIndex).find(
+          (id) => filteredIndex[id].type === 'story'
+        );
+        if (firstStory) {
+          api.selectStory(firstStory);
+        }
+        return;
+      }
+
       if (!index) {
         return;
       }
+
       const firstStory = Object.keys(index).find((id) => index[id].type === 'story');
 
       if (firstStory) {
@@ -543,7 +580,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return;
       }
 
-      navigate('/');
+      navigateWithQueryParams('/');
     },
     selectStory: (titleOrId = undefined, name = undefined, options = {}) => {
       const { ref } = options;
@@ -552,7 +589,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const gotoStory = (entry?: API_HashEntry) => {
         if (entry?.type === 'docs' || entry?.type === 'story') {
           store.setState({ settings: { ...settings, lastTrackedStoryId: entry.id } });
-          navigate(`/${entry.type}/${entry.refId ? `${entry.refId}_${entry.id}` : entry.id}`);
+          navigateWithQueryParams(
+            `/${entry.type}/${entry.refId ? `${entry.refId}_${entry.id}` : entry.id}`
+          );
           return true;
         }
         return false;
@@ -822,25 +861,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       provider.channel?.emit(SET_FILTER, { id });
     },
+
     resetTagFilters: async () => {
-      await store.setState(
-        (s) => ({
-          includedTagFilters: s.defaultIncludedTagFilters,
-          excludedTagFilters: s.defaultExcludedTagFilters,
-        }),
-        { persistence: 'permanent' }
-      );
+      await persistFilters((s) => ({
+        includedTagFilters: s.defaultIncludedTagFilters,
+        excludedTagFilters: s.defaultExcludedTagFilters,
+      }));
+
       recomputeFilters();
     },
 
     setAllTagFilters: async (included: Tag[], excluded: Tag[]) => {
-      await store.setState(
-        {
-          includedTagFilters: included,
-          excludedTagFilters: excluded,
-        },
-        { persistence: 'permanent' }
-      );
+      await persistFilters({ includedTagFilters: included, excludedTagFilters: excluded });
+
       recomputeFilters();
     },
 
@@ -857,25 +890,21 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           newExcluded.delete(tag);
         }
       }
-      await store.setState(
-        {
-          includedTagFilters: Array.from(newIncluded),
-          excludedTagFilters: Array.from(newExcluded),
-        },
-        { persistence: 'permanent' }
-      );
+      await persistFilters({
+        includedTagFilters: Array.from(newIncluded),
+        excludedTagFilters: Array.from(newExcluded),
+      });
+
       recomputeFilters();
     },
 
     removeTagFilters: async (tags: Tag[]) => {
       const state = store.getState();
-      await store.setState(
-        {
-          includedTagFilters: state.includedTagFilters.filter((tag) => !tags.includes(tag)),
-          excludedTagFilters: state.excludedTagFilters.filter((tag) => !tags.includes(tag)),
-        },
-        { persistence: 'permanent' }
-      );
+      await persistFilters({
+        includedTagFilters: state.includedTagFilters.filter((tag) => !tags.includes(tag)),
+        excludedTagFilters: state.excludedTagFilters.filter((tag) => !tags.includes(tag)),
+      });
+
       recomputeFilters();
     },
   };
@@ -924,6 +953,29 @@ export const init: ModuleFn<SubAPI, SubState> = ({
          * - If the user started storybook with a specific page-URL like "/settings/about"
          */
         if (isCanvasRoute) {
+          const { includedTagFilters, excludedTagFilters, filteredIndex } = state;
+          const hasActiveFilters =
+            (includedTagFilters?.length ?? 0) > 0 || (excludedTagFilters?.length ?? 0) > 0;
+
+          if (hasActiveFilters && !stateHasSelection) {
+            const storyPassesFilter = filteredIndex && filteredIndex[storyId]?.type === 'story';
+
+            if (!storyPassesFilter) {
+              const firstFiltered = filteredIndex
+                ? Object.keys(filteredIndex).find((id) => {
+                    const entry = filteredIndex[id];
+                    return entry.type === 'story' || entry.type === 'docs';
+                  })
+                : undefined;
+
+              if (firstFiltered) {
+                navigateWithQueryParams(`/${viewMode}/${firstFiltered}`);
+              }
+
+              return;
+            }
+          }
+
           if (stateHasSelection && stateSelectionDifferent && isStory) {
             // The manager state is correct, the preview state is lagging behind
             provider.channel?.emit(SET_CURRENT_STORY, {
@@ -932,7 +984,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             });
           } else if (stateSelectionDifferent) {
             // The preview state is correct, the manager state is lagging behind
-            navigate(`/${viewMode}/${storyId}`);
+            navigateWithQueryParams(`/${viewMode}/${storyId}`);
           }
         }
       }
@@ -1121,17 +1173,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   const tagPresets: TagsOptions = global.TAGS_OPTIONS || {};
   const defaultTags = getDefaultTagsFromPreset(tagPresets);
 
-  // Read persisted tag filter state, supporting migration from the old layout.xxx path
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const persistedState = store.getState() as Record<string, any>;
-  const initialIncluded: Tag[] =
-    persistedState.includedTagFilters ??
-    persistedState.layout?.includedTagFilters ??
-    defaultTags.included;
-  const initialExcluded: Tag[] =
-    persistedState.excludedTagFilters ??
-    persistedState.layout?.excludedTagFilters ??
-    defaultTags.excluded;
+  const { tags } = queryFromLocation(location);
+  const parsedTags = parseTagsParam(tags);
+  const hasTagsParam = tags !== undefined;
+  const initialIncluded: Tag[] = hasTagsParam ? parsedTags.included : defaultTags.included;
+  const initialExcluded: Tag[] = hasTagsParam ? parsedTags.excluded : defaultTags.excluded;
 
   // Build initial filters: config sidebar filters first, then our managed filters take priority
   const initialFilters: Record<string, API_FilterFunction> = {

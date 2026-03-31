@@ -130,7 +130,6 @@ export const getTsConfig = async () => {
   try {
     const ts = await import('typescript');
     const tsconfigPath = ts.findConfigFile(process.cwd(), ts.sys.fileExists);
-    console.log({ tsconfigPath });
     if (tsconfigPath === undefined) {
       return {};
     }

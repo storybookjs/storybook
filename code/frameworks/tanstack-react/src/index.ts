@@ -7,9 +7,10 @@ import type { ReactTypes } from '@storybook/react';
 
 import * as tanstackPreview from './preview';
 import type { TanStackTypes } from './types';
-
+import type { StoryObj as _StoryObj } from '@storybook/react';
 export * from '@storybook/react';
 export * from './types';
+export * from './routing/helper';
 
 export { getQueryClient } from './query/decorator';
 export { getRouter } from './routing/decorator';
@@ -25,5 +26,8 @@ export function definePreview<Addons extends PreviewAddon<never>[]>(
     addons: [tanstackPreview, ...(preview.addons ?? [])],
   });
 }
+
+export type StoryObj<TMetaOrCmpOrArgs = unknown> = _StoryObj<TMetaOrCmpOrArgs> &
+  Partial<TanStackTypes>;
 
 interface TanStackPreview<T extends AddonTypes> extends ReactPreview<TanStackTypes & T> {}

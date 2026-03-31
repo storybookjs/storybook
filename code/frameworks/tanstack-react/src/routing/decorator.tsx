@@ -1,9 +1,73 @@
-import React from 'react';
+import React, { type ComponentType } from 'react';
 import type { Decorator, Loader } from '@storybook/react-vite';
-import { createRootRoute, FileRoute, Route, RouterProvider } from '@tanstack/react-router';
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  Route,
+  RouterProvider,
+  createRoute,
+  RootRoute,
+} from '@tanstack/react-router';
 import type { Router, AnyRootRoute } from '@tanstack/react-router';
-import { createStoryRoute, createMockRouter as createStoryRouter } from '../export-mocks';
 import type { RouterParameters } from './types';
+import { BaseRoute } from '@tanstack/router-core';
+import { onNavigate } from '../export-mocks/spies';
+
+export type MockRouterOptions = {
+  routeTree?: AnyRootRoute;
+  initialPath?: string;
+};
+
+function createInternalStoryRoute(
+  Story: ComponentType,
+  routeParameter?: RouterParameters['route']
+): AnyRootRoute {
+  if (routeParameter instanceof RootRoute || routeParameter instanceof Route) {
+    console.log('??');
+    routeParameter.update({
+      component: () => <Story />,
+    });
+
+    return routeParameter as RootRoute;
+  }
+
+  const root = createRootRoute();
+
+  // @ts-expect-error route options. HARD to make it work when spreading obj.
+  const route = createRoute({
+    component: () => <Story />,
+    ...routeParameter,
+    path: '/',
+    getParentRoute: () => root,
+  });
+
+  root.addChildren([route]);
+  return root;
+}
+
+export function createStoryRouter({
+  routeTree,
+  initialPath = '/',
+}: MockRouterOptions): Router<AnyRootRoute> {
+  const history = createMemoryHistory();
+
+  console.log('init mock router with path:', initialPath);
+  const router = createRouter({
+    routeTree,
+    history,
+  });
+
+  history.replace(initialPath);
+  history.block({
+    blockerFn() {
+      onNavigate(history.location.pathname);
+      return true;
+    },
+  });
+
+  return router;
+}
 
 let currentRouter: Router<AnyRootRoute> | null = null;
 
@@ -40,7 +104,7 @@ export const tanstackRouteLoader: Loader = async ({ parameters }) => {
 
   // If no explicit routeTree is provided, createMockRouter will
   // dynamically import the user's #/routeTree.gen.
-  currentRouter = await createStoryRouter({
+  currentRouter = createStoryRouter({
     initialPath: routerParams.path,
   });
 };
@@ -50,7 +114,7 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
 
   const routeOptions = routerParams.route;
 
-  const route = createStoryRoute(Story, routeOptions);
+  const route = createInternalStoryRoute(Story, routeOptions);
 
   const router = createStoryRouter({
     routeTree: route,

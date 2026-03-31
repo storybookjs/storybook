@@ -8,65 +8,9 @@ import {
 } from '@tanstack/react-router';
 
 import { fn } from 'storybook/test';
-import React, { type ComponentType } from 'react';
-import type { RouteParameters, RouterParameters } from '../routing/types';
+import React from 'react';
 import { useEffect } from 'storybook/internal/preview-api';
 import type { Navigate as _Navigate } from '@tanstack/react-router';
-
-export type MockRouterOptions = {
-  routeTree?: AnyRootRoute;
-  initialPath?: string;
-};
-
-export function createStoryRoute(
-  Story: ComponentType,
-  routeParameter?: RouterParameters['route']
-): AnyRootRoute {
-  const root = createRootRoute();
-
-  if (routeParameter instanceof Route) {
-    routeParameter.update({
-      component: () => <Story />,
-    });
-
-    // @ts-expect-error why createRoute returns a RootRoute ???
-    return routeParameter;
-  } else {
-    // @ts-expect-error route options. HARD to make it work when spreading obj.
-    const route = createRoute({
-      component: () => <Story />,
-      ...routeParameter,
-      path: '/',
-      getParentRoute: () => root,
-    });
-
-    root.addChildren([route]);
-  }
-
-  return root;
-}
-
-export function createMockRouter({
-  routeTree,
-  initialPath = '/',
-}: MockRouterOptions): Router<AnyRootRoute> {
-  const history = createMemoryHistory();
-
-  console.log('init mock router with path:', initialPath);
-  const router = createRouter({
-    routeTree,
-    history,
-  });
-
-  history.replace(initialPath);
-  history.block({
-    blockerFn() {
-      return true;
-    },
-  });
-
-  return router;
-}
 
 // Mock navigation hooks — use these in stories to assert navigation calls
 export const useNavigate = fn().mockName('@tanstack/react-router::useNavigate');

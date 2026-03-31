@@ -1,11 +1,14 @@
-import type { FileRoute, Route } from '@tanstack/react-router';
+import type { AnyRootRoute, Route } from '@tanstack/react-router';
 import type { RouteOptions } from '@tanstack/router-core';
 
-export type RouteParameters = Pick<
+export type CreateStoryRouteOptions = Pick<
   RouteOptions<any>,
   'loader' | 'beforeLoad' | 'validateSearch' | 'loaderDeps' | 'loader' | 'context'
 >;
+
+export type StoryRouteOptions = CreateStoryRouteOptions | Route | AnyRootRoute;
+
 export interface RouterParameters {
-  route?: RouteParameters | Route;
+  route?: StoryRouteOptions;
   path?: string;
 }

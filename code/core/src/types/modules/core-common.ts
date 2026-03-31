@@ -276,6 +276,21 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
+  onModuleGraphChange?(cb: (moduleGraph: ModuleGraph) => void): () => void;
+}
+
+/**
+ * Builder-agnostic module graph for dependency tracking. Modeled after Vite's module graph.
+ * The same file can be imported in multiple ways (e.g. based on query params or import context),
+ * each representing a unique module identity, hence the value is a Set<ModuleNode>.
+ */
+export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
+
+export interface ModuleNode {
+  file: string;
+  type: 'js' | 'css' | 'asset';
+  importers: Set<ModuleNode>;
+  importedModules: Set<ModuleNode>;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -535,6 +550,13 @@ export interface StorybookConfigRaw {
      * @experimental This feature is in early development and may change significantly in future releases.
      */
     experimentalCodeExamples?: boolean;
+
+    /**
+     * Enable change detection
+     * TODO: Turn to true before 10.4 release
+     * @default false
+     */
+    changeDetection?: boolean;
   };
 
   build?: TestBuildConfig;

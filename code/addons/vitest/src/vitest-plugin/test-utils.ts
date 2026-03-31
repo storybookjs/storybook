@@ -6,6 +6,7 @@ import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/
 import { server } from '@vitest/browser/context';
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
+import { captureStoryScreenshot } from './screenshots';
 import { setViewport } from './viewports';
 
 declare module 'vitest/browser' {
@@ -40,6 +41,7 @@ export const testStory = ({
   componentPath,
   testName,
   componentName,
+  storyFilePath,
 }: {
   exportName: string;
   story: ComposedStoryFn | Story<Renderer>;
@@ -49,6 +51,7 @@ export const testStory = ({
   componentPath?: string;
   testName?: string;
   componentName?: string;
+  storyFilePath?: string;
 }) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
@@ -80,6 +83,8 @@ export const testStory = ({
         reports: Report[];
         componentPath?: string;
         componentName?: string;
+        storyFilePath?: string;
+        screenshotPath?: string;
       };
     };
 
@@ -88,10 +93,16 @@ export const testStory = ({
     _task.meta.storyId = storyId;
     _task.meta.componentPath = componentPath;
     _task.meta.componentName = componentName;
+    _task.meta.storyFilePath = storyFilePath;
 
     await setViewport(composedStory.parameters, composedStory.globals);
 
     await composedStory.run(undefined);
+    _task.meta.screenshotPath = await captureStoryScreenshot({
+      exportName,
+      storyFilePath,
+      testName,
+    });
 
     _task.meta.reports = composedStory.reporting.reports;
   };

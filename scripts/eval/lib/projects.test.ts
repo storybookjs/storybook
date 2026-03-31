@@ -5,13 +5,14 @@ import { PROJECTS } from './projects';
 const githubRepoUrl = /^https:\/\/github\.com\/[^/]+\/[^/]+$/;
 
 describe('PROJECTS', () => {
-  it('pins every benchmark project to a pre-initialized eval-baseline repo', () => {
+  it('pins every benchmark project to a storybook-tmp main-branch repo', () => {
     expect(PROJECTS.length).toBeGreaterThan(0);
 
     for (const project of PROJECTS) {
       expect(project).toMatchObject({
-        branch: 'eval-baseline',
+        branch: 'main',
         repo: expect.stringMatching(githubRepoUrl),
+        githubSlug: expect.stringMatching(/^storybook-tmp\/[^/]+$/),
         description: expect.any(String),
       });
     }

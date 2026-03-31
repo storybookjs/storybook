@@ -13,6 +13,56 @@ vi.mock('./prepare-trial', () => ({
 vi.mock('./grade', () => ({
   grade: vi.fn(),
 }));
+vi.mock('./publish-trial', () => ({
+  buildTrialArtifactUrls: vi.fn().mockReturnValue({
+    summaryUrl: 'https://github.com/storybook-tmp/test-project/blob/trial/test/eval-results/summary.json',
+    transcriptUrl:
+      'https://github.com/storybook-tmp/test-project/blob/trial/test/eval-results/transcript.json',
+  }),
+  buildTrialLabels: vi.fn().mockReturnValue([
+    'eval',
+    'project:test-project',
+    'agent:claude',
+    'model:sonnet-4.6',
+    'effort:high',
+    'prompt:setup',
+  ]),
+  publishTrialBranch: vi.fn().mockResolvedValue({
+    branch: 'trial/test-branch',
+    labels: [
+      'eval',
+      'project:test-project',
+      'agent:claude',
+      'model:sonnet-4.6',
+      'effort:high',
+      'prompt:setup',
+    ],
+    prUrl: 'https://github.com/storybook-tmp/test-project/pull/1',
+    summaryUrl:
+      'https://github.com/storybook-tmp/test-project/blob/trial/test-branch/eval-results/summary.json',
+    transcriptUrl:
+      'https://github.com/storybook-tmp/test-project/blob/trial/test-branch/eval-results/transcript.json',
+    screenshots: [
+      {
+        storyFilePath: 'src/Button.stories.tsx',
+        exportName: 'Primary',
+        imagePath: 'src/Button.stories.Primary.chromium.png',
+      },
+    ],
+  }),
+}));
+vi.mock('./result-docs', () => ({
+  writeEvalResultDocs: vi.fn(),
+}));
+vi.mock('./screenshots', () => ({
+  runStorybookScreenshots: vi.fn().mockResolvedValue([
+    {
+      storyFilePath: 'src/Button.stories.tsx',
+      exportName: 'Primary',
+      imagePath: 'src/Button.stories.Primary.chromium.png',
+    },
+  ]),
+}));
 vi.mock('./utils', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./utils')>();
   return {
@@ -34,7 +84,10 @@ vi.mock('./agents/codex', () => ({
 import { claudeAgent } from './agents/claude-code';
 import { grade } from './grade';
 import { prepareTrial } from './prepare-trial';
+import { publishTrialBranch } from './publish-trial';
 import { runTrial } from './run-trial';
+import { writeEvalResultDocs } from './result-docs';
+import { runStorybookScreenshots } from './screenshots';
 import { captureEnvironment } from './utils';
 
 let TMP: string;
@@ -42,7 +95,7 @@ let TMP: string;
 beforeEach(() => {
   vi.clearAllMocks();
   TMP = join(tmpdir(), `eval-run-trial-${Date.now()}`);
-  mkdirSync(join(TMP, 'results'), { recursive: true });
+  mkdirSync(join(TMP, 'eval-results'), { recursive: true });
 });
 
 afterEach(() => {
@@ -50,7 +103,12 @@ afterEach(() => {
 });
 
 const baseConfig: TrialConfig = {
-  project: { name: 'test-project', repo: 'https://github.com/test/repo', branch: 'main' },
+  project: {
+    name: 'test-project',
+    repo: 'https://github.com/storybook-tmp/test-project',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/test-project',
+  },
   variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
   prompt: 'setup',
 };
@@ -62,8 +120,12 @@ describe('runTrial pipeline', () => {
     const result = await runTrial(baseConfig);
 
     expect(result).toMatchObject({
-      schemaVersion: 1,
-      project: { name: 'test-project', repo: 'https://github.com/test/repo', branch: 'main' },
+      schemaVersion: 2,
+      project: {
+        name: 'test-project',
+        repo: 'https://github.com/storybook-tmp/test-project',
+        branch: 'main',
+      },
       variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       prompt: 'setup',
       baselineCommit: 'deadbeef',
@@ -78,6 +140,10 @@ describe('runTrial pipeline', () => {
       score: {
         score: 1,
       },
+      publish: {
+        branch: 'trial/test-branch',
+        prUrl: 'https://github.com/storybook-tmp/test-project/pull/1',
+      },
     });
     expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
@@ -89,8 +155,9 @@ describe('runTrial pipeline', () => {
       ...baseConfig,
       project: {
         name: 'mealdrop',
-        repo: 'https://github.com/test/mealdrop',
-        branch: 'eval-baseline',
+        repo: 'https://github.com/storybook-tmp/mealdrop',
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
       },
     };
 
@@ -98,19 +165,19 @@ describe('runTrial pipeline', () => {
 
     expect(vi.mocked(prepareTrial).mock.calls[0][0]).toMatchObject({
       name: 'mealdrop',
-      repo: 'https://github.com/test/mealdrop',
-      branch: 'eval-baseline',
+      repo: 'https://github.com/storybook-tmp/mealdrop',
+      branch: 'main',
     });
     expect(vi.mocked(prepareTrial).mock.calls[0][2]).toBeDefined();
 
-    expect(vi.mocked(captureEnvironment).mock.calls[0][0]).toBe(join(TMP, 'results'));
+    expect(vi.mocked(captureEnvironment).mock.calls[0][0]).toBe(join(TMP, 'eval-results'));
 
     const params = vi.mocked(claudeAgent.execute).mock.calls[0][0];
     expect(params).toMatchObject({
       prompt: expect.stringContaining('set up Storybook'),
       projectPath: TMP,
       variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
-      resultsDir: join(TMP, 'results'),
+      resultsDir: join(TMP, 'eval-results'),
     });
     expect(params.logger).toBeDefined();
 
@@ -118,9 +185,23 @@ describe('runTrial pipeline', () => {
     expect(gradeWorkspace).toMatchObject({
       baselineCommit: 'deadbeef',
       projectPath: TMP,
-      resultsDir: join(TMP, 'results'),
+      resultsDir: join(TMP, 'eval-results'),
     });
     expect(vi.mocked(grade).mock.calls[0][1]).toBeDefined();
+    expect(vi.mocked(runStorybookScreenshots).mock.calls[0][0]).toMatchObject({
+      projectPath: TMP,
+      repoRoot: TMP,
+      resultsDir: join(TMP, 'eval-results'),
+    });
+    expect(vi.mocked(writeEvalResultDocs).mock.calls[0][0]).toBe(join(TMP, 'eval-results'));
+    expect(vi.mocked(publishTrialBranch).mock.calls[0][0]).toMatchObject({
+      prompt: 'setup',
+      trialId: expect.any(String),
+      score: 1,
+      workspace: expect.objectContaining({
+        trialBranch: 'trial/test-branch',
+      }),
+    });
   });
 
   it('writes summary.json and prompt.md to results dir', async () => {
@@ -128,15 +209,19 @@ describe('runTrial pipeline', () => {
 
     await runTrial(baseConfig);
 
-    const resultsDir = join(TMP, 'results');
+    const resultsDir = join(TMP, 'eval-results');
 
     const summary: TrialReport = JSON.parse(
       readFileSync(join(resultsDir, 'summary.json'), 'utf-8')
     );
     expect(summary).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       execution: { cost: 0.42 },
       grade: { buildSuccess: true },
+      publish: {
+        branch: 'trial/test-branch',
+        labels: expect.arrayContaining(['prompt:setup']),
+      },
     });
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
@@ -160,10 +245,12 @@ describe('runTrial pipeline', () => {
       callOrder.push('prepare');
       return {
         trialDir: TMP,
+        sourceDir: join(TMP, 'source'),
         repoRoot: TMP,
         projectPath: TMP,
-        resultsDir: join(TMP, 'results'),
+        resultsDir: join(TMP, 'eval-results'),
         baselineCommit: 'deadbeef',
+        trialBranch: 'trial/test-branch',
       };
     });
 
@@ -200,10 +287,12 @@ function setupMocks(overrides?: {
 
   vi.mocked(prepareTrial).mockResolvedValue({
     trialDir: TMP,
+    sourceDir: join(TMP, 'source'),
     repoRoot: TMP,
     projectPath: TMP,
-    resultsDir: join(TMP, 'results'),
+    resultsDir: join(TMP, 'eval-results'),
     baselineCommit: 'deadbeef',
+    trialBranch: 'trial/test-branch',
   });
 
   vi.mocked(claudeAgent.execute).mockResolvedValue({

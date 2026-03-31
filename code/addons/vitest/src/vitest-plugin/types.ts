@@ -37,11 +37,23 @@ export type UserOptions = {
    * @default true
    */
   disableAddonDocs?: boolean;
+  /**
+   * Automatically capture a screenshot for each story test as it completes.
+   *
+   * Screenshots are written next to the story file using the pattern
+   * `<story-file>.<export-name>.chromium.png`.
+   *
+   * @default false
+   */
+  screenshots?: {
+    enabled?: boolean;
+  };
 };
 
 export type InternalOptions = Required<UserOptions> & {
   debug: boolean;
   tags: Required<UserOptions['tags']>;
+  screenshots: Required<NonNullable<UserOptions['screenshots']>>;
   includeStories: string[];
   /** This is the root of the vitest config where the `storybookTest` plugin is applied */
   vitestRoot: string;

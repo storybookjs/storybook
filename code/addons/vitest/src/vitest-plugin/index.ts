@@ -50,6 +50,9 @@ const defaultOptions = {
   configDir: resolve(join(WORKING_DIR, '.storybook')),
   storybookUrl: 'http://localhost:6006',
   disableAddonDocs: true,
+  screenshots: {
+    enabled: false,
+  },
 } satisfies UserOptions;
 
 const extractTagsFromPreview = async (configDir: string) => {
@@ -175,6 +178,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       include: options?.tags?.include ?? [Tag.TEST],
       exclude: options?.tags?.exclude ?? [],
       skip: options?.tags?.skip ?? [],
+    },
+    screenshots: {
+      enabled:
+        options?.screenshots?.enabled ??
+        optionalEnvToBoolean(process.env.STORYBOOK_TEST_SCREENSHOTS),
     },
   } as InternalOptions;
 
@@ -354,6 +362,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
             __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
+            __STORYBOOK_SCREENSHOTS__: finalOptions.screenshots.enabled ? 'true' : 'false',
           },
 
           include: [...includeStories, ...getComponentTestPaths()],

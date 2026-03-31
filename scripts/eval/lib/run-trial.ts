@@ -6,11 +6,19 @@ import type { Project } from './projects.ts';
 import { grade, type Grade, type QualityScore } from './grade.ts';
 import { claudeAgent } from './agents/claude-code.ts';
 import { codexAgent } from './agents/codex.ts';
+import {
+  buildTrialArtifactUrls,
+  buildTrialLabels,
+  publishTrialBranch,
+  type PublishMetadata,
+} from './publish-trial.ts';
 import { prepareTrial } from './prepare-trial.ts';
+import { writeEvalResultDocs } from './result-docs.ts';
+import { runStorybookScreenshots } from './screenshots.ts';
 import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from './utils.ts';
 
 export interface TrialConfig {
-  /** Which project to evaluate (cloned from its eval-baseline branch). */
+  /** Which project to evaluate from its normalized benchmark baseline branch. */
   project: Project;
   /** Agent, model, and effort level. */
   variant: AgentVariant;
@@ -21,7 +29,7 @@ export interface TrialConfig {
 }
 
 export interface TrialReport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   project: Project;
   variant: AgentVariant;
   prompt: string;
@@ -30,6 +38,7 @@ export interface TrialReport {
   execution: Execution;
   grade: Grade;
   score: QualityScore;
+  publish: PublishMetadata;
 }
 
 const drivers: Record<AgentId, AgentDriver> = {
@@ -44,7 +53,8 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Tr
   const { project, variant, prompt: promptName } = config;
   const { agent: agentName, model } = variant;
   const log = logger ?? createLogger();
-  const trialId = generateTrialId(project.name, agentName, model, promptName || 'setup');
+  const resolvedPromptName = promptName || 'setup';
+  const trialId = generateTrialId(project.name, agentName, model, resolvedPromptName);
   const timestamp = new Date().toISOString();
 
   log.log(`Preparing ${project.name}...`);
@@ -76,21 +86,57 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Tr
   // 5. Grade the results (pass agent duration for performance scoring)
   const { grade: trialGrade, score } = await grade(workspace, log, execution.duration);
 
-  // 6. Assemble final report
-  const report: TrialReport = {
-    schemaVersion: 1,
+  // 6. Generate screenshots for the created or modified story files
+  const screenshots = trialGrade.buildSuccess
+    ? await runStorybookScreenshots({
+        projectPath: workspace.projectPath,
+        repoRoot: workspace.repoRoot,
+        resultsDir: workspace.resultsDir,
+        fileChanges: trialGrade.storybookChanges,
+        logger: log,
+      })
+    : [];
+
+  const publishForCommit = {
+    branch: workspace.trialBranch,
+    labels: buildTrialLabels(project, variant, resolvedPromptName),
+    ...buildTrialArtifactUrls(project, workspace.trialBranch),
+    screenshots,
+  } satisfies PublishMetadata;
+
+  // 7. Assemble report content that will be committed with the trial branch
+  const reportForCommit: TrialReport = {
+    schemaVersion: 2,
     project,
     variant,
     timestamp,
-    prompt: promptName || 'setup',
+    prompt: resolvedPromptName,
     baselineCommit: workspace.baselineCommit,
     execution,
     grade: trialGrade,
     score,
+    publish: publishForCommit,
   };
 
-  await writeFile(join(workspace.resultsDir, 'summary.json'), JSON.stringify(report, null, 2));
+  await writeFile(join(workspace.resultsDir, 'summary.json'), JSON.stringify(reportForCommit, null, 2));
+  await writeEvalResultDocs(workspace.resultsDir);
+
+  // 8. Commit, push, and open the benchmark PR
+  const publish = await publishTrialBranch({
+    project,
+    workspace,
+    variant,
+    prompt: resolvedPromptName,
+    trialId,
+    score: score.score,
+    screenshots,
+    logger: log,
+  });
+
   log.logSuccess(`Results saved to ${workspace.resultsDir}`);
 
-  return report;
+  return {
+    ...reportForCommit,
+    publish,
+  };
 }

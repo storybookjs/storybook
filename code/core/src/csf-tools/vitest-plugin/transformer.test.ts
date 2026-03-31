@@ -79,7 +79,8 @@ describe('transformer', () => {
               story: Story,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--story"
+              storyId: "automatic-calculated-title--story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -114,7 +115,8 @@ describe('transformer', () => {
               story: Story,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--story"
+              storyId: "automatic-calculated-title--story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -150,7 +152,8 @@ describe('transformer', () => {
               story: Story,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--story"
+              storyId: "automatic-calculated-title--story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -187,7 +190,8 @@ describe('transformer', () => {
               story: Story,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--story"
+              storyId: "automatic-calculated-title--story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -229,7 +233,8 @@ describe('transformer', () => {
               story: Primary,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary"
+              storyId: "automatic-calculated-title--primary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -260,7 +265,8 @@ describe('transformer', () => {
                 story: Primary,
                 meta: _meta,
                 skipTags: [],
-                storyId: "automatic-calculated-title--primary"
+                storyId: "automatic-calculated-title--primary",
+                storyFilePath: "src/components/Button.stories.js"
               }));
             }
           `);
@@ -289,7 +295,8 @@ describe('transformer', () => {
                 story: Story,
                 meta: _meta,
                 skipTags: [],
-                storyId: "automatic-calculated-title--story"
+                storyId: "automatic-calculated-title--story",
+                storyFilePath: "src/components/Button.stories.js"
               }));
             }
           `);
@@ -330,7 +337,8 @@ describe('transformer', () => {
               story: Primary,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary"
+              storyId: "automatic-calculated-title--primary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -370,7 +378,8 @@ describe('transformer', () => {
               story: Primary,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary-story"
+              storyId: "automatic-calculated-title--primary-story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -412,14 +421,16 @@ describe('transformer', () => {
               story: Secondary,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--secondary"
+              storyId: "automatic-calculated-title--secondary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
             _test("Primary", _testStory({
               exportName: "Primary",
               story: Primary,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary"
+              storyId: "automatic-calculated-title--primary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -456,7 +467,8 @@ describe('transformer', () => {
               story: Story,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--story"
+              storyId: "automatic-calculated-title--story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -519,7 +531,8 @@ describe('transformer', () => {
               story: Included,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--included"
+              storyId: "automatic-calculated-title--included",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -556,7 +569,8 @@ describe('transformer', () => {
               story: Included,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--included"
+              storyId: "automatic-calculated-title--included",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -590,7 +604,8 @@ describe('transformer', () => {
               story: Skipped,
               meta: _meta,
               skipTags: ["skip-me"],
-              storyId: "automatic-calculated-title--skipped"
+              storyId: "automatic-calculated-title--skipped",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -680,7 +695,8 @@ describe('transformer', () => {
               story: Primary,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary"
+              storyId: "automatic-calculated-title--primary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -743,7 +759,8 @@ describe('transformer', () => {
               story: Story,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--story"
+              storyId: "automatic-calculated-title--story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -776,7 +793,8 @@ describe('transformer', () => {
               story: Primary,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary"
+              storyId: "automatic-calculated-title--primary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -818,7 +836,8 @@ describe('transformer', () => {
               story: Primary,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary"
+              storyId: "automatic-calculated-title--primary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -860,7 +879,8 @@ describe('transformer', () => {
               story: Primary,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary-story"
+              storyId: "automatic-calculated-title--primary-story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -902,14 +922,16 @@ describe('transformer', () => {
               story: Secondary,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--secondary"
+              storyId: "automatic-calculated-title--secondary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
             _test("Primary", _testStory({
               exportName: "Primary",
               story: Primary,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--primary"
+              storyId: "automatic-calculated-title--primary",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -946,7 +968,8 @@ describe('transformer', () => {
               story: Story,
               meta: _meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--story"
+              storyId: "automatic-calculated-title--story",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -1009,7 +1032,8 @@ describe('transformer', () => {
                 story: A,
                 meta: meta,
                 skipTags: [],
-                storyId: "automatic-calculated-title--a"
+                storyId: "automatic-calculated-title--a",
+                storyFilePath: "src/components/Button.stories.js"
               }));
               _test("foo", _testStory({
                 exportName: "A",
@@ -1017,6 +1041,7 @@ describe('transformer', () => {
                 meta: meta,
                 skipTags: [],
                 storyId: "automatic-calculated-title--a:foo",
+                storyFilePath: "src/components/Button.stories.js",
                 testName: "foo"
               }));
               _test("bar", _testStory({
@@ -1025,6 +1050,7 @@ describe('transformer', () => {
                 meta: meta,
                 skipTags: [],
                 storyId: "automatic-calculated-title--a:bar",
+                storyFilePath: "src/components/Button.stories.js",
                 testName: "bar"
               }));
             });
@@ -1060,7 +1086,8 @@ describe('transformer', () => {
                 story: Primary,
                 meta: meta,
                 skipTags: [],
-                storyId: "automatic-calculated-title--primary"
+                storyId: "automatic-calculated-title--primary",
+                storyFilePath: "src/components/Button.stories.js"
               }));
               _test("foo", _testStory({
                 exportName: "Primary",
@@ -1068,6 +1095,7 @@ describe('transformer', () => {
                 meta: meta,
                 skipTags: [],
                 storyId: "automatic-calculated-title--primary:foo",
+                storyFilePath: "src/components/Button.stories.js",
                 testName: "foo"
               }));
             });
@@ -1109,7 +1137,8 @@ describe('transformer', () => {
               story: Included,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--included"
+              storyId: "automatic-calculated-title--included",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -1147,7 +1176,8 @@ describe('transformer', () => {
               story: Included,
               meta: meta,
               skipTags: [],
-              storyId: "automatic-calculated-title--included"
+              storyId: "automatic-calculated-title--included",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -1182,7 +1212,8 @@ describe('transformer', () => {
               story: Skipped,
               meta: meta,
               skipTags: ["skip-me"],
-              storyId: "automatic-calculated-title--skipped"
+              storyId: "automatic-calculated-title--skipped",
+              storyFilePath: "src/components/Button.stories.js"
             }));
           }
         `);
@@ -1219,7 +1250,8 @@ describe('transformer', () => {
                 story: Primary,
                 meta: meta,
                 skipTags: [],
-                storyId: "automatic-calculated-title--primary"
+                storyId: "automatic-calculated-title--primary",
+                storyFilePath: "src/components/Button.stories.js"
               }));
               _test("foo", _testStory({
                 exportName: "Primary",
@@ -1227,6 +1259,7 @@ describe('transformer', () => {
                 meta: meta,
                 skipTags: [],
                 storyId: "automatic-calculated-title--primary:foo",
+                storyFilePath: "src/components/Button.stories.js",
                 testName: "foo"
               }));
             });

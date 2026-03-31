@@ -217,6 +217,7 @@ export async function vitestTransform({
   const componentPathLiteral = parsed._rawComponentPath
     ? t.stringLiteral(parsed._rawComponentPath)
     : null;
+  const storyFilePathLiteral = t.stringLiteral(fileName);
 
   let componentNameLiteral = null;
   if (
@@ -257,6 +258,7 @@ export async function vitestTransform({
       t.objectProperty(t.identifier('meta'), t.identifier(metaExportName)),
       t.objectProperty(t.identifier('skipTags'), skipTagsId),
       t.objectProperty(t.identifier('storyId'), t.stringLiteral(storyId)),
+      t.objectProperty(t.identifier('storyFilePath'), storyFilePathLiteral),
     ];
 
     if (componentPathLiteral) {
@@ -311,6 +313,7 @@ export async function vitestTransform({
               t.objectProperty(t.identifier('meta'), t.identifier(metaExportName)),
               t.objectProperty(t.identifier('skipTags'), t.arrayExpression([])),
               t.objectProperty(t.identifier('storyId'), t.stringLiteral(storyId)),
+              t.objectProperty(t.identifier('storyFilePath'), storyFilePathLiteral),
             ];
 
             if (componentPathLiteral) {

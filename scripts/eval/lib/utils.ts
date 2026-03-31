@@ -13,7 +13,7 @@ export interface Logger {
 
 export const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..');
 export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
-export const CACHE_DIR = resolve(EVAL_ROOT, '.cache', 'repos');
+export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
 export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
 

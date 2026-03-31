@@ -9,6 +9,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, screen, waitFor } from 'storybook/test';
 
+import { internal_fullStatusStore } from '../../manager-stores.mock';
+
 import { Filter } from './Filter';
 
 const getDefaultTagFilters = () => {
@@ -213,6 +215,32 @@ export const ClosedWithSelection: Story = {
 
 export const Clear = {
   ...ClosedWithSelection,
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 'c1-s1',
+        typeId: 'change-detection',
+        value: 'status-value:new',
+        title: 'New',
+        description: '',
+      },
+      {
+        storyId: 'c1-test',
+        typeId: 'change-detection',
+        value: 'status-value:modified',
+        title: 'Modified',
+        description: '',
+      },
+      {
+        storyId: 'c1-doc',
+        typeId: 'change-detection',
+        value: 'status-value:affected',
+        title: 'Affected',
+        description: '',
+      },
+    ]);
+    return () => internal_fullStatusStore.unset();
+  },
   play: async ({ canvas }) => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });
     button.click();
@@ -265,6 +293,32 @@ export const NoUserTags = {
         },
       } as StoryIndex,
     },
+  },
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 'c1-s1',
+        typeId: 'change-detection',
+        value: 'status-value:new',
+        title: 'New',
+        description: '',
+      },
+      {
+        storyId: 'c1-test',
+        typeId: 'change-detection',
+        value: 'status-value:modified',
+        title: 'Modified',
+        description: '',
+      },
+      {
+        storyId: 'c1-doc',
+        typeId: 'change-detection',
+        value: 'status-value:affected',
+        title: 'Affected',
+        description: '',
+      },
+    ]);
+    return () => internal_fullStatusStore.unset();
   },
   play: async ({ canvas }) => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });

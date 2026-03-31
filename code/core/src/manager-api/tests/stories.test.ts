@@ -1735,7 +1735,7 @@ describe('stories API', () => {
 
     it('serializes included status values', () => {
       expect(serializeStatusesParam(['status-value:new', 'status-value:modified'], [])).toBe(
-        'new;modified'
+        'modified;new'
       );
     });
 

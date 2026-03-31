@@ -7,6 +7,8 @@ import { deepMerge } from '@vitest/utils';
 import type { API, State } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
+import { IconSymbols } from './IconSymbols';
+
 import type { ModuleArgs, ModuleFn } from '../../../manager-api/lib/types';
 import { init as initStories } from '../../../manager-api/modules/stories';
 import { createTestingStore } from '../../../manager-api/test-utils/store';
@@ -119,6 +121,13 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
     );
   }
 }
+
+export const IconSymbolsDecorator: DecoratorFunction = (Story) => (
+  <>
+    <IconSymbols />
+    <Story />
+  </>
+);
 
 export const MockAPIDecorator: DecoratorFunction = (Story, { args, parameters }) => (
   <MockAPIWrapper

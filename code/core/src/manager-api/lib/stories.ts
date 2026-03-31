@@ -170,11 +170,13 @@ type ToStoriesHashOptions = {
   docsOptions: DocsOptions;
   filters: State['filters'];
   allStatuses: StatusesByStoryIdAndTypeId;
+  /** The key of the status filter in `filters`, if any. The status filter takes priority over the "always show error" rule. */
+  statusFilterKey?: string;
 };
 
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
-  { provider, docsOptions, filters, allStatuses }: ToStoriesHashOptions
+  { provider, docsOptions, filters, allStatuses, statusFilterKey }: ToStoriesHashOptions
 ): API_IndexHash => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
@@ -188,11 +190,26 @@ export const transformStoryIndexToStoriesHash = (
 
   const indexEntries = Object.values(index.entries);
   const filterFunctions = Object.values(filters);
+  const statusFilterFn = statusFilterKey ? filters[statusFilterKey] : undefined;
 
   const entryValues = indexEntries.filter((entry) => {
     const statuses = allStatuses[entry.id] ?? {};
+
+    // The status filter runs first and can hide entries even if they have a failing status.
+    // This allows users to explicitly filter by status (e.g. exclude error stories).
+    if (statusFilterFn && !statusFilterFn({ ...entry, statuses })) {
+      const children = indexEntries.filter((item) => 'parent' in item && item.parent === entry.id);
+      if (
+        !children.some((child) =>
+          statusFilterFn({ ...child, statuses: allStatuses[child.id] ?? {} })
+        )
+      ) {
+        return false;
+      }
+    }
+
     if (Object.values(statuses).some(({ value }) => value === 'status-value:error')) {
-      // All stories with a failing status should always show up, regardless of the applied filters
+      // All stories with a failing status should always show up, regardless of the applied non-status filters
       return true;
     }
 

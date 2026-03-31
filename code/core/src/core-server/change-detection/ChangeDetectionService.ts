@@ -86,7 +86,8 @@ function toRepoRelativePath(repoRoot: string, filePath: string): string {
  */
 export class ChangeDetectionService {
   private disposed = false;
-  private unsubscribe: (() => void) | undefined;
+  private unsubscribeModuleGraph: (() => void) | undefined;
+  private unsubscribeGitState: (() => void) | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private latestModuleGraph: ModuleGraph | undefined;
   private hasReceivedModuleGraph = false;
@@ -94,7 +95,7 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private previousStatuses = new Map<string, Status>();
-  private readonly gitDiffProvider: Pick<GitDiffProvider, 'getChangedFiles' | 'getRepoRoot'>;
+  private readonly gitDiffProvider: GitDiffProvider;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -102,7 +103,7 @@ export class ChangeDetectionService {
     private readonly options: {
       storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
       statusStore: StatusStoreByTypeId;
-      gitDiffProvider?: Pick<GitDiffProvider, 'getChangedFiles' | 'getRepoRoot'>;
+      gitDiffProvider?: GitDiffProvider;
       workingDir?: string;
       debounceMs?: number;
     }
@@ -136,7 +137,7 @@ export class ChangeDetectionService {
     }
 
     logger.debug('Change detection enabled.');
-    this.unsubscribe = onModuleGraphChange((event) => {
+    this.unsubscribeModuleGraph = onModuleGraphChange((event) => {
       if (this.disposed) {
         return;
       }
@@ -150,6 +151,13 @@ export class ChangeDetectionService {
 
       this.handleBuilderStartupEvent(event);
     });
+    this.unsubscribeGitState = this.gitDiffProvider.onGitStateChange(() => {
+      if (this.disposed) {
+        return;
+      }
+
+      this.scheduleScan(this.debounceMs);
+    });
   }
 
   async dispose(): Promise<void> {
@@ -161,8 +169,10 @@ export class ChangeDetectionService {
       this.debounceTimer = undefined;
     }
 
-    this.unsubscribe?.();
-    this.unsubscribe = undefined;
+    this.unsubscribeModuleGraph?.();
+    this.unsubscribeModuleGraph = undefined;
+    this.unsubscribeGitState?.();
+    this.unsubscribeGitState = undefined;
   }
 
   private scheduleScan(delayMs: number): void {

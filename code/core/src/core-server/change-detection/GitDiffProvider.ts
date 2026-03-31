@@ -1,3 +1,7 @@
+import { watch, type FSWatcher } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 // eslint-disable-next-line depend/ban-dependencies
 import { execa, type ExecaError } from 'execa';
 
@@ -7,6 +11,13 @@ export interface GitDiffResult {
   changed: Set<string>;
   new: Set<string>;
 }
+
+type GitStateChangeCallback = () => void;
+type WatcherKey = 'branch' | 'head' | 'packedRefs';
+type GitFileSystem = {
+  watch: typeof watch;
+  readFile: typeof readFile;
+};
 
 function parseChangedFiles(stdout: string): Set<string> {
   return new Set(
@@ -19,8 +30,14 @@ function parseChangedFiles(stdout: string): Set<string> {
 
 export class GitDiffProvider {
   private repoRoot: string | undefined;
+  private readonly gitStateCallbacks = new Set<GitStateChangeCallback>();
+  private readonly watchers: Partial<Record<WatcherKey, FSWatcher>> = {};
+  private watcherSetupInFlight: Promise<void> | undefined;
 
-  constructor(private readonly cwd = process.cwd()) {}
+  constructor(
+    private readonly cwd = process.cwd(),
+    private readonly fileSystem: GitFileSystem = { watch, readFile }
+  ) {}
 
   async getRepoRoot(): Promise<string> {
     if (this.repoRoot) {
@@ -67,6 +84,146 @@ export class GitDiffProvider {
         ...parseChangedFiles(stagedAdded.stdout),
       ]),
     };
+  }
+
+  onGitStateChange(callback: GitStateChangeCallback): () => void {
+    this.gitStateCallbacks.add(callback);
+    void this.ensureWatchers();
+
+    return () => {
+      this.gitStateCallbacks.delete(callback);
+
+      if (this.gitStateCallbacks.size === 0) {
+        this.clearAllWatchers();
+      }
+    };
+  }
+
+  private async ensureWatchers(): Promise<void> {
+    if (this.watcherSetupInFlight) {
+      await this.watcherSetupInFlight;
+      return;
+    }
+
+    if (Object.keys(this.watchers).length > 0) {
+      return;
+    }
+
+    this.watcherSetupInFlight = this.setupWatchers();
+    await this.watcherSetupInFlight;
+  }
+
+  private async setupWatchers(): Promise<void> {
+    try {
+      const gitDir = await this.getGitDir();
+
+      if (this.gitStateCallbacks.size === 0) {
+        return;
+      }
+
+      this.watchFile('head', join(gitDir, 'HEAD'), () => {
+        this.emitGitStateChange();
+        void this.configureBranchWatcher(gitDir);
+      });
+      this.watchFile('packedRefs', join(gitDir, 'packed-refs'), () => {
+        this.emitGitStateChange();
+      });
+      await this.configureBranchWatcher(gitDir);
+    } catch {
+      // Watching git state is opportunistic; scanning still runs from module graph updates.
+    } finally {
+      this.watcherSetupInFlight = undefined;
+    }
+  }
+
+  private emitGitStateChange(): void {
+    this.gitStateCallbacks.forEach((registeredCallback) => {
+      registeredCallback();
+    });
+  }
+
+  private watchFile(
+    key: WatcherKey,
+    filePath: string,
+    onChange: GitStateChangeCallback
+  ): FSWatcher | undefined {
+    try {
+      const watcher = this.fileSystem.watch(filePath, { persistent: false }, () => {
+        if (this.gitStateCallbacks.size > 0) {
+          onChange();
+        }
+      });
+
+      watcher.on('error', () => {
+        watcher.close();
+        if (this.watchers[key] === watcher) {
+          delete this.watchers[key];
+        }
+      });
+
+      this.clearWatcher(key);
+      this.watchers[key] = watcher;
+      return watcher;
+    } catch (error) {
+      if (this.isEnoentError(error)) {
+        return undefined;
+      }
+
+      throw error;
+    }
+  }
+
+  private async configureBranchWatcher(gitDir: string): Promise<void> {
+    if (this.gitStateCallbacks.size === 0) {
+      return;
+    }
+
+    const branchRef = await this.readHeadRef(gitDir);
+
+    if (this.gitStateCallbacks.size === 0) {
+      return;
+    }
+
+    this.clearWatcher('branch');
+
+    if (branchRef?.startsWith('refs/heads/')) {
+      this.watchFile('branch', join(gitDir, branchRef), () => {
+        this.emitGitStateChange();
+      });
+    }
+  }
+
+  private clearWatcher(key: WatcherKey): void {
+    this.watchers[key]?.close();
+    delete this.watchers[key];
+  }
+
+  private clearAllWatchers(): void {
+    (Object.keys(this.watchers) as WatcherKey[]).forEach((key) => {
+      this.clearWatcher(key);
+    });
+  }
+
+  private async getGitDir(): Promise<string> {
+    return join(await this.getRepoRoot(), '.git');
+  }
+
+  private async readHeadRef(gitDir: string): Promise<string | undefined> {
+    try {
+      const headContents = await this.fileSystem.readFile(join(gitDir, 'HEAD'), 'utf8');
+      const match = /^ref:\s+(.+)$/m.exec(headContents.trim());
+      return match?.[1];
+    } catch (error) {
+      if (!this.isEnoentError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  private isEnoentError(error: unknown): error is NodeJS.ErrnoException {
+    return Boolean(
+      error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT'
+    );
   }
 
   private toGitError(error: unknown, command: string): Error {

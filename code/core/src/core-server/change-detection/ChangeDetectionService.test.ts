@@ -17,6 +17,8 @@ import { MockUniversalStore } from '../../shared/universal-store/mock';
 import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
 import { ChangeDetectionService } from './ChangeDetectionService';
+import type { GitDiffResult } from './GitDiffProvider';
+import { GitDiffProvider } from './GitDiffProvider';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
@@ -87,6 +89,44 @@ function createBuilder() {
   };
 }
 
+class MockGitDiffProvider extends GitDiffProvider {
+  readonly getChangedFilesMock = vi.fn(
+    async (): Promise<GitDiffResult> => ({
+      changed: new Set(),
+      new: new Set(),
+    })
+  );
+
+  readonly getRepoRootMock = vi.fn(async (): Promise<string> => '/repo');
+
+  readonly onGitStateChangeMock = vi.fn<(callback: () => void) => () => void>((callback) => {
+    void callback;
+    return vi.fn();
+  });
+
+  constructor() {
+    super('/repo');
+  }
+
+  override getChangedFiles(): Promise<GitDiffResult> {
+    return this.getChangedFilesMock();
+  }
+
+  override getRepoRoot(): Promise<string> {
+    return this.getRepoRootMock();
+  }
+
+  override onGitStateChange(callback: () => void): () => void {
+    return this.onGitStateChangeMock(callback);
+  }
+}
+
+function createMockGitDiffProvider(configure?: (provider: MockGitDiffProvider) => void) {
+  const provider = new MockGitDiffProvider();
+  configure?.(provider);
+  return provider;
+}
+
 describe('ChangeDetectionService', () => {
   const workingDir = '/repo';
 
@@ -131,13 +171,12 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const gitDiffProvider = {
-      getChangedFiles: vi.fn().mockResolvedValue({
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock.mockResolvedValue({
         changed: new Set(['src/Button.module.css']),
         new: new Set(),
-      }),
-      getRepoRoot: vi.fn().mockResolvedValue(workingDir),
-    };
+      });
+    });
     const { builder, emit } = createBuilder();
     const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({
@@ -196,9 +235,8 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const gitDiffProvider = {
-      getChangedFiles: vi
-        .fn()
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock
         .mockResolvedValueOnce({
           changed: new Set(),
           new: new Set(['src/NewButton.stories.tsx']),
@@ -206,9 +244,8 @@ describe('ChangeDetectionService', () => {
         .mockResolvedValueOnce({
           changed: new Set(),
           new: new Set(),
-        }),
-      getRepoRoot: vi.fn().mockResolvedValue(workingDir),
-    };
+        });
+    });
     const { builder, emit } = createBuilder();
     const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({
@@ -249,6 +286,62 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
+  it('rescans on git state changes using the normal debounce', async () => {
+    const buttonStory = createModuleNode('/repo/src/Button.stories.tsx');
+    const moduleGraph: ModuleGraph = new Map([
+      ['/repo/src/Button.stories.tsx', new Set([buttonStory])],
+    ]);
+    const storyIndex = createStoryIndex([
+      { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+    ]);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    let onGitStateChange: (() => void) | undefined;
+    const unsubscribeGitState = vi.fn();
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock.mockResolvedValue({
+        changed: new Set(['src/Button.stories.tsx']),
+        new: new Set(),
+      });
+      provider.onGitStateChangeMock.mockImplementation((callback: () => void) => {
+        onGitStateChange = callback;
+        return unsubscribeGitState;
+      });
+    });
+    const { builder, emit } = createBuilder();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn().mockResolvedValue(storyIndex),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      workingDir,
+      debounceMs: 10,
+    });
+
+    service.start(builder.onModuleGraphChange, true);
+    emit(moduleGraph);
+    await vi.runAllTimersAsync();
+
+    expect(gitDiffProvider.onGitStateChangeMock).toHaveBeenCalledTimes(1);
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
+
+    onGitStateChange?.();
+    await vi.advanceTimersByTimeAsync(9);
+
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
+
+    await service.dispose();
+
+    expect(unsubscribeGitState).toHaveBeenCalledTimes(1);
+  });
+
   it('logs unavailability when the builder does not expose module graph changes', async () => {
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
@@ -259,10 +352,7 @@ describe('ChangeDetectionService', () => {
         getIndex: vi.fn(),
       } as never),
       statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: {
-        getChangedFiles: vi.fn(),
-        getRepoRoot: vi.fn(),
-      },
+      gitDiffProvider: createMockGitDiffProvider(),
       workingDir,
     });
 
@@ -283,10 +373,7 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const gitDiffProvider = {
-      getChangedFiles: vi.fn(),
-      getRepoRoot: vi.fn(),
-    };
+    const gitDiffProvider = createMockGitDiffProvider();
     const { builder, emitError } = createBuilder();
     const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({
@@ -308,7 +395,7 @@ describe('ChangeDetectionService', () => {
       status: 'error',
       error: expect.objectContaining({ message: 'module graph warmup failed' }),
     });
-    expect(gitDiffProvider.getChangedFiles).not.toHaveBeenCalled();
+    expect(gitDiffProvider.getChangedFilesMock).not.toHaveBeenCalled();
     await service.dispose();
   });
 
@@ -320,16 +407,14 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const gitDiffProvider = {
-      getChangedFiles: vi
-        .fn()
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock
         .mockResolvedValueOnce({
           changed: new Set(['src/Button.stories.tsx']),
           new: new Set(),
         })
-        .mockRejectedValueOnce(new ChangeDetectionFailureError('scan blew up')),
-      getRepoRoot: vi.fn().mockResolvedValue(workingDir),
-    };
+        .mockRejectedValueOnce(new ChangeDetectionFailureError('scan blew up'));
+    });
     const { builder, emit } = createBuilder();
     const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({
@@ -382,10 +467,9 @@ describe('ChangeDetectionService', () => {
       changed: Set<string>;
       new: Set<string>;
     }>();
-    const gitDiffProvider = {
-      getChangedFiles: vi.fn().mockImplementation(() => changedFilesDeferred.promise),
-      getRepoRoot: vi.fn().mockResolvedValue(workingDir),
-    };
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock.mockImplementation(() => changedFilesDeferred.promise);
+    });
     const { builder, emit } = createBuilder();
     const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({
@@ -411,7 +495,7 @@ describe('ChangeDetectionService', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(gitDiffProvider.getChangedFiles).toHaveBeenCalledTimes(1);
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({});
     await expect(
       Promise.race([
@@ -426,12 +510,11 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const gitDiffProvider = {
-      getChangedFiles: vi
-        .fn()
-        .mockRejectedValue(new ChangeDetectionUnavailableError('not a git repository')),
-      getRepoRoot: vi.fn(),
-    };
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock.mockRejectedValue(
+        new ChangeDetectionUnavailableError('not a git repository')
+      );
+    });
     const { builder, emit } = createBuilder();
     const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({
@@ -449,7 +532,7 @@ describe('ChangeDetectionService', () => {
     emit(new Map());
     await vi.advanceTimersByTimeAsync(0);
 
-    expect(gitDiffProvider.getChangedFiles).toHaveBeenCalledTimes(1);
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith('Change detection unavailable: not a git repository');
     expect(await getChangeDetectionReadiness()).toEqual({
       status: 'unavailable',
@@ -490,13 +573,12 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const gitDiffProvider = {
-      getChangedFiles: vi.fn().mockResolvedValue({
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock.mockResolvedValue({
         changed: new Set(['src/direct.ts', 'src/indirect.ts']),
         new: new Set(),
-      }),
-      getRepoRoot: vi.fn().mockResolvedValue(workingDir),
-    };
+      });
+    });
     const { builder, emit } = createBuilder();
     const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({
@@ -549,13 +631,12 @@ describe('ChangeDetectionService', () => {
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',
     });
-    const gitDiffProvider = {
-      getChangedFiles: vi.fn().mockResolvedValue({
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.getChangedFilesMock.mockResolvedValue({
         changed: new Set(['src/Button.module.css']),
         new: new Set(),
-      }),
-      getRepoRoot: vi.fn().mockResolvedValue(workingDir),
-    };
+      });
+    });
     const { builder, emit } = createBuilder();
     const service = new ChangeDetectionService({
       storyIndexGeneratorPromise: Promise.resolve({

@@ -201,6 +201,7 @@ async function getParser(userOptions?: ParserOptions & { tsconfigPath?: string }
     cachedCompilerOptions = { noErrorTruncation: true, strict: true };
 
     if (configPath) {
+
       const { config, error } = typescript.readConfigFile(configPath, typescript.sys.readFile);
       if (!error) {
         const parsed = typescript.parseJsonConfigFileContent(
@@ -213,7 +214,6 @@ async function getParser(userOptions?: ParserOptions & { tsconfigPath?: string }
       } else if (userTsconfigPath) {
         logger.warn(`Failed to load tsconfig at "${configPath}": ${typescript.flattenDiagnosticMessageText(error.messageText, '\n')}`);
       }
-    }
 
     const program = typescript.createProgram(
       cachedFileNames ?? [],

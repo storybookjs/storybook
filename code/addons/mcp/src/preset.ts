@@ -170,7 +170,7 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {
 	return {
 		...existingFeatures,
-		componentManifest: true,
+		componentsManifest: true,
 	};
 }
 

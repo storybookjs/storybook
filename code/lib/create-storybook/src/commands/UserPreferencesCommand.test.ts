@@ -360,7 +360,7 @@ describe('UserPreferencesCommand', () => {
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
     });
 
-    it('should include AI feature even with minimal install if user wants it', async () => {
+    it('should not include AI feature in minimal installs', async () => {
       Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         configurable: true,
@@ -377,7 +377,7 @@ describe('UserPreferencesCommand', () => {
         projectType: ProjectType.REACT,
       });
 
-      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
       // Other recommended features should NOT be present with light install
       expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
       expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);

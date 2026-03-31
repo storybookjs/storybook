@@ -80,7 +80,8 @@ export class UserPreferencesCommand {
         : 'recommended';
 
     // Ask about AI setup
-    const useAiForSetup = await this.promptAiSetup(skipPrompt);
+    const useAiForSetup =
+      installType === 'recommended' ? await this.promptAiSetup(skipPrompt) : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,

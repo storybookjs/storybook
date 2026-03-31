@@ -1,11 +1,10 @@
 import { existsSync } from 'node:fs';
-import { relative, sep } from 'node:path';
+import { dirname, relative, sep } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { findTsconfigPathForFile } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
-import * as find from 'empathic/find';
 import MagicString from 'magic-string';
 import type { Documentation } from 'react-docgen';
 import {
@@ -44,24 +43,6 @@ export async function reactDocgen({
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
 
-  const projectRoot = getProjectRoot();
-  const tsconfigPath =
-    find.up('tsconfig.json', { cwd, last: projectRoot }) ??
-    find.up('tsconfig.base.json', { cwd, last: projectRoot }) ??
-    find.up('tsconfig.app.json', { cwd, last: projectRoot });
-  const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
-
-  let matchPath: TsconfigPaths.MatchPath | undefined;
-
-  if (tsconfig.resultType === 'success') {
-    logger.debug('Using tsconfig paths for react-docgen');
-    matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-      'browser',
-      'module',
-      'main',
-    ]);
-  }
-
   return {
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
@@ -71,6 +52,7 @@ export async function reactDocgen({
       }
 
       try {
+        const matchPath = createTsconfigMatchPath(id);
         const docgenResults = parse(src, {
           resolver: defaultResolver,
           handlers,
@@ -132,4 +114,19 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
 
     throw new ReactDocgenResolveError(filename);
   });
+}
+
+function createTsconfigMatchPath(filePath: string) {
+  const tsconfig = TsconfigPaths.loadConfig(findTsconfigPathForFile(dirname(filePath), filePath));
+
+  if (tsconfig.resultType !== 'success') {
+    return undefined;
+  }
+
+  logger.debug('Using tsconfig paths for react-docgen');
+  return TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
+    'browser',
+    'module',
+    'main',
+  ]);
 }

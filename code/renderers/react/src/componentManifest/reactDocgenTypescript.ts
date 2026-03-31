@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 import {
   type ComponentDoc,
@@ -180,7 +180,7 @@ export function invalidateParser() {
   cachedParserOptionsKey = undefined;
 }
 
-async function getParser(userOptions?: ParserOptions) {
+async function getParser(userOptions?: ParserOptions & { tsconfigPath?: string }) {
   const [typescript, reactDocgenTypescript] = await Promise.all([
     loadTypeScript(),
     loadReactDocgenTypescript(),
@@ -192,18 +192,23 @@ async function getParser(userOptions?: ParserOptions) {
   }
 
   if (!parser) {
-    const configPath = findTsconfigPath(process.cwd());
+    const { tsconfigPath: userTsconfigPath, ...restUserOptions } = userOptions ?? {};
+    const configPath = userTsconfigPath
+      ? resolve(process.cwd(), userTsconfigPath)
+      : findTsconfigPath(process.cwd());
     cachedCompilerOptions = { noErrorTruncation: true, strict: true };
 
     if (configPath) {
-      const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-      const parsed = typescript.parseJsonConfigFileContent(
-        config,
-        typescript.sys,
-        dirname(configPath)
-      );
-      cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
-      cachedFileNames = parsed.fileNames;
+      const { config, error } = typescript.readConfigFile(configPath, typescript.sys.readFile);
+      if (!error) {
+        const parsed = typescript.parseJsonConfigFileContent(
+          config,
+          typescript.sys,
+          dirname(configPath)
+        );
+        cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
+        cachedFileNames = parsed.fileNames;
+      }
     }
 
     const program = typescript.createProgram(
@@ -217,7 +222,7 @@ async function getParser(userOptions?: ParserOptions) {
     const parserOptions: ParserOptions = {
       shouldExtractLiteralValuesFromEnum: true,
       shouldRemoveUndefinedFromOptional: true,
-      ...userOptions,
+      ...restUserOptions,
       // Always force savePropValueAsString so default values are in a consistent format
       savePropValueAsString: true,
     };
@@ -290,7 +295,10 @@ export function getReactDocgenTypescriptError(
  * `invalidateCache()`. The underlying TS program is a long-lived singleton.
  */
 export const parseWithReactDocgenTypescript = asyncCache(
-  async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
+  async (
+    filePath: string,
+    userOptions?: ParserOptions & { tsconfigPath?: string }
+  ): Promise<ComponentDocWithExportName[]> => {
     const { program, fileParser, typescript } = await getParser(userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);

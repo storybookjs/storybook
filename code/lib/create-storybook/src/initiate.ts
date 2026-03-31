@@ -115,12 +115,12 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   if (selectedFeatures.has(Feature.AI)) {
     if (options.agent) {
-      const { aiInit } = await import('../../cli-storybook/src/ai');
-      await aiInit({ configDir: configDir ?? '.storybook' });
+      const { aiPrepare } = await import('../../cli-storybook/src/ai');
+      await aiPrepare({ configDir: configDir ?? '.storybook' });
     } else {
       logger.step(
         CLI_COLORS.storybook(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
-        Run \`npx storybook ai init\` and follow its instructions precisely.`)
+        Run \`npx storybook ai prepare\` and follow its instructions precisely.`)
       );
     }
   }

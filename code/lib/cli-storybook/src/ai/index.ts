@@ -3,9 +3,9 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
 import { generateJsonOutput, generateMarkdownOutput } from './prompt';
-import type { ProjectInfo, AiInitOptions } from './types';
+import type { ProjectInfo, AiPrepareOptions } from './types';
 
-export async function aiInit(options: AiInitOptions): Promise<void> {
+export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
   const {
     configDir: userConfigDir,
     packageManager: packageManagerName,

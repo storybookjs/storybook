@@ -24,7 +24,7 @@ import { doctor } from '../doctor';
 import { link } from '../link';
 import { migrate } from '../migrate';
 import { sandbox } from '../sandbox';
-import { aiInit } from '../ai';
+import { aiPrepare } from '../ai';
 import { type UpgradeOptions, upgrade } from '../upgrade';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -307,7 +307,7 @@ command('doctor')
 const aiCommand = command('ai').description('AI agent helpers for Storybook');
 
 aiCommand
-  .command('init')
+  .command('prepare')
   .description('Generate setup instructions to write stories for real components')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
@@ -319,8 +319,8 @@ aiCommand
     new Option('--format <type>', 'Output format').choices(['markdown', 'json']).default('markdown')
   )
   .action(async (options) => {
-    await withTelemetry('ai-init', { cliOptions: options }, async () => {
-      await aiInit(options);
+    await withTelemetry('ai-prepare', { cliOptions: options }, async () => {
+      await aiPrepare(options);
     }).catch(handleCommandFailure(options.logfile));
   });
 

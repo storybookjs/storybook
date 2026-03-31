@@ -1,4 +1,4 @@
-export interface AiInitOptions {
+export interface AiPrepareOptions {
   configDir?: string;
   packageManager?: string;
   format?: 'markdown' | 'json';

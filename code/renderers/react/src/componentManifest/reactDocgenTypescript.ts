@@ -211,7 +211,7 @@ async function getParser(userOptions?: ParserOptions & { tsconfigPath?: string }
         cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
         cachedFileNames = parsed.fileNames;
       } else if (userTsconfigPath) {
-        logger.warn(`Failed to load tsconfig at "${configPath}": ${error.messageText}`);
+        logger.warn(`Failed to load tsconfig at "${configPath}": ${typescript.flattenDiagnosticMessageText(error.messageText, '\n')}`);
       }
     }
 

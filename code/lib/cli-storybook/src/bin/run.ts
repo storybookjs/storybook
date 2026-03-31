@@ -28,8 +28,24 @@ import { type UpgradeOptions, upgrade } from '../upgrade';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
-function command(name: string) {
-  return program
+// Return a failed exit code but write the logs to a file first
+const handleCommandFailure =
+  (logFilePath: string | boolean | undefined) =>
+  async (error: unknown): Promise<never> => {
+    if (!(error instanceof HandledError)) {
+      logger.error(String(error));
+    }
+
+    try {
+      const logFile = await logTracker.writeToFile(logFilePath);
+      logger.log(`Debug logs are written to: ${logFile}`);
+    } catch {}
+    logger.outro('');
+    process.exit(1);
+  };
+
+const command = (name: string) =>
+  program
     .command(name)
     .option(
       '--disable-telemetry',
@@ -72,23 +88,6 @@ function command(name: string) {
         logger.outro(CLI_COLORS.success('Done!'));
       }
     });
-}
-
-// Return a failed exit code but write the logs to a file first
-function handleCommandFailure(logFilePath: string | boolean | undefined) {
-  return async (error: unknown): Promise<never> => {
-    if (!(error instanceof HandledError)) {
-      logger.error(String(error));
-    }
-
-    try {
-      const logFile = await logTracker.writeToFile(logFilePath);
-      logger.log(`Debug logs are written to: ${logFile}`);
-    } catch {}
-    logger.outro('');
-    process.exit(1);
-  };
-}
 
 command('init')
   .description('Initialize Storybook into your project')

@@ -45,15 +45,13 @@ const CodeWrapper = styled.div(({ theme }) => ({
   },
 }));
 
-function CodeSnippet(props: ComponentProps<typeof SyntaxHighlighter>) {
-  return (
-    <ThemeProvider theme={convert(themes.dark)}>
-      <CodeWrapper>
-        <SyntaxHighlighter {...props} />
-      </CodeWrapper>
-    </ThemeProvider>
-  );
-}
+const CodeSnippet = (props: ComponentProps<typeof SyntaxHighlighter>) => (
+  <ThemeProvider theme={convert(themes.dark)}>
+    <CodeWrapper>
+      <SyntaxHighlighter {...props} />
+    </CodeWrapper>
+  </ThemeProvider>
+);
 
 type ItemId = keyof (typeof initialState)['items'];
 
@@ -123,14 +121,14 @@ export interface ChecklistData {
   }[];
 }
 
-function isExample(id: string) {
-  return id.startsWith('example-') || id.startsWith('configure-your-project--');
-}
+const isExample = (id: string) =>
+  id.startsWith('example-') || id.startsWith('configure-your-project--');
 
-function subscribeToIndex(
+const subscribeToIndex: (
   condition: (entries: Record<string, API_PreparedIndexEntry>) => boolean
-): ChecklistData['sections'][number]['items'][number]['subscribe'] {
-  return ({ api, done }) => {
+) => ChecklistData['sections'][number]['items'][number]['subscribe'] =
+  (condition) =>
+  ({ api, done }) => {
     const check = () =>
       condition(
         Object.entries(api.getIndex()?.entries || {}).reduce(
@@ -145,7 +143,6 @@ function subscribeToIndex(
       return api.on(STORY_INDEX_INVALIDATED, () => check() && done());
     }
   };
-}
 
 export const checklistData = {
   sections: [

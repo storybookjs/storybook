@@ -156,18 +156,6 @@ export const BuiltInOnly: Story = {
         typeId: 'change-detection',
         statusValue: 'status-value:affected',
         title: 'Affected',
-      },
-      {
-        storyId: 'c2-story2',
-        typeId: 'change-detection',
-        statusValue: 'status-value:error',
-        title: 'Error',
-      },
-      {
-        storyId: 'c2-story3',
-        typeId: 'change-detection',
-        statusValue: 'status-value:warning',
-        title: 'Warning',
       }
     ),
   },
@@ -260,18 +248,6 @@ export const WithStatuses: Story = {
         typeId: 'change-detection',
         statusValue: 'status-value:affected',
         title: 'Affected',
-      },
-      {
-        storyId: 'c2-story2',
-        typeId: 'change-detection',
-        statusValue: 'status-value:error',
-        title: 'Error',
-      },
-      {
-        storyId: 'c2-story3',
-        typeId: 'change-detection',
-        statusValue: 'status-value:warning',
-        title: 'Warning',
       }
     ),
   },
@@ -287,29 +263,7 @@ export const WithStatusesIncluded: Story = {
 export const WithStatusesExcluded: Story = {
   args: {
     ...WithStatuses.args,
-    excludedStatusFilters: ['status-value:error'],
-  },
-};
-
-export const OnlyErrorStatus: Story = {
-  args: {
-    allStatuses: makeStatuses({
-      storyId: 'c2-story2',
-      typeId: 'change-detection',
-      statusValue: 'status-value:error',
-      title: 'Error',
-    }),
-  },
-};
-
-export const OnlyWarningStatus: Story = {
-  args: {
-    allStatuses: makeStatuses({
-      storyId: 'c2-story3',
-      typeId: 'change-detection',
-      statusValue: 'status-value:warning',
-      title: 'Warning',
-    }),
+    excludedStatusFilters: ['status-value:affected'],
   },
 };
 

@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import {
   type ComponentDoc,
@@ -162,50 +162,53 @@ function getExportNameMap(
   return result;
 }
 
+type ParserState = { program: ts.Program; fileParser: FileParser };
+
 /**
- * Manages the TS program and react-docgen-typescript parser. On `invalidateParser()` the program is
- * rebuilt incrementally — TypeScript reuses source files that haven't changed on disk, so only
- * modified files are re-parsed. This keeps prop extraction correct across HMR cycles without the
- * cost of a full program rebuild.
+ * Manages TS programs and react-docgen-typescript parsers per tsconfig. On `invalidateParser()` the
+ * parsers are rebuilt incrementally — TypeScript reuses source files that haven't changed on disk,
+ * so only modified files are re-parsed. This keeps prop extraction correct across HMR cycles
+ * without the cost of a full program rebuild.
  */
-let cachedCompilerOptions: ts.CompilerOptions | undefined;
-let cachedFileNames: string[] | undefined;
-let previousProgram: ts.Program | undefined;
-let parser: { program: ts.Program; fileParser: FileParser } | undefined;
-let cachedParserOptionsKey: string | undefined;
+const previousProgramsByConfigKey = new Map<string, ts.Program | undefined>();
+let parserCache = new Map<string, ParserState>();
+let parserBuilds = new Map<string, Promise<ParserState>>();
 
 /** Rebuild the TS program incrementally so that file changes are picked up on the next parse. */
 export function invalidateParser() {
-  parser = undefined;
-  cachedCompilerOptions = undefined;
-  cachedFileNames = undefined;
-  cachedParserOptionsKey = undefined;
+  parserCache = new Map();
+  parserBuilds = new Map();
 }
 
-async function getParser(userOptions?: ParserOptions) {
+async function getParser(filePath: string, userOptions?: ParserOptions) {
   const [typescript, reactDocgenTypescript] = await Promise.all([
     loadTypeScript(),
     loadReactDocgenTypescript(),
   ]);
-  // Rebuild parser if options changed
   const optionsKey = JSON.stringify(userOptions ?? {});
-  if (parser && cachedParserOptionsKey !== optionsKey) {
-    parser = undefined;
+
+  const configPath =
+    findTsconfigPathForFile(typescript, process.cwd(), filePath) ?? findTsconfigPath(process.cwd());
+  const configKey = configPath ?? '<no-tsconfig>';
+  const parserKey = `${configKey}::${optionsKey}`;
+  const cachedParser = parserCache.get(parserKey);
+  if (cachedParser) {
+    return { ...cachedParser, typescript };
   }
 
-  if (!parser) {
-    const configPath = findTsconfigPath(process.cwd());
-    cachedCompilerOptions = { noErrorTruncation: true, strict: true };
+  const pendingParser = parserBuilds.get(parserKey);
+  if (pendingParser) {
+    return { ...(await pendingParser), typescript };
+  }
+
+  const buildParser = (async () => {
+    let compilerOptions: ts.CompilerOptions = { noErrorTruncation: true, strict: true };
+    let fileNames: string[] = [];
 
     if (configPath) {
-      const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-      const parsed = typescript.parseJsonConfigFileContent(
-        config,
-        typescript.sys,
-        dirname(configPath)
-      );
-      cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
-      cachedFileNames = parsed.fileNames;
+      const parsed = parseTsconfig(typescript, configPath);
+      compilerOptions = { ...parsed.options, noErrorTruncation: true };
+      fileNames = parsed.fileNames;
     } else {
       logger.warn(
         'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
@@ -215,12 +218,12 @@ async function getParser(userOptions?: ParserOptions) {
     }
 
     const program = typescript.createProgram(
-      cachedFileNames ?? [],
-      cachedCompilerOptions,
+      fileNames,
+      compilerOptions,
       undefined,
-      previousProgram
+      previousProgramsByConfigKey.get(configKey)
     );
-    previousProgram = program;
+    previousProgramsByConfigKey.set(configKey, program);
 
     const parserOptions: ParserOptions = {
       shouldExtractLiteralValuesFromEnum: true,
@@ -230,13 +233,22 @@ async function getParser(userOptions?: ParserOptions) {
       savePropValueAsString: true,
     };
 
-    parser = {
+    const state = {
       program,
-      fileParser: reactDocgenTypescript.withCompilerOptions(cachedCompilerOptions, parserOptions),
+      fileParser: reactDocgenTypescript.withCompilerOptions(compilerOptions, parserOptions),
     };
-    cachedParserOptionsKey = optionsKey;
+
+    parserCache.set(parserKey, state);
+    return state;
+  })();
+
+  parserBuilds.set(parserKey, buildParser);
+
+  try {
+    return { ...(await buildParser), typescript };
+  } finally {
+    parserBuilds.delete(parserKey);
   }
-  return { ...parser, typescript };
 }
 
 /** Find the component doc that matches the given import/component name. */
@@ -299,7 +311,7 @@ export function getReactDocgenTypescriptError(
  */
 export const parseWithReactDocgenTypescript = asyncCache(
   async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
-    const { program, fileParser, typescript } = await getParser(userOptions);
+    const { program, fileParser, typescript } = await getParser(filePath, userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
@@ -329,3 +341,87 @@ export const parseWithReactDocgenTypescript = asyncCache(
   },
   { name: 'parseWithReactDocgenTypescript' }
 );
+
+function findTsconfigPathForFile(
+  typescript: TypeScriptRuntime,
+  cwd: string,
+  filePath: string
+): string | undefined {
+  const configPath = findTsconfigPath(cwd);
+  if (!configPath) {
+    return undefined;
+  }
+
+  return findTsconfigPathIncludingFile(typescript, configPath, filePath, new Set()) ?? configPath;
+}
+
+function findTsconfigPathIncludingFile(
+  typescript: TypeScriptRuntime,
+  configPath: string,
+  filePath: string,
+  seenConfigPaths: Set<string>
+): string | undefined {
+  const normalizedConfigPath = normalizeFileName(typescript, configPath);
+  if (seenConfigPaths.has(normalizedConfigPath)) {
+    return undefined;
+  }
+  seenConfigPaths.add(normalizedConfigPath);
+
+  const { config, parsed } = readTsconfig(typescript, configPath);
+  if (parsed.fileNames.some((name) => isSameFileName(typescript, name, filePath))) {
+    return configPath;
+  }
+
+  for (const referencedConfigPath of getReferencedTsconfigPaths(typescript, configPath, config)) {
+    const matchingConfigPath = findTsconfigPathIncludingFile(
+      typescript,
+      referencedConfigPath,
+      filePath,
+      seenConfigPaths
+    );
+    if (matchingConfigPath) {
+      return matchingConfigPath;
+    }
+  }
+
+  return undefined;
+}
+
+function getReferencedTsconfigPaths(
+  typescript: TypeScriptRuntime,
+  configPath: string,
+  config: unknown
+) {
+  const references = Array.isArray((config as { references?: unknown[] })?.references)
+    ? (config as { references: Array<{ path?: unknown }> }).references
+    : [];
+
+  return references
+    .map((reference) => reference.path)
+    .filter((referencePath): referencePath is string => typeof referencePath === 'string')
+    .map((referencePath) => resolve(dirname(configPath), referencePath))
+    .map((referencePath) =>
+      referencePath.endsWith('.json') ? referencePath : join(referencePath, 'tsconfig.json')
+    )
+    .filter((referencePath) => typescript.sys.fileExists(referencePath));
+}
+
+function parseTsconfig(typescript: TypeScriptRuntime, configPath: string) {
+  return readTsconfig(typescript, configPath).parsed;
+}
+
+function readTsconfig(typescript: TypeScriptRuntime, configPath: string) {
+  const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
+  return {
+    config,
+    parsed: typescript.parseJsonConfigFileContent(config, typescript.sys, dirname(configPath)),
+  };
+}
+
+function isSameFileName(typescript: TypeScriptRuntime, left: string, right: string) {
+  return normalizeFileName(typescript, left) === normalizeFileName(typescript, right);
+}
+
+function normalizeFileName(typescript: TypeScriptRuntime, fileName: string) {
+  return typescript.sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
+}

@@ -44,7 +44,8 @@ export type EventType =
   | 'preview-first-load'
   | 'doctor'
   | 'share'
-  | 'ghost-stories';
+  | 'ghost-stories'
+  | 'ai-prepare';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;

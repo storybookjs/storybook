@@ -24,6 +24,7 @@ import { doctor } from '../doctor';
 import { link } from '../link';
 import { migrate } from '../migrate';
 import { sandbox } from '../sandbox';
+import { aiPrepare } from '../ai';
 import { type UpgradeOptions, upgrade } from '../upgrade';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -303,8 +304,11 @@ command('doctor')
     }).catch(handleCommandFailure(options.logfile));
   });
 
-command('skill')
-  .description('Assist AI agents in improving Storybook setups')
+const aiCommand = command('ai').description('AI agent helpers for Storybook');
+
+aiCommand
+  .command('prepare')
+  .description('Generate setup instructions to write stories for real components')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
@@ -312,13 +316,15 @@ command('skill')
   )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
-    // TODO: Implement the actual skill logic and delete this comment.
-    // withTelemetry('skill', { cliOptions: options }, async () => {
-    logger.intro('Checking Storybook skills');
-    // await skill(options);
-    logger.outro('Done');
-    // }).catch(handleCommandFailure(options.logfile));
+    await withTelemetry('ai-prepare', { cliOptions: options }, async () => {
+      await aiPrepare(options);
+    }).catch(handleCommandFailure(options.logfile));
   });
+
+// Show available subcommands when `storybook ai` is run without arguments
+aiCommand.action(() => {
+  aiCommand.outputHelp();
+});
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

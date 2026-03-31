@@ -5,7 +5,8 @@ import {
   executeCommand,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
+import { Feature } from 'storybook/internal/types';
 
 import {
   executeAddonConfiguration,
@@ -22,6 +23,7 @@ import { registerAllGenerators } from './generators';
 import type { CommandOptions } from './generators/types';
 import { FeatureCompatibilityService } from './services/FeatureCompatibilityService';
 import { TelemetryService } from './services/TelemetryService';
+import { dedent } from 'ts-dedent';
 
 /**
  * Main entry point for Storybook initialization
@@ -39,6 +41,10 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   | { shouldRunDev: false }
 > {
+  if (options.agent) {
+    options.yes = true;
+  }
+
   // Initialize services
   const telemetryService = new TelemetryService(options.disableTelemetry);
 
@@ -66,6 +72,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
     framework,
     builder,
+    renderer,
     projectType,
   });
 
@@ -106,6 +113,18 @@ export async function doInitiate(options: CommandOptions): Promise<
     logfile: options.logfile,
     storybookCommand,
   });
+
+  if (selectedFeatures.has(Feature.AI)) {
+    if (options.agent) {
+      const { aiPrepare } = await import('../../cli-storybook/src/ai');
+      await aiPrepare({ configDir: configDir ?? '.storybook' });
+    } else {
+      logger.step(
+        CLI_COLORS.storybook(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
+        Run \`npx storybook ai prepare\` and follow its instructions precisely.`)
+      );
+    }
+  }
 
   // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
@@ -154,7 +173,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
     handleCommandFailure(options.logfile);
   });
 
-  if (initiateResult?.shouldRunDev) {
+  if (!options.agent && initiateResult?.shouldRunDev) {
     await runStorybookDev(initiateResult);
   }
 }

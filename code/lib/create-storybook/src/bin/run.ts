@@ -9,6 +9,7 @@ import { Option, program } from 'commander';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
 import { initiate } from '../initiate';
+import { isAgent, detectAgent } from 'std-env';
 
 addToGlobalContext('cliVersion', version);
 
@@ -73,6 +74,8 @@ const createStorybookProgram = program
     '--no-dev',
     'Complete the initialization of Storybook without launching the Storybook development server'
   )
+  .option('--agent', 'Force agent mode (non-interactive, logs AI setup instructions)')
+  .option('--no-agent', 'Force disable agent mode even when an AI agent is detected')
   .option(
     '--logfile [path]',
     'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
@@ -89,6 +92,7 @@ const createStorybookProgram = program
   )
   .hook('preAction', async (self) => {
     const options = self.opts();
+    const resolvedAgent = options.agent ?? isAgent;
 
     if (options.debug) {
       logger.setLogLevel('debug');
@@ -98,7 +102,7 @@ const createStorybookProgram = program
       logger.setLogLevel(options.loglevel);
     }
 
-    if (options.logfile) {
+    if (options.logfile || resolvedAgent) {
       logTracker.enableLogWriting();
     }
   })
@@ -120,6 +124,17 @@ createStorybookProgram
     if (options.features === false) {
       // Ensure features are treated as empty when --no-features is set
       options.features = [];
+    }
+
+    const resolvedAgent = options.agent ?? isAgent;
+    options.agent = resolvedAgent;
+
+    if (resolvedAgent) {
+      const agent = detectAgent();
+      const agentName = agent ? agent.name : 'unknown';
+      logger.log(
+        `This command is running via an AI agent: ${agentName}. Proceeding with agentic installation flow.`
+      );
     }
 
     await initiate(options as CommandOptions).catch(() => process.exit(1));

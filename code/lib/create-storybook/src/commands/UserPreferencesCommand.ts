@@ -2,8 +2,8 @@ import type { ProjectType } from 'storybook/internal/cli';
 import { globalSettings } from 'storybook/internal/cli';
 import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
-import { Feature } from 'storybook/internal/types';
+import type { SupportedFramework } from 'storybook/internal/types';
+import { Feature, SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -28,6 +28,7 @@ export interface UserPreferencesOptions {
   skipPrompt?: boolean;
   framework: SupportedFramework | null;
   builder: SupportedBuilder;
+  renderer: SupportedRenderer;
   projectType: ProjectType;
 }
 
@@ -79,11 +80,16 @@ export class UserPreferencesCommand {
         ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
         : 'recommended';
 
+    // Ask about AI setup (only available for React + Vite projects)
+    const isAiFeatureAvailable = this.isAiFeatureAvailable(options.renderer, options.builder);
+    const useAiForSetup = isAiFeatureAvailable ? await this.promptAiSetup(skipPrompt) : false;
+
     const selectedFeatures = this.determineFeatures(
       installType,
       newUser,
       isTestFeatureAvailable,
-      options.projectType
+      options.projectType,
+      useAiForSetup
     );
 
     return { newUser, selectedFeatures };
@@ -179,12 +185,25 @@ export class UserPreferencesCommand {
     return installType;
   }
 
+  /** Prompt user about AI-assisted Storybook setup */
+  private async promptAiSetup(skipPrompt: boolean): Promise<boolean> {
+    if (skipPrompt) {
+      return true;
+    }
+
+    return prompt.confirm({
+      message: dedent`Would you like to improve your Storybook setup with AI?
+      We will provide you with a prompt that you can use with your LLM to fully set up Storybook with best practices, tailored to your project.`,
+    });
+  }
+
   /** Determine features based on install type and user status */
   private determineFeatures(
     installType: InstallType,
     newUser: boolean,
     isTestFeatureAvailable: boolean,
-    projectType: ProjectType
+    projectType: ProjectType,
+    useAiForSetup: boolean
   ): Set<Feature> {
     const features = new Set<Feature>();
 
@@ -200,7 +219,20 @@ export class UserPreferencesCommand {
       }
     }
 
+    // If user has asked for AI setup, we provide the MCP addon and ensure test is included
+    if (useAiForSetup) {
+      features.add(Feature.AI);
+      if (isTestFeatureAvailable) {
+        features.add(Feature.TEST);
+      }
+    }
+
     return features;
+  }
+
+  /** Check if AI feature is available based on renderer and builder */
+  private isAiFeatureAvailable(renderer: SupportedRenderer, builder: SupportedBuilder): boolean {
+    return renderer === SupportedRenderer.REACT && builder === SupportedBuilder.VITE;
   }
 
   /** Validate test feature compatibility and prompt user if issues found */

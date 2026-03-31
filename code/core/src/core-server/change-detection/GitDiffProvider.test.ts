@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { execa } from 'execa';
 
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
-import { GitDiffProvider } from './git-diff-provider';
+import { GitDiffProvider } from './GitDiffProvider';
 
 vi.mock('execa', { spy: true });
 

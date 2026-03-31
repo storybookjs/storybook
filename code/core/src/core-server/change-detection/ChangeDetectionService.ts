@@ -12,7 +12,7 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
-import { GitDiffProvider } from './git-diff-provider';
+import { GitDiffProvider } from './GitDiffProvider';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness';
 import { findAffectedStoryFiles } from './trace-changed';
 

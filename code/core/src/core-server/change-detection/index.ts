@@ -1,8 +1,8 @@
 export { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
-export { GitDiffProvider } from './git-diff-provider';
+export { GitDiffProvider } from './GitDiffProvider';
 export {
   getChangeDetectionReadiness,
   resetChangeDetectionReadiness as internal_resetChangeDetectionReadiness,
   type ChangeDetectionReadiness,
 } from './readiness';
-export { ChangeDetectionService } from './service';
+export { ChangeDetectionService } from './ChangeDetectionService';

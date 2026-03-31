@@ -16,7 +16,7 @@ import { createStatusStore, UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/
 import { MockUniversalStore } from '../../shared/universal-store/mock';
 import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
-import { ChangeDetectionService } from './service';
+import { ChangeDetectionService } from './ChangeDetectionService';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 

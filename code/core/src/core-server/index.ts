@@ -29,7 +29,7 @@ export {
   getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
 } from './change-detection';
-export { ChangeDetectionService } from './change-detection/service';
+export { ChangeDetectionService } from './change-detection/ChangeDetectionService';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

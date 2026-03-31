@@ -199,6 +199,7 @@ async function getParser(userOptions?: ParserOptions & { tsconfigPath?: string }
       ? resolve(process.cwd(), userTsconfigPath)
       : findTsconfigPath(process.cwd());
     cachedCompilerOptions = { noErrorTruncation: true, strict: true };
+    cachedFileNames = undefined;
 
     if (configPath) {
 

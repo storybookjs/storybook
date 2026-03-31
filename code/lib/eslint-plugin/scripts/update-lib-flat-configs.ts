@@ -19,7 +19,7 @@ function formatCategory(category: TCategory) {
   const extendsCategoryId = extendsCategories[category.categoryId];
   if (extendsCategoryId == null) {
     return `
-      import storybookPlugin from '../../index';
+      import storybookPlugin from '../../index.ts';
 
       /*
       * IMPORTANT!
@@ -54,7 +54,7 @@ function formatCategory(category: TCategory) {
     * This file has been automatically generated,
     * in order to update its content, execute "yarn update-rules" or rebuild this package.
     */
-    import config from './${extendsCategoryId}'
+    import config from './${extendsCategoryId}.ts'
 
     export default [
       ...config,

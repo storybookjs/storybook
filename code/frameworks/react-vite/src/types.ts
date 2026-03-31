@@ -59,7 +59,20 @@ type TypescriptOptions = TypescriptOptionsBase & {
    */
   reactDocgen: 'react-docgen-typescript' | 'react-docgen' | false;
   /** Configures `@joshwooding/vite-plugin-react-docgen-typescript` */
-  reactDocgenTypescriptOptions: Parameters<typeof docgenTypescript>[0];
+  reactDocgenTypescriptOptions: Parameters<typeof docgenTypescript>[0] & {
+    /**
+     * Path to a custom tsconfig file for react-docgen-typescript.
+     *
+     * Useful in monorepo setups where the root tsconfig uses project references with empty
+     * `include`/`files` arrays. Point this to a tsconfig that explicitly includes your component
+     * source files so react-docgen-typescript can extract component documentation.
+     *
+     * The path is resolved relative to `process.cwd()`.
+     *
+     * @example './tsconfig.storybook.json'
+     */
+    tsconfigPath?: string;
+  };
 };
 
 /** The interface for Storybook configuration in `main.ts` files. */

@@ -34,7 +34,20 @@ export type TypescriptOptions = TypescriptOptionsBase & {
    * @default
    * @see https://github.com/storybookjs/storybook/blob/next/code/builders/builder-webpack5/src/config/defaults.js#L4-L6
    */
-  reactDocgenTypescriptOptions: ReactDocgenTypescriptOptions;
+  reactDocgenTypescriptOptions: ReactDocgenTypescriptOptions & {
+    /**
+     * Path to a custom tsconfig file for react-docgen-typescript.
+     *
+     * Useful in monorepo setups where the root tsconfig uses project references with empty
+     * `include`/`files` arrays. Point this to a tsconfig that explicitly includes your component
+     * source files so react-docgen-typescript can extract component documentation.
+     *
+     * The path is resolved relative to `process.cwd()`.
+     *
+     * @example './tsconfig.storybook.json'
+     */
+    tsconfigPath?: string;
+  };
 };
 
 export type StorybookConfig<TWebpackConfiguration = WebpackConfigurationBase> =

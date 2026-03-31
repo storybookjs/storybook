@@ -22,7 +22,20 @@ export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-c
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgen: ReactDocgenConfig;
-  reactDocgenTypescriptOptions: ParserOptions;
+  reactDocgenTypescriptOptions: ParserOptions & {
+    /**
+     * Path to a custom tsconfig file for react-docgen-typescript.
+     *
+     * Useful in monorepo setups where the root tsconfig uses project references with empty
+     * `include`/`files` arrays. Point this to a tsconfig that explicitly includes your component
+     * source files so react-docgen-typescript can extract component documentation.
+     *
+     * The path is resolved relative to `process.cwd()`.
+     *
+     * @example './tsconfig.storybook.json'
+     */
+    tsconfigPath?: string;
+  };
 }
 
 export type { ComponentRef } from './types';

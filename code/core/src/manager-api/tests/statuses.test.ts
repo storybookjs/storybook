@@ -14,7 +14,6 @@ vi.mock('../stores/status', () => ({
   },
 }));
 
-// eslint-disable-next-line import/first
 import { fullStatusStore } from '../stores/status';
 
 const entry = (id: string): API_PreparedIndexEntry => ({ id }) as unknown as API_PreparedIndexEntry;

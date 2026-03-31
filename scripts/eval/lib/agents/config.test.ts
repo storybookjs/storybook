@@ -17,7 +17,7 @@ describe('AGENTS', () => {
   it('keeps Claude models fully remappable to SDK model ids', () => {
     expect(AGENTS.claude).toMatchObject({
       defaultModel: 'sonnet-4.6',
-      defaultEffort: 'high',
+      defaultEffort: 'medium',
       sdkModelIds: Object.fromEntries(
         AGENTS.claude.models.map((model) => [model, expect.any(String)])
       ),
@@ -27,7 +27,7 @@ describe('AGENTS', () => {
   it('keeps Codex models fully priceable from token usage', () => {
     expect(AGENTS.codex).toMatchObject({
       defaultModel: 'gpt-5.4',
-      defaultEffort: 'high',
+      defaultEffort: 'medium',
       pricing: {
         'gpt-5.4': {
           input: 2.5,

@@ -80,7 +80,7 @@ export const AGENTS: Record<AgentId, AgentDefinition> = {
     },
     pricing: {},
     efforts: CLAUDE_EFFORTS,
-    defaultEffort: 'high',
+    defaultEffort: 'medium',
   },
   codex: {
     models: CODEX_MODELS,
@@ -90,7 +90,7 @@ export const AGENTS: Record<AgentId, AgentDefinition> = {
       'gpt-5.4': { input: 2.5, cachedInput: 0.25, output: 15.0 },
     },
     efforts: CODEX_EFFORTS,
-    defaultEffort: 'high',
+    defaultEffort: 'medium',
   },
 };
 

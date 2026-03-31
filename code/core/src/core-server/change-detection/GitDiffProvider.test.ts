@@ -33,7 +33,8 @@ describe('GitDiffProvider', () => {
     untrackedResult = resolved('src/Button.css\n');
     stagedAddedResult = resolved('src/NewButton.stories.tsx\n');
 
-    vi.mocked(execa).mockImplementation(async (_command, args) => {
+    vi.mocked(execa).mockImplementation(((_command: string | URL, ...rest: unknown[]) => {
+      const args = Array.isArray(rest[0]) ? rest[0] : [];
       const gitArgs = args.join(' ');
       const result =
         gitArgs === 'rev-parse --show-toplevel'
@@ -56,8 +57,8 @@ describe('GitDiffProvider', () => {
         throw result.error;
       }
 
-      return result as never;
-    });
+      return Promise.resolve(result) as ReturnType<typeof execa>;
+    }) as unknown as typeof execa);
   });
 
   afterEach(() => {

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { dirname, sep } from 'node:path';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
-import { supportedExtensions } from 'storybook/internal/common';
+import { findTsconfigPathForFile, supportedExtensions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import {
@@ -20,7 +20,7 @@ import { extractJSDocInfo } from './jsdocTags';
 import actualNameHandler from './reactDocgen/actualNameHandler';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver';
 import exportNameHandler from './reactDocgen/exportNameHandler';
-import { cached, cachedReadFileSync, cachedResolveImport, findTsconfigPath } from './utils';
+import { cached, cachedReadFileSync, cachedResolveImport } from './utils';
 
 export type DocObj = Documentation & {
   actualName: string;
@@ -58,9 +58,9 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
   return matchingDocgen ?? docgens[0];
 }
 
-export function matchPath(id: string, basedir?: string) {
-  basedir ??= process.cwd();
-  const tsconfig = getTsConfig(basedir);
+export function matchPath(id: string, importerFilePath?: string) {
+  importerFilePath ??= process.cwd();
+  const tsconfig = getTsConfig(importerFilePath);
 
   if (tsconfig.resultType === 'success') {
     const match = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
@@ -74,8 +74,8 @@ export function matchPath(id: string, basedir?: string) {
 }
 
 export const getTsConfig = cached(
-  (cwd: string) => {
-    const tsconfigPath = findTsconfigPath(cwd);
+  (filePath: string) => {
+    const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
     return TsconfigPaths.loadConfig(tsconfigPath);
   },
   { name: 'getTsConfig' }
@@ -98,7 +98,7 @@ const getExportPaths = cached(
     let ast;
     try {
       ast = babelParse(code);
-    } catch (_) {
+    } catch {
       return [];
     }
 
@@ -112,7 +112,7 @@ const getExportPaths = cached(
             ? [statement.source.value]
             : []
       )
-      .map((id) => matchPath(id, basedir))
+      .map((id) => matchPath(id, filePath))
       .flatMap((id) => {
         try {
           return [cachedResolveImport(id, { basedir })];

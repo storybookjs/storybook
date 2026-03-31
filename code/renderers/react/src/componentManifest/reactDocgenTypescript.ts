@@ -8,6 +8,8 @@ import {
 } from 'react-docgen-typescript';
 import type ts from 'typescript';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { asyncCache, findTsconfigPath } from './utils';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
@@ -208,6 +210,8 @@ async function getParser(userOptions?: ParserOptions & { tsconfigPath?: string }
         );
         cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
         cachedFileNames = parsed.fileNames;
+      } else if (userTsconfigPath) {
+        logger.warn(`Failed to load tsconfig at "${configPath}": ${error.messageText}`);
       }
     }
 

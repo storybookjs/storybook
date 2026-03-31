@@ -1,8 +1,8 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { ChannelLike } from 'storybook/internal/channels';
 import type { FileSystemCache } from 'storybook/internal/common';
-import { type StoryIndexGenerator } from 'storybook/internal/core-server';
-import { type CsfFile } from 'storybook/internal/csf-tools';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
@@ -276,6 +276,26 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
+  onModuleGraphChange?(cb: (event: ModuleGraphChangeEvent) => void): () => void;
+}
+
+/**
+ * Builder-agnostic module graph for dependency tracking. Modeled after Vite's module graph.
+ * The same file can be imported in multiple ways (e.g. based on query params or import context),
+ * each representing a unique module identity, hence the value is a Set<ModuleNode>.
+ */
+export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
+
+export type ModuleGraphChangeEvent =
+  | { type: 'moduleGraph'; moduleGraph: ModuleGraph }
+  | { type: 'unavailable'; reason: string; error?: Error }
+  | { type: 'error'; error: Error };
+
+export interface ModuleNode {
+  file: string;
+  type: 'js' | 'css' | 'asset';
+  importers: Set<ModuleNode>;
+  importedModules: Set<ModuleNode>;
 }
 
 /** Options for TypeScript usage within Storybook. */

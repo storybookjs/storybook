@@ -522,6 +522,90 @@ export default {
     },
 
     {
+      id: 'share',
+      title: 'Share',
+      items: [
+        {
+          id: 'shareStorybook',
+          label: 'Share your Storybook for feedback',
+          criteria: 'User has shared their Storybook via the Share button or published it',
+          subscribe: ({ api, done }) => {
+            const SHARE_PROGRESS_KEY = 'chromaui/addon-visual-tests/shareProgress';
+            const SET_VALUE = 'experimental_useSharedState_setValue';
+            return api.on(SET_VALUE, (key: string, value: { status: string } | undefined) => {
+              if (key === SHARE_PROGRESS_KEY && value?.status === 'complete') {
+                done();
+              }
+            });
+          },
+          content: ({ api }) => {
+            const hasAddon = addons
+              .experimental_getRegisteredAddons()
+              .includes('chromaui/addon-visual-tests');
+            // TODO: Distinguish between addon-visual-test versions
+            if (hasAddon) {
+              return (
+                <>
+                  <p>
+                    Share your Storybook with your team in one click using Chromatic. Click the{' '}
+                    <strong>Share</strong> button in the toolbar to publish and get a shareable
+                    link.
+                  </p>
+                  <strong>Take it further</strong>
+                  <p>
+                    Read the{' '}
+                    <Link href="https://www.chromatic.com/docs/sharing" target="_blank" withArrow>
+                      sharing documentation
+                    </Link>
+                  </p>
+                </>
+              );
+            }
+
+            return (
+              <>
+                <p>
+                  Publishing your Storybook is easy and unlocks super clear review cycles and other
+                  collaborative workflows.
+                </p>
+                <p>
+                  Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
+                  <Link href="https://chromatic.com" target="_blank">
+                    Chromatic
+                  </Link>
+                  ,{' '}
+                  <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
+                    Vercel
+                  </Link>
+                  , or{' '}
+                  <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
+                    Netlify
+                  </Link>
+                  .
+                </p>
+                <strong>Take it further</strong>
+                <p>
+                  Read the{' '}
+                  <Link
+                    href={api.getDocsUrl({
+                      subpath: 'sharing/publish-storybook',
+                      renderer: true,
+                      ref: 'guide',
+                    })}
+                    target="_blank"
+                    withArrow
+                  >
+                    publishing documentation
+                  </Link>
+                </p>
+              </>
+            );
+          },
+        },
+      ],
+    },
+
+    {
       id: 'testing',
       title: 'Testing',
       items: [
@@ -1210,60 +1294,6 @@ npm install @my/awesome-project
               <ul>
                 <li>How to reference stories in your content</li>
                 <li>How to import and display markdown files, such as READMEs</li>
-              </ul>
-            </>
-          ),
-        },
-        {
-          id: 'publishStorybook',
-          label: 'Publish your Storybook to share',
-          criteria: "Have some form of `storybook build` in the project's CI config",
-          content: ({ api }) => (
-            <>
-              <p>
-                Publishing your Storybook is easy and unlocks super clear review cycles and other
-                collaborative workflows.
-              </p>
-              <p>
-                Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
-                <Link href="https://chromatic.com" target="_blank">
-                  Chromatic
-                </Link>
-                ,{' '}
-                <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
-                  Vercel
-                </Link>
-                , or{' '}
-                <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
-                  Netlify
-                </Link>
-                .
-              </p>
-              <img
-                src={api.getDocsUrl({
-                  asset: 'sharing/prbadge-publish.png',
-                  ref: 'guide',
-                })}
-                alt="PR check for publish action"
-              />
-              <strong>Take it further</strong>
-              <p>
-                Read the{' '}
-                <Link
-                  href={api.getDocsUrl({
-                    subpath: 'sharing/publish-storybook',
-                    renderer: true,
-                    ref: 'guide',
-                  })}
-                  target="_blank"
-                >
-                  publishing documentation
-                </Link>{' '}
-                to learn:
-              </p>
-              <ul>
-                <li>How to configure the built Storybook (e.g. performance optimizations)</li>
-                <li>How to use your published Storybook to collaborate with colleagues</li>
               </ul>
             </>
           ),

@@ -1,10 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
-import {
-  PREVIEW_INITIALIZED,
-  SHARE_ISOLATE_MODE,
-  SHARE_POPOVER_OPENED,
-  SHARE_STORY_LINK,
-} from 'storybook/internal/core-events';
+import { PREVIEW_INITIALIZED, SHARE_ISOLATE_MODE } from 'storybook/internal/core-events';
 import { type InitPayload, telemetry } from 'storybook/internal/telemetry';
 import { type CacheEntry, getLastEvents } from 'storybook/internal/telemetry';
 import { getSessionId } from 'storybook/internal/telemetry';
@@ -42,12 +37,6 @@ export function initTelemetryChannel(channel: Channel, options: Options) {
           telemetry('preview-first-load', payload);
         }
       } catch {}
-    });
-    channel.on(SHARE_POPOVER_OPENED, async () => {
-      telemetry('share', { action: 'popover-opened' });
-    });
-    channel.on(SHARE_STORY_LINK, async () => {
-      telemetry('share', { action: 'story-link-copied' });
     });
     channel.on(SHARE_ISOLATE_MODE, async () => {
       telemetry('share', { action: 'isolate-mode-opened' });

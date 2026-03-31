@@ -25,9 +25,7 @@ import type { IndexEntry } from './indexer';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,
-  | Addon_TypesEnum.experimental_PAGE
-  | Addon_TypesEnum.experimental_TEST_PROVIDER
-  | Addon_TypesEnum.experimental_SHARE_SECTION
+  Addon_TypesEnum.experimental_PAGE | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
@@ -327,8 +325,7 @@ export type Addon_Type =
   | Addon_BaseType
   | Addon_PageType
   | Addon_WrapperType
-  | Addon_TestProviderType
-  | Addon_ShareSectionType;
+  | Addon_TestProviderType;
 export interface Addon_BaseType {
   /**
    * The title of the addon. This can be a simple string, but it can also be a
@@ -452,32 +449,17 @@ export interface Addon_TestProviderType {
   sidebarContextMenu?: (options: { context: API_HashEntry }) => ReactNode;
 }
 
-export interface Addon_ShareSectionProps {
-  storyId: StoryId;
-  api: API;
-}
-
-export interface Addon_ShareSectionType {
-  type: Addon_TypesEnum.experimental_SHARE_SECTION;
-  /** The unique id of the share section. */
-  id: string;
-  /** The component to render as Section 1 of the share popover. */
-  render: FC<Addon_ShareSectionProps>;
-}
-
 type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
   | Addon_TypesEnum.experimental_TEST_PROVIDER
-  | Addon_TypesEnum.experimental_SHARE_SECTION
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
   [Addon_TypesEnum.PREVIEW]: Addon_WrapperType;
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
   [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType;
-  [Addon_TypesEnum.experimental_SHARE_SECTION]: Addon_ShareSectionType;
 }
 
 export type Addon_Loader<API> = (api: API) => void;
@@ -536,8 +518,4 @@ export enum Addon_TypesEnum {
   experimental_PAGE = 'page',
   /** This adds items to the Testing Module in the sidebar. */
   experimental_TEST_PROVIDER = 'test-provider',
-  /** This adds a section to the share popover in the toolbar.
-   * @unstable
-   */
-  experimental_SHARE_SECTION = 'share-section',
 }

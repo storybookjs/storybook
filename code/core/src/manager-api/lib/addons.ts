@@ -8,7 +8,6 @@ import type {
   Addon_Elements,
   Addon_Loaders,
   Addon_PageType,
-  Addon_ShareSectionType,
   Addon_TestProviderType,
   Addon_Type,
   Addon_Types,
@@ -70,8 +69,7 @@ export class AddonStore {
     T extends
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
-      | Addon_TypesEnum.experimental_TEST_PROVIDER
-      | Addon_TypesEnum.experimental_SHARE_SECTION,
+      | Addon_TypesEnum.experimental_TEST_PROVIDER,
   >(type: T): Addon_Collection<Addon_TypesMapping[T]> | any {
     if (!this.elements[type]) {
       this.elements[type] = {};
@@ -93,7 +91,6 @@ export class AddonStore {
       | Omit<Addon_TestProviderType, 'id'>
       | Omit<Addon_PageType, 'id'>
       | Omit<Addon_WrapperType, 'id'>
-      | Omit<Addon_ShareSectionType, 'id'>
   ): void {
     const { type } = addon;
     const collection = this.getElements(type);

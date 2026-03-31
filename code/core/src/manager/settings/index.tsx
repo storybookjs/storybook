@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 
 import { Button, ScrollArea, TabsView } from 'storybook/internal/components';
 import { Location, Route } from 'storybook/internal/router';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 import type { Addon_PageType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -64,6 +65,9 @@ const Pages: FC<{
     return () => document.removeEventListener('keydown', handleEscape);
   }, [enableShortcuts, onClose]);
 
+  const api = useStorybookApi();
+  const toolsExtra = Object.values(api.getElements(Addon_TypesEnum.TOOLEXTRA));
+
   const tabs = useMemo(() => {
     const tabsToInclude = [
       {
@@ -124,6 +128,9 @@ const Pages: FC<{
             tools={
               <>
                 <SidebarToggle>{menuTool.render({})}</SidebarToggle>
+                {toolsExtra.map((item) => (
+                  <React.Fragment key={item.id}>{item.render({})}</React.Fragment>
+                ))}
                 <Button
                   padding="small"
                   variant="ghost"

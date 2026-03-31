@@ -17,13 +17,13 @@ import { addonsTool } from '../components/preview/tools/addons';
 import { menuTool } from '../components/preview/tools/menu';
 import { openInEditorTool } from '../components/preview/tools/open-in-editor';
 import { remountTool } from '../components/preview/tools/remount';
-import { shareTool } from '../components/preview/tools/share';
+import { isolationModeTool, qrCodeTool } from '../components/preview/tools/share';
 import { zoomTool } from '../components/preview/tools/zoom';
 import type { PreviewProps } from '../components/preview/utils/types';
 
 const defaultTabs = [createCanvasTab()];
 const defaultTools = [menuTool, remountTool];
-const defaultToolsExtra = [zoomTool, addonsTool, fullScreenTool, shareTool, openInEditorTool];
+const defaultToolsExtra = [isolationModeTool, qrCodeTool, zoomTool, addonsTool, fullScreenTool, openInEditorTool];
 
 const emptyTabsList: Addon_BaseType[] = [];
 

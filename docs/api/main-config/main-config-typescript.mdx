@@ -86,6 +86,35 @@ Options to pass to `fork-ts-checker-webpack-plugin`, if [enabled](#check). See [
   <CodeSnippets path="main-config-typescript-react-docgen-typescript-options.md" />
 
   {/* prettier-ignore-end */}
+
+  ### `reactDocgenTypescriptOptions.tsconfigPath`
+
+  Type: `string`
+
+  Path to a custom tsconfig file for `react-docgen-typescript`. Useful in monorepo setups where the root `tsconfig.json` uses [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) with empty `include`/`files` arrays, which causes `react-docgen-typescript` to find no source files and produce no component documentation.
+
+  Point this to a tsconfig that explicitly lists the source files you want documented. The path is resolved relative to `process.cwd()`.
+
+  ```ts
+  // .storybook/main.ts
+  const config: StorybookConfig = {
+    typescript: {
+      reactDocgen: 'react-docgen-typescript',
+      reactDocgenTypescriptOptions: {
+        tsconfigPath: './tsconfig.storybook.json',
+      },
+    },
+  };
+  ```
+
+  For example, your `tsconfig.storybook.json` might look like:
+
+  ```json
+  {
+    "extends": "./tsconfig.base.json",
+    "include": ["packages/*/src/**/*.ts", "packages/*/src/**/*.tsx"]
+  }
+  ```
 </IfRenderer>
 
 ## `skipCompiler`

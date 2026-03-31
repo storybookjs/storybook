@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
 import { Button, Link, ResetWrapper } from 'storybook/internal/components';
@@ -344,6 +344,30 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     controlsId,
   } = props;
 
+  const { rows, args, globals } =
+    'rows' in props ? props : { rows: undefined, args: undefined, globals: undefined };
+
+  const isResettingRef = useRef(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  useEffect(() => {
+    if (isResettingRef.current) {
+      const timer = setTimeout(() => {
+        isResettingRef.current = false;
+        setIsResetting(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [args]);
+
+  const handleResetClick = useCallback(() => {
+    if (!isResettingRef.current && resetArgs) {
+      isResettingRef.current = true;
+      setIsResetting(true);
+      resetArgs();
+    }
+  }, [resetArgs]);
+
   if ('error' in props) {
     const { error } = props;
     return (
@@ -364,9 +388,6 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
   if (isLoading) {
     return <Skeleton />;
   }
-
-  const { rows, args, globals } =
-    'rows' in props ? props : { rows: undefined, args: undefined, globals: undefined };
   const groups: Sections = groupRows(
     pickBy(
       rows || {},
@@ -412,7 +433,8 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
             <StyledButton
               variant="ghost"
               padding="small"
-              onClick={() => resetArgs()}
+              onClick={handleResetClick}
+              disabled={isResetting}
               ariaLabel="Reset controls"
             >
               <UndoIcon />

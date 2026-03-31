@@ -30,6 +30,6 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true
   },
-  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules", "eval/google-apps-script.js"],
+  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"],
   "include": ["./**/*", "./.eslintrc.cjs"]
 }

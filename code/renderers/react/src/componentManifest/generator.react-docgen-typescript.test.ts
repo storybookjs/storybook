@@ -9,10 +9,14 @@ import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import { manifests } from './generator';
-import { invalidateParser } from './reactDocgenTypescript';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
 import { invalidateCache } from './utils';
 
 const repoRoot = process.cwd();
+type ManifestComponentWithReactDocgenTypescript = {
+  error?: { name: string; message: string };
+  reactDocgenTypescript?: ComponentDocWithExportName;
+};
 
 test.sequential('manifests uses the referenced app tsconfig for react-docgen-typescript in Vite-style projects', async () => {
   invalidateCache();
@@ -23,7 +27,9 @@ test.sequential('manifests uses the referenced app tsconfig for react-docgen-typ
 
   try {
     const result = await manifests(undefined, createManifestOptions());
-    const button = result?.components?.components?.['example-button'];
+    const button = result?.components?.components?.['example-button'] as
+      | ManifestComponentWithReactDocgenTypescript
+      | undefined;
 
     expect(button?.error).toBeUndefined();
     expect(button?.reactDocgenTypescript?.displayName).toBe('Button');

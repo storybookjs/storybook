@@ -44,7 +44,7 @@ import {
 } from '../../utils/tree';
 import { useLayout } from '../layout/LayoutProvider';
 import { useContextMenu } from './ContextMenu';
-import { IconSymbols, UseSymbol } from './IconSymbols';
+import { UseSymbol } from './IconSymbols';
 import { StatusButton } from './StatusButton';
 import { StatusContext } from './StatusContext';
 import {
@@ -190,6 +190,9 @@ const StatusIconMap: Record<StatusValue, React.ReactNode | null> = {
   'status-value:error': <ErrorStatusIcon />,
   'status-value:warning': <WarnStatusIcon />,
   'status-value:pending': <PendingStatusIcon />,
+  'status-value:new': null,
+  'status-value:modified': null,
+  'status-value:affected': null,
   'status-value:unknown': null,
 };
 
@@ -267,7 +270,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const statusValue = getMostCriticalStatusValue(
       Object.values(statuses || {}).map((s) => s.value)
     );
-    const [icon, textColor] = getStatus(theme, statusValue);
+    const { icon, textColor } = getStatus(theme, statusValue);
 
     return (
       <LeafNodeStyleWrapper
@@ -308,7 +311,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {contextMenu.node}
         {icon ? (
           <StatusButton
-            ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
+            ariaLabel={`Status: ${statusValue.replace('status-value:', '')}`}
             data-testid="tree-status-button"
             type="button"
             status={statusValue}
@@ -366,10 +369,10 @@ const Node = React.memo<NodeProps>(function Node(props) {
   }
 
   const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const [itemIcon, itemColor] = getStatus(theme, itemStatus);
+  const { icon: itemIcon, textColor: itemColor } = getStatus(theme, itemStatus);
   const itemStatusButton = itemIcon ? (
     <StatusButton
-      ariaLabel={`Test status: ${itemStatus.replace('status-value:', '')}`}
+      ariaLabel={`Status: ${itemStatus.replace('status-value:', '')}`}
       data-testid="tree-status-button"
       role="status"
       type="button"
@@ -390,8 +393,16 @@ const Node = React.memo<NodeProps>(function Node(props) {
       item.type
     ];
     const status = getMostCriticalStatusValue([itemStatus, groupStatus?.[item.id]]);
-    const color = status ? getStatus(theme, status)[1] : null;
-    const showBranchStatus = status === 'status-value:error' || status === 'status-value:warning';
+    const color = status ? getStatus(theme, status).textColor : null;
+    const showBranchStatus = (
+      [
+        'status-value:modified',
+        'status-value:affected',
+        'status-value:new',
+        'status-value:warning',
+        'status-value:error',
+      ] as StatusValue[]
+    ).includes(status);
 
     return (
       <LeafNodeStyleWrapper
@@ -449,15 +460,19 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {contextMenu.node}
         {showBranchStatus ? (
           <StatusButton
-            ariaLabel={`Test status: ${status.replace('status-value:', '')}`}
+            ariaLabel={`Status: ${status.replace('status-value:', '')}`}
             data-testid="tree-status-button"
             type="button"
             status={status}
             selectedItem={isSelected}
           >
-            <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
-              <UseSymbol type="dot" />
-            </svg>
+            {status === 'status-value:error' || status === 'status-value:warning' ? (
+              <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
+                <UseSymbol type="dot" />
+              </svg>
+            ) : (
+              getStatus(theme, status).icon
+            )}
           </StatusButton>
         ) : (
           itemStatusButton

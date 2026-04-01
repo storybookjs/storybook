@@ -18,6 +18,7 @@ import {
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
 } from '../constants';
 import { log } from '../logger';
+import { errorToErrorLike } from '../utils';
 import type { Store } from '../types';
 
 const MAX_START_TIME = 30000;
@@ -144,12 +145,7 @@ const bootTestRunner = async ({
       type: 'FATAL_ERROR',
       payload: {
         message: 'Failed to start test runner process',
-        error: {
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
-          cause: error.cause,
-        },
+        error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
       },
     });
     eventQueue.length = 0;

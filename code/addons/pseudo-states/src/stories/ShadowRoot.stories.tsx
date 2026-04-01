@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ShadowRoot } from './ShadowRoot';
 import './grid.css';
+import { PseudoStateGrid } from './PseudoStateGrid';
 
 const meta = {
   title: 'ShadowRoot',
@@ -15,34 +16,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const All: Story = {
-  render: () => (
-    <div className="story-grid">
-      <div>
-        <ShadowRoot label="Normal" />
-      </div>
-      <div className="pseudo-hover-all">
-        <ShadowRoot label="Hover" />
-      </div>
-      <div className="pseudo-focus-all">
-        <ShadowRoot label="Focus" />
-      </div>
-      <div className="pseudo-active-all">
-        <ShadowRoot label="Active" />
-      </div>
-      <div className="pseudo-hover-all pseudo-focus-all">
-        <ShadowRoot label="Hover Focus" />
-      </div>
-      <div className="pseudo-hover-all pseudo-active-all">
-        <ShadowRoot label="Hover Active" />
-      </div>
-      <div className="pseudo-focus-all pseudo-active-all">
-        <ShadowRoot label="Focus Active" />
-      </div>
-      <div className="pseudo-hover-all pseudo-focus-all pseudo-active-all">
-        <ShadowRoot label="Hover Focus Active" />
-      </div>
-    </div>
-  ),
+  render: () => <PseudoStateGrid render={(label) => <ShadowRoot label={label} />} />,
 };
 
 export const Default: Story = {};

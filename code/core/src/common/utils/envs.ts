@@ -1,3 +1,5 @@
+export { isWebContainer } from '@webcontainer/env';
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Needed for Angular sandbox running without --no-link option. Do NOT convert to @ts-expect-error!
 import { nodePathsToArray } from './paths';

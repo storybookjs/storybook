@@ -1,6 +1,15 @@
-import { expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { cached, groupBy, invalidateCache, invariant } from './utils';
+vi.mock('empathic/find', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+
+import * as find from 'empathic/find';
+
+import { asyncCache, cached, findTsconfigPath, groupBy, invalidateCache, invariant } from './utils';
 
 // Helpers
 const calls = () => {
@@ -112,6 +121,38 @@ test('cached shares cache across wrappers of the same function', () => {
   expect(c.count()).toBe(1);
 });
 
+test('asyncCache memoizes in-flight work and resolved results', async () => {
+  const c = calls();
+  const f = async (x: number) => {
+    c.inc();
+    return x * 2;
+  };
+  const m = asyncCache(f);
+
+  const [first, second] = await Promise.all([m(2), m(2)]);
+
+  expect(first).toBe(4);
+  expect(second).toBe(4);
+  expect(c.count()).toBe(1);
+  expect(await m(2)).toBe(4);
+  expect(c.count()).toBe(1);
+});
+
+test('asyncCache drops rejected promises so retries can recompute', async () => {
+  const c = calls();
+  const f = async (x: string) => {
+    if (c.inc() === 1) {
+      throw new Error('boom');
+    }
+    return x.toUpperCase();
+  };
+  const m = asyncCache(f);
+
+  await expect(m('hit')).rejects.toThrow('boom');
+  await expect(m('hit')).resolves.toBe('HIT');
+  expect(c.count()).toBe(2);
+});
+
 test('invalidateCache clears the module-level memo store', () => {
   const c = calls();
   const f = (x: number) => (c.inc(), x * 2);
@@ -128,4 +169,93 @@ test('invalidateCache clears the module-level memo store', () => {
   invalidateCache();
   expect(m(2)).toBe(4);
   expect(c.count()).toBe(2);
+});
+
+test('invalidateCache clears async module-level memo store', async () => {
+  const c = calls();
+  const f = async (x: number) => (c.inc(), x * 2);
+  const m = asyncCache(f);
+
+  expect(await m(2)).toBe(4);
+  expect(c.count()).toBe(1);
+
+  expect(await m(2)).toBe(4);
+  expect(c.count()).toBe(1);
+
+  invalidateCache();
+  expect(await m(2)).toBe(4);
+  expect(c.count()).toBe(2);
+});
+
+describe('findTsconfigPath', () => {
+  beforeEach(() => {
+    invalidateCache();
+    vi.mocked(getProjectRoot).mockReturnValue('/project-root');
+  });
+
+  test('returns tsconfig.json when found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.json') {
+        return '/project-root/tsconfig.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.json');
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  test('falls back to tsconfig.base.json when tsconfig.json is not found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.base.json') {
+        return '/project-root/tsconfig.base.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.base.json');
+  });
+
+  test('falls back to tsconfig.app.json when neither tsconfig.json nor tsconfig.base.json is found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.app.json') {
+        return '/project-root/tsconfig.app.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.app.json');
+  });
+
+  test('returns undefined when no tsconfig variant is found', () => {
+    vi.mocked(find.up).mockReturnValue(undefined);
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBeUndefined();
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  test('prefers tsconfig.json over fallback variants', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.json') {
+        return '/project-root/tsconfig.json';
+      }
+      if (name === 'tsconfig.base.json') {
+        return '/project-root/tsconfig.base.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.json');
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
 });

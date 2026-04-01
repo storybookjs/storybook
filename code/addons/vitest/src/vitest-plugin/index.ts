@@ -303,14 +303,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
 
-      const previewOrConfigFile = loadPreviewOrConfigFile({ configDir: finalOptions.configDir });
-      const previewConfig = previewOrConfigFile ? await readConfig(previewOrConfigFile) : undefined;
-      const isCSF4 = previewConfig ? isCsfFactoryPreview(previewConfig) : false;
-
       const areProjectAnnotationRequired = await requiresProjectAnnotations(
         nonMutableInputConfig.test,
-        finalOptions,
-        isCSF4
+        finalOptions
       );
 
       const internalSetupFiles = (
@@ -318,7 +313,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           '@storybook/addon-vitest/internal/setup-file',
           areProjectAnnotationRequired &&
             '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-          isCSF4 && previewOrConfigFile,
         ].filter(Boolean) as string[]
       ).map((filePath) => fileURLToPath(import.meta.resolve(filePath)));
 

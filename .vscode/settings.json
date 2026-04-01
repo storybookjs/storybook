@@ -1,30 +1,25 @@
 {
-  "[javascript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "editor.formatOnSave": true
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "editor.formatOnSave": true
-  },
-  "[typescript]": {
+  "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc]": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "editor.formatOnSave": true
-  },
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.oxc": "explicit"
   },
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
-  "eslint.format.enable": true,
   "eslint.options": {
     "cache": true,
     "cacheLocation": ".cache/eslint",
-    "extensions": [".js", ".jsx", ".mjs", ".json", ".ts", ".tsx"]
+    "extensions": [
+      ".js",
+      ".jsx",
+      ".mjs",
+      ".json",
+      ".ts",
+      ".tsx"
+    ]
   },
   "eslint.useESLintClass": true,
   "eslint.validate": [
@@ -35,9 +30,13 @@
     "typescript",
     "typescriptreact"
   ],
-  "eslint.workingDirectories": ["./code", "./scripts"],
+  "eslint.workingDirectories": [
+    "./code",
+    "./scripts"
+  ],
   "files.associations": {
-    "*.js": "javascriptreact"
+    "*.js": "javascriptreact",
+    ".oxfmtrc.json": "json"
   },
   "javascript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.quoteStyle": "single",
@@ -48,7 +47,9 @@
   "typescript.preferences.preferTypeOnlyAutoImports": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.preferGoToSourceDefinition": true,
-  "typescript.tsdk": "./typescript/lib",
+  "typescript.tsdk": "./node_modules/typescript/lib",
   "vitest.workspaceConfig": "./code/vitest.workspace.ts",
   "vitest.rootConfig": "./code/vitest.workspace.ts",
+  "oxc.fmt.configPath": ".oxfmtrc.json",
+  "oxc.enable.oxlint": false,
 }

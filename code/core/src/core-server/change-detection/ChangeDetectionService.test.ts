@@ -12,7 +12,10 @@ import type {
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { createStatusStore, UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store/index.ts';
+import {
+  createStatusStore,
+  UNIVERSAL_STATUS_STORE_OPTIONS,
+} from '../../shared/status-store/index.ts';
 import { MockUniversalStore } from '../../shared/universal-store/mock.ts';
 import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';

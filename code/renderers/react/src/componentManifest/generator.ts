@@ -1,4 +1,4 @@
-import { recast, types as t } from 'storybook/internal/babel';
+import { recast } from 'storybook/internal/babel';
 import { Tag } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
@@ -25,6 +25,11 @@ import {
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
 import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
+import {
+  extractDeclaredSubcomponents,
+  findExactComponentMatch,
+  type DeclaredSubcomponent,
+} from './subcomponents';
 import { cachedFindUp, cachedReadTextFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactSubcomponentManifest extends ComponentSubcomponentManifest {
@@ -39,11 +44,6 @@ interface ReactComponentManifest extends ComponentManifest {
   reactComponentMeta?: ComponentDoc;
   subcomponents?: Record<string, ReactSubcomponentManifest>;
 }
-
-type DeclaredSubcomponent = {
-  componentName: string;
-  name: string;
-};
 
 type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
@@ -122,11 +122,9 @@ export function findMatchingComponent(
   // and getComponents adds it to the component set as-is when it maps cleanly to a component ref.
   // If that strict lookup misses (for example `const Root = Accordion.Root`), continue into the
   // regular title-based candidate selection below.
-  if (componentName) {
-    const match = components.find((it) => it.componentName === componentName);
-    if (match) {
-      return match;
-    }
+  const exactMatch = findExactComponentMatch(components, componentName);
+  if (exactMatch) {
+    return exactMatch;
   }
 
   // No meta.component — guess by title match.
@@ -156,15 +154,6 @@ export function findMatchingComponent(
   return best;
 }
 
-function findMatchingSubcomponent(components: ComponentRef[], componentName: string) {
-  return components.find(
-    (component) =>
-      component.componentName === componentName ||
-      component.localImportName === componentName ||
-      component.importName === componentName
-  );
-}
-
 function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
   const nearestPkg = cachedFindUp('package.json', {
     cwd: path.dirname(componentPath ?? fallbackPath),
@@ -190,109 +179,6 @@ function getPackageInfo(componentPath: string | undefined, fallbackPath: string)
 function getFallbackImport(packageName: string | undefined, componentName: string | undefined) {
   const exportName = componentName?.split('.').at(-1);
   return packageName && exportName ? `import { ${exportName} } from "${packageName}";` : '';
-}
-
-function findVariableInitialization(identifier: string, program: t.Program) {
-  for (const node of program.body) {
-    const declarations = t.isVariableDeclaration(node)
-      ? node.declarations
-      : t.isExportNamedDeclaration(node) && t.isVariableDeclaration(node.declaration)
-        ? node.declaration.declarations
-        : undefined;
-
-    const declaration = declarations?.find(
-      (decl): decl is t.VariableDeclarator =>
-        t.isVariableDeclarator(decl) && t.isIdentifier(decl.id) && decl.id.name === identifier
-    );
-
-    if (declaration?.init && t.isExpression(declaration.init)) {
-      return declaration.init;
-    }
-  }
-
-  return undefined;
-}
-
-function unwrapSubcomponentNode(node: t.Node | undefined, program: t.Program): t.Node | undefined {
-  let current = node;
-
-  while (current) {
-    if (t.isIdentifier(current)) {
-      current = findVariableInitialization(current.name, program);
-      continue;
-    }
-
-    if (
-      t.isParenthesizedExpression(current) ||
-      t.isTSAsExpression(current) ||
-      t.isTSSatisfiesExpression(current) ||
-      t.isTSNonNullExpression(current)
-    ) {
-      current = current.expression;
-      continue;
-    }
-
-    return current;
-  }
-
-  return undefined;
-}
-
-function getObjectKeyName(key: t.Expression | t.Identifier | t.PrivateName) {
-  if (t.isIdentifier(key)) {
-    return key.name;
-  }
-
-  if (t.isStringLiteral(key)) {
-    return key.value;
-  }
-
-  return undefined;
-}
-
-function getComponentExpressionName(node: t.Node | undefined): string | undefined {
-  if (!node) {
-    return undefined;
-  }
-
-  if (t.isIdentifier(node)) {
-    return node.name;
-  }
-
-  if (t.isMemberExpression(node) && !node.computed) {
-    const objectName = getComponentExpressionName(node.object);
-    const propertyName = getComponentExpressionName(node.property);
-
-    return objectName && propertyName ? `${objectName}.${propertyName}` : undefined;
-  }
-
-  return undefined;
-}
-
-function extractDeclaredSubcomponents(
-  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>
-): DeclaredSubcomponent[] {
-  const rawSubcomponents = unwrapSubcomponentNode(
-    csf._metaAnnotations.subcomponents,
-    csf._ast.program
-  );
-
-  if (!rawSubcomponents || !t.isObjectExpression(rawSubcomponents)) {
-    return [];
-  }
-
-  return rawSubcomponents.properties.flatMap((property) => {
-    if (!t.isObjectProperty(property)) {
-      return [];
-    }
-
-    const name = getObjectKeyName(property.key);
-    const directComponentName = getComponentExpressionName(property.value);
-    const componentExpression = unwrapSubcomponentNode(property.value, csf._ast.program);
-    const componentName = getComponentExpressionName(componentExpression) ?? directComponentName;
-
-    return name && componentName ? [{ name, componentName }] : [];
-  });
 }
 
 function getComponentDocgenData(component: ComponentRef | undefined, docgenEngine: DocgenEngine) {
@@ -480,7 +366,7 @@ export const manifests: PresetPropertyFn<
         });
         const component = findMatchingComponent(allComponents, componentName, entry.title);
         const subcomponents = declaredSubcomponents.map((declaredSubcomponent) => ({
-          component: findMatchingSubcomponent(allComponents, declaredSubcomponent.componentName),
+          component: findExactComponentMatch(allComponents, declaredSubcomponent.componentName),
           name: declaredSubcomponent.name,
         }));
         return {

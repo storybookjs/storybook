@@ -8,6 +8,8 @@ import {
 } from 'react-docgen-typescript';
 import type ts from 'typescript';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { asyncCache, findTsconfigPath } from './utils';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
@@ -204,6 +206,12 @@ async function getParser(userOptions?: ParserOptions) {
       );
       cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
       cachedFileNames = parsed.fileNames;
+    } else {
+      logger.warn(
+        'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
+          'TypeScript component props will not be documented by react-docgen-typescript. ' +
+          'Create a tsconfig.json in your project root to enable automatic controls.'
+      );
     }
 
     const program = typescript.createProgram(

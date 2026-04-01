@@ -3,7 +3,6 @@ import versions from './versions';
 /// <reference types="@types/compression" />
 
 export * from './presets';
-
 export * from './utils/cache';
 export * from './utils/cli';
 export * from './utils/check-addon-order';

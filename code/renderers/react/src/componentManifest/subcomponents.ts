@@ -64,11 +64,20 @@ function findVariableInitialization(identifier: string, program: t.Program) {
   return undefined;
 }
 
-function unwrapSubcomponentNode(node: t.Node | undefined, program: t.Program): t.Node | undefined {
+function unwrapSubcomponentNode(
+  node: t.Node | undefined,
+  program: t.Program,
+  visitedIdentifiers = new Set<string>()
+): t.Node | undefined {
   let current = node;
 
   while (current) {
     if (t.isIdentifier(current)) {
+      if (visitedIdentifiers.has(current.name)) {
+        return undefined;
+      }
+
+      visitedIdentifiers.add(current.name);
       current = findVariableInitialization(current.name, program);
       continue;
     }

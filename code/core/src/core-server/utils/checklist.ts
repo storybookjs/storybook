@@ -15,7 +15,7 @@ import {
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
 } from '../../shared/checklist-store';
 
-export async function initializeChecklist() {
+export async function initializeChecklist(disableTelemetry = false) {
   try {
     const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
       ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
@@ -84,6 +84,15 @@ export async function initializeChecklist() {
       });
       saveProjectState({ items: projectValues as StoreState['items'] });
       saveUserState({ items: userValues, widget: state.widget });
+
+      if (disableTelemetry) {
+        return;
+      }
+
+      // Skip telemetry when loading from persistence (first transition to loaded: true)
+      if (!previousState.loaded) {
+        return;
+      }
 
       // Gather items that have changed state
       const { mutedItems, statusItems } = entries.reduce(

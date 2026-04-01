@@ -256,7 +256,7 @@ export const experimental_serverChannel = async (
 ) => {
   const coreOptions = await options.presets.apply('core');
 
-  initializeChecklist();
+  initializeChecklist(coreOptions?.disableTelemetry);
   initializeWhatsNew(channel, options, coreOptions);
   initializeSaveStory(channel, options, coreOptions);
 

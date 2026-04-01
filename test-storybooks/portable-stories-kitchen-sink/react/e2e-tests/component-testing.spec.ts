@@ -182,7 +182,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test Status: success"
     );
     await expect(sbPage.panelContent()).toContainText(
       /This interaction test passed in the CLI, but the tests failed in this browser/
@@ -195,7 +195,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test Status: error"
     );
     await expect(sbPage.panelContent()).toContainText(
       /This interaction test passed in this browser, but the tests failed in the CLI/
@@ -253,7 +253,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test Status: success"
     );
 
     // Assert for expected failure
@@ -262,7 +262,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test Status: error"
     );
 
     // Assert that filter works as intended
@@ -312,7 +312,7 @@ test.describe("component testing", () => {
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: success"
+      "Test Status: success"
     );
 
     // Assert for expected failure
@@ -321,7 +321,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test Status: error"
     );
 
     // Assert that filter works as intended
@@ -368,7 +368,7 @@ test.describe("component testing", () => {
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test Status: error"
     );
   });
 
@@ -408,7 +408,7 @@ test.describe("component testing", () => {
 
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
-      "Status: error"
+      "Test Status: error"
     );
   });
 
@@ -544,7 +544,7 @@ test.describe("component testing", () => {
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test Status: success"]'
       )
     ).toHaveCount(1);
   });
@@ -655,12 +655,12 @@ test.describe("component testing", () => {
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test Status: success"]'
       )
     ).toHaveCount(8);
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: error"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test Status: error"]'
       )
     ).toHaveCount(3); // 1 story, 1 component, 1 group
   });
@@ -716,19 +716,19 @@ test.describe("component testing", () => {
     );
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: error"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test Status: error"]'
       )
     ).toHaveCount(4); // 1 visible/expanded story, 1 expanded component, 1 collapsed component, 1 group
 
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test Status: success"]'
       )
     ).toHaveCount(8);
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: error"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test Status: error"]'
       )
     ).toHaveCount(4);
   });

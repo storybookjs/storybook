@@ -58,7 +58,7 @@
     "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "preact": ">=10",
+    "preact": ">=10 || >= 11.0.0-0",
     "storybook": "workspace:^"
   },
   "publishConfig": {

@@ -150,6 +150,11 @@ export const options = createOptions({
     inverse: true,
     promptType: false,
   },
+  forceLink: {
+    type: 'boolean',
+    description: 'Force dependencies to be linked even with incompatible frameworks?',
+    promptType: false,
+  },
   dir: {
     type: 'string',
     description: 'Name of sandbox directory',

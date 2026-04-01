@@ -1,7 +1,9 @@
 import {
   createRootRoute,
   createRoute,
+  type RoutePathOptions,
   type AnyRootRoute,
+  type AnyRoute,
   type FileRoutesByPath,
 } from '@tanstack/react-router';
 import type { CreateStoryRouteOptions, StoryRouteFileOptions } from './types';
@@ -22,29 +24,35 @@ function buildStoryRoute(options: CreateStoryRouteOptions): AnyRootRoute {
 /**
  * Creates a mock route tree for use in Storybook stories.
  *
- * Supports two call signatures that mirror TanStack Router's API:
+ * Supports two call signatures:
  *
- * builder form (like `createFileRoute`):
+ * Type-safe curried form (pass the Route type to infer loader data, search params, etc.):
  * ```ts
- * createStoryRoute('/about')({ loader: async () => fetchData() })
+ * import { Route } from '../routes/about'
+ * createStoryRoute<typeof Route>('/about')({ loader: async () => ({ title: 'Mock' }) })
  * ```
  *
- * flat form:
+ * Flat form:
  * ```ts
  * createStoryRoute({ path: '/about', loader: async () => fetchData() })
  * ```
  */
-export function createStoryRoute(
-  pathOrOptions: keyof FileRoutesByPath | (string & {})
+
+export function createStoryRoute<TRoute extends AnyRoute = AnyRoute>(
+  pathOrOptions: CreateStoryRouteOptions<TRoute>
+): AnyRootRoute;
+export function createStoryRoute<TRoute extends AnyRoute = AnyRoute>(
+  pathOrOptions: keyof FileRoutesByPath
 ): (options?: StoryRouteFileOptions) => AnyRootRoute;
-export function createStoryRoute(pathOrOptions: CreateStoryRouteOptions): AnyRootRoute;
-export function createStoryRoute(
-  pathOrOptions: keyof FileRoutesByPath | (string & {}) | CreateStoryRouteOptions
+export function createStoryRoute<TRoute extends AnyRoute = AnyRoute>(
+  pathOrOptions: keyof FileRoutesByPath | (string & {}) | CreateStoryRouteOptions<TRoute>
 ): AnyRootRoute | ((options?: StoryRouteFileOptions) => AnyRootRoute) {
+  // String path — return a curried builder
   if (typeof pathOrOptions === 'string') {
     return (options?: StoryRouteFileOptions) => {
       return buildStoryRoute({ ...options, path: pathOrOptions });
     };
   }
+  // Flat options object
   return buildStoryRoute(pathOrOptions);
 }

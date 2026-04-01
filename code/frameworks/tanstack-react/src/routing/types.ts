@@ -1,24 +1,39 @@
-import type { AnyRootRoute, Route, FileRoutesByPath } from '@tanstack/react-router';
+import type { AnyRootRoute, AnyRoute, Route, FileRoutesByPath } from '@tanstack/react-router';
 import type { RouteOptions } from '@tanstack/router-core';
 
-export type StoryRouteFileOptions = Pick<
-  RouteOptions<unknown>,
-  | 'loader'
-  | 'beforeLoad'
-  | 'validateSearch'
-  | 'loaderDeps'
-  | 'context'
-  | 'params'
-  | 'head'
-  | 'search'
-  | 'parseParams'
->;
+export type StoryRouteFileOptions<TRoute extends AnyRoute | undefined = undefined> =
+  TRoute extends AnyRoute
+    ? Pick<
+        TRoute['options'],
+        | 'loader'
+        | 'beforeLoad'
+        | 'validateSearch'
+        | 'loaderDeps'
+        | 'context'
+        | 'params'
+        | 'head'
+        | 'search'
+        | 'parseParams'
+      >
+    : Pick<
+        RouteOptions<unknown>,
+        | 'loader'
+        | 'beforeLoad'
+        | 'validateSearch'
+        | 'loaderDeps'
+        | 'context'
+        | 'params'
+        | 'head'
+        | 'search'
+        | 'parseParams'
+      >;
 
-export type CreateStoryRouteOptions = StoryRouteFileOptions & {
-  path: keyof FileRoutesByPath | (string & {});
-};
+export type CreateStoryRouteOptions<TRoute extends AnyRoute | undefined = undefined> =
+  StoryRouteFileOptions<TRoute> & {
+    path: keyof FileRoutesByPath | (string & {});
+  };
 
-export type StoryRouteOptions = CreateStoryRouteOptions | Route | AnyRootRoute;
+export type StoryRouteOptions = CreateStoryRouteOptions | Route | AnyRoute;
 
 export interface RouterParameters {
   route?: StoryRouteOptions;

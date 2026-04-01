@@ -17,6 +17,7 @@ describe('generateProjectAnnotationsCodeFromPreviews', () => {
 
     // Extract all "import * as <var>" identifiers
     const importedVars = [...result.matchAll(/import \* as (\w+) from/g)].map((m) => m[1]);
+    expect(importedVars).toHaveLength(2);
     // Every imported variable must be unique
     expect(new Set(importedVars).size).toBe(importedVars.length);
   });
@@ -33,9 +34,10 @@ describe('generateProjectAnnotationsCodeFromPreviews', () => {
     });
 
     const importedVars = [...result.matchAll(/import \* as (\w+) from/g)].map((m) => m[1]);
+    expect(importedVars).toHaveLength(2);
     expect(new Set(importedVars).size).toBe(importedVars.length);
     // Neither variable should have a dedup suffix
-    expect(importedVars.every((v) => !/_\d+$/.test(v) || /^\w+_\d+$/.test(v))).toBe(true);
+    expect(importedVars.every((v) => /^\w+(?:_[1-9]\d*)?$/.test(v))).toBe(true);
   });
 
   it('handles three-way collisions', () => {
@@ -53,6 +55,7 @@ describe('generateProjectAnnotationsCodeFromPreviews', () => {
     });
 
     const importedVars = [...result.matchAll(/import \* as (\w+) from/g)].map((m) => m[1]);
+    expect(importedVars).toHaveLength(3);
     expect(new Set(importedVars).size).toBe(importedVars.length);
   });
 });

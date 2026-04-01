@@ -22,6 +22,57 @@ export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/
 export type { VueRenderer };
 
 /**
+ * Helper type to extend component props with custom args that don't map directly to component props.
+ *
+ * This is useful when you want to use args to control aspects of rendering beyond the component's props,
+ * such as adding wrapper elements, conditional rendering, theming, or any custom logic in your render function.
+ *
+ * @example
+ * ```typescript
+ * import type { Meta, StoryObj, WithCustomArgs } from '@storybook/vue3';
+ * import MyPage from './Page.vue';
+ *
+ * // Define custom args that extend the component's props
+ * type PageArgs = WithCustomArgs<typeof MyPage, {
+ *   footer?: string;
+ *   theme?: 'light' | 'dark';
+ * }>;
+ *
+ * const meta = {
+ *   component: MyPage,
+ *   render: ({ footer, theme, ...pageProps }) => ({
+ *     components: { MyPage },
+ *     template: `
+ *       <div :class="theme">
+ *         <MyPage v-bind="pageProps" />
+ *         <footer v-if="footer">{{ footer }}</footer>
+ *       </div>
+ *     `,
+ *     setup() {
+ *       return { footer, theme, pageProps };
+ *     }
+ *   })
+ * } satisfies Meta<PageArgs>;
+ *
+ * export default meta;
+ * type Story = StoryObj<typeof meta>;
+ *
+ * export const WithFooter: Story = {
+ *   args: {
+ *     footer: 'Built with Storybook',
+ *     theme: 'light'
+ *   }
+ * };
+ * ```
+ *
+ * @see https://storybook.js.org/docs/writing-stories/args#args-can-modify-any-aspect-of-your-component
+ */
+export type WithCustomArgs<
+  TComponent,
+  TCustomArgs extends Record<string, any> = Record<string, never>
+> = ComponentPropsAndSlots<TComponent> & TCustomArgs;
+
+/**
  * Metadata to configure the stories for a component.
  *
  * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)

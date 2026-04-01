@@ -1,9 +1,9 @@
 /*
  * Copied from https://github.com/storybookjs/mcp/blob/7402e98b18ed62a73a2e212bf48af83bbeb0828e/eval/templates/result-docs/transcript.tsx
  */
-/* eslint-disable react/react-in-jsx-scope, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, @typescript-eslint/no-explicit-any */
+/* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, @typescript-eslint/no-explicit-any */
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type {
   AssistantMessage,
   TranscriptMessage,

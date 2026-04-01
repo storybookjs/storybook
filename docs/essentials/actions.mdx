@@ -93,26 +93,6 @@ Default: `1`
 
 Controls how many levels deep the action tree is initially expanded. Useful when action arguments contain nested objects and you want to see more detail by default.
 
-#### `limit`
-
-Type: `number`
-
-Default: `50`
-
-Maximum number of action entries to display in the actions panel. When the limit is reached, the oldest actions are discarded and the newest are retained.
-
-This parameter is configured globally using the `configureActions` function (see [Exports](#configureactions) below) rather than as a story parameter.
-
-#### `clearOnStoryChange`
-
-Type: `boolean`
-
-Default: `true`
-
-When set to `true`, the actions panel is automatically cleared when navigating to a different story.
-
-This parameter is configured globally using the `configureActions` function (see [Exports](#configureactions) below) rather than as a story parameter.
-
 ### Exports
 
 ```js

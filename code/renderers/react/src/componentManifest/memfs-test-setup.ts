@@ -46,9 +46,16 @@ export function setupMemfsMocks() {
       return pkg[id];
     }
 
-    if (typeof id === 'string' && id.startsWith('.') && options && 'basedir' in options) {
+    if (
+      typeof id === 'string' &&
+      id.startsWith('.') &&
+      options &&
+      'basedir' in options &&
+      typeof options.basedir === 'string'
+    ) {
+      const { basedir } = options;
       const candidates = ['.tsx', '.ts', '.jsx', '.js'].map((extension) =>
-        path.resolve(options.basedir, `${id}${extension}`)
+        path.resolve(basedir, `${id}${extension}`)
       );
       const existingCandidate = candidates.find((candidate) => vol.existsSync(candidate));
 

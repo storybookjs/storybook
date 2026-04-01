@@ -44,11 +44,21 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
   const variables: string[] = [];
   const imports: string[] = [];
+  const seen = new Set<string>();
   for (const previewAnnotation of previewAnnotationURLs) {
-    const variable =
+    let variable =
       genSafeVariableName(filename(previewAnnotation)).replace(/_(45|46|47)/g, '_') +
       '_' +
       hash(previewAnnotation);
+    // Disambiguate when two different paths produce the same variable name
+    if (seen.has(variable)) {
+      let suffix = 2;
+      while (seen.has(`${variable}_${suffix}`)) {
+        suffix++;
+      }
+      variable = `${variable}_${suffix}`;
+    }
+    seen.add(variable);
     variables.push(variable);
     imports.push(genImport(previewAnnotation, { name: '*', as: variable }));
   }

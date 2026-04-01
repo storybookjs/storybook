@@ -63,13 +63,14 @@ function makeAction(name: string, args: any[], id: string, limit: number = 50): 
 
 /**
  * Helper to emit actions into the container via the mock API.
- * Waits briefly after each emission for React state to settle.
+ * Yields to the event loop after each emission so React can process state updates.
+ * Callers should still synchronize on actual UI state (e.g., via `waitFor` / `findBy*`).
  */
 async function emitActions(actions: ActionDisplay[]) {
   for (const action of actions) {
     currentApi.emit(EVENT_ID, action);
-    // Let React process the state update
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Yield to allow React to process the state update without relying on a fixed timeout
+    await Promise.resolve();
   }
 }
 
@@ -96,8 +97,9 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   args: {
     active: true,
-    // The container receives `api` as a prop. We pass the mock here, but the
-    // decorator will override it with a fresh instance each render via context.
+    // The container reads `api` directly as a prop. We pass a placeholder here;
+    // the `render` function below overrides it with `currentApi` (set by the decorator)
+    // so each story render gets a fresh mock instance.
     // We cast to `any` because our mock intentionally doesn't implement the
     // full API interface — only the parts the ActionLogger container uses.
     api: {} as any,

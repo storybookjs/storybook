@@ -3,9 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   JsPackageManagerFactory,
   PackageManagerName,
+  detectDeclaredNodeVersions,
   invalidateProjectRootCache,
+  updateEnginesNode,
+  updateNvmrc,
 } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as scaffoldModule from '../scaffold-new-project.ts';
 import { PreflightCheckCommand } from './PreflightCheckCommand.ts';
@@ -13,6 +16,7 @@ import { PreflightCheckCommand } from './PreflightCheckCommand.ts';
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('../scaffold-new-project', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('semver', { spy: true });
 
 describe('PreflightCheckCommand', () => {
   let command: PreflightCheckCommand;
@@ -33,6 +37,15 @@ describe('PreflightCheckCommand', () => {
     );
     vi.mocked(scaffoldModule.scaffoldNewProject).mockResolvedValue(undefined);
     vi.mocked(invalidateProjectRootCache).mockImplementation(() => {});
+
+    // Default: no declared version issues (prevents checkDeclaredNodeVersion from prompting)
+    vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
+      nvmrcPath: undefined,
+      nvmrcVersion: undefined,
+      enginesNode: undefined,
+      packageJsonPath: undefined,
+    });
+
     vi.clearAllMocks();
   });
 
@@ -127,6 +140,119 @@ describe('PreflightCheckCommand', () => {
       expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
         expect.stringContaining('Your package.json "name" field is set to "storybook"')
       );
+    });
+  });
+
+  describe('checkDeclaredNodeVersion', () => {
+    beforeEach(() => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+    });
+
+    it('should not show declared version prompt when .nvmrc is fine', async () => {
+      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
+        nvmrcPath: '/project/.nvmrc',
+        nvmrcVersion: '22.14.2',
+        enginesNode: undefined,
+        packageJsonPath: undefined,
+      });
+
+      await command.execute({ force: false } as any);
+
+      expect(prompt.select).not.toHaveBeenCalled();
+    });
+
+    it('should show select prompt when .nvmrc is below minimum', async () => {
+      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
+        nvmrcPath: '/project/.nvmrc',
+        nvmrcVersion: '18.0.0',
+        enginesNode: undefined,
+        packageJsonPath: undefined,
+      });
+      vi.mocked(prompt.select).mockResolvedValue('skip');
+
+      await command.execute({ force: false } as any);
+
+      expect(prompt.select).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('.nvmrc'),
+        })
+      );
+    });
+
+    it('should update .nvmrc when user selects a version', async () => {
+      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
+        nvmrcPath: '/project/.nvmrc',
+        nvmrcVersion: '18.0.0',
+        enginesNode: undefined,
+        packageJsonPath: undefined,
+      });
+      vi.mocked(prompt.select).mockResolvedValue('22.12.0');
+      vi.mocked(updateNvmrc).mockImplementation(() => {});
+
+      await command.execute({ force: false } as any);
+
+      expect(updateNvmrc).toHaveBeenCalledWith('/project/.nvmrc', '22.12.0');
+    });
+
+    it('should not update .nvmrc when user selects skip', async () => {
+      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
+        nvmrcPath: '/project/.nvmrc',
+        nvmrcVersion: '18.0.0',
+        enginesNode: undefined,
+        packageJsonPath: undefined,
+      });
+      vi.mocked(prompt.select).mockResolvedValue('skip');
+
+      await command.execute({ force: false } as any);
+
+      expect(updateNvmrc).not.toHaveBeenCalled();
+    });
+
+    it('should show prompt for engines.node when below minimum', async () => {
+      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
+        nvmrcPath: undefined,
+        nvmrcVersion: undefined,
+        enginesNode: '>=16',
+        packageJsonPath: '/project/package.json',
+      });
+      vi.mocked(prompt.select).mockResolvedValue('skip');
+
+      await command.execute({ force: false } as any);
+
+      expect(prompt.select).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('engines.node'),
+        })
+      );
+    });
+
+    it('should show two prompts when both .nvmrc and engines.node are below minimum', async () => {
+      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
+        nvmrcPath: '/project/.nvmrc',
+        nvmrcVersion: '18.0.0',
+        enginesNode: '>=16',
+        packageJsonPath: '/project/package.json',
+      });
+      vi.mocked(prompt.select).mockResolvedValue('skip');
+
+      await command.execute({ force: false } as any);
+
+      expect(prompt.select).toHaveBeenCalledTimes(2);
+    });
+
+    it('should update engines.node when user selects a version', async () => {
+      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
+        nvmrcPath: undefined,
+        nvmrcVersion: undefined,
+        enginesNode: '>=16',
+        packageJsonPath: '/project/package.json',
+      });
+      vi.mocked(prompt.select).mockResolvedValue('>=22.12');
+      vi.mocked(updateEnginesNode).mockImplementation(() => {});
+
+      await command.execute({ force: false } as any);
+
+      expect(updateEnginesNode).toHaveBeenCalledWith('/project/package.json', '>=22.12');
     });
   });
 });

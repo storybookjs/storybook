@@ -1,52 +1,141 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-type TranscriptTurnType =
-  | 'prompt'
-  | 'system'
-  | 'assistant'
-  | 'tool'
-  | 'user'
-  | 'result'
-  | 'reasoning'
-  | 'command'
-  | 'file'
-  | 'error';
+const TRANSCRIPT_TEMPLATE_URL = new URL(
+  './result-doc-templates/transcript.tsx.txt',
+  import.meta.url
+);
+const TRANSCRIPT_TYPES_TEMPLATE_URL = new URL(
+  './result-doc-templates/transcript.types.ts.txt',
+  import.meta.url
+);
 
-export interface TranscriptViewTurn {
+export interface TranscriptTextContent {
+  type: 'text';
+  text: string;
+}
+
+export interface TranscriptToolUseContent {
+  type: 'tool_use';
   id: string;
-  type: TranscriptTurnType;
-  title: string;
-  subtitle?: string;
-  content?: string;
-  language?: string;
-  tokenCount?: number;
+  name: string;
+  input: Record<string, unknown>;
+  isMCP: boolean;
+}
+
+export interface TranscriptToolResultBlock {
+  type: string;
+  text?: string;
   isError?: boolean;
 }
 
-export interface TranscriptViewData {
+export interface TranscriptToolResultContent {
+  tool_use_id: string;
+  type: 'tool_result';
+  content: string | TranscriptToolResultBlock[];
+}
+
+export interface TranscriptMessageUsage {
+  input_tokens: number;
+  output_tokens: number;
+}
+
+export interface TranscriptAssistantMessage {
+  type: 'assistant';
+  message: {
+    content: Array<TranscriptTextContent | TranscriptToolUseContent>;
+    usage: TranscriptMessageUsage;
+  };
+  ms: number;
+  tokenCount?: number;
+  costUSD?: number;
+}
+
+export interface TranscriptUserMessage {
+  type: 'user';
+  message: {
+    content: TranscriptToolResultContent[];
+  };
+  ms: number;
+  tokenCount?: number;
+  costUSD?: number;
+}
+
+export interface TranscriptSystemMessage {
+  type: 'system';
+  subtype: 'init';
+  agent: string;
+  model: string;
+  tools: string[];
+  mcp_servers: Array<{
+    name: string;
+    status: 'connected' | 'disconnected' | 'unknown';
+  }>;
+  cwd: string;
+  ms: number;
+  tokenCount?: number;
+  costUSD?: number;
+}
+
+export interface TranscriptResultMessage {
+  type: 'result';
+  subtype: 'success' | 'error';
+  duration_ms: number;
+  duration_api_ms: number;
+  num_turns: number;
+  total_cost_usd: number;
+  ms: number;
+  tokenCount?: number;
+  costUSD?: number;
+}
+
+export type TranscriptMessage =
+  | TranscriptAssistantMessage
+  | TranscriptUserMessage
+  | TranscriptSystemMessage
+  | TranscriptResultMessage;
+
+export interface TranscriptDocData {
   prompt: string;
-  turns: TranscriptViewTurn[];
+  promptTokenCount: number;
+  promptCost: number;
+  messages: TranscriptMessage[];
+}
+
+interface EvalSummaryLike {
+  variant?: {
+    agent?: string;
+    model?: string;
+  };
+  execution?: {
+    cost?: number;
+    duration?: number;
+    durationApi?: number;
+    turns?: number;
+  };
 }
 
 export async function writeEvalResultDocs(resultsDir: string) {
-  const [prompt, transcript, summary] = await Promise.all([
-    readOptionalText(join(resultsDir, 'prompt.md')),
-    readOptionalJson(join(resultsDir, 'transcript.json')),
-    readOptionalJson(join(resultsDir, 'summary.json')),
-  ]);
-  const transcriptViewData = normalizeTranscriptForDocs({
+  const [prompt, transcript, summary, transcriptTemplate, transcriptTypesTemplate] =
+    await Promise.all([
+      readOptionalText(join(resultsDir, 'prompt.md')),
+      readOptionalJson(join(resultsDir, 'transcript.json')),
+      readOptionalJson(join(resultsDir, 'summary.json')),
+      readFile(TRANSCRIPT_TEMPLATE_URL, 'utf-8'),
+      readFile(TRANSCRIPT_TYPES_TEMPLATE_URL, 'utf-8'),
+    ]);
+
+  const transcriptData = normalizeTranscriptForDocs({
     prompt: prompt ?? '',
-    transcript: transcript ?? [],
+    transcript: Array.isArray(transcript) ? transcript : [],
+    summary,
   });
 
   await Promise.all([
     writeFile(join(resultsDir, 'summary.mdx'), createSummaryMdx()),
-    writeFile(join(resultsDir, 'transcript-view.tsx'), createTranscriptViewComponent()),
-    writeFile(
-      join(resultsDir, 'transcript-view-data.json'),
-      JSON.stringify(transcriptViewData, null, 2)
-    ),
+    writeFile(join(resultsDir, 'transcript.tsx'), transcriptTemplate),
+    writeFile(join(resultsDir, 'transcript.types.ts'), transcriptTypesTemplate),
+    writeFile(join(resultsDir, 'transcript-data.json'), JSON.stringify(transcriptData, null, 2)),
     writeFile(join(resultsDir, 'transcript.mdx'), createTranscriptMdx()),
     summary
       ? writeFile(join(resultsDir, 'summary.pretty.json'), JSON.stringify(summary, null, 2))
@@ -57,308 +146,420 @@ export async function writeEvalResultDocs(resultsDir: string) {
 export function normalizeTranscriptForDocs(opts: {
   prompt: string;
   transcript: unknown[];
-}): TranscriptViewData {
-  const turns: TranscriptViewTurn[] = [];
+  summary?: unknown;
+}): TranscriptDocData {
+  const summary = isEvalSummaryLike(opts.summary) ? opts.summary : undefined;
+  const messages = opts.transcript.flatMap((entry, index) =>
+    normalizeTranscriptEntry(entry, index, summary)
+  );
 
-  if (opts.prompt.trim()) {
-    turns.push({
-      id: 'prompt',
-      type: 'prompt',
-      title: 'Prompt',
-      content: opts.prompt.trim(),
-      language: 'markdown',
-    });
-  }
-
-  for (const [index, entry] of opts.transcript.entries()) {
-    turns.push(...normalizeTranscriptEntry(entry, index));
-  }
+  ensureSystemMessage(messages, summary);
+  ensureResultMessage(messages, summary);
 
   return {
     prompt: opts.prompt,
-    turns,
+    promptTokenCount: estimateTokenCount(opts.prompt),
+    promptCost: 0,
+    messages,
   };
 }
 
-function normalizeTranscriptEntry(entry: unknown, index: number): TranscriptViewTurn[] {
+function normalizeTranscriptEntry(
+  entry: unknown,
+  index: number,
+  summary?: EvalSummaryLike
+): TranscriptMessage[] {
   if (!entry || typeof entry !== 'object') {
     return [];
   }
 
   if (looksLikeClaudeSystem(entry)) {
-    return [
-      {
-        id: `turn-${index}-system`,
-        type: 'system',
-        title: 'Session started',
-        subtitle: entry.model,
-        content: [
-          entry.agent ? `Agent: ${entry.agent}` : undefined,
-          entry.cwd ? `CWD: ${entry.cwd}` : undefined,
-          Array.isArray(entry.tools) ? `Tools: ${entry.tools.join(', ')}` : undefined,
-        ]
-          .filter(Boolean)
-          .join('\n'),
-      },
-    ];
+    return [normalizeClaudeSystem(entry)];
   }
 
   if (looksLikeClaudeAssistant(entry)) {
-    return normalizeClaudeAssistant(entry, index);
+    return [normalizeClaudeAssistant(entry)];
   }
 
-  if (looksLikeClaudeUser(entry)) {
-    return normalizeClaudeUser(entry, index);
+  if (looksLikeClaudeUser(entry, index)) {
+    return [normalizeClaudeUser(entry, index)];
   }
 
   if (looksLikeClaudeResult(entry)) {
+    return [normalizeClaudeResult(entry, summary)];
+  }
+
+  if (looksLikeClaudeStatus(entry)) {
+    return [createAssistantTextMessage(`Status: ${entry.status ?? 'unknown'}`, entry.ms)];
+  }
+
+  if (looksLikeClaudeApiRetry(entry)) {
     return [
-      {
-        id: `turn-${index}-result`,
-        type: entry.subtype === 'success' ? 'result' : 'error',
-        title: entry.subtype === 'success' ? 'Completed' : 'Failed',
-        content:
-          entry.subtype === 'success'
-            ? [
-                typeof entry.num_turns === 'number' ? `Turns: ${entry.num_turns}` : undefined,
-                typeof entry.total_cost_usd === 'number'
-                  ? `Cost: $${entry.total_cost_usd.toFixed(4)}`
-                  : undefined,
-                typeof entry.duration_ms === 'number'
-                  ? `Duration: ${(entry.duration_ms / 1000).toFixed(1)}s`
-                  : undefined,
-              ]
-                .filter(Boolean)
-                .join('\n')
-            : (entry.errors ?? []).join('\n'),
-        isError: entry.subtype !== 'success',
-      },
+      createAssistantTextMessage(
+        `API retry: attempt ${entry.attempt ?? '?'} / ${entry.max_retries ?? '?'}`,
+        entry.ms
+      ),
+    ];
+  }
+
+  if (looksLikeClaudeToolUseSummary(entry)) {
+    return [createAssistantTextMessage(entry.summary, entry.ms)];
+  }
+
+  if (looksLikeClaudeRateLimitEvent(entry)) {
+    const info = entry.rate_limit_info ?? {};
+    return [
+      createAssistantTextMessage(
+        `Rate limited — status: ${info.status ?? 'unknown'}, resets at: ${info.resetsAt ?? 'unknown'}`,
+        entry.ms
+      ),
     ];
   }
 
   if (looksLikeCodexAgentMessage(entry)) {
-    return [
-      {
-        id: `turn-${index}-assistant`,
-        type: 'assistant',
-        title: 'Assistant',
-        content: entry.text,
-      },
-    ];
+    return [createAssistantTextMessage(entry.text)];
   }
 
   if (looksLikeCodexReasoning(entry)) {
-    return [
-      {
-        id: `turn-${index}-reasoning`,
-        type: 'reasoning',
-        title: 'Reasoning',
-        content: entry.text,
-      },
-    ];
+    return [createAssistantTextMessage(`Reasoning\n\n${entry.text}`)];
   }
 
   if (looksLikeCodexCommand(entry)) {
-    return [
-      {
-        id: `turn-${index}-command`,
-        type: 'command',
-        title: entry.command,
-        subtitle: `exit ${entry.exit_code ?? '?'}`,
-        content: entry.aggregated_output || entry.command,
-        language: 'bash',
-        isError: typeof entry.exit_code === 'number' && entry.exit_code !== 0,
-      },
-    ];
+    return normalizeCodexCommand(entry, index);
   }
 
   if (looksLikeCodexFileChange(entry)) {
-    return [
-      {
-        id: `turn-${index}-file`,
-        type: 'file',
-        title: 'File changes',
-        content: entry.changes.map((change) => `${change.kind} ${change.path}`).join('\n'),
-      },
-    ];
+    const summaryText = ['File changes:', ...entry.changes.map((change) => `- ${change.kind} ${change.path}`)].join(
+      '\n'
+    );
+    return [createAssistantTextMessage(summaryText)];
   }
 
   if (looksLikeCodexError(entry)) {
-    return [
-      {
-        id: `turn-${index}-error`,
-        type: 'error',
-        title: 'Error',
-        content: entry.message,
-        isError: true,
-      },
-    ];
+    return [createAssistantTextMessage(`Error\n\n${entry.message}`)];
   }
 
   return [
-    {
-      id: `turn-${index}-raw`,
-      type: 'system',
-      title: entryTitle(entry),
-      content: JSON.stringify(entry, null, 2),
-      language: 'json',
-    },
+    createAssistantTextMessage(`Raw event\n\n\`\`\`json\n${JSON.stringify(entry, null, 2)}\n\`\`\``),
   ];
 }
 
-function normalizeClaudeAssistant(
-  entry: ExtractClaudeAssistant
-): TranscriptViewTurn[] {
-  const turns: TranscriptViewTurn[] = [];
+function normalizeClaudeSystem(entry: ClaudeSystemEntry): TranscriptSystemMessage {
+  return {
+    type: 'system',
+    subtype: 'init',
+    agent: entry.agent ?? 'Claude',
+    model: entry.model ?? 'unknown',
+    tools: entry.tools?.filter(isString) ?? [],
+    mcp_servers: normalizeMcpServers(entry.mcp_servers),
+    cwd: entry.cwd ?? '',
+    ms: getNumber(entry.ms),
+    tokenCount: getOptionalNumber(entry.tokenCount),
+    costUSD: getOptionalNumber(entry.costUSD),
+  };
+}
 
-  entry.message.content.forEach((block, blockIndex) => {
-    if (block.type === 'text') {
-      turns.push({
-        id: `assistant-${blockIndex}`,
-        type: 'assistant',
-        title: 'Assistant',
-        content: block.text,
-        tokenCount: entry.message.usage?.output_tokens,
-      });
-      return;
+function normalizeClaudeAssistant(entry: ClaudeAssistantEntry): TranscriptAssistantMessage {
+  const content = entry.message.content.flatMap((block): Array<TranscriptTextContent | TranscriptToolUseContent> => {
+    if (block.type === 'text' && typeof block.text === 'string') {
+      return [{ type: 'text', text: block.text }];
     }
 
-    if (block.type === 'tool_use') {
-      turns.push({
-        id: `tool-${blockIndex}`,
-        type: 'tool',
-        title: block.name,
-        subtitle: block.id,
-        content: JSON.stringify(block.input, null, 2),
-        language: 'json',
-      });
+    if (block.type === 'tool_use' && typeof block.name === 'string') {
+      return [
+        {
+          type: 'tool_use',
+          id: typeof block.id === 'string' ? block.id : `tool-${block.name}`,
+          name: block.name,
+          input: isRecord(block.input) ? block.input : {},
+          isMCP: isMcpToolName(block.name),
+        },
+      ];
     }
+
+    return [];
   });
 
-  return turns;
+  const outputTokens = getNumber(entry.message.usage?.output_tokens);
+  const inputTokens = getNumber(entry.message.usage?.input_tokens);
+  const tokenCount =
+    getOptionalNumber(entry.tokenCount) ?? (outputTokens || estimateAssistantContentTokens(content));
+
+  return {
+    type: 'assistant',
+    message: {
+      content,
+      usage: {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+      },
+    },
+    ms: getNumber(entry.ms),
+    tokenCount: tokenCount || undefined,
+    costUSD: getOptionalNumber(entry.costUSD),
+  };
 }
 
-function normalizeClaudeUser(entry: ExtractClaudeUser, index: number): TranscriptViewTurn[] {
-  const content = entry.message.content
-    .map((block) => {
-      if (typeof block.content === 'string') {
-        return block.content;
-      }
+function normalizeClaudeUser(entry: ClaudeUserEntry, index: number): TranscriptUserMessage {
+  const content = entry.message.content.map((block, blockIndex) => ({
+    type: 'tool_result' as const,
+    tool_use_id:
+      typeof block.tool_use_id === 'string' ? block.tool_use_id : `tool-result-${index}-${blockIndex}`,
+    content: normalizeToolResultContent(block.content),
+  }));
 
-      if (Array.isArray(block.content)) {
-        return block.content.map((item) => item.text ?? `[${item.type}]`).join('\n');
-      }
+  const tokenCount =
+    getOptionalNumber(entry.tokenCount) ??
+    content.reduce((sum, block) => sum + estimateToolResultTokens(block.content), 0);
 
-      return '[no content]';
-    })
-    .join('\n\n');
+  return {
+    type: 'user',
+    message: { content },
+    ms: getNumber(entry.ms),
+    tokenCount: tokenCount || undefined,
+    costUSD: getOptionalNumber(entry.costUSD),
+  };
+}
+
+function normalizeClaudeResult(
+  entry: ClaudeResultEntry,
+  summary?: EvalSummaryLike
+): TranscriptResultMessage {
+  return {
+    type: 'result',
+    subtype: entry.subtype,
+    duration_ms:
+      getNumber(entry.duration_ms) || Math.round(getNumber(summary?.execution?.duration) * 1000),
+    duration_api_ms:
+      getNumber(entry.duration_api_ms) ||
+      Math.round(getNumber(summary?.execution?.durationApi) * 1000),
+    num_turns: getNumber(entry.num_turns) || getNumber(summary?.execution?.turns),
+    total_cost_usd: getNumber(entry.total_cost_usd) || getNumber(summary?.execution?.cost),
+    ms: getNumber(entry.ms),
+    tokenCount: getOptionalNumber(entry.tokenCount),
+    costUSD: getOptionalNumber(entry.costUSD),
+  };
+}
+
+function normalizeCodexCommand(entry: CodexCommandEntry, index: number): TranscriptMessage[] {
+  const id = `codex-command-${index}`;
+  const output = buildCodexCommandOutput(entry);
 
   return [
     {
-      id: `turn-${index}-user`,
+      type: 'assistant',
+      message: {
+        content: [
+          {
+            type: 'tool_use',
+            id,
+            name: 'Bash',
+            input: { command: entry.command },
+            isMCP: false,
+          },
+        ],
+        usage: {
+          input_tokens: 0,
+          output_tokens: estimateTokenCount(entry.command),
+        },
+      },
+      ms: 0,
+      tokenCount: estimateTokenCount(entry.command),
+    },
+    {
       type: 'user',
-      title: 'Tool result',
-      content,
+      message: {
+        content: [
+          {
+            type: 'tool_result',
+            tool_use_id: id,
+            content: output,
+          },
+        ],
+      },
+      ms: 0,
+      tokenCount: estimateToolResultTokens(output),
     },
   ];
 }
 
-type ClaudeBase = Record<string, any>;
-type ExtractClaudeAssistant = ClaudeBase & {
-  type: 'assistant';
-  message: {
-    content: Array<
-      | {
-          type: 'text';
-          text: string;
-        }
-      | {
-          type: 'tool_use';
-          id: string;
-          name: string;
-          input: Record<string, unknown>;
-        }
-    >;
-    usage?: {
-      output_tokens?: number;
-    };
-  };
-};
-
-type ExtractClaudeUser = ClaudeBase & {
-  type: 'user';
-  message: {
-    content: Array<{
-      type: 'tool_result';
-      content:
-        | string
-        | Array<{
-            type: string;
-            text?: string;
-          }>;
-    }>;
-  };
-};
-
-function looksLikeClaudeSystem(entry: any): entry is ClaudeBase & {
-  type: 'system';
-  subtype: 'init';
-  agent?: string;
-  model?: string;
-  tools?: string[];
-  cwd?: string;
-} {
-  return entry.type === 'system' && entry.subtype === 'init';
-}
-
-function looksLikeClaudeAssistant(entry: any): entry is ExtractClaudeAssistant {
-  return entry.type === 'assistant' && entry.message && Array.isArray(entry.message.content);
-}
-
-function looksLikeClaudeUser(entry: any): entry is ExtractClaudeUser {
-  return entry.type === 'user' && entry.message && Array.isArray(entry.message.content);
-}
-
-function looksLikeClaudeResult(entry: any): entry is ClaudeBase & {
-  type: 'result';
-  subtype: 'success' | 'error';
-  num_turns?: number;
-  total_cost_usd?: number;
-  duration_ms?: number;
-  errors?: string[];
-} {
-  return entry.type === 'result' && typeof entry.subtype === 'string';
-}
-
-function looksLikeCodexAgentMessage(entry: any): entry is { type: 'agent_message'; text: string } {
-  return entry.type === 'agent_message' && typeof entry.text === 'string';
-}
-
-function looksLikeCodexReasoning(entry: any): entry is { type: 'reasoning'; text: string } {
-  return entry.type === 'reasoning' && typeof entry.text === 'string';
-}
-
-function looksLikeCodexCommand(
-  entry: any
-): entry is { type: 'command_execution'; command: string; exit_code?: number; aggregated_output?: string } {
-  return entry.type === 'command_execution' && typeof entry.command === 'string';
-}
-
-function looksLikeCodexFileChange(
-  entry: any
-): entry is { type: 'file_change'; changes: Array<{ kind: string; path: string }> } {
-  return entry.type === 'file_change' && Array.isArray(entry.changes);
-}
-
-function looksLikeCodexError(entry: any): entry is { type: 'error'; message: string } {
-  return entry.type === 'error' && typeof entry.message === 'string';
-}
-
-function entryTitle(entry: Record<string, unknown>) {
-  if (typeof entry.type === 'string') {
-    return entry.type;
+function ensureSystemMessage(messages: TranscriptMessage[], summary?: EvalSummaryLike) {
+  if (messages.some((message) => message.type === 'system')) {
+    return;
   }
-  return 'Entry';
+
+  if (!summary?.variant) {
+    return;
+  }
+
+  messages.unshift({
+    type: 'system',
+    subtype: 'init',
+    agent: formatAgentName(summary.variant.agent),
+    model: summary.variant.model ?? 'unknown',
+    tools: [],
+    mcp_servers: [],
+    cwd: '',
+    ms: 0,
+  });
+}
+
+function ensureResultMessage(messages: TranscriptMessage[], summary?: EvalSummaryLike) {
+  if (messages.some((message) => message.type === 'result')) {
+    return;
+  }
+
+  if (!summary?.execution) {
+    return;
+  }
+
+  messages.push({
+    type: 'result',
+    subtype: 'success',
+    duration_ms: Math.round(getNumber(summary.execution.duration) * 1000),
+    duration_api_ms: Math.round(getNumber(summary.execution.durationApi) * 1000),
+    num_turns: getNumber(summary.execution.turns),
+    total_cost_usd: getNumber(summary.execution.cost),
+    ms: 0,
+  });
+}
+
+function normalizeToolResultContent(content: unknown): string | TranscriptToolResultBlock[] {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content.map((item) => ({
+      type: isRecord(item) && typeof item.type === 'string' ? item.type : 'text',
+      text: isRecord(item) && typeof item.text === 'string' ? item.text : undefined,
+      isError: isRecord(item) && item.isError === true,
+    }));
+  }
+
+  return JSON.stringify(content, null, 2);
+}
+
+function normalizeMcpServers(value: unknown): TranscriptSystemMessage['mcp_servers'] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((server) => {
+    if (!isRecord(server) || typeof server.name !== 'string') {
+      return [];
+    }
+
+    const status = server.status;
+    return [
+      {
+        name: server.name,
+        status:
+          status === 'connected' || status === 'disconnected' || status === 'unknown'
+            ? status
+            : 'unknown',
+      },
+    ];
+  });
+}
+
+function buildCodexCommandOutput(entry: CodexCommandEntry) {
+  const lines = [];
+
+  if (typeof entry.exit_code === 'number') {
+    lines.push(`Exit code: ${entry.exit_code}`);
+  }
+  if (typeof entry.aggregated_output === 'string' && entry.aggregated_output.trim()) {
+    lines.push(entry.aggregated_output.trim());
+  }
+  if (lines.length === 0) {
+    lines.push(entry.command);
+  }
+
+  return lines.join('\n\n');
+}
+
+function createAssistantTextMessage(text: string, ms = 0): TranscriptAssistantMessage {
+  const tokenCount = estimateTokenCount(text);
+
+  return {
+    type: 'assistant',
+    message: {
+      content: [{ type: 'text', text }],
+      usage: {
+        input_tokens: 0,
+        output_tokens: tokenCount,
+      },
+    },
+    ms,
+    tokenCount,
+  };
+}
+
+function estimateAssistantContentTokens(
+  content: Array<TranscriptTextContent | TranscriptToolUseContent>
+) {
+  return content.reduce((sum, item) => {
+    if (item.type === 'text') {
+      return sum + estimateTokenCount(item.text);
+    }
+
+    return sum + estimateTokenCount(`${item.name}\n${JSON.stringify(item.input)}`);
+  }, 0);
+}
+
+function estimateToolResultTokens(content: string | TranscriptToolResultBlock[]) {
+  if (typeof content === 'string') {
+    return estimateTokenCount(content);
+  }
+
+  return content.reduce(
+    (sum, item) => sum + estimateTokenCount([item.type, item.text].filter(Boolean).join('\n')),
+    0
+  );
+}
+
+function estimateTokenCount(text: string) {
+  if (!text.trim()) {
+    return 0;
+  }
+
+  return Math.max(1, Math.ceil(text.length / 4));
+}
+
+function formatAgentName(agent?: string) {
+  if (agent === 'claude') {
+    return 'Claude';
+  }
+  if (agent === 'codex') {
+    return 'Codex';
+  }
+
+  return agent ?? 'Agent';
+}
+
+function isMcpToolName(name: string) {
+  return /^mcp/i.test(name) || name.includes('mcp__') || name.includes('mcp_');
+}
+
+function isEvalSummaryLike(value: unknown): value is EvalSummaryLike {
+  return isRecord(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function getNumber(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function getOptionalNumber(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 async function readOptionalText(path: string) {
@@ -418,235 +619,153 @@ function createSummaryMdx() {
 }
 
 function createTranscriptMdx() {
-  return `import summary from './summary.json';
-import transcriptData from './transcript-view-data.json';
-import { TranscriptView } from './transcript-view';
+  return `import transcriptData from './transcript-data.json';
+import { Transcript } from './transcript';
 
 # Transcript
 
-<TranscriptView data={transcriptData} summary={summary} />
+<Transcript {...transcriptData} />
 `;
 }
 
-function createTranscriptViewComponent() {
-  return `import { useEffect, useRef, useState } from 'react';
+interface ClaudeSystemEntry {
+  type: 'system';
+  subtype: 'init';
+  agent?: string;
+  model?: string;
+  tools?: unknown[];
+  mcp_servers?: unknown;
+  cwd?: string;
+  ms?: number;
+  tokenCount?: number;
+  costUSD?: number;
+}
 
-const TYPE_COLORS = {
-  prompt: { bg: '#fce7f3', text: '#9f1239' },
-  system: { bg: '#e0e7ff', text: '#3730a3' },
-  assistant: { bg: '#dbeafe', text: '#1e40af' },
-  tool: { bg: '#fef3c7', text: '#92400e' },
-  user: { bg: '#f3e8ff', text: '#6b21a8' },
-  result: { bg: '#dcfce7', text: '#166534' },
-  reasoning: { bg: '#e0f2fe', text: '#0c4a6e' },
-  command: { bg: '#ede9fe', text: '#5b21b6' },
-  file: { bg: '#ecfccb', text: '#365314' },
-  error: { bg: '#fee2e2', text: '#991b1b' },
-};
-
-const CodeBlock = ({ content, language = '', isError = false }) => {
-  const [isTruncated, setIsTruncated] = useState(content.length > 500);
-  const codeRef = useRef(null);
-
-  useEffect(() => {
-    if (codeRef.current && globalThis.hljs) {
-      globalThis.hljs.highlightElement(codeRef.current);
-    }
-  }, [content, isTruncated]);
-
-  return (
-    <div style={{ position: 'relative', marginBottom: '1rem' }}>
-      <pre
-        style={{
-          margin: 0,
-          padding: '1rem',
-          backgroundColor: isError ? '#fef2f2' : '#1e1e1e',
-          color: isError ? '#991b1b' : '#d4d4d4',
-          borderRadius: '6px',
-          overflow: isTruncated ? 'hidden' : 'auto',
-          fontSize: '0.875rem',
-          fontFamily: 'monospace',
-          border: isError ? '1px solid #fecaca' : 'none',
-          maxHeight: isTruncated ? '300px' : 'none',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-        }}
-      >
-        <code ref={codeRef} className={language ? \`language-\${language}\` : ''}>
-          {content}
-        </code>
-      </pre>
-      {content.length > 500 && (
-        <button
-          onClick={() => setIsTruncated(!isTruncated)}
-          style={{
-            marginTop: '0.5rem',
-            padding: '0.5rem 1rem',
-            backgroundColor: '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.875rem',
-          }}
-        >
-          {isTruncated ? 'Show more' : 'Show less'}
-        </button>
-      )}
-    </div>
-  );
-};
-
-const MetadataCard = ({ title, value, subvalue }) => (
-  <div
-    style={{
-      padding: '1.5rem',
-      backgroundColor: '#f9fafb',
-      border: '1px solid #e5e7eb',
-      borderRadius: '8px',
-    }}
-  >
-    <h3
-      style={{
-        margin: '0 0 0.5rem 0',
-        fontSize: '0.875rem',
-        fontWeight: 600,
-        color: '#6b7280',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-      }}
-    >
-      {title}
-    </h3>
-    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>{value}</div>
-    {subvalue ? (
-      <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>{subvalue}</div>
-    ) : null}
-  </div>
-);
-
-const Turn = ({ turn }) => {
-  const [isExpanded, setIsExpanded] = useState(turn.type === 'prompt' || turn.type === 'result');
-  const colors = TYPE_COLORS[turn.type] || TYPE_COLORS.assistant;
-
-  return (
-    <div
-      style={{
-        marginBottom: '1rem',
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        overflow: 'hidden',
-      }}
-    >
-      <div
-        onClick={() => setIsExpanded(!isExpanded)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          padding: '1rem',
-          backgroundColor: '#f9fafb',
-          cursor: 'pointer',
-        }}
-      >
-        <div style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-          ▶
-        </div>
-        <span
-          style={{
-            padding: '0.25rem 0.75rem',
-            borderRadius: '9999px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            backgroundColor: colors.bg,
-            color: colors.text,
-            textTransform: 'uppercase',
-          }}
-        >
-          {turn.type}
-        </span>
-        <span style={{ fontWeight: 600 }}>{turn.title}</span>
-        <span style={{ flex: 1 }} />
-        {turn.subtitle ? (
-          <span style={{ color: '#6b7280', fontSize: '0.875rem', fontFamily: 'monospace' }}>
-            {turn.subtitle}
-          </span>
-        ) : null}
-        {turn.tokenCount ? (
-          <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>{turn.tokenCount} tokens</span>
-        ) : null}
-      </div>
-      {isExpanded && (
-        <div style={{ padding: '1rem', backgroundColor: 'white' }}>
-          {turn.content ? (
-            <CodeBlock content={turn.content} language={turn.language} isError={turn.isError} />
-          ) : (
-            <em style={{ color: '#6b7280' }}>No content</em>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export const TranscriptView = ({ data, summary }) => {
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'module';
-    script.textContent = "import hljs from 'https://esm.sh/highlight.js@11.9.0'; window.hljs = hljs;";
-    document.head.appendChild(script);
-
-    const style = document.createElement('link');
-    style.rel = 'stylesheet';
-    style.href = 'https://esm.sh/highlight.js@11.9.0/styles/github-dark-dimmed.css';
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(script);
-      document.head.removeChild(style);
+interface ClaudeAssistantEntry {
+  type: 'assistant';
+  message: {
+    content: Array<
+      | {
+          type: 'text';
+          text: string;
+        }
+      | {
+          type: 'tool_use';
+          id?: string;
+          name: string;
+          input: Record<string, unknown>;
+        }
+    >;
+    usage?: {
+      input_tokens?: number;
+      output_tokens?: number;
     };
-  }, []);
+  };
+  ms?: number;
+  tokenCount?: number;
+  costUSD?: number;
+}
 
-  const cards = [
-    { title: 'Agent', value: summary.variant.agent },
-    { title: 'Model', value: summary.variant.model },
-    { title: 'Effort', value: summary.variant.effort },
-    {
-      title: 'Execution',
-      value: \`\${summary.execution.turns} turns\`,
-      subvalue: \`\${Math.round(summary.execution.duration)}s\${summary.execution.cost != null ? \` · $\${summary.execution.cost.toFixed(2)}\` : ''}\`,
-    },
-  ];
+interface ClaudeUserEntry {
+  type: 'user';
+  message: {
+    content: Array<{
+      type: 'tool_result';
+      tool_use_id?: string;
+      content:
+        | string
+        | Array<{
+            type: string;
+            text?: string;
+            isError?: boolean;
+          }>;
+    }>;
+  };
+  ms?: number;
+  tokenCount?: number;
+  costUSD?: number;
+}
 
-  return (
-    <div
-      style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '2rem',
-        fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
-      }}
-    >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem',
-          marginBottom: '2rem',
-        }}
-      >
-        {cards.map((card) => (
-          <MetadataCard key={card.title} {...card} />
-        ))}
-      </div>
+interface ClaudeResultEntry {
+  type: 'result';
+  subtype: 'success' | 'error';
+  duration_ms?: number;
+  duration_api_ms?: number;
+  num_turns?: number;
+  total_cost_usd?: number;
+  ms?: number;
+  tokenCount?: number;
+  costUSD?: number;
+}
 
-      <div style={{ display: 'grid', gap: '1rem' }}>
-        {data.turns.map((turn) => (
-          <Turn key={turn.id} turn={turn} />
-        ))}
-      </div>
-    </div>
-  );
-};
-`;
+interface CodexCommandEntry {
+  type: 'command_execution';
+  command: string;
+  exit_code?: number;
+  aggregated_output?: string;
+}
+
+function looksLikeClaudeSystem(entry: unknown): entry is ClaudeSystemEntry {
+  return isRecord(entry) && entry.type === 'system' && entry.subtype === 'init';
+}
+
+function looksLikeClaudeAssistant(entry: unknown): entry is ClaudeAssistantEntry {
+  return isRecord(entry) && entry.type === 'assistant' && isRecord(entry.message) && Array.isArray(entry.message.content);
+}
+
+function looksLikeClaudeUser(entry: unknown, index: number): entry is ClaudeUserEntry {
+  void index;
+  return isRecord(entry) && entry.type === 'user' && isRecord(entry.message) && Array.isArray(entry.message.content);
+}
+
+function looksLikeClaudeResult(entry: unknown): entry is ClaudeResultEntry {
+  return isRecord(entry) && entry.type === 'result' && (entry.subtype === 'success' || entry.subtype === 'error');
+}
+
+function looksLikeClaudeStatus(entry: unknown): entry is { type: 'system'; subtype: 'status'; status?: string; ms?: number } {
+  return isRecord(entry) && entry.type === 'system' && entry.subtype === 'status';
+}
+
+function looksLikeClaudeApiRetry(
+  entry: unknown
+): entry is { type: 'system'; subtype: 'api_retry'; attempt?: number; max_retries?: number; ms?: number } {
+  return isRecord(entry) && entry.type === 'system' && entry.subtype === 'api_retry';
+}
+
+function looksLikeClaudeToolUseSummary(
+  entry: unknown
+): entry is { type: 'tool_use_summary'; summary: string; ms?: number } {
+  return isRecord(entry) && entry.type === 'tool_use_summary' && typeof entry.summary === 'string';
+}
+
+function looksLikeClaudeRateLimitEvent(
+  entry: unknown
+): entry is {
+  type: 'rate_limit_event';
+  rate_limit_info?: { status?: string; resetsAt?: string };
+  ms?: number;
+} {
+  return isRecord(entry) && entry.type === 'rate_limit_event';
+}
+
+function looksLikeCodexAgentMessage(entry: unknown): entry is { type: 'agent_message'; text: string } {
+  return isRecord(entry) && entry.type === 'agent_message' && typeof entry.text === 'string';
+}
+
+function looksLikeCodexReasoning(entry: unknown): entry is { type: 'reasoning'; text: string } {
+  return isRecord(entry) && entry.type === 'reasoning' && typeof entry.text === 'string';
+}
+
+function looksLikeCodexCommand(entry: unknown): entry is CodexCommandEntry {
+  return isRecord(entry) && entry.type === 'command_execution' && typeof entry.command === 'string';
+}
+
+function looksLikeCodexFileChange(
+  entry: unknown
+): entry is { type: 'file_change'; changes: Array<{ kind: string; path: string }> } {
+  return isRecord(entry) && entry.type === 'file_change' && Array.isArray(entry.changes);
+}
+
+function looksLikeCodexError(entry: unknown): entry is { type: 'error'; message: string } {
+  return isRecord(entry) && entry.type === 'error' && typeof entry.message === 'string';
 }

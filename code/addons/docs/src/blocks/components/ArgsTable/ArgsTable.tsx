@@ -351,24 +351,8 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
   const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
-    if (!isResetting) {
-      return;
-    }
-    const fallbackTimer = setTimeout(() => {
-      isResettingRef.current = false;
-      setIsResetting(false);
-    }, 1000);
-    return () => clearTimeout(fallbackTimer);
-  }, [isResetting]);
-
-  useEffect(() => {
-    if (isResettingRef.current) {
-      const timer = setTimeout(() => {
-        isResettingRef.current = false;
-        setIsResetting(false);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
+    isResettingRef.current = false;
+    setIsResetting(false);
   }, [args]);
 
   const handleResetClick = useCallback(() => {

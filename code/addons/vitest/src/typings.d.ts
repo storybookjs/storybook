@@ -3,7 +3,6 @@ declare var STORYBOOK_BUILDER: import('storybook/internal/types').SupportedBuild
 
 interface ImportMetaEnv {
   __STORYBOOK_SCREENSHOTS__?: string;
-  __STORYBOOK_SCREENSHOTS_RETINA__?: string;
   __STORYBOOK_URL__?: string;
 }
 

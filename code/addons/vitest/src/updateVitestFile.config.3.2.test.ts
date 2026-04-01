@@ -64,15 +64,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
           plugins: [react()],
@@ -94,7 +88,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -150,15 +144,9 @@ describe('updateConfigFile', () => {
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default {
           plugins: [react()],
@@ -180,7 +168,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -266,15 +254,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
           plugins: [react()],
@@ -300,7 +282,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -354,15 +336,9 @@ describe('updateConfigFile', () => {
         
       + import path from 'node:path';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const config = defineConfig({
           resolve: {
@@ -389,7 +365,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -445,15 +421,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
           plugins: [react()],
@@ -475,7 +445,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -529,15 +499,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
           plugins: [react()],
@@ -563,7 +527,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -614,15 +578,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
         
@@ -643,7 +601,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -700,15 +658,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           plugins: [react()]
@@ -735,7 +687,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -788,15 +740,9 @@ describe('updateConfigFile', () => {
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, {
           plugins: [react()],
@@ -822,7 +768,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -874,15 +820,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
         
@@ -903,7 +843,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -959,15 +899,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -992,7 +926,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1054,15 +988,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1086,7 +1014,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1147,15 +1075,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1190,7 +1112,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1251,15 +1173,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1294,7 +1210,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1341,15 +1257,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig(mergeConfig(viteConfig, {
           test: {
@@ -1378,7 +1288,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1429,15 +1339,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig(mergeConfig(viteConfig, {
           test: {
@@ -1466,7 +1370,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1516,15 +1420,9 @@ describe('updateConfigFile', () => {
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, {
           test: {
@@ -1553,7 +1451,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1601,15 +1499,9 @@ describe('updateConfigFile', () => {
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const test = {
           name: 'node',
@@ -1641,7 +1533,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1693,15 +1585,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const config = mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1730,7 +1616,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1777,15 +1663,9 @@ describe('updateConfigFile', () => {
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineProject({
           test: {
@@ -1814,7 +1694,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1864,15 +1744,9 @@ describe('updateConfigFile', () => {
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const vitestConfig = {
           test: {
@@ -1901,7 +1775,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1960,15 +1834,9 @@ describe('updateConfigFile', () => {
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + import { playwright } from '@vitest/browser-playwright';
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
-      +   contextOptions: {
-      +     deviceScaleFactor: 2
-      +   }
-      + } : {};
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -2014,7 +1882,7 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright(playwrightProviderOptions),
+      +           provider: 'playwright',
       +           instances: [{
       +             browser: 'chromium'
       +           }]

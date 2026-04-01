@@ -363,8 +363,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
             __STORYBOOK_SCREENSHOTS__: finalOptions.screenshots.enabled ? 'true' : 'false',
-            __STORYBOOK_SCREENSHOTS_RETINA__:
-              process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? 'true' : 'false',
           },
 
           include: [...includeStories, ...getComponentTestPaths()],

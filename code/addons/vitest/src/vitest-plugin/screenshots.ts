@@ -6,9 +6,6 @@ const STORY_FILE_PATTERN = /\.(stories|story)\.[tj]sx?$/;
 export const isAutomaticScreenshotCaptureEnabled = () =>
   import.meta.env[SCREENSHOT_ENV_FLAG] === 'true';
 
-export const isRetinaScreenshotCaptureEnabled = () =>
-  import.meta.env.__STORYBOOK_SCREENSHOTS_RETINA__ === 'true';
-
 export const buildStoryScreenshotPath = (storyFilePath: string, exportName: string) => {
   const { dir, name } = parse(storyFilePath);
   return join(dir, `${name}.${sanitizePathToken(exportName)}.chromium.png`);
@@ -35,7 +32,7 @@ export async function captureStoryScreenshot(opts: {
 
   return page.screenshot({
     path: buildStoryScreenshotPath(opts.storyFilePath!, opts.exportName),
-    ...(isRetinaScreenshotCaptureEnabled() ? { scale: 'device' as const } : {}),
+    scale: 'device',
   });
 }
 

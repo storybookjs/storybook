@@ -33,9 +33,12 @@ export type CreateStoryRouteOptions<TRoute extends AnyRoute | undefined = undefi
     path: keyof FileRoutesByPath | (string & {});
   };
 
-export type StoryRouteOptions = CreateStoryRouteOptions | Route | AnyRoute;
+export type StoryRouteOptions<TRoute extends AnyRoute | undefined = undefined> =
+  | CreateStoryRouteOptions<TRoute>
+  | Route
+  | AnyRoute;
 
-export interface RouterParameters {
-  route?: StoryRouteOptions;
+export interface RouterParameters<TRoute extends AnyRoute | undefined = undefined> {
+  route?: StoryRouteOptions<TRoute>;
   path?: string;
 }

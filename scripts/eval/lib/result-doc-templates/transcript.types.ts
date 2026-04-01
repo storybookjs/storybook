@@ -1,5 +1,5 @@
 /*
- * Copied from /Users/kasperpeulen/code/github/mcp/eval/templates/result-docs/transcript.types.ts
+ * Copied from https://github.com/storybookjs/mcp/blob/7402e98b18ed62a73a2e212bf48af83bbeb0828e/eval/templates/result-docs/transcript.types.ts
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

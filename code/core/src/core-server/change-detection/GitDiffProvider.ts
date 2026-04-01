@@ -1,6 +1,6 @@
 import { watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
-import { join, resolve as resolvePath } from 'node:path';
+import { dirname, join, resolve as resolvePath } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execa, type ExecaError } from 'execa';
@@ -35,6 +35,8 @@ export class GitDiffProvider {
   private readonly watchers: Partial<Record<WatcherKey, FSWatcher>> = {};
   private watcherSetupInFlight: Promise<void> | undefined;
   private watcherSetupGeneration = 0;
+  private watcherRebuildTimer: ReturnType<typeof setTimeout> | undefined;
+  private watcherRebuildAttempts = 0;
 
   constructor(
     private readonly cwd = process.cwd(),
@@ -96,20 +98,22 @@ export class GitDiffProvider {
       this.gitStateCallbacks.delete(callback);
 
       if (this.gitStateCallbacks.size === 0) {
-        this.watcherSetupGeneration += 1;
-        this.clearAllWatchers();
+        this.cancelWatcherRebuild();
+        this.invalidateAndClearWatchers();
       }
     };
   }
 
   private async ensureWatchers(): Promise<void> {
-    while (this.gitStateCallbacks.size > 0 && Object.keys(this.watchers).length === 0) {
-      if (!this.watcherSetupInFlight) {
-        this.watcherSetupInFlight = this.setupWatchers(this.watcherSetupGeneration);
-      }
-
-      await this.watcherSetupInFlight;
+    if (this.gitStateCallbacks.size === 0 || Object.keys(this.watchers).length > 0) {
+      return;
     }
+
+    if (!this.watcherSetupInFlight) {
+      this.watcherSetupInFlight = this.setupWatchers(this.watcherSetupGeneration);
+    }
+
+    await this.watcherSetupInFlight;
   }
 
   private async setupWatchers(generation: number): Promise<void> {
@@ -120,14 +124,15 @@ export class GitDiffProvider {
         return;
       }
 
-      this.watchFile(generation, 'head', join(gitDir, 'HEAD'), () => {
+      this.watchFile(generation, 'head', gitDir, () => {
         this.emitGitStateChange();
         void this.configureBranchWatcher(gitDir, generation);
       });
-      this.watchFile(generation, 'packedRefs', join(gitDir, 'packed-refs'), () => {
+      this.watchFile(generation, 'packedRefs', gitDir, () => {
         this.emitGitStateChange();
       });
       await this.configureBranchWatcher(gitDir, generation);
+      this.watcherRebuildAttempts = 0;
     } catch {
       // Watching git state is opportunistic; scanning still runs from module graph updates.
     } finally {
@@ -168,6 +173,9 @@ export class GitDiffProvider {
         if (this.watchers[key] === watcher) {
           delete this.watchers[key];
         }
+        if (this.isWatcherSetupCurrent(generation)) {
+          this.scheduleWatcherRebuild();
+        }
       });
 
       this.clearWatcher(key);
@@ -196,8 +204,10 @@ export class GitDiffProvider {
     this.clearWatcher('branch');
 
     if (branchRef?.startsWith('refs/heads/')) {
-      const branchWatcher = this.watchFile(generation, 'branch', join(gitDir, branchRef), () => {
+      const branchRefPath = join(gitDir, branchRef);
+      const branchWatcher = this.watchFile(generation, 'branch', dirname(branchRefPath), () => {
         this.emitGitStateChange();
+        void this.configureBranchWatcher(gitDir, generation);
       });
 
       if (!branchWatcher) {
@@ -222,6 +232,38 @@ export class GitDiffProvider {
     (Object.keys(this.watchers) as WatcherKey[]).forEach((key) => {
       this.clearWatcher(key);
     });
+  }
+
+  private invalidateAndClearWatchers(): void {
+    this.watcherSetupGeneration += 1;
+    this.clearAllWatchers();
+  }
+
+  private scheduleWatcherRebuild(): void {
+    if (this.watcherRebuildTimer || this.gitStateCallbacks.size === 0) {
+      return;
+    }
+
+    const delayMs = Math.min(1000, 50 * 2 ** this.watcherRebuildAttempts);
+    this.watcherRebuildAttempts += 1;
+
+    this.watcherRebuildTimer = setTimeout(() => {
+      this.watcherRebuildTimer = undefined;
+      if (this.gitStateCallbacks.size === 0) {
+        return;
+      }
+
+      this.invalidateAndClearWatchers();
+      void this.ensureWatchers();
+    }, delayMs);
+  }
+
+  private cancelWatcherRebuild(): void {
+    if (this.watcherRebuildTimer) {
+      clearTimeout(this.watcherRebuildTimer);
+      this.watcherRebuildTimer = undefined;
+    }
+    this.watcherRebuildAttempts = 0;
   }
 
   private async getGitDir(): Promise<string> {

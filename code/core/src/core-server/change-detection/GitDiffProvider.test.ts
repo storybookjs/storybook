@@ -17,6 +17,7 @@ type MockWatcherRecord = {
   path: string;
   watcher: FSWatcher;
   emitChange: () => void;
+  emitError: () => void;
 };
 type GitDiffProviderTestContext = {
   headReads: string[];
@@ -65,13 +66,19 @@ function setupGitWatchProvider(
   const gitDirPath = options.gitDirFileContents ? '/actual/git-dir' : '/repo/.git';
   const missingWatchPaths = new Set(options.missingWatchPaths ?? []);
   const mockWatch = ((path, _options, listener) => {
+    let onError: (() => void) | undefined;
     if (missingWatchPaths.has(String(path))) {
       throw Object.assign(new Error(`Missing watch path: ${String(path)}`), { code: 'ENOENT' });
     }
 
     const watcher = {
       close: vi.fn(),
-      on: vi.fn().mockReturnThis(),
+      on: vi.fn().mockImplementation((event: string, handler: () => void) => {
+        if (event === 'error') {
+          onError = handler;
+        }
+        return watcher;
+      }),
     } as unknown as FSWatcher;
 
     watchRecords.push({
@@ -79,6 +86,9 @@ function setupGitWatchProvider(
       watcher,
       emitChange: () => {
         listener?.('change', null);
+      },
+      emitError: () => {
+        onError?.();
       },
     });
 
@@ -198,18 +208,14 @@ describe('GitDiffProvider', () => {
     await expect(provider.getChangedFiles()).rejects.toBeInstanceOf(ChangeDetectionFailureError);
   });
 
-  it('watches HEAD, packed-refs, and the current branch ref for git state changes', async () => {
+  it('watches git and branch directories for git state changes', async () => {
     const { createProvider, getWatchedPaths, watchRecords } = setupGitWatchProvider();
     const onGitStateChange = vi.fn();
     const provider = createProvider();
 
     provider.onGitStateChange(onGitStateChange);
     await vi.waitFor(() => {
-      expect(getWatchedPaths()).toEqual([
-        '/repo/.git/HEAD',
-        '/repo/.git/packed-refs',
-        '/repo/.git/refs/heads/main',
-      ]);
+      expect(getWatchedPaths()).toEqual(['/repo/.git', '/repo/.git', '/repo/.git/refs/heads']);
     });
 
     watchRecords[2].emitChange();
@@ -220,17 +226,22 @@ describe('GitDiffProvider', () => {
 
   it('reconfigures the branch watcher when HEAD changes', async () => {
     const { createProvider, getWatchedPaths, headReads, watchRecords } = setupGitWatchProvider();
-    headReads.splice(0, headReads.length, 'ref: refs/heads/main\n', 'ref: refs/heads/release\n');
+    headReads.splice(
+      0,
+      headReads.length,
+      'ref: refs/heads/main\n',
+      'ref: refs/heads/releases/main\n'
+    );
     const onGitStateChange = vi.fn();
     const provider = createProvider();
 
     provider.onGitStateChange(onGitStateChange);
     await vi.waitFor(() => {
-      expect(getWatchedPaths()).toContain('/repo/.git/refs/heads/main');
+      expect(getWatchedPaths()).toContain('/repo/.git/refs/heads');
     });
 
     const mainBranchWatcher = watchRecords.find(
-      ({ path }) => path === '/repo/.git/refs/heads/main'
+      ({ path }) => path === '/repo/.git/refs/heads'
     )?.watcher;
     expect(mainBranchWatcher).toBeDefined();
     if (!mainBranchWatcher) {
@@ -239,7 +250,7 @@ describe('GitDiffProvider', () => {
 
     watchRecords[0].emitChange();
     await vi.waitFor(() => {
-      expect(getWatchedPaths()).toContain('/repo/.git/refs/heads/release');
+      expect(getWatchedPaths()).toContain('/repo/.git/refs/heads/releases');
     });
 
     expect(onGitStateChange).toHaveBeenCalledTimes(1);
@@ -259,28 +270,29 @@ describe('GitDiffProvider', () => {
     provider.onGitStateChange(vi.fn());
     await vi.waitFor(() => {
       expect(getWatchedPaths()).toEqual([
-        '/actual/git-dir/HEAD',
-        '/actual/git-dir/packed-refs',
-        '/actual/git-dir/refs/heads/main',
+        '/actual/git-dir',
+        '/actual/git-dir',
+        '/actual/git-dir/refs/heads',
       ]);
     });
   });
 
-  it('falls back to watching refs/heads when the branch ref file is missing', async () => {
+  it('falls back to watching refs/heads when the branch directory is missing', async () => {
     const { createProvider, getWatchedPaths, headReads, watchRecords } = setupGitWatchProvider({
-      missingWatchPaths: ['/repo/.git/refs/heads/release'],
+      missingWatchPaths: ['/repo/.git/refs/heads/feature'],
     });
-    headReads.splice(0, headReads.length, 'ref: refs/heads/release\n', 'ref: refs/heads/release\n');
+    headReads.splice(
+      0,
+      headReads.length,
+      'ref: refs/heads/feature/release\n',
+      'ref: refs/heads/feature/release\n'
+    );
     const onGitStateChange = vi.fn();
     const provider = createProvider();
 
     provider.onGitStateChange(onGitStateChange);
     await vi.waitFor(() => {
-      expect(getWatchedPaths()).toEqual([
-        '/repo/.git/HEAD',
-        '/repo/.git/packed-refs',
-        '/repo/.git/refs/heads',
-      ]);
+      expect(getWatchedPaths()).toEqual(['/repo/.git', '/repo/.git', '/repo/.git/refs/heads']);
     });
 
     watchRecords[2].emitChange();
@@ -353,7 +365,7 @@ describe('GitDiffProvider', () => {
 
     const unsubscribe = provider.onGitStateChange(vi.fn());
     await vi.waitFor(() => {
-      expect(getWatchedPaths()).toEqual(['/repo/.git/HEAD', '/repo/.git/packed-refs']);
+      expect(getWatchedPaths()).toEqual(['/repo/.git', '/repo/.git']);
     });
 
     unsubscribe();
@@ -361,6 +373,50 @@ describe('GitDiffProvider', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(getWatchedPaths()).toEqual(['/repo/.git/HEAD', '/repo/.git/packed-refs']);
+    expect(getWatchedPaths()).toEqual(['/repo/.git', '/repo/.git']);
+  });
+
+  it('does not retry watcher setup indefinitely when no watchers can be installed', async () => {
+    repoRootResult = rejected(new Error('fatal: not a git repository'));
+    const provider = new GitDiffProvider('/repo');
+
+    provider.onGitStateChange(vi.fn());
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(vi.mocked(execa)).toHaveBeenCalledTimes(1);
+  });
+
+  it('rebuilds watchers after a watcher error while callbacks are still registered', async () => {
+    vi.useFakeTimers();
+    try {
+      const { createProvider, getWatchedPaths, watchRecords } = setupGitWatchProvider();
+      const provider = createProvider();
+
+      provider.onGitStateChange(vi.fn());
+      await vi.waitFor(() => {
+        expect(watchRecords).toHaveLength(3);
+      });
+
+      const initialWatchers = watchRecords.slice(0, 3).map(({ watcher }) => watcher);
+      watchRecords[1].emitError();
+
+      await vi.advanceTimersByTimeAsync(60);
+      await vi.waitFor(() => {
+        expect(watchRecords.length).toBeGreaterThan(3);
+      });
+
+      initialWatchers.forEach((watcher) => {
+        expect(watcher.close).toHaveBeenCalledTimes(1);
+      });
+      expect(getWatchedPaths().slice(-3)).toEqual([
+        '/repo/.git',
+        '/repo/.git',
+        '/repo/.git/refs/heads',
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

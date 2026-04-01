@@ -122,23 +122,25 @@ describe('publishTrialBranch', () => {
     const calls: Array<{ cmd: string; args: string[]; cwd?: string }> = [];
 
     vi.doMock('tinyexec', () => ({
-      x: vi.fn(async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
-        calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
+      x: vi.fn(
+        async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
+          calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
 
-        if (cmd === 'gh' && args[0] === 'label' && args[1] === 'list') {
-          return createExecResult('');
+          if (cmd === 'gh' && args[0] === 'label' && args[1] === 'list') {
+            return createExecResult('');
+          }
+
+          if (cmd === 'git' && args[0] === 'config' && args.length === 2) {
+            return createExecResult('', 1);
+          }
+
+          if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'create') {
+            return createExecResult('https://github.com/storybook-tmp/mealdrop/pull/123\n');
+          }
+
+          return createExecResult();
         }
-
-        if (cmd === 'git' && args[0] === 'config' && args.length === 2) {
-          return createExecResult('', 1);
-        }
-
-        if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'create') {
-          return createExecResult('https://github.com/storybook-tmp/mealdrop/pull/123\n');
-        }
-
-        return createExecResult();
-      }),
+      ),
     }));
 
     const { publishTrialBranch } = await import('./publish-trial.ts');
@@ -289,32 +291,34 @@ describe('publishTrialBranch', () => {
     const calls: Array<{ cmd: string; args: string[]; cwd?: string }> = [];
 
     vi.doMock('tinyexec', () => ({
-      x: vi.fn(async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
-        calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
+      x: vi.fn(
+        async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
+          calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
 
-        if (cmd === 'gh' && args[0] === 'label' && args[1] === 'list') {
-          return createExecResult(
-            [
-              'eval\tAutomated eval label for eval\t#D93F0B',
-              'project:mealdrop\tAutomated eval label for project:mealdrop\t#1D76DB',
-              'agent:claude\tAutomated eval label for agent:claude\t#C5DEF5',
-              'model:sonnet-4.6\tAutomated eval label for model:sonnet-4.6\t#FBCA04',
-              'effort:high\tAutomated eval label for effort:high\t#0E8A16',
-              'prompt:setup\tAutomated eval label for prompt:setup\t#BFDADC',
-            ].join('\n')
-          );
+          if (cmd === 'gh' && args[0] === 'label' && args[1] === 'list') {
+            return createExecResult(
+              [
+                'eval\tAutomated eval label for eval\t#D93F0B',
+                'project:mealdrop\tAutomated eval label for project:mealdrop\t#1D76DB',
+                'agent:claude\tAutomated eval label for agent:claude\t#C5DEF5',
+                'model:sonnet-4.6\tAutomated eval label for model:sonnet-4.6\t#FBCA04',
+                'effort:high\tAutomated eval label for effort:high\t#0E8A16',
+                'prompt:setup\tAutomated eval label for prompt:setup\t#BFDADC',
+              ].join('\n')
+            );
+          }
+
+          if (cmd === 'git' && args[0] === 'config' && args.length === 2) {
+            return createExecResult('', 1);
+          }
+
+          if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'create') {
+            return createExecResult('https://github.com/storybook-tmp/mealdrop/pull/789\n');
+          }
+
+          return createExecResult();
         }
-
-        if (cmd === 'git' && args[0] === 'config' && args.length === 2) {
-          return createExecResult('', 1);
-        }
-
-        if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'create') {
-          return createExecResult('https://github.com/storybook-tmp/mealdrop/pull/789\n');
-        }
-
-        return createExecResult();
-      }),
+      ),
     }));
 
     const { publishTrialBranch } = await import('./publish-trial.ts');

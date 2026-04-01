@@ -171,7 +171,9 @@ async function validateEvalSupportSetup(opts: {
   } else {
     const content = await readFile(configPath, 'utf-8');
     if (!content.includes('./eval-support/*.mdx')) {
-      missing.push(`${relative(opts.projectPath, configPath) || '.storybook/main'} missing ./eval-support/*.mdx`);
+      missing.push(
+        `${relative(opts.projectPath, configPath) || '.storybook/main'} missing ./eval-support/*.mdx`
+      );
     }
   }
 

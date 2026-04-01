@@ -45,15 +45,17 @@ describe('prepareTrial', () => {
     const calls: Array<{ cmd: string; args: string[]; cwd?: string }> = [];
 
     vi.doMock('tinyexec', () => ({
-      x: vi.fn(async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
-        calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
+      x: vi.fn(
+        async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
+          calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
 
-        if (cmd === 'git' && args[0] === 'rev-parse') {
-          return createExecResult('deadbeef\n');
+          if (cmd === 'git' && args[0] === 'rev-parse') {
+            return createExecResult('deadbeef\n');
+          }
+
+          return createExecResult();
         }
-
-        return createExecResult();
-      }),
+      ),
     }));
 
     vi.doMock('./package-manager.ts', () => ({ installDeps }));
@@ -153,15 +155,17 @@ describe('prepareTrial', () => {
     mkdirSync(join(sourceDir, '.git'), { recursive: true });
 
     vi.doMock('tinyexec', () => ({
-      x: vi.fn(async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
-        calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
+      x: vi.fn(
+        async (cmd: string, args: string[], options?: { nodeOptions?: { cwd?: string } }) => {
+          calls.push({ cmd, args, cwd: options?.nodeOptions?.cwd });
 
-        if (cmd === 'git' && args[0] === 'rev-parse') {
-          return createExecResult('cafebabe\n');
+          if (cmd === 'git' && args[0] === 'rev-parse') {
+            return createExecResult('cafebabe\n');
+          }
+
+          return createExecResult();
         }
-
-        return createExecResult();
-      }),
+      ),
     }));
 
     vi.doMock('./package-manager.ts', () => ({ installDeps }));

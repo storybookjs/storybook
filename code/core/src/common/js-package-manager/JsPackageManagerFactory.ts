@@ -1,7 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { basename, parse, relative } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { basename, join, parse, relative } from 'node:path';
 
 import * as find from 'empathic/find';
+import * as walk from 'empathic/walk';
 
 import { executeCommandSync } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
@@ -251,26 +252,36 @@ function hasPNPM(cwd?: string) {
 }
 
 /**
- * Check the nearest package.json for a `packageManager` field specifying yarn.
- * Returns 1 or 2 if found, undefined if not applicable.
+ * Walk upward from `cwd` to `root`, checking each package.json for a
+ * `packageManager` field specifying yarn.  Returns 1 or 2 when found,
+ * or undefined only after every ancestor has been checked.
+ *
+ * This avoids a common monorepo pitfall where the closest package.json
+ * (a workspace package) lacks `packageManager` while the repo-root
+ * package.json declares it.
  */
 function getYarnVersionFromPackageJson(cwd?: string, root?: string): 1 | 2 | undefined {
-  const packageJsonPath = find.up('package.json', { cwd, last: root });
-  if (!packageJsonPath) {
-    return undefined;
-  }
+  const effectiveRoot = root ?? getProjectRoot();
+  const directories = walk.up(cwd ?? process.cwd(), { last: effectiveRoot });
 
-  try {
-    const content = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    const packageManager: unknown = content.packageManager;
-    if (typeof packageManager === 'string') {
-      const match = packageManager.match(/^yarn@(\d+)\./);
-      if (match) {
-        return match[1] === '1' ? 1 : 2;
-      }
+  for (const dir of directories) {
+    const packageJsonPath = join(dir, 'package.json');
+    if (!existsSync(packageJsonPath)) {
+      continue;
     }
-  } catch {
-    // Ignore parse errors
+
+    try {
+      const content = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      const packageManager: unknown = content.packageManager;
+      if (typeof packageManager === 'string') {
+        const match = packageManager.match(/^yarn@(\d+)\./);
+        if (match) {
+          return match[1] === '1' ? 1 : 2;
+        }
+      }
+    } catch {
+      // Ignore parse errors and continue walking
+    }
   }
 
   return undefined;

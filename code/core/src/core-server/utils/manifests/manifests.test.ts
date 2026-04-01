@@ -112,6 +112,36 @@ describe('manifests', () => {
       expect(files['/output/manifests/components.html']).toContain('<!doctype html>');
     });
 
+    it('should render subcomponents in the manifest debugger', async () => {
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {
+            button: {
+              id: 'button',
+              name: 'Button',
+              path: './Button.stories.tsx',
+              stories: [],
+              jsDocTags: {},
+              subcomponents: {
+                ButtonIcon: {
+                  name: 'ButtonIcon',
+                  path: './ButtonIcon.tsx',
+                  jsDocTags: {},
+                },
+              },
+            },
+          },
+        } as ComponentsManifest,
+      };
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      expect(files['/output/manifests/components.html']).toContain('ButtonIcon');
+      expect(files['/output/manifests/components.html']).toContain('subcomponent');
+    });
+
     it('should write HTML file when docs manifest exists', async () => {
       mockManifests = {
         docs: {

@@ -12,6 +12,7 @@ import { vi } from 'vitest';
 import { type JsPackageManager, JsPackageManagerFactory } from 'storybook/internal/common';
 
 import { vol } from 'memfs';
+import path from 'pathe';
 import { loadConfig } from 'tsconfig-paths';
 
 import { fsMocks } from './fixtures';
@@ -33,7 +34,7 @@ export function setupMemfsMocks() {
         primaryPackageJson: { packageJson: { name: 'some-package' } },
       }) as unknown as JsPackageManager
   );
-  vi.mocked(cachedResolveImport).mockImplementation((id) => {
+  vi.mocked(cachedResolveImport).mockImplementation((id, options) => {
     const pkg: Record<string, string> = {
       '@design-system/button': './src/stories/Button.tsx',
       '@ds/button': './src/stories/Button.tsx',
@@ -44,6 +45,18 @@ export function setupMemfsMocks() {
     if (pkg[id]) {
       return pkg[id];
     }
+
+    if (typeof id === 'string' && id.startsWith('.') && options && 'basedir' in options) {
+      const candidates = ['.tsx', '.ts', '.jsx', '.js'].map((extension) =>
+        path.resolve(options.basedir, `${id}${extension}`)
+      );
+      const existingCandidate = candidates.find((candidate) => vol.existsSync(candidate));
+
+      if (existingCandidate) {
+        return existingCandidate;
+      }
+    }
+
     throw new Error(`Unable to resolve ${id}`);
   });
 }

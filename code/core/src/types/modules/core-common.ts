@@ -374,6 +374,16 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
+export interface ComponentSubcomponentManifest {
+  name: string;
+  path: string;
+  description?: string | undefined;
+  import?: string | undefined;
+  summary?: string | undefined;
+  jsDocTags: Record<string, string[]>;
+  error?: { name: string; message: string };
+}
+
 export interface ComponentManifest {
   id: string;
   path: string;
@@ -389,6 +399,7 @@ export interface ComponentManifest {
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
+  subcomponents?: Record<string, ComponentSubcomponentManifest>;
   error?: { name: string; message: string };
 }
 

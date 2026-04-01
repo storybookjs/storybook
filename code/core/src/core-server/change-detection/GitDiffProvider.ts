@@ -128,7 +128,7 @@ export class GitDiffProvider {
 
       this.watchFile(generation, 'head', gitDir, () => {
         this.emitGitStateChange();
-        void this.configureBranchWatcher(gitDir, generation);
+        this.reconfigureBranchWatcher(gitDir, generation);
       });
       this.watchFile(generation, 'packedRefs', gitDir, () => {
         this.emitGitStateChange();
@@ -209,16 +209,24 @@ export class GitDiffProvider {
       const branchRefPath = join(gitDir, branchRef);
       const branchWatcher = this.watchFile(generation, 'branch', dirname(branchRefPath), () => {
         this.emitGitStateChange();
-        void this.configureBranchWatcher(gitDir, generation);
+        this.reconfigureBranchWatcher(gitDir, generation);
       });
 
       if (!branchWatcher) {
         this.watchFile(generation, 'branch', join(gitDir, 'refs', 'heads'), () => {
           this.emitGitStateChange();
-          void this.configureBranchWatcher(gitDir, generation);
+          this.reconfigureBranchWatcher(gitDir, generation);
         });
       }
     }
+  }
+
+  private reconfigureBranchWatcher(gitDir: string, generation: number): void {
+    void this.configureBranchWatcher(gitDir, generation).catch(() => {
+      if (this.isWatcherSetupCurrent(generation)) {
+        this.scheduleWatcherRebuild();
+      }
+    });
   }
 
   private isWatcherSetupCurrent(generation: number): boolean {

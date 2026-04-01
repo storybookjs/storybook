@@ -372,7 +372,7 @@ describe('GitDiffProvider', () => {
 
   it('does not leave watchers behind when unsubscribing during setup', async () => {
     const headReadDeferred = createDeferred<void>();
-    const { createProvider, getWatchedPaths } = setupGitWatchProvider({
+    const { createProvider, getWatchedPaths, watchRecords } = setupGitWatchProvider({
       headReadDelay: headReadDeferred.promise,
     });
     const provider = createProvider();
@@ -384,9 +384,11 @@ describe('GitDiffProvider', () => {
 
     unsubscribe();
     headReadDeferred.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-
+    await vi.waitFor(() => {
+      watchRecords.forEach(({ watcher }) => {
+        expect(watcher.close).toHaveBeenCalledTimes(1);
+      });
+    });
     expect(getWatchedPaths()).toEqual(['/repo/.git', '/repo/.git']);
   });
 
@@ -395,11 +397,9 @@ describe('GitDiffProvider', () => {
     const provider = new GitDiffProvider('/repo');
 
     provider.onGitStateChange(vi.fn());
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(vi.mocked(execa)).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(vi.mocked(execa)).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('rebuilds watchers after a watcher error while callbacks are still registered', async () => {

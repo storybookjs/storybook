@@ -134,14 +134,16 @@ describe('GitDiffProvider', () => {
   let unstagedResult: ExecaMockResult;
   let untrackedResult: ExecaMockResult;
   let stagedAddedResult: ExecaMockResult;
+  let intentToAddResult: ExecaMockResult;
 
   beforeEach(() => {
     vi.clearAllMocks();
     repoRootResult = resolved('/repo');
-    stagedResult = resolved('src/Button.tsx\nsrc/NewButton.stories.tsx\n');
+    stagedResult = resolved('src/Button.tsx\n');
     unstagedResult = resolved('src/Button.tsx\n');
     untrackedResult = resolved('src/Button.css\n');
     stagedAddedResult = resolved('src/NewButton.stories.tsx\n');
+    intentToAddResult = resolved('');
 
     vi.mocked(execa).mockImplementation(((_command: string | URL, ...rest: unknown[]) => {
       const args = Array.isArray(rest[0]) ? rest[0] : [];
@@ -149,15 +151,17 @@ describe('GitDiffProvider', () => {
       const result =
         gitArgs === 'rev-parse --show-toplevel'
           ? repoRootResult
-          : gitArgs === 'diff --name-only --diff-filter=d --cached'
+          : gitArgs === 'diff --name-only --diff-filter=ad --cached'
             ? stagedResult
-            : gitArgs === 'diff --name-only --diff-filter=d'
+            : gitArgs === 'diff --name-only --diff-filter=ad'
               ? unstagedResult
               : gitArgs === 'ls-files --others --exclude-standard'
                 ? untrackedResult
                 : gitArgs === 'diff --name-only --diff-filter=A --cached'
                   ? stagedAddedResult
-                  : undefined;
+                  : gitArgs === 'diff --name-only --diff-filter=A'
+                    ? intentToAddResult
+                    : undefined;
 
       if (!result) {
         throw new Error(`Unexpected git args: ${gitArgs}`);
@@ -175,12 +179,22 @@ describe('GitDiffProvider', () => {
     vi.clearAllMocks();
   });
 
-  it('returns the union of staged, unstaged, and untracked files', async () => {
+  it('returns changed and new files without overlap', async () => {
     const provider = new GitDiffProvider('/repo');
 
     await expect(provider.getChangedFiles()).resolves.toEqual({
-      changed: new Set(['src/Button.tsx', 'src/NewButton.stories.tsx']),
+      changed: new Set(['src/Button.tsx']),
       new: new Set(['src/Button.css', 'src/NewButton.stories.tsx']),
+    });
+  });
+
+  it('includes intent-to-add files in new', async () => {
+    intentToAddResult = resolved('src/IntentToAdd.ts\n');
+    const provider = new GitDiffProvider('/repo');
+
+    await expect(provider.getChangedFiles()).resolves.toEqual({
+      changed: new Set(['src/Button.tsx']),
+      new: new Set(['src/Button.css', 'src/NewButton.stories.tsx', 'src/IntentToAdd.ts']),
     });
   });
 
@@ -202,7 +216,7 @@ describe('GitDiffProvider', () => {
     await expect(provider.getChangedFiles()).rejects.toEqual(
       expect.objectContaining({
         name: 'ChangeDetectionFailureError',
-        message: expect.stringContaining('git diff --name-only --diff-filter=d --cached failed'),
+        message: expect.stringContaining('git diff --name-only --diff-filter=ad --cached failed'),
       })
     );
     await expect(provider.getChangedFiles()).rejects.toBeInstanceOf(ChangeDetectionFailureError);

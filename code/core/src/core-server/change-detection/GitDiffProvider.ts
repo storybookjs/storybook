@@ -71,11 +71,12 @@ export class GitDiffProvider {
       }
     };
 
-    const [staged, unstaged, untracked, stagedAdded] = await Promise.all([
-      runGitCommand(['diff', '--name-only', '--diff-filter=d', '--cached']),
-      runGitCommand(['diff', '--name-only', '--diff-filter=d']),
-      runGitCommand(['ls-files', '--others', '--exclude-standard']),
+    const [staged, unstaged, added, intentToAdd, untracked] = await Promise.all([
+      runGitCommand(['diff', '--name-only', '--diff-filter=ad', '--cached']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=ad']),
       runGitCommand(['diff', '--name-only', '--diff-filter=A', '--cached']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=A']),
+      runGitCommand(['ls-files', '--others', '--exclude-standard']),
     ]);
 
     return {
@@ -84,8 +85,9 @@ export class GitDiffProvider {
         ...parseChangedFiles(unstaged.stdout),
       ]),
       new: new Set([
+        ...parseChangedFiles(added.stdout),
+        ...parseChangedFiles(intentToAdd.stdout),
         ...parseChangedFiles(untracked.stdout),
-        ...parseChangedFiles(stagedAdded.stdout),
       ]),
     };
   }

@@ -254,8 +254,7 @@ function hasPNPM(cwd?: string) {
  * Check the nearest package.json for a `packageManager` field specifying yarn.
  * Returns 1 or 2 if found, undefined if not applicable.
  */
-function getYarnVersionFromPackageJson(cwd?: string): 1 | 2 | undefined {
-  const root = getProjectRoot();
+function getYarnVersionFromPackageJson(cwd?: string, root?: string): 1 | 2 | undefined {
   const packageJsonPath = find.up('package.json', { cwd, last: root });
   if (!packageJsonPath) {
     return undefined;
@@ -281,20 +280,21 @@ function getYarnVersionFromPackageJson(cwd?: string): 1 | 2 | undefined {
  * Check whether a `.yarnrc.yml` file exists in the project tree.
  * This file only exists in Yarn Berry (v2+) projects.
  */
-function hasYarnBerryConfig(cwd?: string): boolean {
-  const root = getProjectRoot();
+function hasYarnBerryConfig(cwd?: string, root?: string): boolean {
   return find.up('.yarnrc.yml', { cwd, last: root }) !== undefined;
 }
 
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
+  const root = getProjectRoot();
+
   // 1. Check packageManager field in closest package.json (highest priority)
-  const versionFromPackageJson = getYarnVersionFromPackageJson(cwd);
+  const versionFromPackageJson = getYarnVersionFromPackageJson(cwd, root);
   if (versionFromPackageJson !== undefined) {
     return versionFromPackageJson;
   }
 
   // 2. Check for .yarnrc.yml (Berry-only config file)
-  const hasBerryConfig = hasYarnBerryConfig(cwd);
+  const hasBerryConfig = hasYarnBerryConfig(cwd, root);
 
   // 3. Run yarn --version
   try {

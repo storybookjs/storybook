@@ -13,11 +13,11 @@ import {
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from 'storybook/internal/core-events';
 
-import { SupportedRenderer } from '../../types';
-import { searchFiles } from '../utils/search-files';
-import { initFileSearchChannel } from './file-search-channel';
+import { SupportedRenderer } from '../../types/index.ts';
+import { searchFiles } from '../utils/search-files.ts';
+import { initFileSearchChannel } from './file-search-channel.ts';
 
-vi.mock(import('../utils/search-files'), async (importOriginal) => ({
+vi.mock(import('../utils/search-files.ts'), async (importOriginal) => ({
   searchFiles: vi.fn((await importOriginal()).searchFiles),
 }));
 

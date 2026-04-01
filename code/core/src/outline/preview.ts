@@ -1,8 +1,8 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import { PARAM_KEY } from './constants';
-import type { OutlineTypes } from './types';
-import { withOutline } from './withOutline';
+import { PARAM_KEY } from './constants.ts';
+import type { OutlineTypes } from './types.ts';
+import { withOutline } from './withOutline.ts';
 
 export const decorators = globalThis.FEATURES?.outline ? [withOutline] : [];
 

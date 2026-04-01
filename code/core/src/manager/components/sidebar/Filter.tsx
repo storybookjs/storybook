@@ -9,7 +9,7 @@ import { FilterIcon } from '@storybook/icons';
 import { type API, type Combo, Consumer, experimental_useStatusStore } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { FilterPanel } from './FilterPanel';
+import { FilterPanel } from './FilterPanel.tsx';
 
 const StyledButton = styled(Button)<{ $isHighlighted: boolean }>(({ $isHighlighted, theme }) => ({
   '&:focus-visible': {

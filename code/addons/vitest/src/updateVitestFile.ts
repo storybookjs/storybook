@@ -16,13 +16,13 @@ import { normalize } from 'pathe';
 async function getTemplatePath(name: string) {
   switch (name) {
     case 'vitest.config.template':
-      return import('../templates/vitest.config.template?raw');
+      return import('../templates/vitest.config.template.ts?raw');
     case 'vitest.config.4.template':
-      return import('../templates/vitest.config.4.template?raw');
+      return import('../templates/vitest.config.4.template.ts?raw');
     case 'vitest.config.3.2.template':
-      return import('../templates/vitest.config.3.2.template?raw');
+      return import('../templates/vitest.config.3.2.template.ts?raw');
     case 'vitest.workspace.template':
-      return import('../templates/vitest.workspace.template?raw');
+      return import('../templates/vitest.workspace.template.ts?raw');
     default:
       throw new Error(`Unknown template: ${name}`);
   }

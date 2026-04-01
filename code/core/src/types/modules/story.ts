@@ -22,7 +22,7 @@ import type {
   StoryIdentifier,
   StoryName,
   StrictArgTypes,
-} from './csf';
+} from './csf.ts';
 
 // Store Types
 export interface WebRenderer extends Renderer {

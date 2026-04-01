@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 
-import { VersionService } from './VersionService';
+import { VersionService } from './VersionService.ts';
 
 vi.mock('storybook/internal/common', async () => {
   const actual = await vi.importActual('storybook/internal/common');

@@ -5,9 +5,9 @@
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import path from 'path';
 
-import { isIdentifier, isImportDeclaration, isLiteral } from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+import { isIdentifier, isImportDeclaration, isLiteral } from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition

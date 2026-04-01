@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 
 import type { OutputFile } from 'esbuild';
 
-import { sanitizePath } from './files';
+import { sanitizePath } from './files.ts';
 
 const os = platform();
 const isWindows = os === 'win32';

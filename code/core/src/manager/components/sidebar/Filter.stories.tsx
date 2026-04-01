@@ -9,9 +9,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, screen, waitFor } from 'storybook/test';
 
-import { internal_fullStatusStore } from '../../manager-stores.mock';
+import { internal_fullStatusStore } from '../../manager-stores.mock.ts';
 
-import { Filter } from './Filter';
+import { Filter } from './Filter.tsx';
 
 const getDefaultTagFilters = () => {
   const tagOptions = global.TAGS_OPTIONS ?? {};

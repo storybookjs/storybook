@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { stripCommentsAndStrings } from './strip-comments-and-strings';
+import { stripCommentsAndStrings } from './strip-comments-and-strings.ts';
 
 describe('stripCommentsAndStrings', () => {
   it('should remove single-quoted strings', () => {

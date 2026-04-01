@@ -8,7 +8,7 @@ import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import { doctor } from '../doctor';
+import { doctor } from '../doctor/index.ts';
 import type {
   AutofixOptions,
   AutofixOptionsFromCLI,
@@ -17,11 +17,11 @@ import type {
   FixSummary,
   PreCheckFailure,
   Prompt,
-} from './fixes';
-import { FixStatus, allFixes, commandFixes } from './fixes';
-import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
-import { logMigrationSummary } from './helpers/logMigrationSummary';
-import { getStorybookData } from './helpers/mainConfigFile';
+} from './fixes/index.ts';
+import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
+import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
+import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
+import { getStorybookData } from './helpers/mainConfigFile.ts';
 
 const logAvailableMigrations = () => {
   const availableFixes = [...allFixes, ...commandFixes]

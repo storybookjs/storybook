@@ -1,10 +1,10 @@
-import { StatusTypeIdMismatchError as ManagerStatusTypeIdMismatchError } from '../../manager-errors';
-import { StatusTypeIdMismatchError as PreviewStatusTypeIdMismatchError } from '../../preview-errors';
-import { StatusTypeIdMismatchError as ServerStatusTypeIdMismatchError } from '../../server-errors';
-import type { StoryId } from '../../types';
-import type { UniversalStore } from '../universal-store';
-import type { StoreOptions } from '../universal-store/types';
-import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager';
+import { StatusTypeIdMismatchError as ManagerStatusTypeIdMismatchError } from '../../manager-errors.ts';
+import { StatusTypeIdMismatchError as PreviewStatusTypeIdMismatchError } from '../../preview-errors.ts';
+import { StatusTypeIdMismatchError as ServerStatusTypeIdMismatchError } from '../../server-errors.ts';
+import type { StoryId } from '../../types/index.ts';
+import type { UniversalStore } from '../universal-store/index.ts';
+import type { StoreOptions } from '../universal-store/types.ts';
+import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager.ts';
 
 export type StatusValue =
   | 'status-value:pending'

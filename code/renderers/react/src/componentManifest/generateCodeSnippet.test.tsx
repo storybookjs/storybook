@@ -5,7 +5,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { getCodeSnippet } from './generateCodeSnippet';
+import { getCodeSnippet } from './generateCodeSnippet.ts';
 
 function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();

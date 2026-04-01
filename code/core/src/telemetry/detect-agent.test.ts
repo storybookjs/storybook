@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { detectAgent } from './detect-agent';
+import { detectAgent } from './detect-agent.ts';
 
 describe('detectAgent', () => {
   afterEach(() => {

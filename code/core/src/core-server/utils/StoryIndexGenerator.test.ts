@@ -8,10 +8,10 @@ import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
 
-import { Tag } from '../../shared/constants/tags';
-import { csfIndexer } from '../presets/common-preset';
-import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
-import { StoryIndexGenerator } from './StoryIndexGenerator';
+import { Tag } from '../../shared/constants/tags.ts';
+import { csfIndexer } from '../presets/common-preset.ts';
+import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
+import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 
 vi.mock('../utils/constants', () => {
   return {

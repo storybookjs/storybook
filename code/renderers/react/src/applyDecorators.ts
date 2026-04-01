@@ -4,7 +4,7 @@ import type { DecoratorFunction, LegacyStoryFn } from 'storybook/internal/types'
 
 import { defaultDecorateStory } from 'storybook/preview-api';
 
-import type { ReactRenderer } from './types';
+import type { ReactRenderer } from './types.ts';
 
 export const applyDecorators = (
   storyFn: LegacyStoryFn<ReactRenderer>,

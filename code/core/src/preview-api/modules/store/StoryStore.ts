@@ -23,10 +23,10 @@ import type {
 import { omitBy, pick } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 
-import { HooksContext } from '../addons';
-import { ArgsStore } from './ArgsStore';
-import { GlobalsStore } from './GlobalsStore';
-import { StoryIndexStore } from './StoryIndexStore';
+import { HooksContext } from '../addons/index.ts';
+import { ArgsStore } from './ArgsStore.ts';
+import { GlobalsStore } from './GlobalsStore.ts';
+import { StoryIndexStore } from './StoryIndexStore.ts';
 import {
   composeConfigs,
   normalizeProjectAnnotations,
@@ -34,8 +34,8 @@ import {
   prepareMeta,
   prepareStory,
   processCSFFile,
-} from './csf';
-import { ReporterAPI } from './reporter-api';
+} from './csf/index.ts';
+import { ReporterAPI } from './reporter-api.ts';
 
 export function picky<T extends Record<string, any>, K extends keyof T>(
   obj: T,

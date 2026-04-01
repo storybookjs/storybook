@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 
-import { Select as Component } from './Select';
+import { Select as Component } from './Select.tsx';
 
 const meta = {
   title: 'Form/Select',

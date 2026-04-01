@@ -11,8 +11,8 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
-import { SupportedBuilder, SupportedFramework } from '../types';
-import { AddonVitestService } from './AddonVitestService';
+import { SupportedBuilder, SupportedFramework } from '../types/index.ts';
+import { AddonVitestService } from './AddonVitestService.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('node:os', { spy: true });

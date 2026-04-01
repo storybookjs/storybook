@@ -50,26 +50,26 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { getEventMetadata } from '../lib/events';
+import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,
   denormalizeStoryParameters,
   getComponentLookupList,
   getStoriesLookupList,
   transformStoryIndexToStoriesHash,
-} from '../lib/stories';
-import type { ModuleFn } from '../lib/types';
-import { buildNavigationUrl } from '../lib/url';
-import type { ComposedRef } from '../root';
-import { fullStatusStore } from '../stores/status';
-import { computeStatusFilterFn, parseStatusesParam, serializeStatusesParam } from './statuses';
+} from '../lib/stories.ts';
+import type { ModuleFn } from '../lib/types.tsx';
+import { buildNavigationUrl } from '../lib/url.ts';
+import type { ComposedRef } from '../root.tsx';
+import { fullStatusStore } from '../stores/status.ts';
+import { computeStatusFilterFn, parseStatusesParam, serializeStatusesParam } from './statuses.ts';
 import {
   computeStaticFilterFn,
   computeTagsFilterFn,
   getDefaultTagsFromPreset,
   parseTagsParam,
   serializeTagsParam,
-} from './tags';
+} from './tags.ts';
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';

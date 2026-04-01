@@ -3,7 +3,7 @@ import React from 'react';
 
 import { action } from 'storybook/actions';
 
-import { ActionBar } from './ActionBar';
+import { ActionBar } from './ActionBar.tsx';
 
 const action1 = action('action1');
 const action2 = action('action2');

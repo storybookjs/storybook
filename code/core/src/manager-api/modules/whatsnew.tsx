@@ -10,7 +10,7 @@ import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events
 
 import { global } from '@storybook/global';
 
-import type { ModuleFn } from '../lib/types';
+import type { ModuleFn } from '../lib/types.tsx';
 
 export type SubState = {
   whatsNewData?: WhatsNewData;

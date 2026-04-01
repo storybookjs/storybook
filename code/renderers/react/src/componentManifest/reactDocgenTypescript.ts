@@ -10,7 +10,7 @@ import type ts from 'typescript';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { asyncCache, findTsconfigPath } from './utils';
+import { asyncCache, findTsconfigPath } from './utils.ts';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 

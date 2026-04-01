@@ -1,8 +1,8 @@
 import type { Options } from 'storybook/internal/types';
 
-import { frameworkToRenderer } from './framework';
-import { extractFrameworkPackageName, getFrameworkName } from './get-framework-name';
-import { frameworkPackages } from './get-storybook-info';
+import { frameworkToRenderer } from './framework.ts';
+import { extractFrameworkPackageName, getFrameworkName } from './get-framework-name.ts';
+import { frameworkPackages } from './get-storybook-info.ts';
 
 /**
  * Render is set as a string on core. It must be set by the framework It falls back to the framework

@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, fireEvent, fn, screen, within } from 'storybook/test';
 
-import { SaveStory } from './SaveStory';
+import { SaveStory } from './SaveStory.tsx';
 
 const meta = {
   component: SaveStory,

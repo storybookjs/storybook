@@ -3,10 +3,10 @@ import React from 'react';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
-import { initialState } from '../../shared/checklist-store/checklistData.state';
-import { internal_universalChecklistStore as mockStore } from '../manager-stores.mock';
-import { GuidePage } from './GuidePage';
+import preview from '../../../../.storybook/preview.tsx';
+import { initialState } from '../../shared/checklist-store/checklistData.state.ts';
+import { internal_universalChecklistStore as mockStore } from '../manager-stores.mock.ts';
+import { GuidePage } from './GuidePage.tsx';
 
 const managerContext: any = {
   state: {},

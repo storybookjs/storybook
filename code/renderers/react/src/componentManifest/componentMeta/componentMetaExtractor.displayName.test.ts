@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extractFromStory } from './componentMetaExtractor.test-helpers';
+import { extractFromStory } from './componentMetaExtractor.test-helpers.ts';
 
 describe('display name resolution', () => {
   it('uses export name for named exports', async () => {

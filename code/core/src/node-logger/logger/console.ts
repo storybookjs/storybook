@@ -1,6 +1,6 @@
 import picocolors from 'picocolors';
 
-import { debug, error, log, warn } from './logger';
+import { debug, error, log, warn } from './logger.ts';
 
 interface ConsoleLoggerOptions {
   prefix: string;

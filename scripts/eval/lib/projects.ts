@@ -3,7 +3,6 @@ export interface Project {
   repo: string;
   branch: string;
   githubSlug: string;
-  chromaticProjectId?: string;
   projectDir?: string;
   description?: string;
 }

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
+import { basename, dirname, relative, resolve } from 'node:path';
 
 import * as find from 'empathic/find';
 import picomatch from 'picomatch';
@@ -157,7 +157,10 @@ function compareTsconfigEntries(filePath: string, left: TsconfigEntry, right: Ts
     return leftDepth - rightDepth;
   }
 
-  return right.path.length - left.path.length;
+  const leftIsPrimaryTsconfig = basename(left.path) === 'tsconfig.json' ? 1 : 0;
+  const rightIsPrimaryTsconfig = basename(right.path) === 'tsconfig.json' ? 1 : 0;
+
+  return rightIsPrimaryTsconfig - leftIsPrimaryTsconfig;
 }
 
 function readTsconfigConfig(configPath: string): TsconfigConfig | undefined {

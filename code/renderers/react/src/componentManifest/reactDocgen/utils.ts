@@ -1,4 +1,5 @@
 import type { SBType } from 'storybook/internal/csf';
+import { findTsconfigPathForFile } from 'storybook/internal/common';
 
 import { dirname } from 'path';
 import type {
@@ -126,11 +127,12 @@ export function mapCommonTypes(typeName: string): SBType | null {
   return null;
 }
 
-export const getTsConfig = async () => {
+export const getTsConfig = async (componentFilePath?: string) => {
   try {
     const ts = await import('typescript');
-    const tsconfigPath = ts.findConfigFile(process.cwd(), ts.sys.fileExists);
-    console.log({ tsconfigPath });
+    const tsconfigPath = componentFilePath
+      ? findTsconfigPathForFile(dirname(componentFilePath), componentFilePath)
+      : ts.findConfigFile(process.cwd(), ts.sys.fileExists);
     if (tsconfigPath === undefined) {
       return {};
     }

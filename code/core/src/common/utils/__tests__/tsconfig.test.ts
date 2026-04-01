@@ -46,6 +46,33 @@ describe('findTsconfigPathForFile', () => {
     );
   });
 
+  it('keeps reference order for same-directory sibling tsconfigs that both match the file', () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        files: [],
+        references: [{ path: './tsconfig.app.json' }, { path: './tsconfig.node.json' }],
+      }),
+      'tsconfig.app.json': JSON.stringify({
+        compilerOptions: {
+          baseUrl: '.',
+        },
+        include: ['src'],
+      }),
+      'tsconfig.node.json': JSON.stringify({
+        compilerOptions: {
+          module: 'ESNext',
+        },
+      }),
+      'src/Button.tsx': 'export const Button = () => null;',
+    });
+
+    vi.spyOn(paths, 'getProjectRoot').mockReturnValue(dir);
+
+    expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
+      join(dir, 'tsconfig.app.json')
+    );
+  });
+
   it('falls back to the nearest discovered tsconfig when no reference matches the file', () => {
     const dir = createTempProject({
       'tsconfig.json': JSON.stringify({

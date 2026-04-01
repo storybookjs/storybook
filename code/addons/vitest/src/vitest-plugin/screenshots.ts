@@ -30,7 +30,10 @@ export async function captureStoryScreenshot(opts: {
     return undefined;
   }
 
-  return page.screenshot({ path: buildStoryScreenshotPath(opts.storyFilePath!, opts.exportName) });
+  return page.screenshot({
+    path: buildStoryScreenshotPath(opts.storyFilePath!, opts.exportName),
+    scale: 'device',
+  });
 }
 
 function sanitizePathToken(value: string) {

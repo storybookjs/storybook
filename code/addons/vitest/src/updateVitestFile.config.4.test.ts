@@ -88,7 +88,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -169,7 +173,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -284,7 +292,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -368,7 +380,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -449,7 +465,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -532,7 +552,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -607,7 +631,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -694,7 +722,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -776,7 +808,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -852,7 +888,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -936,7 +976,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1025,7 +1069,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1124,7 +1172,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1223,7 +1275,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1302,7 +1358,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1385,7 +1445,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1467,7 +1531,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1550,7 +1618,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1634,7 +1706,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1713,7 +1789,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1797,7 +1877,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1880,7 +1964,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -1963,7 +2051,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -2093,7 +2185,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]
@@ -2201,7 +2297,11 @@ describe('updateConfigFile', () => {
       +         browser: {
       +           enabled: true,
       +           headless: true,
-      +           provider: playwright({}),
+      +           provider: playwright({
+      +             contextOptions: {
+      +               deviceScaleFactor: 2
+      +             }
+      +           }),
       +           instances: [{
       +             browser: 'chromium'
       +           }]

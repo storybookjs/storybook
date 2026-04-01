@@ -11,6 +11,7 @@ import type { StoryObj as _StoryObj } from '@storybook/react';
 export * from '@storybook/react';
 export * from './types';
 export * from './routing/helper';
+export type { CreateStoryRouteOptions, StoryRouteOptions, RouterParameters } from './routing/types';
 
 export { getQueryClient } from './query/decorator';
 export { getRouter } from './routing/decorator';

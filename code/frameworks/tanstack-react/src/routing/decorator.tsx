@@ -79,45 +79,6 @@ export function createStoryRouter({
   return router;
 }
 
-let currentRouter: Router<AnyRootRoute> | null = null;
-
-/**
- * Returns the current story's mock `Router` instance.
- *
- * Available in `beforeEach`, `play`, and inside decorators/components.
- * Useful for inspecting router state or configuring the router before render.
- *
- * ```ts
- * import { getRouter } from '@storybook/tanstack-react';
- *
- * export const MyStory = {
- *   async beforeEach() {
- *     const router = getRouter();
- *     // inspect or configure the router
- *   },
- * };
- * ```
- */
-export function getRouter(): Router<AnyRootRoute> {
-  if (!currentRouter) {
-    throw new Error('Router is not available. Make sure the TanStack Router decorator is active.');
-  }
-  return currentRouter;
-}
-
-/**
- * Loader that creates the mock router per story render.
- * Runs before `beforeEach`, so the router is accessible via `getRouter()`.
- */
-export const tanstackRouteLoader: Loader = async ({ parameters }) => {
-  const routerParams: RouterParameters = parameters.tanstack?.router ?? {};
-
-  // todo pretty sure this breaks. Ask valentin about it.
-  currentRouter = createStoryRouter({
-    initialPath: routerParams.path,
-  });
-};
-
 export const tanstackRouteDecorator: Decorator = (Story, context) => {
   const routerParams: RouterParameters = context.parameters.tanstack?.router ?? {};
 

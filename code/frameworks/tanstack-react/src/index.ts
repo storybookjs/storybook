@@ -18,9 +18,6 @@ export type {
   RouterParameters,
 } from './routing/types';
 
-export { getQueryClient } from './query/decorator';
-export { getRouter } from './routing/decorator';
-
 export function definePreview<Addons extends PreviewAddon<never>[]>(
   preview: {
     addons?: Addons;

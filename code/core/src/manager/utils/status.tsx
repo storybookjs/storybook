@@ -32,6 +32,8 @@ export interface StatusMapping {
   textColor: string | null;
 }
 
+export const CHANGE_DETECTION_TYPE_ID = 'storybook/change-detection';
+
 export const statusPriority: StatusValue[] = [
   'status-value:unknown',
   'status-value:pending',
@@ -150,6 +152,46 @@ export function getGroupStatus(
         // @ts-expect-error (non strict)
         acc[item.id] = combinedStatus;
       }
+    }
+    return acc;
+  }, {});
+}
+
+export function getGroupDualStatus(
+  collapsedData: {
+    [x: string]: Partial<API_HashEntry>;
+  },
+  allStatuses: StatusesByStoryIdAndTypeId
+): Record<string, { change: StatusValue; test: StatusValue }> {
+  return Object.values(collapsedData).reduce<
+    Record<string, { change: StatusValue; test: StatusValue }>
+  >((acc, item) => {
+    if (item.type === 'group' || item.type === 'component' || item.type === 'story') {
+      // @ts-expect-error (non strict)
+      const leafs = getDescendantIds(collapsedData as any, item.id, false)
+        .map((id) => collapsedData[id])
+        .filter((i) => i.type === 'story');
+
+      const allDescendantStatuses = leafs.flatMap(
+        (story) =>
+          Object.values(allStatuses[story.id!] || {}) as Array<{
+            typeId: string;
+            value: StatusValue;
+          }>
+      );
+
+      const changeValues = allDescendantStatuses
+        .filter((s: { typeId: string }) => s.typeId === CHANGE_DETECTION_TYPE_ID)
+        .map((s: { value: StatusValue }) => s.value);
+      const testValues = allDescendantStatuses
+        .filter((s: { typeId: string }) => s.typeId !== CHANGE_DETECTION_TYPE_ID)
+        .map((s: { value: StatusValue }) => s.value);
+
+      // @ts-expect-error (non strict)
+      acc[item.id] = {
+        change: getMostCriticalStatusValue(changeValues),
+        test: getMostCriticalStatusValue(testValues),
+      };
     }
     return acc;
   }, {});

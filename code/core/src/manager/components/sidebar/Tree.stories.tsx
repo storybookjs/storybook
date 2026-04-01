@@ -323,7 +323,18 @@ export const WithContextContent: Story = {
 const dualSlotStoryId = storyId;
 const dualSlotParentId = (index[dualSlotStoryId] as any).parent as string;
 
+const getAncestorChain = (startId: string): IndexHash => {
+  const chain: IndexHash = {};
+  let currentId: string | null = startId;
+  while (currentId && index[currentId]) {
+    chain[currentId] = index[currentId];
+    currentId = ((index[currentId] as any)?.parent as string | null) ?? null;
+  }
+  return chain;
+};
+
 const dualSlotData: IndexHash = {
+  ...getAncestorChain(dualSlotParentId),
   [dualSlotParentId]: {
     ...(index[dualSlotParentId] as ComponentEntry),
     children: [dualSlotStoryId],

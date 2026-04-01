@@ -18,6 +18,15 @@ export interface PreflightCheckResult {
   isEmptyProject: boolean;
 }
 
+/** Human-friendly labels for each package manager type */
+const PACKAGE_MANAGER_LABEL: Record<PackageManagerName, string> = {
+  [PackageManagerName.NPM]: 'npm',
+  [PackageManagerName.YARN1]: 'Yarn Classic (v1)',
+  [PackageManagerName.YARN2]: 'Yarn Berry',
+  [PackageManagerName.PNPM]: 'pnpm',
+  [PackageManagerName.BUN]: 'Bun',
+};
+
 /**
  * Command for running preflight checks before Storybook initialization
  *
@@ -62,6 +71,10 @@ export class PreflightCheckCommand {
     const packageManager = JsPackageManagerFactory.getPackageManager({
       force: options.packageManager,
     });
+
+    logger.info(
+      `Package manager: ${PACKAGE_MANAGER_LABEL[packageManager.type] ?? packageManager.type}`
+    );
 
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {

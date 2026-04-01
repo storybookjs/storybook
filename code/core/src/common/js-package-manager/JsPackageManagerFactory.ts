@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { basename, parse, relative } from 'node:path';
 
 import * as find from 'empathic/find';
@@ -249,7 +250,53 @@ function hasPNPM(cwd?: string) {
   }
 }
 
+/**
+ * Check the nearest package.json for a `packageManager` field specifying yarn.
+ * Returns 1 or 2 if found, undefined if not applicable.
+ */
+function getYarnVersionFromPackageJson(cwd?: string): 1 | 2 | undefined {
+  const root = getProjectRoot();
+  const packageJsonPath = find.up('package.json', { cwd, last: root });
+  if (!packageJsonPath) {
+    return undefined;
+  }
+
+  try {
+    const content = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    const packageManager: unknown = content.packageManager;
+    if (typeof packageManager === 'string') {
+      const match = packageManager.match(/^yarn@(\d+)\./);
+      if (match) {
+        return match[1] === '1' ? 1 : 2;
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+
+  return undefined;
+}
+
+/**
+ * Check whether a `.yarnrc.yml` file exists in the project tree.
+ * This file only exists in Yarn Berry (v2+) projects.
+ */
+function hasYarnBerryConfig(cwd?: string): boolean {
+  const root = getProjectRoot();
+  return find.up('.yarnrc.yml', { cwd, last: root }) !== undefined;
+}
+
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
+  // 1. Check packageManager field in closest package.json (highest priority)
+  const versionFromPackageJson = getYarnVersionFromPackageJson(cwd);
+  if (versionFromPackageJson !== undefined) {
+    return versionFromPackageJson;
+  }
+
+  // 2. Check for .yarnrc.yml (Berry-only config file)
+  const hasBerryConfig = hasYarnBerryConfig(cwd);
+
+  // 3. Run yarn --version
   try {
     const yarnVersion = executeCommandSync({
       command: 'yarn',
@@ -259,8 +306,20 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
         Object.entries(process.env).filter(([, value]) => value !== undefined)
       ) as Record<string, string>,
     });
-    return /^1\.+/.test(yarnVersion.trim()) ? 1 : 2;
+
+    if (/^1\./.test(yarnVersion.trim())) {
+      // yarn --version reports 1.x, but .yarnrc.yml means it's actually Berry
+      return hasBerryConfig ? 2 : 1;
+    }
+
+    return 2;
   } catch (err) {
+    // 4. yarn command failed — fall back to .yarnrc.yml presence
+    if (hasBerryConfig) {
+      return 2;
+    }
+
+    // 5. No yarn command and no .yarnrc.yml
     return undefined;
   }
 }

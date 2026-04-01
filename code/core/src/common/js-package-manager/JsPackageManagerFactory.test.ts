@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +19,9 @@ const executeCommandSyncMock = vi.mocked(executeCommandSync);
 
 vi.mock('empathic/find');
 const findMock = vi.mocked(find);
+
+vi.mock('node:fs', { spy: true });
+const readFileSyncMock = vi.mocked(readFileSync);
 
 describe('CLASS: JsPackageManagerFactory', () => {
   beforeEach(() => {
@@ -115,10 +119,15 @@ describe('CLASS: JsPackageManagerFactory', () => {
       });
 
       it('PNPM LOCK IF CLOSER: when a pnpm-lock.yaml file is closer than a yarn.lock', async () => {
-        // Allow find to work as normal, we'll set the cwd to our fixture package
-        findMock.up.mockImplementation(
-          (await vi.importActual<typeof import('empathic/find')>('empathic/find')).up
-        );
+        // Use real find.up for lockfile resolution but exclude .yarnrc.yml
+        // so the test doesn't depend on the host repo's own Yarn Berry config
+        const realFind = await vi.importActual<typeof import('empathic/find')>('empathic/find');
+        findMock.up.mockImplementation((filename, opts) => {
+          if (typeof filename === 'string' && filename === '.yarnrc.yml') {
+            return undefined;
+          }
+          return realFind.up(filename, opts);
+        });
 
         executeCommandSyncMock.mockImplementation((options) => {
           // Yarn is ok
@@ -212,10 +221,15 @@ describe('CLASS: JsPackageManagerFactory', () => {
       });
 
       it('when multiple lockfiles are in a project, prefers yarn', async () => {
-        // Allow find to work as normal, we'll set the cwd to our fixture package
-        findMock.up.mockImplementation(
-          (await vi.importActual<typeof import('empathic/find')>('empathic/find')).up
-        );
+        // Use real find.up for lockfile resolution but exclude .yarnrc.yml
+        // so the test doesn't depend on the host repo's own Yarn Berry config
+        const realFind = await vi.importActual<typeof import('empathic/find')>('empathic/find');
+        findMock.up.mockImplementation((filename, opts) => {
+          if (typeof filename === 'string' && filename === '.yarnrc.yml') {
+            return undefined;
+          }
+          return realFind.up(filename, opts);
+        });
 
         executeCommandSyncMock.mockImplementation((options) => {
           // Yarn is ok
@@ -300,6 +314,168 @@ describe('CLASS: JsPackageManagerFactory', () => {
         findMock.up.mockImplementation((filename) => {
           if (typeof filename === 'string' && filename === 'yarn.lock') {
             return '/Users/johndoe/Documents/yarn.lock';
+          }
+          return undefined;
+        });
+
+        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
+      });
+
+      it('BERRY VIA .yarnrc.yml: when yarn --version reports 1.x but .yarnrc.yml exists', () => {
+        executeCommandSyncMock.mockImplementation((options) => {
+          // Yarn reports 1.x (global yarn classic)
+          if (options.command === 'yarn' && options.args?.[0] === '--version') {
+            return '1.22.4';
+          }
+          // NPM is ko
+          if (options.command === 'npm' && options.args?.[0] === '--version') {
+            throw new Error('Command not found');
+          }
+          throw new Error('Command not found');
+        });
+
+        findMock.up.mockImplementation((filename) => {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
+            return '/Users/johndoe/Documents/yarn.lock';
+          }
+          if (typeof filename === 'string' && filename === '.yarnrc.yml') {
+            return '/Users/johndoe/Documents/.yarnrc.yml';
+          }
+          return undefined;
+        });
+
+        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
+      });
+
+      it('BERRY VIA packageManager FIELD: when yarn --version reports 1.x but package.json has packageManager yarn@4.1.0', () => {
+        executeCommandSyncMock.mockImplementation((options) => {
+          // Yarn reports 1.x (global yarn classic)
+          if (options.command === 'yarn' && options.args?.[0] === '--version') {
+            return '1.22.4';
+          }
+          // NPM is ko
+          if (options.command === 'npm' && options.args?.[0] === '--version') {
+            throw new Error('Command not found');
+          }
+          throw new Error('Command not found');
+        });
+
+        findMock.up.mockImplementation((filename) => {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
+            return '/Users/johndoe/Documents/yarn.lock';
+          }
+          if (typeof filename === 'string' && filename === 'package.json') {
+            return '/Users/johndoe/Documents/package.json';
+          }
+          return undefined;
+        });
+
+        readFileSyncMock.mockImplementation((filePath, encoding) => {
+          if (
+            typeof filePath === 'string' &&
+            filePath === '/Users/johndoe/Documents/package.json' &&
+            encoding === 'utf-8'
+          ) {
+            return JSON.stringify({ packageManager: 'yarn@4.1.0' });
+          }
+          throw new Error('File not found');
+        });
+
+        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
+      });
+
+      it('BERRY VIA packageManager FIELD WITH HASH: when package.json has packageManager yarn@4.1.0+sha256.xxx', () => {
+        executeCommandSyncMock.mockImplementation((options) => {
+          if (options.command === 'yarn' && options.args?.[0] === '--version') {
+            return '1.22.4';
+          }
+          if (options.command === 'npm' && options.args?.[0] === '--version') {
+            throw new Error('Command not found');
+          }
+          throw new Error('Command not found');
+        });
+
+        findMock.up.mockImplementation((filename) => {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
+            return '/Users/johndoe/Documents/yarn.lock';
+          }
+          if (typeof filename === 'string' && filename === 'package.json') {
+            return '/Users/johndoe/Documents/package.json';
+          }
+          return undefined;
+        });
+
+        readFileSyncMock.mockImplementation((filePath, encoding) => {
+          if (
+            typeof filePath === 'string' &&
+            filePath === '/Users/johndoe/Documents/package.json' &&
+            encoding === 'utf-8'
+          ) {
+            return JSON.stringify({
+              packageManager:
+                'yarn@4.1.0+sha256.81a00df816059803e6b5148acf03ce313cad36b7f6e5af6efa040a8db86b7e8f',
+            });
+          }
+          throw new Error('File not found');
+        });
+
+        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
+      });
+
+      it('BERRY v3: when yarn --version reports 3.x', () => {
+        executeCommandSyncMock.mockImplementation((options) => {
+          if (options.command === 'yarn' && options.args?.[0] === '--version') {
+            return '3.6.4';
+          }
+          if (options.command === 'npm' && options.args?.[0] === '--version') {
+            throw new Error('Command not found');
+          }
+          throw new Error('Command not found');
+        });
+
+        findMock.up.mockImplementation((filename) => {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
+            return '/Users/johndoe/Documents/yarn.lock';
+          }
+          return undefined;
+        });
+
+        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
+      });
+
+      it('BERRY v4: when yarn --version reports 4.x', () => {
+        executeCommandSyncMock.mockImplementation((options) => {
+          if (options.command === 'yarn' && options.args?.[0] === '--version') {
+            return '4.1.0';
+          }
+          if (options.command === 'npm' && options.args?.[0] === '--version') {
+            throw new Error('Command not found');
+          }
+          throw new Error('Command not found');
+        });
+
+        findMock.up.mockImplementation((filename) => {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
+            return '/Users/johndoe/Documents/yarn.lock';
+          }
+          return undefined;
+        });
+
+        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
+      });
+
+      it('BERRY WHEN YARN FAILS: when yarn command fails but .yarnrc.yml exists', () => {
+        executeCommandSyncMock.mockImplementation(() => {
+          // All commands fail
+          throw new Error('Command not found');
+        });
+
+        findMock.up.mockImplementation((filename) => {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
+            return '/Users/johndoe/Documents/yarn.lock';
+          }
+          if (typeof filename === 'string' && filename === '.yarnrc.yml') {
+            return '/Users/johndoe/Documents/.yarnrc.yml';
           }
           return undefined;
         });

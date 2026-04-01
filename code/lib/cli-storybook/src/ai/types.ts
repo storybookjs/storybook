@@ -1,6 +1,7 @@
 export interface AiPrepareOptions {
   configDir?: string;
   packageManager?: string;
+  output?: string;
 }
 
 export interface ProjectInfo {

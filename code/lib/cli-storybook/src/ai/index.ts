@@ -1,3 +1,6 @@
+import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
 import type { PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -6,7 +9,7 @@ import { generateMarkdownOutput } from './prompt';
 import type { ProjectInfo, AiPrepareOptions } from './types';
 
 export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
-  const { configDir: userConfigDir, packageManager: packageManagerName } = options;
+  const { configDir: userConfigDir, packageManager: packageManagerName, output } = options;
 
   let projectInfo: ProjectInfo;
 
@@ -54,7 +57,15 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
     return;
   }
 
-  logger.log(generateMarkdownOutput(projectInfo));
+  const markdownOutput = generateMarkdownOutput(projectInfo);
+
+  if (output) {
+    const outputPath = resolve(output);
+    await writeFile(outputPath, markdownOutput, 'utf-8');
+    logger.log(`Prompt written to ${outputPath}`);
+  } else {
+    logger.log(markdownOutput);
+  }
 }
 
 function parseMajorVersion(version: string): number | undefined {

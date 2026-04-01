@@ -20,9 +20,6 @@ const menuMapper = ({ api, state }: Combo) => ({
       forceFocus,
       poll: true,
     });
-    // if (success) {
-    // animateLandmark?.(document.getElementById(focusableUIElements.sidebarRegion));
-    // }
   },
 });
 

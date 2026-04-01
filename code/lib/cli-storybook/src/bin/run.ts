@@ -304,7 +304,12 @@ command('doctor')
     }).catch(handleCommandFailure(options.logfile));
   });
 
-const aiCommand = command('ai').description('AI agent helpers for Storybook');
+const aiCommand = command('ai')
+  .description('AI agent helpers for Storybook')
+  .option(
+    '-o, --output <path>',
+    'Write the prompt output to a file instead of printing it to stdout'
+  );
 
 aiCommand
   .command('prepare')
@@ -315,10 +320,12 @@ aiCommand
     )
   )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .action(async (options) => {
-    await withTelemetry('ai-prepare', { cliOptions: options }, async () => {
-      await aiPrepare(options);
-    }).catch(handleCommandFailure(options.logfile));
+  .action(async (options, cmd) => {
+    const parentOptions = cmd.parent?.opts() ?? {};
+    const mergedOptions = { ...parentOptions, ...options };
+    await withTelemetry('ai-prepare', { cliOptions: mergedOptions }, async () => {
+      await aiPrepare(mergedOptions);
+    }).catch(handleCommandFailure(mergedOptions.logfile));
   });
 
 // Show available subcommands when `storybook ai` is run without arguments

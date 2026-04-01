@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, relative } from 'node:path';
+import { join, relative } from 'node:path';
 import { x } from 'tinyexec';
 import type { AgentVariant } from './agents/config.ts';
 import type { Project } from './projects.ts';
@@ -51,9 +51,10 @@ export async function publishTrialBranch(opts: {
     opts.workspace.trialBranch
   );
 
-  await ensureEvalResultsStoriesGlob({
+  await validateEvalSupportSetup({
+    projectName: opts.project.name,
     projectPath: opts.workspace.projectPath,
-    resultsDir: opts.workspace.resultsDir,
+    repoRoot: opts.workspace.repoRoot,
   });
 
   const prBody = renderPrBody({
@@ -126,7 +127,22 @@ export async function publishTrialBranch(opts: {
 }
 
 async function ensureLabels(repo: string, labels: string[]) {
+  const existing = new Set(
+    (
+      await x('gh', ['label', 'list', '--repo', repo, '--limit', '200'], {
+        nodeOptions: { cwd: process.cwd() },
+      })
+    ).stdout
+      .split('\n')
+      .map((line) => line.split('\t')[0]?.trim())
+      .filter((label): label is string => Boolean(label))
+  );
+
   for (const label of labels) {
+    if (existing.has(label)) {
+      continue;
+    }
+
     await x(
       'gh',
       [
@@ -135,41 +151,47 @@ async function ensureLabels(repo: string, labels: string[]) {
         label,
         '--repo',
         repo,
-        '--color',
-        '6E7781',
         '--description',
         `Automated eval label for ${label}`,
-        '--force',
       ],
       { throwOnError: false }
     );
   }
 }
 
-async function ensureEvalResultsStoriesGlob(opts: { projectPath: string; resultsDir: string }) {
+async function validateEvalSupportSetup(opts: {
+  projectName: string;
+  projectPath: string;
+  repoRoot: string;
+}) {
+  const missing: string[] = [];
   const configPath = await findStorybookMainFile(opts.projectPath);
   if (!configPath) {
-    return;
+    missing.push('.storybook/main.(ts|js|mts|mjs|cjs)');
+  } else {
+    const content = await readFile(configPath, 'utf-8');
+    if (!content.includes('./eval-support/*.mdx')) {
+      missing.push(`${relative(opts.projectPath, configPath) || '.storybook/main'} missing ./eval-support/*.mdx`);
+    }
   }
 
-  const content = await readFile(configPath, 'utf-8');
-  const relativePattern = relative(dirname(configPath), join(opts.resultsDir, '*.mdx')).replaceAll(
-    '\\',
-    '/'
-  );
-  const quotedPattern = `'${relativePattern}'`;
-  if (content.includes(relativePattern)) {
-    return;
+  const supportDir = join(opts.projectPath, '.storybook', 'eval-support');
+  for (const file of ['summary.mdx', 'transcript.mdx', 'transcript.tsx', 'transcript.types.ts']) {
+    if (!existsSync(join(supportDir, file))) {
+      missing.push(relative(opts.projectPath, join(supportDir, file)));
+    }
   }
 
-  const updated = content.replace(
-    /((?:stories|"stories")\s*:\s*\[[\s\S]*?)(\])/m,
-    (_, start: string, end: string) =>
-      `${start}${start.trimEnd().endsWith('[') ? '' : ','}\n    ${quotedPattern}\n  ${end}`
-  );
+  for (const file of ['summary.json', 'transcript.json']) {
+    if (!existsSync(join(opts.repoRoot, 'eval-results', file))) {
+      missing.push(relative(opts.repoRoot, join(opts.repoRoot, 'eval-results', file)));
+    }
+  }
 
-  if (updated !== content) {
-    await writeFile(configPath, updated);
+  if (missing.length > 0) {
+    throw new Error(
+      `Eval support is not configured for ${opts.projectName}. Missing: ${missing.join(', ')}`
+    );
   }
 }
 
@@ -238,10 +260,5 @@ function renderPrBody(opts: {
 ## Screenshots
 
 ${screenshotLines}
-
-## Chromatic
-
-- Published Storybook: pending CI
-- Build URL: pending CI
 `;
 }

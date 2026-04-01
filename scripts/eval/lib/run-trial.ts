@@ -13,7 +13,6 @@ import {
   type PublishMetadata,
 } from './publish-trial.ts';
 import { prepareTrial } from './prepare-trial.ts';
-import { writeEvalResultDocs } from './result-docs.ts';
 import { runStorybookScreenshots } from './screenshots.ts';
 import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from './utils.ts';
 
@@ -122,7 +121,6 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Tr
     join(workspace.resultsDir, 'summary.json'),
     JSON.stringify(reportForCommit, null, 2)
   );
-  await writeEvalResultDocs(workspace.resultsDir);
 
   // 8. Commit, push, and open the benchmark PR
   const publish = await publishTrialBranch({

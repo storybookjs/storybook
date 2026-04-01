@@ -1,19 +1,6 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { describe, expect, it } from 'vitest';
 
-import { afterEach, describe, expect, it } from 'vitest';
-
-import { normalizeTranscriptForDocs, writeEvalResultDocs } from './result-docs';
-
-let TMP = '';
-
-afterEach(() => {
-  if (TMP) {
-    rmSync(TMP, { recursive: true, force: true });
-    TMP = '';
-  }
-});
+import { normalizeTranscriptForDocs } from './result-docs';
 
 describe('normalizeTranscriptForDocs', () => {
   it('normalizes claude transcript entries into MCP transcript props', () => {
@@ -155,40 +142,5 @@ describe('normalizeTranscriptForDocs', () => {
         num_turns: 3,
       },
     ]);
-  });
-});
-
-describe('writeEvalResultDocs', () => {
-  it('writes the transcript view as a direct template copy', async () => {
-    TMP = mkdtempSync(join(tmpdir(), 'eval-result-docs-'));
-
-    writeFileSync(join(TMP, 'prompt.md'), 'Write a story');
-    writeFileSync(join(TMP, 'transcript.json'), '[]');
-    writeFileSync(
-      join(TMP, 'summary.json'),
-      JSON.stringify({
-        project: { name: 'demo' },
-        prompt: 'setup',
-        variant: { agent: 'codex', model: 'gpt-5.4', effort: 'high' },
-        score: { score: 1 },
-        grade: { buildSuccess: true, typeCheckErrors: 0, fileChanges: [] },
-        publish: { screenshots: [] },
-      })
-    );
-
-    await writeEvalResultDocs(TMP);
-
-    expect(readFileSync(join(TMP, 'transcript.tsx'), 'utf-8')).toBe(
-      readFileSync(new URL('./result-doc-templates/transcript.tsx', import.meta.url), 'utf-8')
-    );
-    expect(readFileSync(join(TMP, 'transcript.types.ts'), 'utf-8')).toBe(
-      readFileSync(new URL('./result-doc-templates/transcript.types.ts', import.meta.url), 'utf-8')
-    );
-    expect(readFileSync(join(TMP, 'transcript.mdx'), 'utf-8')).toContain(
-      "import { Transcript } from './transcript';"
-    );
-    expect(readFileSync(join(TMP, 'transcript-data.json'), 'utf-8')).toContain(
-      '"prompt": "Write a story"'
-    );
   });
 });

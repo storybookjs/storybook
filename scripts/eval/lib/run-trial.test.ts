@@ -54,9 +54,6 @@ vi.mock('./publish-trial', () => ({
     ],
   }),
 }));
-vi.mock('./result-docs', () => ({
-  writeEvalResultDocs: vi.fn(),
-}));
 vi.mock('./screenshots', () => ({
   runStorybookScreenshots: vi.fn().mockResolvedValue([
     {
@@ -89,7 +86,6 @@ import { grade } from './grade';
 import { prepareTrial } from './prepare-trial';
 import { publishTrialBranch } from './publish-trial';
 import { runTrial } from './run-trial';
-import { writeEvalResultDocs } from './result-docs';
 import { runStorybookScreenshots } from './screenshots';
 import { captureEnvironment } from './utils';
 
@@ -196,7 +192,6 @@ describe('runTrial pipeline', () => {
       repoRoot: TMP,
       resultsDir: join(TMP, 'eval-results'),
     });
-    expect(vi.mocked(writeEvalResultDocs).mock.calls[0][0]).toBe(join(TMP, 'eval-results'));
     expect(vi.mocked(publishTrialBranch).mock.calls[0][0]).toMatchObject({
       prompt: 'setup',
       trialId: expect.any(String),
@@ -229,6 +224,9 @@ describe('runTrial pipeline', () => {
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
     expect(promptContent).toContain('set up Storybook');
+    expect(() => readFileSync(join(resultsDir, 'summary.mdx'), 'utf-8')).toThrow();
+    expect(() => readFileSync(join(resultsDir, 'transcript.mdx'), 'utf-8')).toThrow();
+    expect(() => readFileSync(join(resultsDir, 'transcript-data.json'), 'utf-8')).toThrow();
   });
 
   it('propagates failed build into result', async () => {
@@ -238,6 +236,19 @@ describe('runTrial pipeline', () => {
       grade: { buildSuccess: false, typeCheckErrors: 5 },
       score: { score: 0.3 },
     });
+  });
+
+  it('skips screenshot generation when the build fails', async () => {
+    setupMocks({ buildSuccess: false, typeCheckErrors: 5 });
+
+    await runTrial(baseConfig);
+
+    expect(vi.mocked(runStorybookScreenshots)).not.toHaveBeenCalled();
+    expect(vi.mocked(publishTrialBranch)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        screenshots: [],
+      })
+    );
   });
 
   it('does not call grade before agent finishes', async () => {

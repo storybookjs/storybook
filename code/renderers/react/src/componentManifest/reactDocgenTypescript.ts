@@ -10,7 +10,7 @@ import type ts from 'typescript';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { asyncCache, findTsconfigPath } from './utils';
+import { asyncCache, cached, findTsconfigPath } from './utils';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
@@ -345,18 +345,24 @@ export const parseWithReactDocgenTypescript = asyncCache(
   { name: 'parseWithReactDocgenTypescript' }
 );
 
-function findTsconfigPathForFile(
-  typescript: TypeScriptRuntime,
-  cwd: string,
-  filePath: string
-): string | undefined {
-  const configPath = findTsconfigPath(cwd);
-  if (!configPath) {
-    return undefined;
-  }
+const findTsconfigPathForFile = cached(
+  (typescript: TypeScriptRuntime, cwd: string, filePath: string): string | undefined => {
+    const configPath = findTsconfigPath(cwd);
+    if (!configPath) {
+      return undefined;
+    }
 
-  return findTsconfigPathIncludingFile(typescript, configPath, filePath, new Set()) ?? configPath;
-}
+    return findTsconfigPathIncludingFile(typescript, configPath, filePath, new Set()) ?? configPath;
+  },
+  {
+    key: (typescript, cwd, filePath) =>
+      `${normalizeFileName(typescript, resolve(cwd))}::${normalizeFileName(
+        typescript,
+        resolve(filePath)
+      )}`,
+    name: 'findTsconfigPathForFile',
+  }
+);
 
 function findTsconfigPathIncludingFile(
   typescript: TypeScriptRuntime,

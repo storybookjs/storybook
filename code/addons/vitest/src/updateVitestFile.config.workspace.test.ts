@@ -50,9 +50,14 @@ describe('updateWorkspaceFile', () => {
       + import { defineWorkspace } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
+      +   contextOptions: {
+      +     deviceScaleFactor: 2
+      +   }
+      + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + export default ['packages/*', 'ROOT_CONFIG', {
       +   extends: '.',
       +   plugins: [
@@ -66,11 +71,7 @@ describe('updateWorkspaceFile', () => {
       +     browser: {
       +       enabled: true,
       +       headless: true,
-      +       provider: playwright({
-      +         contextOptions: {
-      +           deviceScaleFactor: 2
-      +         }
-      +       }),
+      +       provider: playwright(playwrightProviderOptions),
       +       instances: [{
       +         browser: 'chromium'
       +       }]
@@ -113,9 +114,14 @@ describe('updateWorkspaceFile', () => {
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS_RETINA === 'true' ? {
+      +   contextOptions: {
+      +     deviceScaleFactor: 2
+      +   }
+      + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + export default defineWorkspace(['packages/*', 'ROOT_CONFIG', {
       +   extends: '.',
       +   plugins: [
@@ -129,11 +135,7 @@ describe('updateWorkspaceFile', () => {
       +     browser: {
       +       enabled: true,
       +       headless: true,
-      +       provider: playwright({
-      +         contextOptions: {
-      +           deviceScaleFactor: 2
-      +         }
-      +       }),
+      +       provider: playwright(playwrightProviderOptions),
       +       instances: [{
       +         browser: 'chromium'
       +       }]

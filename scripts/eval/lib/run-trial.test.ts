@@ -15,18 +15,21 @@ vi.mock('./grade', () => ({
 }));
 vi.mock('./publish-trial', () => ({
   buildTrialArtifactUrls: vi.fn().mockReturnValue({
-    summaryUrl: 'https://github.com/storybook-tmp/test-project/blob/trial/test/eval-results/summary.json',
+    summaryUrl:
+      'https://github.com/storybook-tmp/test-project/blob/trial/test/eval-results/summary.json',
     transcriptUrl:
       'https://github.com/storybook-tmp/test-project/blob/trial/test/eval-results/transcript.json',
   }),
-  buildTrialLabels: vi.fn().mockReturnValue([
-    'eval',
-    'project:test-project',
-    'agent:claude',
-    'model:sonnet-4.6',
-    'effort:high',
-    'prompt:setup',
-  ]),
+  buildTrialLabels: vi
+    .fn()
+    .mockReturnValue([
+      'eval',
+      'project:test-project',
+      'agent:claude',
+      'model:sonnet-4.6',
+      'effort:high',
+      'prompt:setup',
+    ]),
   publishTrialBranch: vi.fn().mockResolvedValue({
     branch: 'trial/test-branch',
     labels: [

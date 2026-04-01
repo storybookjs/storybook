@@ -226,9 +226,10 @@ function normalizeTranscriptEntry(
   }
 
   if (looksLikeCodexFileChange(entry)) {
-    const summaryText = ['File changes:', ...entry.changes.map((change) => `- ${change.kind} ${change.path}`)].join(
-      '\n'
-    );
+    const summaryText = [
+      'File changes:',
+      ...entry.changes.map((change) => `- ${change.kind} ${change.path}`),
+    ].join('\n');
     return [createAssistantTextMessage(summaryText)];
   }
 
@@ -237,7 +238,9 @@ function normalizeTranscriptEntry(
   }
 
   return [
-    createAssistantTextMessage(`Raw event\n\n\`\`\`json\n${JSON.stringify(entry, null, 2)}\n\`\`\``),
+    createAssistantTextMessage(
+      `Raw event\n\n\`\`\`json\n${JSON.stringify(entry, null, 2)}\n\`\`\``
+    ),
   ];
 }
 
@@ -257,30 +260,33 @@ function normalizeClaudeSystem(entry: ClaudeSystemEntry): TranscriptSystemMessag
 }
 
 function normalizeClaudeAssistant(entry: ClaudeAssistantEntry): TranscriptAssistantMessage {
-  const content = entry.message.content.flatMap((block): Array<TranscriptTextContent | TranscriptToolUseContent> => {
-    if (block.type === 'text' && typeof block.text === 'string') {
-      return [{ type: 'text', text: block.text }];
-    }
+  const content = entry.message.content.flatMap(
+    (block): Array<TranscriptTextContent | TranscriptToolUseContent> => {
+      if (block.type === 'text' && typeof block.text === 'string') {
+        return [{ type: 'text', text: block.text }];
+      }
 
-    if (block.type === 'tool_use' && typeof block.name === 'string') {
-      return [
-        {
-          type: 'tool_use',
-          id: typeof block.id === 'string' ? block.id : `tool-${block.name}`,
-          name: block.name,
-          input: isRecord(block.input) ? block.input : {},
-          isMCP: isMcpToolName(block.name),
-        },
-      ];
-    }
+      if (block.type === 'tool_use' && typeof block.name === 'string') {
+        return [
+          {
+            type: 'tool_use',
+            id: typeof block.id === 'string' ? block.id : `tool-${block.name}`,
+            name: block.name,
+            input: isRecord(block.input) ? block.input : {},
+            isMCP: isMcpToolName(block.name),
+          },
+        ];
+      }
 
-    return [];
-  });
+      return [];
+    }
+  );
 
   const outputTokens = getNumber(entry.message.usage?.output_tokens);
   const inputTokens = getNumber(entry.message.usage?.input_tokens);
   const tokenCount =
-    getOptionalNumber(entry.tokenCount) ?? (outputTokens || estimateAssistantContentTokens(content));
+    getOptionalNumber(entry.tokenCount) ??
+    (outputTokens || estimateAssistantContentTokens(content));
 
   return {
     type: 'assistant',
@@ -301,7 +307,9 @@ function normalizeClaudeUser(entry: ClaudeUserEntry, index: number): TranscriptU
   const content = entry.message.content.map((block, blockIndex) => ({
     type: 'tool_result' as const,
     tool_use_id:
-      typeof block.tool_use_id === 'string' ? block.tool_use_id : `tool-result-${index}-${blockIndex}`,
+      typeof block.tool_use_id === 'string'
+        ? block.tool_use_id
+        : `tool-result-${index}-${blockIndex}`,
     content: normalizeToolResultContent(block.content),
   }));
 
@@ -707,25 +715,45 @@ function looksLikeClaudeSystem(entry: unknown): entry is ClaudeSystemEntry {
 }
 
 function looksLikeClaudeAssistant(entry: unknown): entry is ClaudeAssistantEntry {
-  return isRecord(entry) && entry.type === 'assistant' && isRecord(entry.message) && Array.isArray(entry.message.content);
+  return (
+    isRecord(entry) &&
+    entry.type === 'assistant' &&
+    isRecord(entry.message) &&
+    Array.isArray(entry.message.content)
+  );
 }
 
 function looksLikeClaudeUser(entry: unknown, index: number): entry is ClaudeUserEntry {
   void index;
-  return isRecord(entry) && entry.type === 'user' && isRecord(entry.message) && Array.isArray(entry.message.content);
+  return (
+    isRecord(entry) &&
+    entry.type === 'user' &&
+    isRecord(entry.message) &&
+    Array.isArray(entry.message.content)
+  );
 }
 
 function looksLikeClaudeResult(entry: unknown): entry is ClaudeResultEntry {
-  return isRecord(entry) && entry.type === 'result' && (entry.subtype === 'success' || entry.subtype === 'error');
+  return (
+    isRecord(entry) &&
+    entry.type === 'result' &&
+    (entry.subtype === 'success' || entry.subtype === 'error')
+  );
 }
 
-function looksLikeClaudeStatus(entry: unknown): entry is { type: 'system'; subtype: 'status'; status?: string; ms?: number } {
+function looksLikeClaudeStatus(
+  entry: unknown
+): entry is { type: 'system'; subtype: 'status'; status?: string; ms?: number } {
   return isRecord(entry) && entry.type === 'system' && entry.subtype === 'status';
 }
 
-function looksLikeClaudeApiRetry(
-  entry: unknown
-): entry is { type: 'system'; subtype: 'api_retry'; attempt?: number; max_retries?: number; ms?: number } {
+function looksLikeClaudeApiRetry(entry: unknown): entry is {
+  type: 'system';
+  subtype: 'api_retry';
+  attempt?: number;
+  max_retries?: number;
+  ms?: number;
+} {
   return isRecord(entry) && entry.type === 'system' && entry.subtype === 'api_retry';
 }
 
@@ -735,9 +763,7 @@ function looksLikeClaudeToolUseSummary(
   return isRecord(entry) && entry.type === 'tool_use_summary' && typeof entry.summary === 'string';
 }
 
-function looksLikeClaudeRateLimitEvent(
-  entry: unknown
-): entry is {
+function looksLikeClaudeRateLimitEvent(entry: unknown): entry is {
   type: 'rate_limit_event';
   rate_limit_info?: { status?: string; resetsAt?: string };
   ms?: number;
@@ -745,7 +771,9 @@ function looksLikeClaudeRateLimitEvent(
   return isRecord(entry) && entry.type === 'rate_limit_event';
 }
 
-function looksLikeCodexAgentMessage(entry: unknown): entry is { type: 'agent_message'; text: string } {
+function looksLikeCodexAgentMessage(
+  entry: unknown
+): entry is { type: 'agent_message'; text: string } {
   return isRecord(entry) && entry.type === 'agent_message' && typeof entry.text === 'string';
 }
 

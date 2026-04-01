@@ -111,11 +111,9 @@ export async function publishTrialBranch(opts: {
   ).stdout.trim();
 
   for (const label of labels) {
-    await x(
-      'gh',
-      ['pr', 'edit', prUrl, '--repo', opts.project.githubSlug, '--add-label', label],
-      { nodeOptions: { cwd: opts.workspace.repoRoot } }
-    );
+    await x('gh', ['pr', 'edit', prUrl, '--repo', opts.project.githubSlug, '--add-label', label], {
+      nodeOptions: { cwd: opts.workspace.repoRoot },
+    });
   }
 
   return {
@@ -167,7 +165,8 @@ async function ensureEvalResultsStoriesGlob(opts: { projectPath: string; results
 
   const updated = content.replace(
     /((?:stories|"stories")\s*:\s*\[[\s\S]*?)(\])/m,
-    (_, start: string, end: string) => `${start}${start.trimEnd().endsWith('[') ? '' : ','}\n    ${quotedPattern}\n  ${end}`
+    (_, start: string, end: string) =>
+      `${start}${start.trimEnd().endsWith('[') ? '' : ','}\n    ${quotedPattern}\n  ${end}`
   );
 
   if (updated !== content) {
@@ -217,7 +216,7 @@ function createChromaticWorkflow(project: Project, repoRoot: string, projectPath
   const runDirectory = relative(repoRoot, projectPath).replaceAll('\\', '/') || '.';
 
   return [
-    "name: Eval Chromatic",
+    'name: Eval Chromatic',
     '',
     'on:',
     '  pull_request:',
@@ -294,7 +293,7 @@ function createChromaticWorkflow(project: Project, repoRoot: string, projectPath
     '              repo: context.repo.repo,',
     '              issue_number: context.issue.number,',
     '            });',
-    "            const existing = comments.find((comment) => comment.body?.includes(marker));",
+    '            const existing = comments.find((comment) => comment.body?.includes(marker));',
     '            if (existing) {',
     '              await github.rest.issues.updateComment({',
     '                owner: context.repo.owner,',

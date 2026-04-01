@@ -11,10 +11,8 @@ export const buildStoryScreenshotPath = (storyFilePath: string, exportName: stri
   return join(dir, `${name}.${sanitizePathToken(exportName)}.chromium.png`);
 };
 
-export const shouldCaptureStoryScreenshot = (opts: {
-  storyFilePath?: string;
-  testName?: string;
-}) => Boolean(opts.storyFilePath && STORY_FILE_PATTERN.test(opts.storyFilePath) && !opts.testName);
+export const shouldCaptureStoryScreenshot = (opts: { storyFilePath?: string; testName?: string }) =>
+  Boolean(opts.storyFilePath && STORY_FILE_PATTERN.test(opts.storyFilePath) && !opts.testName);
 
 export async function captureStoryScreenshot(opts: {
   exportName: string;

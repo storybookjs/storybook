@@ -182,14 +182,13 @@ describe('writeEvalResultDocs', () => {
       readFileSync(new URL('./result-doc-templates/transcript.tsx', import.meta.url), 'utf-8')
     );
     expect(readFileSync(join(TMP, 'transcript.types.ts'), 'utf-8')).toBe(
-      readFileSync(
-        new URL('./result-doc-templates/transcript.types.ts', import.meta.url),
-        'utf-8'
-      )
+      readFileSync(new URL('./result-doc-templates/transcript.types.ts', import.meta.url), 'utf-8')
     );
     expect(readFileSync(join(TMP, 'transcript.mdx'), 'utf-8')).toContain(
       "import { Transcript } from './transcript';"
     );
-    expect(readFileSync(join(TMP, 'transcript-data.json'), 'utf-8')).toContain('"prompt": "Write a story"');
+    expect(readFileSync(join(TMP, 'transcript-data.json'), 'utf-8')).toContain(
+      '"prompt": "Write a story"'
+    );
   });
 });

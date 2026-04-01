@@ -40,7 +40,9 @@ describe('collectScreenshotArtifacts', () => {
     writeFileSync(join(TMP, 'src', 'Button.stories.Primary.chromium.png'), 'png');
     writeFileSync(join(TMP, 'src', 'Button.stories.Secondary.chromium.png'), 'png');
 
-    const screenshots = await collectScreenshotArtifacts(TMP, [join(TMP, 'src', 'Button.stories.tsx')]);
+    const screenshots = await collectScreenshotArtifacts(TMP, [
+      join(TMP, 'src', 'Button.stories.tsx'),
+    ]);
 
     expect(screenshots).toEqual([
       {

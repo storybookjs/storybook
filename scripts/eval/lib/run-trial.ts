@@ -118,7 +118,10 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Tr
     publish: publishForCommit,
   };
 
-  await writeFile(join(workspace.resultsDir, 'summary.json'), JSON.stringify(reportForCommit, null, 2));
+  await writeFile(
+    join(workspace.resultsDir, 'summary.json'),
+    JSON.stringify(reportForCommit, null, 2)
+  );
   await writeEvalResultDocs(workspace.resultsDir);
 
   // 8. Commit, push, and open the benchmark PR

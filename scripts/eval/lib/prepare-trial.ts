@@ -67,13 +67,11 @@ async function ensureSourceClone(project: Project, sourceDir: string, logger: Lo
   });
 }
 
-async function syncSourceClone(
-  project: Project,
-  sourceDir: string,
-  logger: Logger
-) {
+async function syncSourceClone(project: Project, sourceDir: string, logger: Logger) {
   logger.logStep(`Syncing ${project.name} source clone...`);
-  await x('git', ['remote', 'set-url', 'origin', project.repo], { nodeOptions: { cwd: sourceDir } });
+  await x('git', ['remote', 'set-url', 'origin', project.repo], {
+    nodeOptions: { cwd: sourceDir },
+  });
   await x('git', ['fetch', 'origin', '--prune'], {
     timeout: 120_000,
     nodeOptions: { cwd: sourceDir },

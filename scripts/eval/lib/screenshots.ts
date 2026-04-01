@@ -38,7 +38,9 @@ export async function runStorybookScreenshots(opts: {
     .filter((storyFile) => storyFile !== '' && !storyFile.startsWith('..'));
 
   if (runnableStoryFiles.length === 0) {
-    opts.logger.logStep('No changed story files live under the evaluated project path; skipping screenshots.');
+    opts.logger.logStep(
+      'No changed story files live under the evaluated project path; skipping screenshots.'
+    );
     return [] satisfies ScreenshotArtifact[];
   }
 

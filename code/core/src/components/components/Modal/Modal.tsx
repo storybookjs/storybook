@@ -15,8 +15,8 @@ import { useOverlayTriggerState } from '@react-stately/overlays';
 import type { KeyboardEvent as RAKeyboardEvent } from '@react-types/shared';
 import { useTransitionState } from 'react-transition-state';
 
-import { useMediaQuery } from '../../../manager/hooks/useMedia';
-import * as Components from './Modal.styled';
+import { useMediaQuery } from '../../../manager/hooks/useMedia.tsx';
+import * as Components from './Modal.styled.tsx';
 
 interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   container?: HTMLElement;

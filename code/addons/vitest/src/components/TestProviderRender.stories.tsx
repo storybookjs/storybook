@@ -8,10 +8,10 @@ import { ManagerContext, addons } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants';
-import { storeOptions } from '../constants';
-import { store as mockStore } from '../manager-store.mock';
-import { TestProviderRender } from './TestProviderRender';
+import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants.ts';
+import { storeOptions } from '../constants.ts';
+import { store as mockStore } from '../manager-store.mock.ts';
+import { TestProviderRender } from './TestProviderRender.tsx';
 
 const managerContext: any = {
   api: {

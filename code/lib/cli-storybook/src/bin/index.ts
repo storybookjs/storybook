@@ -17,4 +17,4 @@ if (
   process.exit(1);
 }
 
-import('./run');
+import('./run.ts');

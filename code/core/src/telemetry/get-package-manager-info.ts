@@ -2,7 +2,7 @@
 import { execaCommand } from 'execa';
 import { detect } from 'package-manager-detector';
 
-import { getProjectRoot } from '../common';
+import { getProjectRoot } from '../common/index.ts';
 
 export const getPackageManagerInfo = async () => {
   const packageManagerType = await detect({ cwd: getProjectRoot() });

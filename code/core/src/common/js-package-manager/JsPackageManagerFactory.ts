@@ -2,22 +2,22 @@ import { basename, parse, relative } from 'node:path';
 
 import * as find from 'empathic/find';
 
-import { executeCommandSync } from '../utils/command';
-import { getProjectRoot } from '../utils/paths';
-import { BUNProxy } from './BUNProxy';
-import type { JsPackageManager } from './JsPackageManager';
-import { PackageManagerName } from './JsPackageManager';
-import { NPMProxy } from './NPMProxy';
-import { PNPMProxy } from './PNPMProxy';
-import { Yarn1Proxy } from './Yarn1Proxy';
-import { Yarn2Proxy } from './Yarn2Proxy';
+import { executeCommandSync } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
+import { BUNProxy } from './BUNProxy.ts';
+import type { JsPackageManager } from './JsPackageManager.ts';
+import { PackageManagerName } from './JsPackageManager.ts';
+import { NPMProxy } from './NPMProxy.ts';
+import { PNPMProxy } from './PNPMProxy.ts';
+import { Yarn1Proxy } from './Yarn1Proxy.ts';
+import { Yarn2Proxy } from './Yarn2Proxy.ts';
 import {
   BUN_LOCKFILE,
   BUN_LOCKFILE_BINARY,
   NPM_LOCKFILE,
   PNPM_LOCKFILE,
   YARN_LOCKFILE,
-} from './constants';
+} from './constants.ts';
 
 type PackageManagerProxy =
   | typeof NPMProxy

@@ -4,8 +4,8 @@ import type { Options } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { VIRTUAL_ID as PROJECT_ANNOTATIONS_VIRTUAL_ID } from './plugins/storybook-project-annotations-plugin';
-import { SB_VIRTUAL_FILES } from './virtual-file-names';
+import { VIRTUAL_ID as PROJECT_ANNOTATIONS_VIRTUAL_ID } from './plugins/storybook-project-annotations-plugin.ts';
+import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export async function generateModernIframeScriptCode(options: Options) {
   const frameworkName = await getFrameworkName(options);

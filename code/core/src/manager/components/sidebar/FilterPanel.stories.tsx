@@ -1,11 +1,15 @@
-import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
-
+import type {
+  DocsIndexEntry,
+  StoryIndex,
+  StoryIndexEntry,
+  StatusesByStoryIdAndTypeId,
+  StatusValue,
+} from 'storybook/internal/types';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { API } from '../../../manager-api/index.ts';
 
-import { type API } from 'storybook/manager-api';
-
-import { MockAPIDecorator } from './TagsFilter.story-helpers';
-import { TagsFilterPanel } from './TagsFilterPanel';
+import { IconSymbolsDecorator, MockAPIDecorator } from './Filter.story-helpers.tsx';
+import { FilterPanel } from './FilterPanel.tsx';
 
 const getEntries = (includeUserTags: boolean) => {
   const entries = {
@@ -84,11 +88,27 @@ const getEntries = (includeUserTags: boolean) => {
   return entries;
 };
 
+// Helper to build an allStatuses map with one entry per status value
+const makeStatuses = (
+  ...values: Array<{ storyId: string; typeId: string; statusValue: StatusValue; title: string }>
+): StatusesByStoryIdAndTypeId =>
+  values.reduce<StatusesByStoryIdAndTypeId>((acc, { storyId, typeId, statusValue, title }) => {
+    acc[storyId] ??= {};
+    acc[storyId][typeId] = {
+      value: statusValue,
+      typeId,
+      storyId,
+      title,
+      description: '',
+    };
+    return acc;
+  }, {});
+
 const meta = {
-  component: TagsFilterPanel,
-  title: 'Sidebar/TagsFilterPanel',
+  component: FilterPanel,
+  title: 'Sidebar/FilterPanel',
   // Will provide api mock
-  decorators: [MockAPIDecorator],
+  decorators: [MockAPIDecorator, IconSymbolsDecorator],
   tags: ['hoho'],
   args: {
     api: {} as API,
@@ -100,8 +120,11 @@ const meta = {
     defaultIncludedFilters: [],
     includedFilters: [],
     excludedFilters: [],
+    allStatuses: {},
+    includedStatusFilters: [],
+    excludedStatusFilters: [],
   },
-} satisfies Meta<typeof TagsFilterPanel>;
+} satisfies Meta<typeof FilterPanel>;
 
 export default meta;
 
@@ -115,20 +138,37 @@ export const BuiltInOnly: Story = {
       v: 6,
       entries: getEntries(false),
     } as StoryIndex,
+    allStatuses: makeStatuses(
+      {
+        storyId: 'c1-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:new',
+        title: 'New',
+      },
+      {
+        storyId: 'c1-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:modified',
+        title: 'Modified',
+      },
+      {
+        storyId: 'c2-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:affected',
+        title: 'Affected',
+      }
+    ),
   },
 };
 
 /**
- * Production is equal to development now. We want to avoid a completely empty TagsFilterPanel and
+ * Production is equal to development now. We want to avoid a completely empty FilterPanel and
  * we can't easily detect if there'll be items matching the built-in filters. Plus, onboarding users
  * on custom tags is still useful in production.
  */
 export const BuiltInOnlyProduction: Story = {
   args: {
-    indexJson: {
-      v: 6,
-      entries: getEntries(false),
-    } as StoryIndex,
+    ...BuiltInOnly.args,
   },
 };
 
@@ -185,5 +225,77 @@ export const DefaultSelectionModified: Story = {
     includedFilters: ['tag1', 'tag2'],
     defaultIncludedFilters: ['tag1'],
     defaultExcludedFilters: ['tag2'],
+  },
+};
+
+export const WithStatuses: Story = {
+  args: {
+    allStatuses: makeStatuses(
+      {
+        storyId: 'c1-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:new',
+        title: 'New',
+      },
+      {
+        storyId: 'c1-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:modified',
+        title: 'Modified',
+      },
+      {
+        storyId: 'c2-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:affected',
+        title: 'Affected',
+      }
+    ),
+  },
+};
+
+export const WithStatusesIncluded: Story = {
+  args: {
+    ...WithStatuses.args,
+    includedStatusFilters: ['status-value:new', 'status-value:modified'],
+  },
+};
+
+export const WithStatusesExcluded: Story = {
+  args: {
+    ...WithStatuses.args,
+    excludedStatusFilters: ['status-value:affected'],
+  },
+};
+
+export const OnlyNewStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c1-story1',
+      typeId: 'change-detection',
+      statusValue: 'status-value:new',
+      title: 'New',
+    }),
+  },
+};
+
+export const OnlyModifiedStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c1-story2',
+      typeId: 'change-detection',
+      statusValue: 'status-value:modified',
+      title: 'Modified',
+    }),
+  },
+};
+
+export const OnlyAffectedStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c2-story1',
+      typeId: 'change-detection',
+      statusValue: 'status-value:affected',
+      title: 'Affected',
+    }),
   },
 };

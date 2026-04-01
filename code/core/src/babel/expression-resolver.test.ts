@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import * as parser from '@babel/parser';
 
-import { resolveExpression, unwrapTSExpression } from './expression-resolver';
+import { resolveExpression, unwrapTSExpression } from './expression-resolver.ts';
 
 const parse = (code: string) =>
   parser.parse(code, {

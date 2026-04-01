@@ -1,7 +1,7 @@
 import { dedent } from 'ts-dedent';
 
-import { createBlocker } from './types';
-import { findOutdatedPackage } from './utils';
+import { createBlocker } from './types.ts';
+import { findOutdatedPackage } from './utils.ts';
 
 const minimalVersionsMap = {
   '@angular/core': '18.0.0',

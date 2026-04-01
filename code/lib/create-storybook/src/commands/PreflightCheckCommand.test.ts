@@ -5,12 +5,14 @@ import {
   PackageManagerName,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
-import * as scaffoldModule from '../scaffold-new-project';
-import { PreflightCheckCommand } from './PreflightCheckCommand';
+import * as scaffoldModule from '../scaffold-new-project.ts';
+import { PreflightCheckCommand } from './PreflightCheckCommand.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('../scaffold-new-project', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 describe('PreflightCheckCommand', () => {
   let command: PreflightCheckCommand;
@@ -22,6 +24,7 @@ describe('PreflightCheckCommand', () => {
       installDependencies: vi.fn(),
       latestVersion: vi.fn().mockResolvedValue('8.0.0'),
       type: PackageManagerName.NPM,
+      primaryPackageJson: { packageJson: { name: 'my-app' } },
     };
 
     vi.mocked(JsPackageManagerFactory.getPackageManager).mockReturnValue(mockPackageManager);
@@ -102,6 +105,28 @@ describe('PreflightCheckCommand', () => {
       expect(JsPackageManagerFactory.getPackageManager).toHaveBeenCalledWith({
         force: 'yarn',
       });
+    });
+
+    it('should warn when package.json name is "storybook"', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.primaryPackageJson = { packageJson: { name: 'storybook' } };
+
+      await command.execute({ force: false } as any);
+
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining('Your package.json "name" field is set to "storybook"')
+      );
+    });
+
+    it('should not warn when package.json name is not "storybook"', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.primaryPackageJson = { packageJson: { name: 'my-project' } };
+
+      await command.execute({ force: false } as any);
+
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+        expect.stringContaining('Your package.json "name" field is set to "storybook"')
+      );
     });
   });
 });

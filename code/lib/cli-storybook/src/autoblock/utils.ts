@@ -4,8 +4,8 @@ import { CLI_COLORS } from 'storybook/internal/node-logger';
 import picocolors from 'picocolors';
 import { lt } from 'semver';
 
-import { shortenPath } from '../util';
-import type { AutoblockerResult } from './types';
+import { shortenPath } from '../util.ts';
+import type { AutoblockerResult } from './types.ts';
 
 type Result<M extends Record<string, string>> = {
   installedVersion: string | undefined;

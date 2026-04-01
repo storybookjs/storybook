@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { action } from 'storybook/actions';
 import { expect, fn } from 'storybook/test';
 
-import { Link } from './link';
+import { Link } from './link.tsx';
 
 const onClick = action('onClick');
 

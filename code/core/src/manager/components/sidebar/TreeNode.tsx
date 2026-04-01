@@ -3,8 +3,8 @@ import React from 'react';
 
 import { type FunctionInterpolation, styled } from 'storybook/theming';
 
-import { UseSymbol } from './IconSymbols';
-import { CollapseIcon } from './components/CollapseIcon';
+import { UseSymbol } from './IconSymbols.tsx';
+import { CollapseIcon } from './components/CollapseIcon.tsx';
 
 export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'group' | 'document' }>(
   ({ theme, type }) => ({

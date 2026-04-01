@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { useStore } from './utils';
+import { useStore } from './utils.ts';
 
 describe('useStore', () => {
   it('should return the initial value', () => {

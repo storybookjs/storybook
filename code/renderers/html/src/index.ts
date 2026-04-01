@@ -1,4 +1,4 @@
-import './globals';
+import './globals.ts';
 
-export * from './public-types';
-export * from './portable-stories';
+export * from './public-types.ts';
+export * from './portable-stories.ts';

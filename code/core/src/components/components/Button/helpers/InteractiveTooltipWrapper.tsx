@@ -2,8 +2,8 @@ import React, { type DOMAttributes, type ReactElement, useMemo } from 'react';
 
 import { type API_KeyCollection, shortcutToHumanString } from 'storybook/manager-api';
 
-import { TooltipNote } from '../../tooltip/TooltipNote';
-import { TooltipProvider } from '../../tooltip/TooltipProvider';
+import { TooltipNote } from '../../tooltip/TooltipNote.tsx';
+import { TooltipProvider } from '../../tooltip/TooltipProvider.tsx';
 
 export const InteractiveTooltipWrapper: React.FC<{
   children: ReactElement<DOMAttributes<Element>, string>;

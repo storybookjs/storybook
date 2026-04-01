@@ -4,7 +4,7 @@ import type { ArgTypesEnhancer, Renderer, SBType } from 'storybook/internal/type
 import { mapValues } from 'es-toolkit/object';
 import { dedent } from 'ts-dedent';
 
-import { combineParameters } from './parameters';
+import { combineParameters } from './parameters.ts';
 
 const inferType = (
   value: any,

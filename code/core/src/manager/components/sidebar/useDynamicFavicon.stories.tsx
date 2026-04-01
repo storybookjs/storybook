@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { getFaviconUrl } from './useDynamicFavicon';
+import { getFaviconUrl } from './useDynamicFavicon.ts';
 
 export default {
   title: 'Dynamic Favicon',

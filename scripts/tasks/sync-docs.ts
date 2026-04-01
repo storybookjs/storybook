@@ -11,8 +11,8 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 
-import type { Task } from '../task';
-import { ask } from '../utils/ask';
+import type { Task } from '../task.ts';
+import { ask } from '../utils/ask.ts';
 
 const logger = console;
 

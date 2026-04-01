@@ -2,8 +2,8 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import type { ViewportMap } from 'storybook/viewport';
 
-import preview from '../../../../../.storybook/preview';
-import { Viewport } from './Viewport';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Viewport } from './Viewport.tsx';
 
 const managerContext: any = {
   state: {},

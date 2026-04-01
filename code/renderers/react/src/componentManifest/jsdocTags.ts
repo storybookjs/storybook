@@ -1,6 +1,6 @@
 import { parse } from 'comment-parser';
 
-import { groupBy } from './utils';
+import { groupBy } from './utils.ts';
 
 export function extractJSDocInfo(jsdocComment: string) {
   const lines = jsdocComment.split('\n');

@@ -13,8 +13,8 @@ import type { ArgTypes } from 'storybook/internal/csf';
 import {
   STORYBOOK_FN_PLACEHOLDER,
   generateDummyArgsFromArgTypes,
-} from '../../core-server/utils/get-dummy-args-from-argtypes';
-import { createTestGuardDeclaration } from './transformer';
+} from '../../core-server/utils/get-dummy-args-from-argtypes.ts';
+import { createTestGuardDeclaration } from './transformer.ts';
 
 const VITEST_IMPORT_SOURCE = 'vitest';
 const TEST_UTILS_IMPORT_SOURCE = '@storybook/addon-vitest/internal/test-utils';

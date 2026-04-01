@@ -7,8 +7,8 @@ import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
-import { duplicateStoryWithNewName } from './duplicate-story-with-new-name';
-import { getDiff } from './getDiff';
+import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
+import { getDiff } from './getDiff.ts';
 
 const makeTitle = (userTitle: string) => userTitle;
 

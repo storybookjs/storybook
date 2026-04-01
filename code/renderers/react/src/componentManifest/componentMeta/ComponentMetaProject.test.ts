@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import type { StoryRef } from '../getComponentImports';
-import { extractFromStory, withProject } from './componentMetaExtractor.test-helpers';
+import type { StoryRef } from '../getComponentImports.ts';
+import { extractFromStory, withProject } from './componentMetaExtractor.test-helpers.ts';
 
 describe('compound component extraction', () => {
   it('extracts props for Accordion.Root, not Item or Trigger', async () => {

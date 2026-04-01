@@ -5,7 +5,7 @@ import type { Args, Globals } from 'storybook/internal/types';
 import { expectTypeOf } from 'expect-type';
 import { computed, reactive } from 'vue';
 
-import { updateArgs } from './render';
+import { updateArgs } from './render.ts';
 
 describe('Render Story', () => {
   it('update reactive Args updateArgs()', () => {

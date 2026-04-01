@@ -1,19 +1,19 @@
 import type { ReactElement } from 'react';
 
-import type { Channel } from '../../channels';
-import type { State } from '../../manager-api';
-import type { RenderData } from '../../router/types';
-import type { ThemeVars } from '../../theming/types';
-import type { Addon_RenderOptions } from './addons';
+import type { Channel } from '../../channels/index.ts';
+import type { State } from '../../manager-api/index.ts';
+import type { RenderData } from '../../router/types.ts';
+import type { ThemeVars } from '../../theming/types.ts';
+import type { Addon_RenderOptions } from './addons.ts';
 import type {
   API_FilterFunction,
   API_HashEntry,
   API_IndexHash,
   API_PreparedIndexEntry,
-} from './api-stories';
-import type { SetStoriesStory, SetStoriesStoryData } from './channelApi';
-import type { DocsOptions } from './core-common';
-import type { StoryIndex } from './indexer';
+} from './api-stories.ts';
+import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
+import type { DocsOptions } from './core-common.ts';
+import type { StoryIndex } from './indexer.ts';
 
 type OrString<T extends string> = T | (string & {});
 

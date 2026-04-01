@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as detect from 'storybook/internal/cli';
 
-import type { CheckOptions, RunOptions } from '../types';
-import { type WrapGetAbsolutePathRunOptions, wrapGetAbsolutePath } from './wrap-getAbsolutePath';
+import type { CheckOptions, RunOptions } from '../types.ts';
+import { type WrapGetAbsolutePathRunOptions, wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
 
 vi.mock('storybook/internal/cli', async (importOriginal) => ({
   ...(await importOriginal<typeof import('storybook/internal/cli')>()),

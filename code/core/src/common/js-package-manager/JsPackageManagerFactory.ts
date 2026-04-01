@@ -308,7 +308,7 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
     });
 
     if (/^1\./.test(yarnVersion.trim())) {
-      // yarn --version reports 1.x, but .yarnrc.yml means it's actually Berry
+      // yarn --version reports 1.x, but .yarnrc.yml means it's actually Berry; happens if the user's global Yarn is used because they forgot to enable corepack
       return hasBerryConfig ? 2 : 1;
     }
 

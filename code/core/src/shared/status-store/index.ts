@@ -16,6 +16,30 @@ export type StatusValue =
   | 'status-value:error'
   | 'status-value:unknown';
 
+const STATUS_VALUE_PREFIX = 'status-value:';
+
+export const STATUS_VALUES: StatusValue[] = [
+  'status-value:pending',
+  'status-value:success',
+  'status-value:new',
+  'status-value:modified',
+  'status-value:affected',
+  'status-value:warning',
+  'status-value:error',
+  'status-value:unknown',
+];
+
+/** Converts a short name like "error" to `"status-value:error"`. Returns undefined if invalid. */
+export const toStatusValue = (shortName: string): StatusValue | undefined => {
+  const candidate = `${STATUS_VALUE_PREFIX}${shortName}` as StatusValue;
+  return STATUS_VALUES.includes(candidate) ? candidate : undefined;
+};
+
+/** Extracts the short name from a StatusValue, e.g. `"status-value:error"` → `"error"`. */
+export const statusValueShortName = (value: StatusValue): string => {
+  return value.slice(STATUS_VALUE_PREFIX.length);
+};
+
 export type StatusTypeId = string;
 export type StatusByTypeId = Record<StatusTypeId, Status>;
 export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;
@@ -29,6 +53,8 @@ export interface Status {
   data?: any;
   sidebarContextMenu?: boolean;
 }
+
+export const CHANGE_DETECTION_STATUS_TYPE_ID = 'storybook/change-detection';
 
 export const UNIVERSAL_STATUS_STORE_OPTIONS: StoreOptions<StatusesByStoryIdAndTypeId> = {
   id: 'storybook/status',

@@ -31,6 +31,7 @@ export * from './utils/remove';
 export * from './utils/resolve-path-in-sb-cache';
 export * from './utils/symlinks';
 export * from './utils/template';
+export * from './utils/tsconfig';
 export * from './utils/validate-config';
 export * from './utils/validate-configuration-files';
 export * from './utils/satisfies';

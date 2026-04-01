@@ -1,7 +1,10 @@
 // Object.groupBy polyfill
 import { readFileSync } from 'node:fs';
 
-import { getProjectRoot, resolveImport } from 'storybook/internal/common';
+import {
+  findTsconfigPath as findTsconfigPathCommon,
+  resolveImport,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -169,25 +172,9 @@ export const cachedResolveImport: typeof resolveImport = cached(resolveImport, {
   name: 'resolveImport',
 }) as typeof resolveImport;
 
-/**
- * Tsconfig filenames to try, in order. Monorepo setups (e.g. Nx) often keep only
- * `tsconfig.base.json` at the repository root, so we fall back to common alternatives
- * when `tsconfig.json` is not found.
- */
-const TSCONFIG_CANDIDATES = ['tsconfig.json', 'tsconfig.base.json', 'tsconfig.app.json'] as const;
-
 export const findTsconfigPath = cached(
-  (cwd: string): string | undefined => {
-    const projectRoot = getProjectRoot();
-
-    for (const candidate of TSCONFIG_CANDIDATES) {
-      const found = find.up(candidate, { cwd, last: projectRoot });
-      if (found) {
-        return found;
-      }
-    }
-
-    return undefined;
-  },
-  { name: 'findTsconfigPath' }
+  (cwd: string): string | undefined => findTsconfigPathCommon(cwd),
+  {
+    name: 'findTsconfigPath',
+  }
 );

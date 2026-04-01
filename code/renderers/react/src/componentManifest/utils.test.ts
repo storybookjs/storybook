@@ -4,10 +4,8 @@ vi.mock('empathic/find', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
-import { getProjectRoot } from 'storybook/internal/common';
+import * as common from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-
-import * as find from 'empathic/find';
 
 import { asyncCache, cached, findTsconfigPath, groupBy, invalidateCache, invariant } from './utils';
 
@@ -190,16 +188,10 @@ test('invalidateCache clears async module-level memo store', async () => {
 describe('findTsconfigPath', () => {
   beforeEach(() => {
     invalidateCache();
-    vi.mocked(getProjectRoot).mockReturnValue('/project-root');
   });
 
   test('returns tsconfig.json when found', () => {
-    vi.mocked(find.up).mockImplementation((name) => {
-      if (name === 'tsconfig.json') {
-        return '/project-root/tsconfig.json';
-      }
-      return undefined;
-    });
+    vi.mocked(common.findTsconfigPath).mockReturnValue('/project-root/tsconfig.json');
 
     const result = findTsconfigPath('/project-root');
 
@@ -208,12 +200,7 @@ describe('findTsconfigPath', () => {
   });
 
   test('falls back to tsconfig.base.json when tsconfig.json is not found', () => {
-    vi.mocked(find.up).mockImplementation((name) => {
-      if (name === 'tsconfig.base.json') {
-        return '/project-root/tsconfig.base.json';
-      }
-      return undefined;
-    });
+    vi.mocked(common.findTsconfigPath).mockReturnValue('/project-root/tsconfig.base.json');
 
     const result = findTsconfigPath('/project-root');
 
@@ -221,12 +208,7 @@ describe('findTsconfigPath', () => {
   });
 
   test('falls back to tsconfig.app.json when neither tsconfig.json nor tsconfig.base.json is found', () => {
-    vi.mocked(find.up).mockImplementation((name) => {
-      if (name === 'tsconfig.app.json') {
-        return '/project-root/tsconfig.app.json';
-      }
-      return undefined;
-    });
+    vi.mocked(common.findTsconfigPath).mockReturnValue('/project-root/tsconfig.app.json');
 
     const result = findTsconfigPath('/project-root');
 
@@ -234,7 +216,7 @@ describe('findTsconfigPath', () => {
   });
 
   test('returns undefined when no tsconfig variant is found', () => {
-    vi.mocked(find.up).mockReturnValue(undefined);
+    vi.mocked(common.findTsconfigPath).mockReturnValue(undefined);
 
     const result = findTsconfigPath('/project-root');
 
@@ -243,15 +225,7 @@ describe('findTsconfigPath', () => {
   });
 
   test('prefers tsconfig.json over fallback variants', () => {
-    vi.mocked(find.up).mockImplementation((name) => {
-      if (name === 'tsconfig.json') {
-        return '/project-root/tsconfig.json';
-      }
-      if (name === 'tsconfig.base.json') {
-        return '/project-root/tsconfig.base.json';
-      }
-      return undefined;
-    });
+    vi.mocked(common.findTsconfigPath).mockReturnValue('/project-root/tsconfig.json');
 
     const result = findTsconfigPath('/project-root');
 

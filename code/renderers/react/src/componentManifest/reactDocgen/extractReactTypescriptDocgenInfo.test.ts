@@ -1,8 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { extractComponentProps } from 'storybook/internal/docs-tools';
 
+import { extractArgTypesFromDocgenTypescript } from './extractReactTypescriptDocgenInfo';
 import { extractProps } from '../../extractProps';
+
+const tempDirs: string[] = [];
+
+afterEach(() => {
+  vi.restoreAllMocks();
+
+  for (const dir of tempDirs.splice(0)) {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 // TODO: Norbert figure this out thank you
 describe('extractArgTypesFromDocgenTypescript', () => {
@@ -434,4 +449,69 @@ describe('extractArgTypesFromDocgenTypescript', () => {
       ]
     `);
   });
+
+  it('preserves JSDoc descriptions with Vite-style project references', async () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        files: [],
+        references: [{ path: './tsconfig.app.json' }, { path: './tsconfig.node.json' }],
+      }),
+      'tsconfig.app.json': JSON.stringify({
+        compilerOptions: {
+          target: 'ES2023',
+          jsx: 'react-jsx',
+          strict: true,
+          module: 'ESNext',
+          moduleResolution: 'bundler',
+          noEmit: true,
+        },
+        include: ['src'],
+      }),
+      'tsconfig.node.json': JSON.stringify({
+        compilerOptions: {
+          target: 'ES2023',
+          module: 'ESNext',
+        },
+        include: ['vite.config.ts'],
+      }),
+      'src/Button.tsx': `
+        export interface ButtonProps {
+          /** Button contents */
+          label: string;
+          /** Is this the principal call to action on the page? */
+          primary?: boolean;
+        }
+
+        /** Primary UI component for user interaction */
+        export const Button = ({ label, primary = false }: ButtonProps) => {
+          return <button data-primary={primary}>{label}</button>;
+        };
+      `,
+    });
+
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+
+    const argTypes = await extractArgTypesFromDocgenTypescript({
+      componentFilePath: path.join(dir, 'src/Button.tsx'),
+      componentExportName: 'Button',
+    });
+
+    expect(argTypes?.label?.description).toBe('Button contents');
+    expect(argTypes?.primary?.description).toBe(
+      'Is this the principal call to action on the page?'
+    );
+  });
 });
+
+function createTempProject(files: Record<string, string>) {
+  const dir = mkdtempSync(path.join(tmpdir(), 'sb-rdt-argtypes-'));
+  tempDirs.push(dir);
+
+  for (const [name, content] of Object.entries(files)) {
+    const filePath = path.join(dir, name);
+    mkdirSync(path.dirname(filePath), { recursive: true });
+    writeFileSync(filePath, content, 'utf-8');
+  }
+
+  return dir;
+}

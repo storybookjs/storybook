@@ -217,7 +217,7 @@ const getDisplayStatus = (
   itemType: Item['type'],
   status: StatusValue
 ): { status: StatusValue; label: string } =>
-  itemType === 'story' && HIDDEN_STORY_STATUSES.has(status)
+  (itemType === 'story' || itemType === 'docs') && HIDDEN_STORY_STATUSES.has(status)
     ? { status: 'status-value:unknown', label: 'Unknown' }
     : { status, label: status.split(':')[1].replace(/^./, (char) => char.toUpperCase()) };
 

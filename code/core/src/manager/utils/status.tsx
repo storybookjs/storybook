@@ -2,7 +2,11 @@ import type { ReactElement } from 'react';
 import React from 'react';
 
 import type { StatusValue } from 'storybook/internal/types';
-import { type API_HashEntry, type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  type API_HashEntry,
+  type StatusesByStoryIdAndTypeId,
+} from 'storybook/internal/types';
 
 import { CircleIcon } from '@storybook/icons';
 
@@ -31,8 +35,6 @@ export interface StatusMapping {
   iconColor: string | null;
   textColor: string | null;
 }
-
-export const CHANGE_DETECTION_TYPE_ID = 'storybook/change-detection';
 
 export const statusPriority: StatusValue[] = [
   'status-value:unknown',
@@ -181,10 +183,10 @@ export function getGroupDualStatus(
       );
 
       const changeValues = allDescendantStatuses
-        .filter((s: { typeId: string }) => s.typeId === CHANGE_DETECTION_TYPE_ID)
+        .filter((s: { typeId: string }) => s.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
         .map((s: { value: StatusValue }) => s.value);
       const testValues = allDescendantStatuses
-        .filter((s: { typeId: string }) => s.typeId !== CHANGE_DETECTION_TYPE_ID)
+        .filter((s: { typeId: string }) => s.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
         .map((s: { value: StatusValue }) => s.value);
 
       // @ts-expect-error (non strict)

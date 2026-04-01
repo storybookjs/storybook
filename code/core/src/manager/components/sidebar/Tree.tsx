@@ -251,7 +251,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const {
     item,
     statuses,
-    groupStatus,
     groupDualStatus,
     refId,
     docsMode,
@@ -448,8 +447,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
         <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
           <UseSymbol type="dot" />
         </svg>
-      ) : branchTest !== 'status-value:unknown' ? (
-        getStatus(theme, branchTest).icon
       ) : null;
 
     const overallStatus = getMostCriticalStatusValue([branchChange, branchTest]);

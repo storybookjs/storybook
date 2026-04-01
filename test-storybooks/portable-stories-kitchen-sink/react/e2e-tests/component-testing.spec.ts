@@ -544,7 +544,7 @@ test.describe("component testing", () => {
     await page.click("body");
     await expect(
       page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: success"]'
+        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Status: success"]'
       )
     ).toHaveCount(1);
   });

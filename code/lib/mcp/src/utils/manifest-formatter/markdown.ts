@@ -1,4 +1,11 @@
-import type { AllManifests, ComponentManifest, Doc, SourceManifests, Story } from '../../types.ts';
+import type {
+	AllManifests,
+	ComponentManifest,
+	ComponentSubcomponentManifest,
+	Doc,
+	SourceManifests,
+	Story,
+} from '../../types.ts';
 import {
 	parseReactComponentMeta,
 	parseReactDocgen,
@@ -65,7 +72,12 @@ function extractSummary(
  * Extract parsed docgen from a component manifest, preferring reactDocgen over
  * reactDocgenTypescript over reactComponentMeta.
  */
-function getParsedDocgen(componentManifest: ComponentManifest): ParsedDocgen | undefined {
+function getParsedDocgen(
+	componentManifest: Pick<
+		ComponentManifest | ComponentSubcomponentManifest,
+		'reactDocgen' | 'reactDocgenTypescript' | 'reactComponentMeta'
+	>,
+): ParsedDocgen | undefined {
 	if (componentManifest.reactDocgen) {
 		return parseReactDocgen(componentManifest.reactDocgen);
 	}
@@ -101,6 +113,108 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
 	return parts;
 }
 
+function formatPropsSection(
+	parsedDocgen: ParsedDocgen | undefined,
+	options: { title?: string; typeName?: string } = {},
+): string[] {
+	const propEntries = parsedDocgen ? Object.entries(parsedDocgen.props) : [];
+
+	if (propEntries.length === 0) {
+		return [];
+	}
+
+	const title = options.title ?? '## Props';
+	const typeName = options.typeName ?? 'Props';
+	const parts: string[] = [];
+	parts.push(title);
+	parts.push('');
+	parts.push('```');
+	parts.push(`export type ${typeName} = {`);
+
+	for (const [propName, propInfo] of propEntries) {
+		const type = propInfo.type ?? 'any';
+		const isRequired = propInfo.required ?? true;
+		const hasDefault = propInfo.defaultValue !== undefined;
+		const hasDescription = propInfo.description !== undefined;
+
+		if (hasDescription) {
+			parts.push('  /**');
+			parts.push(`    ${propInfo.description}`);
+			parts.push('  */');
+		}
+
+		let propLine = `  ${propName}`;
+		if (!isRequired) {
+			propLine += '?';
+		}
+
+		propLine += `: ${type}`;
+
+		if (hasDefault) {
+			propLine += ` = ${propInfo.defaultValue}`;
+		}
+
+		propLine += ';';
+		parts.push(propLine);
+	}
+
+	parts.push('}');
+	parts.push('```');
+	parts.push('');
+
+	return parts;
+}
+
+function formatSubcomponentsSection(
+	subcomponents: Record<string, ComponentSubcomponentManifest> | undefined,
+): string[] {
+	if (!subcomponents || Object.keys(subcomponents).length === 0) {
+		return [];
+	}
+
+	const parts: string[] = [];
+	parts.push('## Subcomponents');
+	parts.push('');
+
+	for (const [key, subcomponent] of Object.entries(subcomponents)) {
+		parts.push(`### ${subcomponent.name || key}`);
+		parts.push('');
+
+		if (subcomponent.summary) {
+			parts.push(subcomponent.summary);
+			parts.push('');
+		}
+
+		if (subcomponent.description) {
+			parts.push(subcomponent.description);
+			parts.push('');
+		}
+
+		if (subcomponent.import) {
+			parts.push('```');
+			parts.push(subcomponent.import);
+			parts.push('```');
+			parts.push('');
+		}
+
+		if (subcomponent.error) {
+			parts.push(`Error: ${subcomponent.error.name}`);
+			parts.push('');
+			parts.push('```');
+			parts.push(subcomponent.error.message);
+			parts.push('```');
+			parts.push('');
+			continue;
+		}
+
+		const parsedDocgen = getParsedDocgen(subcomponent);
+		const typeName = `${(subcomponent.name || key).replace(/\W+/g, '')}Props`;
+		parts.push(...formatPropsSection(parsedDocgen, { title: '#### Props', typeName }));
+	}
+
+	return parts;
+}
+
 /**
  * Format a single component manifest into markdown.
  */
@@ -118,6 +232,8 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 		parts.push(componentManifest.description);
 		parts.push('');
 	}
+
+	parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
 
 	// Parse docgen data (from either engine)
 	const parsedDocgen = getParsedDocgen(componentManifest);
@@ -165,53 +281,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 		}
 	}
 
-	// Props section
-	if (parsedDocgen) {
-		const propEntries = Object.entries(parsedDocgen.props);
-
-		if (propEntries.length > 0) {
-			parts.push('## Props');
-			parts.push('');
-			parts.push('```');
-			parts.push('export type Props = {');
-
-			for (const [propName, propInfo] of propEntries) {
-				const type = propInfo.type ?? 'any';
-				const isRequired = propInfo.required ?? true;
-				const hasDefault = propInfo.defaultValue !== undefined;
-				const hasDescription = propInfo.description !== undefined;
-
-				// Add description as JSDoc comment if present
-				if (hasDescription) {
-					parts.push('  /**');
-					parts.push(`    ${propInfo.description}`);
-					parts.push('  */');
-				}
-
-				// Build the prop line
-				let propLine = `  ${propName}`;
-
-				// Add ? for optional props
-				if (!isRequired) {
-					propLine += '?';
-				}
-
-				propLine += `: ${type}`;
-
-				// Add default value if present
-				if (hasDefault) {
-					propLine += ` = ${propInfo.defaultValue}`;
-				}
-
-				propLine += ';';
-				parts.push(propLine);
-			}
-
-			parts.push('}');
-			parts.push('```');
-			parts.push('');
-		}
-	}
+	parts.push(...formatPropsSection(parsedDocgen));
 
 	// Attached docs section
 	if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {

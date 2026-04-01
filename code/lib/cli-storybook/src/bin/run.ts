@@ -306,7 +306,10 @@ command('doctor')
 
 const aiCommand = command('ai')
   .description('AI agent helpers for Storybook')
-  .option('-o, --output <path>', 'Write the prompt output to a file instead of printing it to stdout');
+  .option(
+    '-o, --output <path>',
+    'Write the prompt output to a file instead of printing it to stdout'
+  );
 
 aiCommand
   .command('prepare')

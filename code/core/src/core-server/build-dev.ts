@@ -308,7 +308,7 @@ export async function buildDevStandalone(
       );
 
     if (problems.length > 0) {
-      logger.error(CLI_COLORS.error('Smoke tests failed.'));
+      logger.error('Smoke tests failed.');
       logger.log(problems.map((p) => p.stack).join('\n'));
     } else {
       logger.step(CLI_COLORS.success('Smoke tests passed, exiting.'));

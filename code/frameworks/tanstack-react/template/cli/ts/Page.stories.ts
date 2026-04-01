@@ -1,8 +1,16 @@
-import type { Meta, StoryObj } from '@storybook/tanstack-react';
+import { createStoryRoute, type Meta, type StoryObj } from '@storybook/tanstack-react';
 
 import { expect, userEvent, within } from 'storybook/test';
 
-import { Page } from './Page';
+import { Page, type PageLoaderData } from './Page';
+
+const sampleLoaderData: PageLoaderData = {
+  featuredItems: [
+    { id: 1, title: 'Type-safe routing', description: 'Full path & search param inference' },
+    { id: 2, title: 'Route loaders', description: 'Data fetching before render' },
+    { id: 3, title: 'Search validation', description: 'Zod-powered search params' },
+  ],
+};
 
 const meta = {
   title: 'Example/Page',
@@ -10,6 +18,11 @@ const meta = {
   parameters: {
     // More on how to position stories at: https://storybook.js.org/docs/configure/story-layout
     layout: 'fullscreen',
+    tanstack: {
+      router: {
+        route: createStoryRoute('/')({ loader: async () => sampleLoaderData }),
+      },
+    },
   },
 } satisfies Meta<typeof Page>;
 
@@ -29,17 +42,6 @@ export const LoggedIn: Story = {
 
     const logoutButton = canvas.getByRole('button', { name: /Log out/i });
     await expect(logoutButton).toBeInTheDocument();
-  },
-};
-
-// Use the tanstack.router.path parameter to set the initial route for a story
-export const WithRouterPath: Story = {
-  parameters: {
-    tanstack: {
-      router: {
-        path: '/settings?tab=profile',
-      },
-    },
   },
 };
 

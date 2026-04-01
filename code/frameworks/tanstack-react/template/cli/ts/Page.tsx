@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link, useLoaderData, useRouterState } from '@tanstack/react-router';
 
 import { Header } from './Header';
 import './page.css';
@@ -9,39 +9,13 @@ type User = {
   name: string;
 };
 
-function CurrentRoute() {
-  const { location } = useRouterState();
-
-  return (
-    <div
-      style={{
-        padding: '12px 16px',
-        background: '#f6f9fc',
-        border: '1px solid #e0e6ef',
-        borderRadius: 8,
-        fontFamily: 'monospace',
-        fontSize: 13,
-        marginBottom: 24,
-        display: 'flex',
-        gap: 12,
-        alignItems: 'center',
-        flexWrap: 'wrap',
-      }}
-    >
-      <span style={{ fontWeight: 600, color: '#333' }}>Current route:</span>
-      <code style={{ color: '#029cfd' }}>{location.pathname}</code>
-      {location.searchStr && (
-        <>
-          <span style={{ color: '#666' }}>search:</span>
-          <code style={{ color: '#66bf3c' }}>{location.searchStr}</code>
-        </>
-      )}
-    </div>
-  );
-}
+export type PageLoaderData = {
+  featuredItems: Array<{ id: number; title: string; description: string }>;
+};
 
 export const Page: React.FC = () => {
   const [user, setUser] = React.useState<User>();
+  const { featuredItems } = useLoaderData({ strict: false }) as PageLoaderData;
 
   return (
     <article>
@@ -54,6 +28,35 @@ export const Page: React.FC = () => {
 
       <section className="storybook-page">
         <h2>TanStack Router in Storybook</h2>
+
+        <CurrentRoute />
+
+        {featuredItems?.length > 0 && (
+          <>
+            <h3>Loaded via route loader</h3>
+            <ul
+              style={{ listStyle: 'none', padding: 0, display: 'flex', gap: 12, flexWrap: 'wrap' }}
+            >
+              {featuredItems.map((item) => (
+                <li
+                  key={item.id}
+                  style={{
+                    padding: '12px 16px',
+                    background: '#f6f9fc',
+                    border: '1px solid #e0e6ef',
+                    borderRadius: 8,
+                    minWidth: 180,
+                  }}
+                >
+                  <strong>{item.title}</strong>
+                  <p style={{ margin: '4px 0 0', fontSize: 13, color: '#666' }}>
+                    {item.description}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         <CurrentRoute />
 
@@ -106,3 +109,33 @@ export const Page: React.FC = () => {
     </article>
   );
 };
+function CurrentRoute() {
+  const { location } = useRouterState();
+
+  return (
+    <div
+      style={{
+        padding: '12px 16px',
+        background: '#f6f9fc',
+        border: '1px solid #e0e6ef',
+        borderRadius: 8,
+        fontFamily: 'monospace',
+        fontSize: 13,
+        marginBottom: 24,
+        display: 'flex',
+        gap: 12,
+        alignItems: 'center',
+        flexWrap: 'wrap',
+      }}
+    >
+      <span style={{ fontWeight: 600, color: '#333' }}>Current route:</span>
+      <code style={{ color: '#029cfd' }}>{location.pathname}</code>
+      {location.searchStr && (
+        <>
+          <span style={{ color: '#666' }}>search:</span>
+          <code style={{ color: '#66bf3c' }}>{location.searchStr}</code>
+        </>
+      )}
+    </div>
+  );
+}

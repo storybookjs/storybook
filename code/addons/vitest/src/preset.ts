@@ -35,11 +35,11 @@ import {
   type TriggerTestRunRequestPayload,
   type TriggerTestRunResponsePayload,
   storeOptions,
-} from './constants';
-import { log } from './logger';
-import { runTestRunner } from './node/boot-test-runner';
-import type { CachedState, ErrorLike, StoreState } from './types';
-import type { StoreEvent } from './types';
+} from './constants.ts';
+import { log } from './logger.ts';
+import { runTestRunner } from './node/boot-test-runner.ts';
+import type { CachedState, ErrorLike, StoreState } from './types.ts';
+import type { StoreEvent } from './types.ts';
 
 type Event =
   | {

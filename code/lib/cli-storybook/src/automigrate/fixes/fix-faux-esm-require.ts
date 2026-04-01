@@ -13,8 +13,8 @@ import {
   containsRequireUsage,
   hasRequireBanner,
   updateMainConfig,
-} from '../helpers/mainConfigFile';
-import type { Fix } from '../types';
+} from '../helpers/mainConfigFile.ts';
+import type { Fix } from '../types.ts';
 
 /**
  * Checks if a variable declaration with the given identifier name exists in the program body.

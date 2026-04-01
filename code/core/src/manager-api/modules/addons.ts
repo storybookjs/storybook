@@ -7,8 +7,8 @@ import type {
   Addon_TypesMapping,
 } from 'storybook/internal/types';
 
-import type { ModuleFn } from '../lib/types';
-import type { Options } from '../store';
+import type { ModuleFn } from '../lib/types.tsx';
+import type { Options } from '../store.ts';
 
 export interface SubState {
   selectedPanel: string;

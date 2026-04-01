@@ -6,8 +6,8 @@ import type { Args } from 'storybook/internal/types';
 import { LitElement, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
-import { __definePreview } from './preview';
-import type { Decorator } from './public-types';
+import { __definePreview } from './preview.ts';
+import type { Decorator } from './public-types.ts';
 
 type ButtonProps = { label: string; disabled: boolean };
 

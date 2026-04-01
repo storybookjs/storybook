@@ -9,7 +9,7 @@ import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
-import { resolveMock } from './resolve';
+import { resolveMock } from './resolve.ts';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
 

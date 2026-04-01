@@ -6,11 +6,11 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { isChromatic } from '../../../../.storybook/isChromatic';
-import { CallStates } from '../../instrumenter/types';
-import { getCalls, getInteractions } from '../mocks';
-import { InteractionsPanel } from './InteractionsPanel';
-import ToolbarStories from './Toolbar.stories';
+import { isChromatic } from '../../../../.storybook/isChromatic.ts';
+import { CallStates } from '../../instrumenter/types.ts';
+import { getCalls, getInteractions } from '../mocks/index.ts';
+import { InteractionsPanel } from './InteractionsPanel.tsx';
+import ToolbarStories from './Toolbar.stories.tsx';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,

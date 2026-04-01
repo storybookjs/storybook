@@ -6,8 +6,8 @@ import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybo
 import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
-import { Tag } from '../../../shared/constants/tags';
-import { registerManifests, writeManifests } from './manifests';
+import { Tag } from '../../../shared/constants/tags.ts';
+import { registerManifests, writeManifests } from './manifests.ts';
 
 // Mock dependencies
 vi.mock('node:fs/promises', async () => {

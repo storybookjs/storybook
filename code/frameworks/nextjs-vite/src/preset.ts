@@ -10,9 +10,9 @@ import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import semver from 'semver';
 
-import { normalizePostCssConfig } from './find-postcss-config';
-import type { FrameworkOptions } from './types';
-import { getNextjsVersion } from './utils';
+import { normalizePostCssConfig } from './find-postcss-config.ts';
+import type { FrameworkOptions } from './types.ts';
+import { getNextjsVersion } from './utils.ts';
 
 const require = createRequire(import.meta.url);
 

@@ -4,10 +4,10 @@ import type { CoreConfig, Options } from 'storybook/internal/types';
 import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
-import { sendTelemetryError } from '../withTelemetry';
-import type { StoryIndexGenerator } from './StoryIndexGenerator';
-import { summarizeIndex } from './summarizeIndex';
-import { versionStatus } from './versionStatus';
+import { sendTelemetryError } from '../withTelemetry.ts';
+import type { StoryIndexGenerator } from './StoryIndexGenerator.ts';
+import { summarizeIndex } from './summarizeIndex.ts';
+import { versionStatus } from './versionStatus.ts';
 
 export async function doTelemetry(
   app: Polka,

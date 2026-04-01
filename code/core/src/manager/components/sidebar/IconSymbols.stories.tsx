@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { IconSymbols } from './IconSymbols';
+import { IconSymbols } from './IconSymbols.tsx';
 
 const meta = {
   component: IconSymbols,

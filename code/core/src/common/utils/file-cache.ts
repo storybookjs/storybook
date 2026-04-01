@@ -5,7 +5,7 @@ import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { writeFileWithRetry } from './write-file-with-retry';
+import { writeFileWithRetry } from './write-file-with-retry.ts';
 
 interface FileSystemCacheOptions {
   ns?: string;

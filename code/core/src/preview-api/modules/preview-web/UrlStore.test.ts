@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { global } from '@storybook/global';
 
-import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore';
+import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
 
 const { history, document } = global;
 

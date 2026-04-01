@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getAnnotationsName } from './get-addon-annotations';
+import { getAnnotationsName } from './get-addon-annotations.ts';
 
 describe('getAnnotationsName', () => {
   it('should handle @storybook namespace and camel case conversion', () => {

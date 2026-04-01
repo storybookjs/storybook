@@ -9,7 +9,7 @@ import {
   Tooltip as TooltipUpstream,
 } from 'react-aria-components/patched-dist/Tooltip';
 
-import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers';
+import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
 
 export interface TooltipProviderProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */

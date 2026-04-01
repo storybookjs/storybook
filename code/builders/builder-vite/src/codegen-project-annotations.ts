@@ -6,7 +6,7 @@ import { genArrayFromRaw, genImport, genSafeVariableName } from 'knitwork';
 import { filename } from 'pathe/utils';
 import { dedent } from 'ts-dedent';
 
-import { processPreviewAnnotation } from './utils/process-preview-annotation';
+import { processPreviewAnnotation } from './utils/process-preview-annotation.ts';
 
 /** Generates the code for the `PROJECT_ANNOTATIONS_FILE` virtual module. */
 export async function generateProjectAnnotationsCode(options: Options, projectRoot: string) {

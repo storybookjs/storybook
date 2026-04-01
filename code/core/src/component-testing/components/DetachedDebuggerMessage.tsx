@@ -4,7 +4,7 @@ import { Link } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-import { PANEL_ID } from '../constants';
+import { PANEL_ID } from '../constants.ts';
 
 const Wrapper = styled.div(({ theme: { color, typography, background } }) => ({
   textAlign: 'start',

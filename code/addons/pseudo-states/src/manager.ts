@@ -1,7 +1,7 @@
 import { addons, types } from 'storybook/manager-api';
 
-import { ADDON_ID, TOOL_ID } from './constants';
-import { PseudoStateTool } from './manager/PseudoStateTool';
+import { ADDON_ID, TOOL_ID } from './constants.ts';
+import { PseudoStateTool } from './manager/PseudoStateTool.tsx';
 
 addons.register(ADDON_ID, () => {
   addons.add(TOOL_ID, {

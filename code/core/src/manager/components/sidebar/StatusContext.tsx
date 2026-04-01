@@ -9,8 +9,8 @@ import type {
 
 import type { StoriesHash } from 'storybook/manager-api';
 
-import type { Item } from '../../container/Sidebar';
-import { getDescendantIds } from '../../utils/tree';
+import type { Item } from '../../container/Sidebar.tsx';
+import { getDescendantIds } from '../../utils/tree.ts';
 
 export const StatusContext = createContext<{
   data?: StoriesHash;

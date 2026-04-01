@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { rewriteStyleSheet } from './rewriteStyleSheet';
-import { splitSelectors } from './splitSelectors';
+import { rewriteStyleSheet } from './rewriteStyleSheet.ts';
+import { splitSelectors } from './splitSelectors.ts';
 
 function splitRules(cssText: string): string[] {
   let ruleStart: number | undefined;

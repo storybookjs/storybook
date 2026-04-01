@@ -2,8 +2,8 @@ import { readFile, writeFile } from 'fs/promises';
 import { resolve } from 'path';
 import { format, resolveConfig } from 'prettier';
 
-import type { TRuleListWithoutName, TRulesList } from '../update-rules-list';
-import { categoryIds } from './categories';
+import type { TRuleListWithoutName, TRulesList } from '../update-rules-list.ts';
+import { categoryIds } from './categories.ts';
 
 const prettierConfig = resolveConfig(__dirname);
 const readmePath = resolve(

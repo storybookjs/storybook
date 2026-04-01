@@ -27,9 +27,9 @@ import { dirname, relative, resolve } from 'pathe';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
-import { DOCUMENTATION_LINK } from './constants';
-import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
+import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
+import { DOCUMENTATION_LINK } from './constants.ts';
+import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile.ts';
 
 const ADDON_NAME = '@storybook/addon-vitest' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];

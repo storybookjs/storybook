@@ -8,8 +8,8 @@ import { Consumer } from 'storybook/manager-api';
 import { Global, styled } from 'storybook/theming';
 import type { CSSObject } from 'storybook/theming';
 
-import { Viewport } from './Viewport';
-import type { FramesRendererProps } from './utils/types';
+import { Viewport } from './Viewport.tsx';
+import type { FramesRendererProps } from './utils/types.tsx';
 
 const getActive = (refId: FramesRendererProps['refId'], refs: FramesRendererProps['refs']) => {
   if (refId && refs[refId]) {

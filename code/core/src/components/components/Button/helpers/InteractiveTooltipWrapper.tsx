@@ -8,9 +8,9 @@ import React, {
 
 import { type API_KeyCollection, shortcutToHumanString } from 'storybook/manager-api';
 
-import { TooltipNote } from '../../tooltip/TooltipNote';
-import { TooltipProvider } from '../../tooltip/TooltipProvider';
-import { useAriaDescription } from './useAriaDescription';
+import { TooltipNote } from '../../tooltip/TooltipNote.tsx';
+import { TooltipProvider } from '../../tooltip/TooltipProvider.tsx';
+import { useAriaDescription } from './useAriaDescription.tsx';
 
 export interface InteractiveTooltipWrapperProps {
   children: ReactElement<DOMAttributes<Element> & AriaAttributes, string>;

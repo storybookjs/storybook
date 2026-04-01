@@ -5,8 +5,8 @@ import { FaceHappyIcon } from '@storybook/icons';
 import { expect, fn, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { Button } from './Button';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Button } from './Button.tsx';
 
 const meta = preview.meta({
   id: 'button-component',

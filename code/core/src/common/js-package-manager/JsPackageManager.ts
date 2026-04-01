@@ -13,12 +13,12 @@ import picocolors from 'picocolors';
 import { coerce, gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
-import { HandledError } from '../utils/HandledError';
-import type { ExecuteCommandOptions } from '../utils/command';
-import { findFilesUp, getProjectRoot } from '../utils/paths';
-import storybookPackagesVersions from '../versions';
-import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
-import type { InstallationMetadata } from './types';
+import { HandledError } from '../utils/HandledError.ts';
+import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
+import storybookPackagesVersions from '../versions.ts';
+import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
+import type { InstallationMetadata } from './types.ts';
 
 export enum PackageManagerName {
   NPM = 'npm',

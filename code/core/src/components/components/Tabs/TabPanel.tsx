@@ -6,8 +6,8 @@ import type { TabListState } from '@react-stately/tabs';
 import type { Node } from '@react-types/shared';
 import { styled } from 'storybook/theming';
 
-import { ScrollArea } from '../ScrollArea/ScrollArea';
-import type { useTabsState } from './TabsView';
+import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
+import type { useTabsState } from './TabsView.tsx';
 
 export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
   /** The state of the tab list. Primary mechanism for using the tabpanel. */

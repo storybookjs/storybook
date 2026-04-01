@@ -7,9 +7,9 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import type { Feature } from 'storybook/internal/types';
 import { SupportedLanguage } from 'storybook/internal/types';
 
-import type { CommandOptions } from '../generators/types';
-import { ProjectTypeService } from '../services/ProjectTypeService';
-import { ProjectDetectionCommand } from './ProjectDetectionCommand';
+import type { CommandOptions } from '../generators/types.ts';
+import { ProjectTypeService } from '../services/ProjectTypeService.ts';
+import { ProjectDetectionCommand } from './ProjectDetectionCommand.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });

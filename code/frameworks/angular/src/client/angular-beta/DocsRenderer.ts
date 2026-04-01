@@ -1,9 +1,9 @@
 import { DOCS_RENDERED, STORY_CHANGED } from 'storybook/internal/core-events';
 import { addons } from 'storybook/preview-api';
 
-import type { Parameters, StoryFnAngularReturnType } from '../types';
-import { AbstractRenderer, STORY_UID_ATTRIBUTE } from './AbstractRenderer';
-import { getNextStoryUID } from './utils/StoryUID';
+import type { Parameters, StoryFnAngularReturnType } from '../types.ts';
+import { AbstractRenderer, STORY_UID_ATTRIBUTE } from './AbstractRenderer.ts';
+import { getNextStoryUID } from './utils/StoryUID.ts';
 
 export class DocsRenderer extends AbstractRenderer {
   public async render(options: {

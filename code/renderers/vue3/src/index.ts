@@ -1,9 +1,9 @@
-import './globals';
+import './globals.ts';
 
-export { setup } from './render';
-export * from './public-types';
-export * from './portable-stories';
+export { setup } from './render.ts';
+export * from './public-types.ts';
+export * from './portable-stories.ts';
 
-export * from './preview';
+export * from './preview.ts';
 
-export type { VueTypes } from './types';
+export type { VueTypes } from './types.ts';

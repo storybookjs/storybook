@@ -1,4 +1,4 @@
-import type { ErrorLike } from './types';
+import type { ErrorLike } from './types.ts';
 
 export function errorToErrorLike(error: Error): ErrorLike {
   return {

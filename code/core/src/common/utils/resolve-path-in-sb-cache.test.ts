@@ -11,7 +11,7 @@ vi.mock('empathic/package', () => ({
   cache: vi.fn(),
 }));
 
-vi.mock('../versions', () => ({
+vi.mock('../versions.ts', () => ({
   default: {
     storybook: '10.3.0-alpha.1',
   },

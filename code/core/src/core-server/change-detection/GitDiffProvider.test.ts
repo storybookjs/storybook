@@ -355,6 +355,8 @@ describe('GitDiffProvider', () => {
   });
 
   it('does not retry watcher setup indefinitely when no watchers can be installed', async () => {
+    // This codifies our simplified behavior: setup is best-effort and we intentionally avoid
+    // background retry loops when git watching is unavailable.
     repoRootResult = rejected(new Error('fatal: not a git repository'));
     const provider = new GitDiffProvider('/repo');
 

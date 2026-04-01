@@ -181,7 +181,7 @@ const Result: FC<
   const nameMatch = matches.find((match: Match) => match.key === 'name');
   const pathMatches = matches.filter((match: Match) => match.key === 'path');
 
-  const [icon] = item.status ? getStatus(theme, item.status) : [];
+  const icon = item.status ? getStatus(theme, item.status).icon : null;
 
   return (
     <ResultRow {...props} onClick={click}>

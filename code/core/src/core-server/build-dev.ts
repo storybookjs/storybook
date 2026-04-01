@@ -13,7 +13,7 @@ import {
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
-import { deprecate, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
@@ -307,7 +307,13 @@ export async function buildDevStandalone(
         (warning) => !warning.message.includes(`Conflicting values for 'process.env.NODE_ENV'`)
       );
 
-    logger.log(problems.map((p) => p.stack).join('\n'));
+    if (problems.length > 0) {
+      logger.error('Smoke tests failed.');
+      logger.log(problems.map((p) => p.stack).join('\n'));
+    } else {
+      logger.step(CLI_COLORS.success('Smoke tests passed, exiting.'));
+    }
+    logger.outro('');
     process.exit(problems.length > 0 ? 1 : 0);
   } else {
     const name =

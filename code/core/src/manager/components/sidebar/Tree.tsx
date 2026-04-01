@@ -270,7 +270,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const statusValue = getMostCriticalStatusValue(
       Object.values(statuses || {}).map((s) => s.value)
     );
-    const [icon, textColor] = getStatus(theme, statusValue);
+    const { icon, textColor } = getStatus(theme, statusValue);
 
     return (
       <LeafNodeStyleWrapper
@@ -369,7 +369,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   }
 
   const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const [itemIcon, itemColor] = getStatus(theme, itemStatus);
+  const { icon: itemIcon, textColor: itemColor } = getStatus(theme, itemStatus);
   const itemStatusButton = itemIcon ? (
     <StatusButton
       ariaLabel={`Status: ${itemStatus.replace('status-value:', '')}`}
@@ -393,7 +393,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       item.type
     ];
     const status = getMostCriticalStatusValue([itemStatus, groupStatus?.[item.id]]);
-    const color = status ? getStatus(theme, status)[1] : null;
+    const color = status ? getStatus(theme, status).textColor : null;
     const showBranchStatus = (
       [
         'status-value:modified',
@@ -471,7 +471,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
                 <UseSymbol type="dot" />
               </svg>
             ) : (
-              getStatus(theme, status)[0]
+              getStatus(theme, status).icon
             )}
           </StatusButton>
         ) : (

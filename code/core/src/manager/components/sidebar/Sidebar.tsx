@@ -23,7 +23,7 @@ import { IconSymbols } from './IconSymbols.tsx';
 import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
-import { TagsFilter } from './TagsFilter.tsx';
+import { Filter } from './Filter.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
 
@@ -190,7 +190,7 @@ export const Sidebar = React.memo(function Sidebar({
                 </>
               )
             }
-            searchFieldContent={<TagsFilter />}
+            searchFieldContent={<Filter />}
             {...lastViewedProps}
           >
             {({

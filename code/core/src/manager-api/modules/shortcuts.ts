@@ -380,6 +380,13 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
               }
             });
           }
+
+          if (!wasPanelShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
+              forceFocus: true,
+              poll: true,
+            });
+          }
           break;
         }
 
@@ -402,6 +409,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
               }
             });
           }
+
+          if (!wasNavShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
+              forceFocus: true,
+              poll: true,
+            });
+          }
+
           break;
         }
 

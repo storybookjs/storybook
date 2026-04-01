@@ -39,7 +39,7 @@ const ActionListItem = styled.li<{
       '--listbox-item-muted-color': 'var(--listbox-item-active-color)',
     },
 
-    '&:not(:hover, :has(:focus-visible)) svg + input': {
+    '&:not(:hover, :has(:focus-visible)) :not(input) + input': {
       position: 'absolute',
       opacity: 0,
     },

@@ -1,13 +1,16 @@
 import { logConfig, normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
 
 import { telemetry } from '../telemetry/index.ts';
-import { type StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { ChangeDetectionService } from './change-detection/index.ts';
+import { getStatusStoreByTypeId } from './stores/status.ts';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
@@ -32,6 +35,7 @@ export async function storybookDevServer(
 
   const workingDir = process.cwd();
   const configDir = options.configDir;
+  const features = await options.presets.apply('features');
   const stories = await options.presets.apply('stories');
   // StoryIndexGenerator depends on these normalized stories to be referentially equal
   // So it's important that we only normalize them once here and pass the same reference around
@@ -111,6 +115,13 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
+    const changeDetectionService = new ChangeDetectionService({
+      storyIndexGeneratorPromise,
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      workingDir,
+    });
+    changeDetectionService.start(previewBuilder.onModuleGraphChange, features?.changeDetection);
+
     logger.debug('Starting preview..');
     previewResult = await previewBuilder
       .start({
@@ -120,16 +131,17 @@ export async function storybookDevServer(
         server,
         channel: options.channel,
       })
-      .catch(async (e: any) => {
+      .catch(async (e: unknown) => {
         logger.error('Failed to build the preview');
         process.exitCode = 1;
 
-        await managerBuilder?.bail().catch();
+        await changeDetectionService.dispose().catch(() => undefined);
+        await managerBuilder?.bail().catch(() => undefined);
         // For some reason, even when Webpack fails e.g. wrong main.js config,
         // the preview may continue to print to stdout, which can affect output
         // when we catch this error and process those errors (e.g. telemetry)
         // gets overwritten by preview progress output. Therefore, we should bail the preview too.
-        await previewBuilder?.bail().catch();
+        await previewBuilder?.bail().catch(() => undefined);
 
         // re-throw the error
         throw e;
@@ -151,12 +163,11 @@ export async function storybookDevServer(
       });
     }
   } catch (e) {
-    await managerBuilder?.bail().catch();
-    await previewBuilder?.bail().catch();
+    await managerBuilder?.bail().catch(() => undefined);
+    await previewBuilder?.bail().catch(() => undefined);
     throw e;
   }
 
-  const features = await options.presets.apply('features');
   if (features?.componentsManifest) {
     registerManifests({ app, presets: options.presets });
   }
@@ -175,7 +186,7 @@ export async function storybookDevServer(
           storyStats: indexAndStats.stats,
         });
       }
-    } catch (err) {}
+    } catch {}
     await telemetry('canceled', payload, { immediate: true });
     process.exit(0);
   }

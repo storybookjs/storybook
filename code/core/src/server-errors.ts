@@ -577,6 +577,17 @@ export class NoStatsForViteDevError extends StorybookError {
   }
 }
 
+export class ViteModuleGraphSubscriptionError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ViteModuleGraphSubscriptionError',
+      category: Category.BUILDER_VITE,
+      code: 2,
+      message: 'Vite module graph listeners must be registered before the builder starts.',
+    });
+  }
+}
+
 export class FindPackageVersionsError extends StorybookError {
   constructor(
     public data: { error: Error | unknown; packageName: string; packageManager: string }

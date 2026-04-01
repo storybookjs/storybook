@@ -166,7 +166,7 @@ export const AddonPanel = React.memo<{
         Addon panel
       </h2>
       <StatelessTabsView
-        id="storybook-panel-root"
+        id={focusableUIElements.storyPanelRoot}
         showToolsWhenEmpty
         emptyState={emptyState}
         selected={selectedPanel ?? undefined}

@@ -26,6 +26,11 @@ export {
   universalStatusStore as internal_universalStatusStore,
 } from './stores/status.ts';
 export {
+  getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
+  type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
+} from './change-detection/index.ts';
+export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
+export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,
   universalTestProviderStore as internal_universalTestProviderStore,

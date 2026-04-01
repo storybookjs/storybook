@@ -9,7 +9,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, screen, waitFor } from 'storybook/test';
 
-import { TagsFilter } from './TagsFilter.tsx';
+import { internal_fullStatusStore } from '../../manager-stores.mock.ts';
+
+import { Filter } from './Filter.tsx';
 
 const getDefaultTagFilters = () => {
   const tagOptions = global.TAGS_OPTIONS ?? {};
@@ -48,8 +50,8 @@ const createInitialState = (initialStoryState: Record<string, unknown> = {}) => 
 };
 
 const meta = {
-  component: TagsFilter,
-  title: 'Sidebar/TagsFilter',
+  component: Filter,
+  title: 'Sidebar/Filter',
   tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   decorators: [
     (Story, { args, parameters }) => {
@@ -106,6 +108,46 @@ const meta = {
               excludedTagFilters: excluded,
             }));
           },
+          addStatusFilters: (statuses: string[], excluded: boolean) => {
+            setState((current: any) => {
+              const includedStatusFilters = new Set(current.includedStatusFilters ?? []);
+              const excludedStatusFilters = new Set(current.excludedStatusFilters ?? []);
+
+              statuses.forEach((status) => {
+                if (excluded) {
+                  includedStatusFilters.delete(status);
+                  excludedStatusFilters.add(status);
+                } else {
+                  includedStatusFilters.add(status);
+                  excludedStatusFilters.delete(status);
+                }
+              });
+
+              return {
+                ...current,
+                includedStatusFilters: Array.from(includedStatusFilters),
+                excludedStatusFilters: Array.from(excludedStatusFilters),
+              };
+            });
+          },
+          removeStatusFilters: (statuses: string[]) => {
+            setState((current: any) => ({
+              ...current,
+              includedStatusFilters: (current.includedStatusFilters ?? []).filter(
+                (s: string) => !statuses.includes(s)
+              ),
+              excludedStatusFilters: (current.excludedStatusFilters ?? []).filter(
+                (s: string) => !statuses.includes(s)
+              ),
+            }));
+          },
+          resetStatusFilters: () => {
+            setState((current: any) => ({
+              ...current,
+              includedStatusFilters: [],
+              excludedStatusFilters: [],
+            }));
+          },
           getDocsUrl: ({ subpath }: { subpath: string }) =>
             `https://storybook.js.org/docs/${subpath}`,
         }),
@@ -119,7 +161,7 @@ const meta = {
       );
     },
   ],
-} satisfies Meta<typeof TagsFilter>;
+} satisfies Meta<typeof Filter>;
 
 export default meta;
 
@@ -173,6 +215,32 @@ export const ClosedWithSelection: Story = {
 
 export const Clear = {
   ...ClosedWithSelection,
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 'c1-s1',
+        typeId: 'change-detection',
+        value: 'status-value:new',
+        title: 'New',
+        description: '',
+      },
+      {
+        storyId: 'c1-test',
+        typeId: 'change-detection',
+        value: 'status-value:modified',
+        title: 'Modified',
+        description: '',
+      },
+      {
+        storyId: 'c1-doc',
+        typeId: 'change-detection',
+        value: 'status-value:affected',
+        title: 'Affected',
+        description: '',
+      },
+    ]);
+    return () => internal_fullStatusStore.unset();
+  },
   play: async ({ canvas }) => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });
     button.click();
@@ -225,6 +293,32 @@ export const NoUserTags = {
         },
       } as StoryIndex,
     },
+  },
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 'c1-s1',
+        typeId: 'change-detection',
+        value: 'status-value:new',
+        title: 'New',
+        description: '',
+      },
+      {
+        storyId: 'c1-test',
+        typeId: 'change-detection',
+        value: 'status-value:modified',
+        title: 'Modified',
+        description: '',
+      },
+      {
+        storyId: 'c1-doc',
+        typeId: 'change-detection',
+        value: 'status-value:affected',
+        title: 'Affected',
+        description: '',
+      },
+    ]);
+    return () => internal_fullStatusStore.unset();
   },
   play: async ({ canvas }) => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });

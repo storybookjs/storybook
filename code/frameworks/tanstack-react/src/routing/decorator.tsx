@@ -11,7 +11,7 @@ import {
 } from '@tanstack/react-router';
 import type { Router, AnyRootRoute } from '@tanstack/react-router';
 import type { RouterParameters } from './types';
-import { BaseRoute } from '@tanstack/router-core';
+import type { BaseRoute } from '@tanstack/router-core';
 import { onNavigate } from '../export-mocks/spies';
 
 export type MockRouterOptions = {
@@ -23,13 +23,23 @@ function createInternalStoryRoute(
   Story: ComponentType,
   routeParameter?: RouterParameters['route']
 ): AnyRootRoute {
-  if (routeParameter instanceof RootRoute || routeParameter instanceof Route) {
-    console.log('??');
-    routeParameter.update({
-      component: () => <Story />,
-    });
+  if (routeParameter instanceof RootRoute) {
+    // createStoryRoute() returns a root with a child route that has the loader/options.
+    // Set the Story component on the child so useLoaderData() works inside it.
+    const children = routeParameter.children as BaseRoute[] | undefined;
+    if (children?.length) {
+      children[0].update({ component: () => <Story /> });
+    } else {
+      routeParameter.update({ component: () => <Story /> });
+    }
+    return routeParameter;
+  }
 
-    return routeParameter as RootRoute;
+  if (routeParameter instanceof Route) {
+    routeParameter.update({ component: () => <Story /> });
+    const root = createRootRoute();
+    root.addChildren([routeParameter as any]);
+    return root;
   }
 
   const root = createRootRoute();
@@ -102,8 +112,7 @@ export function getRouter(): Router<AnyRootRoute> {
 export const tanstackRouteLoader: Loader = async ({ parameters }) => {
   const routerParams: RouterParameters = parameters.tanstack?.router ?? {};
 
-  // If no explicit routeTree is provided, createMockRouter will
-  // dynamically import the user's #/routeTree.gen.
+  // todo pretty sure this breaks. Ask valentin about it.
   currentRouter = createStoryRouter({
     initialPath: routerParams.path,
   });
@@ -116,9 +125,18 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
 
   const route = createInternalStoryRoute(Story, routeOptions);
 
+  // Auto-detect initial path from the route tree's first child if not explicitly set
+  let initialPath = routerParams.path;
+  if (!initialPath && route instanceof RootRoute) {
+    const children = (route as any).children as BaseRoute[] | undefined;
+    if (children?.length) {
+      initialPath = (children[0].options as any)?.path;
+    }
+  }
+
   const router = createStoryRouter({
     routeTree: route,
-    initialPath: routerParams.path,
+    initialPath: initialPath,
   });
 
   return <RouterProvider router={router}></RouterProvider>;

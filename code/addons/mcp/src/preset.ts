@@ -172,7 +172,7 @@ export const features: PresetPropertyFn<'features'> = async (existingFeatures) =
 		...existingFeatures,
 		componentsManifest: true,
 	};
-}
+};
 
 /**
  * Get composed Storybook refs from Storybook config.

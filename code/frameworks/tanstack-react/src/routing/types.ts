@@ -1,7 +1,7 @@
 import type { AnyRootRoute, Route, FileRoutesByPath } from '@tanstack/react-router';
 import type { RouteOptions } from '@tanstack/router-core';
 
-export type CreateStoryRouteOptions = Pick<
+export type StoryRouteFileOptions = Pick<
   RouteOptions<unknown>,
   | 'loader'
   | 'beforeLoad'
@@ -12,7 +12,11 @@ export type CreateStoryRouteOptions = Pick<
   | 'head'
   | 'search'
   | 'parseParams'
-> & { path: keyof FileRoutesByPath | (string & {}) };
+>;
+
+export type CreateStoryRouteOptions = StoryRouteFileOptions & {
+  path: keyof FileRoutesByPath | (string & {});
+};
 
 export type StoryRouteOptions = CreateStoryRouteOptions | Route | AnyRootRoute;
 

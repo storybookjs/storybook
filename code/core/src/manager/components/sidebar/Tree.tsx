@@ -5,6 +5,7 @@ import { Button, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 import type { StatusValue } from 'storybook/internal/types';
 import {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
   type API_HashEntry,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
@@ -28,7 +29,6 @@ import { styled, useTheme } from 'storybook/theming';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import {
-  CHANGE_DETECTION_TYPE_ID,
   getGroupDualStatus,
   getGroupStatus,
   getMostCriticalStatusValue,
@@ -236,10 +236,10 @@ export function getChangeDetectionStatus(statuses: StatusByTypeId): {
   testStatus: StatusValue;
 } {
   const changeValues = Object.values(statuses)
-    .filter((status) => status.typeId === CHANGE_DETECTION_TYPE_ID)
+    .filter((status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
     .map((status) => status.value);
   const testValues = Object.values(statuses)
-    .filter((status) => status.typeId !== CHANGE_DETECTION_TYPE_ID)
+    .filter((status) => status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
     .map((status) => status.value);
   return {
     changeStatus: getMostCriticalStatusValue(changeValues),

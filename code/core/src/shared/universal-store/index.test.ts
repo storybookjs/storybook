@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { UniversalStore } from '.';
-import { instances as mockedInstances } from './__mocks__/instances';
-import { MockUniversalStore } from './mock';
-import type { ChannelEvent } from './types';
+import { UniversalStore } from './index.ts';
+import { instances as mockedInstances } from './__mocks__/instances.ts';
+import { MockUniversalStore } from './mock.ts';
+import type { ChannelEvent } from './types.ts';
 
 vi.mock('./instances');
 

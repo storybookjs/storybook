@@ -8,10 +8,10 @@ import type {
   StoryAnnotationsOrFn as Story,
 } from 'storybook/internal/types';
 
-import { Tag } from '../../../../shared/constants/tags';
-import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';
-import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile';
-import { composeStories, composeStory, setProjectAnnotations } from './portable-stories';
+import { Tag } from '../../../../shared/constants/tags.ts';
+import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
+import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
+import { composeStories, composeStory, setProjectAnnotations } from './portable-stories.ts';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
 

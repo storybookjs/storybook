@@ -4,8 +4,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { type API } from 'storybook/manager-api';
 
-import { MockAPIDecorator } from './TagsFilter.story-helpers';
-import { TagsFilterPanel } from './TagsFilterPanel';
+import { MockAPIDecorator } from './TagsFilter.story-helpers.tsx';
+import { TagsFilterPanel } from './TagsFilterPanel.tsx';
 
 const getEntries = (includeUserTags: boolean) => {
   const entries = {

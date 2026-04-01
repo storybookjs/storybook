@@ -4,8 +4,8 @@ import React from 'react';
 import type { State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { useLayout } from '../layout/LayoutProvider';
-import NotificationItem from './NotificationItem';
+import { useLayout } from '../layout/LayoutProvider.tsx';
+import NotificationItem from './NotificationItem.tsx';
 
 interface NotificationListProps {
   notifications: State['notifications'];

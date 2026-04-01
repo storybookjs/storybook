@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { PackageManagerName } from '../../../core/src/common';
-import { add, getVersionSpecifier } from './add';
+import { PackageManagerName } from '../../../core/src/common/index.ts';
+import { add, getVersionSpecifier } from './add.ts';
 
 const MockedConfig = vi.hoisted(() => {
   return {

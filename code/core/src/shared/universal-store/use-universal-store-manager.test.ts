@@ -2,10 +2,10 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { UniversalStore } from '.';
-import { instances as mockedInstances } from './__mocks__/instances';
-import type { ChannelEvent } from './types';
-import { useUniversalStore as useUniversalStoreManager } from './use-universal-store-manager';
+import { UniversalStore } from './index.ts';
+import { instances as mockedInstances } from './__mocks__/instances.ts';
+import type { ChannelEvent } from './types.ts';
+import { useUniversalStore as useUniversalStoreManager } from './use-universal-store-manager.ts';
 
 vi.mock('./instances');
 

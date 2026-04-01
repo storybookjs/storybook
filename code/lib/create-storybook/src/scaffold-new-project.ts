@@ -6,7 +6,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import type { CommandOptions } from './generators/types';
+import type { CommandOptions } from './generators/types.ts';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';
 

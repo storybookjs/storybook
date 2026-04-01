@@ -7,15 +7,19 @@ import type { Builder, Middleware, ModuleGraph, Options } from 'storybook/intern
 
 import type { ViteDevServer } from 'vite';
 
-import { build as viteBuild } from './build';
-import type { ViteBuilder } from './types';
-import { createViteServer } from './vite-server';
-import { buildModuleGraph } from './utils/build-module-graph';
+import { build as viteBuild } from './build.ts';
+import type { ViteBuilder } from './types.ts';
+import { createViteServer } from './vite-server.ts';
+import { buildModuleGraph } from './utils/build-module-graph.ts';
 
-export { withoutVitePlugins } from './utils/without-vite-plugins';
-export { hasVitePlugins } from './utils/has-vite-plugins';
+export { withoutVitePlugins } from './utils/without-vite-plugins.ts';
+export { hasVitePlugins } from './utils/has-vite-plugins.ts';
 
-export * from './types';
+export * from './types.ts';
+
+type OnModuleGraphChange = NonNullable<Builder<Options>['onModuleGraphChange']>;
+type ModuleGraphChangeListener = Parameters<OnModuleGraphChange>[0];
+type ModuleGraphChangePayload = Parameters<ModuleGraphChangeListener>[0];
 
 function iframeHandler(options: Options, server: ViteDevServer): Middleware {
   return async (req, res) => {
@@ -34,12 +38,12 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
 }
 
 let server: ViteDevServer;
-const listeners = new Set<(moduleGraph: ModuleGraph) => void>();
+const listeners = new Set<ModuleGraphChangeListener>();
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let watcherChangeHandler: (() => void) | undefined;
 let waitForModuleGraph: ReturnType<typeof setInterval> | undefined;
 
-function notifyListeners(moduleGraph: ModuleGraph): void {
+function notifyListeners(moduleGraph: ModuleGraphChangePayload): void {
   listeners.forEach((listener) => {
     listener(moduleGraph);
   });
@@ -65,7 +69,7 @@ export async function bail(): Promise<void> {
   return server?.close();
 }
 
-export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphChange']> = (cb) => {
+export const onModuleGraphChange: OnModuleGraphChange = (cb) => {
   listeners.add(cb);
 
   return () => {
@@ -88,7 +92,9 @@ export const start: ViteBuilder['start'] = async ({
   watcherChangeHandler = () => {
     clearTimeout(debounce);
     debounce = setTimeout(() => {
-      notifyListeners(buildModuleGraph(server.moduleGraph.fileToModulesMap));
+      notifyListeners(
+        buildModuleGraph(server.moduleGraph.fileToModulesMap) as unknown as ModuleGraphChangePayload
+      );
     }, 100);
   };
 

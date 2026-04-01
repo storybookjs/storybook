@@ -7,4 +7,4 @@ export type {
   StatusStore,
   StatusStoreByTypeId,
   UseStatusStore,
-} from '../../shared/status-store';
+} from '../../shared/status-store/index.ts';

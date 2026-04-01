@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { Feature } from 'storybook/internal/types';
 
-import { DependencyCollector } from '../dependency-collector';
-import { DependencyInstallationCommand } from './DependencyInstallationCommand';
+import { DependencyCollector } from '../dependency-collector.ts';
+import { DependencyInstallationCommand } from './DependencyInstallationCommand.ts';
 
 describe('DependencyInstallationCommand', () => {
   let command: DependencyInstallationCommand;

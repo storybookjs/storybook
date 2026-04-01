@@ -1,7 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
-import { autoblock } from './index';
-import { type BlockerModule, createBlocker } from './types';
+import { autoblock } from './index.ts';
+import { type BlockerModule, createBlocker } from './types.ts';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<any>()),

@@ -2,10 +2,10 @@ import type { AfterEach } from 'storybook/internal/types';
 
 import { expect } from 'storybook/test';
 
-import { run } from './a11yRunner';
-import type { A11yParameters } from './params';
-import { getIsVitestStandaloneRun } from './utils';
-import { withVisionSimulator } from './withVisionSimulator';
+import { run } from './a11yRunner.ts';
+import type { A11yParameters } from './params.ts';
+import { getIsVitestStandaloneRun } from './utils.ts';
+import { withVisionSimulator } from './withVisionSimulator.ts';
 
 let vitestMatchersExtended = false;
 

@@ -3,10 +3,10 @@ import type { PlayFunction } from 'storybook/internal/csf';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { initialState } from '../../../shared/checklist-store/checklistData.state';
-import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
-import { ChecklistWidget } from './ChecklistWidget';
+import preview from '../../../../../.storybook/preview.tsx';
+import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
+import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock.ts';
+import { ChecklistWidget } from './ChecklistWidget.tsx';
 
 const managerContext: any = {
   state: {},

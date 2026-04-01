@@ -8,7 +8,7 @@ import { FilterIcon } from '@storybook/icons';
 import { type API, type Combo, Consumer } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { TagsFilterPanel } from './TagsFilterPanel';
+import { TagsFilterPanel } from './TagsFilterPanel.tsx';
 
 const StyledButton = styled(Button)<{ $isHighlighted: boolean }>(({ $isHighlighted, theme }) => ({
   '&:focus-visible': {

@@ -1,8 +1,8 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import * as addArgs from './addArgs';
-import * as loaders from './loaders';
-import type { ActionsTypes } from './types';
+import * as addArgs from './addArgs.ts';
+import * as loaders from './loaders.ts';
+import type { ActionsTypes } from './types.ts';
 
 export type { ActionsTypes };
 

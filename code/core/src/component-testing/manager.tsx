@@ -4,10 +4,10 @@ import { AddonPanel } from 'storybook/internal/components';
 
 import { type Combo, Consumer, addons, types } from 'storybook/manager-api';
 
-import { Panel } from './components/Panel';
-import { PanelTitle } from './components/PanelTitle';
-import { ADDON_ID, PANEL_ID } from './constants';
-import { isInteractionsDisabled } from './utils';
+import { Panel } from './components/Panel.tsx';
+import { PanelTitle } from './components/PanelTitle.tsx';
+import { ADDON_ID, PANEL_ID } from './constants.ts';
+import { isInteractionsDisabled } from './utils.ts';
 
 export default addons.register(ADDON_ID, () => {
   if (globalThis?.FEATURES?.interactions) {

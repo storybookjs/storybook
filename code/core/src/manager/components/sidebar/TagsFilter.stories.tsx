@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, screen, waitFor } from 'storybook/test';
 
-import { TagsFilter } from './TagsFilter';
+import { TagsFilter } from './TagsFilter.tsx';
 
 const getDefaultTagFilters = () => {
   const tagOptions = global.TAGS_OPTIONS ?? {};

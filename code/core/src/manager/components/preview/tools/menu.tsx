@@ -8,8 +8,8 @@ import { MenuIcon } from '@storybook/icons';
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 
-import { focusableUIElements } from '../../../../manager-api/modules/layout';
-import { useRegionFocusAnimation } from '../../layout/useLandmarkIndicator';
+import { focusableUIElements } from '../../../../manager-api/modules/layout.ts';
+import { useRegionFocusAnimation } from '../../layout/useLandmarkIndicator.ts';
 
 const menuMapper = ({ api, state }: Combo) => ({
   isVisible: api.getIsNavShown(),

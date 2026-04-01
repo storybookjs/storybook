@@ -1,1 +1,1 @@
-export { doInitiate as initiate } from './initiate';
+export { doInitiate as initiate } from './initiate.ts';

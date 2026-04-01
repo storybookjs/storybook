@@ -12,8 +12,8 @@ import * as find from 'empathic/find';
 import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { SupportedBuilder, type SupportedFramework } from '../types';
-import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants';
+import { SupportedBuilder, type SupportedFramework } from '../types/index.ts';
+import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants.ts';
 
 type Result = {
   compatible: boolean;

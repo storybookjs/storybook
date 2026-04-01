@@ -17,8 +17,8 @@ import {
 import type { API } from 'storybook/manager-api';
 import { color, styled } from 'storybook/theming';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
-import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags';
+import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags.ts';
 
 type Filter = {
   id: string;

@@ -8,8 +8,8 @@ import type {
 
 import { mapValues } from 'es-toolkit/object';
 
-import { filterArgTypes } from './filterArgTypes';
-import { combineParameters } from './parameters';
+import { filterArgTypes } from './filterArgTypes.ts';
+import { combineParameters } from './parameters.ts';
 
 export type ControlsMatchers = {
   date: RegExp;

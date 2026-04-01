@@ -9,8 +9,8 @@ import type {
 
 import { dequal as deepEqual } from 'dequal';
 
-import { getEventMetadata } from '../lib/events';
-import type { ModuleFn } from '../lib/types';
+import { getEventMetadata } from '../lib/events.ts';
+import type { ModuleFn } from '../lib/types.tsx';
 
 export interface SubState {
   globals?: Globals;

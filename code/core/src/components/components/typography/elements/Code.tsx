@@ -4,10 +4,10 @@ import React, { Children } from 'react';
 import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
-import { SyntaxHighlighter } from '../../syntaxhighlighter/lazy-syntaxhighlighter';
-import type { SupportedLanguage } from '../../syntaxhighlighter/syntaxhighlighter-types';
-import { codeCommon } from '../lib/common';
-import { isReactChildString } from '../lib/isReactChildString';
+import { SyntaxHighlighter } from '../../syntaxhighlighter/lazy-syntaxhighlighter.tsx';
+import type { SupportedLanguage } from '../../syntaxhighlighter/syntaxhighlighter-types.ts';
+import { codeCommon } from '../lib/common.tsx';
+import { isReactChildString } from '../lib/isReactChildString.tsx';
 
 const isInlineCodeRegex = /[\n\r]/g;
 

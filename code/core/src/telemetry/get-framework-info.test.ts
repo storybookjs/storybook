@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import { getFrameworkInfo } from './get-framework-info';
+import { getFrameworkInfo } from './get-framework-info.ts';
 
 vi.mock('storybook/internal/common', () => ({
   getStorybookInfo: vi.fn(),

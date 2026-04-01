@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as pkg from 'empathic/package';
 
-import versions from '../versions';
-import { resolvePathInStorybookCache } from './resolve-path-in-sb-cache';
+import versions from '../versions.ts';
+import { resolvePathInStorybookCache } from './resolve-path-in-sb-cache.ts';
 
 vi.mock('empathic/package', () => ({
   cache: vi.fn(),

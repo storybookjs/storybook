@@ -1,6 +1,6 @@
 import type { API_Settings, StoryId } from 'storybook/internal/types';
 
-import type { ModuleFn } from '../lib/types';
+import type { ModuleFn } from '../lib/types.tsx';
 
 export interface SubAPI {
   storeSelection: () => void;

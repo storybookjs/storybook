@@ -1,8 +1,8 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/types';
 
-import { ProjectType } from '../../../core/src/cli/projectTypes';
-import { SupportedBuilder } from '../../../core/src/types/modules/builders';
+import { ProjectType } from '../../../core/src/cli/projectTypes.ts';
+import { SupportedBuilder } from '../../../core/src/types/modules/builders.ts';
 
 export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type AllTemplatesKey = keyof typeof allTemplates;

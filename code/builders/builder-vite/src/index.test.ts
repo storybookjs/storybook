@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ModuleNode as StorybookModuleNode, Options } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
-import { bail, onModuleGraphChange, start } from './index';
-import { createViteServer } from './vite-server';
+import { bail, onModuleGraphChange, start } from './index.ts';
+import { createViteServer } from './vite-server.ts';
 
 vi.mock('./vite-server', () => ({
   createViteServer: vi.fn(),

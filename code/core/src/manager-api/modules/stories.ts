@@ -53,20 +53,20 @@ import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 
-import { BUILT_IN_FILTERS, Tag as TagEnum, USER_TAG_FILTER } from '../../shared/constants/tags';
-import { getEventMetadata } from '../lib/events';
+import { BUILT_IN_FILTERS, Tag as TagEnum, USER_TAG_FILTER } from '../../shared/constants/tags.ts';
+import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,
   denormalizeStoryParameters,
   getComponentLookupList,
   getStoriesLookupList,
   transformStoryIndexToStoriesHash,
-} from '../lib/stories';
-import type { ModuleFn } from '../lib/types';
-import { buildNavigationUrl } from '../lib/url';
-import type { ComposedRef } from '../root';
-import { fullStatusStore } from '../stores/status';
-import { parseTagsParam, serializeTagsParam } from './tags';
+} from '../lib/stories.ts';
+import type { ModuleFn } from '../lib/types.tsx';
+import { buildNavigationUrl } from '../lib/url.ts';
+import type { ComposedRef } from '../root.tsx';
+import { fullStatusStore } from '../stores/status.ts';
+import { parseTagsParam, serializeTagsParam } from './tags.ts';
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';

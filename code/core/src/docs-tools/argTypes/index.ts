@@ -1,8 +1,8 @@
-export * from './convert';
-export * from './docgen';
+export * from './convert/index.ts';
+export * from './docgen/index.ts';
 
-export * from './jsdocParser';
-export * from './types';
-export * from './utils';
+export * from './jsdocParser.ts';
+export * from './types.ts';
+export * from './utils.ts';
 
-export * from './enhanceArgTypes';
+export * from './enhanceArgTypes.ts';

@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { summarizeStats } from './summarizeStats';
+import { summarizeStats } from './summarizeStats.ts';
 
 it('should summarize stats', () => {
   const stats = [

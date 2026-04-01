@@ -5,8 +5,8 @@ import { global } from '@storybook/global';
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
-import type { ArgTypes, Args, StoryFn } from './public-types';
-import type { FetchStoryHtmlType, ServerRenderer } from './types';
+import type { ArgTypes, Args, StoryFn } from './public-types.ts';
+import type { FetchStoryHtmlType, ServerRenderer } from './types.ts';
 
 const { fetch, Node } = global;
 

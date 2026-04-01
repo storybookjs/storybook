@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { ArgsStore } from './ArgsStore';
+import { ArgsStore } from './ArgsStore.ts';
 
 vi.mock('storybook/internal/client-logger');
 

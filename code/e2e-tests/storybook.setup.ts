@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { SbPage } from './util';
+import { SbPage } from './util.ts';
 
 const STORYBOOK_READY_TIMEOUT = 200000;
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';

@@ -6,7 +6,7 @@ import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/
 import { server } from '@vitest/browser/context';
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
-import { setViewport } from './viewports';
+import { setViewport } from './viewports.ts';
 
 declare module 'vitest/browser' {
   interface BrowserCommands {

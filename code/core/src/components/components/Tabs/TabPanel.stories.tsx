@@ -4,11 +4,11 @@ import { useState } from 'react';
 import type { TabListState } from '@react-stately/tabs';
 import { expect, userEvent, within } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { TabList } from './TabList';
-import { TabPanel } from './TabPanel';
-import { useTabsState } from './TabsView';
-import type { TabProps } from './TabsView';
+import preview from '../../../../../.storybook/preview.tsx';
+import { TabList } from './TabList.tsx';
+import { TabPanel } from './TabPanel.tsx';
+import { useTabsState } from './TabsView.tsx';
+import type { TabProps } from './TabsView.tsx';
 
 const TabContent: FC<{ tabNumber: number }> = ({ tabNumber }) => {
   const [counter, setCounter] = useState(0);

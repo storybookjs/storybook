@@ -6,8 +6,8 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
-import { storeOptions } from '../constants';
-import { GlobalErrorContext, GlobalErrorModal } from './GlobalErrorModal';
+import { storeOptions } from '../constants.ts';
+import { GlobalErrorContext, GlobalErrorModal } from './GlobalErrorModal.tsx';
 
 type Story = StoryObj<typeof meta>;
 

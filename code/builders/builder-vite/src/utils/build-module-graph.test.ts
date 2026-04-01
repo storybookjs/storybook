@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ModuleNode as StorybookModuleNode } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
-import { buildModuleGraph } from './build-module-graph';
+import { buildModuleGraph } from './build-module-graph.ts';
 
 vi.mock('./vite-server', () => ({
   createViteServer: vi.fn(),

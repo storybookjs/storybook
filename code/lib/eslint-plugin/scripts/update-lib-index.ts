@@ -7,8 +7,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { format } from 'oxfmt';
 
-import { categoryIds } from './utils/categories';
-import rules from './utils/rules';
+import { categoryIds } from './utils/categories.ts';
+import rules from './utils/rules.ts';
 
 function camelize(text: string) {
   const a = text.toLowerCase().replace(/[-_\s.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''));

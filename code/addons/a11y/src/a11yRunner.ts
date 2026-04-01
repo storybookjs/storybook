@@ -5,9 +5,9 @@ import { global } from '@storybook/global';
 import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
 import { addons, waitForAnimations } from 'storybook/preview-api';
 
-import { withLinkPaths } from './a11yRunnerUtils';
-import { EVENTS } from './constants';
-import type { A11yParameters } from './params';
+import { withLinkPaths } from './a11yRunnerUtils.ts';
+import { EVENTS } from './constants.ts';
+import type { A11yParameters } from './params.ts';
 
 const { document } = global;
 

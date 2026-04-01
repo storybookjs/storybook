@@ -7,9 +7,9 @@ import { deepMerge } from '@vitest/utils';
 import type { API, State } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
-import type { ModuleArgs, ModuleFn } from '../../../manager-api/lib/types';
-import { init as initStories } from '../../../manager-api/modules/stories';
-import { createTestingStore } from '../../../manager-api/test-utils/store';
+import type { ModuleArgs, ModuleFn } from '../../../manager-api/lib/types.tsx';
+import { init as initStories } from '../../../manager-api/modules/stories.ts';
+import { createTestingStore } from '../../../manager-api/test-utils/store.ts';
 
 /** Mock API wrapper that forces component updates when store state changes. */
 export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{

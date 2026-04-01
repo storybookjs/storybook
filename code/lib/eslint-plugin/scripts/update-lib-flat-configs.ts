@@ -5,15 +5,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { format } from 'oxfmt';
-import type { TCategory } from './utils/categories';
-import { categories } from './utils/categories';
+import type { TCategory } from './utils/categories.ts';
+import { categories } from './utils/categories.ts';
 import {
   MAIN_JS_FILE,
   STORIES_GLOBS,
   extendsCategories,
   formatRules,
   formatSingleRule,
-} from './utils/updates';
+} from './utils/updates.ts';
 
 function formatCategory(category: TCategory) {
   const extendsCategoryId = extendsCategories[category.categoryId];

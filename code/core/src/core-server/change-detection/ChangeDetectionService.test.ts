@@ -342,6 +342,33 @@ describe('ChangeDetectionService', () => {
     expect(unsubscribeGitState).toHaveBeenCalledTimes(1);
   });
 
+  it('does not subscribe to git state when change detection is disabled', async () => {
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = createMockGitDiffProvider();
+    const { builder } = createBuilder();
+    const service = new ChangeDetectionService({
+      storyIndexGeneratorPromise: Promise.resolve({
+        getIndex: vi.fn(),
+      } as never),
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      workingDir,
+    });
+
+    service.start(builder.onModuleGraphChange, false);
+
+    expect(builder.onModuleGraphChange).not.toHaveBeenCalled();
+    expect(gitDiffProvider.onGitStateChangeMock).not.toHaveBeenCalled();
+    expect(await getChangeDetectionReadiness()).toEqual({
+      status: 'unavailable',
+      reason: 'disabled',
+    });
+    await service.dispose();
+  });
+
   it('logs unavailability when the builder does not expose module graph changes', async () => {
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),

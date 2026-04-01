@@ -95,7 +95,7 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private previousStatuses = new Map<string, Status>();
-  private readonly gitDiffProvider: GitDiffProvider;
+  private gitDiffProvider: GitDiffProvider | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -108,7 +108,7 @@ export class ChangeDetectionService {
       debounceMs?: number;
     }
   ) {
-    this.gitDiffProvider = options.gitDiffProvider ?? new GitDiffProvider(options.workingDir);
+    this.gitDiffProvider = options.gitDiffProvider;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
     resetChangeDetectionReadiness();
@@ -151,12 +151,10 @@ export class ChangeDetectionService {
 
       this.handleBuilderStartupEvent(event);
     });
-    this.unsubscribeGitState = this.gitDiffProvider.onGitStateChange(() => {
-      if (this.disposed) {
-        return;
+    this.unsubscribeGitState = this.getGitDiffProvider().onGitStateChange(() => {
+      if (!this.disposed) {
+        this.scheduleScan(this.debounceMs);
       }
-
-      this.scheduleScan(this.debounceMs);
     });
   }
 
@@ -247,9 +245,10 @@ export class ChangeDetectionService {
   }
 
   private async buildStatuses(moduleGraph: ModuleGraph): Promise<Map<string, Status>> {
+    const gitDiffProvider = this.getGitDiffProvider();
     const [changes, repoRoot, storyIndexGenerator] = await Promise.all([
-      this.gitDiffProvider.getChangedFiles(),
-      this.gitDiffProvider.getRepoRoot(),
+      gitDiffProvider.getChangedFiles(),
+      gitDiffProvider.getRepoRoot(),
       this.options.storyIndexGeneratorPromise,
     ]);
 
@@ -304,6 +303,11 @@ export class ChangeDetectionService {
     }
 
     return statuses;
+  }
+
+  private getGitDiffProvider(): GitDiffProvider {
+    this.gitDiffProvider ??= new GitDiffProvider(this.workingDir);
+    return this.gitDiffProvider;
   }
 
   private applyStatusStorePatch(nextStatuses: Map<string, Status>): void {

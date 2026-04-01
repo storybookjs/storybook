@@ -1,3 +1,8 @@
+/*
+ * Copied from /Users/kasperpeulen/code/github/mcp/eval/templates/result-docs/transcript.types.ts
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export interface TextContent {
 	type: 'text';
 	text: string;

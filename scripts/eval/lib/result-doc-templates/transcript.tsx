@@ -1,3 +1,8 @@
+/*
+ * Copied from /Users/kasperpeulen/code/github/mcp/eval/templates/result-docs/transcript.tsx
+ */
+/* eslint-disable react/react-in-jsx-scope, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, @typescript-eslint/no-explicit-any */
+
 import { useEffect, useRef, useState } from 'react';
 import type {
 	AssistantMessage,

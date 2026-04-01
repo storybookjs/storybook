@@ -179,11 +179,11 @@ describe('writeEvalResultDocs', () => {
     await writeEvalResultDocs(TMP);
 
     expect(readFileSync(join(TMP, 'transcript.tsx'), 'utf-8')).toBe(
-      readFileSync(new URL('./result-doc-templates/transcript.tsx.txt', import.meta.url), 'utf-8')
+      readFileSync(new URL('./result-doc-templates/transcript.tsx', import.meta.url), 'utf-8')
     );
     expect(readFileSync(join(TMP, 'transcript.types.ts'), 'utf-8')).toBe(
       readFileSync(
-        new URL('./result-doc-templates/transcript.types.ts.txt', import.meta.url),
+        new URL('./result-doc-templates/transcript.types.ts', import.meta.url),
         'utf-8'
       )
     );

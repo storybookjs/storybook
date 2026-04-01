@@ -1,12 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-const TRANSCRIPT_TEMPLATE_URL = new URL(
-  './result-doc-templates/transcript.tsx.txt',
-  import.meta.url
-);
+const TRANSCRIPT_TEMPLATE_URL = new URL('./result-doc-templates/transcript.tsx', import.meta.url);
 const TRANSCRIPT_TYPES_TEMPLATE_URL = new URL(
-  './result-doc-templates/transcript.types.ts.txt',
+  './result-doc-templates/transcript.types.ts',
   import.meta.url
 );
 

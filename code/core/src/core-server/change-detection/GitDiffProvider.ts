@@ -4,6 +4,7 @@ import { dirname, join, resolve as resolvePath } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execa, type ExecaError } from 'execa';
+import { logger } from 'storybook/internal/node-logger';
 
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
 
@@ -31,12 +32,8 @@ function parseChangedFiles(stdout: string): Set<string> {
 
 export class GitDiffProvider {
   private repoRoot: string | undefined;
-  private readonly gitStateCallbacks = new Set<GitStateChangeCallback>();
+  private gitStateCallback: GitStateChangeCallback | undefined;
   private readonly watchers: Partial<Record<WatcherKey, FSWatcher>> = {};
-  private watcherSetupInFlight: Promise<void> | undefined;
-  private watcherSetupGeneration = 0;
-  private watcherRebuildTimer: ReturnType<typeof setTimeout> | undefined;
-  private watcherRebuildAttempts = 0;
 
   constructor(
     private readonly cwd = process.cwd(),
@@ -93,79 +90,59 @@ export class GitDiffProvider {
   }
 
   onGitStateChange(callback: GitStateChangeCallback): () => void {
-    this.gitStateCallbacks.add(callback);
-    void this.ensureWatchers();
+    this.gitStateCallback = callback;
+    this.clearAllWatchers();
+    void this.setupWatchers();
 
     return () => {
-      this.gitStateCallbacks.delete(callback);
-
-      if (this.gitStateCallbacks.size === 0) {
-        this.cancelWatcherRebuild();
-        this.invalidateAndClearWatchers();
+      if (this.gitStateCallback === callback) {
+        this.gitStateCallback = undefined;
+        this.clearAllWatchers();
       }
     };
   }
 
-  private async ensureWatchers(): Promise<void> {
-    if (this.gitStateCallbacks.size === 0 || Object.keys(this.watchers).length > 0) {
+  private async setupWatchers(): Promise<void> {
+    if (!this.gitStateCallback) {
       return;
     }
 
-    if (!this.watcherSetupInFlight) {
-      this.watcherSetupInFlight = this.setupWatchers(this.watcherSetupGeneration);
-    }
-
-    await this.watcherSetupInFlight;
-  }
-
-  private async setupWatchers(generation: number): Promise<void> {
     try {
       const gitDir = await this.getGitDir();
-
-      if (!this.isWatcherSetupCurrent(generation)) {
-        return;
-      }
-
-      this.watchFile(generation, 'head', gitDir, () => {
+      this.watchFile('head', gitDir, () => {
         this.emitGitStateChange();
-        this.reconfigureBranchWatcher(gitDir, generation);
+        this.reconfigureBranchWatcher(gitDir);
       });
-      this.watchFile(generation, 'packedRefs', gitDir, () => {
+      this.watchFile('packedRefs', gitDir, () => {
         this.emitGitStateChange();
       });
-      await this.configureBranchWatcher(gitDir, generation);
-      this.watcherRebuildAttempts = 0;
+      await this.configureBranchWatcher(gitDir);
     } catch {
       // Watching git state is opportunistic; scanning still runs from module graph updates.
-    } finally {
-      this.watcherSetupInFlight = undefined;
     }
   }
 
   private emitGitStateChange(): void {
-    this.gitStateCallbacks.forEach((registeredCallback) => {
-      registeredCallback();
-    });
+    this.gitStateCallback?.();
   }
 
   private watchFile(
-    generation: number,
     key: WatcherKey,
     filePath: string,
     onChange: GitStateChangeCallback
   ): FSWatcher | undefined {
-    if (!this.isWatcherSetupCurrent(generation)) {
+    if (!this.gitStateCallback) {
       return undefined;
     }
 
     try {
       const watcher = this.fileSystem.watch(filePath, { persistent: false }, () => {
-        if (this.isWatcherSetupCurrent(generation)) {
+        if (this.gitStateCallback) {
           onChange();
         }
       });
 
-      if (!this.isWatcherSetupCurrent(generation)) {
+      if (!this.gitStateCallback) {
         watcher.close();
         return undefined;
       }
@@ -175,9 +152,10 @@ export class GitDiffProvider {
         if (this.watchers[key] === watcher) {
           delete this.watchers[key];
         }
-        if (this.isWatcherSetupCurrent(generation)) {
-          this.scheduleWatcherRebuild();
-        }
+        this.clearAllWatchers();
+        logger.warn(
+          `Change detection git watcher failed for ${filePath}. Git state updates may stop until restart.`
+        );
       });
 
       this.clearWatcher(key);
@@ -192,14 +170,14 @@ export class GitDiffProvider {
     }
   }
 
-  private async configureBranchWatcher(gitDir: string, generation: number): Promise<void> {
-    if (!this.isWatcherSetupCurrent(generation)) {
+  private async configureBranchWatcher(gitDir: string): Promise<void> {
+    if (!this.gitStateCallback) {
       return;
     }
 
     const branchRef = await this.readHeadRef(gitDir);
 
-    if (!this.isWatcherSetupCurrent(generation)) {
+    if (!this.gitStateCallback) {
       return;
     }
 
@@ -207,30 +185,25 @@ export class GitDiffProvider {
 
     if (branchRef?.startsWith('refs/heads/')) {
       const branchRefPath = join(gitDir, branchRef);
-      const branchWatcher = this.watchFile(generation, 'branch', dirname(branchRefPath), () => {
+      const branchWatcher = this.watchFile('branch', dirname(branchRefPath), () => {
         this.emitGitStateChange();
-        this.reconfigureBranchWatcher(gitDir, generation);
+        this.reconfigureBranchWatcher(gitDir);
       });
 
       if (!branchWatcher) {
-        this.watchFile(generation, 'branch', join(gitDir, 'refs', 'heads'), () => {
+        this.watchFile('branch', join(gitDir, 'refs', 'heads'), () => {
           this.emitGitStateChange();
-          this.reconfigureBranchWatcher(gitDir, generation);
+          this.reconfigureBranchWatcher(gitDir);
         });
       }
     }
   }
 
-  private reconfigureBranchWatcher(gitDir: string, generation: number): void {
-    void this.configureBranchWatcher(gitDir, generation).catch(() => {
-      if (this.isWatcherSetupCurrent(generation)) {
-        this.scheduleWatcherRebuild();
-      }
+  private reconfigureBranchWatcher(gitDir: string): void {
+    void this.configureBranchWatcher(gitDir).catch(() => {
+      logger.warn('Change detection failed to reconfigure git branch watcher.');
+      this.clearAllWatchers();
     });
-  }
-
-  private isWatcherSetupCurrent(generation: number): boolean {
-    return this.gitStateCallbacks.size > 0 && generation === this.watcherSetupGeneration;
   }
 
   private clearWatcher(key: WatcherKey): void {
@@ -242,38 +215,6 @@ export class GitDiffProvider {
     (Object.keys(this.watchers) as WatcherKey[]).forEach((key) => {
       this.clearWatcher(key);
     });
-  }
-
-  private invalidateAndClearWatchers(): void {
-    this.watcherSetupGeneration += 1;
-    this.clearAllWatchers();
-  }
-
-  private scheduleWatcherRebuild(): void {
-    if (this.watcherRebuildTimer || this.gitStateCallbacks.size === 0) {
-      return;
-    }
-
-    const delayMs = Math.min(1000, 50 * 2 ** this.watcherRebuildAttempts);
-    this.watcherRebuildAttempts += 1;
-
-    this.watcherRebuildTimer = setTimeout(() => {
-      this.watcherRebuildTimer = undefined;
-      if (this.gitStateCallbacks.size === 0) {
-        return;
-      }
-
-      this.invalidateAndClearWatchers();
-      void this.ensureWatchers();
-    }, delayMs);
-  }
-
-  private cancelWatcherRebuild(): void {
-    if (this.watcherRebuildTimer) {
-      clearTimeout(this.watcherRebuildTimer);
-      this.watcherRebuildTimer = undefined;
-    }
-    this.watcherRebuildAttempts = 0;
   }
 
   private async getGitDir(): Promise<string> {

@@ -6,11 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
+import { logger } from 'storybook/internal/node-logger';
 
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
 import { GitDiffProvider } from './GitDiffProvider';
 
 vi.mock('execa', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 type ExecaMockResult = { stdout: string } | { error: Error };
 type MockWatcherRecord = {
@@ -45,17 +47,6 @@ function resolved(stdout: string): ExecaMockResult {
 
 function rejected(error: Error): ExecaMockResult {
   return { error };
-}
-
-function createDeferred<T>() {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-
-  return {
-    promise: new Promise<T>((fulfill) => {
-      resolve = fulfill;
-    }),
-    resolve,
-  };
 }
 
 function setupGitWatchProvider(
@@ -335,61 +326,32 @@ describe('GitDiffProvider', () => {
     });
   });
 
-  it('reuses the same git watchers for multiple callbacks', async () => {
+  it('replaces existing git watchers when subscribing a new callback', async () => {
     const { createProvider, watchRecords } = setupGitWatchProvider();
     const firstCallback = vi.fn();
     const secondCallback = vi.fn();
     const provider = createProvider();
 
-    const unsubscribeFirst = provider.onGitStateChange(firstCallback);
+    provider.onGitStateChange(firstCallback);
     await vi.waitFor(() => {
       expect(watchRecords).toHaveLength(3);
     });
 
     const initialWatchers = watchRecords.map(({ watcher }) => watcher);
 
-    const unsubscribeSecond = provider.onGitStateChange(secondCallback);
-    await Promise.resolve();
-
-    expect(watchRecords).toHaveLength(3);
-    expect(watchRecords.map(({ watcher }) => watcher)).toEqual(initialWatchers);
-
-    watchRecords[1].emitChange();
-
-    expect(firstCallback).toHaveBeenCalledTimes(1);
-    expect(secondCallback).toHaveBeenCalledTimes(1);
-
-    unsubscribeFirst();
-    initialWatchers.forEach((watcher) => {
-      expect(watcher.close).not.toHaveBeenCalled();
+    provider.onGitStateChange(secondCallback);
+    await vi.waitFor(() => {
+      expect(watchRecords).toHaveLength(6);
     });
 
-    unsubscribeSecond();
+    watchRecords[1].emitChange();
+    watchRecords[4].emitChange();
+
+    expect(firstCallback).not.toHaveBeenCalled();
+    expect(secondCallback).toHaveBeenCalledTimes(2);
     initialWatchers.forEach((watcher) => {
       expect(watcher.close).toHaveBeenCalledTimes(1);
     });
-  });
-
-  it('does not leave watchers behind when unsubscribing during setup', async () => {
-    const headReadDeferred = createDeferred<void>();
-    const { createProvider, getWatchedPaths, watchRecords } = setupGitWatchProvider({
-      headReadDelay: headReadDeferred.promise,
-    });
-    const provider = createProvider();
-
-    const unsubscribe = provider.onGitStateChange(vi.fn());
-    await vi.waitFor(() => {
-      expect(getWatchedPaths()).toEqual(['/repo/.git', '/repo/.git']);
-    });
-
-    unsubscribe();
-    headReadDeferred.resolve();
-    await vi.waitFor(() => {
-      watchRecords.forEach(({ watcher }) => {
-        expect(watcher.close).toHaveBeenCalledTimes(1);
-      });
-    });
-    expect(getWatchedPaths()).toEqual(['/repo/.git', '/repo/.git']);
   });
 
   it('does not retry watcher setup indefinitely when no watchers can be installed', async () => {
@@ -402,35 +364,22 @@ describe('GitDiffProvider', () => {
     });
   });
 
-  it('rebuilds watchers after a watcher error while callbacks are still registered', async () => {
-    vi.useFakeTimers();
-    try {
-      const { createProvider, getWatchedPaths, watchRecords } = setupGitWatchProvider();
-      const provider = createProvider();
+  it('logs a warning and tears down watchers when a watcher errors', async () => {
+    const { createProvider, watchRecords } = setupGitWatchProvider();
+    const provider = createProvider();
 
-      provider.onGitStateChange(vi.fn());
-      await vi.waitFor(() => {
-        expect(watchRecords).toHaveLength(3);
-      });
+    provider.onGitStateChange(vi.fn());
+    await vi.waitFor(() => {
+      expect(watchRecords).toHaveLength(3);
+    });
 
-      const initialWatchers = watchRecords.slice(0, 3).map(({ watcher }) => watcher);
-      watchRecords[1].emitError();
+    watchRecords[1].emitError();
 
-      await vi.advanceTimersByTimeAsync(60);
-      await vi.waitFor(() => {
-        expect(watchRecords.length).toBeGreaterThan(3);
-      });
-
-      initialWatchers.forEach((watcher) => {
-        expect(watcher.close).toHaveBeenCalledTimes(1);
-      });
-      expect(getWatchedPaths().slice(-3)).toEqual([
-        '/repo/.git',
-        '/repo/.git',
-        '/repo/.git/refs/heads',
-      ]);
-    } finally {
-      vi.useRealTimers();
-    }
+    watchRecords.slice(0, 3).forEach(({ watcher }) => {
+      expect(watcher.close).toHaveBeenCalledTimes(1);
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Change detection git watcher failed')
+    );
   });
 });

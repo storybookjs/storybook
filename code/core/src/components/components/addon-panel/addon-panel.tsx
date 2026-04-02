@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { ScrollArea } from '../ScrollArea/ScrollArea';
+import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
 
 const usePrevious = (value: any) => {
   const ref = useRef();

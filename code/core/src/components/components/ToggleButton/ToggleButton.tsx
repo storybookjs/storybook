@@ -3,7 +3,7 @@ import React, { forwardRef } from 'react';
 import { darken, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
-import { Button, type ButtonProps } from '../Button/Button';
+import { Button, type ButtonProps } from '../Button/Button.tsx';
 
 export interface ToggleButtonProps extends ButtonProps {
   /** Whether the ToggleButton is currently pressed or not. */

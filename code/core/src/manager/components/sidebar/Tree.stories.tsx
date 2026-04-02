@@ -13,10 +13,10 @@ import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
-import { IconSymbols } from './IconSymbols';
-import { DEFAULT_REF_ID } from './Sidebar';
-import { Tree } from './Tree';
-import { index } from './mockdata.large';
+import { IconSymbols } from './IconSymbols.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
+import { Tree } from './Tree.tsx';
+import { index } from './mockdata.large.ts';
 
 const managerContext: any = {
   state: {

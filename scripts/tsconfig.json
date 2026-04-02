@@ -15,6 +15,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "strictBindCallApply": true,
     "lib": ["ESNext"],
     "types": ["node"],

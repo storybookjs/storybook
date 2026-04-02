@@ -7,7 +7,7 @@ import type { StoriesEntry, Tag } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { type StoryTest, formatCsf, loadCsf } from '../CsfFile';
+import { type StoryTest, formatCsf, loadCsf } from '../CsfFile.ts';
 
 type TagsFilter = {
   include: string[];

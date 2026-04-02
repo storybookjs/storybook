@@ -6,8 +6,8 @@ import type { StoryObj } from '@storybook/react-vite';
 import { expect, screen } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { TooltipMessage } from './TooltipMessage';
-import { WithToolTipState as WithTooltip } from './WithTooltip';
+import { TooltipMessage } from './TooltipMessage.tsx';
+import { WithToolTipState as WithTooltip } from './WithTooltip.tsx';
 
 const ViewPort = styled.div({
   height: 300,

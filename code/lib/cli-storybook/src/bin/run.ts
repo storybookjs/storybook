@@ -18,13 +18,13 @@ import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
-import { add } from '../add';
-import { doAutomigrate } from '../automigrate';
-import { doctor } from '../doctor';
-import { link } from '../link';
-import { migrate } from '../migrate';
-import { sandbox } from '../sandbox';
-import { type UpgradeOptions, upgrade } from '../upgrade';
+import { add } from '../add.ts';
+import { doAutomigrate } from '../automigrate/index.ts';
+import { doctor } from '../doctor/index.ts';
+import { link } from '../link.ts';
+import { migrate } from '../migrate.ts';
+import { sandbox } from '../sandbox.ts';
+import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
 

@@ -6,7 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { RollupPlugin } from 'unplugin';
 
-import { STORIES_REGEX } from './constants';
+import { STORIES_REGEX } from './constants.ts';
 
 export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlugin<any>> {
   return {

@@ -7,10 +7,10 @@ import { useTabListState } from '@react-stately/tabs';
 import type { Key } from '@react-types/shared';
 import { styled } from 'storybook/theming';
 
-import { Bar } from '../Bar/Bar';
-import { EmptyTabContent } from './EmptyTabContent';
-import { TabList } from './TabList';
-import { TabPanel } from './TabPanel';
+import { Bar } from '../Bar/Bar.tsx';
+import { EmptyTabContent } from './EmptyTabContent.tsx';
+import { TabList } from './TabList.tsx';
+import { TabPanel } from './TabPanel.tsx';
 
 export interface TabProps {
   id: string;

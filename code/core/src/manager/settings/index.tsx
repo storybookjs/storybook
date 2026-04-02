@@ -11,12 +11,12 @@ import { CloseIcon } from '@storybook/icons';
 import { types, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { menuTool } from '../components/preview/tools/menu';
-import { matchesKeyCode, matchesModifiers } from '../keybinding';
-import { AboutPage } from './AboutPage';
-import { GuidePage } from './GuidePage';
-import { ShortcutsPage } from './ShortcutsPage';
-import { WhatsNewPage } from './whats_new_page';
+import { menuTool } from '../components/preview/tools/menu.tsx';
+import { matchesKeyCode, matchesModifiers } from '../keybinding.ts';
+import { AboutPage } from './AboutPage.tsx';
+import { GuidePage } from './GuidePage.tsx';
+import { ShortcutsPage } from './ShortcutsPage.tsx';
+import { WhatsNewPage } from './whats_new_page.tsx';
 
 const { document } = global;
 

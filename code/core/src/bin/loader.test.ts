@@ -8,7 +8,7 @@ import {
   addExtensionsToRelativeImports,
   clearDirectoryCache,
   resolveWithExtension,
-} from './loader';
+} from './loader.ts';
 
 // Mock dependencies
 vi.mock('node:fs');

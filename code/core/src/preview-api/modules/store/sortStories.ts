@@ -11,7 +11,7 @@ import type { PreparedStory } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { storySort } from './storySort';
+import { storySort } from './storySort.ts';
 
 const sortStoriesCommon = (
   stories: IndexEntry[],

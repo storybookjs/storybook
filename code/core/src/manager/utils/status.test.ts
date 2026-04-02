@@ -2,9 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
 
-import { mockDataset } from '../components/sidebar/mockdata';
-import { getChangeDetectionStatus } from '../components/sidebar/Tree';
-import { getGroupStatus, getMostCriticalStatusValue } from './status';
+import { mockDataset } from '../components/sidebar/mockdata.tsx';
+import { getChangeDetectionStatus } from '../components/sidebar/Tree.tsx';
+import { getGroupStatus, getMostCriticalStatusValue } from './status.tsx';
 
 describe('getHighestStatus', () => {
   it('default value', () => {

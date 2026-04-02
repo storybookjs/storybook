@@ -7,8 +7,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { getStorybookData } from './automigrate/helpers/mainConfigFile';
-import { postinstallAddon } from './postinstallAddon';
+import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
+import { postinstallAddon } from './postinstallAddon.ts';
 
 export interface PostinstallOptions {
   packageManager: PackageManagerName;

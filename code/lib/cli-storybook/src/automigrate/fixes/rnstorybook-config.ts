@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { dedent } from 'ts-dedent';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 interface Options {
   storybookDir: string;

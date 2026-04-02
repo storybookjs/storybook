@@ -5,9 +5,9 @@ import ora from 'ora';
 import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 
-import { esMain } from '../utils/esmain';
-import { git } from './utils/git-client';
-import { getUnpickedPRs } from './utils/github-client';
+import { esMain } from '../utils/esmain.ts';
+import { git } from './utils/git-client.ts';
+import { getUnpickedPRs } from './utils/github-client.ts';
 
 program.name('pick-patches').description('Cherry pick patch PRs back to main');
 

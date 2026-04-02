@@ -1,15 +1,15 @@
 import { readFileSync } from 'fs';
 import { join } from 'path/posix';
 
-import { build_linux } from './common-jobs';
-import { artifact, workflow } from './utils/helpers';
+import { build_linux } from './common-jobs.ts';
+import { artifact, workflow } from './utils/helpers.ts';
 import {
   type JobOrNoOpJob,
   type Workflow,
   defineJob,
   defineNoOpJob,
   isWorkflowOrAbove,
-} from './utils/types';
+} from './utils/types.ts';
 
 export function definePortableStoryTest(directory: string) {
   const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;

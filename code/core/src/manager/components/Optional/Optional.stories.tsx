@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { keyframes, styled } from 'storybook/theming';
 
-import { Optional } from './Optional';
+import { Optional } from './Optional.tsx';
 
 const resize = keyframes`
   to {

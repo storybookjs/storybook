@@ -4,10 +4,10 @@ import type { DecoratorFunction } from 'storybook/internal/csf';
 
 import type { Meta } from '@storybook/react-vite';
 
-import { Button } from '../Button/Button';
-import { PopoverProvider } from '../Popover/PopoverProvider';
-import { TooltipMessage } from './TooltipMessage';
-import { WithTooltip } from './WithTooltip';
+import { Button } from '../Button/Button.tsx';
+import { PopoverProvider } from '../Popover/PopoverProvider.tsx';
+import { TooltipMessage } from './TooltipMessage.tsx';
+import { WithTooltip } from './WithTooltip.tsx';
 
 const WithTooltipDecorator: DecoratorFunction = (storyFn) => (
   <div

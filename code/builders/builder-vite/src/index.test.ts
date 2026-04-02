@@ -4,8 +4,8 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ModuleNode as StorybookModuleNode, Options } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
-import { bail, onModuleGraphChange, start } from './index';
-import { createViteServer } from './vite-server';
+import { bail, onModuleGraphChange, start } from './index.ts';
+import { createViteServer } from './vite-server.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./vite-server', { spy: true });

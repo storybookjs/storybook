@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createCommand } from 'commander';
 
-import { areOptionsSatisfied, createOptions, getCommand, getOptions } from './options';
+import { areOptionsSatisfied, createOptions, getCommand, getOptions } from './options.ts';
 
 const allOptions = createOptions({
   first: {

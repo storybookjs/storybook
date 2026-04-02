@@ -10,7 +10,7 @@ import type {
   StrictArgs,
 } from 'storybook/internal/types';
 
-import type { ServerRenderer } from './types';
+import type { ServerRenderer } from './types.ts';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 

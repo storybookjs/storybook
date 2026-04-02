@@ -4,7 +4,7 @@ import { Feature } from 'storybook/internal/types';
 
 import { getProcessAncestry } from 'process-ancestry';
 
-import { VersionService } from './VersionService';
+import { VersionService } from './VersionService.ts';
 
 /** Service for tracking telemetry events during Storybook initialization */
 export class TelemetryService {

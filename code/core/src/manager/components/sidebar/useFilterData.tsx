@@ -17,7 +17,7 @@ import {
   STATUS_DISPLAY_ORDER,
   getFilterFunction,
   statusValueShortName,
-} from './FilterPanel.utils';
+} from './FilterPanel.utils.ts';
 
 export interface TagFilterEntry {
   id: string;

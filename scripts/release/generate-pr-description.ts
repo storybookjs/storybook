@@ -5,11 +5,11 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain';
-import { getCurrentVersion } from './get-current-version';
-import type { Change } from './utils/get-changes';
-import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes';
-import type { PullRequestInfo } from './utils/get-github-info';
+import { esMain } from '../utils/esmain.ts';
+import { getCurrentVersion } from './get-current-version.ts';
+import type { Change } from './utils/get-changes.ts';
+import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes.ts';
+import type { PullRequestInfo } from './utils/get-github-info.ts';
 
 program
   .name('generate-pr-description')

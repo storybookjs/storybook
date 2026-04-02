@@ -7,7 +7,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 
-import { FinalizationCommand } from './FinalizationCommand';
+import { FinalizationCommand } from './FinalizationCommand.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });

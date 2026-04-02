@@ -1,6 +1,6 @@
 import type { InputType } from 'storybook/internal/types';
 
-import type { IconsProps } from '../components/components/icon/icon';
+import type { IconsProps } from '../components/components/icon/icon.tsx';
 
 export type ToolbarShortcutType = 'next' | 'previous' | 'reset';
 

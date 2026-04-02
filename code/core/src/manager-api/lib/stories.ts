@@ -26,10 +26,10 @@ import { mapValues } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
-import { Tag } from '../../shared/constants/tags';
-import { type API, type State, combineParameters } from '../root';
-import intersect from './intersect';
-import merge from './merge';
+import { Tag } from '../../shared/constants/tags.ts';
+import { type API, type State, combineParameters } from '../root.tsx';
+import intersect from './intersect.ts';
+import merge from './merge.ts';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
 

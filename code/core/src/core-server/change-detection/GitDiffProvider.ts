@@ -90,6 +90,8 @@ export class GitDiffProvider {
   }
 
   onGitStateChange(callback: GitStateChangeCallback): () => void {
+    // We intentionally support only one subscriber: change detection currently has a single consumer,
+    // so we keep lifecycle management simple instead of multiplexing callbacks.
     this.gitStateCallback = callback;
     this.clearAllWatchers();
     void this.setupWatchers();
@@ -152,6 +154,8 @@ export class GitDiffProvider {
         if (this.watchers[key] === watcher) {
           delete this.watchers[key];
         }
+        // Intentionally do not rebuild watchers after runtime failures. Module-graph events still
+        // drive scans, and avoiding auto-recovery keeps this code path small and predictable.
         this.clearAllWatchers();
         logger.warn(
           `Change detection git watcher failed for ${filePath}. Git state updates may stop until restart.`
@@ -201,6 +205,7 @@ export class GitDiffProvider {
 
   private reconfigureBranchWatcher(gitDir: string): void {
     void this.configureBranchWatcher(gitDir).catch(() => {
+      // Same trade-off as watcher errors: fail closed and warn instead of retrying/rebuilding.
       logger.warn('Change detection failed to reconfigure git branch watcher.');
       this.clearAllWatchers();
     });

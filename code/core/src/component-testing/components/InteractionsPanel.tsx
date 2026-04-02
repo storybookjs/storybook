@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { transparentize } from 'polished';
+import { announce } from '@react-aria/live-announcer';
 import type { API } from 'storybook/manager-api';
 import { srOnlyStyles, styled } from 'storybook/theming';
 
@@ -65,8 +66,6 @@ const InteractionsList = styled.ol({
   margin: 0,
   padding: 0,
 });
-
-const LiveStatus = styled.div(srOnlyStyles);
 
 const CaughtException = styled.div(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
@@ -146,6 +145,10 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     const statusAnnouncement = getStatusAnnouncement(status, hasException);
     const isStatusAlert = status === 'errored' || (status === 'completed' && hasException);
 
+    React.useEffect(() => {
+      announce(statusAnnouncement, isStatusAlert ? 'assertive' : 'polite');
+    }, [statusAnnouncement, isStatusAlert]);
+
     return (
       <Container>
         {hasResultMismatch && <TestDiscrepancyMessage browserTestStatus={browserTestStatus} />}
@@ -162,13 +165,6 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           canOpenInEditor={canOpenInEditor}
           api={api}
         />
-        <LiveStatus
-          role={isStatusAlert ? 'alert' : 'status'}
-          aria-live={isStatusAlert ? 'assertive' : 'polite'}
-          aria-atomic="true"
-        >
-          {statusAnnouncement}
-        </LiveStatus>
         <InteractionsSection>
           <InteractionsHeading>Interaction steps</InteractionsHeading>
           <InteractionsList aria-busy={isListBusy}>

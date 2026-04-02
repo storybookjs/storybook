@@ -11,6 +11,7 @@ import { CallStates } from '../../instrumenter/types.ts';
 import { getCalls, getInteractions } from '../mocks/index.ts';
 import { InteractionsPanel } from './InteractionsPanel.tsx';
 import ToolbarStories from './Toolbar.stories.tsx';
+import { destroyAnnouncer } from '@react-aria/live-announcer';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,
@@ -64,6 +65,9 @@ const meta = {
     // prop for the AddonPanel used as wrapper of Panel
     active: true,
   },
+  beforeEach: () => {
+    destroyAnnouncer();
+  },
 } as Meta<typeof InteractionsPanel>;
 
 export default meta;
@@ -80,21 +84,16 @@ const withNestedStepToggle = (isCollapsed: boolean) => {
 
 const expectLiveAnnouncement = async ({
   canvas,
-  role,
   ariaLive,
   text,
   isListBusy,
 }: {
   canvas: ReturnType<typeof within>;
-  role: 'status' | 'alert';
   ariaLive: 'polite' | 'assertive';
   text: string;
   isListBusy: boolean;
 }) => {
-  const announcement = canvas.getByRole(role);
-
-  await expect(announcement).toHaveAttribute('aria-live', ariaLive);
-  await expect(announcement).toHaveTextContent(text);
+  await expect(document.body).toHaveLiveRegion({ text, level: ariaLive });
   await expect(canvas.getByRole('list')).toHaveAttribute(
     'aria-busy',
     isListBusy ? 'true' : 'false'
@@ -112,7 +111,6 @@ export const Passing: Story = {
     await step('Expose the completed run status for assistive tech', async () => {
       await expectLiveAnnouncement({
         canvas,
-        role: 'status',
         ariaLive: 'polite',
         text: 'Component test completed successfully.',
         isListBusy: false,
@@ -221,7 +219,6 @@ export const Playing: Story = {
 
     await expectLiveAnnouncement({
       canvas,
-      role: 'status',
       ariaLive: 'polite',
       text: 'Component test is running.',
       isListBusy: true,
@@ -241,7 +238,6 @@ export const Failed: Story = {
 
     await expectLiveAnnouncement({
       canvas,
-      role: 'alert',
       ariaLive: 'assertive',
       text: 'Component test failed.',
       isListBusy: false,
@@ -299,7 +295,6 @@ export const Rendering: Story = {
 
     await expectLiveAnnouncement({
       canvas,
-      role: 'status',
       ariaLive: 'polite',
       text: 'Component test is rendering.',
       isListBusy: true,
@@ -319,7 +314,6 @@ export const CompletedWithException: Story = {
 
     await expectLiveAnnouncement({
       canvas,
-      role: 'alert',
       ariaLive: 'assertive',
       text: 'Component test failed.',
       isListBusy: false,
@@ -338,7 +332,6 @@ export const Aborted: Story = {
 
     await expectLiveAnnouncement({
       canvas,
-      role: 'status',
       ariaLive: 'polite',
       text: 'Component test was aborted.',
       isListBusy: false,

@@ -41,30 +41,14 @@ function getStoryIdsByAbsolutePath(
   workingDir: string
 ): Map<string, Set<string>> {
   const storyIdsByFile = new Map<string, Set<string>>();
-  const addStoryId = (filePath: string, storyId: string) => {
-    const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
-    storyIds.add(storyId);
-    storyIdsByFile.set(filePath, storyIds);
-  };
-
   Object.values(storyIndex.entries).forEach((entry) => {
-    if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
-      return;
+    if (entry.type === 'story' && !entry.importPath.startsWith('virtual:')) {
+      const filePath = join(workingDir, entry.importPath);
+      const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
+      storyIds.add(entry.id);
+      storyIdsByFile.set(filePath, storyIds);
     }
-
-<<<<<<< change-detection-windows
-    const absolutePath = join(workingDir, entry.importPath);
-    const storyIds = storyIdsByFile.get(absolutePath) ?? new Set<string>();
-    storyIds.add(entry.id);
-    storyIdsByFile.set(absolutePath, storyIds);
-=======
-    const absolutePath = resolve(workingDir, entry.importPath);
-    const normalizedAbsolutePath = normalizePath(absolutePath);
-    addStoryId(absolutePath, entry.id);
-    addStoryId(normalizedAbsolutePath, entry.id);
->>>>>>> next
   });
-
   return storyIdsByFile;
 }
 
@@ -257,17 +241,8 @@ export class ChangeDetectionService {
       this.options.storyIndexGeneratorPromise,
     ]);
 
-    const changedFiles = new Set(
-<<<<<<< change-detection-windows
-      Array.from(changes.changed).map((filePath) => join(repoRoot, filePath))
-=======
-      Array.from(changes.changed).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
-    );
-    const newFiles = new Set(
-      Array.from(changes.new).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
->>>>>>> next
-    );
-    const newFiles = new Set(Array.from(changes.new).map((filePath) => join(repoRoot, filePath)));
+    const changedFiles = new Set(Array.from(changes.changed).map((path) => join(repoRoot, path)));
+    const newFiles = new Set(Array.from(changes.new).map((path) => join(repoRoot, path)));
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
     const normalizedModuleGraph = new Map<string, Set<ModuleNode>>();
     moduleGraph.forEach((nodes, filePath) => {

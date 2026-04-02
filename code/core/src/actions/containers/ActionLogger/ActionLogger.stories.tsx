@@ -7,9 +7,9 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import type { ActionDisplay } from '../../models';
-import { EVENT_ID } from '../../constants';
-import ActionLogger from './index';
+import type { ActionDisplay } from '../../models/index.ts';
+import { EVENT_ID } from '../../constants.ts';
+import ActionLogger from './index.tsx';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,

@@ -5,11 +5,13 @@ import type {
   Builder,
   ModuleGraph,
   ModuleGraphChangeEvent,
+  ModuleNode,
   Status,
   StatusStoreByTypeId,
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
+import { normalizePath } from '../../common/utils/normalize-path.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
@@ -39,6 +41,11 @@ function getStoryIdsByAbsolutePath(
   workingDir: string
 ): Map<string, Set<string>> {
   const storyIdsByFile = new Map<string, Set<string>>();
+  const addStoryId = (filePath: string, storyId: string) => {
+    const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
+    storyIds.add(storyId);
+    storyIdsByFile.set(filePath, storyIds);
+  };
 
   Object.values(storyIndex.entries).forEach((entry) => {
     if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
@@ -46,10 +53,9 @@ function getStoryIdsByAbsolutePath(
     }
 
     const absolutePath = resolve(workingDir, entry.importPath);
-    // logger.info(`Story ${entry.id} absolute path: ${absolutePath}`);
-    const storyIds = storyIdsByFile.get(absolutePath) ?? new Set<string>();
-    storyIds.add(entry.id);
-    storyIdsByFile.set(absolutePath, storyIds);
+    const normalizedAbsolutePath = normalizePath(absolutePath);
+    addStoryId(absolutePath, entry.id);
+    addStoryId(normalizedAbsolutePath, entry.id);
   });
 
   return storyIdsByFile;
@@ -253,19 +259,33 @@ export class ChangeDetectionService {
     ]);
 
     const changedFiles = new Set(
-      Array.from(changes.changed).map((filePath) => resolve(repoRoot, filePath))
+      Array.from(changes.changed).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
     );
     const newFiles = new Set(
-      Array.from(changes.new).map((filePath) => resolve(repoRoot, filePath))
+      Array.from(changes.new).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
     );
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
+    const normalizedModuleGraph = new Map<string, Set<ModuleNode>>();
+    moduleGraph.forEach((nodes, filePath) => {
+      const normalizedPath = normalizePath(filePath);
+      const existingNodes = normalizedModuleGraph.get(normalizedPath);
+      if (existingNodes) {
+        nodes.forEach((node) => void existingNodes.add(node));
+      } else {
+        normalizedModuleGraph.set(normalizedPath, new Set(nodes));
+      }
+    });
 
     const storyIndex = await storyIndexGenerator.getIndex();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {
-      const affectedStoryFiles = findAffectedStoryFiles(changedFile, moduleGraph, storyIdsByFile);
+      const affectedStoryFiles = findAffectedStoryFiles(
+        changedFile,
+        normalizedModuleGraph,
+        storyIdsByFile
+      );
       const lowestDistance = Math.min(
         ...Array.from(affectedStoryFiles.values(), ({ distance }) => distance)
       );

@@ -1,3 +1,11 @@
+## 10.4.0-alpha.7
+
+- CLI: Explicitly tell whether smoke tests passed or failed - [#34419](https://github.com/storybookjs/storybook/pull/34419), thanks @Sidnioulz!
+- Core: Add `ChangeDetectionService` and wire up builder-vite - [#34369](https://github.com/storybookjs/storybook/pull/34369), thanks @ghengeveld!
+- Maintenance: Extract parseFilterParam shared helper from tags and statuses modules - [#34436](https://github.com/storybookjs/storybook/pull/34436), thanks @mixelburg!
+- Sidebar: Add status-based filtering with refactored status architecture - [#34339](https://github.com/storybookjs/storybook/pull/34339), thanks @valentinpalkovic!
+- UI: Fix global shortcuts not showing region focus indicator - [#34201](https://github.com/storybookjs/storybook/pull/34201), thanks @Sidnioulz!
+
 ## 10.4.0-alpha.6
 
 - Builder-Vite: Add onModuleGraphChange method - [#34323](https://github.com/storybookjs/storybook/pull/34323), thanks @ghengeveld!

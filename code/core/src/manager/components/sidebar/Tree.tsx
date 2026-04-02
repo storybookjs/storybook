@@ -506,44 +506,44 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </SkipToContentLink>
         )}
         {contextMenu.node}
-        <StatusSlots>
-          {branchChangeIcon && branchTestIcon ? (
-            <StatusButton
-              ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
-              data-testid="tree-change-status-button"
-              type="button"
-              status={branchChange}
-              selectedItem={isSelected}
-            >
-              {branchChangeIcon}
-            </StatusButton>
-          ) : (
-            <StatusSlotPlaceholder aria-hidden="true" />
-          )}
-          {branchTestIcon ? (
-            <StatusButton
-              ariaLabel={`Test status: ${branchTest.replace('status-value:', '')}`}
-              data-testid="tree-status-button"
-              type="button"
-              status={branchTest}
-              selectedItem={isSelected}
-            >
-              {branchTestIcon}
-            </StatusButton>
-          ) : branchChangeIcon ? (
-            <StatusButton
-              ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
-              data-testid="tree-change-status-button"
-              type="button"
-              status={branchChange}
-              selectedItem={isSelected}
-            >
-              {branchChangeIcon}
-            </StatusButton>
-          ) : (
-            <StatusSlotPlaceholder aria-hidden="true" />
-          )}
-        </StatusSlots>
+        {(branchChangeIcon || branchTestIcon) && (
+          <StatusSlots>
+            {branchChangeIcon && branchTestIcon ? (
+              <StatusButton
+                ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
+                data-testid="tree-change-status-button"
+                type="button"
+                status={branchChange}
+                selectedItem={isSelected}
+              >
+                {branchChangeIcon}
+              </StatusButton>
+            ) : (
+              <StatusSlotPlaceholder aria-hidden="true" />
+            )}
+            {branchTestIcon ? (
+              <StatusButton
+                ariaLabel={`Test status: ${branchTest.replace('status-value:', '')}`}
+                data-testid="tree-status-button"
+                type="button"
+                status={branchTest}
+                selectedItem={isSelected}
+              >
+                {branchTestIcon}
+              </StatusButton>
+            ) : (
+              <StatusButton
+                ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
+                data-testid="tree-change-status-button"
+                type="button"
+                status={branchChange}
+                selectedItem={isSelected}
+              >
+                {branchChangeIcon}
+              </StatusButton>
+            )}
+          </StatusSlots>
+        )}
       </LeafNodeStyleWrapper>
     );
   }

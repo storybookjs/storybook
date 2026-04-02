@@ -18,10 +18,10 @@ import {
   composeStory,
   normalizeArrays,
   normalizeProjectAnnotations,
-} from '../preview-api/index';
-import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
-import { Tag } from '../shared/constants/tags';
-import { getCoreAnnotations } from './core-annotations';
+} from '../preview-api/index.ts';
+import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils.ts';
+import { Tag } from '../shared/constants/tags.ts';
+import { getCoreAnnotations } from './core-annotations.ts';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';

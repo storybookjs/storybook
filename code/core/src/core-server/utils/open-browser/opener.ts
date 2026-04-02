@@ -13,8 +13,8 @@ import spawn from 'cross-spawn';
 import open, { type App } from 'open';
 import picocolors from 'picocolors';
 
-import { resolvePackageDir } from '../../../common';
-import { StorybookError } from '../../../storybook-error';
+import { resolvePackageDir } from '../../../common/index.ts';
+import { StorybookError } from '../../../storybook-error.ts';
 
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome';

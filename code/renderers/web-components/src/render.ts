@@ -9,7 +9,7 @@ import { isTemplateResult } from 'lit/directive-helpers.js';
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
-import type { WebComponentsRenderer } from './types';
+import type { WebComponentsRenderer } from './types.ts';
 
 const { Node } = global;
 

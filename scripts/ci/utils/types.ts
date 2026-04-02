@@ -1,6 +1,6 @@
-import type { executors } from './executors';
-import { toId } from './helpers';
-import type { parameters } from './parameters';
+import type { executors } from './executors.ts';
+import { toId } from './helpers.ts';
+import type { parameters } from './parameters.ts';
 
 export type Job<K extends string> = {
   id: string;

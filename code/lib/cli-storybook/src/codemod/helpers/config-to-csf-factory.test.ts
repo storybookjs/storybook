@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { dedent } from 'ts-dedent';
 import { formatFileContent } from 'storybook/internal/common';
-import { configToCsfFactory } from './config-to-csf-factory';
+import { configToCsfFactory } from './config-to-csf-factory.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadCsf } from './CsfFile';
+import { loadCsf } from './CsfFile.ts';
 
 const getIndex = (code: string) => {
   const inputs = loadCsf(code, { makeTitle: () => 'title', fileName: 'a.stories.ts' }).parse()

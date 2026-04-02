@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, userEvent, within } from 'storybook/test';
 
-import { CallStates } from '../../instrumenter/types';
-import { getCalls } from '../mocks';
-import { Interaction } from './Interaction';
-import ToolbarStories from './Toolbar.stories';
+import { CallStates } from '../../instrumenter/types.ts';
+import { getCalls } from '../mocks/index.ts';
+import { Interaction } from './Interaction.tsx';
+import ToolbarStories from './Toolbar.stories.tsx';
 
 type Story = StoryObj<typeof Interaction>;
 

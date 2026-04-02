@@ -8,11 +8,11 @@ import type { Addon_RenderOptions } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import { FlexBar } from '../Bar/Bar';
-import { TabButton } from './Button';
-import { EmptyTabContent } from './EmptyTabContent';
-import { VisuallyHidden, childrenToList } from './Tabs.helpers';
-import { useList } from './Tabs.hooks';
+import { FlexBar } from '../Bar/Bar.tsx';
+import { TabButton } from './Button.tsx';
+import { EmptyTabContent } from './EmptyTabContent.tsx';
+import { VisuallyHidden, childrenToList } from './Tabs.helpers.tsx';
+import { useList } from './Tabs.hooks.tsx';
 
 const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';

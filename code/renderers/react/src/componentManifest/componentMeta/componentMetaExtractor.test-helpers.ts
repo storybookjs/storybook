@@ -5,10 +5,10 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import ts from 'typescript';
 
-import { findMatchingComponent } from '../generator';
-import { type StoryRef, getComponents } from '../getComponentImports';
-import { ComponentMetaProject } from './ComponentMetaProject';
-import { createTempProject, writeFiles } from './test-helpers';
+import { findMatchingComponent } from '../generator.ts';
+import { type StoryRef, getComponents } from '../getComponentImports.ts';
+import { ComponentMetaProject } from './ComponentMetaProject.ts';
+import { createTempProject, writeFiles } from './test-helpers.ts';
 
 /**
  * Shared LanguageService across all tests — avoids re-parsing @types/react per test. First

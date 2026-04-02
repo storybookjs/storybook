@@ -14,8 +14,8 @@ import { type JsPackageManager, JsPackageManagerFactory } from 'storybook/intern
 import { vol } from 'memfs';
 import { loadConfig } from 'tsconfig-paths';
 
-import { fsMocks } from './fixtures';
-import { cachedFindUp, cachedResolveImport, invalidateCache } from './utils';
+import { fsMocks } from './fixtures.ts';
+import { cachedFindUp, cachedResolveImport, invalidateCache } from './utils.ts';
 
 export function setupMemfsMocks() {
   vol.reset();

@@ -1,7 +1,7 @@
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
-import type { SyntaxHighlighterFormatTypes } from './syntaxhighlighter-types';
+import type { SyntaxHighlighterFormatTypes } from './syntaxhighlighter-types.ts';
 
 export const formatter = memoize(2)(async (type: SyntaxHighlighterFormatTypes, source: string) => {
   if (type === false) {

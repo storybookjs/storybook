@@ -11,8 +11,11 @@ import * as esbuild from 'esbuild';
 import { format } from 'oxfmt';
 import { dedent } from 'ts-dedent';
 
-import { getWorkspace } from '../../../scripts/utils/tools';
-import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../src/shared/constants/environments-support';
+import { getWorkspace } from '../../../scripts/utils/tools.ts';
+import {
+  BROWSER_TARGETS,
+  SUPPORTED_FEATURES,
+} from '../src/shared/constants/environments-support.ts';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 

@@ -20,7 +20,7 @@ import type * as typefest from 'type-fest';
 import typescript from 'typescript';
 import ts from 'typescript';
 
-import { ROOT_DIRECTORY } from './constants';
+import { ROOT_DIRECTORY } from './constants.ts';
 
 export { globalExternals };
 

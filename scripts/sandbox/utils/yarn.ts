@@ -2,7 +2,7 @@ import { rename, rm, writeFile } from 'node:fs/promises';
 
 import { join } from 'path';
 
-import { runCommand } from '../generate';
+import { runCommand } from '../generate.ts';
 
 interface SetupYarnOptions {
   cwd: string;

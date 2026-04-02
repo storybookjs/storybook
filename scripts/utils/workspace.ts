@@ -2,7 +2,7 @@
 import { execaCommand } from 'execa';
 import memoize from 'memoizerific';
 
-import { ROOT_DIRECTORY } from './constants';
+import { ROOT_DIRECTORY } from './constants.ts';
 
 export type Workspace = { name: string; location: string };
 

@@ -7,7 +7,7 @@ import {
   cleanupTypeImports,
   getConfigProperties,
   removeExportDeclarations,
-} from './csf-factories-utils';
+} from './csf-factories-utils.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => {

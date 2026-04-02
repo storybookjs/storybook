@@ -2,7 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { Preset, StorybookConfig } from '@storybook/core-webpack';
 
-import { isReactScriptsInstalled } from './cra-config';
+import { isReactScriptsInstalled } from './cra-config.ts';
 
 const checkForNewPreset = (presetsList: Preset[]) => {
   const hasNewPreset = presetsList.some((preset: Preset) => {

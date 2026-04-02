@@ -7,7 +7,7 @@ import { screen } from 'storybook/test';
 import { ThemeProvider, useTheme } from 'storybook/theming';
 import type { Theme } from 'storybook/theming';
 
-import { Heading } from './Heading';
+import { Heading } from './Heading.tsx';
 
 type Story = StoryFn<typeof Heading>;
 

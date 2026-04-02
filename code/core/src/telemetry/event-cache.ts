@@ -1,6 +1,6 @@
 import { cache } from 'storybook/internal/common';
 
-import type { EventType, TelemetryEvent } from './types';
+import type { EventType, TelemetryEvent } from './types.ts';
 
 interface UpgradeSummary {
   timestamp: number;

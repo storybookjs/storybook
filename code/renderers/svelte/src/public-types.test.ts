@@ -14,8 +14,8 @@ import type { Component, ComponentProps } from 'svelte';
 import Button from './__test__/Button.svelte';
 import Decorator2 from './__test__/Decorator2.svelte';
 import Decorator1 from './__test__/Decorator.svelte';
-import type { Decorator, Meta, StoryObj } from './public-types';
-import type { SvelteRenderer } from './types';
+import type { Decorator, Meta, StoryObj } from './public-types.ts';
+import type { SvelteRenderer } from './types.ts';
 
 type SvelteStory<Comp extends Component<any, any, any>, Args, RequiredArgs> = StoryAnnotations<
   SvelteRenderer<Comp>,

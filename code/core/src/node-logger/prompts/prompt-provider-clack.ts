@@ -1,7 +1,7 @@
 import * as clack from '@clack/prompts';
 
-import { logTracker } from '../logger/log-tracker';
-import { wrapTextForClackHint } from '../wrap-utils';
+import { logTracker } from '../logger/log-tracker.ts';
+import { wrapTextForClackHint } from '../wrap-utils.ts';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
@@ -12,8 +12,8 @@ import type {
   TaskLogInstance,
   TaskLogOptions,
   TextPromptOptions,
-} from './prompt-provider-base';
-import { PromptProvider } from './prompt-provider-base';
+} from './prompt-provider-base.ts';
+import { PromptProvider } from './prompt-provider-base.ts';
 
 export const getCurrentTaskLog = (): ReturnType<typeof clack.taskLog> | null => {
   if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {

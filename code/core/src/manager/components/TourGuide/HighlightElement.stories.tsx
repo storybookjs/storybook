@@ -1,7 +1,7 @@
 import { Button } from 'storybook/internal/components';
 
-import preview from '../../../../../.storybook/preview';
-import { HighlightElement } from './HighlightElement';
+import preview from '../../../../../.storybook/preview.tsx';
+import { HighlightElement } from './HighlightElement.tsx';
 
 const meta = preview.meta({
   component: HighlightElement,

@@ -9,7 +9,7 @@ import type { NextConfig } from 'next';
 import nextJSLoadConfigModule from 'next/dist/build/load-jsconfig.js';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { getNodeModulesExcludeRegex } from '../utils';
+import { getNodeModulesExcludeRegex } from '../utils.ts';
 
 export const configureSWCLoader = async (
   baseConfig: WebpackConfig,

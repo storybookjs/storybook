@@ -3,7 +3,7 @@ import React from 'react';
 
 import { Modal } from 'storybook/internal/components';
 
-import { MOBILE_TRANSITION_DURATION } from '../../../constants';
+import { MOBILE_TRANSITION_DURATION } from '../../../constants.ts';
 
 interface MobileAddonsDrawerProps {
   children: ReactNode;

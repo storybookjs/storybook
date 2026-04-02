@@ -1,23 +1,23 @@
-import angularGenerator from './ANGULAR';
-import emberGenerator from './EMBER';
-import { generatorRegistry } from './GeneratorRegistry';
-import htmlGenerator from './HTML';
-import nextjsGenerator from './NEXTJS';
-import nuxtGenerator from './NUXT';
-import preactGenerator from './PREACT';
-import qwikGenerator from './QWIK';
-import reactGenerator from './REACT';
-import reactNativeGenerator from './REACT_NATIVE';
-import reactNativeAndRNWGenerator from './REACT_NATIVE_AND_RNW';
-import reactNativeWebGenerator from './REACT_NATIVE_WEB';
-import reactScriptsGenerator from './REACT_SCRIPTS';
-import serverGenerator from './SERVER';
-import solidGenerator from './SOLID';
-import svelteGenerator from './SVELTE';
-import svelteKitGenerator from './SVELTEKIT';
-import vue3Generator from './VUE3';
-import webComponentsGenerator from './WEB-COMPONENTS';
-import type { GeneratorModule } from './types';
+import angularGenerator from './ANGULAR/index.ts';
+import emberGenerator from './EMBER/index.ts';
+import { generatorRegistry } from './GeneratorRegistry.ts';
+import htmlGenerator from './HTML/index.ts';
+import nextjsGenerator from './NEXTJS/index.ts';
+import nuxtGenerator from './NUXT/index.ts';
+import preactGenerator from './PREACT/index.ts';
+import qwikGenerator from './QWIK/index.ts';
+import reactGenerator from './REACT/index.ts';
+import reactNativeGenerator from './REACT_NATIVE/index.ts';
+import reactNativeAndRNWGenerator from './REACT_NATIVE_AND_RNW/index.ts';
+import reactNativeWebGenerator from './REACT_NATIVE_WEB/index.ts';
+import reactScriptsGenerator from './REACT_SCRIPTS/index.ts';
+import serverGenerator from './SERVER/index.ts';
+import solidGenerator from './SOLID/index.ts';
+import svelteGenerator from './SVELTE/index.ts';
+import svelteKitGenerator from './SVELTEKIT/index.ts';
+import vue3Generator from './VUE3/index.ts';
+import webComponentsGenerator from './WEB-COMPONENTS/index.ts';
+import type { GeneratorModule } from './types.ts';
 
 const setOfGenerators = new Set<GeneratorModule>([
   reactGenerator,

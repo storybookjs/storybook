@@ -27,7 +27,7 @@ import type {
 import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.tsx';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import {
   getGroupDualStatus,
   getGroupStatus,

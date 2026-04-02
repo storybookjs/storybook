@@ -42,11 +42,12 @@ export function toHaveLiveRegion(
   for (const el of candidates) {
     // Determine the effective politeness level.
     const ariaLive = el.getAttribute('aria-live');
-    const role = el.getAttribute('role');
+    const role = el.getAttribute('role');  
+    const isOutput = el.tagName.toLowerCase() === 'output';  
 
     let effectiveLevel: string | null = ariaLive;
     if (!effectiveLevel) {
-      if (role === 'status' || role === 'log') {
+      if (role === 'status' || role === 'log' || isOutput) {
         effectiveLevel = 'polite';
       }
       if (role === 'alert') {

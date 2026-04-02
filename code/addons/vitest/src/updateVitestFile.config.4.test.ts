@@ -60,11 +60,11 @@ describe('updateConfigFile', () => {
         
         // https://vite.dev/config/
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -73,12 +73,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
           plugins: [react()],
@@ -93,16 +93,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -152,12 +152,12 @@ describe('updateConfigFile', () => {
         
         // https://vite.dev/config/
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { defineConfig } from "vitest/config";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -166,12 +166,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default {
           plugins: [react()],
@@ -186,16 +186,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -276,11 +276,11 @@ describe('updateConfigFile', () => {
         
         // https://vite.dev/config/
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -289,12 +289,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
           plugins: [react()],
@@ -313,16 +313,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -372,10 +372,10 @@ describe('updateConfigFile', () => {
         import viteReact from '@vitejs/plugin-react';
         import { fileURLToPath, URL } from 'url';
         
-      + import path from "node:path";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -384,12 +384,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const config = defineConfig({
           resolve: {
@@ -409,16 +409,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -469,11 +469,11 @@ describe('updateConfigFile', () => {
         
         // https://vite.dev/config/
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -482,12 +482,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
           plugins: [react()],
@@ -502,16 +502,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -560,11 +560,11 @@ describe('updateConfigFile', () => {
         
         // https://vite.dev/config/
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -573,12 +573,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
           plugins: [react()],
@@ -597,16 +597,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -652,11 +652,11 @@ describe('updateConfigFile', () => {
         
         // https://vite.dev/config/
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -665,12 +665,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig({
         
@@ -684,16 +684,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -745,11 +745,11 @@ describe('updateConfigFile', () => {
         import { defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -758,12 +758,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           plugins: [react()]
@@ -783,16 +783,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -839,12 +839,12 @@ describe('updateConfigFile', () => {
       "  import { mergeConfig } from 'vite';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { defineConfig } from "vitest/config";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -853,12 +853,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, {
           plugins: [react()],
@@ -877,16 +877,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -933,11 +933,11 @@ describe('updateConfigFile', () => {
         import { defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -946,12 +946,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
         
@@ -965,16 +965,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1025,11 +1025,11 @@ describe('updateConfigFile', () => {
         
         // https://vite.dev/config/
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1038,12 +1038,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1061,16 +1061,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1127,11 +1127,11 @@ describe('updateConfigFile', () => {
       "  import { mergeConfig, defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1140,12 +1140,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1162,16 +1162,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1227,11 +1227,11 @@ describe('updateConfigFile', () => {
       "  import { mergeConfig, defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1240,12 +1240,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1273,16 +1273,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1338,11 +1338,11 @@ describe('updateConfigFile', () => {
       "  import { mergeConfig, defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1351,12 +1351,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1384,16 +1384,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1435,11 +1435,11 @@ describe('updateConfigFile', () => {
       "  import { defineConfig, mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1448,12 +1448,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig(mergeConfig(viteConfig, {
           test: {
@@ -1475,16 +1475,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1530,11 +1530,11 @@ describe('updateConfigFile', () => {
         import viteConfig from './vite.config';
         import type { ViteUserConfig } from 'vitest/config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1543,12 +1543,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineConfig(mergeConfig(viteConfig, {
           test: {
@@ -1570,16 +1570,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1623,12 +1623,12 @@ describe('updateConfigFile', () => {
         import viteConfig from './vite.config';
         import type { ViteUserConfig } from 'vitest/config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { defineConfig } from "vitest/config";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1637,12 +1637,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, {
           test: {
@@ -1664,16 +1664,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1715,12 +1715,12 @@ describe('updateConfigFile', () => {
       "  import { mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { defineConfig } from "vitest/config";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1729,12 +1729,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const test = {
           name: 'node',
@@ -1759,16 +1759,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1815,11 +1815,11 @@ describe('updateConfigFile', () => {
       "  import { defineConfig, mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1828,12 +1828,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const config = mergeConfig(viteConfig, defineConfig({
           test: {
@@ -1855,16 +1855,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -1905,12 +1905,12 @@ describe('updateConfigFile', () => {
     expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { defineProject } from 'vitest/config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { defineConfig } from "vitest/config";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -1919,12 +1919,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default defineProject({
           test: {
@@ -1946,16 +1946,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -2002,11 +2002,11 @@ describe('updateConfigFile', () => {
       "  import { defineConfig, mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -2015,12 +2015,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export const config = mergeConfig(viteConfig, defineConfig({
           test: {
@@ -2042,16 +2042,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -2096,12 +2096,12 @@ describe('updateConfigFile', () => {
       "  import { mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { defineConfig } from "vitest/config";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -2110,12 +2110,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export const vitestConfig = {
           test: {
@@ -2137,16 +2137,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -2191,12 +2191,12 @@ describe('updateConfigFile', () => {
       "  import { mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { defineConfig } from "vitest/config";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -2205,12 +2205,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const vitestConfig = {
           test: {
@@ -2232,16 +2232,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -2315,10 +2315,10 @@ describe('updateConfigFile', () => {
         
         // https://vitejs.dev/config/
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -2327,12 +2327,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         const viteConfig = defineConfig({
           plugins: [tsconfigPaths(), react()],
@@ -2374,16 +2374,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }
@@ -2437,11 +2437,11 @@ describe('updateConfigFile', () => {
       "  import { mergeConfig, defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         
-      + import path from "node:path";
-      + import { fileURLToPath } from "node:url";
-      + import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-      + import { playwright } from "@vitest/browser-playwright";
-      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === "true" ? {
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const playwrightProviderOptions = process.env.STORYBOOK_TEST_SCREENSHOTS === 'true' ? {
       +   contextOptions: {
       +     deviceScaleFactor: 2,
       +     viewport: {
@@ -2450,12 +2450,12 @@ describe('updateConfigFile', () => {
       +     },
       +     isMobile: true,
       +     hasTouch: true,
-      +     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+      +     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
       +   }
       + } : {};
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + const dirname = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
@@ -2494,16 +2494,16 @@ describe('updateConfigFile', () => {
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
       +       storybookTest({
-      +         configDir: path.join(dirname, ".storybook")
+      +         configDir: path.join(dirname, '.storybook')
       +       })],
       +       test: {
-      +         name: "storybook",
+      +         name: 'storybook',
       +         browser: {
       +           enabled: true,
       +           headless: true,
       +           provider: playwright(playwrightProviderOptions),
       +           instances: [{
-      +             browser: "chromium"
+      +             browser: 'chromium'
       +           }]
       +         }
       +       }

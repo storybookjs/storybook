@@ -167,6 +167,13 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
 	return app;
 };
 
+export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {
+	return {
+		...existingFeatures,
+		componentsManifest: true,
+	};
+};
+
 /**
  * Get composed Storybook refs from Storybook config.
  * See: https://storybook.js.org/docs/sharing/storybook-composition

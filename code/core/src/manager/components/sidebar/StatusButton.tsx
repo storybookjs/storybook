@@ -8,7 +8,7 @@ import type { Theme } from '@emotion/react';
 import { darken, lighten } from 'polished';
 import { styled } from 'storybook/theming';
 
-import { getStatus } from '../../utils/status';
+import { getStatus } from '../../utils/status.tsx';
 
 const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue }) => ({
   color: getStatus(theme, status).iconColor ?? undefined,

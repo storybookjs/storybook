@@ -6,8 +6,8 @@ import { program } from 'commander';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { esMain } from '../utils/esmain';
-import { githubRestClient } from './utils/github-client';
+import { esMain } from '../utils/esmain.ts';
+import { githubRestClient } from './utils/github-client.ts';
 
 program
   .name('cancel-preparation-workflows')

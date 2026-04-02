@@ -1,11 +1,11 @@
 import { dedent } from 'ts-dedent';
 import waitOn from 'wait-on';
 
-import { getPort } from '../sandbox/utils/getPort';
-import type { Task } from '../task';
-import { exec } from '../utils/exec';
-import { isNxTaskExecution } from '../utils/nx';
-import { PORT } from './serve';
+import { getPort } from '../sandbox/utils/getPort.ts';
+import type { Task } from '../task.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
+import { PORT } from './serve.ts';
 
 const testFileRegex = /(test|spec)\.(js|ts|mjs)$/;
 

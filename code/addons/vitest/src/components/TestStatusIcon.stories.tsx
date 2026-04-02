@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { TestStatusIcon } from './TestStatusIcon';
+import { TestStatusIcon } from './TestStatusIcon.tsx';
 
 const meta = {
   component: TestStatusIcon,

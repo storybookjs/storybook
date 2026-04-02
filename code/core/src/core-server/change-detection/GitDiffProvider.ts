@@ -1,7 +1,7 @@
 // eslint-disable-next-line depend/ban-dependencies
 import { execa, type ExecaError } from 'execa';
 
-import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 
 export interface GitDiffResult {
   changed: Set<string>;

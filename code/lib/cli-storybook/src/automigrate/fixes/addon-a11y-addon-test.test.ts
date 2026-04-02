@@ -10,7 +10,7 @@ import {
   addonA11yAddonTest,
   transformPreviewFile,
   transformSetupFile,
-} from './addon-a11y-addon-test';
+} from './addon-a11y-addon-test.ts';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const mod = (await importOriginal()) as any;

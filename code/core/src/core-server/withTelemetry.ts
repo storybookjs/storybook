@@ -9,7 +9,7 @@ import {
 import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
-import { StorybookError } from '../storybook-error';
+import { StorybookError } from '../storybook-error.ts';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;

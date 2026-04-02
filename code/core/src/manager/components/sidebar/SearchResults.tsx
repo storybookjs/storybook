@@ -12,14 +12,14 @@ import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-import { getStatus } from '../../utils/status';
-import { UseSymbol } from './IconSymbols';
-import { NoResults } from './NoResults';
-import { StatusLabel } from './StatusButton';
-import { TypeIcon } from './TreeNode';
-import type { DownshiftItem, Match, SearchResult } from './types';
-import { isExpandType } from './types';
+import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
+import { getStatus } from '../../utils/status.tsx';
+import { UseSymbol } from './IconSymbols.tsx';
+import { NoResults } from './NoResults.tsx';
+import { StatusLabel } from './StatusButton.tsx';
+import { TypeIcon } from './TreeNode.tsx';
+import type { DownshiftItem, Match, SearchResult } from './types.ts';
+import { isExpandType } from './types.ts';
 
 const { document } = global;
 

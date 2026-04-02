@@ -14,16 +14,16 @@ import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { initialState } from '../../../shared/checklist-store/checklistData.state';
+import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
-} from '../../manager-stores.mock';
-import { LayoutProvider } from '../layout/LayoutProvider';
-import { standardData as standardHeaderData } from './Heading.stories';
-import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
-import { mockDataset } from './mockdata';
-import type { RefType } from './types';
+} from '../../manager-stores.mock.ts';
+import { LayoutProvider } from '../layout/LayoutProvider.tsx';
+import { standardData as standardHeaderData } from './Heading.stories.tsx';
+import { DEFAULT_REF_ID, Sidebar } from './Sidebar.tsx';
+import { mockDataset } from './mockdata.ts';
+import type { RefType } from './types.ts';
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {

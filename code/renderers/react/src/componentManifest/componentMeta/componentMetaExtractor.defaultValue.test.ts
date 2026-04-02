@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extract } from './componentMetaExtractor.test-helpers';
+import { extract } from './componentMetaExtractor.test-helpers.ts';
 
 describe('default value extraction', () => {
   it('extracts destructuring defaults from arrow function', async () => {

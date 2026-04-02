@@ -1,6 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 
-import type { Parameters, Renderer, StoryContext, StoryId, StoryName } from './csf';
+import type { Parameters, Renderer, StoryContext, StoryId, StoryName } from './csf.ts';
 import type {
   CSFFile,
   ModuleExport,
@@ -9,7 +9,7 @@ import type {
   PreparedMeta,
   PreparedStory,
   RenderContext,
-} from './story';
+} from './story.ts';
 
 export type RenderContextCallbacks<TRenderer extends Renderer> = Pick<
   RenderContext<TRenderer>,

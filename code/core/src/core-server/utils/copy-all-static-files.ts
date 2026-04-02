@@ -6,7 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
-import { parseStaticDir } from './server-statics';
+import { parseStaticDir } from './server-statics.ts';
 
 export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDir: string) {
   if (staticDirs && staticDirs.length > 0) {

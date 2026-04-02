@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extract, extractFromStory } from './componentMetaExtractor.test-helpers';
+import { extract, extractFromStory } from './componentMetaExtractor.test-helpers.ts';
 
 describe('prop extraction', () => {
   describe('basic types', () => {

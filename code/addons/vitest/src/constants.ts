@@ -1,12 +1,12 @@
 import type { StoreOptions } from 'storybook/internal/types';
 
-import type { CurrentRun, RunTrigger, StoreState } from './types';
+import type { CurrentRun, RunTrigger, StoreState } from './types.ts';
 
-export { PANEL_ID as COMPONENT_TESTING_PANEL_ID } from '../../../core/src/component-testing/constants';
+export { PANEL_ID as COMPONENT_TESTING_PANEL_ID } from '../../../core/src/component-testing/constants.ts';
 export {
   PANEL_ID as A11Y_PANEL_ID,
   ADDON_ID as A11Y_ADDON_ID,
-} from '../../../addons/a11y/src/constants';
+} from '../../../addons/a11y/src/constants.ts';
 
 export const ADDON_ID = 'storybook/test';
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;

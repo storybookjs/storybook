@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-import preview from '../../../../../.storybook/preview';
-import type { useCollapsible } from './Collapsible';
-import { Collapsible } from './Collapsible';
+import preview from '../../../../../.storybook/preview.tsx';
+import type { useCollapsible } from './Collapsible.tsx';
+import { Collapsible } from './Collapsible.tsx';
 
 const toggle = ({
   isCollapsed,

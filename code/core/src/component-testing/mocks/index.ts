@@ -1,6 +1,6 @@
 import { type Call, CallStates } from 'storybook/internal/instrumenter';
 
-import { INTERNAL_RENDER_CALL_ID } from '../constants';
+import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
 
 export const getCalls = (finalStatus: CallStates, slice?: number) => {
   let calls: Call[] = [

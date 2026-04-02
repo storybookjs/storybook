@@ -5,8 +5,8 @@ import type { Options, Presets } from 'storybook/internal/types';
 
 import { loadConfigFromFile } from 'vite';
 
-import { storybookConfigPlugin } from './plugins/storybook-config-plugin';
-import { commonConfig } from './vite-config';
+import { storybookConfigPlugin } from './plugins/storybook-config-plugin.ts';
+import { commonConfig } from './vite-config.ts';
 
 vi.mock('vite', async (importOriginal) => ({
   ...(await importOriginal<typeof import('vite')>()),

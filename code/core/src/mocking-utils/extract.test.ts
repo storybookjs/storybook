@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { parse } from '@babel/parser';
 import { readFileSync } from 'fs';
 
-import * as extractModule from './extract';
-import * as resolveModule from './resolve';
+import * as extractModule from './extract.ts';
+import * as resolveModule from './resolve.ts';
 
 vi.mock('fs', async () => {
   const actual = await vi.importActual<typeof import('fs')>('fs');

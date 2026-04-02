@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { styled } from 'storybook/theming';
 
-import { ToggleButton } from './ToggleButton';
+import { ToggleButton } from './ToggleButton.tsx';
 
 const meta = {
   title: 'ToggleButton',

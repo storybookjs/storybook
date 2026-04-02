@@ -5,7 +5,7 @@ import { global } from '@storybook/global';
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
-import type { HtmlRenderer } from './types';
+import type { HtmlRenderer } from './types.ts';
 
 const { Node } = global;
 

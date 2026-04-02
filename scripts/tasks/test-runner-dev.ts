@@ -1,5 +1,5 @@
-import { PORT } from './dev';
-import { testRunnerBuild as testRunnerProd } from './test-runner-build';
+import { PORT } from './dev.ts';
+import { testRunnerBuild as testRunnerProd } from './test-runner-build.ts';
 
 export const testRunnerDev: typeof testRunnerProd = {
   ...testRunnerProd,

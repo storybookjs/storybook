@@ -6,15 +6,15 @@ import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 import { type API, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants';
-import { Notifications } from '../../container/Notifications';
-import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
-import { useLayout } from './LayoutProvider';
-import { MainAreaContainer } from './MainAreaContainer';
-import { PanelContainer } from './PanelContainer';
-import { SidebarContainer } from './SidebarContainer';
-import { useDragging } from './useDragging';
-import { useLandmarkIndicator } from './useLandmarkIndicator';
+import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants.ts';
+import { Notifications } from '../../container/Notifications.tsx';
+import { MobileNavigation } from '../mobile/navigation/MobileNavigation.tsx';
+import { useLayout } from './LayoutProvider.tsx';
+import { MainAreaContainer } from './MainAreaContainer.tsx';
+import { PanelContainer } from './PanelContainer.tsx';
+import { SidebarContainer } from './SidebarContainer.tsx';
+import { useDragging } from './useDragging.ts';
+import { useLandmarkIndicator } from './useLandmarkIndicator.ts';
 
 interface InternalLayoutState {
   isDragging: boolean;

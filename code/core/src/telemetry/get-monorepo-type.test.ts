@@ -3,9 +3,9 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { getMonorepoType, monorepoConfigs } from './get-monorepo-type';
+import { getMonorepoType, monorepoConfigs } from './get-monorepo-type.ts';
 
-vi.mock('node:fs', async () => import('../../../__mocks__/fs'));
+vi.mock('node:fs', async () => import('../../../__mocks__/fs.ts'));
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   return {

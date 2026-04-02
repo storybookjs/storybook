@@ -10,7 +10,7 @@ import type {
   StrictArgs,
 } from 'storybook/internal/types';
 
-import type { HtmlRenderer } from './types';
+import type { HtmlRenderer } from './types.ts';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { HtmlRenderer };

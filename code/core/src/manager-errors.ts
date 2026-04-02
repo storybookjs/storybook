@@ -1,5 +1,5 @@
-import type { Status, StatusTypeId } from './shared/status-store';
-import { StorybookError } from './storybook-error';
+import type { Status, StatusTypeId } from './shared/status-store/index.ts';
+import { StorybookError } from './storybook-error.ts';
 
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file

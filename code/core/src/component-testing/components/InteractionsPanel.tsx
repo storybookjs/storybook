@@ -4,15 +4,15 @@ import { transparentize } from 'polished';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types';
-import { INTERNAL_RENDER_CALL_ID } from '../constants';
-import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
-import { DetachedDebuggerMessage } from './DetachedDebuggerMessage';
-import { Empty } from './EmptyState';
-import { Interaction } from './Interaction';
-import type { PlayStatus } from './StatusBadge';
-import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
-import { Toolbar } from './Toolbar';
+import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types.ts';
+import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
+import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils.ts';
+import { DetachedDebuggerMessage } from './DetachedDebuggerMessage.tsx';
+import { Empty } from './EmptyState.tsx';
+import { Interaction } from './Interaction.tsx';
+import type { PlayStatus } from './StatusBadge.tsx';
+import { TestDiscrepancyMessage } from './TestDiscrepancyMessage.tsx';
+import { Toolbar } from './Toolbar.tsx';
 
 export interface Controls {
   start: (args?: any) => void;

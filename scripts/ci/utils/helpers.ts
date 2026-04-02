@@ -1,5 +1,5 @@
-import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants';
-import { type JobOrNoOpJob, type Workflow } from './types';
+import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants.ts';
+import { type JobOrNoOpJob, type Workflow } from './types.ts';
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {

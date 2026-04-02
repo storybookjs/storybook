@@ -4,10 +4,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { transformStoryIndexToStoriesHash } from '../lib/stories';
-import { getSourceType, init as initRefs } from '../modules/refs';
-import type { State } from '../root';
-import type Store from '../store';
+import { transformStoryIndexToStoriesHash } from '../lib/stories.ts';
+import { getSourceType, init as initRefs } from '../modules/refs.ts';
+import type { State } from '../root.tsx';
+import type Store from '../store.ts';
 
 const { fetch } = global;
 

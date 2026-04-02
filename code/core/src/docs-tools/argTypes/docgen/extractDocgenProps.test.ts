@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Component } from '../types';
-import { extractComponentProps } from './extractDocgenProps';
+import type { Component } from '../types.ts';
+import { extractComponentProps } from './extractDocgenProps.ts';
 
 const DOCGEN_SECTION = 'props';
 const PROP_NAME = 'propName';

@@ -6,9 +6,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { useChannel, useStoryContext } from 'storybook/preview-api';
 
-import { Button } from './CSSAtRules';
+import { Button } from './CSSAtRules.tsx';
 import './grid.css';
-import { PseudoStateGrid } from './PseudoStateGrid';
+import { PseudoStateGrid } from './PseudoStateGrid.tsx';
 
 const meta = {
   title: 'CSSAtRules',

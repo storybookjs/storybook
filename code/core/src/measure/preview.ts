@@ -1,8 +1,8 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import { PARAM_KEY } from './constants';
-import type { MeasureTypes } from './types';
-import { withMeasure } from './withMeasure';
+import { PARAM_KEY } from './constants.ts';
+import type { MeasureTypes } from './types.ts';
+import { withMeasure } from './withMeasure.ts';
 
 export const decorators = globalThis.FEATURES?.measure ? [withMeasure] : [];
 

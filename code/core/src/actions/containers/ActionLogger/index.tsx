@@ -6,10 +6,10 @@ import { dequal as deepEqual } from 'dequal';
 import type { API } from 'storybook/manager-api';
 import { useParameter } from 'storybook/manager-api';
 
-import { ActionLogger as ActionLoggerComponent } from '../../components/ActionLogger';
-import { CLEAR_ID, EVENT_ID, PARAM_KEY } from '../../constants';
-import type { ActionDisplay } from '../../models';
-import type { ActionsParameters } from '../../types';
+import { ActionLogger as ActionLoggerComponent } from '../../components/ActionLogger/index.tsx';
+import { CLEAR_ID, EVENT_ID, PARAM_KEY } from '../../constants.ts';
+import type { ActionDisplay } from '../../models/index.ts';
+import type { ActionsParameters } from '../../types.ts';
 
 interface ActionLoggerProps {
   active: boolean;

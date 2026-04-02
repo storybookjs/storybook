@@ -2,11 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { ProjectAnnotations, Renderer, StoryIndex } from 'storybook/internal/types';
 
-import { StoryStore } from './StoryStore';
-import { composeConfigs } from './csf/composeConfigs';
-import { prepareStory } from './csf/prepareStory';
-import { processCSFFile } from './csf/processCSFFile';
-import type { HooksContext } from './hooks';
+import { StoryStore } from './StoryStore.ts';
+import { composeConfigs } from './csf/composeConfigs.ts';
+import { prepareStory } from './csf/prepareStory.ts';
+import { processCSFFile } from './csf/processCSFFile.ts';
+import type { HooksContext } from './hooks.ts';
 
 // Spy on prepareStory/processCSFFile
 vi.mock('./csf/prepareStory', async (importOriginal) => {

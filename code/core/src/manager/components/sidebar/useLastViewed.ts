@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { debounce } from 'es-toolkit/function';
 import store from 'store2';
 
-import type { Selection, StoryRef } from './types';
+import type { Selection, StoryRef } from './types.ts';
 
 const LAST_VIEWED_KEY = `@storybook/manager/lastViewedStoryIds/${globalThis.STORYBOOK_ANONYMOUS_PROJECT_ID || 'anonymous'}`;
 

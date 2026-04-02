@@ -13,9 +13,9 @@ import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import type { ThemeVars } from 'storybook/theming';
 import { create } from 'storybook/theming/create';
 
-import merge from '../lib/merge';
-import type { ModuleFn } from '../lib/types';
-import type { State } from '../root';
+import merge from '../lib/merge.ts';
+import type { ModuleFn } from '../lib/types.tsx';
+import type { State } from '../root.tsx';
 
 const { document } = global;
 

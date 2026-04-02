@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { addons } from 'storybook/preview-api';
 
-import { EVENTS } from './constants';
+import { EVENTS } from './constants.ts';
 
 vi.mock('storybook/preview-api');
 const mockedAddons = vi.mocked(addons);
@@ -19,7 +19,7 @@ describe('a11yRunner', () => {
   });
 
   it('should listen to events', async () => {
-    await import('./a11yRunner');
+    await import('./a11yRunner.ts');
 
     expect(mockedAddons.getChannel).toHaveBeenCalled();
     expect(mockChannel.on).toHaveBeenCalledWith(EVENTS.MANUAL, expect.any(Function));

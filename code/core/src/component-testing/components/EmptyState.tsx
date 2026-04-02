@@ -7,7 +7,7 @@ import { DocumentIcon } from '@storybook/icons';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { DOCUMENTATION_PLAY_FUNCTION_LINK } from '../constants';
+import { DOCUMENTATION_PLAY_FUNCTION_LINK } from '../constants.ts';
 
 const Links = styled.div(({ theme }) => ({
   display: 'flex',

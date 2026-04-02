@@ -3,7 +3,7 @@ import {
   isRouterPackage,
   isStateManagementPackage,
   isStylingPackage,
-} from './ecosystem-identifier';
+} from './ecosystem-identifier.ts';
 
 export const ERROR_CATEGORIES = {
   MISSING_PROVIDER: 'MISSING_PROVIDER',

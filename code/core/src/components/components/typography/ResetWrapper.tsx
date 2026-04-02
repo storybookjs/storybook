@@ -1,6 +1,6 @@
 import { styled } from 'storybook/theming';
 
-import { withReset } from './lib/common';
+import { withReset } from './lib/common.tsx';
 
 /**
  * This is a "local" reset to style subtrees with Storybook styles

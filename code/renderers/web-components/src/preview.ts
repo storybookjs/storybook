@@ -18,9 +18,9 @@ import type {
 
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
-import * as webComponentsAnnotations from './entry-preview';
-import * as webComponentsDocsAnnotations from './entry-preview-docs';
-import { type WebComponentsTypes } from './types';
+import * as webComponentsAnnotations from './entry-preview.ts';
+import * as webComponentsDocsAnnotations from './entry-preview-docs.ts';
+import { type WebComponentsTypes } from './types.ts';
 
 /**
  * Creates a Web Components-specific preview configuration with CSF factories support.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { Tag } from '../../shared/constants/tags';
-import { isPageStory, summarizeIndex } from './summarizeIndex';
+import { Tag } from '../../shared/constants/tags.ts';
+import { isPageStory, summarizeIndex } from './summarizeIndex.ts';
 
 describe('isPageStory', () => {
   describe('true positives', () => {

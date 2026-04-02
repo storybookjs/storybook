@@ -20,9 +20,9 @@ import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';
 
-import { ROOT_DIRECTORY } from './utils/constants';
-import { findMostMatchText } from './utils/diff';
-import { getCodeWorkspaces } from './utils/workspace';
+import { ROOT_DIRECTORY } from './utils/constants.ts';
+import { findMostMatchText } from './utils/diff.ts';
+import { getCodeWorkspaces } from './utils/workspace.ts';
 
 async function run() {
   const packages = (await getCodeWorkspaces())

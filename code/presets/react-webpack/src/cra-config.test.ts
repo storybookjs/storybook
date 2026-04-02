@@ -3,7 +3,7 @@ import { join, sep } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getReactScriptsPath } from './cra-config';
+import { getReactScriptsPath } from './cra-config.ts';
 
 vi.mock('fs', () => ({
   realpathSync: vi.fn(() => '/test-project'),

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import spawn from 'cross-spawn';
 import open from 'open';
 
-import { BrowserEnvError, openBrowser } from './opener';
+import { BrowserEnvError, openBrowser } from './opener.ts';
 
 vi.mock('open', { spy: true });
 vi.mock('cross-spawn', { spy: true });

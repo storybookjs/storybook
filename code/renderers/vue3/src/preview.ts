@@ -18,10 +18,10 @@ import type {
 
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
-import * as vueAnnotations from './entry-preview';
-import * as vueDocsAnnotations from './entry-preview-docs';
-import { type Args, type ComponentPropsAndSlots } from './public-types';
-import { type VueTypes } from './types';
+import * as vueAnnotations from './entry-preview.ts';
+import * as vueDocsAnnotations from './entry-preview-docs.ts';
+import { type Args, type ComponentPropsAndSlots } from './public-types.ts';
+import { type VueTypes } from './types.ts';
 
 /**
  * Creates a Vue3-specific preview configuration with CSF factories support.

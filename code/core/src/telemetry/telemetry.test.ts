@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-import { fetch } from './fetch';
-import { sendTelemetry } from './telemetry';
+import { fetch } from './fetch.ts';
+import { sendTelemetry } from './telemetry.ts';
 
 vi.mock('./fetch');
 vi.mock('./event-cache', () => {

@@ -4,12 +4,12 @@ import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
 
-import { now, saveBench } from '../bench/utils';
-import type { Task } from '../task';
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
-import { isNxTaskExecution } from '../utils/nx';
-import { prepareSandbox } from '../prepare-sandbox';
+import { now, saveBench } from '../bench/utils.ts';
+import type { Task } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
+import { prepareSandbox } from '../prepare-sandbox.ts';
 
 async function pathExists(path: string) {
   try {

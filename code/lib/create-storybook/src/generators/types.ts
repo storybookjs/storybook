@@ -10,8 +10,8 @@ import type {
   SupportedRenderer,
 } from 'storybook/internal/types';
 
-import type { DependencyCollector } from '../dependency-collector';
-import type { FrameworkPreviewParts } from './configure';
+import type { DependencyCollector } from '../dependency-collector.ts';
+import type { FrameworkPreviewParts } from './configure.ts';
 
 export type GeneratorOptions = {
   language: SupportedLanguage;

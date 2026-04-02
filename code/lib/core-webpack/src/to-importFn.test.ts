@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 
-import { webpackIncludeRegexp } from './to-importFn';
+import { webpackIncludeRegexp } from './to-importFn.ts';
 
 const testCases: [string, string[], string[]][] = [
   [

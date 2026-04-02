@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Addon_StoryContext } from 'storybook/internal/types';
 
-import { makeDecorator } from './make-decorator';
+import { makeDecorator } from './make-decorator.ts';
 
 // Copy & paste from internal api: client-api/src/client_api
 type DecoratorFn = (fn: any, context: Addon_StoryContext) => any;

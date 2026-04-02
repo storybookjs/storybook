@@ -12,7 +12,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import type { PrintResultType } from './PrintResultType';
+import type { PrintResultType } from './PrintResultType.ts';
 
 const getCsfParsingErrorMessage = ({
   expectedType,

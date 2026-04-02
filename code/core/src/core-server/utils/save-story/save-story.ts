@@ -20,9 +20,9 @@ import { logger } from 'storybook/internal/node-logger';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { duplicateStoryWithNewName } from './duplicate-story-with-new-name';
-import { updateArgsInCsfFile } from './update-args-in-csf-file';
-import { SaveStoryError } from './utils';
+import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
+import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
+import { SaveStoryError } from './utils.ts';
 
 const parseArgs = (args: string): Record<string, any> =>
   JSON.parse(args, (_, value) => {

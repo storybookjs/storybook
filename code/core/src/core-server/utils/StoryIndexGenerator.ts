@@ -31,13 +31,13 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
-import { resolveImport, supportedExtensions } from '../../common';
-import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
-import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories';
-import { Tag } from '../../shared/constants/tags';
-import { IndexingError, MultipleIndexingError } from './IndexingError';
-import { autoName } from './autoName';
-import { type IndexStatsSummary, addStats } from './summarizeStats';
+import { resolveImport, supportedExtensions } from '../../common/index.ts';
+import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle.ts';
+import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories.ts';
+import { Tag } from '../../shared/constants/tags.ts';
+import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
+import { autoName } from './autoName.ts';
+import { type IndexStatsSummary, addStats } from './summarizeStats.ts';
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
 type StoryIndexEntryWithExtra = StoryIndexEntry & {

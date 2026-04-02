@@ -29,18 +29,18 @@ import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { resolvePackageDir } from '../../shared/utils/module';
-import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
-import { initFileSearchChannel } from '../server-channel/file-search-channel';
-import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel';
-import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
-import { initTelemetryChannel } from '../server-channel/telemetry-channel';
-import { initializeChecklist } from '../utils/checklist';
-import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
-import { initializeSaveStory } from '../utils/save-story/save-story';
-import { parseStaticDir } from '../utils/server-statics';
-import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
-import { getWsToken } from './wsToken';
+import { resolvePackageDir } from '../../shared/utils/module.ts';
+import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
+import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
+import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
+import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
+import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
+import { initializeChecklist } from '../utils/checklist.ts';
+import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
+import { initializeSaveStory } from '../utils/save-story/save-story.ts';
+import { parseStaticDir } from '../utils/server-statics.ts';
+import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
+import { getWsToken } from './wsToken.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -204,19 +204,20 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
 
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
-  argTypeTargetsV7: true,
-  legacyDecoratorFileOrder: false,
-  disallowImplicitActionsInRenderV8: true,
-  viewport: true,
-  highlight: true,
-  controls: true,
-  interactions: true,
   actions: true,
+  argTypeTargetsV7: true,
   backgrounds: true,
-  outline: true,
-  measure: true,
-  sidebarOnboardingChecklist: true,
+  changeDetection: false,
   componentsManifest: true,
+  controls: true,
+  disallowImplicitActionsInRenderV8: true,
+  highlight: true,
+  interactions: true,
+  legacyDecoratorFileOrder: false,
+  measure: true,
+  outline: true,
+  sidebarOnboardingChecklist: true,
+  viewport: true,
 });
 
 export const csfIndexer: Indexer = {

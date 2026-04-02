@@ -4,8 +4,8 @@ import { global } from '@storybook/global';
 
 import { parse, stringify } from 'picoquery';
 
-import type { Selection, SelectionSpecifier, SelectionStore } from './SelectionStore';
-import { parseArgsParam } from './parseArgsParam';
+import type { Selection, SelectionSpecifier, SelectionStore } from './SelectionStore.ts';
+import { parseArgsParam } from './parseArgsParam.ts';
 
 const { history, document } = global;
 

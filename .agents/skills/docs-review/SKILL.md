@@ -1,275 +1,147 @@
 ---
 name: docs-review
-description: Guide for reviewing and maintaining documentation. Use this when asked to review or update documentation.
+description: Review, improve, rewrite, author, or plan Storybook documentation in /docs. Use this when asked to review docs, improve a page, rewrite documentation, draft new docs, or advise on docs strategy.
 ---
 
-# Documentation Review Guide
+# Documentation Review
 
 ## Scope
 
-ONLY review and maintain documentation files, such as README.md, CONTRIBUTING.md, and docs/ directory. Do NOT review or edit code files, configuration files, or any non-documentation files.
+This skill applies to documentation files in `/docs` and docs-owned snippet files in `docs/_snippets/`. Do not use this skill for non-docs files (code, configuration, READMEs outside `/docs`).
 
-## Autonomous Workflow
+## Use This Skill When
 
-Follow these steps when running a docs review end-to-end:
+- Asked to review, improve, rewrite, or author documentation in `/docs`.
+- Asked for advice on page structure, doc type, audience, or content strategy for `/docs`.
+- Asked to fix formatting, style, or compliance issues in `/docs`.
 
-1. Run `yarn fmt:write` to auto-format any files (this will catch some formatting issues automatically)
-2. Run `yarn docs:check`; fix any errors it reports
-3. Manually review the writing standards below for issues automated checks can't catch
-4. Fix issues found
-5. Run `yarn docs:check` again to confirm no regressions
-6. Open a PR using the `pr` skill
+## Use a Light Touch When
 
-## Automated Docs Validation
+- The request is a trivial grammar or typo fix that does not need full diagnosis.
+- The page is already structurally sound and only needs minor editorial cleanup.
 
-Storybook provides an automated script for these common documentation issues:
+## Reference Files
 
-- **Broken relative links**: All `[text](./path.mdx)` and `[text](../path.mdx)` links in `.mdx` files are checked to ensure the target file exists. When a link includes a URL fragment (e.g. `#section-name`), the target file is also checked to ensure it contains a matching heading.
-- **Missing CodeSnippets paths**: All `<CodeSnippets path="..." />` usages are checked to ensure the referenced file exists in `docs/_snippets/`.
-- **Deprecated `<IfRenderer>` usage**: All `.mdx` files are checked for `<IfRenderer>` and should use `<If>` instead.
-- **`<Callout>` missing variant prop**: All `<Callout>` tags must include a `variant` prop (`"info"` or `"warning"`).
-- **H1 in body**: All `.mdx` files are checked for `# ` headings in the body (outside frontmatter and code blocks). H1 should only come from the frontmatter `title`.
-- **Skipped heading levels**: Heading hierarchy is checked per file (e.g., `##` followed by `####` without an intervening `###`).
-- **Non-standard `variant="positive"`**: All `<Callout>` tags are checked for `variant="positive"`, which should be `variant="info"`.
-- **Mismatched callout icons**: The ⚠️ icon must use `variant="warning"`, not `variant="info"`.
-- **Unnecessarily quoted frontmatter title**: Frontmatter `title` values should not be wrapped in quotes unless the value contains special characters (`&`, `|`, `:`, `,`).
-- **Redundant `sidebar.title`**: If `sidebar.title` matches the page `title`, it should be removed.
-- **Bare URLs**: URLs in prose must be wrapped in markdown link syntax `[text](url)`, not left bare.
+This skill uses four reference files under `references/`. Load them in order and only as needed:
 
-### How to run the docs check
+| File | Owns | When to Load |
+|------|------|--------------|
+| `references/docs-principles.md` | North star, quality dimensions, dual-reader requirement | Always — read first |
+| `references/docs-strategy.md` | Modes, doc types, intervention thresholds, page-shape guidance | Always — read second |
+| `references/docs-antipatterns.md` | Diagnosis patterns and corrective moves | When diagnosing a weak or confusing draft |
+| `references/storybook-style.md` | Editorial, MDX components, frontmatter, formatting, validation rules | In `maintenance` mode, or as the final pass of edit modes |
 
-- **From the root:**
-  ```bash
-  yarn docs:check
-  ```
+### Ownership Rules
 
-This runs the script at `scripts/docs/check-docs.ts`. It will print a summary and exit with an error if any issues are found.
+- Strategy references do not own formatting or component rules.
+- `storybook-style.md` does not own doc-type or intervention logic.
+- This file (`SKILL.md`) owns workflow and handoffs only.
 
-See `scripts/docs/check-docs.ts` for implementation details and to add new checks.
+## Workflow
 
-## Writing Standards
+Follow this sequence for every request. Steps 1–4 are diagnosis; steps 5–7 are action.
 
-Items marked `[oxfmt]` are covered by the repo's auto-formatting rules, which are run with `yarn fmt:write`.
+### 1. Determine the Requested Outcome
 
-Items marked `[auto]` are automatically checked by the `yarn docs:check` script, but are not auto-fixable.
+Read the user's request and map it to a mode:
 
-### Headings
+| Request Pattern | Mode |
+|----------------|------|
+| "Fix links, callouts, formatting" | `maintenance` |
+| "Make this clearer", "improve this page" | `improve` |
+| "This doc is a mess; rewrite it" | `rewrite` |
+| "Draft docs for feature X" | `author` |
+| "What kind of page should this be?" | `strategy` |
+| "Review this doc" (unspecified) | **hybrid** — see below |
 
-- H1 via frontmatter `title` only; never use `# Heading` in the body [auto]
-- H2/H3 use sentence case (capitalize first word and proper nouns only)
-- Don't skip heading levels [auto]
+**Hybrid behavior:** For vague asks like "review this doc":
+- If the draft is obviously weak or the ask implies planning → critique-first (lead with diagnosis).
+- If the page is decent and the ask implies cleanup → improve-first (lead with edits).
 
-### Links
+**Default:** When ambiguous, default to `improve`, not `maintenance`.
 
-- Internal: relative paths to `.mdx` files, e.g. `[text](../path/to/file.mdx)` [auto]
-- External: full URLs, always wrapped in markdown link syntax (no bare URLs in prose) [auto]
+### 2. Determine the Primary Doc Type
 
-### Lists
+Read the page and classify it using the doc types in `references/docs-strategy.md`:
 
-- Unordered lists use `-` (not `*` or `+`) [oxfmt]
+- `concept` — explains what something is and why it matters
+- `task` — walks the reader through accomplishing a goal
+- `reference` — lookup for options, API, or config
+- `troubleshooting` — diagnose and fix a problem
+- `migration` — move from one version or approach to another
+- `decision guide` — choose between options
 
-### Inline formatting
+Always select **one** primary type, even if the page contains secondary elements.
 
-- Backticks for file paths, function names, variable names, component names, CLI commands, config keys, type names
-- Bold for UI labels and emphasis; italics sparingly
+### 3. Diagnose the Draft
 
-### Voice and tone
+Evaluate the page against the quality dimensions in `references/docs-principles.md`, in order:
 
-#### Point of view
+1. Intent clarity
+2. Audience fit
+3. Information shape
+4. Conceptual clarity
+5. Task usability
+6. Example quality
+7. Economy
 
-- Second person ("you") for addressing the reader — this is the default
-- First person plural ("we") when speaking from Storybook's perspective (e.g., "We recommend…") or walking through something together (e.g., "Let's take a look…")
-- Do not use first person singular ("I") or third person for the reader ("the user")
+If the page shows signs of structural weakness, load `references/docs-antipatterns.md` and check for common patterns.
 
-#### Tone
+### 4. Choose the Intervention Level
 
-- Professional but conversational — write as if explaining to a colleague, not a textbook
-- Encouraging without being excessive — "That's great!" is fine occasionally; avoid over-the-top enthusiasm
-- Solution-focused — emphasize what readers *can* accomplish rather than limitations
-- Direct and confident — state recommendations clearly ("We recommend…") rather than hedging unnecessarily
+Use the thresholds in `references/docs-strategy.md`:
 
-#### Sentence structure
+- No structural issues, minor style problems → `maintenance`
+- Structure is okay but framing, order, or examples are weak → `improve`
+- Structure is wrong for the page's job → `rewrite`
+- Page does not exist → `author`
+- User wants advice, not edits → `strategy`
 
-- Prefer active voice over passive ("Storybook renders the component" not "The component is rendered by Storybook")
-- Use short, direct sentences for emphasis and introductions
-- Longer sentences are acceptable when explaining complex relationships, but avoid run-ons
-- Lead with purpose — open sections by stating what something is or why it matters, not with background
+**Hard rule:** When the draft is structurally weak, do not stop at sentence-level edits. Reorder, split, replace examples, or rewrite the page shape.
 
-#### Instructions
+**Split/escalation rule:** If the dominant job is unclear or the page serves multiple unrelated jobs, switch to `strategy` mode or recommend a page split before polishing.
 
-- Use imperative mood for step-by-step instructions: "Run this command", "Add the following", "Create a new file"
-- Use suggestive phrasing for optional or alternative approaches: "You can also…", "You might want to…"
-- Use declarative phrasing to introduce code examples with context: "To define the args of a single story, use the `args` CSF story key:"
+### 5. Improve or Plan
 
-#### Contractions
+Execute based on the chosen mode:
 
-- Use contractions naturally (don't, can't, won't, you'll, it's, we're) — they reinforce the conversational tone
-- Avoid contractions in callout warnings or other serious/cautionary contexts where precision matters
+- **`maintenance`:** Apply editorial and compliance fixes. Load `references/storybook-style.md` as primary guide.
+- **`improve`:** Strengthen framing, order, explanation, and examples. Keep the page's identity. Use `references/storybook-style.md` for the final pass.
+- **`rewrite`:** Materially replace the page. Preserve sound content; discard or restructure the rest. Use `references/storybook-style.md` for the final pass.
+- **`author`:** Write the page from scratch using the primary doc type's shape as a guide. Use `references/storybook-style.md` for the final pass.
+- **`strategy`:** Return a planning artifact containing:
+  - Audience
+  - Page job
+  - Primary doc type
+  - Recommended outline
+  - Split/merge recommendation (if applicable)
+  - Preserve list (content worth keeping)
+  - Do **not** edit files or run validation.
 
-#### Technical terms
+When editing, you may also improve docs-owned snippet files in `docs/_snippets/` if example quality depends on them.
 
-- Define key terms on first use, then use them freely afterward (e.g., "Component Story Format (CSF)" then "CSF")
-- Link to related concepts rather than re-explaining them inline
-- Assume basic web development knowledge (HTML, CSS, JavaScript, components) — don't over-explain fundamentals
-- Use backticks for all code-like terms (see [Inline formatting](#inline-formatting))
+### 6. Apply Storybook Style
 
-#### Hedging
+For edit modes (`maintenance`, `improve`, `rewrite`, `author`):
 
-- Use "can" for capabilities and "may" or "might" for conditional outcomes
-- Use "should" for recommendations, "must" for requirements
-- Use "typically" or "generally" when describing common patterns that have exceptions
-- Don't hedge when the statement is straightforward — say "This adds…" not "This should add…"
+- Load `references/storybook-style.md` if not already loaded.
+- Apply voice, tone, heading, link, component, and frontmatter rules.
+- This step is always downstream of structural and editorial work — never the first pass.
 
-#### Word choice
+### 7. Validate
 
-- Avoid minimizing language ("simply", "just", "easily", "obviously") — what's simple for one reader may not be for another
-- Use "powerful", "useful", or "great" sparingly and only when warranted
-- Be specific rather than vague — "renders in under 2 seconds" over "renders quickly"
+For edit modes only:
 
-#### Introducing examples
-
-- Set up *why* before showing *how* — provide a brief sentence of context before code blocks
-- Use patterns like: "Here's how you could…", "For example, if you…", "To do X, use Y:"
-- End the lead-in sentence with a colon when the code block directly follows
-
-#### Section openings
-
-- Open with a 1–2 sentence summary of what the section covers and why it matters
-- Get to the point quickly — minimize preamble
-- The opening sentence should work as a standalone definition or value statement
-
-#### Paragraph length
-
-- Keep paragraphs to 2–4 sentences for scannability
-- Introductory paragraphs should be 1–2 sentences
-- Break up longer explanations with headings, lists, or callouts
-
-## Custom Components
-
-### Callout standardization
-
-- Always specify `variant` (`"info"` or `"warning"`). Bare `<Callout>` is not allowed.
-- Standardized icon usage:
-  - 💡 — tips and helpful information (`variant="info"`)
-  - 🧪 — experimental/preview features (`variant="info"` or `variant="warning"`)
-  - ℹ️ — additional context (`variant="info"`)
-  - 📣 — announcements, combined with `title` prop (`variant="info"`)
-  - ♿ — accessibility-specific (`variant="info"`)
-  - ⚠️ — should use `variant="warning"`, not `variant="info"` [auto]
-  - Icons are optional; if used, they must follow the mapping above
-- `variant="positive"` is non-standard; use `variant="info"` instead [auto]
-
-### Other custom components
-
-- `<If renderer={[...]}>` / `<If notRenderer={[...]}>` — conditional rendering
-- `<CodeSnippets path="..." />` — path must exist in `docs/_snippets/`
-- `<Video src="..." />` — embedded video
-- `<YouTubeCallout id="..." title="..." />` — YouTube embed
-
-## Formatting
-
-Most formatting is handled automatically by scripts. These are opinionated guidelines to ensure consistency and readability across documentation files. When making edits, please follow these guidelines to maintain a high standard of documentation.
-
-### Frontmatter
-
-- Values are not wrapped in quotes, unless the value contains special characters (e.g. `&`, `|`, `:`, commas) that require quoting to be parsed correctly. [auto]
-- When quoting is needed, use single quotes.
-- Only use `sidebar.title` when it is different from the `title` field. If `sidebar.title` is not needed, it should be omitted. [auto]
-
-**Good example:**
-
-```yaml
----
-title: Component Story Format (CSF)
-sidebar:
-  title: CSF
-  order: 2
----
+```bash
+yarn fmt:write
+yarn docs:check
 ```
 
-**Bad example:**
+Fix any errors reported by `yarn docs:check`, then run it again to confirm.
 
-```yaml
----
-title: "ArgTypes"
-sidebar:
-  title: "ArgTypes"
-  order: 2
----
-```
+**Do not run validation in `strategy` mode** or when no files were edited.
 
-### Block JSX elements (e.g. <Callout>, <details>, <If>)
+## Handoffs
 
-- New line before and after elements (unless the content before/after is a comment, in which case there should be no new line between the comment and the element)
-- New line before and after content inside elements (<summary> is an exception, there should be no new line between the opening <details> tag and the <summary> tag)
-- Content is not indented, except when the content would normally be indented (e.g. nested list items, content inside codeblocks)
-
-**Good example:**
-
-````mdx
-<If renderer={['react']}>
-
-Other content.
-
-<Callout variant="info">
-
-This is a callout.
-
-- This is a list item inside the callout
-  - This is a nested list item inside the callout
-
-```json
-{
-  "key": "value"
-}
-```
-
-</Callout>
-
-More other content.
-
-<details>
-<summary>This is a summary</summary>
-
-This is content inside the details element.
-
-</details>
-
-More other content.
-
-</If>
-{/* End supported renderers */}
-````
-
-**Bad example:**
-
-````mdx
-<If renderer={['react']}>
-Other content.
-
-<Callout>
-This is a callout.
-
-- This is a list item inside the callout
-- This is a nested list item inside the callout
-
-```json
-{
-  "key": "value"
-}
-```
-
-</Callout>
-More other content.
-<details>
-
-<summary>This is a summary</summary>
-This is content inside the details element.
-
-</details>
-More other content.
-
-</If>
-
-{/* End supported renderers */}
-````
+- **PR creation:** Do not create a PR automatically. If the user asks for end-to-end execution including a PR, hand off to the `pr` skill.
+- **Snippet files:** This skill may edit files in `docs/_snippets/` when example quality requires it, but does not own snippet creation for non-docs purposes.

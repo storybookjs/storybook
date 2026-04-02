@@ -3,10 +3,13 @@ import { resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { SupportedLanguage } from 'storybook/internal/types';
 
-import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
-import { generateMarkdownOutput } from './prompt';
-import type { ProjectInfo, AiPrepareOptions } from './types';
+import { ProjectTypeService } from '../../../create-storybook/src/services/ProjectTypeService.ts';
+
+import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
+import { generateMarkdownOutput } from './prompt.ts';
+import type { ProjectInfo, AiPrepareOptions } from './types.ts';
 
 export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
   const { configDir: userConfigDir, packageManager: packageManagerName, output } = options;
@@ -29,16 +32,22 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
       return;
     }
 
+    const projectTypeService = new ProjectTypeService(data.packageManager);
+    const detectedLanguage = await projectTypeService.detectLanguage();
+    const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
+
     projectInfo = {
       storybookVersion: data.versionInstalled,
       majorVersion,
       framework: data.frameworkPackage,
-      renderer: data.rendererPackage,
-      builder: data.builderPackage,
+      rendererPackage: data.rendererPackage,
+      renderer: data.renderer,
+      builderPackage: data.builderPackage,
       addons: data.addons ?? [],
       configDir: data.configDir,
       storiesPaths: data.storiesPaths,
       hasCsfFactoryPreview: data.hasCsfFactoryPreview,
+      language,
     };
   } catch (err: unknown) {
     logger.error(
@@ -51,9 +60,15 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
   }
 
   if (
-    projectInfo.renderer !== '@storybook/react' &&
-    projectInfo.builder !== '@storybook/builder-vite'
+    projectInfo.rendererPackage !== '@storybook/react' &&
+    projectInfo.builderPackage !== '@storybook/builder-vite'
   ) {
+    logger.log(
+      'AI-assisted setup is currently only available for projects using the React renderer with Vite builder. Detected renderer: ' +
+        projectInfo.rendererPackage +
+        ', builder: ' +
+        projectInfo.builderPackage
+    );
     return;
   }
 

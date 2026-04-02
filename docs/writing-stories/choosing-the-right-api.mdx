@@ -1,0 +1,58 @@
+---
+title: Choosing the right story API
+sidebar:
+  order: 8
+  title: Choosing the right API
+---
+
+Storybook provides several APIs for controlling how stories receive data and render components. This guide helps you choose the right one for your situation.
+
+## Args vs parameters vs loaders
+
+These three APIs all provide data to your stories, but they serve different purposes:
+
+| API                                | Purpose                                 | Controllable via UI                             | When to use                                                                              |
+| ---------------------------------- | --------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [**Args**](./args.mdx)             | Component inputs (props, slots, inputs) | Yes, via [Controls](../essentials/controls.mdx) | Default choice for any data that maps to component inputs                                |
+| [**Parameters**](./parameters.mdx) | Static metadata for addons and features | No                                              | Configuring addon behavior (e.g., backgrounds, viewports) or attaching non-prop metadata |
+| [**Loaders**](./loaders.mdx)       | Async data fetched before render        | No                                              | Loading data from an API or performing async setup before the story renders              |
+
+**Start with args.** They integrate with Controls, actions, and other Storybook tooling. Use parameters when you need to configure addon behavior, not component behavior. Use loaders only when you need async data that can't be defined statically.
+
+## Decorators vs render functions
+
+Both decorators and render functions change what a story renders, but in different ways:
+
+| Approach                                     | What it does                                 | When to use                                                                                                                  |
+| -------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| [**Decorators**](./decorators.mdx)           | Wrap a story in additional markup or context | Adding providers (theme, router, store), layout wrappers, or global setup that applies across stories                        |
+| [**Render functions**](../api/csf/index.mdx) | Replace what the story renders entirely      | Composing multiple components, passing args to non-standard positions, or rendering a component differently than its default |
+
+**Use decorators for wrapping, render functions for replacing.** If you need to add a provider or layout around a story, use a decorator. If you need to change _what_ renders (e.g., placing a Button inside an Alert), use a render function.
+
+Decorators can be shared across stories (component-level or global), while render functions are typically defined per-story or per-component.
+
+## Mocking approaches
+
+When your component depends on external data or services, choose the mocking approach that matches where the dependency lives:
+
+| Approach                                                                     | What it mocks                                     | When to use                                                    |
+| ---------------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------- |
+| [**Module mocks**](./mocking-data-and-modules/mocking-modules.mdx)           | Imported modules (utilities, services, libraries) | The component imports a function or module you want to control |
+| [**Network mocks**](./mocking-data-and-modules/mocking-network-requests.mdx) | HTTP requests (REST, GraphQL)                     | The component fetches data from an API at render time          |
+| [**Provider mocks**](./mocking-data-and-modules/mocking-providers.mdx)       | Context providers (theme, auth, store)            | The component reads from a context provider                    |
+
+You can combine these approaches. For example, a page component might use provider mocks for its theme, module mocks for a utility function, and network mocks for its API calls.
+
+## Quick reference
+
+| I want to...                          | Use                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| Pass props to my component            | [Args](./args.mdx)                                                       |
+| Configure an addon                    | [Parameters](./parameters.mdx)                                           |
+| Fetch async data before render        | [Loaders](./loaders.mdx)                                                 |
+| Wrap my story in a provider or layout | [Decorators](./decorators.mdx)                                           |
+| Change what my story renders          | [Render function](../api/csf/index.mdx)                                  |
+| Control an imported module            | [Module mocks](./mocking-data-and-modules/mocking-modules.mdx)           |
+| Intercept API requests                | [Network mocks](./mocking-data-and-modules/mocking-network-requests.mdx) |
+| Supply a context provider             | [Provider mocks](./mocking-data-and-modules/mocking-providers.mdx)       |

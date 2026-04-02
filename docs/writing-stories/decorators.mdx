@@ -1,7 +1,7 @@
 ---
 title: Decorators
 sidebar:
-  order: 3
+  order: 5
 ---
 
 A decorator is a way to wrap a story in extra “rendering” functionality. Many addons define decorators to augment your stories with extra rendering or gather details about how your story renders.
@@ -54,7 +54,6 @@ The second argument to a decorator function is the **story context** which conta
 - `viewMode`- Storybook's current active window (e.g., canvas, docs).
 
 This context can be used to adjust the behavior of your decorator based on the story's arguments or other metadata. For example, you could create a decorator that allows you to optionally apply a layout to the story, by defining `parameters.pageLayout = 'page'` (or `'page-mobile'`):
-:
 
 <CodeSnippets path="decorator-parameterized-in-preview.md" />
 
@@ -82,7 +81,7 @@ The same applies to Storybook hooks you want to call in your decorator. For inst
 
 ### Using decorators to provide data
 
-If your components are “connected” and require side-loaded data to render, you can use decorators to provide that data in a mocked way without having to refactor your components to take that data as an arg. There are several techniques to achieve this. Depending on exactly how you are loading that data. Read more in the [building pages in Storybook](./build-pages-with-storybook.mdx) section.
+If your components require side-loaded data (e.g., from a context provider or global store), you can use decorators to provide that data in a mocked way without refactoring your components. See [mocking providers](./mocking-data-and-modules/mocking-providers.mdx) for details on wrapping stories with context providers, or [building pages in Storybook](./build-pages-with-storybook.mdx) for broader strategies.
 
 ## Story decorators
 
@@ -132,4 +131,14 @@ All decorators relevant to a story will run in the following order once the stor
 
 - Global decorators, in the order they are defined
 - Component decorators, in the order they are defined
-- Story decorators, in the order they are defined, starting from the innermost decorator and working outwards and up the hierarchy in the same order
+- Story decorators, in the order they are defined
+
+Each decorator wraps the result of the next one, so the first global decorator is the **outermost** wrapper and the last story decorator is the **innermost** (closest to the component). For example, if you define a global theme provider decorator and a story-level padding decorator, the rendered output looks like this:
+
+```
+Theme provider (global)
+  └─ Padding (story)
+       └─ Component
+```
+
+This ordering matters when decorators depend on each other. A decorator that reads from a context provider must be rendered _inside_ the decorator that provides that context.

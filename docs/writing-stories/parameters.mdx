@@ -1,7 +1,7 @@
 ---
 title: Parameters
 sidebar:
-  order: 2
+  order: 4
 ---
 
 Parameters are a set of static, named metadata about a story, typically used to control the behavior of Storybook features and addons.
@@ -64,3 +64,5 @@ The way the global, component and story parameters are combined is:
 The merging of parameters is important. This means it is possible to override a single specific sub-parameter on a per-story basis while retaining most of the parameters defined globally.
 
 If you are defining an API that relies on parameters (e.g., an [**addon**](../addons/index.mdx)) it is a good idea to take this behavior into account.
+
+[Loaders](./loaders.mdx#loader-inheritance) follow the same inheritance pattern.

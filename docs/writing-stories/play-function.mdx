@@ -1,14 +1,14 @@
 ---
 title: Play function
 sidebar:
-  order: 4
+  order: 9
 ---
 
-`Play` functions are small snippets of code executed after the story renders. They enable you to interact with your components and test scenarios that otherwise require user intervention.
+`Play` functions are small snippets of code executed after the story renders. Aided by the [interactions panel](../writing-tests/interaction-testing.mdx#debugging-interaction-tests), they enable you to interact with your components and test scenarios that otherwise require user intervention.
 
 ## Writing stories with the play function
 
-Storybook's `play` functions are small code snippets that run once the story finishes rendering. Aided by the [interactions panel](../writing-tests/interaction-testing.mdx#debugging-interaction-tests), it allows you to build component interactions and test scenarios that were impossible without user intervention. For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
+For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
 
 <CodeSnippets path="play-function.md" />
 

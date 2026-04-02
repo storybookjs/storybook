@@ -1,5 +1,17 @@
 ---
 title: Mocking data and modules
 sidebar:
-  order: 8
+  order: 11
 ---
+
+Components often depend on external data, services, or context providers. Storybook provides several ways to mock these dependencies so your stories render reliably without needing real backends or infrastructure.
+
+Choose the approach that matches where the dependency lives:
+
+- [**Mocking modules**](./mocking-modules.mdx) — control the behavior of imported functions, utilities, or libraries
+- [**Mocking network requests**](./mocking-network-requests.mdx) — intercept and simulate REST or GraphQL API calls
+- [**Mocking providers**](./mocking-providers.mdx) — supply context providers (theme, auth, store) with controlled values
+
+You can combine these approaches in the same story. For example, a page component might mock a context provider for its theme while also intercepting network requests for its data.
+
+For an overview of how these fit alongside other story APIs, see [choosing the right API](../choosing-the-right-api.mdx#mocking-approaches).

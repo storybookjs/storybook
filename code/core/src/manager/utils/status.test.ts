@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
 
-import { mockDataset } from '../components/sidebar/mockdata.tsx';
+import { mockDataset } from '../components/sidebar/mockdata.ts';
 import { getChangeDetectionStatus } from '../components/sidebar/Tree.tsx';
 import { getGroupStatus, getMostCriticalStatusValue } from './status.tsx';
 

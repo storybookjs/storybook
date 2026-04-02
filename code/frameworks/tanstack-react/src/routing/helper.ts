@@ -1,16 +1,10 @@
-import {
-  createRootRoute,
-  createRoute,
-  type RoutePathOptions,
-  type AnyRootRoute,
-  type AnyRoute,
-  type FileRoutesByPath,
-} from '@tanstack/react-router';
-import type { CreateStoryRouteOptions, StoryRouteFileOptions } from './types';
+import { createRootRoute, createRoute, type AnyRoute } from '@tanstack/react-router';
+import type { CreateStoryRouteOptions, StoryRouteFileOptions, StoryRoutePath } from './types';
 
-function buildStoryRoute(options: CreateStoryRouteOptions): AnyRootRoute {
+function buildStoryRoute<TRoute extends AnyRoute = AnyRoute>(
+  options: CreateStoryRouteOptions<TRoute>
+): TRoute {
   const root = createRootRoute();
-  // @ts-expect-error - route options. HARD to make it work when spreading obj.
   const route = createRoute({
     getParentRoute: () => root,
     ...options,
@@ -18,7 +12,7 @@ function buildStoryRoute(options: CreateStoryRouteOptions): AnyRootRoute {
 
   root.addChildren([route]);
 
-  return root;
+  return root as unknown as TRoute;
 }
 
 /**
@@ -39,18 +33,22 @@ function buildStoryRoute(options: CreateStoryRouteOptions): AnyRootRoute {
  */
 
 export function createStoryRoute<TRoute extends AnyRoute = AnyRoute>(
-  pathOrOptions: CreateStoryRouteOptions<TRoute>
-): AnyRootRoute;
+  path: StoryRoutePath<TRoute>
+): (options?: StoryRouteFileOptions<TRoute>) => TRoute;
 export function createStoryRoute<TRoute extends AnyRoute = AnyRoute>(
-  pathOrOptions: keyof FileRoutesByPath
-): (options?: StoryRouteFileOptions) => AnyRootRoute;
+  options: CreateStoryRouteOptions<TRoute>
+): TRoute;
 export function createStoryRoute<TRoute extends AnyRoute = AnyRoute>(
-  pathOrOptions: keyof FileRoutesByPath | (string & {}) | CreateStoryRouteOptions<TRoute>
-): AnyRootRoute | ((options?: StoryRouteFileOptions) => AnyRootRoute) {
+  pathOrOptions: StoryRoutePath<TRoute> | CreateStoryRouteOptions<TRoute>
+): TRoute | ((options?: StoryRouteFileOptions<TRoute>) => TRoute) {
   // String path — return a curried builder
   if (typeof pathOrOptions === 'string') {
-    return (options?: StoryRouteFileOptions) => {
-      return buildStoryRoute({ ...options, path: pathOrOptions });
+    return (options?: StoryRouteFileOptions<TRoute>) => {
+      const routeOptions = {
+        ...(options ?? {}),
+        path: pathOrOptions,
+      } as CreateStoryRouteOptions<TRoute>;
+      return buildStoryRoute(routeOptions);
     };
   }
   // Flat options object

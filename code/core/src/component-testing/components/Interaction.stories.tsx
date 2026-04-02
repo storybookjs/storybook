@@ -26,6 +26,13 @@ const createCall = (overrides: Partial<Call> = {}): Call => ({
 export default {
   title: 'Interaction',
   component: Interaction,
+  decorators: [
+    (Story) => (
+      <ul style={{ listStyleType: 'none' }}>
+        <Story />
+      </ul>
+    ),
+  ],
   args: {
     callsById: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),
     controls: ToolbarStories.args.controls,

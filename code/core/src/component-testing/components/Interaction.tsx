@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { Button } from 'storybook/internal/components';
 
-import { ChevronDownIcon, ChevronRightIcon } from '@storybook/icons';
+import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
@@ -292,7 +292,7 @@ export const Interaction = ({
               ariaLabel={getExpandButtonAriaLabel({ isCollapsed, stepName })}
               aria-expanded={!isCollapsed}
             >
-              {isCollapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
+              {isCollapsed ? <ChevronUpIcon /> : <ChevronDownIcon />}
             </StyledButton>
           )}
         </RowActions>

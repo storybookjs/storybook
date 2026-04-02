@@ -19,12 +19,12 @@ import path, { dirname, join, normalize, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { COVERAGE_DIRECTORY } from '../constants';
-import { log } from '../logger';
-import type { TriggerRunEvent } from '../types';
-import type { StorybookCoverageReporterOptions } from './coverage-reporter';
-import { StorybookReporter } from './reporter';
-import type { TestManager } from './test-manager';
+import { COVERAGE_DIRECTORY } from '../constants.ts';
+import { log } from '../logger.ts';
+import type { TriggerRunEvent } from '../types.ts';
+import type { StorybookCoverageReporterOptions } from './coverage-reporter.ts';
+import { StorybookReporter } from './reporter.ts';
+import type { TestManager } from './test-manager.ts';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
 const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];

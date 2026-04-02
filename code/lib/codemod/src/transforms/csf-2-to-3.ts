@@ -8,7 +8,7 @@ import type { API, FileInfo } from 'jscodeshift';
 import prettier from 'prettier';
 import invariant from 'tiny-invariant';
 
-import { upgradeDeprecatedTypes } from './upgrade-deprecated-types';
+import { upgradeDeprecatedTypes } from './upgrade-deprecated-types.ts';
 
 const { isIdentifier, isTSTypeAnnotation, isTSTypeReference } = t;
 

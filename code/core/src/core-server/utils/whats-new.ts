@@ -17,7 +17,7 @@ import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
-import { sendTelemetryError } from '../withTelemetry';
+import { sendTelemetryError } from '../withTelemetry.ts';
 
 export type OptionsWithRequiredCache = Exclude<Options, 'cache'> & Required<Pick<Options, 'cache'>>;
 

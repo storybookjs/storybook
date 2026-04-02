@@ -229,5 +229,31 @@ module.exports = {
         'storybook/no-renderer-packages': 'off',
       },
     },
+    {
+      files: ['**/*.ts', '**/*.tsx'],
+      excludedFiles: [
+        '**/*.d.ts',
+        '**/docs/**/*',
+        '**/template/**/*',
+        '**/templates/**/*',
+        '**/__testfixtures__/**/*',
+        '**/__mocks-ng-workspace__/**/*',
+      ],
+      rules: {
+        'import-x/extensions': [
+          'error',
+          'always',
+          {
+            ignorePackages: true,
+            checkTypeImports: true,
+            fix: true,
+            pathGroupOverrides: [
+              { pattern: 'storybook/**', action: 'ignore' },
+              { pattern: '@storybook/**', action: 'ignore' },
+            ],
+          },
+        ],
+      },
+    },
   ],
 };

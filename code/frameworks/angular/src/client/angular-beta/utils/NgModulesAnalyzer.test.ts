@@ -1,7 +1,7 @@
 import { Component, NgModule } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
-import { isComponentAlreadyDeclared } from './NgModulesAnalyzer';
+import { isComponentAlreadyDeclared } from './NgModulesAnalyzer.ts';
 
 const FooComponent = Component({})(class {});
 

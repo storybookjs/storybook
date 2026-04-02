@@ -2,11 +2,11 @@ import { Bar } from 'storybook/internal/components';
 
 import { expect } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { TabList } from './TabList';
-import { TabPanel } from './TabPanel';
-import type { TabProps } from './TabsView';
-import { useTabsState } from './TabsView';
+import preview from '../../../../../.storybook/preview.tsx';
+import { TabList } from './TabList.tsx';
+import { TabPanel } from './TabPanel.tsx';
+import type { TabProps } from './TabsView.tsx';
+import { useTabsState } from './TabsView.tsx';
 
 const DEFAULT_TABS: TabProps[] = [
   {

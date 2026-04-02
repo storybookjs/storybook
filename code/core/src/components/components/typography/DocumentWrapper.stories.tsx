@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { DocumentWrapper } from './DocumentWrapper';
+import { DocumentWrapper } from './DocumentWrapper.tsx';
 
 export default {
   component: DocumentWrapper,

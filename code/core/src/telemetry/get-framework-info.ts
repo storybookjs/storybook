@@ -1,7 +1,7 @@
 import { getStorybookInfo } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import { cleanPaths } from './sanitize';
+import { cleanPaths } from './sanitize.ts';
 
 const cleanAndSanitizePath = (path: string) => {
   return cleanPaths(path).replace(/.*node_modules[\\/]/, '');

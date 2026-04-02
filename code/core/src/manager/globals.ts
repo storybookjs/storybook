@@ -1,1 +1,1 @@
-export * from './globals/globals';
+export * from './globals/globals.ts';

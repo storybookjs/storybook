@@ -18,10 +18,10 @@ import { styled } from 'storybook/theming';
 import {
   ArgsTable,
   type SortType,
-} from '../../../../addons/docs/src/blocks/components/ArgsTable/ArgsTable';
-import type { PresetColor } from '../../../../addons/docs/src/blocks/controls/types';
-import { PARAM_KEY } from '../constants';
-import { SaveStory } from './SaveStory';
+} from '../../../../addons/docs/src/blocks/components/ArgsTable/ArgsTable.tsx';
+import type { PresetColor } from '../../../../addons/docs/src/blocks/controls/types.ts';
+import { PARAM_KEY } from '../constants.ts';
+import { SaveStory } from './SaveStory.tsx';
 
 // Remove undefined values (top-level only)
 const clean = (obj: { [key: string]: any }) =>

@@ -2,7 +2,7 @@ import { sanitize } from 'storybook/internal/csf';
 import type { ModuleExports, NormalizedComponentAnnotations } from 'storybook/internal/types';
 import type { Renderer } from 'storybook/internal/types';
 
-import { normalizeInputTypes } from './normalizeInputTypes';
+import { normalizeInputTypes } from './normalizeInputTypes.ts';
 
 export function normalizeComponentAnnotations<TRenderer extends Renderer>(
   defaultExport: ModuleExports['default'],

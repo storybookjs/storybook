@@ -2,8 +2,8 @@ import { Channel } from 'storybook/internal/channels';
 
 import { dedent } from 'ts-dedent';
 
-import { UniversalStore } from '.';
-import type { StoreOptions } from './types';
+import { UniversalStore } from './index.ts';
+import type { StoreOptions } from './types.ts';
 
 /**
  * A mock universal store that can be used when testing code that relies on a universal store. It

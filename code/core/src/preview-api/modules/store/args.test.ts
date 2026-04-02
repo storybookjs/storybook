@@ -9,7 +9,7 @@ import {
   groupArgsByTarget,
   mapArgsToTypes,
   validateOptions,
-} from './args';
+} from './args.ts';
 
 const stringType: SBType = { name: 'string' };
 const numberType: SBType = { name: 'number' };

@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { transformImportFiles } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 export const VITE_DEFAULT_VERSION = '^7.0.0';
 

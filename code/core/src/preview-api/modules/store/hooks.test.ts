@@ -24,8 +24,8 @@ import {
   useRef,
   useState,
   useStoryContext,
-} from '../addons';
-import { defaultDecorateStory } from './decorators';
+} from '../addons/index.ts';
+import { defaultDecorateStory } from './decorators.ts';
 
 vi.mock('storybook/internal/client-logger', () => ({
   logger: { warn: vi.fn(), log: vi.fn() },

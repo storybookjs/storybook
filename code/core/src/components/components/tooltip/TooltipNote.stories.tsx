@@ -2,9 +2,9 @@ import { Button } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { TooltipNote } from './TooltipNote';
-import { TooltipProvider } from './TooltipProvider';
+import preview from '../../../../../.storybook/preview.tsx';
+import { TooltipNote } from './TooltipNote.tsx';
+import { TooltipProvider } from './TooltipProvider.tsx';
 
 const ViewPort = styled.div({
   height: 300,

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 
-import { findFilesUp } from '../../util';
-import type { Fix } from '../types';
+import { findFilesUp } from '../../util.ts';
+import type { Fix } from '../types.ts';
 
 interface AddonExperimentalTestOptions {
   matchingFiles: string[];

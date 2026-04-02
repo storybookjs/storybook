@@ -17,16 +17,16 @@ import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
-import type { ArgTypes } from '../../csf';
-import { loadConfig, printConfig } from '../../csf-tools';
+import type { ArgTypes } from '../../csf/index.ts';
+import { loadConfig, printConfig } from '../../csf-tools/index.ts';
 import {
   STORYBOOK_FN_PLACEHOLDER,
   generateDummyArgsFromArgTypes,
-} from './get-dummy-args-from-argtypes';
-import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
-import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
-import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
-import { escapeForTemplate } from './safeString';
+} from './get-dummy-args-from-argtypes.ts';
+import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template.ts';
+import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript.ts';
+import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript.ts';
+import { escapeForTemplate } from './safeString.ts';
 
 export async function getNewStoryFile(
   {

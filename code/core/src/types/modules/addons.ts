@@ -1,10 +1,10 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { State } from '../../manager-api';
-import type { RenderData as RouterData } from '../../router/types';
-import type { ThemeVars } from '../../theming/types';
-import type { API_LayoutCustomisations, API_SidebarOptions } from './api';
-import type { API_HashEntry, API_StoryEntry } from './api-stories';
+import type { State } from '../../manager-api/index.ts';
+import type { RenderData as RouterData } from '../../router/types.ts';
+import type { ThemeVars } from '../../theming/types.ts';
+import type { API_LayoutCustomisations, API_SidebarOptions } from './api.ts';
+import type { API_HashEntry, API_StoryEntry } from './api-stories.ts';
 import type {
   Args,
   ArgsStoryFn as ArgsStoryFnForFramework,
@@ -20,8 +20,8 @@ import type {
   StoryId,
   StoryKind,
   StoryName,
-} from './csf';
-import type { IndexEntry } from './indexer';
+} from './csf.ts';
+import type { IndexEntry } from './indexer.ts';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,

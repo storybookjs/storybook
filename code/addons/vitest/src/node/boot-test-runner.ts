@@ -11,14 +11,15 @@ import type { EventInfo, Options } from 'storybook/internal/types';
 
 import { normalize } from 'pathe';
 
-import { importMetaResolve } from '../../../../core/src/shared/utils/module';
+import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
-} from '../constants';
-import { log } from '../logger';
-import type { Store } from '../types';
+} from '../constants.ts';
+import { log } from '../logger.ts';
+import { errorToErrorLike } from '../utils.ts';
+import type { Store } from '../types.ts';
 
 const MAX_START_TIME = 30000;
 
@@ -144,12 +145,7 @@ const bootTestRunner = async ({
       type: 'FATAL_ERROR',
       payload: {
         message: 'Failed to start test runner process',
-        error: {
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
-          cause: error.cause,
-        },
+        error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
       },
     });
     eventQueue.length = 0;

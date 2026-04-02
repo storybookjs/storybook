@@ -12002,6 +12002,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"aria-live-capture@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "aria-live-capture@npm:2.0.0"
+  checksum: 10c0/c706051c507320908d48b014bfd90ad225ad7104e3eb359c317e75f13888c7ef55a4c1b7cefdece9a28164774ad1ff4fd83cb492ea5c5fecd8172697144b12a8
+  languageName: node
+  linkType: hard
+
 "aria-query@npm:5.1.3":
   version: 5.1.3
   resolution: "aria-query@npm:5.1.3"
@@ -17255,6 +17262,15 @@ __metadata:
   version: 1.0.8
   resolution: "exsolve@npm:1.0.8"
   checksum: 10c0/65e44ae05bd4a4a5d87cfdbbd6b8f24389282cf9f85fa5feb17ca87ad3f354877e6af4cd99e02fc29044174891f82d1d68c77f69234410eb8f163530e6278c67
+  languageName: node
+  linkType: hard
+
+"extend-to-be-announced@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "extend-to-be-announced@npm:2.0.0"
+  dependencies:
+    aria-live-capture: "npm:^2.0.0"
+  checksum: 10c0/8ad88d8711ce69ec60384f1febae31d7e5fcc2c63d7340d217800bcd5a43e906da1861243fc572d3b7a0484227502d037b38a6d55f397d8e0aa497cb682c23aa
   languageName: node
   linkType: hard
 
@@ -28567,6 +28583,7 @@ __metadata:
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@react-aria/interactions": "npm:^3.25.5"
     "@react-aria/landmark": "npm:^3.0.8"
+    "@react-aria/live-announcer": "npm:^3.4.4"
     "@react-aria/overlays": "npm:^3.29.1"
     "@react-aria/tabs": "npm:^3.10.7"
     "@react-aria/toolbar": "npm:3.0.0-beta.20"
@@ -28625,6 +28642,7 @@ __metadata:
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
     execa: "npm:^9.6.1"
     exsolve: "npm:^1.0.7"
+    extend-to-be-announced: "npm:^2.0.0"
     fetch-retry: "npm:^6.0.0"
     flush-promises: "npm:^1.0.2"
     fuse.js: "npm:^3.6.1"

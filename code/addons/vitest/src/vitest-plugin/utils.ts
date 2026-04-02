@@ -7,7 +7,7 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { dirname, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import type { InternalOptions } from './types';
+import type { InternalOptions } from './types.ts';
 
 let hasLoggedDeprecationWarning = false;
 

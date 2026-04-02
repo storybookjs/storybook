@@ -12,13 +12,13 @@ import type { TabListState } from '@react-stately/tabs';
 import { Helmet } from 'react-helmet-async';
 import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
 
-import { useLandmark } from '../../hooks/useLandmark';
-import { FramesRenderer } from './FramesRenderer';
-import { ToolbarComp } from './Toolbar';
-import { ApplyWrappers } from './Wrappers';
-import { ZoomConsumer, ZoomProvider } from './tools/zoom';
-import * as S from './utils/components';
-import type { PreviewProps } from './utils/types';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+import { FramesRenderer } from './FramesRenderer.tsx';
+import { ToolbarComp } from './Toolbar.tsx';
+import { ApplyWrappers } from './Wrappers.tsx';
+import { ZoomConsumer, ZoomProvider } from './tools/zoom.tsx';
+import * as S from './utils/components.ts';
+import type { PreviewProps } from './utils/types.tsx';
 
 const canvasMapper = ({ state, api }: Combo) => ({
   api,

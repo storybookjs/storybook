@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
-import { executeCommand } from '../utils/command';
-import { JsPackageManager } from './JsPackageManager';
-import { PNPMProxy } from './PNPMProxy';
+import { executeCommand } from '../utils/command.ts';
+import { JsPackageManager } from './JsPackageManager.ts';
+import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -18,7 +18,7 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock(import('../utils/command'), { spy: true });
+vi.mock(import('../utils/command.ts'), { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
 
 describe('PNPM Proxy', () => {
@@ -150,7 +150,9 @@ describe('PNPM Proxy', () => {
 
   describe('getVersion', () => {
     it('with a Storybook package listed in versions.json it returns the version', async () => {
-      const storybookAngularVersion = (await import('../versions')).default['@storybook/angular'];
+      const storybookAngularVersion = (await import('../versions.ts')).default[
+        '@storybook/angular'
+      ];
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
 
       const version = await pnpmProxy.getVersion('@storybook/angular');

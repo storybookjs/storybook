@@ -5,7 +5,7 @@ import { executeCommandSync, getProjectRoot } from 'storybook/internal/common';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { oneWayHash } from './one-way-hash';
+import { oneWayHash } from './one-way-hash.ts';
 
 export function normalizeGitUrl(rawUrl: string) {
   // I don't *think* its possible to set a hash on a origin URL, but just in case

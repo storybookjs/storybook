@@ -3,7 +3,7 @@ import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 
-import { COMPONENT_TESTING_PANEL_ID } from '../constants';
+import { COMPONENT_TESTING_PANEL_ID } from '../constants.ts';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment

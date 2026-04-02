@@ -2,7 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
-import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
+import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   CACHE_KEYS,
   CACHE_PATHS,
@@ -16,8 +16,8 @@ import {
   verdaccio,
   workflow,
   workspace,
-} from './utils/helpers';
-import { defineJob, defineNoOpJob } from './utils/types';
+} from './utils/helpers.ts';
+import { defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
@@ -64,19 +64,18 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   ],
 }));
 
-export const prettyDocs = defineJob('Prettify docs', () => ({
+export const fmt = defineJob('Format check', () => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'medium+',
   },
   steps: [
     git.checkout(),
-    npm.installScripts(),
+    npm.install('.'),
     {
       run: {
-        name: 'Prettier',
-        working_directory: `scripts`,
-        command: 'yarn docs:prettier:check',
+        name: 'Format check',
+        command: 'yarn fmt:check',
       },
     },
   ],
@@ -180,7 +179,7 @@ export const check = defineJob(
 );
 
 export const lint = defineJob(
-  'EsLint & Prettier validation',
+  'ESLint',
   () => ({
     executor: {
       name: 'sb_node_22_classic',
@@ -193,13 +192,6 @@ export const lint = defineJob(
           name: 'Lint code JS',
           working_directory: `code`,
           command: 'yarn lint:js',
-        },
-      },
-      {
-        run: {
-          name: 'Lint code Other',
-          working_directory: `code`,
-          command: 'yarn lint:other',
         },
       },
       {
@@ -247,14 +239,13 @@ export const testsUnit_linux = defineJob(
       {
         run: {
           name: 'Run tests',
-          working_directory: `code`,
           command: [
-            'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-tests\\//d" | sed "/node_modules\\//d")',
             'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },
       },
-      testResults.persist(`code/test-results`),
+      testResults.persist(`test-results`),
 
       git.check(),
       ...workflow.reportOnFailure(workflowName),
@@ -276,14 +267,13 @@ export const testsStories_linux = defineJob(
       {
         run: {
           name: 'Run stories tests',
-          working_directory: `code`,
           command: [
-            'TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-tests\\//d" | sed "/node_modules\\//d")',
             'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },
       },
-      testResults.persist(`code/test-results`),
+      testResults.persist(`test-results`),
 
       git.check(),
       ...workflow.reportOnFailure(workflowName),
@@ -314,10 +304,9 @@ export const testUnit_windows = defineJob(
           command:
             'yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
           name: 'Run unit tests',
-          working_directory: `code`,
         },
       },
-      testResults.persist(`code/test-results`),
+      testResults.persist(`test-results`),
     ],
   }),
   [build_windows]

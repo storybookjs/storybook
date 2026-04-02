@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
 import type { Server } from 'http';
 import { stringify } from 'telejson';
 
-import { ServerChannelTransport, getServerChannel } from '../get-server-channel';
+import { ServerChannelTransport, getServerChannel } from '../get-server-channel.ts';
 
 const mockToken = 'test-token-123';
 
@@ -14,6 +14,11 @@ const options = {
   localAddress: 'http://localhost:6006',
   networkAddress: 'http://192.168.1.100:6006',
   token: mockToken,
+} as any;
+
+const webContainerOptions = {
+  ...options,
+  skipValidation: true,
 } as any;
 
 describe('getServerChannel', () => {
@@ -302,5 +307,61 @@ describe('ServerChannelTransport', () => {
     expect(handleUpgradeSpy).not.toHaveBeenCalled();
     // Socket should not be destroyed for wrong path (just ignored)
     expect(destroySpy).not.toHaveBeenCalled();
+  });
+
+  it('accepts connections without token when validation is disabled', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter() as any;
+    socket.write = vi.fn();
+    socket.destroy = vi.fn();
+    const destroySpy = vi.spyOn(socket, 'destroy');
+    const handleUpgradeSpy = vi.fn();
+    const transport = new ServerChannelTransport(server, webContainerOptions);
+
+    // Mock handleUpgrade to track if it's called
+    // @ts-expect-error (accessing private property)
+    transport.socket.handleUpgrade = handleUpgradeSpy;
+
+    const request = {
+      url: '/storybook-server-channel',
+      headers: {
+        origin: 'http://localhost:6006',
+      },
+    } as any;
+    const head = Buffer.from('');
+
+    server.listeners('upgrade')[0](request, socket, head);
+
+    expect(socket.write).not.toHaveBeenCalled();
+    expect(destroySpy).not.toHaveBeenCalled();
+    expect(handleUpgradeSpy).toHaveBeenCalled();
+  });
+
+  it('accepts connections with invalid origin when validation is disabled', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter() as any;
+    socket.write = vi.fn();
+    socket.destroy = vi.fn();
+    const destroySpy = vi.spyOn(socket, 'destroy');
+    const handleUpgradeSpy = vi.fn();
+    const transport = new ServerChannelTransport(server, webContainerOptions);
+
+    // Mock handleUpgrade to track if it's called
+    // @ts-expect-error (accessing private property)
+    transport.socket.handleUpgrade = handleUpgradeSpy;
+
+    const request = {
+      url: '/storybook-server-channel?token=wrong-token',
+      headers: {
+        origin: 'http://malicious-site.com',
+      },
+    } as any;
+    const head = Buffer.from('');
+
+    server.listeners('upgrade')[0](request, socket, head);
+
+    expect(socket.write).not.toHaveBeenCalled();
+    expect(destroySpy).not.toHaveBeenCalled();
+    expect(handleUpgradeSpy).toHaveBeenCalled();
   });
 });

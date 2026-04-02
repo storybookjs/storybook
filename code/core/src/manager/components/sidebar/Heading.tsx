@@ -5,9 +5,9 @@ import { Button } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-import { Brand } from './Brand';
-import type { MenuList, SidebarMenuProps } from './Menu';
-import { SidebarMenu } from './Menu';
+import { Brand } from './Brand.tsx';
+import type { MenuList, SidebarMenuProps } from './Menu.tsx';
+import { SidebarMenu } from './Menu.tsx';
 
 export interface HeadingProps {
   menuHighlighted?: boolean;

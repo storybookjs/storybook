@@ -4,7 +4,7 @@ import type { NextConfig } from 'next';
 import semver from 'semver';
 import type { RuleSetRule, Configuration as WebpackConfig } from 'webpack';
 
-import { getNextjsVersion } from '../utils';
+import { getNextjsVersion } from '../utils.ts';
 
 export const configureImages = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
   configureStaticImageImport(baseConfig, nextConfig);

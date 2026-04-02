@@ -10,7 +10,7 @@ import {
   CREATE_NEW_STORYFILE_RESPONSE,
 } from 'storybook/internal/core-events';
 
-import { initCreateNewStoryChannel } from './create-new-story-channel';
+import { initCreateNewStoryChannel } from './create-new-story-channel.ts';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('storybook/internal/common')>();

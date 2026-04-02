@@ -6,12 +6,12 @@ import type { API_Provider } from 'storybook/internal/types';
 import EventEmitter from 'events';
 import { themes } from 'storybook/theming';
 
-import type { ModuleArgs } from '../lib/types';
-import type { SubState as AddonsSubState } from '../modules/addons';
-import type { SubAPI, SubState } from '../modules/layout';
-import { defaultLayoutState, init as initLayout } from '../modules/layout';
-import type { API, State } from '../root';
-import type Store from '../store';
+import type { ModuleArgs } from '../lib/types.tsx';
+import type { SubState as AddonsSubState } from '../modules/addons.ts';
+import type { SubAPI, SubState } from '../modules/layout.ts';
+import { getDefaultLayoutState, init as initLayout } from '../modules/layout.ts';
+import type { API, State } from '../root.tsx';
+import type Store from '../store.ts';
 
 describe('layout API', () => {
   let layoutApi: SubAPI;
@@ -24,7 +24,7 @@ describe('layout API', () => {
 
   beforeEach(() => {
     currentState = {
-      ...defaultLayoutState,
+      ...getDefaultLayoutState(),
       selectedPanel: 'storybook/internal/action/panel',
       theme: themes.light,
       singleStory: false,
@@ -562,7 +562,7 @@ describe('layout API', () => {
 
       // Re-import the layout module so it captures our mock document
       vi.resetModules();
-      const { init: freshInit } = await import('../modules/layout');
+      const { init: freshInit } = await import('../modules/layout.ts');
       focusLayoutApi = freshInit({
         store,
         provider,

@@ -4,15 +4,15 @@ import type { Globals } from 'storybook/internal/csf';
 
 import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, PARAM_KEY } from './constants';
-import { MINIMAL_VIEWPORTS } from './defaults';
+import { ADDON_ID, PARAM_KEY } from './constants.ts';
+import { MINIMAL_VIEWPORTS } from './defaults.ts';
 import type {
   GlobalState,
   GlobalStateUpdate,
   ViewportMap,
   ViewportParameters,
   ViewportType,
-} from './types';
+} from './types.ts';
 
 // Custom viewport format, e.g. '100pct-200px' (width-height)
 const URL_VALUE_PATTERN = /^([0-9]{1,4})([a-z]{0,4})-([0-9]{1,4})([a-z]{0,4})$/;
@@ -179,12 +179,7 @@ export const useViewport = () => {
       const w = width.replace(/px$/, '').replace(/%$/, 'pct');
       const h = height.replace(/px$/, '').replace(/%$/, 'pct');
       const value = isRotated ? `${h}-${w}` : `${w}-${h}`;
-      const [match, vx, ux, vy, uy] = value.match(URL_VALUE_PATTERN) || [];
-
-      // Don't update to pixel values less than 40
-      if (match && (ux || Number(vx) >= 40) && (uy || Number(vy) >= 40)) {
-        update({ value: match, isRotated });
-      }
+      update({ value, isRotated });
     },
     [update, isRotated]
   );

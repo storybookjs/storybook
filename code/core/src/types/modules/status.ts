@@ -1,3 +1,4 @@
+export { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../shared/status-store/index.ts';
 export type {
   Status,
   StatusValue,
@@ -7,4 +8,4 @@ export type {
   StatusStore,
   StatusStoreByTypeId,
   UseStatusStore,
-} from '../../shared/status-store';
+} from '../../shared/status-store/index.ts';

@@ -9,13 +9,13 @@ import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
-import { resolvePackageDir } from '../shared/utils/module';
-import { getAnonymousProjectId, getProjectSince } from './anonymous-id';
-import { detectAgent } from './detect-agent';
-import { set as saveToCache } from './event-cache';
-import { fetch } from './fetch';
-import { getSessionId } from './session-id';
-import type { Options, TelemetryData } from './types';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
+import { detectAgent } from './detect-agent.ts';
+import { set as saveToCache } from './event-cache.ts';
+import { fetch } from './fetch.ts';
+import { getSessionId } from './session-id.ts';
+import type { Options, TelemetryData } from './types.ts';
 
 const retryingFetch = retry(fetch);
 
@@ -51,7 +51,7 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
 // by the app. currently:
 // - cliVersion
 const inCI = isCI();
-const agentDetection = detectAgent({ stdoutIsTTY: process.stdout.isTTY, env: process.env });
+const agentDetection = detectAgent();
 const globalContext = {
   inCI,
   isTTY: process.stdout.isTTY,

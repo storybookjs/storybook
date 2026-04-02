@@ -1,5 +1,5 @@
-import { importModule } from '../../shared/utils/module';
-import { getInterpretedFile } from './interpret-files';
+import { importModule } from '../../shared/utils/module.ts';
+import { getInterpretedFile } from './interpret-files.ts';
 
 function getCandidate(paths: string[]) {
   for (let i = 0; i < paths.length; i += 1) {

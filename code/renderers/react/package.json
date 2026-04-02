@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.3.0-alpha.14",
+  "version": "10.4.0-alpha.7",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -62,6 +62,8 @@
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
     "@types/node": "^22.19.1",
+    "@volar/language-core": "~2.4.28",
+    "@volar/typescript": "~2.4.28",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",

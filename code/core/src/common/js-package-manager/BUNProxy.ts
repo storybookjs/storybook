@@ -9,12 +9,12 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
 
-import type { ExecuteCommandOptions } from '../utils/command';
-import { executeCommand } from '../utils/command';
-import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager';
-import type { PackageJson } from './PackageJson';
-import type { InstallationMetadata, PackageMetadata } from './types';
+import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { executeCommand } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import type { PackageJson } from './PackageJson.ts';
+import type { InstallationMetadata, PackageMetadata } from './types.ts';
 
 type NpmDependency = {
   version: string;

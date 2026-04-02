@@ -9,7 +9,6 @@ import * as esbuild from 'esbuild';
 import { glob } from 'glob';
 import limit from 'p-limit';
 import picocolors from 'picocolors';
-import * as prettier from 'prettier';
 import prettyTime from 'pretty-hrtime';
 import * as rollup from 'rollup';
 import * as rpd from 'rollup-plugin-dts';
@@ -21,7 +20,7 @@ import type * as typefest from 'type-fest';
 import typescript from 'typescript';
 import ts from 'typescript';
 
-import { ROOT_DIRECTORY } from './constants';
+import { ROOT_DIRECTORY } from './constants.ts';
 
 export { globalExternals };
 
@@ -119,7 +118,6 @@ export {
   dedent,
   limit,
   sortPackageJson,
-  prettier,
 };
 
 export const nodeInternals = [

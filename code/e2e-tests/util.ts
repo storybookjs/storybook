@@ -3,7 +3,7 @@ import { toId } from 'storybook/internal/csf';
 
 import type { Expect, Page } from '@playwright/test';
 
-import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates';
+import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates.ts';
 
 export class SbPage {
   readonly page: Page;
@@ -193,7 +193,9 @@ export class SbPage {
   }
 
   async openTagsFilter() {
-    const tagFiltersButton = this.page.locator('[aria-label="Tag filters"]');
+    const tagFiltersButton = this.page
+      .locator('[aria-label*="active tag filter"]')
+      .or(this.page.locator('[aria-label="Tag filters"]'));
     // FIXME: we might want to strengthen this locator with an aria-label or testid on the dialog.
     const tooltip = this.page.locator('[role="dialog"]');
     const isTooltipVisible = await tooltip.isVisible();

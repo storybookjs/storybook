@@ -5,7 +5,7 @@ import { Channel } from 'storybook/internal/channels';
 import { GHOST_STORIES_REQUEST, GHOST_STORIES_RESPONSE } from 'storybook/internal/core-events';
 import type { Options } from 'storybook/internal/types';
 
-import { initGhostStoriesChannel } from './ghost-stories-channel';
+import { initGhostStoriesChannel } from './ghost-stories-channel.ts';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('storybook/internal/common')>();
@@ -66,7 +66,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 
 const mockCommon = await import('storybook/internal/common');
 const mockTelemetry = await import('storybook/internal/telemetry');
-const mockStoryGeneration = await import('../utils/ghost-stories/get-candidates');
+const mockStoryGeneration = await import('../utils/ghost-stories/get-candidates.ts');
 
 describe('ghostStoriesChannel', () => {
   const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
@@ -432,7 +432,7 @@ describe('ghostStoriesChannel', () => {
           runError: 'Failed to analyze components',
           stats: {
             globMatchCount: 0,
-            candidateAnalysisDuration: 0,
+            candidateAnalysisDuration: expect.any(Number),
             totalRunDuration: expect.any(Number),
             analyzedCount: 0,
             avgComplexity: 0,
@@ -516,12 +516,12 @@ describe('ghostStoriesChannel', () => {
           runError: 'JSON report not found',
           stats: {
             globMatchCount: 5,
-            candidateAnalysisDuration: 0,
-            totalRunDuration: 0,
+            candidateAnalysisDuration: expect.any(Number),
+            totalRunDuration: expect.any(Number),
             analyzedCount: 2,
             avgComplexity: 1.0,
             candidateCount: 1,
-            testRunDuration: 0,
+            testRunDuration: expect.any(Number),
           },
         });
       });
@@ -569,12 +569,12 @@ describe('ghostStoriesChannel', () => {
           runError: 'Startup Error',
           stats: {
             globMatchCount: 5,
-            candidateAnalysisDuration: 0,
-            totalRunDuration: 0,
+            candidateAnalysisDuration: expect.any(Number),
+            totalRunDuration: expect.any(Number),
             analyzedCount: 2,
             avgComplexity: 1.0,
             candidateCount: 1,
-            testRunDuration: 0,
+            testRunDuration: expect.any(Number),
           },
         });
       });

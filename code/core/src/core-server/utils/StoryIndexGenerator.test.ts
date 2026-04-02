@@ -8,10 +8,10 @@ import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
 
-import { Tag } from '../../shared/constants/tags';
-import { csfIndexer } from '../presets/common-preset';
-import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
-import { StoryIndexGenerator } from './StoryIndexGenerator';
+import { Tag } from '../../shared/constants/tags.ts';
+import { csfIndexer } from '../presets/common-preset.ts';
+import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
+import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 
 vi.mock('../utils/constants', () => {
   return {
@@ -1955,6 +1955,31 @@ describe('StoryIndexGenerator', () => {
             "v": 5,
           }
         `);
+      });
+
+      it('puts the Meta of stories file first in storiesImports even when it is not the last import', async () => {
+        const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/*.stories.(js|ts)',
+          options
+        );
+
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './complex/MetaOfImportOrder.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([csfSpecifier, docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        const docsEntry = storyIndex.entries['a--metaofimportorder'];
+
+        expect(docsEntry).toMatchObject({
+          type: 'docs',
+          title: 'A',
+          importPath: './complex/MetaOfImportOrder.mdx',
+          storiesImports: ['./src/A.stories.js', './src/B.stories.ts'],
+        });
       });
     });
 

@@ -4,8 +4,8 @@ import type { Options } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { VIRTUAL_ID as PROJECT_ANNOTATIONS_VIRTUAL_ID } from './plugins/storybook-project-annotations-plugin';
-import { SB_VIRTUAL_FILES } from './virtual-file-names';
+import { VIRTUAL_ID as PROJECT_ANNOTATIONS_VIRTUAL_ID } from './plugins/storybook-project-annotations-plugin.ts';
+import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export async function generateModernIframeScriptCode(options: Options) {
   const frameworkName = await getFrameworkName(options);
@@ -31,9 +31,11 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
 
     return dedent`
     if (import.meta.hot) {
-      import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
-        // Cancel any running play function before patching in the new importFn
+      import.meta.hot.on('vite:afterUpdate', () => {
         window.__STORYBOOK_PREVIEW__.channel.emit('${STORY_HOT_UPDATED}');
+      });
+
+      import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
         // importFn has changed so we need to patch the new one in
         window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
       });

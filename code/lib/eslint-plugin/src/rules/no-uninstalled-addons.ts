@@ -8,7 +8,7 @@ import { readFileSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { dedent } from 'ts-dedent';
 
-import { getMetaObjectExpression } from '../utils';
+import { getMetaObjectExpression } from '../utils/index.ts';
 import {
   isArrayExpression,
   isIdentifier,
@@ -17,9 +17,9 @@ import {
   isProperty,
   isVariableDeclaration,
   isVariableDeclarator,
-} from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+} from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition
@@ -59,6 +59,7 @@ export default createStorybookRule({
             },
           },
         },
+        additionalProperties: false,
       },
     ],
   },

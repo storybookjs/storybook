@@ -18,20 +18,20 @@ import {
 import { type API, Tag, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
-import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants';
+import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants.ts';
 import {
   ADDON_ONBOARDING_CHANNEL,
   ADDON_ID as ADDON_ONBOARDING_ID,
-} from '../../../../addons/onboarding/src/constants';
+} from '../../../../addons/onboarding/src/constants.ts';
 import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
-} from '../../../../addons/vitest/src/constants';
-import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
-import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
-import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
-import { LocationMonitor } from '../../manager/hooks/useLocation';
-import type { initialState } from './checklistData.state';
+} from '../../../../addons/vitest/src/constants.ts';
+import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants.ts';
+import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared.ts';
+import { TourGuide } from '../../manager/components/TourGuide/TourGuide.tsx';
+import { LocationMonitor } from '../../manager/hooks/useLocation.ts';
+import type { initialState } from './checklistData.state.ts';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -718,7 +718,7 @@ export const Disabled: Story = {
     await userEvent.click(button);
     
     // 👇 Make assertions
-    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
     await expect(args.onClick).not.toHaveBeenCalled();
   }
 };`}
@@ -1175,7 +1175,7 @@ export default meta;`}
               </p>
               <CodeSnippet language="jsx">
                 {`{ /* introduction.mdx */ }
-import { Meta, Title, Subtitle, Description } from '@storybook/addon-docs/blocks';
+import { Meta, Title, Subtitle } from '@storybook/addon-docs/blocks';
 
 <Meta title="Get started" />
  
@@ -1183,10 +1183,8 @@ import { Meta, Title, Subtitle, Description } from '@storybook/addon-docs/blocks
 
 <Subtitle>It's really awesome</Subtitle>
 
-<Description>
-  My Awesome Project is designed to work with Your Awesome Project seamlessly.
-  Follow this guide and you'll be ready in no time.
-</Description>
+My Awesome Project is designed to work with Your Awesome Project seamlessly.
+Follow this guide and you'll be ready in no time.
 
 ## Install
 

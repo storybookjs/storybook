@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises';
+import os from 'node:os';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,10 +11,11 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
-import { SupportedBuilder, SupportedFramework } from '../types';
-import { AddonVitestService } from './AddonVitestService';
+import { SupportedBuilder, SupportedFramework } from '../types/index.ts';
+import { AddonVitestService } from './AddonVitestService.ts';
 
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('node:os', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('empathic/find', { spy: true });
@@ -391,7 +393,7 @@ describe('AddonVitestService', () => {
       vi.mocked(logger.warn).mockImplementation(() => {});
       // Mock getPackageCommand to return a string
       vi.mocked(mockPackageManager.getPackageCommand).mockReturnValue(
-        'npx playwright install chromium --with-deps'
+        'npx playwright install chromium'
       );
     });
 
@@ -416,25 +418,127 @@ describe('AddonVitestService', () => {
     });
 
     it('should execute playwright install command', async () => {
-      type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
-      let commandFactory: ChildProcessFactory | ChildProcessFactory[];
-      vi.mocked(prompt.confirm).mockResolvedValue(true);
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
-        async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
-          commandFactory = Array.isArray(factory) ? factory[0] : factory;
-          // Simulate the child process completion
-          commandFactory();
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            // Simulate the child process completion
+            commandFactory();
+          }
+        );
+
+        await service.installPlaywright();
+
+        expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+          args: ['playwright', 'install', 'chromium'],
+          signal: undefined,
+          stdio: ['inherit', 'pipe', 'pipe'],
+        });
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI;
         }
-      );
-
-      await service.installPlaywright();
-
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
-        args: ['playwright', 'install', 'chromium', '--with-deps'],
-        signal: undefined,
-        stdio: ['inherit', 'pipe', 'pipe'],
-      });
+      }
     });
+
+    it('should warn about missing system dependencies after install on Linux', async () => {
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            const commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            commandFactory();
+          }
+        );
+
+        const { result } = await service.installPlaywright();
+
+        expect(result).toBe('installed');
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('installed without system dependencies')
+        );
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('run Storybook Test from the Storybook UI')
+        );
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI;
+        }
+      }
+    });
+
+    it('should execute playwright install command with --with-deps in CI', async () => {
+      const originalCI = process.env.CI;
+      process.env.CI = 'true';
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            commandFactory();
+          }
+        );
+
+        await service.installPlaywright();
+
+        expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+          args: ['playwright', 'install', 'chromium', '--with-deps'],
+          signal: undefined,
+          stdio: ['inherit', 'pipe', 'pipe'],
+        });
+      } finally {
+        if (originalCI === undefined) {
+          delete process.env.CI;
+        } else {
+          process.env.CI = originalCI;
+        }
+      }
+    });
+
+    it.each(['darwin', 'win32'] as const)(
+      'should execute playwright install command with --with-deps on %s',
+      async (platform) => {
+        const originalCI = process.env.CI;
+        delete process.env.CI;
+        vi.mocked(os.platform).mockReturnValue(platform);
+        try {
+          type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+          let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+          vi.mocked(prompt.confirm).mockResolvedValue(true);
+          vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+            async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+              commandFactory = Array.isArray(factory) ? factory[0] : factory;
+              commandFactory();
+            }
+          );
+
+          await service.installPlaywright();
+
+          expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+            args: ['playwright', 'install', 'chromium', '--with-deps'],
+            signal: undefined,
+            stdio: ['inherit', 'pipe', 'pipe'],
+          });
+        } finally {
+          if (originalCI !== undefined) {
+            process.env.CI = originalCI;
+          }
+        }
+      }
+    );
 
     it('should capture error stack when installation fails', async () => {
       const error = new Error('Installation failed');
@@ -568,11 +672,25 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should reject invalid vitest config', async () => {
+    it('should accept plain export default {}', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue('export default {}');
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should reject arrow function vitest config (unsupported)', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `import { defineConfig } from 'vitest/config';
+export default defineConfig(() => ({ test: {} }))`
+      );
 
       const result = await service.validateConfigFiles('.storybook');
 
@@ -657,14 +775,121 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should reject mergeConfig with invalid object (non-object argument)', async () => {
+    it('should accept defineConfig(mergeConfig(...)) pattern', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
         .mockReturnValueOnce('vitest.config.ts'); // config
-      vi.mocked(fs.readFile).mockResolvedValue('export default mergeConfig(viteConfig, "string")');
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default defineConfig(
+          mergeConfig(viteConfig, {
+            test: { name: 'node', environment: 'happy-dom' },
+          })
+        )`
+      );
       const result = await service.validateConfigFiles('.storybook');
-      expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r) => r.includes('invalid Vitest config'))).toBe(true);
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineConfig(mergeConfig(...) satisfies ViteUserConfig) pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import type { ViteUserConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default defineConfig(
+          mergeConfig(viteConfig, {
+            test: { name: 'node' },
+          }) satisfies ViteUserConfig
+        )`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig(...) as ViteUserConfig pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import type { ViteUserConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default mergeConfig(viteConfig, {
+          test: { name: 'node' },
+        }) as ViteUserConfig`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig with shorthand test variable', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const test = { name: 'node', environment: 'happy-dom' };
+        export default mergeConfig(viteConfig, { test })`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig with external vitestConfig variable', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const vitestConfig = { test: { name: 'node' } };
+        export default mergeConfig(viteConfig, vitestConfig)`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept const config = mergeConfig(...); export default config pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const config = mergeConfig(
+          viteConfig,
+          defineConfig({ test: { name: 'node' } })
+        );
+        export default config`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineProject({}) pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineProject } from 'vitest/config';
+        export default defineProject({
+          test: { name: 'node', environment: 'happy-dom' },
+        })`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
     });
   });
 });

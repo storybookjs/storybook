@@ -8,9 +8,9 @@ import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 
-import type { StoryIndexGenerator } from './StoryIndexGenerator';
-import { watchStorySpecifiers } from './watch-story-specifiers';
-import { watchConfig } from './watchConfig';
+import type { StoryIndexGenerator } from './StoryIndexGenerator.ts';
+import { watchStorySpecifiers } from './watch-story-specifiers.ts';
+import { watchConfig } from './watchConfig.ts';
 
 export const DEBOUNCE = 100;
 
@@ -39,7 +39,7 @@ export function registerIndexJsonRoute({
   normalizedStories: NormalizedStoriesSpecifier[];
 }) {
   const maybeInvalidate = debounce(() => channel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
-    edges: ['trailing'],
+    edges: ['leading', 'trailing'],
   });
   watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed) => {
     (await storyIndexGeneratorPromise).invalidate(path, removed);

@@ -4,15 +4,15 @@ import type {
   Blocker,
   BlockerCheckResult,
   BlockerModule,
-} from './types';
+} from './types.ts';
 
 const blockers: () => BlockerModule<any>[] = () => [
   // add/remove blockers here
-  import('./block-dependencies-versions'),
-  import('./block-node-version'),
-  import('./block-webpack5-frameworks'),
-  import('./block-major-version'),
-  import('./block-experimental-addon-test'),
+  import('./block-dependencies-versions.ts'),
+  import('./block-node-version.ts'),
+  import('./block-webpack5-frameworks.ts'),
+  import('./block-major-version.ts'),
+  import('./block-experimental-addon-test.ts'),
 ];
 
 /**

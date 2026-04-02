@@ -1,10 +1,10 @@
 import { readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import type { Task } from '../task';
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
-import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
+import type { Task } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 
 // The amount of VCPUs for the check task on CI is 4 (large resource)
 const amountOfVCPUs = 2;
@@ -33,7 +33,10 @@ export const compile: Task = {
     const command = link && !prod ? linkCommand : noLinkCommand;
     await rm(join(codeDir, 'bench/esbuild-metafiles'), { recursive: true, force: true });
     return exec(
-      `${command} ${skipCache ? '--skip-nx-cache' : ''}`,
+      // NX cache is disabled in Circle CI during the NX Cloud experiment so we can
+      // measure the true cost of NX Cloud agents without local cache hits.
+      // This will be reverted once the experiment concludes.
+      `${command} ${skipCache || process.env.CI ? '--skip-nx-cache' : ''}`,
       { cwd: ROOT_DIRECTORY },
       {
         startMessage: '🥾 Bootstrapping',

@@ -26,10 +26,10 @@ import type {
 
 import type { UserEventObject } from 'storybook/test';
 
-import type { StoryStore } from '../../store';
-import type { Render, RenderType } from './Render';
-import { PREPARE_ABORTED } from './Render';
-import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils';
+import type { StoryStore } from '../../store/index.ts';
+import type { Render, RenderType } from './Render.ts';
+import { PREPARE_ABORTED } from './Render.ts';
+import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils.ts';
 
 const { AbortController } = globalThis;
 

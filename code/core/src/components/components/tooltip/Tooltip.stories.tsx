@@ -1,7 +1,7 @@
 import React from 'react';
 
-import preview from '../../../../../.storybook/preview';
-import { Tooltip } from './Tooltip';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Tooltip } from './Tooltip.tsx';
 
 const SampleTooltip = () => (
   <div>

@@ -1,6 +1,6 @@
 import { getAddonNames, removeAddon } from 'storybook/internal/common';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 /** Remove @storybook/addon-interactions since it's now part of Storybook core. */
 export const removeAddonInteractions: Fix<true> = {

@@ -1,6 +1,6 @@
 import { parser, types as t } from 'storybook/internal/babel';
 
-import type { Parser, ParserResult } from './types';
+import type { Parser, ParserResult } from './types.ts';
 
 /** A generic parser that can parse both ES and CJS modules. */
 export class GenericParser implements Parser {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { escapeGlobPath } from './storybook-optimize-deps-plugin';
+import { escapeGlobPath, getMockRedirectIncludeEntries } from './storybook-optimize-deps-plugin.ts';
 
 describe('escapeGlobPath', () => {
   it('should not modify a plain path without special characters', () => {
@@ -40,5 +40,37 @@ describe('escapeGlobPath', () => {
     expect(escapeGlobPath('./src/my-component/Button.stories.tsx')).toBe(
       './src/my-component/Button.stories.tsx'
     );
+  });
+});
+
+describe('getMockRedirectIncludeEntries', () => {
+  it('should include only manual mock redirect paths', () => {
+    expect(
+      getMockRedirectIncludeEntries([
+        { redirectPath: '/project/src/lib/__mocks__/db.ts' },
+        { redirectPath: null },
+      ])
+    ).toEqual(['/project/src/lib/__mocks__/db.ts']);
+  });
+
+  it('should escape special glob characters in redirect paths', () => {
+    expect(
+      getMockRedirectIncludeEntries([
+        { redirectPath: '/project/src/(group)/__mocks__/db.ts' },
+        { redirectPath: '/project/src/[id]/__mocks__/db.ts' },
+      ])
+    ).toEqual([
+      '/project/src/\\(group\\)/__mocks__/db.ts',
+      '/project/src/\\[id\\]/__mocks__/db.ts',
+    ]);
+  });
+
+  it('should dedupe redirect paths', () => {
+    expect(
+      getMockRedirectIncludeEntries([
+        { redirectPath: '/project/src/lib/__mocks__/db.ts' },
+        { redirectPath: '/project/src/lib/__mocks__/db.ts' },
+      ])
+    ).toEqual(['/project/src/lib/__mocks__/db.ts']);
   });
 });

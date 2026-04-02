@@ -1,5 +1,6 @@
-import type { Task } from '../task';
-import { exec } from '../utils/exec';
+import type { Task } from '../task.ts';
+import { exec } from '../utils/exec.ts';
+import { prepareSandbox } from '../prepare-sandbox.ts';
 
 export const checkSandbox: Task = {
   description: 'Typecheck a sandbox',
@@ -7,7 +8,8 @@ export const checkSandbox: Task = {
   async ready() {
     return false;
   },
-  async run({ sandboxDir }, { dryRun, debug }) {
+  async run({ sandboxDir, key }, { dryRun, debug, link }) {
+    await prepareSandbox({ key, link });
     await exec(`yarn typecheck`, { cwd: sandboxDir }, { dryRun, debug });
   },
 };

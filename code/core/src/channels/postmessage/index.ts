@@ -13,8 +13,8 @@ import type {
   ChannelHandler,
   ChannelTransport,
   Config,
-} from '../types';
-import { getEventSourceUrl } from './getEventSourceUrl';
+} from '../types.ts';
+import { getEventSourceUrl } from './getEventSourceUrl.ts';
 
 const { document, location } = global;
 
@@ -212,7 +212,7 @@ export class PostMessageTransport implements ChannelTransport {
         }
 
         event.source =
-          this.config.page === 'preview' ? rawEvent.origin : getEventSourceUrl(rawEvent);
+          this.config.page === 'preview' ? rawEvent.origin : getEventSourceUrl(rawEvent, refId);
 
         if (!event.source) {
           pretty.error(

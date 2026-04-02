@@ -17,16 +17,16 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
-import { resolvePackageDir } from '../shared/utils/module';
-import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
-import { buildOrThrow } from './utils/build-or-throw';
-import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
-import { getBuilders } from './utils/get-builders';
-import { writeIndexJson } from './utils/index-json';
-import { writeManifests } from './utils/manifests/manifests';
-import { extractStorybookMetadata } from './utils/metadata';
-import { outputStats } from './utils/output-stats';
-import { summarizeIndex } from './utils/summarizeIndex';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { buildOrThrow } from './utils/build-or-throw.ts';
+import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files.ts';
+import { getBuilders } from './utils/get-builders.ts';
+import { writeIndexJson } from './utils/index-json.ts';
+import { writeManifests } from './utils/manifests/manifests.ts';
+import { extractStorybookMetadata } from './utils/metadata.ts';
+import { outputStats } from './utils/output-stats.ts';
+import { summarizeIndex } from './utils/summarizeIndex.ts';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
@@ -157,7 +157,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       )
     );
 
-    if (features?.experimentalComponentsManifest) {
+    if (features?.componentsManifest) {
       effects.push(writeManifests(options.outputDir, presets));
     }
   }

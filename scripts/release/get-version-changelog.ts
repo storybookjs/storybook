@@ -2,9 +2,9 @@ import { setOutput } from '@actions/core';
 import { program } from 'commander';
 import picocolors from 'picocolors';
 
-import { esMain } from '../utils/esmain';
-import { getCurrentVersion } from './get-current-version';
-import { getChanges } from './utils/get-changes';
+import { esMain } from '../utils/esmain.ts';
+import { getCurrentVersion } from './get-current-version.ts';
+import { getChanges } from './utils/get-changes.ts';
 
 program
   .name('get-version-changelog')

@@ -11,10 +11,10 @@ import type {
 
 import path from 'pathe';
 
-import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
-import type { StoreEvent, StoreState } from '../types';
-import { TestManager, type TestManagerOptions } from './test-manager';
-import { DOUBLE_SPACES } from './vitest-manager';
+import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants.ts';
+import type { StoreEvent, StoreState } from '../types.ts';
+import { TestManager, type TestManagerOptions } from './test-manager.ts';
+import { DOUBLE_SPACES } from './vitest-manager.ts';
 
 const setTestNamePattern = vi.hoisted(() => vi.fn());
 const vitest = vi.hoisted(() => ({
@@ -44,8 +44,7 @@ const vitest = vi.hoisted(() => ({
 
 const mockCreateVitest = vi.fn();
 
-vi.mock('vitest/node', async (importOriginal) => ({
-  ...(await importOriginal()),
+vi.mock('vitest/node', () => ({
   createVitest: mockCreateVitest,
 }));
 

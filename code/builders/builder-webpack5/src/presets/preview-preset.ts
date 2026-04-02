@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
-import webpackConfig from '../preview/iframe-webpack.config';
+import webpackConfig from '../preview/iframe-webpack.config.ts';
 
 export const webpack = async (_: unknown, options: any) => webpackConfig(options);
 

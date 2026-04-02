@@ -4,11 +4,12 @@ import type { Options } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 import type { InlineConfig } from 'vite';
 
-import { createViteLogger } from './logger';
-import type { WebpackStatsPlugin } from './plugins';
-import { hasVitePlugins } from './utils/has-vite-plugins';
-import { withoutVitePlugins } from './utils/without-vite-plugins';
-import { commonConfig } from './vite-config';
+import { createViteLogger } from './logger.ts';
+import type { WebpackStatsPlugin } from './plugins/index.ts';
+import { hasVitePlugins } from './utils/has-vite-plugins.ts';
+import { bundlerOptionsKey } from './utils/vite-features.ts';
+import { withoutVitePlugins } from './utils/without-vite-plugins.ts';
+import { commonConfig } from './vite-config.ts';
 
 function findPlugin(config: InlineConfig, name: string) {
   return config.plugins?.find((p) => p && 'name' in p && p.name === name);
@@ -19,11 +20,13 @@ export async function build(options: Options) {
   const { presets } = options;
 
   const config = await commonConfig(options, 'build');
+
   config.build = mergeConfig(config, {
     build: {
       outDir: options.outputDir,
       emptyOutDir: false, // do not clean before running Vite build - Storybook has already added assets in there!
-      rollupOptions: {
+      // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
+      [bundlerOptionsKey]: {
         external: [/\.\/sb-common-assets\/.*\.woff2/],
       },
       ...(options.test

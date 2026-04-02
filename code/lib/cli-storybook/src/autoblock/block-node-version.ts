@@ -1,6 +1,6 @@
 import { lt } from 'semver';
 
-import { createBlocker } from './types';
+import { createBlocker } from './types.ts';
 
 export const blocker = createBlocker({
   id: 'minimumNode20',

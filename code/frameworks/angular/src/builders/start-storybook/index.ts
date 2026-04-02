@@ -28,9 +28,9 @@ import { Observable } from 'rxjs';
 import * as find from 'empathic/find';
 import * as pkg from 'empathic/package';
 
-import { errorSummary, printErrorDetails } from '../utils/error-handler';
-import { runCompodoc } from '../utils/run-compodoc';
-import type { StandaloneOptions } from '../utils/standalone-options';
+import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
+import { runCompodoc } from '../utils/run-compodoc.ts';
+import type { StandaloneOptions } from '../utils/standalone-options.ts';
 import { VERSION } from '@angular/core';
 import { Channel } from 'storybook/internal/channels';
 

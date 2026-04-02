@@ -4,9 +4,9 @@ import { logger } from 'storybook/internal/node-logger';
 
 import path from 'path';
 
-import type { FileInfo } from '../../automigrate/codemod';
-import { addImportToTop, cleanupTypeImports } from './csf-factories-utils';
-import { removeUnusedTypes } from './remove-unused-types';
+import type { FileInfo } from '../../automigrate/codemod.ts';
+import { addImportToTop, cleanupTypeImports } from './csf-factories-utils.ts';
+import { removeUnusedTypes } from './remove-unused-types.ts';
 
 const typesDisallowList = [
   'Story',

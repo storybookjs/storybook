@@ -1,5 +1,6 @@
-import type { Task } from '../task';
-import { exec } from '../utils/exec';
+import type { Task } from '../task.ts';
+import { exec } from '../utils/exec.ts';
+import { prepareSandbox } from '../prepare-sandbox.ts';
 
 export const chromatic: Task = {
   description: 'Run Chromatic against the sandbox',
@@ -8,7 +9,8 @@ export const chromatic: Task = {
   async ready() {
     return false;
   },
-  async run({ key, sandboxDir, builtSandboxDir, junitFilename }, { dryRun, debug }) {
+  async run({ key, sandboxDir, builtSandboxDir, junitFilename }, { dryRun, debug, link }) {
+    await prepareSandbox({ key, link });
     const tokenEnvVarName = `CHROMATIC_TOKEN_${key.toUpperCase().replace(/\/|-|\./g, '_')}`;
     const token = process.env[tokenEnvVarName];
 

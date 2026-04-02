@@ -29,14 +29,17 @@ import {
   useTheme,
 } from 'storybook/theming';
 
-import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
-import * as templatePreview from '../core/template/stories/preview';
-import '../renderers/react/template/components/index';
-import { isChromatic } from './isChromatic';
+import { DocsPageWrapper } from '../addons/docs/src/blocks/components/index.ts';
+import * as templatePreview from '../core/template/stories/preview.ts';
+import '../renderers/react/template/components/index.js';
+import { isChromatic } from './isChromatic.ts';
+
+sb.mock(import('@storybook/global'), { spy: true });
 
 sb.mock('../core/template/stories/test/ModuleMocking.utils.ts');
 sb.mock('../core/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });
 sb.mock('../core/template/stories/test/ModuleAutoMocking.utils.ts');
+sb.mock('../core/template/stories/test/ClearModuleMocksMocking.api.ts', { spy: true });
 /* eslint-disable depend/ban-dependencies */
 sb.mock(import('lodash-es'));
 sb.mock(import('lodash-es/add'));

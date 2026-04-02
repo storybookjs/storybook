@@ -1,10 +1,10 @@
 import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
-import type { ToolbarArgType } from '../toolbar';
-import type { SBScalarType, SBType } from './SBType';
-import type { CoreTypes } from './core-annotations';
+import type { ToolbarArgType } from '../toolbar/index.ts';
+import type { SBScalarType, SBType } from './SBType.ts';
+import type { CoreTypes } from './core-annotations.ts';
 
-export * from './SBType';
+export * from './SBType.ts';
 export type StoryId = string;
 export type ComponentId = string;
 export type ComponentTitle = string;
@@ -584,8 +584,8 @@ export type StoryAnnotationsOrFn<TRenderer extends Renderer = Renderer, TArgs = 
 
 export type ArgsFromMeta<TRenderer extends Renderer, Meta> = Meta extends {
   render?: ArgsStoryFn<TRenderer, infer RArgs>;
-  loaders?: (infer Loaders)[] | infer Loaders;
-  decorators?: (infer Decorators)[] | infer Decorators;
+  loaders?: (infer Loaders)[] | (infer Loaders);
+  decorators?: (infer Decorators)[] | (infer Decorators);
 }
   ? Simplify<
       RemoveIndexSignature<

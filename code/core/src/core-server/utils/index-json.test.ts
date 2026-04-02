@@ -9,11 +9,11 @@ import { debounce } from 'es-toolkit/function';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
-import { csfIndexer } from '../presets/common-preset';
-import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
-import { StoryIndexGenerator } from './StoryIndexGenerator';
-import type { ServerChannel } from './get-server-channel';
-import { DEBOUNCE, registerIndexJsonRoute } from './index-json';
+import { csfIndexer } from '../presets/common-preset.ts';
+import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
+import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
+import type { ServerChannel } from './get-server-channel.ts';
+import { DEBOUNCE, registerIndexJsonRoute } from './index-json.ts';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/function', { spy: true });
@@ -644,52 +644,20 @@ describe('registerIndexJsonRoute', () => {
       onChange(`${workingDir}/src/nested/Button.stories.ts`);
       onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
-      // With trailing-only debounce, the first emit only fires after the debounce period
+      // Wait for first batch to be processed and emit (leading edge)
       await vi.waitFor(() => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
       });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
 
       // Fire another change event after the first batch is processed
-      // This will trigger the trailing edge of the debounce again
+      // This will trigger the trailing edge of the debounce
       onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
-      // Wait for the trailing debounce to trigger a second emit
+      // Wait for trailing debounce to trigger second emit
       await vi.waitFor(() => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(2);
       });
-    });
-
-    it('only emits once per file change (no double-fire from leading+trailing edges)', async () => {
-      vi.mocked(debounce).mockImplementation(
-        (await vi.importActual<typeof import('es-toolkit/function')>('es-toolkit/function'))
-          .debounce
-      );
-
-      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      registerIndexJsonRoute({
-        app,
-        channel: mockServerChannel,
-        workingDir,
-        normalizedStories,
-        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
-      });
-
-      const watcher = Watchpack.mock.instances[0];
-      const onChange = watcher.on.mock.calls[0][1];
-
-      // Fire a single change event
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
-
-      // Wait for the trailing debounce to fire
-      await vi.waitFor(() => {
-        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
-      });
-
-      // Ensure it was only called once (no double-fire from both leading and trailing edges)
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
-      expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
   });
 });

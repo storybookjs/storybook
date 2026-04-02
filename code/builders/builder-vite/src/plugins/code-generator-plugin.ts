@@ -6,16 +6,17 @@ import type { Options } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
-import { importMetaResolve } from '../../../../core/src/shared/utils/module';
-import { generateImportFnScriptCode } from '../codegen-importfn-script';
-import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
-import { generateAddonSetupCode } from '../codegen-set-addon-channel';
-import { transformIframeHtml } from '../transform-iframe-html';
+import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
+import { generateImportFnScriptCode } from '../codegen-importfn-script.ts';
+import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script.ts';
+import { generateAddonSetupCode } from '../codegen-set-addon-channel.ts';
+import { transformIframeHtml } from '../transform-iframe-html.ts';
+import { bundlerOptionsKey, ensureRolldownOptions } from '../utils/vite-features.ts';
 import {
   SB_VIRTUAL_FILES,
   SB_VIRTUAL_FILE_IDS,
   getResolvedVirtualModuleId,
-} from '../virtual-file-names';
+} from '../virtual-file-names.ts';
 
 export function codeGeneratorPlugin(options: Options) {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
@@ -45,10 +46,17 @@ export function codeGeneratorPlugin(options: Options) {
         if (!config.build) {
           config.build = {};
         }
-        config.build.rollupOptions = {
-          ...config.build.rollupOptions,
+        // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
+        const build = config.build as Record<string, any>;
+
+        // shared options between rollup/rolldown
+        build[bundlerOptionsKey] = {
+          ...build[bundlerOptionsKey],
           input: iframePath,
         };
+
+        // necessary rolldown specific overrides
+        ensureRolldownOptions(config);
       }
     },
     configResolved(config) {

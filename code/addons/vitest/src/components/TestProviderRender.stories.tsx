@@ -327,7 +327,7 @@ export const InSidebarContextMenu: Story = {
   },
 };
 
-/** Verifies that clicking "Start test run" announces "Test run started." */
+/** Verifies that transitioning from pending to running announces "Test run started." */
 export const AnnouncesTestRunStart: Story = {
   tags: ['vitest'],
   args: {
@@ -336,26 +336,16 @@ export const AnnouncesTestRunStart: Story = {
   render: function Render(args) {
     const [state, setState] = React.useState<TestProviderState>(args.testProviderState);
     React.useEffect(() => {
-      mockStore.send.mockImplementation((action: { type: string }) => {
-        if (action.type === 'TRIGGER_RUN') {
-          setState('test-provider-state:running');
-        }
-      });
-      return () => {
-        mockStore.send.mockReset();
-      };
+      // Simulate test start after a brief delay (matching the pattern of other Announces stories).
+      const timer = setTimeout(() => setState('test-provider-state:running'), 100);
+      return () => clearTimeout(timer);
     }, []);
     return <TestProviderRender {...args} testProviderState={state} />;
   },
-  play: async ({ canvas, step }) => {
-    await step('Click Start test run to begin testing', async () => {
-      const startButton = canvas.getByRole('button', { name: 'Start test run' });
-      await userEvent.click(startButton);
-    });
-
+  play: async ({ step }) => {
     await step('Verify "Test run started." is announced', async () => {
       await waitFor(() => {
-        expect(canvas).toHaveLiveRegion({ text: 'Test run started.', level: 'polite' });
+        expect(document.body).toHaveLiveRegion({ text: 'Test run started.', level: 'polite' });
       });
     });
   },

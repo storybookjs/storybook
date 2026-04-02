@@ -7,6 +7,7 @@ import type {
 
 import memoize from 'memoizerific';
 
+import { parseFilterParam } from '../lib/filter-param.ts';
 import { BUILT_IN_FILTERS, Tag as TagEnum, USER_TAG_FILTER } from '../../shared/constants/tags.ts';
 
 export const BUILT_IN_URL_TAG_MAP: Record<string, Tag> = {
@@ -17,32 +18,8 @@ export const BUILT_IN_URL_TAG_MAP: Record<string, Tag> = {
 
 export const parseTagsParam = (
   tagsParam: string | undefined
-): { included: Tag[]; excluded: Tag[] } => {
-  if (!tagsParam) {
-    return { included: [], excluded: [] };
-  }
-
-  const included: Tag[] = [];
-  const excluded: Tag[] = [];
-
-  tagsParam.split(';').forEach((rawTag) => {
-    if (!rawTag) {
-      return;
-    }
-
-    const isExcluded = rawTag.startsWith('!');
-    const normalizedTag = isExcluded ? rawTag.slice(1) : rawTag;
-    const mappedTag = (BUILT_IN_URL_TAG_MAP[normalizedTag] ?? normalizedTag) as Tag;
-
-    if (isExcluded) {
-      excluded.push(mappedTag);
-    } else {
-      included.push(mappedTag);
-    }
-  });
-
-  return { included, excluded };
-};
+): { included: Tag[]; excluded: Tag[] } =>
+  parseFilterParam(tagsParam, (raw) => (BUILT_IN_URL_TAG_MAP[raw] ?? raw) as Tag);
 
 export const serializeTagsParam = (included: Tag[], excluded: Tag[]): string => {
   if (!included.length && !excluded.length) {

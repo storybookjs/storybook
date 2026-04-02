@@ -195,6 +195,39 @@ describe('normalizeTranscriptForDocs', () => {
     ]);
   });
 
+  it('treats missing Claude tool result content as empty text', () => {
+    const normalized = normalizeTranscriptForDocs({
+      prompt: 'Write stories',
+      transcript: [
+        {
+          type: 'user',
+          message: {
+            content: [
+              {
+                type: 'tool_result',
+                tool_use_id: 'tool_1',
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(normalized.messages).toHaveLength(1);
+    expect(normalized.messages[0]).toMatchObject({
+      type: 'user',
+      message: {
+        content: [
+          {
+            type: 'tool_result',
+            tool_use_id: 'tool_1',
+            content: '',
+          },
+        ],
+      },
+    });
+  });
+
   it('builds a single persisted eval data object', () => {
     const data = buildEvalData({
       id: '20260402T041205123Z-deadbeef',

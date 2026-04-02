@@ -416,7 +416,7 @@ function normalizeToolResultContent(content: unknown): ToolResultContent['conten
     }));
   }
 
-  return JSON.stringify(content, null, 2);
+  return JSON.stringify(content, null, 2) ?? '';
 }
 
 function normalizeMcpServers(value: unknown): SystemMessage['mcp_servers'] {
@@ -485,7 +485,11 @@ function estimateAssistantContentTokens(content: AssistantMessage['message']['co
   }, 0);
 }
 
-function estimateToolResultTokens(content: ToolResultContent['content']) {
+function estimateToolResultTokens(content: ToolResultContent['content'] | undefined) {
+  if (content == null) {
+    return 0;
+  }
+
   if (typeof content === 'string') {
     return estimateTokenCount(content);
   }

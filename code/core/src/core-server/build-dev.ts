@@ -24,22 +24,22 @@ import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import Channel from '../channels';
-import { detectPnp } from '../cli/detect';
-import { resolvePackageDir } from '../shared/utils/module';
-import { storybookDevServer } from './dev-server';
-import { getWsToken } from './presets/wsToken';
-import { buildOrThrow } from './utils/build-or-throw';
-import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
-import { getServerChannel } from './utils/get-server-channel';
-import { outputStartupInformation } from './utils/output-startup-information';
-import { outputStats } from './utils/output-stats';
-import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address';
-import { getServer } from './utils/server-init';
-import { stripCommentsAndStrings } from './utils/strip-comments-and-strings';
-import { updateCheck } from './utils/update-check';
-import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
-import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
+import Channel from '../channels/index.ts';
+import { detectPnp } from '../cli/detect.ts';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import { storybookDevServer } from './dev-server.ts';
+import { getWsToken } from './presets/wsToken.ts';
+import { buildOrThrow } from './utils/build-or-throw.ts';
+import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
+import { getServerChannel } from './utils/get-server-channel.ts';
+import { outputStartupInformation } from './utils/output-startup-information.ts';
+import { outputStats } from './utils/output-stats.ts';
+import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
+import { getServer } from './utils/server-init.ts';
+import { stripCommentsAndStrings } from './utils/strip-comments-and-strings.ts';
+import { updateCheck } from './utils/update-check.ts';
+import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons.ts';
+import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex.ts';
 
 export async function buildDevStandalone(
   options: CLIOptions &

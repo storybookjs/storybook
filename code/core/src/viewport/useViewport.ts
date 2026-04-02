@@ -4,15 +4,15 @@ import type { Globals } from 'storybook/internal/csf';
 
 import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, PARAM_KEY } from './constants';
-import { MINIMAL_VIEWPORTS } from './defaults';
+import { ADDON_ID, PARAM_KEY } from './constants.ts';
+import { MINIMAL_VIEWPORTS } from './defaults.ts';
 import type {
   GlobalState,
   GlobalStateUpdate,
   ViewportMap,
   ViewportParameters,
   ViewportType,
-} from './types';
+} from './types.ts';
 
 // Custom viewport format, e.g. '100pct-200px' (width-height)
 const URL_VALUE_PATTERN = /^([0-9]{1,4})([a-z]{0,4})-([0-9]{1,4})([a-z]{0,4})$/;

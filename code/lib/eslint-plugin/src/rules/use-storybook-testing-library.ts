@@ -4,9 +4,9 @@
  */
 import type { TSESTree } from '@typescript-eslint/utils';
 
-import { isImportDefaultSpecifier } from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+import { isImportDefaultSpecifier } from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition

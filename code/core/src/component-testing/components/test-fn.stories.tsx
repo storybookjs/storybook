@@ -4,7 +4,7 @@ import type { StoryContext } from '@storybook/react-vite';
 
 import { expect, fn } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
+import preview from '../../../../.storybook/preview.tsx';
 
 const Button = (args: React.ComponentProps<'button'>) => <button {...args} />;
 

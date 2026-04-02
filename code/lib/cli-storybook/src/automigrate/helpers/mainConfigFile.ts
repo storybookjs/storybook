@@ -20,7 +20,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 
-import { getStoriesPathsFromConfig } from '../../util';
+import { getStoriesPathsFromConfig } from '../../util.ts';
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.

@@ -18,12 +18,12 @@ import {
 import * as TsconfigPaths from 'tsconfig-paths';
 import type { PluginOption } from 'vite';
 
-import actualNameHandler from './docgen-handlers/actualNameHandler';
+import actualNameHandler from './docgen-handlers/actualNameHandler.ts';
 import {
   RESOLVE_EXTENSIONS,
   ReactDocgenResolveError,
   defaultLookupModule,
-} from './docgen-resolver';
+} from './docgen-resolver.ts';
 
 type DocObj = Documentation & { actualName: string; definedInFile: string };
 

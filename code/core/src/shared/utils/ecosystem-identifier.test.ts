@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { globToRegex, matchesPackagePattern } from './ecosystem-identifier';
+import { globToRegex, matchesPackagePattern } from './ecosystem-identifier.ts';
 
 describe('ecosystem-identifier', () => {
   describe('globToRegex', () => {

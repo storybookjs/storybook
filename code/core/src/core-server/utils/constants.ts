@@ -1,6 +1,6 @@
 import { join } from 'pathe';
 
-import { resolvePackageDir } from '../../shared/utils/module';
+import { resolvePackageDir } from '../../shared/utils/module.ts';
 
 export const DEBOUNCE = 100;
 

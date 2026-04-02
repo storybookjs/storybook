@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { isEqual } from 'es-toolkit/predicate';
 
-import type { UniversalStore } from './index';
+import type { UniversalStore } from './index.ts';
 
 /**
  * A hook to use a UniversalStore in the manager UI (eg. in an addon panel). This hook will react to

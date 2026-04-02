@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parseVitestResults } from './parse-vitest-report';
+import { parseVitestResults } from './parse-vitest-report.ts';
 
 vi.mock('../../../shared/utils/categorize-render-errors', { spy: true });
 

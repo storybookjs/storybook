@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager } from './JsPackageManager.ts';
 
 const mockVersions = vi.hoisted(() => ({
   '@storybook/react': '8.3.0',

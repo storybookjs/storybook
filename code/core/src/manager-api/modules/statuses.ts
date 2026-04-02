@@ -4,8 +4,8 @@ import type {
   StatusValue,
 } from 'storybook/internal/types';
 
-import { statusValueShortName, toStatusValue } from '../../shared/status-store';
-import { fullStatusStore } from '../stores/status';
+import { statusValueShortName, toStatusValue } from '../../shared/status-store/index.ts';
+import { fullStatusStore } from '../stores/status.ts';
 
 export const parseStatusesParam = (
   statusesParam: string | undefined

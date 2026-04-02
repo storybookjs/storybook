@@ -13,8 +13,8 @@ import { expectTypeOf } from 'expect-type';
 import { fn } from 'storybook/test';
 import type { Mock } from 'storybook/test';
 
-import { __definePreview } from './preview';
-import type { Decorator } from './public-types';
+import { __definePreview } from './preview.tsx';
+import type { Decorator } from './public-types.ts';
 
 type ButtonProps = { label: string; disabled: boolean; onKeyDown?: () => void };
 const Button: (props: ButtonProps) => ReactElement = () => <></>;

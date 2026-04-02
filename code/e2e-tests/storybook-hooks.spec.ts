@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
-import { SANDBOX_DIRECTORY } from '../../scripts/utils/constants';
-import { SbPage } from './util';
+import { SANDBOX_DIRECTORY } from '../../scripts/utils/constants.ts';
+import { SbPage } from './util.ts';
 
 declare global {
   interface Window {

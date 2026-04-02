@@ -2,9 +2,9 @@ import type { Options } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
-import { codeGeneratorPlugin } from './code-generator-plugin';
-import { injectExportOrderPlugin } from './inject-export-order-plugin';
-import { stripStoryHMRBoundary } from './strip-story-hmr-boundaries';
+import { codeGeneratorPlugin } from './code-generator-plugin.ts';
+import { injectExportOrderPlugin } from './inject-export-order-plugin.ts';
+import { stripStoryHMRBoundary } from './strip-story-hmr-boundaries.ts';
 
 /**
  * A composite Vite plugin that manages the generation and injection of virtual entry points for

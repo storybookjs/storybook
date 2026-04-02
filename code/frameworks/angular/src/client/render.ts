@@ -2,8 +2,8 @@ import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
 import '@angular/compiler';
 
-import { RendererFactory } from './angular-beta/RendererFactory';
-import type { AngularRenderer } from './types';
+import { RendererFactory } from './angular-beta/RendererFactory.ts';
+import type { AngularRenderer } from './types.ts';
 
 export const rendererFactory = new RendererFactory();
 

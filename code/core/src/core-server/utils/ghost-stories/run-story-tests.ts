@@ -5,8 +5,8 @@ import { executeCommand, resolvePathInStorybookCache } from 'storybook/internal/
 
 import { join } from 'pathe';
 
-import { parseVitestResults } from './parse-vitest-report';
-import type { TestRunSummary } from './types';
+import { parseVitestResults } from './parse-vitest-report.ts';
+import type { TestRunSummary } from './types.ts';
 
 export async function runStoryTests(componentFilePaths: string[]): Promise<TestRunSummary> {
   try {

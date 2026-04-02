@@ -6,14 +6,14 @@ import { action } from 'storybook/actions';
 import type { API } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 
-import { IconSymbols } from './IconSymbols';
-import { Search } from './Search';
-import type { SearchProps } from './Search';
-import { SearchResults } from './SearchResults';
-import { noResults } from './SearchResults.stories';
-import { DEFAULT_REF_ID } from './Sidebar';
-import { index } from './mockdata.large';
-import type { Selection } from './types';
+import { IconSymbols } from './IconSymbols.tsx';
+import { Search } from './Search.tsx';
+import type { SearchProps } from './Search.tsx';
+import { SearchResults } from './SearchResults.tsx';
+import { noResults } from './SearchResults.stories.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
+import { index } from './mockdata.large.ts';
+import type { Selection } from './types.ts';
 
 const refId = DEFAULT_REF_ID;
 const data = { [refId]: { id: refId, url: '/', index, previewInitialized: true, allStatuses: {} } };

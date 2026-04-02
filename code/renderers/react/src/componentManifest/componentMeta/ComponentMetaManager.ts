@@ -21,9 +21,9 @@ import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
 import type ts from 'typescript';
 
-import type { StoryRef } from '../getComponentImports';
-import { groupByToMap } from '../utils';
-import { ComponentMetaProject } from './ComponentMetaProject';
+import type { StoryRef } from '../getComponentImports.ts';
+import { groupByToMap } from '../utils.ts';
+import { ComponentMetaProject } from './ComponentMetaProject.ts';
 
 // Adapted from:
 // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L18

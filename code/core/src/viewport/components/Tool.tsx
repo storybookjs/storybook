@@ -6,8 +6,8 @@ import { GrowIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import { useViewport } from '../useViewport';
-import { iconsMap } from '../viewportIcons';
+import { useViewport } from '../useViewport.ts';
+import { iconsMap } from '../viewportIcons.tsx';
 
 const Dimensions = styled.div(({ theme }) => ({
   display: 'flex',

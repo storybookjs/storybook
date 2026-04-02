@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { global } from '@storybook/global';
 
-import { composeConfigs } from './composeConfigs';
+import { composeConfigs } from './composeConfigs.ts';
 
 vi.mock('@storybook/global', () => ({
   global: {

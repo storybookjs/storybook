@@ -6,8 +6,8 @@ import { DeleteIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
-import type { FilterItem } from './FilterPanel.utils';
+import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import type { FilterItem } from './FilterPanel.utils.ts';
 
 const MutedText = styled.span(({ theme }) => ({
   color: theme.textMutedColor,

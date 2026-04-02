@@ -1,6 +1,10 @@
-import type { ErrorCategory } from '../../../shared/utils/categorize-render-errors';
-import { categorizeError } from '../../../shared/utils/categorize-render-errors';
-import { type ErrorCategorizationResult, type StoryTestResult, type TestRunSummary } from './types';
+import type { ErrorCategory } from '../../../shared/utils/categorize-render-errors.ts';
+import { categorizeError } from '../../../shared/utils/categorize-render-errors.ts';
+import {
+  type ErrorCategorizationResult,
+  type StoryTestResult,
+  type TestRunSummary,
+} from './types.ts';
 
 /**
  * For a given list of test results:

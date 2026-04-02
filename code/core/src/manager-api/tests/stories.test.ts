@@ -21,14 +21,19 @@ import { global } from '@storybook/global';
 
 import { EventEmitter } from 'events';
 
-import { getEventMetadata as getEventMetadataOriginal } from '../lib/events';
-import type { ModuleArgs } from '../lib/types';
-import { init as initStories } from '../modules/stories';
-import { parseStatusesParam, serializeStatusesParam } from '../modules/statuses';
-import type { API, State } from '../root';
-import type Store from '../store';
-import { fullStatusStore } from '../stores/status';
-import { docsEntries, mockEntries, navigationEntries, preparedEntries } from './mockStoriesEntries';
+import { getEventMetadata as getEventMetadataOriginal } from '../lib/events.ts';
+import type { ModuleArgs } from '../lib/types.tsx';
+import { init as initStories } from '../modules/stories.ts';
+import { parseStatusesParam, serializeStatusesParam } from '../modules/statuses.ts';
+import type { API, State } from '../root.tsx';
+import type Store from '../store.ts';
+import { fullStatusStore } from '../stores/status.ts';
+import {
+  docsEntries,
+  mockEntries,
+  navigationEntries,
+  preparedEntries,
+} from './mockStoriesEntries.ts';
 
 const mockGetEntries = vi.fn();
 const fetch = vi.mocked(global.fetch);
@@ -36,7 +41,7 @@ const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-vi.mock('../lib/events', () => ({
+vi.mock('../lib/events.ts', () => ({
   getEventMetadata: vi.fn(() => ({ sourceType: 'local' })),
 }));
 vi.mock('@storybook/global', () => ({

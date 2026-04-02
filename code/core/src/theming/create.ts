@@ -1,8 +1,8 @@
 // This generates theme variables in the correct shape for the UI
-import darkThemeVars from './themes/dark';
-import lightThemeVars from './themes/light';
-import type { ThemeVars, ThemeVarsPartial } from './types';
-import { getPreferredColorScheme } from './utils';
+import darkThemeVars from './themes/dark.ts';
+import lightThemeVars from './themes/light.ts';
+import type { ThemeVars, ThemeVarsPartial } from './types.ts';
+import { getPreferredColorScheme } from './utils.ts';
 
 interface Themes {
   light: ThemeVars;

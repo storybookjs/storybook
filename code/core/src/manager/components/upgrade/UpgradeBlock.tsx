@@ -6,7 +6,7 @@ import { Link } from 'storybook/internal/components';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 
 interface UpgradeBlockProps {
   onNavigateToWhatsNew?: () => void;

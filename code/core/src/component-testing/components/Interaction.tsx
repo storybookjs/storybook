@@ -7,13 +7,13 @@ import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
 
-import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
-import { INTERNAL_RENDER_CALL_ID } from '../constants';
-import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
-import type { Controls } from './InteractionsPanel';
-import { MatcherResult } from './MatcherResult';
-import { MethodCall } from './MethodCall';
-import { StatusIcon } from './StatusIcon';
+import { type Call, CallStates, type ControlStates } from '../../instrumenter/types.ts';
+import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
+import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils.ts';
+import type { Controls } from './InteractionsPanel.tsx';
+import { MatcherResult } from './MatcherResult.tsx';
+import { MethodCall } from './MethodCall.tsx';
+import { StatusIcon } from './StatusIcon.tsx';
 
 const MethodCallWrapper = styled.div({
   fontFamily: typography.fonts.mono,

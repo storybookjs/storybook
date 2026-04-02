@@ -7,7 +7,7 @@ import type {
 
 import memoize from 'memoizerific';
 
-import { BUILT_IN_FILTERS, Tag as TagEnum, USER_TAG_FILTER } from '../../shared/constants/tags';
+import { BUILT_IN_FILTERS, Tag as TagEnum, USER_TAG_FILTER } from '../../shared/constants/tags.ts';
 
 export const BUILT_IN_URL_TAG_MAP: Record<string, Tag> = {
   $docs: '_docs',

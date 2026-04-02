@@ -1,5 +1,16 @@
 # @storybook/mcp
 
+## 0.6.2
+
+### Patch Changes
+
+- [#206](https://github.com/storybookjs/mcp/pull/206) [`70b5b23`](https://github.com/storybookjs/mcp/commit/70b5b2333a3bd37fc8065cc56cc8f8dcd474572e) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Support Storybook component manifests that use `reactComponentMeta` for React prop extraction.
+
+  This keeps MCP documentation output working when Storybook is configured to emit the newer
+  `reactComponentMeta` payload instead of `reactDocgen` or `reactDocgenTypescript`.
+
+- [#204](https://github.com/storybookjs/mcp/pull/204) [`b2a327d`](https://github.com/storybookjs/mcp/commit/b2a327dde8d0529ee3a2b80e033ce35991ad538e) Thanks [@JReinhold](https://github.com/JReinhold)! - upgrade tmcp dependencies
+
 ## 0.6.1
 
 ### Patch Changes

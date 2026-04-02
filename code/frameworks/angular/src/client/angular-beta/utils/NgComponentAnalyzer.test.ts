@@ -24,7 +24,7 @@ import {
   isDeclarable,
   getComponentDecoratorMetadata,
   isStandaloneComponent,
-} from './NgComponentAnalyzer';
+} from './NgComponentAnalyzer.ts';
 
 describe('getComponentInputsOutputs', () => {
   it('should return empty if no I/O found', () => {

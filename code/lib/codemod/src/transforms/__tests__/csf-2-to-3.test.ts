@@ -4,7 +4,7 @@ import ansiRegex from 'ansi-regex';
 import type { API } from 'jscodeshift';
 import { dedent } from 'ts-dedent';
 
-import _transform from '../csf-2-to-3';
+import _transform from '../csf-2-to-3.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),

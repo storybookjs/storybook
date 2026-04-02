@@ -6,15 +6,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';
 
-import { PackageManagerName } from '.';
-import { executeCommandSync } from '../utils/command';
-import { getProjectRoot } from '../utils/paths';
-import { BUNProxy } from './BUNProxy';
-import { JsPackageManagerFactory } from './JsPackageManagerFactory';
-import { NPMProxy } from './NPMProxy';
-import { PNPMProxy } from './PNPMProxy';
-import { Yarn1Proxy } from './Yarn1Proxy';
-import { Yarn2Proxy } from './Yarn2Proxy';
+import { PackageManagerName } from './index.ts';
+import { executeCommandSync } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
+import { BUNProxy } from './BUNProxy.ts';
+import { JsPackageManagerFactory } from './JsPackageManagerFactory.ts';
+import { NPMProxy } from './NPMProxy.ts';
+import { PNPMProxy } from './PNPMProxy.ts';
+import { Yarn1Proxy } from './Yarn1Proxy.ts';
+import { Yarn2Proxy } from './Yarn2Proxy.ts';
 
 vi.mock('../utils/command', { spy: true });
 const executeCommandSyncMock = vi.mocked(executeCommandSync);

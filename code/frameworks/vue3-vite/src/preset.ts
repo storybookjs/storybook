@@ -2,10 +2,10 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
-import { vueComponentMeta } from './plugins/vue-component-meta';
-import { vueDocgen } from './plugins/vue-docgen';
-import { templateCompilation } from './plugins/vue-template';
-import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types';
+import { vueComponentMeta } from './plugins/vue-component-meta.ts';
+import { vueDocgen } from './plugins/vue-docgen.ts';
+import { templateCompilation } from './plugins/vue-template.ts';
+import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types.ts';
 
 export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),

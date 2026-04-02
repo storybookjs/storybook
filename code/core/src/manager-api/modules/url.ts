@@ -15,10 +15,14 @@ import { dequal as deepEqual } from 'dequal';
 import { omit } from 'es-toolkit/object';
 import { stringify } from 'picoquery';
 
-import merge from '../lib/merge';
-import type { ModuleArgs, ModuleFn } from '../lib/types';
-import { buildNavigationUrl } from '../lib/url';
-import { DEFAULT_BOTTOM_PANEL_HEIGHT, DEFAULT_NAV_SIZE, DEFAULT_RIGHT_PANEL_WIDTH } from './layout';
+import merge from '../lib/merge.ts';
+import type { ModuleArgs, ModuleFn } from '../lib/types.tsx';
+import { buildNavigationUrl } from '../lib/url.ts';
+import {
+  DEFAULT_BOTTOM_PANEL_HEIGHT,
+  DEFAULT_NAV_SIZE,
+  DEFAULT_RIGHT_PANEL_WIDTH,
+} from './layout.ts';
 
 export interface SubState {
   customQueryParams: QueryParams;

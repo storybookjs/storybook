@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getEventMetadata } from '../lib/events';
-import type { API } from '../root';
+import { getEventMetadata } from '../lib/events.ts';
+import type { API } from '../root.tsx';
 
 vi.mock('@storybook/global', () => ({
   global: {

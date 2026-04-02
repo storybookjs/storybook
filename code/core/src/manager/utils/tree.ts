@@ -5,8 +5,8 @@ import { global } from '@storybook/global';
 import memoize from 'memoizerific';
 import type { HashEntry, IndexHash } from 'storybook/manager-api';
 
-import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar';
-import type { Dataset, Item, RefType, SearchItem } from '../components/sidebar/types';
+import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar.tsx';
+import type { Dataset, Item, RefType, SearchItem } from '../components/sidebar/types.ts';
 
 const { document, window: globalWindow } = global;
 

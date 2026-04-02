@@ -17,9 +17,9 @@ import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybo
 import type { State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { focusableUIElements } from '../../../manager-api/modules/layout';
-import { useLandmark } from '../../hooks/useLandmark';
-import { useLayout } from '../layout/LayoutProvider';
+import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+import { useLayout } from '../layout/LayoutProvider.tsx';
 
 export interface SafeTabProps {
   title: Addon_BaseType['title'];
@@ -166,7 +166,7 @@ export const AddonPanel = React.memo<{
         Addon panel
       </h2>
       <StatelessTabsView
-        id="storybook-panel-root"
+        id={focusableUIElements.storyPanelRoot}
         showToolsWhenEmpty
         emptyState={emptyState}
         selected={selectedPanel ?? undefined}

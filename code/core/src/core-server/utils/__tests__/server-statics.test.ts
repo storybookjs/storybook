@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { onlyWindows, skipWindows } from '../../../../../vitest.helpers';
-import { parseStaticDir, prepareNestedSvg } from '../server-statics';
+import { onlyWindows, skipWindows } from '../../../../../vitest.helpers.ts';
+import { parseStaticDir, prepareNestedSvg } from '../server-statics.ts';
 
 vi.mock('node:fs');
 const existsSyncMock = vi.mocked(fs.existsSync);

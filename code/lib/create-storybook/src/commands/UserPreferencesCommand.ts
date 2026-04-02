@@ -8,9 +8,9 @@ import { Feature, SupportedBuilder, SupportedRenderer } from 'storybook/internal
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { CommandOptions } from '../generators/types';
-import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
-import { TelemetryService } from '../services/TelemetryService';
+import type { CommandOptions } from '../generators/types.ts';
+import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
 
 export type InstallType = 'recommended' | 'light';
 

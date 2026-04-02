@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extractFromStory } from './componentMetaExtractor.test-helpers';
+import { extractFromStory } from './componentMetaExtractor.test-helpers.ts';
 
 describe('prop extraction via story JSX', () => {
   it('simple named export', async () => {

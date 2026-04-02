@@ -7,23 +7,23 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
-import { telemetry } from '../telemetry';
-import { ChangeDetectionService } from './change-detection';
-import { getStatusStoreByTypeId } from './stores/status';
-import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
-import { doTelemetry } from './utils/doTelemetry';
-import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
-import { getCachingMiddleware } from './utils/get-caching-middleware';
-import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
-import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware';
-import { registerIndexJsonRoute } from './utils/index-json';
-import { registerManifests } from './utils/manifests/manifests';
-import { useStorybookMetadata } from './utils/metadata';
-import { getMiddleware } from './utils/middleware';
-import { openInBrowser } from './utils/open-browser/open-in-browser';
-import type { getServer } from './utils/server-init';
-import { useStatics } from './utils/server-statics';
-import { summarizeIndex } from './utils/summarizeIndex';
+import { telemetry } from '../telemetry/index.ts';
+import { ChangeDetectionService } from './change-detection/index.ts';
+import { getStatusStoreByTypeId } from './stores/status.ts';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { doTelemetry } from './utils/doTelemetry.ts';
+import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
+import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
+import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware.ts';
+import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware.ts';
+import { registerIndexJsonRoute } from './utils/index-json.ts';
+import { registerManifests } from './utils/manifests/manifests.ts';
+import { useStorybookMetadata } from './utils/metadata.ts';
+import { getMiddleware } from './utils/middleware.ts';
+import { openInBrowser } from './utils/open-browser/open-in-browser.ts';
+import type { getServer } from './utils/server-init.ts';
+import { useStatics } from './utils/server-statics.ts';
+import { summarizeIndex } from './utils/summarizeIndex.ts';
 
 export async function storybookDevServer(
   options: Options,

@@ -5,7 +5,7 @@ import type { DocsOptions, Options, Ref, TagsOptions } from 'storybook/internal/
 import { render } from 'ejs';
 import { join } from 'pathe';
 
-import { resolvePackageDir } from '../../shared/utils/module';
+import { resolvePackageDir } from '../../shared/utils/module.ts';
 
 export const getTemplatePath = (template: string) => {
   return join(resolvePackageDir('storybook'), 'assets/server', template);

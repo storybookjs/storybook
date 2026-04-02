@@ -3,9 +3,9 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { useEffect } from 'storybook/preview-api';
 
-import { destroy, init, rescale } from './box-model/canvas';
-import { drawSelectedElement } from './box-model/visualizer';
-import { deepElementFromPoint } from './util';
+import { destroy, init, rescale } from './box-model/canvas.ts';
+import { drawSelectedElement } from './box-model/visualizer.ts';
+import { deepElementFromPoint } from './util.ts';
 
 let nodeAtPointerRef;
 const pointer = { x: 0, y: 0 };

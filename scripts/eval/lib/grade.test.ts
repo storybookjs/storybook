@@ -13,8 +13,8 @@ import {
   computeQualityScore,
   countTypeCheckErrors,
   parseChangedFiles,
-} from './grade';
-import type { FileChange } from './grade';
+} from './grade.ts';
+import type { FileChange } from './grade.ts';
 
 describe('filterStorybookFiles', () => {
   it('matches files in .storybook/ directory', () => {

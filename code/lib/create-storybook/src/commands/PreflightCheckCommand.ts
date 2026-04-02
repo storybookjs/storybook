@@ -9,9 +9,9 @@ import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import type { CommandOptions } from '../generators/types';
-import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project';
-import { VersionService } from '../services';
+import type { CommandOptions } from '../generators/types.ts';
+import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project.ts';
+import { VersionService } from '../services/index.ts';
 
 export interface PreflightCheckResult {
   packageManager: JsPackageManager;

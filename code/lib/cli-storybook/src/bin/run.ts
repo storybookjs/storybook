@@ -18,14 +18,14 @@ import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
-import { add } from '../add';
-import { doAutomigrate } from '../automigrate';
-import { doctor } from '../doctor';
-import { link } from '../link';
-import { migrate } from '../migrate';
-import { sandbox } from '../sandbox';
-import { aiPrepare } from '../ai';
-import { type UpgradeOptions, upgrade } from '../upgrade';
+import { add } from '../add.ts';
+import { doAutomigrate } from '../automigrate/index.ts';
+import { doctor } from '../doctor/index.ts';
+import { link } from '../link.ts';
+import { migrate } from '../migrate.ts';
+import { sandbox } from '../sandbox.ts';
+import { aiPrepare } from '../ai/index.ts';
+import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -304,7 +304,12 @@ command('doctor')
     }).catch(handleCommandFailure(options.logfile));
   });
 
-const aiCommand = command('ai').description('AI agent helpers for Storybook');
+const aiCommand = command('ai')
+  .description('AI agent helpers for Storybook')
+  .option(
+    '-o, --output <path>',
+    'Write the prompt output to a file instead of printing it to stdout'
+  );
 
 aiCommand
   .command('prepare')
@@ -315,10 +320,12 @@ aiCommand
     )
   )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .action(async (options) => {
-    await withTelemetry('ai-prepare', { cliOptions: options }, async () => {
-      await aiPrepare(options);
-    }).catch(handleCommandFailure(options.logfile));
+  .action(async (options, cmd) => {
+    const parentOptions = cmd.parent?.opts() ?? {};
+    const mergedOptions = { ...parentOptions, ...options };
+    await withTelemetry('ai-prepare', { cliOptions: mergedOptions }, async () => {
+      await aiPrepare(mergedOptions);
+    }).catch(handleCommandFailure(mergedOptions.logfile));
   });
 
 // Show available subcommands when `storybook ai` is run without arguments

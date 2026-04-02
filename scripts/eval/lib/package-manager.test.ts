@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { detectPackageManager, resolveInstallRoot } from './package-manager';
+import { detectPackageManager, resolveInstallRoot } from './package-manager.ts';
 
 const TEMP_DIRS: string[] = [];
 

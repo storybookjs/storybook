@@ -270,9 +270,9 @@ describe('normalizeTranscriptForDocs', () => {
       screenshots: [],
       transcript: [],
       artifacts: {
-        buildOutput: { path: 'eval-results/build-output.txt', success: true },
+        buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },
         typecheckOutput: {
-          path: 'eval-results/typecheck-output.txt',
+          path: '.storybook/eval-results/typecheck-output.txt',
           errorCount: 0,
         },
       },
@@ -286,9 +286,9 @@ describe('normalizeTranscriptForDocs', () => {
         content: 'Write stories',
       },
       artifacts: {
-        buildOutput: { path: 'eval-results/build-output.txt', success: true },
+        buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },
         typecheckOutput: {
-          path: 'eval-results/typecheck-output.txt',
+          path: '.storybook/eval-results/typecheck-output.txt',
           errorCount: 0,
         },
       },

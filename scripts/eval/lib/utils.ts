@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { resolve, basename } from 'node:path';
+import { basename, join, resolve, sep } from 'node:path';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
 
@@ -15,6 +15,8 @@ export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
 export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
 export const PROMPTS_DIR = resolve(import.meta.dirname, '..', 'prompts');
+export const STORYBOOK_DIRNAME = '.storybook';
+export const EVAL_RESULTS_DIRNAME = 'eval-results';
 
 export function createLogger(prefix?: string): Logger {
   const p = prefix ? pc.dim(`[${prefix}]`) + ' ' : '';
@@ -31,12 +33,52 @@ export const formatDuration = (s: number) =>
 
 export const formatCost = (cost?: number) => (cost == null ? '-' : `$${cost.toFixed(2)}`);
 
+export function getProjectPath(repoRoot: string, projectDir?: string) {
+  return projectDir ? join(repoRoot, projectDir) : repoRoot;
+}
+
+export function getStorybookDir(projectPath: string) {
+  return join(projectPath, STORYBOOK_DIRNAME);
+}
+
+export function getEvalSupportDir(projectPath: string) {
+  return join(getStorybookDir(projectPath), 'eval-support');
+}
+
+export function getEvalResultsDir(projectPath: string) {
+  return join(getStorybookDir(projectPath), EVAL_RESULTS_DIRNAME);
+}
+
+export function getEvalResultsRelativeDir(projectDir?: string) {
+  return toPosixPath(
+    projectDir ? join(projectDir, STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME) : join(STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME)
+  );
+}
+
+export function getEvalResultsRelativePath(fileName: string, projectDir?: string) {
+  return `${getEvalResultsRelativeDir(projectDir)}/${fileName}`;
+}
+
 export function generateTrialId() {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\.(\d{3})Z$/, '$1Z');
+  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z').replace(/:/g, '-');
   return `${timestamp}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
+}
+
+export function formatReadableUtcTimestamp(timestamp: string) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return timestamp;
+  }
+
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][
+    date.getUTCMonth()
+  ];
+  const day = date.getUTCDate();
+  const year = date.getUTCFullYear();
+  const hour = `${date.getUTCHours()}`.padStart(2, '0');
+  const minute = `${date.getUTCMinutes()}`.padStart(2, '0');
+  const second = `${date.getUTCSeconds()}`.padStart(2, '0');
+  return `${month} ${day} ${year} ${hour}:${minute}:${second} UTC`;
 }
 
 /** Format data as an aligned table with automatic column widths. */
@@ -98,4 +140,8 @@ export async function captureEnvironment(): Promise<EvalEnvironment> {
 /** Strip ANSI escape codes for accurate width calculation. */
 function stripAnsi(str: string) {
   return str.replace(/\x1b\[[0-9;]*m/g, '');
+}
+
+function toPosixPath(value: string) {
+  return value.split(sep).join('/');
 }

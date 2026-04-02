@@ -3,14 +3,20 @@ import { join } from 'node:path';
 import type { Logger } from './utils.ts';
 import type { AgentId, AgentDriver, AgentVariant } from './agents/config.ts';
 import type { Project } from './projects.ts';
-import { grade } from './grade.ts';
+import { collectGhostStoriesGrade, grade } from './grade.ts';
 import { claudeAgent } from './agents/claude-code.ts';
 import { codexAgent } from './agents/codex.ts';
 import { publishTrialBranch, type PublishMetadata } from './publish-trial.ts';
 import { prepareTrial } from './prepare-trial.ts';
 import { runStorybookScreenshots, type ScreenshotRunResult } from './screenshots.ts';
 import { buildEvalData, type EvalData } from './result-docs.ts';
-import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from './utils.ts';
+import {
+  captureEnvironment,
+  createLogger,
+  generateTrialId,
+  getEvalResultsRelativePath,
+  loadPrompt,
+} from './utils.ts';
 
 export interface TrialConfig {
   /** Which project to evaluate from its normalized benchmark baseline branch. */
@@ -53,11 +59,18 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   // 2. Capture environment
   const environment = await captureEnvironment();
 
-  // 3. Load the prompt
+  // 3. Capture a baseline ghost-stories score before the agent changes the repo.
+  const baselineGhostStories = await collectGhostStoriesGrade(
+    workspace.projectPath,
+    log,
+    'baseline ghost stories'
+  );
+
+  // 4. Load the prompt
   const prompt = loadPrompt(promptName);
   await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
-  // 4. Execute the agent
+  // 5. Execute the agent
   log.log(`  Running ${agentName} (${model}, effort=${variant.effort})...`);
   const driver = drivers[agentName];
   const { execution, transcript } = await driver.execute({
@@ -73,11 +86,11 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
 
   const provisionalArtifacts = {
     buildOutput: {
-      path: 'eval-results/build-output.txt',
+      path: getEvalResultsRelativePath('build-output.txt', project.projectDir),
       success: false,
     },
     typecheckOutput: {
-      path: 'eval-results/typecheck-output.txt',
+      path: getEvalResultsRelativePath('typecheck-output.txt', project.projectDir),
       errorCount: 0,
     },
   };
@@ -96,6 +109,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     environment,
     execution,
     grade: {
+      baselineGhostStories,
       buildSuccess: false,
       typeCheckErrors: 0,
       fileChanges: [],
@@ -121,7 +135,11 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   );
 
   // 6. Grade the results (pass agent duration for performance scoring)
-  const { grade: trialGrade, score } = await grade(workspace, log, execution.duration);
+  const { grade: postAgentGrade, score } = await grade(workspace, log, execution.duration);
+  const trialGrade = {
+    ...postAgentGrade,
+    baselineGhostStories,
+  };
 
   // 7. Generate screenshots for the created or modified story files
   const screenshotRun = trialGrade.buildSuccess
@@ -156,7 +174,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
       },
       screenshotOutput: screenshotRun.attempted
         ? {
-            path: 'eval-results/screenshot-output.txt',
+            path: getEvalResultsRelativePath('screenshot-output.txt', project.projectDir),
             attempted: screenshotRun.attempted,
             success: screenshotRun.success,
           }

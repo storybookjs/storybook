@@ -24,10 +24,6 @@ const formatJsonWithPreservedWhitespace = (obj: any): string => {
     .replace(/\\t/g, '\t');
 };
 
-const truncateText = (text: string, maxLength: number): string => {
-  return text.length <= maxLength ? text : text.substring(0, maxLength) + '...';
-};
-
 const getPercentageStyle = (percentage: number): React.CSSProperties => {
   const adjustedPercentage = Math.max(0, percentage - 5);
   const intensity = Math.min(adjustedPercentage / 25, 1);
@@ -484,6 +480,7 @@ export const Transcript = (props: TranscriptProps) => {
 
   const totalTime = messages.reduce((sum, turn) => sum + (turn.ms || 0), 0);
   const totalMessageTokens = messageTokens;
+  const totalTokensForPercentages = Math.max(totalMessageTokens, promptTokenCount, 1);
 
   const metadataCards = [];
 
@@ -596,7 +593,7 @@ export const Transcript = (props: TranscriptProps) => {
           type="prompt"
           title="User Prompt"
           tokenCount={`${promptTokenCount.toLocaleString()} tokens`}
-          percentage={(promptTokenCount / totalMessageTokens) * 100}
+          percentage={(promptTokenCount / totalTokensForPercentages) * 100}
         >
           <ContentSection label="Prompt">
             <CodeBlock content={prompt} language="markdown" />
@@ -623,7 +620,7 @@ export const Transcript = (props: TranscriptProps) => {
           if (currentTurn) {
             const elapsedMs = currentTurn.ms;
             if (elapsedMs >= 50) {
-              const percentage = (elapsedMs / totalTime) * 100;
+              const percentage = totalTime > 0 ? (elapsedMs / totalTime) * 100 : 0;
               elements.push(
                 <ElapsedTime
                   key={`elapsed-${index}`}
@@ -783,7 +780,7 @@ function getTurnTitle(turn: TranscriptMessage): string {
     if (toolUse && 'name' in toolUse) return toolUse.name;
 
     const text = turn.message.content.find((c) => c.type === 'text');
-    if (text && 'text' in text) return truncateText(text.text, 80);
+    if (text && 'text' in text) return text.text;
   }
 
   if (turn.type === 'user' && 'message' in turn && turn.message?.content) {

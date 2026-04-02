@@ -34,6 +34,10 @@ export const claudeAgent: AgentDriver = {
         options: {
           model: sdkModel,
           cwd: projectPath,
+          env: {
+            ...process.env,
+            STORYBOOK_DISABLE_TELEMETRY: '1',
+          },
           allowedTools: [...settings.allowedTools],
           effort,
           debug: settings.debug,
@@ -78,7 +82,7 @@ function logMessage(message: SDKMessage, logger: Logger) {
         if (block.type === 'text') {
           logger.log(`💬 ${block.text}`);
         } else if (block.type === 'tool_use') {
-          logger.log(`🔧 ${block.name}(${JSON.stringify(block.input).slice(0, 200)})`);
+          logger.log(`🔧 ${block.name}(${formatFullJson(block.input)})`);
         }
       }
       if (message.error) {
@@ -93,14 +97,13 @@ function logMessage(message: SDKMessage, logger: Logger) {
         if (block.type === 'tool_result') {
           const text =
             typeof block.content === 'string'
-              ? block.content.slice(0, 200)
+              ? block.content
               : Array.isArray(block.content)
                 ? block.content
                     .map((b: { type: string; text?: string }) =>
-                      'text' in b ? b.text : `[${b.type}]`
+                      'text' in b ? b.text ?? '' : `[${b.type}]`
                     )
                     .join('')
-                    .slice(0, 200)
                 : '[no content]';
           logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${text}`);
         }
@@ -126,7 +129,7 @@ function logMessage(message: SDKMessage, logger: Logger) {
       }
       break;
     case 'tool_use_summary':
-      logger.log(`📋 ${message.summary.slice(0, 200)}`);
+      logger.log(`📋 ${message.summary}`);
       break;
     case 'rate_limit_event':
       logger.log(
@@ -135,6 +138,14 @@ function logMessage(message: SDKMessage, logger: Logger) {
       break;
     default:
       break;
+  }
+}
+
+function formatFullJson(value: unknown) {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
   }
 }
 

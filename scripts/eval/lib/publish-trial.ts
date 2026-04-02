@@ -1,10 +1,17 @@
 import { existsSync } from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { x } from 'tinyexec';
 import type { TrialWorkspace } from './prepare-trial.ts';
 import type { EvalData } from './result-docs.ts';
-import type { Logger } from './utils.ts';
+import {
+  formatCost,
+  formatDuration,
+  formatReadableUtcTimestamp,
+  getEvalResultsDir,
+  getEvalResultsRelativePath,
+  type Logger,
+} from './utils.ts';
 
 export interface PublishMetadata {
   branch: string;
@@ -36,22 +43,19 @@ export async function publishTrialBranch(opts: {
   await validateEvalSupportSetup({
     projectName: opts.data.project.name,
     projectPath: opts.workspace.projectPath,
-    repoRoot: opts.workspace.repoRoot,
   });
 
   const prBody = renderPrBody({
     branch: opts.workspace.trialBranch,
     data: opts.data,
   });
-  const prBodyPath = join(opts.workspace.resultsDir, 'pr-body.md');
-  await writeFile(prBodyPath, prBody);
 
   opts.logger.logStep('Creating trial commit...');
   await ensureGitIdentity(opts.workspace.repoRoot);
   await x('git', ['add', '-A'], {
     nodeOptions: { cwd: opts.workspace.repoRoot },
   });
-  await x('git', ['commit', '-m', `eval: ${opts.data.id}`], {
+  await x('git', ['commit', '--no-verify', '-m', `eval: ${opts.data.id}`], {
     nodeOptions: { cwd: opts.workspace.repoRoot },
   });
 
@@ -80,8 +84,8 @@ export async function publishTrialBranch(opts: {
         '--draft',
         '--title',
         title,
-        '--body-file',
-        prBodyPath,
+        '--body',
+        prBody,
       ],
       { nodeOptions: { cwd: opts.workspace.repoRoot } }
     )
@@ -139,7 +143,6 @@ async function ensureLabels(repo: string, labels: string[]) {
 async function validateEvalSupportSetup(opts: {
   projectName: string;
   projectPath: string;
-  repoRoot: string;
 }) {
   const missing: string[] = [];
   const configPath = await findStorybookMainFile(opts.projectPath);
@@ -161,13 +164,15 @@ async function validateEvalSupportSetup(opts: {
     }
   }
 
-  if (!existsSync(join(opts.repoRoot, 'eval-results', 'data.json'))) {
-    missing.push('eval-results/data.json');
+  const resultsDir = getEvalResultsDir(opts.projectPath);
+
+  if (!existsSync(join(resultsDir, 'data.json'))) {
+    missing.push(relative(opts.projectPath, join(resultsDir, 'data.json')));
   }
 
   for (const file of ['build-output.txt', 'typecheck-output.txt']) {
-    if (!existsSync(join(opts.repoRoot, 'eval-results', file))) {
-      missing.push(relative(opts.repoRoot, join(opts.repoRoot, 'eval-results', file)));
+    if (!existsSync(join(resultsDir, file))) {
+      missing.push(relative(opts.projectPath, join(resultsDir, file)));
     }
   }
 
@@ -215,7 +220,7 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
   const dataUrl = createBlobUrl(
     opts.data.project.githubSlug,
     opts.branch,
-    'eval-results/data.json'
+    getEvalResultsRelativePath('data.json', opts.data.project.projectDir)
   );
   const buildOutputUrl = createBlobUrl(
     opts.data.project.githubSlug,
@@ -234,10 +239,13 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
         opts.data.artifacts.screenshotOutput.path
       )
     : undefined;
+  const baselineGhostStories = formatGhostStories(opts.data.grade.baselineGhostStories);
+  const postAgentGhostStories = formatGhostStories(opts.data.grade.ghostStories);
   const lines = [
     '# Eval Trial',
     '',
     `- ID: \`${opts.data.id}\``,
+    `- Created at: \`${formatReadableUtcTimestamp(opts.data.timestamp)}\``,
     `- Project: \`${opts.data.project.name}\``,
     `- Agent: \`${opts.data.variant.agent}\``,
     `- Model: \`${opts.data.variant.model}\``,
@@ -246,11 +254,13 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     `- Score: \`${opts.data.score.score}\``,
     `- Build: \`${opts.data.grade.buildSuccess ? 'PASS' : 'FAIL'}\``,
     `- TypeScript errors: \`${opts.data.grade.typeCheckErrors}\``,
-    `- Ghost stories: \`${formatGhostStories(opts.data)}\``,
+    `- Ghost stories before: \`${baselineGhostStories}\``,
+    `- Ghost stories after: \`${postAgentGhostStories}\``,
+    `- Ghost stories delta: \`${formatGhostStoryDelta(opts.data)}\``,
     `- Duration: \`${formatDuration(opts.data.execution.duration)}\``,
     `- Cost: \`${formatCost(opts.data.execution.cost)}\``,
     `- Screenshot count: \`${opts.data.screenshots.length}\``,
-    `- Raw data: [eval-results/data.json](${dataUrl})`,
+    `- Raw data: [${getEvalResultsRelativePath('data.json', opts.data.project.projectDir)}](${dataUrl})`,
   ];
 
   if (!opts.data.grade.buildSuccess) {
@@ -269,11 +279,21 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     );
   }
 
+  lines.push(
+    '',
+    '<details>',
+    '<summary>Full prompt</summary>',
+    '',
+    '```md',
+    opts.data.prompt.content,
+    '```',
+    '</details>'
+  );
+
   return lines.join('\n');
 }
 
-function formatGhostStories(data: EvalData) {
-  const ghost = data.grade.ghostStories;
+function formatGhostStories(ghost?: EvalData['grade']['ghostStories']) {
   if (!ghost) {
     return '-';
   }
@@ -281,14 +301,16 @@ function formatGhostStories(data: EvalData) {
   return `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)`;
 }
 
-function formatDuration(durationSeconds: number) {
-  if (durationSeconds < 60) {
-    return `${Math.round(durationSeconds)}s`;
+function formatGhostStoryDelta(data: EvalData) {
+  const before = data.grade.baselineGhostStories;
+  const after = data.grade.ghostStories;
+  if (!before || !after) {
+    return '-';
   }
 
-  return `${Math.floor(durationSeconds / 60)}m${Math.round(durationSeconds % 60)}s`;
-}
-
-function formatCost(cost?: number) {
-  return cost == null ? '-' : `$${cost.toFixed(2)}`;
+  const passedDelta = after.passed - before.passed;
+  const percentDelta = Math.round((after.successRate - before.successRate) * 100);
+  const passedPrefix = passedDelta > 0 ? '+' : '';
+  const percentPrefix = percentDelta > 0 ? '+' : '';
+  return `${passedPrefix}${passedDelta} passed, ${percentPrefix}${percentDelta} pts`;
 }

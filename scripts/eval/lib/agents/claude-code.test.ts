@@ -50,6 +50,36 @@ describe('claudeAgent.execute', () => {
     );
   });
 
+  it('passes STORYBOOK_DISABLE_TELEMETRY through the Claude SDK environment', async () => {
+    queryMock.mockImplementation(async function* () {
+      yield {
+        type: 'result',
+        subtype: 'success',
+        num_turns: 1,
+        total_cost_usd: 0.1,
+        duration_api_ms: 1000,
+      };
+    });
+
+    await claudeAgent.execute({
+      prompt: 'prompt',
+      projectPath: '/repo',
+      variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'medium' },
+      resultsDir: '/results',
+      logger,
+    });
+
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({
+          env: expect.objectContaining({
+            STORYBOOK_DISABLE_TELEMETRY: '1',
+          }),
+        }),
+      })
+    );
+  });
+
   it('preserves terminal result metadata for non-success Claude results', async () => {
     queryMock.mockImplementation(async function* () {
       yield {

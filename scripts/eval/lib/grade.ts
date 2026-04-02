@@ -54,6 +54,7 @@ export interface Grade {
   typeCheckOutput?: string;
   fileChanges: FileChange[];
   storybookChanges: FileChange[];
+  baselineGhostStories?: GhostStoryGrade;
   ghostStories?: GhostStoryGrade;
 }
 
@@ -198,7 +199,9 @@ export async function grade(
   }
 
   // Ghost stories (only if build passed)
-  const ghostStories = buildSuccess ? await gradeGhostStories(projectPath, logger) : undefined;
+  const ghostStories = buildSuccess
+    ? await collectGhostStoriesGrade(projectPath, logger)
+    : undefined;
 
   const trialGrade: Grade = {
     buildSuccess,
@@ -231,24 +234,25 @@ async function getChangedFiles(repoRoot: string, baseline: string): Promise<File
   return parseChangedFiles(stdout);
 }
 
-async function gradeGhostStories(
+export async function collectGhostStoriesGrade(
   projectPath: string,
-  logger: Logger
+  logger: Logger,
+  label = 'ghost stories'
 ): Promise<GhostStoryGrade | undefined> {
-  logger.logStep('Running ghost stories...');
+  logger.logStep(`Running ${label}...`);
 
   try {
     const { candidates } = await getComponentCandidates({ sampleSize: 20, cwd: projectPath });
     if (candidates.length === 0) {
-      logger.logError('No candidate components found');
+      logger.logError(`No candidate components found for ${label}`);
       return undefined;
     }
-    logger.logStep(`Found ${candidates.length} candidate component(s)`);
+    logger.logStep(`Found ${candidates.length} candidate component(s) for ${label}`);
 
     const result = await runGhostStories(candidates, { cwd: projectPath });
 
     if (result.runError) {
-      logger.logError(`Ghost stories: ${result.runError}`);
+      logger.logError(`${capitalize(label)}: ${result.runError}`);
       return undefined;
     }
 
@@ -257,7 +261,7 @@ async function gradeGhostStories(
     if (summary && summary.total > 0) {
       const realPassed = summary.passed - summary.passedButEmptyRender;
       logger.logSuccess(
-        `Ghost stories: ${realPassed}/${summary.total} passed (${Math.round(summary.successRateWithoutEmptyRender * 100)}%)${summary.passedButEmptyRender > 0 ? ` (${summary.passedButEmptyRender} empty renders excluded)` : ''}`
+        `${capitalize(label)}: ${realPassed}/${summary.total} passed (${Math.round(summary.successRateWithoutEmptyRender * 100)}%)${summary.passedButEmptyRender > 0 ? ` (${summary.passedButEmptyRender} empty renders excluded)` : ''}`
       );
     }
 
@@ -268,7 +272,9 @@ async function gradeGhostStories(
       successRate: summary?.successRateWithoutEmptyRender ?? 0,
     };
   } catch (error) {
-    logger.logError(`Ghost stories: ${error instanceof Error ? error.message : String(error)}`);
+    logger.logError(
+      `${capitalize(label)}: ${error instanceof Error ? error.message : String(error)}`
+    );
     return undefined;
   }
 }
@@ -286,4 +292,8 @@ function parseGitDiffStatus(rawStatus?: string): GitDiffStatus {
   return firstChar === 'A' || firstChar === 'M' || firstChar === 'D' || firstChar === 'R'
     ? firstChar
     : 'M';
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

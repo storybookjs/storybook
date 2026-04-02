@@ -11,6 +11,7 @@ vi.mock('./prepare-trial', () => ({
   prepareTrial: vi.fn(),
 }));
 vi.mock('./grade', () => ({
+  collectGhostStoriesGrade: vi.fn(),
   grade: vi.fn(),
 }));
 vi.mock('./publish-trial', () => ({
@@ -58,7 +59,7 @@ vi.mock('./agents/codex', () => ({
 }));
 
 import { claudeAgent } from './agents/claude-code';
-import { grade } from './grade';
+import { collectGhostStoriesGrade, grade } from './grade';
 import { prepareTrial } from './prepare-trial';
 import { publishTrialBranch } from './publish-trial';
 import { runTrial } from './run-trial';
@@ -70,7 +71,7 @@ let TMP: string;
 beforeEach(() => {
   vi.clearAllMocks();
   TMP = join(tmpdir(), `eval-run-trial-${Date.now()}`);
-  mkdirSync(join(TMP, 'eval-results'), { recursive: true });
+  mkdirSync(join(TMP, '.storybook', 'eval-results'), { recursive: true });
 });
 
 afterEach(() => {
@@ -113,6 +114,12 @@ describe('runTrial pipeline', () => {
         turns: 12,
       },
       grade: {
+        baselineGhostStories: {
+          candidateCount: 12,
+          total: 6,
+          passed: 2,
+          successRate: 0.33,
+        },
         buildSuccess: true,
       },
       score: {
@@ -161,7 +168,7 @@ describe('runTrial pipeline', () => {
       prompt: expect.stringContaining('set up Storybook'),
       projectPath: TMP,
       variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
-      resultsDir: join(TMP, 'eval-results'),
+      resultsDir: join(TMP, '.storybook', 'eval-results'),
     });
     expect(params.logger).toBeDefined();
 
@@ -169,13 +176,18 @@ describe('runTrial pipeline', () => {
     expect(gradeWorkspace).toMatchObject({
       baselineCommit: 'deadbeef',
       projectPath: TMP,
-      resultsDir: join(TMP, 'eval-results'),
+      resultsDir: join(TMP, '.storybook', 'eval-results'),
     });
     expect(vi.mocked(grade).mock.calls[0][1]).toBeDefined();
+    expect(vi.mocked(collectGhostStoriesGrade)).toHaveBeenCalledWith(
+      TMP,
+      expect.anything(),
+      'baseline ghost stories'
+    );
     expect(vi.mocked(runStorybookScreenshots).mock.calls[0][0]).toMatchObject({
       projectPath: TMP,
       repoRoot: TMP,
-      resultsDir: join(TMP, 'eval-results'),
+      resultsDir: join(TMP, '.storybook', 'eval-results'),
     });
     expect(vi.mocked(publishTrialBranch).mock.calls[0][0]).toMatchObject({
       data: expect.objectContaining({
@@ -193,7 +205,7 @@ describe('runTrial pipeline', () => {
 
     await runTrial(baseConfig);
 
-    const resultsDir = join(TMP, 'eval-results');
+    const resultsDir = join(TMP, '.storybook', 'eval-results');
 
     const data: TrialReport = JSON.parse(readFileSync(join(resultsDir, 'data.json'), 'utf-8'));
     expect(data).toMatchObject({
@@ -205,13 +217,13 @@ describe('runTrial pipeline', () => {
         name: 'setup',
       },
       artifacts: {
-        buildOutput: { path: 'eval-results/build-output.txt', success: true },
+        buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },
         typecheckOutput: {
-          path: 'eval-results/typecheck-output.txt',
+          path: '.storybook/eval-results/typecheck-output.txt',
           errorCount: 0,
         },
         screenshotOutput: {
-          path: 'eval-results/screenshot-output.txt',
+          path: '.storybook/eval-results/screenshot-output.txt',
           attempted: true,
           success: true,
         },
@@ -264,10 +276,15 @@ describe('runTrial pipeline', () => {
         sourceDir: join(TMP, 'source'),
         repoRoot: TMP,
         projectPath: TMP,
-        resultsDir: join(TMP, 'eval-results'),
+        resultsDir: join(TMP, '.storybook', 'eval-results'),
         baselineCommit: 'deadbeef',
         trialBranch: 'trial/test-branch',
       };
+    });
+
+    vi.mocked(collectGhostStoriesGrade).mockImplementation(async () => {
+      callOrder.push('baseline');
+      return undefined;
     });
 
     vi.mocked(claudeAgent.execute).mockImplementation(async () => {
@@ -301,7 +318,7 @@ describe('runTrial pipeline', () => {
 
     await runTrial(baseConfig);
 
-    expect(callOrder).toEqual(['prepare', 'agent', 'grade']);
+    expect(callOrder).toEqual(['prepare', 'baseline', 'agent', 'grade']);
   });
 });
 
@@ -317,9 +334,16 @@ function setupMocks(overrides?: {
     sourceDir: join(TMP, 'source'),
     repoRoot: TMP,
     projectPath: TMP,
-    resultsDir: join(TMP, 'eval-results'),
+    resultsDir: join(TMP, '.storybook', 'eval-results'),
     baselineCommit: 'deadbeef',
     trialBranch: 'trial/test-branch',
+  });
+
+  vi.mocked(collectGhostStoriesGrade).mockResolvedValue({
+    candidateCount: 12,
+    total: 6,
+    passed: 2,
+    successRate: 0.33,
   });
 
   vi.mocked(claudeAgent.execute).mockResolvedValue({
@@ -342,6 +366,12 @@ function setupMocks(overrides?: {
 
   vi.mocked(grade).mockResolvedValue({
     grade: {
+      baselineGhostStories: {
+        candidateCount: 12,
+        total: 6,
+        passed: 2,
+        successRate: 0.33,
+      },
       buildSuccess,
       typeCheckErrors,
       fileChanges: [
@@ -352,6 +382,12 @@ function setupMocks(overrides?: {
         { path: '.storybook/preview.tsx', gitStatus: 'A' },
         { path: 'src/Button.stories.tsx', gitStatus: 'A' },
       ],
+      ghostStories: {
+        candidateCount: 12,
+        total: 6,
+        passed: 4,
+        successRate: 0.67,
+      },
     },
     score: {
       score: buildSuccess ? 1 : 0.3,

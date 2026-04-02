@@ -85,7 +85,7 @@ describe('prepareTrial', () => {
       sourceDir: join(reposDir, 'evergreen-ci'),
       repoRoot: join(trialsDir, 'trial-123', 'project'),
       projectPath: join(trialsDir, 'trial-123', 'project', 'packages/lib'),
-      resultsDir: join(trialsDir, 'trial-123', 'project', 'eval-results'),
+      resultsDir: join(trialsDir, 'trial-123', 'project', 'packages/lib', '.storybook', 'eval-results'),
       baselineCommit: 'deadbeef',
       trialBranch: 'trial/trial-123',
     });

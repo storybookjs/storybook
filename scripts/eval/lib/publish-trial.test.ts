@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -38,7 +38,7 @@ function createExecResult(stdout = '', exitCode = 0) {
 function writeEvalSupportFixture(projectPath: string, repoRoot: string) {
   const supportDir = join(projectPath, '.storybook', 'eval-support');
   const configPath = join(projectPath, '.storybook', 'main.ts');
-  const resultsDir = join(repoRoot, 'eval-results');
+  const resultsDir = join(projectPath, '.storybook', 'eval-results');
 
   mkdirSync(supportDir, { recursive: true });
   mkdirSync(resultsDir, { recursive: true });
@@ -96,7 +96,7 @@ describe('buildTrialLabels', () => {
 });
 
 describe('publishTrialBranch', () => {
-  it('validates shared eval support, writes the PR body, and leaves Storybook config untouched', async () => {
+  it('validates shared eval support, passes the PR body in-memory, and leaves Storybook config untouched', async () => {
     const calls: Array<{ cmd: string; args: string[]; cwd?: string }> = [];
 
     vi.doMock('tinyexec', () => ({
@@ -124,7 +124,7 @@ describe('publishTrialBranch', () => {
     const { publishTrialBranch } = await import('./publish-trial.ts');
     const repoRoot = join(TMP, 'repo');
     const projectPath = join(repoRoot, 'packages', 'app');
-    const resultsDir = join(repoRoot, 'eval-results');
+    const resultsDir = join(projectPath, '.storybook', 'eval-results');
     const configPath = join(projectPath, '.storybook', 'main.ts');
 
     writeEvalSupportFixture(projectPath, repoRoot);
@@ -163,6 +163,12 @@ describe('publishTrialBranch', () => {
           terminalResultSubtype: 'success',
         },
         grade: {
+          baselineGhostStories: {
+            candidateCount: 10,
+            total: 8,
+            passed: 4,
+            successRate: 0.5,
+          },
           buildSuccess: true,
           typeCheckErrors: 0,
           fileChanges: [],
@@ -192,13 +198,13 @@ describe('publishTrialBranch', () => {
         ],
         transcript: [],
         artifacts: {
-          buildOutput: { path: 'eval-results/build-output.txt', success: true },
+          buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },
           typecheckOutput: {
-            path: 'eval-results/typecheck-output.txt',
+            path: '.storybook/eval-results/typecheck-output.txt',
             errorCount: 0,
           },
           screenshotOutput: {
-            path: 'eval-results/screenshot-output.txt',
+            path: '.storybook/eval-results/screenshot-output.txt',
             attempted: true,
             success: true,
           },
@@ -231,13 +237,24 @@ describe('publishTrialBranch', () => {
 
     expect(readFileSync(configPath, 'utf-8')).toBe(originalConfig);
 
-    const prBody = readFileSync(join(resultsDir, 'pr-body.md'), 'utf-8');
+    const prCreateCall = calls.find(
+      (call) => call.cmd === 'gh' && call.args[0] === 'pr' && call.args[1] === 'create'
+    );
+    expect(prCreateCall).toBeDefined();
+    const prBody = prCreateCall!.args[prCreateCall!.args.indexOf('--body') + 1];
     expect(prBody).toContain('ID: `trial-123`');
+    expect(prBody).toContain('Created at: `Apr 2 2026 00:00:00 UTC`');
     expect(prBody).toContain('Score: `0.91`');
+    expect(prBody).toContain('Ghost stories before: `4/8 (50%)`');
+    expect(prBody).toContain('Ghost stories after: `6/8 (75%)`');
+    expect(prBody).toContain('Ghost stories delta: `+2 passed, +25 pts`');
     expect(prBody).toContain('Screenshot count: `1`');
-    expect(prBody).toContain('[eval-results/data.json](');
+    expect(prBody).toContain('[.storybook/eval-results/data.json](');
+    expect(prBody).toContain('<summary>Full prompt</summary>');
+    expect(prBody.match(/<details>/g)).toHaveLength(1);
     expect(prBody).not.toContain('src/Button.stories.Primary.chromium.png');
     expect(prBody).not.toContain('## Chromatic');
+    expect(existsSync(join(resultsDir, 'pr-body.md'))).toBe(false);
 
     expect(calls).toEqual(
       expect.arrayContaining([
@@ -248,7 +265,7 @@ describe('publishTrialBranch', () => {
         },
         {
           cmd: 'git',
-          args: ['commit', '-m', 'eval: trial-123'],
+          args: ['commit', '--no-verify', '-m', 'eval: trial-123'],
           cwd: repoRoot,
         },
         {
@@ -281,7 +298,8 @@ describe('publishTrialBranch', () => {
     const { publishTrialBranch } = await import('./publish-trial.ts');
     const repoRoot = join(TMP, 'repo');
     const projectPath = join(repoRoot, 'packages', 'app');
-    const resultsDir = join(repoRoot, 'eval-results');
+    const resultsDir = join(projectPath, '.storybook', 'eval-results');
+    
 
     mkdirSync(join(projectPath, '.storybook'), { recursive: true });
     mkdirSync(resultsDir, { recursive: true });
@@ -340,11 +358,11 @@ describe('publishTrialBranch', () => {
           transcript: [],
           artifacts: {
             buildOutput: {
-              path: 'eval-results/build-output.txt',
+              path: '.storybook/eval-results/build-output.txt',
               success: true,
             },
             typecheckOutput: {
-              path: 'eval-results/typecheck-output.txt',
+              path: '.storybook/eval-results/typecheck-output.txt',
               errorCount: 0,
             },
           },
@@ -408,7 +426,7 @@ describe('publishTrialBranch', () => {
     const { publishTrialBranch } = await import('./publish-trial.ts');
     const repoRoot = join(TMP, 'repo');
     const projectPath = join(repoRoot, 'packages', 'app');
-    const resultsDir = join(repoRoot, 'eval-results');
+    const resultsDir = join(projectPath, '.storybook', 'eval-results');
 
     writeEvalSupportFixture(projectPath, repoRoot);
 
@@ -460,9 +478,9 @@ describe('publishTrialBranch', () => {
         screenshots: [],
         transcript: [],
         artifacts: {
-          buildOutput: { path: 'eval-results/build-output.txt', success: true },
+          buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },
           typecheckOutput: {
-            path: 'eval-results/typecheck-output.txt',
+            path: '.storybook/eval-results/typecheck-output.txt',
             errorCount: 0,
           },
         },

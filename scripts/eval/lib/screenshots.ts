@@ -66,6 +66,7 @@ export async function runStorybookScreenshots(opts: {
       cwd: opts.projectPath,
       env: {
         ...process.env,
+        STORYBOOK_DISABLE_TELEMETRY: '1',
         STORYBOOK_TEST_SCREENSHOTS: 'true',
       },
     },

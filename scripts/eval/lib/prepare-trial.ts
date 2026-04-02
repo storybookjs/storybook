@@ -5,7 +5,7 @@ import type { Logger } from './utils.ts';
 import type { Project } from './projects.ts';
 import { x } from 'tinyexec';
 import { installDeps } from './package-manager.ts';
-import { REPOS_DIR, TRIALS_DIR } from './utils.ts';
+import { getEvalResultsDir, getProjectPath, REPOS_DIR, TRIALS_DIR } from './utils.ts';
 
 export interface TrialWorkspace {
   trialDir: string;
@@ -41,8 +41,8 @@ export async function prepareTrial(
     logger,
   });
 
-  const projectPath = project.projectDir ? join(repoRoot, project.projectDir) : repoRoot;
-  const resultsDir = join(repoRoot, 'eval-results');
+  const projectPath = getProjectPath(repoRoot, project.projectDir);
+  const resultsDir = getEvalResultsDir(projectPath);
   await mkdir(resultsDir, { recursive: true });
   await installDeps(projectPath, logger, undefined, { stopAt: repoRoot });
 

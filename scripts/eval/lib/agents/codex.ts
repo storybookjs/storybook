@@ -19,7 +19,12 @@ export const codexAgent: AgentDriver = {
     const settings = AGENTS.codex.execution;
     const { model, effort } = variant;
 
-    const codex = new Codex();
+    const codex = new Codex({
+      env: {
+        ...process.env,
+        STORYBOOK_DISABLE_TELEMETRY: '1',
+      },
+    });
     const thread = codex.startThread({
       model,
       modelReasoningEffort: effort as ModelReasoningEffort,
@@ -41,19 +46,19 @@ export const codexAgent: AgentDriver = {
           items.push(item);
           switch (item.type) {
             case 'agent_message':
-              logger.log(`💬 ${item.text.slice(0, 300)}`);
+              logger.log(`💬 ${item.text}`);
               break;
             case 'command_execution':
               logger.log(`🔧 $ ${item.command} → exit ${item.exit_code ?? '?'}`);
-              if (item.exit_code !== 0 && item.aggregated_output) {
-                logger.log(`   ${item.aggregated_output.slice(-200)}`);
+              if (item.aggregated_output) {
+                logger.log(`   ${item.aggregated_output}`);
               }
               break;
             case 'file_change':
               for (const c of item.changes) logger.log(`📝 ${c.kind} ${c.path}`);
               break;
             case 'reasoning':
-              logger.log(`🧠 ${item.text.slice(0, 200)}`);
+              logger.log(`🧠 ${item.text}`);
               break;
             case 'error':
               logger.logError(item.message);

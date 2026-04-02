@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +12,6 @@ import type {
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { normalizePath } from '../../common/utils/normalize-path.ts';
 import {
   createStatusStore,
   UNIVERSAL_STATUS_STORE_OPTIONS,
@@ -534,9 +533,9 @@ describe('ChangeDetectionService', () => {
   });
 
   it('stores changed files as normalized repo-relative paths', async () => {
-    const buttonCssPath = normalizePath(join(workingDir, 'src', 'Button.module.css'));
-    const buttonComponentPath = normalizePath(join(workingDir, 'src', 'Button.tsx'));
-    const buttonStoryPath = normalizePath(join(workingDir, 'src', 'Button.stories.tsx'));
+    const buttonCssPath = join(workingDir, 'src', 'Button.module.css');
+    const buttonComponentPath = join(workingDir, 'src', 'Button.tsx');
+    const buttonStoryPath = join(workingDir, 'src', 'Button.stories.tsx');
     const buttonCss = createModuleNode(buttonCssPath);
     const buttonComponent = createModuleNode(buttonComponentPath);
     const buttonStory = createModuleNode(buttonStoryPath);

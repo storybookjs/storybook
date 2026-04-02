@@ -1,4 +1,4 @@
-import { join, relative } from 'node:path';
+import { join, relative } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import type {
@@ -10,7 +10,6 @@ import type {
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { normalizePath } from '../../common/utils/normalize-path.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
@@ -46,7 +45,7 @@ function getStoryIdsByAbsolutePath(
       return;
     }
 
-    const absolutePath = normalizePath(join(workingDir, entry.importPath));
+    const absolutePath = join(workingDir, entry.importPath);
     const storyIds = storyIdsByFile.get(absolutePath) ?? new Set<string>();
     storyIds.add(entry.id);
     storyIdsByFile.set(absolutePath, storyIds);
@@ -72,11 +71,6 @@ function mergeStatusValues(
   }
 
   return nextValue;
-}
-
-function toRepoRelativePath(repoRoot: string, filePath: string): string {
-  const relativePath = relative(repoRoot, filePath);
-  return relativePath.startsWith('\\\\?\\') ? relativePath : relativePath.replace(/\\/g, '/');
 }
 
 /**
@@ -244,11 +238,9 @@ export class ChangeDetectionService {
     ]);
 
     const changedFiles = new Set(
-      Array.from(changes.changed).map((filePath) => normalizePath(join(repoRoot, filePath)))
+      Array.from(changes.changed).map((filePath) => join(repoRoot, filePath))
     );
-    const newFiles = new Set(
-      Array.from(changes.new).map((filePath) => normalizePath(join(repoRoot, filePath)))
-    );
+    const newFiles = new Set(Array.from(changes.new).map((filePath) => join(repoRoot, filePath)));
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
 
     const storyIndex = await storyIndexGenerator.getIndex();
@@ -276,7 +268,7 @@ export class ChangeDetectionService {
         storyIds.forEach((storyId) => {
           const existingStatus = statuses.get(storyId);
           const changedStoryFiles = new Set<string>(existingStatus?.data?.changedFiles ?? []);
-          changedStoryFiles.add(toRepoRelativePath(repoRoot, changedFile));
+          changedStoryFiles.add(relative(repoRoot, changedFile));
 
           statuses.set(storyId, {
             storyId,

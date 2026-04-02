@@ -71,10 +71,59 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`
   );
 
-  // 5. Grade the results (pass agent duration for performance scoring)
+  const provisionalArtifacts = {
+    buildOutput: {
+      path: 'eval-results/build-output.txt',
+      success: false,
+    },
+    typecheckOutput: {
+      path: 'eval-results/typecheck-output.txt',
+      errorCount: 0,
+    },
+  };
+
+  // 5. Write provisional data so the baseline-owned MDX files can resolve it during grading.
+  const provisionalData = buildEvalData({
+    id: trialId,
+    timestamp,
+    project,
+    variant,
+    prompt: {
+      name: resolvedPromptName,
+      content: prompt,
+    },
+    baselineCommit: workspace.baselineCommit,
+    environment,
+    execution,
+    grade: {
+      buildSuccess: false,
+      typeCheckErrors: 0,
+      fileChanges: [],
+      storybookChanges: [],
+    },
+    score: {
+      score: 0,
+      breakdown: {
+        build: 0,
+        typecheck: 0,
+        ghostStories: 0,
+        performance: 0,
+      },
+    },
+    screenshots: [],
+    transcript,
+    artifacts: provisionalArtifacts,
+  });
+
+  await writeFile(
+    join(workspace.resultsDir, 'data.json'),
+    JSON.stringify(provisionalData, null, 2)
+  );
+
+  // 6. Grade the results (pass agent duration for performance scoring)
   const { grade: trialGrade, score } = await grade(workspace, log, execution.duration);
 
-  // 6. Generate screenshots for the created or modified story files
+  // 7. Generate screenshots for the created or modified story files
   const screenshotRun = trialGrade.buildSuccess
     ? await runStorybookScreenshots({
         projectPath: workspace.projectPath,
@@ -89,30 +138,20 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
         success: true,
       } satisfies ScreenshotRunResult);
 
-  // 7. Assemble report content that will be committed with the trial branch
+  // 8. Rewrite the provisional data with the final grade and screenshot metadata.
   const reportForCommit = buildEvalData({
-    id: trialId,
-    timestamp,
-    project,
-    variant,
-    prompt: {
-      name: resolvedPromptName,
-      content: prompt,
-    },
-    baselineCommit: workspace.baselineCommit,
-    environment,
-    execution,
+    ...provisionalData,
     grade: trialGrade,
     score,
     screenshots: screenshotRun.screenshots,
-    transcript,
     artifacts: {
+      ...provisionalArtifacts,
       buildOutput: {
-        path: 'eval-results/build-output.txt',
+        ...provisionalArtifacts.buildOutput,
         success: trialGrade.buildSuccess,
       },
       typecheckOutput: {
-        path: 'eval-results/typecheck-output.txt',
+        ...provisionalArtifacts.typecheckOutput,
         errorCount: trialGrade.typeCheckErrors,
       },
       screenshotOutput: screenshotRun.attempted
@@ -130,7 +169,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     JSON.stringify(reportForCommit, null, 2)
   );
 
-  // 8. Commit, push, and open the benchmark PR
+  // 9. Commit, push, and open the benchmark PR
   const publish = await publishTrialBranch({
     data: reportForCommit,
     workspace,

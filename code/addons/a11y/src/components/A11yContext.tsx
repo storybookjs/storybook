@@ -1,5 +1,13 @@
 import type { FC, PropsWithChildren } from 'react';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   STORY_CHANGED,
@@ -140,8 +148,21 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [setState, storyId]);
 
   const handleToggleHighlight = useCallback(() => {
-    setState((prev) => ({ ...prev, ui: { ...prev.ui, highlighted: !prev.ui.highlighted } }));
+    setState((prev) => ({
+      ...prev,
+      ui: { ...prev.ui, highlighted: !prev.ui.highlighted },
+    }));
   }, [setState]);
+
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current !== null) {
+        clearTimeout(statusTimerRef.current);
+      }
+    };
+  }, []);
 
   const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
     const initialValue = new Map();
@@ -202,7 +223,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       if (storyId === id) {
         setState((prev) => ({ ...prev, status: 'ran', results: axeResults }));
 
-        setTimeout(() => {
+        if (statusTimerRef.current !== null) {
+          clearTimeout(statusTimerRef.current);
+        }
+        statusTimerRef.current = setTimeout(() => {
+          statusTimerRef.current = null;
           setState((prev) => {
             if (prev.status === 'ran') {
               return { ...prev, status: 'ready' };

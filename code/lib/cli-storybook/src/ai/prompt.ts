@@ -1,11 +1,24 @@
 import { dedent } from 'ts-dedent';
 
-import type { ProjectInfo, AiPrompt } from './types';
+import type { ProjectInfo, AiPrompt } from './types.ts';
 
-export function getDocsUrl(majorVersion: number | undefined): string {
-  // Use {major}.0 format since /10 doesn't work on the docs site but /10.0 does. If not identified, link to the latest docs at / route.
-  const versionPath = majorVersion ? `/${majorVersion}.0` : '';
-  return `https://storybook.js.org/docs${versionPath}`;
+/**
+ * Builds a markdown-format docs URL with renderer and language query parameters.
+ * Appending .md to any Storybook docs URL returns clean markdown with code examples.
+ */
+export function getDocsMarkdownUrl(
+  path: string,
+  projectInfo?: Pick<ProjectInfo, 'majorVersion' | 'renderer' | 'language'>
+): string {
+  const { majorVersion, renderer = 'react', language = 'ts' } = projectInfo ?? {};
+  const versionSegment = majorVersion ? `/${majorVersion}` : '';
+  const params = new URLSearchParams();
+  if (renderer) {
+    params.set('renderer', renderer);
+  }
+  params.set('language', language);
+  const query = params.toString();
+  return `https://storybook.js.org/docs${versionSegment}/${path}.md${query ? `?${query}` : ''}`;
 }
 
 export function getPrompts(projectInfo: ProjectInfo): AiPrompt[] {
@@ -21,9 +34,6 @@ export function getPrompts(projectInfo: ProjectInfo): AiPrompt[] {
 }
 
 function getSetupInstructions(projectInfo: ProjectInfo): string {
-  const docsUrl = getDocsUrl(projectInfo.majorVersion);
-  const renderer = projectInfo.renderer || 'react';
-
   return dedent`
     Attention: The following instructions must be followed in order to successfully set up Storybook in this project. Do not skip steps or attempt to do them out of order.
 
@@ -32,6 +42,8 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
 
     Work through these steps in order. After each story file, run Vitest to verify it renders.
     If the test fails, read the error, fix the issue, and re-run until it passes before moving on.
+
+    ${getDocsReferenceSection(projectInfo)}
 
     ### Step 1: Analyze the codebase
 
@@ -81,7 +93,7 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
     Each file must have at least 2 story exports covering the component's main states.
     Make sure the file location and naming matches the \`stories\` patterns in \`${projectInfo.configDir}/main.ts\`.
 
-    ${projectInfo.hasCsfFactoryPreview ? getCsfFactoryExample() : getCsfExample(renderer)}
+    ${projectInfo.hasCsfFactoryPreview ? getCsfFactoryExample() : getCsfExample(projectInfo.rendererPackage || 'react')}
 
     Rules:
     - Every named export is a story. Use \`args\` to set props.
@@ -89,7 +101,7 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
     - If a component needs per-story decorators (beyond the global ones), add them in the meta.
     - Do NOT use \`any\` types. Use the component's prop types for type safety.
 
-    Reference: ${docsUrl}/writing-stories
+    Reference: ${getDocsMarkdownUrl('writing-stories', projectInfo)}
 
     ### Step 4: Verify each story with Vitest
 
@@ -131,6 +143,28 @@ function getSetupInstructions(projectInfo: ProjectInfo): string {
     - [ ] Complex component 3: story written and passing
     - [ ] Full Vitest suite passes: \`npx vitest --project storybook\`
     - [ ] Run \`npx storybook doctor\` to check for common issues (version mismatches, duplicated deps, etc.)
+  `;
+}
+
+function getDocsReferenceSection(projectInfo: ProjectInfo): string {
+  const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);
+
+  return dedent`
+    ### Storybook Documentation Reference
+
+    Use the following references to look up Storybook APIs, concepts, or examples:
+
+    - Full docs index: https://storybook.js.org/llms.txt
+    - See code snippets only with codeOnly=true param e.g. ${docsUrl('writing-stories')}&codeOnly=true
+
+    Key documentation pages for this task:
+    - Writing stories: ${docsUrl('writing-stories')}
+    - Decorators: ${docsUrl('writing-stories/decorators')}
+    - Args: ${docsUrl('writing-stories/args')}
+    - Play functions: ${docsUrl('writing-stories/play-function')}
+    - Vitest integration: ${docsUrl('writing-tests/vitest-plugin')}
+
+    Fetch these URLs directly when you need guidance on Storybook APIs or patterns.
   `;
 }
 
@@ -179,11 +213,11 @@ function getPreviewConfigExample(projectInfo: ProjectInfo): string {
   `;
 }
 
-function getCsfExample(renderer: string): string {
+function getCsfExample(rendererPackage: string): string {
   return dedent`
     Story format (CSF):
     \`\`\`ts
-    import type { Meta, StoryObj } from '@storybook/${renderer}';
+    import type { Meta, StoryObj } from '${rendererPackage}';
     import { Button } from './Button';
 
     const meta = {
@@ -238,25 +272,23 @@ function getCsfFactoryExample(): string {
   `;
 }
 
-function getProjectOverview(projectInfo: ProjectInfo, docsUrl: string): string {
+function getProjectOverview(projectInfo: ProjectInfo): string {
   return dedent`
     ## Project Info
 
     | Property | Value |
     |----------|-------|
     | Version | ${projectInfo.storybookVersion || 'unknown'} |
+    | Renderer | ${projectInfo.rendererPackage || 'unknown'} |
     | Framework | ${projectInfo.framework || 'unknown'} |
-    | Renderer | ${projectInfo.renderer || 'unknown'} |
-    | Builder | ${projectInfo.builder || 'unknown'} |
+    | Builder | ${projectInfo.builderPackage || 'unknown'} |
     | Config Dir | \`${projectInfo.configDir}\` |
     | CSF Format | ${projectInfo.hasCsfFactoryPreview ? 'CSF Factory' : 'CSF3'} |
     | Addons | ${projectInfo.addons.length > 0 ? projectInfo.addons.join(', ') : 'none'} |
-    | Docs | ${docsUrl} |
   `;
 }
 
 export function generateMarkdownOutput(projectInfo: ProjectInfo): string {
-  const docsUrl = getDocsUrl(projectInfo.majorVersion);
   const aiPrompts = getPrompts(projectInfo);
 
   const sections: string[] = [];
@@ -265,7 +297,7 @@ export function generateMarkdownOutput(projectInfo: ProjectInfo): string {
     # Storybook Setup
   `);
 
-  sections.push(getProjectOverview(projectInfo, docsUrl));
+  sections.push(getProjectOverview(projectInfo));
 
   for (const aiPrompt of aiPrompts) {
     sections.push(aiPrompt.instructions);

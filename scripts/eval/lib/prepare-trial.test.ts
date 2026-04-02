@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { getCacheRefreshReason, type TrialCacheInfo } from './prepare-trial';
-import type { Project } from './projects';
+import { getCacheRefreshReason, type TrialCacheInfo } from './prepare-trial.ts';
+import type { Project } from './projects.ts';
 
 const project: Project = {
   name: 'mealdrop',

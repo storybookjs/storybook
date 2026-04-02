@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { AGENTS, getDefaultVariant } from './config';
+import { AGENTS, getDefaultVariant } from './config.ts';
 
 describe('AGENTS', () => {
   it('keeps each agent default inside its supported model and effort lists', () => {

@@ -120,6 +120,7 @@ export const getStorybookData = async ({
     versionSpecifier,
     frameworkPackage,
     rendererPackage,
+    renderer,
     builderPackage,
     addons,
   } = await getStorybookInfo(
@@ -171,6 +172,7 @@ export const getStorybookData = async ({
     hasCsfFactoryPreview,
     frameworkPackage,
     rendererPackage,
+    renderer,
     builderPackage,
     addons,
   };

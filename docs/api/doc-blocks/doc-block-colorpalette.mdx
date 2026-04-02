@@ -8,7 +8,8 @@ The `ColorPalette` block allows you to document all color-related items (e.g., s
 
 ![Screenshot of ColorPalette and ColorItem blocks](../../_assets/api/doc-block-colorpalette.png)
 
-```md title="Colors.mdx"
+{/* prettier-ignore-start */}
+```mdx title="Colors.mdx"
 import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs/blocks';
 
 <Meta title="Colors" />
@@ -19,15 +20,15 @@ import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs/blocks';
     subtitle="Some of the greys"
     colors={{ White: '#FFFFFF', Alabaster: '#F8F8F8', Concrete: '#F3F3F3' }}
   />
-  <ColorItem 
-    title="theme.color.primary" 
-    subtitle="Coral" 
-    colors={{ WildWatermelon: '#FF4785' }} 
+  <ColorItem
+    title="theme.color.primary"
+    subtitle="Coral"
+    colors={{ WildWatermelon: '#FF4785' }}
   />
-  <ColorItem 
-    title="theme.color.secondary" 
-    subtitle="Ocean" 
-    colors={{ DodgerBlue: '#1EA7FD' }} 
+  <ColorItem
+    title="theme.color.secondary"
+    subtitle="Ocean"
+    colors={{ DodgerBlue: '#1EA7FD' }}
   />
   <ColorItem
     title="theme.color.positive"
@@ -53,6 +54,7 @@ import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs/blocks';
   />
 </ColorPalette>
 ```
+{/* prettier-ignore-end */}
 
 ## ColorPalette
 

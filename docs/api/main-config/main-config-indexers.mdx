@@ -263,14 +263,12 @@ export const Primary = {
 };
 ```
 
-### Examples
+## Examples
 
 Some example usages of custom indexers include:
 
 <details open>
-<summary>
-Generating stories dynamically from fixture data or API endpoints
-</summary>
+<summary>Generating stories dynamically from fixture data or API endpoints</summary>
 
 This indexer generates stories for components based on JSON fixture data. It looks for `*.stories.json` files in the project, adds them to the index and separately converts their content to CSF.
 
@@ -286,7 +284,8 @@ An example input JSON file could look like this:
       "Primary": {
         "args": {
           "primary": true
-        },
+        }
+      },
       "Secondary": {
         "args": {
           "primary": false
@@ -302,7 +301,7 @@ An example input JSON file could look like this:
         "args": {
           "isOpen": true
         }
-      },
+      }
     }
   }
 }

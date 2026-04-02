@@ -8,9 +8,9 @@ The `Unstyled` block is a special block that disables Storybook's default stylin
 
 By default, most elements (like `h1`, `p`, etc.) in docs have a few default styles applied to ensure the docs look good. However, sometimes you might want some of your content to not have these styles applied. In those cases, wrap the content with the `Unstyled` block to remove the default styles.
 
-```md title="ButtonDocs.mdx"
-import { Meta, Unstyled } from "@storybook/addon-docs/blocks";
-import { Header } from "./Header.tsx";
+```mdx title="ButtonDocs.mdx"
+import { Meta, Unstyled } from '@storybook/addon-docs/blocks';
+import { Header } from './Header.tsx';
 
 <Meta title="Unstyled" />
 
@@ -23,7 +23,7 @@ import { Header } from "./Header.tsx";
 
 ... neither will this paragraph, nor the following component (which contains an \<h1\>):
 
-  <Header />
+<Header />
 
 </Unstyled>
 ```

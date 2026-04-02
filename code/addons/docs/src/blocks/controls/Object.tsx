@@ -231,7 +231,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
 
   // Keep a stable serialized snapshot so raw-mode editing can sync back to external Arg updates.
   const jsonString = useMemo(() => {
-    return JSON.stringify(data ?? '', null, 2);
+    return JSON.stringify(data ?? '', null, 2) ?? '';
   }, [data]);
   const [rawValue, setRawValue] = useState(jsonString);
   const isRawEmpty = rawValue.length === 0;

@@ -4,24 +4,25 @@ import {
   getLastEvents,
   getSessionId,
   getStorybookMetadata,
+  isTelemetryModuleEnabled,
   telemetry,
 } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
 import { runStoryTests } from '../utils/ghost-stories/run-story-tests.ts';
 
-export function initGhostStoriesChannel(
-  channel: Channel,
-  options: Options,
-  coreOptions: CoreConfig
-) {
-  if (coreOptions.disableTelemetry) {
-    return channel;
-  }
-
+export function initGhostStoriesChannel(channel: Channel, options: Options) {
   /** Listens for events to discover and test stories */
   channel.on(GHOST_STORIES_REQUEST, async () => {
+    // Ghost stories is a telemetry-only feature that performs expensive work
+    // (candidate analysis, test runs) solely to gather telemetry data.
+    // Skip all work when telemetry is disabled.
+    if (!isTelemetryModuleEnabled()) {
+      channel.emit(GHOST_STORIES_RESPONSE);
+      return;
+    }
+
     const stats: {
       globMatchCount?: number;
       candidateAnalysisDuration?: number;

@@ -7,7 +7,6 @@ import type { ViteUserConfig } from 'vitest/config';
 import {
   DEFAULT_FILES_PATTERN,
   getInterpretedFile,
-  loadPreviewOrConfigFile,
   normalizeStories,
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
@@ -19,14 +18,9 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import {
-  componentTransform,
-  isCsfFactoryPreview,
-  readConfig,
-  vitestTransform,
-} from 'storybook/internal/csf-tools';
+import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
+import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
@@ -448,22 +442,21 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      if (
-        !core?.disableTelemetry &&
-        !optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
-      ) {
-        // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
-        // before the tests do. If not we may miss the event, we are OK with that.
-        telemetry(
-          'test-run',
-          {
-            runner: 'vitest',
-            watch: context.vitest.config.watch,
-            coverage: !!context.vitest.config.coverage?.enabled,
-          },
-          { configDir: finalOptions.configDir }
-        );
+      if (core?.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)) {
+        setTelemetryEnabled(false);
       }
+
+      // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
+      // before the tests do. If not we may miss the event, we are OK with that.
+      telemetry(
+        'test-run',
+        {
+          runner: 'vitest',
+          watch: context.vitest.config.watch,
+          coverage: !!context.vitest.config.coverage?.enabled,
+        },
+        { configDir: finalOptions.configDir }
+      );
     },
     async configureServer(server) {
       if (staticDirs) {

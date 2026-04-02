@@ -27,6 +27,8 @@ vi.mock('storybook/internal/telemetry', async (importOriginal) => {
     getLastEvents: vi.fn(),
     getSessionId: vi.fn(),
     getStorybookMetadata: vi.fn(),
+    isTelemetryModuleEnabled: vi.fn().mockReturnValue(true),
+    setTelemetryEnabled: vi.fn(),
     telemetry: vi.fn(),
   };
 });
@@ -94,6 +96,8 @@ describe('ghostStoriesChannel', () => {
     vi.mocked(mockTelemetry.getLastEvents).mockReset();
     vi.mocked(mockTelemetry.getSessionId).mockReset();
     vi.mocked(mockTelemetry.getStorybookMetadata).mockReset();
+    vi.mocked(mockTelemetry.isTelemetryModuleEnabled).mockReset().mockReturnValue(true);
+    vi.mocked(mockTelemetry.setTelemetryEnabled).mockReset();
     vi.mocked(mockTelemetry.telemetry).mockReset();
     vi.mocked(mockStoryGeneration.getComponentCandidates).mockReset();
     mockFs.existsSync.mockReset();
@@ -157,7 +161,7 @@ describe('ghostStoriesChannel', () => {
         })
       );
 
-      initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+      initGhostStoriesChannel(mockChannel, {} as Options);
 
       mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -256,7 +260,7 @@ describe('ghostStoriesChannel', () => {
         })
       );
 
-      initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+      initGhostStoriesChannel(mockChannel, {} as Options);
 
       mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -312,15 +316,16 @@ describe('ghostStoriesChannel', () => {
       it('should skip discovery run when telemetry is disabled', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: true });
+        vi.mocked(mockTelemetry.isTelemetryModuleEnabled).mockReturnValue(false);
+
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
-        // When telemetry is disabled, no listener is set up, so wait a bit and check nothing happened
+        // When telemetry is disabled, handler returns early after emitting response
         await new Promise((resolve) => setTimeout(resolve, 10));
 
-        expect(ghostStoriesEventListener).not.toHaveBeenCalled();
-        expect(mockCommon.cache.get).not.toHaveBeenCalled();
+        expect(ghostStoriesEventListener).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -334,7 +339,7 @@ describe('ghostStoriesChannel', () => {
         } as any);
         vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -360,7 +365,7 @@ describe('ghostStoriesChannel', () => {
           addons: { '@storybook/addon-vitest': {} },
         } as any);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -386,7 +391,7 @@ describe('ghostStoriesChannel', () => {
           addons: {},
         } as any);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -419,7 +424,7 @@ describe('ghostStoriesChannel', () => {
           globMatchCount: 0,
         });
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -459,7 +464,7 @@ describe('ghostStoriesChannel', () => {
           avgComplexity: 1.5,
         });
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -504,7 +509,7 @@ describe('ghostStoriesChannel', () => {
         vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Test execution failed'));
         mockFs.existsSync.mockReturnValue(false);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -557,7 +562,7 @@ describe('ghostStoriesChannel', () => {
           })
         );
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 
@@ -583,7 +588,7 @@ describe('ghostStoriesChannel', () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
         vi.mocked(mockTelemetry.getLastEvents).mockRejectedValue(new Error('Cache error') as any);
 
-        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+        initGhostStoriesChannel(mockChannel, {} as Options);
 
         mockChannel.emit(GHOST_STORIES_REQUEST);
 

@@ -191,10 +191,8 @@ export async function storybookDevServer(
     process.exit(0);
   }
 
-  if (!core?.disableTelemetry) {
-    process.on('SIGINT', cancelTelemetry);
-    process.on('SIGTERM', cancelTelemetry);
-  }
+  process.on('SIGINT', cancelTelemetry);
+  process.on('SIGTERM', cancelTelemetry);
 
   return { previewResult, managerResult };
 }

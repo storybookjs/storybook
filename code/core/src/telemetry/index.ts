@@ -22,6 +22,22 @@ export { getSessionId } from './session-id.ts';
 
 export { addToGlobalContext } from './telemetry.ts';
 
+/** Module-level flag to disable telemetry. When true, all telemetry calls are no-ops. */
+let _disabled = false;
+
+/**
+ * Enable or disable telemetry globally. When disabled, all calls to `telemetry()` become no-ops.
+ * This should be called once at startup based on CLI options and/or config.
+ */
+export function setTelemetryEnabled(enabled: boolean) {
+  _disabled = !enabled;
+}
+
+/** Check whether telemetry is currently enabled. */
+export function isTelemetryModuleEnabled() {
+  return !_disabled;
+}
+
 /** Is this story part of the CLI generated examples, including user-created stories in those files */
 export const isExampleStoryId = (storyId: string) =>
   storyId.startsWith('example-button--') ||
@@ -33,6 +49,10 @@ export const telemetry = async (
   payload: Payload = {},
   options: Partial<Options> = {}
 ) => {
+  if (_disabled) {
+    return;
+  }
+
   // Don't notify on boot since it can lead to double notification in `sb init`.
   // The notification will happen when the actual command runs.
   if (eventType !== 'boot' && options.notify !== false) {

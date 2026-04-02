@@ -4,6 +4,7 @@ import {
   ErrorCollector,
   getPrecedingUpgrade,
   oneWayHash,
+  setTelemetryEnabled,
   telemetry,
 } from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
@@ -155,7 +156,7 @@ export async function sendTelemetryError(
 }
 
 export function isTelemetryEnabled(options: TelemetryOptions) {
-  return !(options.cliOptions.disableTelemetry || options.cliOptions.test === true);
+  return !options.cliOptions.disableTelemetry;
 }
 
 export async function withTelemetry<T>(
@@ -163,15 +164,15 @@ export async function withTelemetry<T>(
   options: TelemetryOptions,
   run: () => Promise<T>
 ): Promise<T | undefined> {
-  const enableTelemetry = isTelemetryEnabled(options);
+  if (!isTelemetryEnabled(options)) {
+    setTelemetryEnabled(false);
+  }
 
   let canceled = false;
 
   async function cancelTelemetry() {
     canceled = true;
-    if (enableTelemetry) {
-      await telemetry('canceled', { eventType }, { stripMetadata: true, immediate: true });
-    }
+    await telemetry('canceled', { eventType }, { stripMetadata: true, immediate: true });
 
     process.exit(0);
   }
@@ -181,9 +182,7 @@ export async function withTelemetry<T>(
     process.on('SIGINT', cancelTelemetry);
   }
 
-  if (enableTelemetry) {
-    telemetry('boot', { eventType }, { stripMetadata: true });
-  }
+  telemetry('boot', { eventType }, { stripMetadata: true });
 
   try {
     return await run();
@@ -200,18 +199,14 @@ export async function withTelemetry<T>(
       printError(error);
     }
 
-    if (enableTelemetry) {
-      await sendTelemetryError(error, eventType, options);
-    }
+    await sendTelemetryError(error, eventType, options);
 
     throw error;
   } finally {
-    if (enableTelemetry) {
-      const errors = ErrorCollector.getErrors();
-      for (const error of errors) {
-        await sendTelemetryError(error, eventType, options, false);
-      }
-      process.off('SIGINT', cancelTelemetry);
+    const errors = ErrorCollector.getErrors();
+    for (const error of errors) {
+      await sendTelemetryError(error, eventType, options, false);
     }
+    process.off('SIGINT', cancelTelemetry);
   }
 }

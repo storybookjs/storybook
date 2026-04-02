@@ -1,4 +1,4 @@
-import { relative, resolve } from 'node:path';
+import { join, relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 import type {
@@ -46,7 +46,7 @@ function getStoryIdsByAbsolutePath(
       return;
     }
 
-    const absolutePath = normalizePath(resolve(workingDir, entry.importPath));
+    const absolutePath = normalizePath(join(workingDir, entry.importPath));
     const storyIds = storyIdsByFile.get(absolutePath) ?? new Set<string>();
     storyIds.add(entry.id);
     storyIdsByFile.set(absolutePath, storyIds);
@@ -244,10 +244,10 @@ export class ChangeDetectionService {
     ]);
 
     const changedFiles = new Set(
-      Array.from(changes.changed).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
+      Array.from(changes.changed).map((filePath) => normalizePath(join(repoRoot, filePath)))
     );
     const newFiles = new Set(
-      Array.from(changes.new).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
+      Array.from(changes.new).map((filePath) => normalizePath(join(repoRoot, filePath)))
     );
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
 

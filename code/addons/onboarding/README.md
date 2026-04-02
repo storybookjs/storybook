@@ -6,8 +6,8 @@ This addon provides a guided tour in some of Storybook's features, helping you g
 
 ## Triggering the onboarding
 
-This addon comes installed by default in Storybook projects and should trigger automatically.
-If you want to retrigger the addon, you should make sure that your Storybook still contains the example stories that come when initializing Storybook, and you can then navigate to http://localhost:6006/?path=/onboarding after running Storybook.
+This addon is not included by default in new Storybook projects. To use it, install it and add it to your Storybook configuration.
+If you want to trigger the addon, make sure your Storybook still contains the example stories that come when initializing Storybook, and then navigate to http://localhost:6006/?path=/onboarding after running Storybook.
 
 ## Uninstalling
 

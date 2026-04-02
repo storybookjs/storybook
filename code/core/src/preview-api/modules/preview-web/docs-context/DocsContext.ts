@@ -14,8 +14,8 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { type StoryStore } from '../../store';
-import type { DocsContextProps } from './DocsContextProps';
+import { type StoryStore } from '../../store/index.ts';
+import type { DocsContextProps } from './DocsContextProps.ts';
 
 export class DocsContext<TRenderer extends Renderer> implements DocsContextProps<TRenderer> {
   private componentStoriesValue: PreparedStory<TRenderer>[];

@@ -13,7 +13,7 @@ import {
   isTSSatisfiesExpression,
   isVariableDeclaration,
   isVariableDeclarator,
-} from './ast';
+} from './ast.ts';
 
 export const docsUrl = (ruleName: string) =>
   `https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/${ruleName}.md`;

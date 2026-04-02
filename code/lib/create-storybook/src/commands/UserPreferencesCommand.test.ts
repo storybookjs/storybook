@@ -7,10 +7,10 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
 
-import type { CommandOptions } from '../generators/types';
-import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
-import { TelemetryService } from '../services/TelemetryService';
-import { UserPreferencesCommand } from './UserPreferencesCommand';
+import type { CommandOptions } from '../generators/types.ts';
+import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
+import { UserPreferencesCommand } from './UserPreferencesCommand.ts';
 
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });

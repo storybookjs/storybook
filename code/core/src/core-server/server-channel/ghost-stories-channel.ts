@@ -8,8 +8,8 @@ import {
 } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { getComponentCandidates } from '../utils/ghost-stories/get-candidates';
-import { runGhostStories } from '../utils/ghost-stories/run-story-tests';
+import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
+import { runGhostStories } from '../utils/ghost-stories/run-story-tests.ts';
 
 export function initGhostStoriesChannel(
   channel: Channel,

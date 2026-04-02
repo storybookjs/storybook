@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
 
-import { instances } from './instances';
+import { instances } from './instances.ts';
 import type {
   Actor,
   ChannelEvent,
@@ -15,7 +15,7 @@ import type {
   StateUpdater,
   StatusType,
   StoreOptions,
-} from './types';
+} from './types.ts';
 
 const CHANNEL_EVENT_PREFIX = 'UNIVERSAL_STORE:' as const;
 

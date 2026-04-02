@@ -7,8 +7,8 @@ import { Feature, SupportedBuilder } from 'storybook/internal/types';
 import { Option, program } from 'commander';
 
 import { version } from '../../package.json';
-import type { CommandOptions } from '../generators/types';
-import { initiate } from '../initiate';
+import type { CommandOptions } from '../generators/types.ts';
+import { initiate } from '../initiate.ts';
 import { isAgent, detectAgent } from 'std-env';
 
 addToGlobalContext('cliVersion', version);

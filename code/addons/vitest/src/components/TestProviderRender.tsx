@@ -21,11 +21,11 @@ import {
   A11Y_PANEL_ID,
   COMPONENT_TESTING_PANEL_ID,
   FULL_RUN_TRIGGERS,
-} from '../constants';
-import type { StoreState } from '../types';
-import type { StatusValueToStoryIds } from '../use-test-provider-state';
-import { Description } from './Description';
-import { TestStatusIcon } from './TestStatusIcon';
+} from '../constants.ts';
+import type { StoreState } from '../types.ts';
+import type { StatusValueToStoryIds } from '../use-test-provider-state.ts';
+import { Description } from './Description.tsx';
+import { TestStatusIcon } from './TestStatusIcon.tsx';
 
 const Container = styled.div<{ inContextMenu?: boolean }>(({ inContextMenu }) => ({
   display: 'flex',

@@ -2,10 +2,10 @@ import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
-import storybookVersions from '../../code/core/src/common/versions';
-import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { exec } from './exec';
+import storybookVersions from '../../code/core/src/common/versions.ts';
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { exec } from './exec.ts';
 
 export type YarnOptions = {
   cwd: string;

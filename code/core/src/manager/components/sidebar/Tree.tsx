@@ -32,21 +32,21 @@ import type {
 } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
-import { getGroupStatus, getMostCriticalStatusValue, getStatus } from '../../utils/status';
+import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
+import { getGroupStatus, getMostCriticalStatusValue, getStatus } from '../../utils/status.tsx';
 import {
   createId,
   getAncestorIds,
   getDescendantIds,
   getLink,
   isStoryHoistable,
-} from '../../utils/tree';
-import { useLayout } from '../layout/LayoutProvider';
-import { useContextMenu } from './ContextMenu';
-import { UseSymbol } from './IconSymbols';
-import { StatusButton } from './StatusButton';
-import { StatusContext } from './StatusContext';
+} from '../../utils/tree.ts';
+import { useLayout } from '../layout/LayoutProvider.tsx';
+import { useContextMenu } from './ContextMenu.tsx';
+import { UseSymbol } from './IconSymbols.tsx';
+import { StatusButton } from './StatusButton.tsx';
+import { StatusContext } from './StatusContext.tsx';
 import {
   ComponentNode,
   DocumentNode,
@@ -55,11 +55,11 @@ import {
   StoryBranchNode,
   StoryLeafNode,
   TestNode,
-} from './TreeNode';
-import { CollapseIcon } from './components/CollapseIcon';
-import type { Highlight, Item } from './types';
-import type { ExpandAction, ExpandedState } from './useExpanded';
-import { useExpanded } from './useExpanded';
+} from './TreeNode.tsx';
+import { CollapseIcon } from './components/CollapseIcon.tsx';
+import type { Highlight, Item } from './types.ts';
+import type { ExpandAction, ExpandedState } from './useExpanded.ts';
+import { useExpanded } from './useExpanded.ts';
 
 export type ExcludesNull = <T>(x: T | null) => x is T;
 

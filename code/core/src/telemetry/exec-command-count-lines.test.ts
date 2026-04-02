@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa as rawExeca } from 'execa';
 
-import { execCommandCountLines } from './exec-command-count-lines';
+import { execCommandCountLines } from './exec-command-count-lines.ts';
 
 vi.mock('execa', { spy: true });
 

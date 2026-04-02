@@ -17,12 +17,12 @@ import {
   executePreflightCheck,
   executeProjectDetection,
   executeUserPreferences,
-} from './commands';
-import { DependencyCollector } from './dependency-collector';
-import { registerAllGenerators } from './generators';
-import type { CommandOptions } from './generators/types';
-import { FeatureCompatibilityService } from './services/FeatureCompatibilityService';
-import { TelemetryService } from './services/TelemetryService';
+} from './commands/index.ts';
+import { DependencyCollector } from './dependency-collector.ts';
+import { registerAllGenerators } from './generators/index.ts';
+import type { CommandOptions } from './generators/types.ts';
+import { FeatureCompatibilityService } from './services/FeatureCompatibilityService.ts';
+import { TelemetryService } from './services/TelemetryService.ts';
 import { dedent } from 'ts-dedent';
 
 /**
@@ -116,7 +116,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   if (selectedFeatures.has(Feature.AI)) {
     if (options.agent) {
-      const { aiPrepare } = await import('../../cli-storybook/src/ai');
+      const { aiPrepare } = await import('../../cli-storybook/src/ai/index.ts');
       await aiPrepare({ configDir: configDir ?? '.storybook' });
     } else {
       logger.step(

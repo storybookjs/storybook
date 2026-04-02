@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { getStoryId } from './get-story-id';
+import { getStoryId } from './get-story-id.ts';
 
 describe('getStoryId', () => {
   it('should return the storyId', async () => {

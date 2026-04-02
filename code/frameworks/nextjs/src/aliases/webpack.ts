@@ -1,8 +1,8 @@
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
-import { configureCompatibilityAliases } from '../compatibility/compatibility-map';
-import { configureNextExportMocks } from '../export-mocks/webpack';
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module.ts';
+import { configureCompatibilityAliases } from '../compatibility/compatibility-map.ts';
+import { configureNextExportMocks } from '../export-mocks/webpack.ts';
 
 export const configureAliases = (baseConfig: WebpackConfig): void => {
   configureNextExportMocks(baseConfig);

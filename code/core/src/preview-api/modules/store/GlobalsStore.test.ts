@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { GlobalsStore } from './GlobalsStore';
+import { GlobalsStore } from './GlobalsStore.ts';
 
 vi.mock('storybook/internal/client-logger', () => ({
   logger: {

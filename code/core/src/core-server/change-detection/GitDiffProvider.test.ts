@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
 
-import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
-import { GitDiffProvider } from './GitDiffProvider';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
+import { GitDiffProvider } from './GitDiffProvider.ts';
 
 vi.mock('execa', { spy: true });
 

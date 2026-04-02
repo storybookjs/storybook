@@ -8,15 +8,15 @@ import { BatchAcceptIcon, DocumentIcon, ShareAltIcon, SweepIcon, UndoIcon } from
 import type { API } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { getStatus } from '../../utils/status';
-import { createFilterLink, StatusIcon } from './FilterPanelLink';
-import { type FilterItem, areFiltersEqual } from './FilterPanel.utils';
+import { getStatus } from '../../utils/status.tsx';
+import { createFilterLink, StatusIcon } from './FilterPanelLink.tsx';
+import { type FilterItem, areFiltersEqual } from './FilterPanel.utils.ts';
 import {
   type StatusFilterEntry,
   type TagFilterEntry,
   useStatusFilterEntries,
   useTagFilterEntries,
-} from './useFilterData';
+} from './useFilterData.tsx';
 
 const Wrapper = styled.div({
   minWidth: 240,

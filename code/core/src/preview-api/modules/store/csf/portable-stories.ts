@@ -23,20 +23,20 @@ import type {
 import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
-import { HooksContext } from '../../../addons';
+import { HooksContext } from '../../../addons.ts';
 import {
   isTestEnvironment,
   pauseAnimations,
   waitForAnimations,
-} from '../../preview-web/render/animation-utils';
-import { ReporterAPI } from '../reporter-api';
-import { composeConfigs } from './composeConfigs';
-import { getCsfFactoryAnnotations } from './csf-factory-utils';
-import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes';
-import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
-import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import { normalizeStory } from './normalizeStory';
-import { prepareContext, prepareStory } from './prepareStory';
+} from '../../preview-web/render/animation-utils.ts';
+import { ReporterAPI } from '../reporter-api.ts';
+import { composeConfigs } from './composeConfigs.ts';
+import { getCsfFactoryAnnotations } from './csf-factory-utils.ts';
+import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes.ts';
+import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
+import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
+import { normalizeStory } from './normalizeStory.ts';
+import { prepareContext, prepareStory } from './prepareStory.ts';
 
 // TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
 declare global {

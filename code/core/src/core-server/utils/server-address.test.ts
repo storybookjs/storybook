@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import detectPort from 'detect-port';
 
-import { getServerAddresses, getServerChannelUrl, getServerPort } from './server-address';
+import { getServerAddresses, getServerChannelUrl, getServerPort } from './server-address.ts';
 
 vi.mock('node:os', () => ({
   default: { release: () => '' },

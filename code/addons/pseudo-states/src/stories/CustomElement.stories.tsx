@@ -2,9 +2,9 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import './CustomElement';
+import './CustomElement.tsx';
 import './grid.css';
-import { PseudoStateGrid } from './PseudoStateGrid';
+import { PseudoStateGrid } from './PseudoStateGrid.tsx';
 
 const meta = {
   title: 'CustomElement',

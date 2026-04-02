@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { global } from '@storybook/global';
 
-import { simulatePageLoad } from './simulate-pageload';
+import { simulatePageLoad } from './simulate-pageload.ts';
 
 const { document } = global;
 

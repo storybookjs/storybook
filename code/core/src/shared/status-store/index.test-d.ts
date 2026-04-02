@@ -5,10 +5,10 @@ import {
   type StatusesByStoryIdAndTypeId,
   UNIVERSAL_STATUS_STORE_OPTIONS,
   createStatusStore,
-} from '.';
-import type { StoryId } from '../../types';
-import { MockUniversalStore } from '../universal-store/mock';
-import { useUniversalStore } from '../universal-store/use-universal-store-manager';
+} from './index.ts';
+import type { StoryId } from '../../types/index.ts';
+import { MockUniversalStore } from '../universal-store/mock.ts';
+import { useUniversalStore } from '../universal-store/use-universal-store-manager.ts';
 
 const { fullStatusStore, getStatusStoreByTypeId, useStatusStore } = createStatusStore({
   universalStatusStore: MockUniversalStore.create(UNIVERSAL_STATUS_STORE_OPTIONS),

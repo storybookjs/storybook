@@ -10,7 +10,7 @@ import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { babelParse, recast, types as t, traverse } from '../babel';
+import { babelParse, recast, types as t, traverse } from '../babel/index.ts';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];

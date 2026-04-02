@@ -11,10 +11,10 @@ import type {
   ProjectAnnotations,
 } from 'storybook/internal/types';
 import type * as AngularCore from '@angular/core';
-import type { AngularRenderer } from './types';
+import type { AngularRenderer } from './types.ts';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
-export type { Parameters as AngularParameters } from './types';
+export type { Parameters as AngularParameters } from './types.ts';
 export type { AngularRenderer };
 
 /**

@@ -2,9 +2,9 @@ import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/type
 
 import type { DetectResult } from 'package-manager-detector';
 
-import type { AgentInfo } from './detect-agent';
-import type { KnownPackagesList } from './get-known-packages';
-import type { MonorepoType } from './get-monorepo-type';
+import type { AgentInfo } from './detect-agent.ts';
+import type { KnownPackagesList } from './get-known-packages.ts';
+import type { MonorepoType } from './get-monorepo-type.ts';
 
 export type EventType =
   | 'boot'

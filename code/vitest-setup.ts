@@ -4,6 +4,7 @@ import { expect, vi } from 'vitest';
 import { dedent } from 'ts-dedent';
 
 import './core/src/shared/utils/toHaveLiveRegion';
+import { toHaveLiveRegion } from './core/src/shared/utils/toHaveLiveRegion';
 
 const ignoreList = [
   (error: any) => error.message.includes('":nth-child" is potentially unsafe'),
@@ -72,6 +73,8 @@ expect.extend({
     };
   },
 });
+
+expect.extend({ toHaveLiveRegion });
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {

@@ -8,7 +8,6 @@ import { destroyAnnouncer } from '@react-aria/live-announcer';
 import { ManagerContext, addons } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
-import { toHaveLiveRegion } from '../../../../core/src/shared/utils/toHaveLiveRegion';
 
 import { toHaveLiveRegion } from '../../../../core/src/manager/utils/toHaveLiveRegion.ts';
 import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants.ts';
@@ -356,9 +355,7 @@ export const AnnouncesTestRunStart: Story = {
 
     await step('Verify "Test run started." is announced', async () => {
       await waitFor(() => {
-        expect(
-          toHaveLiveRegion(document.body, { text: 'Test run started.', level: 'polite' }).pass
-        ).toBe(true);
+        expect(canvas).toHaveLiveRegion({ text: 'Test run started.', level: 'polite' });
       });
     });
   },
@@ -387,12 +384,10 @@ export const AnnouncesTestRunFinished: Story = {
   play: async ({ step }) => {
     await step('Verify test results are announced', async () => {
       await waitFor(() => {
-        expect(
-          toHaveLiveRegion(document.body, {
-            text: /Test run finished\. 1 component errored, 3 components passed\./,
-            level: 'assertive',
-          }).pass
-        ).toBe(true);
+        expect(document.body).toHaveLiveRegion({
+          text: /Test run finished\. 1 component errored, 3 components passed\./,
+          level: 'assertive',
+        });
       });
     });
   },
@@ -423,12 +418,10 @@ export const AnnouncesTestRunCrashed: Story = {
   play: async ({ step }) => {
     await step('Verify crash is announced', async () => {
       await waitFor(() => {
-        expect(
-          toHaveLiveRegion(document.body, {
-            text: 'Test run crashed.',
-            level: 'assertive',
-          }).pass
-        ).toBe(true);
+        expect(document.body).toHaveLiveRegion({
+          text: 'Test run crashed.',
+          level: 'assertive',
+        });
       });
     });
   },

@@ -10,29 +10,29 @@ import type { Call, CallRef, ElementRef } from '../../instrumenter/types.ts';
 
 const colorsLight = {
   base: '#444',
-  nullish: '#7D99AA',
-  string: '#16B242',
+  nullish: '#536D7F',
+  string: '#107A2E',
   number: '#5D40D0',
-  boolean: '#f41840',
-  objectkey: '#698394',
-  instance: '#A15C20',
-  function: '#EA7509',
-  muted: '#7D99AA',
+  boolean: '#D10A2E',
+  objectkey: '#536B74',
+  instance: '#844C1A',
+  function: '#A45306',
+  muted: '#536C7F',
   tag: {
     name: '#6F2CAC',
     suffix: '#1F99E5',
   },
-  date: '#459D9C',
+  date: '#32716D',
   error: {
-    name: '#D43900',
+    name: '#C23400',
     message: '#444',
   },
   regex: {
-    source: '#A15C20',
-    flags: '#EA7509',
+    source: '#844C1A',
+    flags: '#A45306',
   },
-  meta: '#EA7509',
-  method: '#0271B6',
+  meta: '#A45306',
+  method: '#026EB1',
 };
 
 const colorsDark = {
@@ -40,7 +40,7 @@ const colorsDark = {
   nullish: '#aaa',
   string: '#5FE584',
   number: '#6ba5ff',
-  boolean: '#ff4191',
+  boolean: '#FF70AC',
   objectkey: '#accfe6',
   instance: '#E3B551',
   function: '#E3B551',
@@ -51,7 +51,7 @@ const colorsDark = {
   },
   date: '#70D4D3',
   error: {
-    name: '#f40',
+    name: '#FF7847',
     message: '#eee',
   },
   regex: {

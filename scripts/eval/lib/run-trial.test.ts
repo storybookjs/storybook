@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TrialConfig, TrialReport } from './run-trial';
+import type { TrialConfig, TrialReport } from './run-trial.ts';
 
 // Mock external dependencies to avoid real git/storybook/vitest calls
 vi.mock('./prepare-trial', () => ({
@@ -31,11 +31,11 @@ vi.mock('./agents/codex', () => ({
   codexAgent: { name: 'codex', execute: vi.fn() },
 }));
 
-import { claudeAgent } from './agents/claude-code';
-import { grade } from './grade';
-import { prepareTrial } from './prepare-trial';
-import { runTrial } from './run-trial';
-import { captureEnvironment } from './utils';
+import { claudeAgent } from './agents/claude-code.ts';
+import { grade } from './grade.ts';
+import { prepareTrial } from './prepare-trial.ts';
+import { runTrial } from './run-trial.ts';
+import { captureEnvironment } from './utils.ts';
 
 let TMP: string;
 

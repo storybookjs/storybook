@@ -10,7 +10,7 @@ import {
   countTypeCheckErrors,
   filterStorybookFiles,
   parseChangedFiles,
-} from './grade';
+} from './grade.ts';
 /**
  * Helper-level test: compose grading helpers on a fake project directory.
  * This exercises candidate discovery, git-output parsing,

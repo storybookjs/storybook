@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PROJECTS } from './projects';
+import { PROJECTS } from './projects.ts';
 
 const githubRepoUrl = /^https:\/\/github\.com\/[^/]+\/[^/]+$/;
 

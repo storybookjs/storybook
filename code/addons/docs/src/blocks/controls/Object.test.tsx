@@ -22,6 +22,8 @@ describe('Object control', () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByRole('textbox', { name: 'Edit object as JSON' })).toHaveValue('');
+    const rawInput = screen.getByRole('textbox', { name: 'Edit object as JSON' });
+
+    expect((rawInput as HTMLTextAreaElement).value).toBe('');
   });
 });

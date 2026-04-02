@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { destroyAnnouncer } from '@react-aria/live-announcer';
 import { ManagerContext, addons } from 'storybook/manager-api';
-import { expect, fn, userEvent, waitFor } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { toHaveLiveRegion } from '../../../../core/src/manager/utils/toHaveLiveRegion.ts';

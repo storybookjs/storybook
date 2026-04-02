@@ -36,10 +36,10 @@ export async function runStorybookScreenshots(opts: {
   const storyFiles = getChangedStoryFiles(opts.repoRoot, opts.fileChanges);
   if (storyFiles.length === 0) {
     return {
-      screenshots: [] satisfies ScreenshotArtifact[],
+      screenshots: [] as ScreenshotArtifact[],
       attempted: false,
       success: true,
-    } satisfies ScreenshotRunResult;
+    };
   }
 
   await clearExistingScreenshots(storyFiles);
@@ -52,10 +52,10 @@ export async function runStorybookScreenshots(opts: {
       'No changed story files live under the evaluated project path; skipping screenshots.'
     );
     return {
-      screenshots: [] satisfies ScreenshotArtifact[],
+      screenshots: [] as ScreenshotArtifact[],
       attempted: false,
       success: true,
-    } satisfies ScreenshotRunResult;
+    };
   }
 
   opts.logger.logStep(`Generating screenshots for ${runnableStoryFiles.length} story file(s)...`);

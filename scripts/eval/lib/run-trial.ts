@@ -8,7 +8,7 @@ import { claudeAgent } from './agents/claude-code.ts';
 import { codexAgent } from './agents/codex.ts';
 import { publishTrialBranch, type PublishMetadata } from './publish-trial.ts';
 import { prepareTrial } from './prepare-trial.ts';
-import { runStorybookScreenshots } from './screenshots.ts';
+import { runStorybookScreenshots, type ScreenshotRunResult } from './screenshots.ts';
 import { buildEvalData, type EvalData } from './result-docs.ts';
 import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from './utils.ts';
 
@@ -83,7 +83,11 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
         fileChanges: trialGrade.storybookChanges,
         logger: log,
       })
-    : { screenshots: [], attempted: false, success: true };
+    : ({
+        screenshots: [],
+        attempted: false,
+        success: true,
+      } satisfies ScreenshotRunResult);
 
   // 7. Assemble report content that will be committed with the trial branch
   const reportForCommit = buildEvalData({

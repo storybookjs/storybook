@@ -44,12 +44,4 @@ export const PROJECTS: Project[] = [
     githubSlug: 'storybook-tmp/echarts-react',
     description: 'ECharts React wrapper',
   },
-  {
-    name: 'evergreen-ci',
-    repo: 'https://github.com/storybook-tmp/ui',
-    branch: 'main',
-    githubSlug: 'storybook-tmp/ui',
-    projectDir: 'packages/lib',
-    description: 'GraphQL',
-  },
 ];

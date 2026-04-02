@@ -32,7 +32,6 @@ export async function captureStoryScreenshot(opts: {
 
   return page.screenshot({
     path: buildStoryScreenshotPath(opts.storyFilePath!, opts.exportName),
-    scale: 'device',
   });
 }
 

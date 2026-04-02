@@ -5,40 +5,13 @@ import type {
 } from 'storybook/internal/types';
 
 import { statusValueShortName, toStatusValue } from '../../shared/status-store/index.ts';
+import { parseFilterParam } from '../lib/filter-param.ts';
 import { fullStatusStore } from '../stores/status.ts';
 
 export const parseStatusesParam = (
   statusesParam: string | undefined
-): { included: StatusValue[]; excluded: StatusValue[] } => {
-  if (!statusesParam) {
-    return { included: [], excluded: [] };
-  }
-
-  const included: StatusValue[] = [];
-  const excluded: StatusValue[] = [];
-
-  statusesParam.split(';').forEach((rawStatus) => {
-    if (!rawStatus) {
-      return;
-    }
-
-    const isExcluded = rawStatus.startsWith('!');
-    const shortName = isExcluded ? rawStatus.slice(1) : rawStatus;
-    const statusValue = toStatusValue(shortName);
-
-    if (!statusValue) {
-      return; // silently ignore unknown short names
-    }
-
-    if (isExcluded) {
-      excluded.push(statusValue);
-    } else {
-      included.push(statusValue);
-    }
-  });
-
-  return { included, excluded };
-};
+): { included: StatusValue[]; excluded: StatusValue[] } =>
+  parseFilterParam(statusesParam, toStatusValue);
 
 export const serializeStatusesParam = (
   included: StatusValue[],

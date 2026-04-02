@@ -31,7 +31,7 @@ test.describe('addon-controls', () => {
       'background-color',
       'rgb(85, 90, 185)'
     );
-    const toggle = sbPage.panelContent().locator('input[name=primary]');
+    const toggle = sbPage.panelContent().locator('label:has(input[name="primary"])');
     await toggle.click();
     await expect(async () => {
       await expect(sbPage.previewRoot().locator('button')).toHaveCSS(

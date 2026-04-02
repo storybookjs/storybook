@@ -2,8 +2,9 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import type { API, State } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import type { ActionDisplay } from '../../models';
@@ -25,7 +26,7 @@ const StyledWrapper = styled.div(({ theme }) => ({
  * callback. We capture that handler so that play functions can call
  * `api.emit(EVENT_ID, action)` to drive the container's state.
  */
-function createMockApi() {
+function createMockApi(): API {
   const listeners: Record<string, Set<(...args: any[]) => void>> = {};
 
   const api = {
@@ -46,11 +47,8 @@ function createMockApi() {
     getData: fn().mockName('api::getData'),
   };
 
-  return api;
+  return api as unknown as API;
 }
-
-/** Module-level reference so play functions can access the same mock. */
-let currentApi: ReturnType<typeof createMockApi>;
 
 function makeAction(name: string, args: any[], id: string, limit: number = 50): ActionDisplay {
   return {
@@ -66,9 +64,9 @@ function makeAction(name: string, args: any[], id: string, limit: number = 50): 
  * Yields to the event loop after each emission so React can process state updates.
  * Callers should still synchronize on actual UI state (e.g., via `waitFor` / `findBy*`).
  */
-async function emitActions(actions: ActionDisplay[]) {
+async function emitActions(api: API, actions: ActionDisplay[]) {
   for (const action of actions) {
-    currentApi.emit(EVENT_ID, action);
+    api.emit(EVENT_ID, action);
     // Yield to allow React to process the state update without relying on a fixed timeout
     await Promise.resolve();
   }
@@ -77,36 +75,24 @@ async function emitActions(actions: ActionDisplay[]) {
 const meta = {
   title: 'ActionLogger',
   component: ActionLogger,
-  decorators: [
-    (Story: any) => {
-      // Fresh mock API per story render
-      currentApi = createMockApi();
-      const managerContext: any = {
-        state: {},
-        api: currentApi,
-      };
-      return (
-        <ManagerContext.Provider value={managerContext}>
-          <StyledWrapper id="panel-tab-content">
-            <Story />
-          </StyledWrapper>
-        </ManagerContext.Provider>
-      );
-    },
-  ],
+  loaders: [() => ({ api: createMockApi() })],
+  render(args, { loaded: { api } }) {
+    const managerContext = {
+      state: {} as State,
+      api,
+    };
+
+    return (
+      <ManagerContext.Provider value={managerContext}>
+        <StyledWrapper id="panel-tab-content">
+          <ActionLogger {...args} api={api} />
+        </StyledWrapper>
+      </ManagerContext.Provider>
+    );
+  },
   parameters: { layout: 'fullscreen' },
   args: {
     active: true,
-    // The container reads `api` directly as a prop. We pass a placeholder here;
-    // the `render` function below overrides it with `currentApi` (set by the decorator)
-    // so each story render gets a fresh mock instance.
-    // We cast to `any` because our mock intentionally doesn't implement the
-    // full API interface — only the parts the ActionLogger container uses.
-    api: {} as any,
-  },
-  render: (args) => {
-    // Use the currentApi that was just created by the decorator
-    return <ActionLogger active={args.active} api={currentApi as any} />;
   },
 } as Meta<typeof ActionLogger>;
 
@@ -116,51 +102,45 @@ type Story = StoryObj<typeof meta>;
 export const Empty: Story = {};
 
 export const SingleAction: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ loaded: { api }, canvas }) => {
+    await emitActions(api, [makeAction('onClick', [{ target: 'button' }], 'action-click')]);
 
-    await emitActions([makeAction('onClick', [{ target: 'button' }], 'action-click')]);
-
-    await expect(canvas.getByText('onClick')).toBeInTheDocument();
+    await waitFor(() => expect(canvas.getByText('onClick')).toBeInTheDocument());
   },
 };
 
 export const RepeatedAction: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ loaded: { api }, canvas }) => {
     const action = makeAction('onClick', [{ target: 'button' }], 'action-click');
 
     // Emit the same action 5 times — the container deduplicates via count
-    await emitActions([action, action, action, action, action]);
+    await emitActions(api, [action, action, action, action, action]);
 
-    await expect(canvas.getByText('5')).toBeInTheDocument();
+    await waitFor(() => expect(canvas.getByText('5')).toBeInTheDocument());
   },
 };
 
 export const MultipleActions: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await emitActions([
+  play: async ({ loaded: { api }, canvas }) => {
+    await emitActions(api, [
       makeAction('onClick', [{ target: 'button' }], 'action-1'),
       makeAction('onChange', ['new value'], 'action-2'),
       makeAction('onSubmit', [{ formData: { name: 'test' } }], 'action-3'),
     ]);
 
-    await expect(canvas.getByText('onClick')).toBeInTheDocument();
-    await expect(canvas.getByText('onChange')).toBeInTheDocument();
-    await expect(canvas.getByText('onSubmit')).toBeInTheDocument();
+    await waitFor(() => expect(canvas.getByText('onClick')).toBeInTheDocument());
+    await waitFor(() => expect(canvas.getByText('onChange')).toBeInTheDocument());
+    await waitFor(() => expect(canvas.getByText('onSubmit')).toBeInTheDocument());
   },
 };
 
 export const LimitDiscardsOldest: Story = {
   name: 'Limit discards oldest actions',
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ loaded: { api }, canvas }) => {
     const limit = 3;
 
     // Emit 5 actions with a limit of 3 — only the last 3 should remain
-    await emitActions([
+    await emitActions(api, [
       makeAction('onFirst', ['1st'], 'action-1', limit),
       makeAction('onSecond', ['2nd'], 'action-2', limit),
       makeAction('onThird', ['3rd'], 'action-3', limit),
@@ -169,9 +149,9 @@ export const LimitDiscardsOldest: Story = {
     ]);
 
     // The newest 3 should be visible
-    await expect(canvas.getByText('onThird')).toBeInTheDocument();
-    await expect(canvas.getByText('onFourth')).toBeInTheDocument();
-    await expect(canvas.getByText('onFifth')).toBeInTheDocument();
+    await waitFor(() => expect(canvas.getByText('onThird')).toBeInTheDocument());
+    await waitFor(() => expect(canvas.getByText('onFourth')).toBeInTheDocument());
+    await waitFor(() => expect(canvas.getByText('onFifth')).toBeInTheDocument());
 
     // The oldest 2 should have been discarded
     expect(canvas.queryByText('onFirst')).not.toBeInTheDocument();
@@ -181,35 +161,32 @@ export const LimitDiscardsOldest: Story = {
 
 export const LimitWithRepeatedActions: Story = {
   name: 'Limit with repeated (deduplicated) actions',
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ loaded: { api }, canvas }) => {
     const limit = 3;
 
     // Emit 2 unique actions, then repeat the last one — should stay within limit
-    await emitActions([
+    await emitActions(api, [
       makeAction('onAlpha', ['a'], 'action-a', limit),
       makeAction('onBeta', ['b'], 'action-b', limit),
       makeAction('onBeta', ['b'], 'action-c', limit), // same data, should increment count
     ]);
 
-    await expect(canvas.getByText('onAlpha')).toBeInTheDocument();
-    await expect(canvas.getByText('onBeta')).toBeInTheDocument();
+    await waitFor(() => expect(canvas.getByText('onAlpha')).toBeInTheDocument());
+    await waitFor(() => expect(canvas.getByText('onBeta')).toBeInTheDocument());
     // The repeated action should show count 2
-    await expect(canvas.getByText('2')).toBeInTheDocument();
+    await waitFor(() => expect(canvas.getByText('2')).toBeInTheDocument());
   },
 };
 
 export const ClearActions: Story = {
   name: 'Clear button removes all actions',
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await emitActions([
+  play: async ({ loaded: { api }, canvas }) => {
+    await emitActions(api, [
       makeAction('onClick', [{ target: 'button' }], 'action-1'),
       makeAction('onChange', ['value'], 'action-2'),
     ]);
 
-    await expect(canvas.getByText('onClick')).toBeInTheDocument();
+    await waitFor(() => expect(canvas.getByText('onClick')).toBeInTheDocument());
 
     // Click the Clear button
     const clearButton = canvas.getByText('Clear');

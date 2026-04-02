@@ -119,7 +119,7 @@ import { configureActions } from "storybook/actions";
 
 Type: `(options?: ActionOptions) => void`
 
-Configures the global behavior of the actions addon. Call this in your preview file or anywhere before actions are used. Available options:
+Configures the global behavior of the actions addon. Call this in your `.storybook/preview.*` file or anywhere before actions are used. Available options:
 
 - **`limit`** (`number`, default: `50`): Maximum number of action entries to display. When the limit is reached, the oldest actions are discarded.
 - **`clearOnStoryChange`** (`boolean`, default: `true`): Clear the actions panel when navigating to a different story.

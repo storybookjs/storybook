@@ -14,7 +14,6 @@ export interface GitDiffResult {
 }
 
 type GitStateChangeCallback = () => void;
-type WatcherKey = 'branch' | 'head' | 'packedRefs';
 type GitFileSystem = {
   watch: typeof watch;
   readFile: typeof readFile;
@@ -32,8 +31,12 @@ function parseChangedFiles(stdout: string): Set<string> {
 
 export class GitDiffProvider {
   private repoRoot: string | undefined;
-  private gitStateCallback: GitStateChangeCallback | undefined;
-  private readonly watchers: Partial<Record<WatcherKey, FSWatcher>> = {};
+  private gitStateCallback: GitStateChangeCallback = () => {};
+  private branchWatcher: FSWatcher | undefined;
+  private headWatcher: FSWatcher | undefined;
+  private packedRefsWatcher: FSWatcher | undefined;
+  private watchingInitialized = false;
+  private watchingStopped = false;
 
   constructor(
     private readonly cwd = process.cwd(),
@@ -89,34 +92,32 @@ export class GitDiffProvider {
     };
   }
 
-  onGitStateChange(callback: GitStateChangeCallback): () => void {
-    // We intentionally support only one subscriber: change detection currently has a single consumer,
-    // so we keep lifecycle management simple instead of multiplexing callbacks.
+  onGitStateChange(callback: GitStateChangeCallback): void {
+    // Change detection has a single long-lived consumer.
     this.gitStateCallback = callback;
-    this.clearAllWatchers();
-    void this.setupWatchers();
-
-    return () => {
-      if (this.gitStateCallback === callback) {
-        this.gitStateCallback = undefined;
-        this.clearAllWatchers();
-      }
-    };
+    if (!this.watchingInitialized && !this.watchingStopped) {
+      this.watchingInitialized = true;
+      void this.initializeWatching();
+    }
   }
 
-  private async setupWatchers(): Promise<void> {
-    if (!this.gitStateCallback) {
-      return;
-    }
-
+  private async initializeWatching(): Promise<void> {
     try {
       const gitDir = await this.getGitDir();
-      this.watchFile('head', gitDir, () => {
-        this.emitGitStateChange();
-        this.reconfigureBranchWatcher(gitDir);
+      this.headWatcher = this.attachWatcher({
+        filePath: gitDir,
+        currentWatcher: this.headWatcher,
+        onChange: () => {
+          this.gitStateCallback();
+          this.reconfigureBranchWatcher(gitDir);
+        },
       });
-      this.watchFile('packedRefs', gitDir, () => {
-        this.emitGitStateChange();
+      this.packedRefsWatcher = this.attachWatcher({
+        filePath: gitDir,
+        currentWatcher: this.packedRefsWatcher,
+        onChange: () => {
+          this.gitStateCallback();
+        },
       });
       await this.configureBranchWatcher(gitDir);
     } catch {
@@ -124,46 +125,42 @@ export class GitDiffProvider {
     }
   }
 
-  private emitGitStateChange(): void {
-    this.gitStateCallback?.();
-  }
-
-  private watchFile(
-    key: WatcherKey,
-    filePath: string,
-    onChange: GitStateChangeCallback
-  ): FSWatcher | undefined {
-    if (!this.gitStateCallback) {
+  private attachWatcher(options: {
+    filePath: string;
+    currentWatcher: FSWatcher | undefined;
+    onChange: () => void;
+  }): FSWatcher | undefined {
+    const { filePath, currentWatcher, onChange } = options;
+    if (this.watchingStopped) {
       return undefined;
     }
 
     try {
       const watcher = this.fileSystem.watch(filePath, { persistent: false }, () => {
-        if (this.gitStateCallback) {
+        if (!this.watchingStopped) {
           onChange();
         }
       });
 
-      if (!this.gitStateCallback) {
-        watcher.close();
-        return undefined;
-      }
+      currentWatcher?.close();
 
       watcher.on('error', () => {
         watcher.close();
-        if (this.watchers[key] === watcher) {
-          delete this.watchers[key];
+        if (this.headWatcher === watcher) {
+          this.headWatcher = undefined;
         }
-        // Intentionally do not rebuild watchers after runtime failures. Module-graph events still
-        // drive scans, and avoiding auto-recovery keeps this code path small and predictable.
-        this.clearAllWatchers();
+        if (this.packedRefsWatcher === watcher) {
+          this.packedRefsWatcher = undefined;
+        }
+        if (this.branchWatcher === watcher) {
+          this.branchWatcher = undefined;
+        }
+        this.stopWatching();
         logger.warn(
           `Change detection git watcher failed for ${filePath}. Git state updates may stop until restart.`
         );
       });
 
-      this.clearWatcher(key);
-      this.watchers[key] = watcher;
       return watcher;
     } catch (error) {
       if (this.isEnoentError(error)) {
@@ -175,30 +172,27 @@ export class GitDiffProvider {
   }
 
   private async configureBranchWatcher(gitDir: string): Promise<void> {
-    if (!this.gitStateCallback) {
-      return;
-    }
-
     const branchRef = await this.readHeadRef(gitDir);
 
-    if (!this.gitStateCallback) {
-      return;
-    }
+    this.branchWatcher?.close();
+    this.branchWatcher = undefined;
 
-    this.clearWatcher('branch');
+    const watchBranch = (filePath: string): FSWatcher | undefined => {
+      this.branchWatcher = this.attachWatcher({
+        filePath,
+        currentWatcher: this.branchWatcher,
+        onChange: () => {
+          this.gitStateCallback();
+          this.reconfigureBranchWatcher(gitDir);
+        },
+      });
+      return this.branchWatcher;
+    };
 
     if (branchRef?.startsWith('refs/heads/')) {
-      const branchRefPath = join(gitDir, branchRef);
-      const branchWatcher = this.watchFile('branch', dirname(branchRefPath), () => {
-        this.emitGitStateChange();
-        this.reconfigureBranchWatcher(gitDir);
-      });
-
-      if (!branchWatcher) {
-        this.watchFile('branch', join(gitDir, 'refs', 'heads'), () => {
-          this.emitGitStateChange();
-          this.reconfigureBranchWatcher(gitDir);
-        });
+      const refWatcher = watchBranch(dirname(join(gitDir, branchRef)));
+      if (!refWatcher) {
+        watchBranch(join(gitDir, 'refs', 'heads'));
       }
     }
   }
@@ -207,19 +201,22 @@ export class GitDiffProvider {
     void this.configureBranchWatcher(gitDir).catch(() => {
       // Same trade-off as watcher errors: fail closed and warn instead of retrying/rebuilding.
       logger.warn('Change detection failed to reconfigure git branch watcher.');
-      this.clearAllWatchers();
+      this.stopWatching();
     });
   }
 
-  private clearWatcher(key: WatcherKey): void {
-    this.watchers[key]?.close();
-    delete this.watchers[key];
-  }
+  private stopWatching(): void {
+    if (this.watchingStopped) {
+      return;
+    }
 
-  private clearAllWatchers(): void {
-    (Object.keys(this.watchers) as WatcherKey[]).forEach((key) => {
-      this.clearWatcher(key);
-    });
+    this.watchingStopped = true;
+    this.headWatcher?.close();
+    this.headWatcher = undefined;
+    this.packedRefsWatcher?.close();
+    this.packedRefsWatcher = undefined;
+    this.branchWatcher?.close();
+    this.branchWatcher = undefined;
   }
 
   private async getGitDir(): Promise<string> {

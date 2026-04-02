@@ -93,7 +93,6 @@ function toRepoRelativePath(repoRoot: string, filePath: string): string {
 export class ChangeDetectionService {
   private disposed = false;
   private unsubscribeModuleGraph: (() => void) | undefined;
-  private unsubscribeGitState: (() => void) | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private latestModuleGraph: ModuleGraph | undefined;
   private hasReceivedModuleGraph = false;
@@ -157,7 +156,7 @@ export class ChangeDetectionService {
 
       this.handleBuilderStartupEvent(event);
     });
-    this.unsubscribeGitState = this.getGitDiffProvider().onGitStateChange(() => {
+    this.getGitDiffProvider().onGitStateChange(() => {
       if (!this.disposed) {
         this.scheduleScan(this.debounceMs);
       }
@@ -175,8 +174,6 @@ export class ChangeDetectionService {
 
     this.unsubscribeModuleGraph?.();
     this.unsubscribeModuleGraph = undefined;
-    this.unsubscribeGitState?.();
-    this.unsubscribeGitState = undefined;
   }
 
   private scheduleScan(delayMs: number): void {

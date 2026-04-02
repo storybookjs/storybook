@@ -102,9 +102,8 @@ class MockGitDiffProvider extends GitDiffProvider {
 
   readonly getRepoRootMock = vi.fn(async (): Promise<string> => '/repo');
 
-  readonly onGitStateChangeMock = vi.fn<(callback: () => void) => () => void>((callback) => {
+  readonly onGitStateChangeMock = vi.fn<(callback: () => void) => void>((callback) => {
     void callback;
-    return vi.fn();
   });
 
   constructor() {
@@ -119,8 +118,8 @@ class MockGitDiffProvider extends GitDiffProvider {
     return this.getRepoRootMock();
   }
 
-  override onGitStateChange(callback: () => void): () => void {
-    return this.onGitStateChangeMock(callback);
+  override onGitStateChange(callback: () => void): void {
+    this.onGitStateChangeMock(callback);
   }
 }
 
@@ -302,7 +301,6 @@ describe('ChangeDetectionService', () => {
       environment: 'server',
     });
     let onGitStateChange: (() => void) | undefined;
-    const unsubscribeGitState = vi.fn();
     const gitDiffProvider = createMockGitDiffProvider((provider) => {
       provider.getChangedFilesMock.mockResolvedValue({
         changed: new Set(['src/Button.stories.tsx']),
@@ -310,7 +308,6 @@ describe('ChangeDetectionService', () => {
       });
       provider.onGitStateChangeMock.mockImplementation((callback: () => void) => {
         onGitStateChange = callback;
-        return unsubscribeGitState;
       });
     });
     const { builder, emit } = createBuilder();
@@ -341,8 +338,6 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
-
-    expect(unsubscribeGitState).toHaveBeenCalledTimes(1);
   });
 
   it('does not subscribe to git state when change detection is disabled', async () => {

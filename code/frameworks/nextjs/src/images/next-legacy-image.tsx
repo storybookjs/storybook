@@ -8,8 +8,8 @@ import type * as _NextLegacyImage from 'next/legacy/image';
 // @ts-ignore import is aliased in webpack config
 import OriginalNextLegacyImage from 'sb-original/next/legacy/image';
 
-import { type ImageContext as ImageContextType } from '../image-context';
-import { defaultLoader } from './next-image-default-loader';
+import { type ImageContext as ImageContextType } from '../image-context.ts';
+import { defaultLoader } from './next-image-default-loader.tsx';
 
 const ImageContext = ImageContextValue as typeof ImageContextType;
 

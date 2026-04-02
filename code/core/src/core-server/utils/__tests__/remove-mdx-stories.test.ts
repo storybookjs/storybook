@@ -10,7 +10,7 @@ import { glob as globOriginal } from 'glob';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { removeMDXEntries } from '../remove-mdx-entries';
+import { removeMDXEntries } from '../remove-mdx-entries.ts';
 
 const configDir = '/configDir/';
 const workingDir = '/';

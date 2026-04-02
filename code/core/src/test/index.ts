@@ -5,10 +5,10 @@ import { instrument } from 'storybook/internal/instrumenter';
 
 import { Assertion } from 'chai';
 
-import { expect as rawExpect } from './expect';
-import { type queries } from './testing-library';
+import { expect as rawExpect } from './expect.ts';
+import { type queries } from './testing-library.ts';
 
-export * from './spy';
+export * from './spy.ts';
 
 type Queries = BoundFunctions<typeof queries>;
 
@@ -59,4 +59,4 @@ export const sb: {
   },
 };
 
-export * from './testing-library';
+export * from './testing-library.ts';

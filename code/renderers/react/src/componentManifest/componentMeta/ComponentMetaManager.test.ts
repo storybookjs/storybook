@@ -6,9 +6,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 import ts from 'typescript';
 
-import type { StoryRef } from '../getComponentImports';
-import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager';
-import { cleanup, createTempDir, tsconfigJSON, writeFiles } from './test-helpers';
+import type { StoryRef } from '../getComponentImports.ts';
+import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager.ts';
+import { cleanup, createTempDir, tsconfigJSON, writeFiles } from './test-helpers.ts';
 
 // ---------------------------------------------------------------------------
 // Unit tests: sortTSConfigs and isFileInDir

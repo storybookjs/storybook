@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { StoryContext } from 'storybook/internal/types';
 
-import { addActionsFromArgTypes, inferActionsFromArgTypesRegex } from './addArgsHelpers';
+import { addActionsFromArgTypes, inferActionsFromArgTypesRegex } from './addArgsHelpers.ts';
 
 describe('actions parameter enhancers', () => {
   describe('actions.argTypesRegex parameter', () => {

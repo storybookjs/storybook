@@ -1,2 +1,2 @@
-export * from './convert';
-export * from './types';
+export * from './convert.ts';
+export * from './types.ts';

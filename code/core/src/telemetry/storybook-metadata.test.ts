@@ -14,27 +14,31 @@ import {
 
 import { detect } from 'package-manager-detector';
 
-import { type Settings, globalSettings } from '../cli/globalSettings';
-import { getApplicationFileCount } from '../telemetry/get-application-file-count';
-import { analyzeEcosystemPackages } from '../telemetry/get-known-packages';
-import { getMonorepoType } from '../telemetry/get-monorepo-type';
-import { getPackageManagerInfo } from '../telemetry/get-package-manager-info';
-import { getPortableStoriesFileCount } from '../telemetry/get-portable-stories-usage';
+import { type Settings, globalSettings } from '../cli/globalSettings.ts';
+import { getApplicationFileCount } from '../telemetry/get-application-file-count.ts';
+import { analyzeEcosystemPackages } from '../telemetry/get-known-packages.ts';
+import { getMonorepoType } from '../telemetry/get-monorepo-type.ts';
+import { getPackageManagerInfo } from '../telemetry/get-package-manager-info.ts';
+import { getPortableStoriesFileCount } from '../telemetry/get-portable-stories-usage.ts';
 import {
   getActualPackageJson,
   getActualPackageVersion,
   getActualPackageVersions,
-} from './package-json';
-import { computeStorybookMetadata, metaFrameworks, sanitizeAddonName } from './storybook-metadata';
+} from './package-json.ts';
+import {
+  computeStorybookMetadata,
+  metaFrameworks,
+  sanitizeAddonName,
+} from './storybook-metadata.ts';
 
-vi.mock(import('../cli/globalSettings'), { spy: true });
-vi.mock(import('./package-json'), { spy: true });
-vi.mock(import('./get-monorepo-type'), { spy: true });
-vi.mock(import('./get-framework-info'), { spy: true });
-vi.mock(import('./get-package-manager-info'), { spy: true });
-vi.mock(import('./get-portable-stories-usage'), { spy: true });
-vi.mock(import('./get-application-file-count'), { spy: true });
-vi.mock(import('./get-known-packages'), { spy: true });
+vi.mock(import('../cli/globalSettings.ts'), { spy: true });
+vi.mock(import('./package-json.ts'), { spy: true });
+vi.mock(import('./get-monorepo-type.ts'), { spy: true });
+vi.mock(import('./get-framework-info.ts'), { spy: true });
+vi.mock(import('./get-package-manager-info.ts'), { spy: true });
+vi.mock(import('./get-portable-stories-usage.ts'), { spy: true });
+vi.mock(import('./get-application-file-count.ts'), { spy: true });
+vi.mock(import('./get-known-packages.ts'), { spy: true });
 vi.mock(import('package-manager-detector'), { spy: true });
 vi.mock(import('storybook/internal/common'), { spy: true });
 

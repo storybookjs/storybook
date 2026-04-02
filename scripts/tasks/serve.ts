@@ -1,12 +1,12 @@
 import waitOn from 'wait-on';
 
-import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { getPort } from '../sandbox/utils/getPort';
-import { type Task } from '../task';
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
-import { isNxTaskExecution } from '../utils/nx';
-import { prepareSandbox } from '../prepare-sandbox';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { getPort } from '../sandbox/utils/getPort.ts';
+import { type Task } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
+import { prepareSandbox } from '../prepare-sandbox.ts';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)

@@ -3,7 +3,7 @@ import React from 'react';
 
 import { Consumer } from 'storybook/manager-api';
 
-import { ShortcutsScreen } from './shortcuts';
+import { ShortcutsScreen } from './shortcuts.tsx';
 
 const ShortcutsPage: FC = () => (
   <Consumer>

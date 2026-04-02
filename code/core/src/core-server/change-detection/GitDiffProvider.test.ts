@@ -8,8 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { execa } from 'execa';
 import { logger } from 'storybook/internal/node-logger';
 
-import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
-import { GitDiffProvider } from './GitDiffProvider';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
+import { GitDiffProvider } from './GitDiffProvider.ts';
 
 vi.mock('execa', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });

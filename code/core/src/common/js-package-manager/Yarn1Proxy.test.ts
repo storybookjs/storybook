@@ -4,9 +4,9 @@ import { prompt } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import { executeCommand } from '../utils/command';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager';
-import { Yarn1Proxy } from './Yarn1Proxy';
+import { executeCommand } from '../utils/command.ts';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import { Yarn1Proxy } from './Yarn1Proxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -20,7 +20,7 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock(import('../utils/command'), { spy: true });
+vi.mock(import('../utils/command.ts'), { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
 
 vi.mock('node:process', async (importOriginal) => {

@@ -1,13 +1,13 @@
-export { StoryStore } from './StoryStore';
-export { combineParameters } from './parameters';
-export { filterArgTypes } from './filterArgTypes';
-export type { PropDescriptor } from './filterArgTypes';
-export { inferControls } from './inferControls';
+export { StoryStore } from './StoryStore.ts';
+export { combineParameters } from './parameters.ts';
+export { filterArgTypes } from './filterArgTypes.ts';
+export type { PropDescriptor } from './filterArgTypes.ts';
+export { inferControls } from './inferControls.ts';
 
-export * from './csf';
-export * from './hooks';
-export * from './decorators';
-export * from './args';
-export * from './autoTitle';
-export * from './sortStories';
-export * from './reporter-api';
+export * from './csf/index.ts';
+export * from './hooks.ts';
+export * from './decorators.ts';
+export * from './args.ts';
+export * from './autoTitle.ts';
+export * from './sortStories.ts';
+export * from './reporter-api.ts';

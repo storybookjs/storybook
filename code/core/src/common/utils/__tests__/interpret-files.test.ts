@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import { getInterpretedFile } from '../interpret-files';
+import { getInterpretedFile } from '../interpret-files.ts';
 
 vi.mock('fs', async () => {
   const memfs = await vi.importActual('memfs');

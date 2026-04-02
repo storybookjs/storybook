@@ -5,9 +5,9 @@ import {
   type TestProviderStateByProviderId,
   UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
   createTestProviderStore,
-} from '.';
-import { MockUniversalStore } from '../universal-store/mock';
-import { useUniversalStore } from '../universal-store/use-universal-store-manager';
+} from './index.ts';
+import { MockUniversalStore } from '../universal-store/mock.ts';
+import { useUniversalStore } from '../universal-store/use-universal-store-manager.ts';
 
 const { fullTestProviderStore, getTestProviderStoreById, useTestProviderStore } =
   createTestProviderStore({

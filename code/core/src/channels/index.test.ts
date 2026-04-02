@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ChannelTransport, Listener } from '.';
-import { Channel, WebsocketTransport } from '.';
+import type { ChannelTransport, Listener } from './index.ts';
+import { Channel, WebsocketTransport } from './index.ts';
 
 const MockedWebsocket = vi.hoisted(() => {
   const ref = { current: undefined as unknown as InstanceType<typeof MyMockedWebsocket> };

@@ -2,38 +2,38 @@
 
 export { getPreviewHeadTemplate, getPreviewBodyTemplate } from 'storybook/internal/common';
 
-export * from './build-static';
-export * from './build-dev';
-export * from './build-index';
-export * from './withTelemetry';
-export { default as build } from './standalone';
-export { mapStaticDir } from './utils/server-statics';
-export { StoryIndexGenerator } from './utils/StoryIndexGenerator';
-export { generateStoryFile } from './utils/generate-story';
-export type { GenerateStoryResult, GenerateStoryOptions } from './utils/generate-story';
-export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes';
+export * from './build-static.ts';
+export * from './build-dev.ts';
+export * from './build-index.ts';
+export * from './withTelemetry.ts';
+export { default as build } from './standalone.ts';
+export { mapStaticDir } from './utils/server-statics.ts';
+export { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+export { generateStoryFile } from './utils/generate-story.ts';
+export type { GenerateStoryResult, GenerateStoryOptions } from './utils/generate-story.ts';
+export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes.ts';
 
-export { loadStorybook as experimental_loadStorybook } from './load';
+export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
-export { Tag } from '../shared/constants/tags';
+export { Tag } from '../shared/constants/tags.ts';
 export { analyze as analyzeMdx } from '@storybook/docs-mdx';
 
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
-export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
+export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
+export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
 export {
   getStatusStoreByTypeId as experimental_getStatusStore,
   fullStatusStore as internal_fullStatusStore,
   universalStatusStore as internal_universalStatusStore,
-} from './stores/status';
+} from './stores/status.ts';
 export {
   getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
-} from './change-detection';
-export { ChangeDetectionService } from './change-detection/ChangeDetectionService';
+} from './change-detection/index.ts';
+export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,
   universalTestProviderStore as internal_universalTestProviderStore,
-} from './stores/test-provider';
+} from './stores/test-provider.ts';
 
-export { getServerPort } from './utils/server-address';
+export { getServerPort } from './utils/server-address.ts';

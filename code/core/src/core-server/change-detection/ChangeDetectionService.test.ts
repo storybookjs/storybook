@@ -12,13 +12,16 @@ import type {
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { createStatusStore, UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store';
-import { MockUniversalStore } from '../../shared/universal-store/mock';
-import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index';
-import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
-import { ChangeDetectionService } from './ChangeDetectionService';
-import type { GitDiffResult } from './GitDiffProvider';
-import { GitDiffProvider } from './GitDiffProvider';
+import {
+  createStatusStore,
+  UNIVERSAL_STATUS_STORE_OPTIONS,
+} from '../../shared/status-store/index.ts';
+import { MockUniversalStore } from '../../shared/universal-store/mock.ts';
+import { getChangeDetectionReadiness, internal_resetChangeDetectionReadiness } from './index.ts';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
+import { ChangeDetectionService } from './ChangeDetectionService.ts';
+import type { GitDiffResult } from './GitDiffProvider.ts';
+import { GitDiffProvider } from './GitDiffProvider.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 

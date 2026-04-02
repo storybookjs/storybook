@@ -6,7 +6,7 @@ import { dirname, join, resolve as resolvePath } from 'node:path';
 import { execa, type ExecaError } from 'execa';
 import { logger } from 'storybook/internal/node-logger';
 
-import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 
 export interface GitDiffResult {
   changed: Set<string>;

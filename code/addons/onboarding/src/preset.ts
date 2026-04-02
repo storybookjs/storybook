@@ -3,7 +3,7 @@ import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import { version as addonVersion } from '../package.json';
-import { ADDON_ONBOARDING_CHANNEL } from './constants';
+import { ADDON_ONBOARDING_CHANNEL } from './constants.ts';
 
 type Event = {
   type: 'telemetry' | 'survey';

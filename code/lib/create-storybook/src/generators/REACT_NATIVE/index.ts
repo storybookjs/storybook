@@ -4,7 +4,7 @@ import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storyboo
 
 import { dedent } from 'ts-dedent';
 
-import { defineGeneratorModule } from '../modules/GeneratorModule';
+import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 
 export default defineGeneratorModule({
   metadata: {

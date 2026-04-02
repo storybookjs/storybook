@@ -11,8 +11,8 @@ import type { HashEntry, Refs } from 'storybook/manager-api';
 import type { Theme } from 'storybook/theming';
 import { ThemeProvider, ensure, themes } from 'storybook/theming';
 
-import { Sidebar } from '../Sidebar';
-import type { SidebarProps } from '../Sidebar';
+import { Sidebar } from '../Sidebar.tsx';
+import type { SidebarProps } from '../Sidebar.tsx';
 
 const DOCS_NAME = 'Docs';
 

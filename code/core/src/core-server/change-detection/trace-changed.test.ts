@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ModuleGraph, ModuleNode } from 'storybook/internal/types';
 
-import { findAffectedStoryFiles } from './trace-changed';
+import { findAffectedStoryFiles } from './trace-changed.ts';
 
 function createModuleNode(file: string): ModuleNode {
   return {

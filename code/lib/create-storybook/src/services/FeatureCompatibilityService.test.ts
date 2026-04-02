@@ -4,7 +4,7 @@ import { AddonVitestService, ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
-import { FeatureCompatibilityService } from './FeatureCompatibilityService';
+import { FeatureCompatibilityService } from './FeatureCompatibilityService.ts';
 
 vi.mock('storybook/internal/cli', { spy: true });
 

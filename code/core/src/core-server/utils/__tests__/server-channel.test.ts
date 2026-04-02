@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
 import type { Server } from 'http';
 import { stringify } from 'telejson';
 
-import { ServerChannelTransport, getServerChannel } from '../get-server-channel';
+import { ServerChannelTransport, getServerChannel } from '../get-server-channel.ts';
 
 const mockToken = 'test-token-123';
 

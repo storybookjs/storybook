@@ -5,9 +5,9 @@ import type { SupportedBuilder } from 'storybook/internal/types';
 import { type SupportedRenderer } from 'storybook/internal/types';
 import type { SupportedFramework } from 'storybook/internal/types';
 
-import { generatorRegistry } from '../generators/GeneratorRegistry';
-import type { CommandOptions } from '../generators/types';
-import { FrameworkDetectionService } from '../services/FrameworkDetectionService';
+import { generatorRegistry } from '../generators/GeneratorRegistry.ts';
+import type { CommandOptions } from '../generators/types.ts';
+import { FrameworkDetectionService } from '../services/FrameworkDetectionService.ts';
 
 export interface FrameworkDetectionResult {
   renderer: SupportedRenderer;

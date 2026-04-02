@@ -10,8 +10,8 @@ import memoizerific from 'memoizerific';
 import { transparentize } from 'polished';
 import { type Theme, styled } from 'storybook/theming';
 
-import { UseSymbol } from '../components/sidebar/IconSymbols';
-import { getDescendantIds } from './tree';
+import { UseSymbol } from '../components/sidebar/IconSymbols.tsx';
+import { getDescendantIds } from './tree.ts';
 
 const SmallIcons = styled(CircleIcon)({
   // specificity hack

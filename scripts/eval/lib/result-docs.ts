@@ -1,102 +1,56 @@
-import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import type { AgentVariant, Execution } from "./agents/config.ts";
+import type { Grade, QualityScore } from "./grade.ts";
+import type { Project } from "./projects.ts";
+import type { ScreenshotArtifact } from "./screenshots.ts";
+import type {
+  AssistantMessage,
+  ResultMessage,
+  SystemMessage,
+  TranscriptMessage,
+  TranscriptProps,
+  ToolResultContent,
+  ToolUseContent,
+  UserMessage,
+} from "./result-doc-templates/transcript.types.ts";
+import type { EvalEnvironment } from "./utils.ts";
 
-const TRANSCRIPT_TEMPLATE_URL = new URL('./result-doc-templates/transcript.tsx', import.meta.url);
-const TRANSCRIPT_TYPES_TEMPLATE_URL = new URL(
-  './result-doc-templates/transcript.types.ts',
-  import.meta.url
-);
-
-export interface TranscriptTextContent {
-  type: 'text';
-  text: string;
+export interface EvalArtifacts {
+  buildOutput: {
+    path: string;
+    success: boolean;
+  };
+  typecheckOutput: {
+    path: string;
+    errorCount: number;
+  };
+  screenshotOutput?: {
+    path: string;
+    attempted: boolean;
+    success: boolean;
+  };
 }
 
-export interface TranscriptToolUseContent {
-  type: 'tool_use';
+export interface EvalData {
+  schemaVersion: 3;
   id: string;
-  name: string;
-  input: Record<string, unknown>;
-  isMCP: boolean;
-}
-
-export interface TranscriptToolResultBlock {
-  type: string;
-  text?: string;
-  isError?: boolean;
-}
-
-export interface TranscriptToolResultContent {
-  tool_use_id: string;
-  type: 'tool_result';
-  content: string | TranscriptToolResultBlock[];
-}
-
-export interface TranscriptMessageUsage {
-  input_tokens: number;
-  output_tokens: number;
-}
-
-export interface TranscriptAssistantMessage {
-  type: 'assistant';
-  message: {
-    content: Array<TranscriptTextContent | TranscriptToolUseContent>;
-    usage: TranscriptMessageUsage;
-  };
-  ms: number;
-  tokenCount?: number;
-  costUSD?: number;
-}
-
-export interface TranscriptUserMessage {
-  type: 'user';
-  message: {
-    content: TranscriptToolResultContent[];
-  };
-  ms: number;
-  tokenCount?: number;
-  costUSD?: number;
-}
-
-export interface TranscriptSystemMessage {
-  type: 'system';
-  subtype: 'init';
-  agent: string;
-  model: string;
-  tools: string[];
-  mcp_servers: Array<{
+  timestamp: string;
+  project: Project;
+  variant: AgentVariant;
+  prompt: {
     name: string;
-    status: 'connected' | 'disconnected' | 'unknown';
-  }>;
-  cwd: string;
-  ms: number;
-  tokenCount?: number;
-  costUSD?: number;
-}
-
-export interface TranscriptResultMessage {
-  type: 'result';
-  subtype: 'success' | 'error';
-  duration_ms: number;
-  duration_api_ms: number;
-  num_turns: number;
-  total_cost_usd: number;
-  ms: number;
-  tokenCount?: number;
-  costUSD?: number;
-}
-
-export type TranscriptMessage =
-  | TranscriptAssistantMessage
-  | TranscriptUserMessage
-  | TranscriptSystemMessage
-  | TranscriptResultMessage;
-
-export interface TranscriptDocData {
-  prompt: string;
-  promptTokenCount: number;
-  promptCost: number;
-  messages: TranscriptMessage[];
+    content: string;
+  };
+  baselineCommit: string;
+  environment: EvalEnvironment;
+  execution: Execution;
+  grade: Grade;
+  score: QualityScore;
+  screenshots: ScreenshotArtifact[];
+  transcript: unknown[];
+  artifacts: EvalArtifacts;
+  docs: {
+    transcript: TranscriptProps;
+  };
 }
 
 interface EvalSummaryLike {
@@ -109,45 +63,64 @@ interface EvalSummaryLike {
     duration?: number;
     durationApi?: number;
     turns?: number;
+    terminalResultSubtype?: string;
   };
 }
 
-export async function writeEvalResultDocs(resultsDir: string) {
-  const [prompt, transcript, summary, transcriptTemplate, transcriptTypesTemplate] =
-    await Promise.all([
-      readOptionalText(join(resultsDir, 'prompt.md')),
-      readOptionalJson(join(resultsDir, 'transcript.json')),
-      readOptionalJson(join(resultsDir, 'summary.json')),
-      readFile(TRANSCRIPT_TEMPLATE_URL, 'utf-8'),
-      readFile(TRANSCRIPT_TYPES_TEMPLATE_URL, 'utf-8'),
-    ]);
-
-  const transcriptData = normalizeTranscriptForDocs({
-    prompt: prompt ?? '',
-    transcript: Array.isArray(transcript) ? transcript : [],
-    summary,
-  });
-
-  await Promise.all([
-    writeFile(join(resultsDir, 'summary.mdx'), createSummaryMdx()),
-    writeFile(join(resultsDir, 'transcript.tsx'), transcriptTemplate),
-    writeFile(join(resultsDir, 'transcript.types.ts'), transcriptTypesTemplate),
-    writeFile(join(resultsDir, 'transcript-data.json'), JSON.stringify(transcriptData, null, 2)),
-    writeFile(join(resultsDir, 'transcript.mdx'), createTranscriptMdx()),
-    summary
-      ? writeFile(join(resultsDir, 'summary.pretty.json'), JSON.stringify(summary, null, 2))
-      : Promise.resolve(),
-  ]);
+export function buildEvalData(opts: {
+  id: string;
+  timestamp: string;
+  project: Project;
+  variant: AgentVariant;
+  prompt: {
+    name: string;
+    content: string;
+  };
+  baselineCommit: string;
+  environment: EvalEnvironment;
+  execution: Execution;
+  grade: Grade;
+  score: QualityScore;
+  screenshots: ScreenshotArtifact[];
+  transcript: unknown[];
+  artifacts: EvalArtifacts;
+}): EvalData {
+  return {
+    schemaVersion: 3,
+    id: opts.id,
+    timestamp: opts.timestamp,
+    project: opts.project,
+    variant: opts.variant,
+    prompt: opts.prompt,
+    baselineCommit: opts.baselineCommit,
+    environment: opts.environment,
+    execution: opts.execution,
+    grade: opts.grade,
+    score: opts.score,
+    screenshots: opts.screenshots,
+    transcript: opts.transcript,
+    artifacts: opts.artifacts,
+    docs: {
+      transcript: normalizeTranscriptForDocs({
+        prompt: opts.prompt.content,
+        transcript: opts.transcript,
+        summary: {
+          variant: opts.variant,
+          execution: opts.execution,
+        },
+      }),
+    },
+  };
 }
 
 export function normalizeTranscriptForDocs(opts: {
   prompt: string;
   transcript: unknown[];
   summary?: unknown;
-}): TranscriptDocData {
+}): TranscriptProps {
   const summary = isEvalSummaryLike(opts.summary) ? opts.summary : undefined;
   const messages = opts.transcript.flatMap((entry, index) =>
-    normalizeTranscriptEntry(entry, index, summary)
+    normalizeTranscriptEntry(entry, index, summary),
   );
 
   ensureSystemMessage(messages, summary);
@@ -164,9 +137,9 @@ export function normalizeTranscriptForDocs(opts: {
 function normalizeTranscriptEntry(
   entry: unknown,
   index: number,
-  summary?: EvalSummaryLike
+  summary?: EvalSummaryLike,
 ): TranscriptMessage[] {
-  if (!entry || typeof entry !== 'object') {
+  if (!entry || typeof entry !== "object") {
     return [];
   }
 
@@ -178,7 +151,7 @@ function normalizeTranscriptEntry(
     return [normalizeClaudeAssistant(entry)];
   }
 
-  if (looksLikeClaudeUser(entry, index)) {
+  if (looksLikeClaudeUser(entry)) {
     return [normalizeClaudeUser(entry, index)];
   }
 
@@ -187,14 +160,19 @@ function normalizeTranscriptEntry(
   }
 
   if (looksLikeClaudeStatus(entry)) {
-    return [createAssistantTextMessage(`Status: ${entry.status ?? 'unknown'}`, entry.ms)];
+    return [
+      createAssistantTextMessage(
+        `Status: ${entry.status ?? "unknown"}`,
+        entry.ms,
+      ),
+    ];
   }
 
   if (looksLikeClaudeApiRetry(entry)) {
     return [
       createAssistantTextMessage(
-        `API retry: attempt ${entry.attempt ?? '?'} / ${entry.max_retries ?? '?'}`,
-        entry.ms
+        `API retry: attempt ${entry.attempt ?? "?"} / ${entry.max_retries ?? "?"}`,
+        entry.ms,
       ),
     ];
   }
@@ -207,8 +185,8 @@ function normalizeTranscriptEntry(
     const info = entry.rate_limit_info ?? {};
     return [
       createAssistantTextMessage(
-        `Rate limited — status: ${info.status ?? 'unknown'}, resets at: ${info.resetsAt ?? 'unknown'}`,
-        entry.ms
+        `Rate limited — status: ${info.status ?? "unknown"}, resets at: ${info.resetsAt ?? "unknown"}`,
+        entry.ms,
       ),
     ];
   }
@@ -227,9 +205,9 @@ function normalizeTranscriptEntry(
 
   if (looksLikeCodexFileChange(entry)) {
     const summaryText = [
-      'File changes:',
+      "File changes:",
       ...entry.changes.map((change) => `- ${change.kind} ${change.path}`),
-    ].join('\n');
+    ].join("\n");
     return [createAssistantTextMessage(summaryText)];
   }
 
@@ -239,38 +217,40 @@ function normalizeTranscriptEntry(
 
   return [
     createAssistantTextMessage(
-      `Raw event\n\n\`\`\`json\n${JSON.stringify(entry, null, 2)}\n\`\`\``
+      `Raw event\n\n\`\`\`json\n${JSON.stringify(entry, null, 2)}\n\`\`\``,
     ),
   ];
 }
 
-function normalizeClaudeSystem(entry: ClaudeSystemEntry): TranscriptSystemMessage {
+function normalizeClaudeSystem(entry: ClaudeSystemEntry): SystemMessage {
   return {
-    type: 'system',
-    subtype: 'init',
-    agent: entry.agent ?? 'Claude',
-    model: entry.model ?? 'unknown',
+    type: "system",
+    subtype: "init",
+    agent: entry.agent ?? "Claude",
+    model: entry.model ?? "unknown",
     tools: entry.tools?.filter(isString) ?? [],
     mcp_servers: normalizeMcpServers(entry.mcp_servers),
-    cwd: entry.cwd ?? '',
+    cwd: entry.cwd ?? "",
     ms: getNumber(entry.ms),
     tokenCount: getOptionalNumber(entry.tokenCount),
     costUSD: getOptionalNumber(entry.costUSD),
   };
 }
 
-function normalizeClaudeAssistant(entry: ClaudeAssistantEntry): TranscriptAssistantMessage {
+function normalizeClaudeAssistant(
+  entry: ClaudeAssistantEntry,
+): AssistantMessage {
   const content = entry.message.content.flatMap(
-    (block): Array<TranscriptTextContent | TranscriptToolUseContent> => {
-      if (block.type === 'text' && typeof block.text === 'string') {
-        return [{ type: 'text', text: block.text }];
+    (block): Array<{ type: "text"; text: string } | ToolUseContent> => {
+      if (block.type === "text" && typeof block.text === "string") {
+        return [{ type: "text", text: block.text }];
       }
 
-      if (block.type === 'tool_use' && typeof block.name === 'string') {
+      if (block.type === "tool_use" && typeof block.name === "string") {
         return [
           {
-            type: 'tool_use',
-            id: typeof block.id === 'string' ? block.id : `tool-${block.name}`,
+            type: "tool_use",
+            id: typeof block.id === "string" ? block.id : `tool-${block.name}`,
             name: block.name,
             input: isRecord(block.input) ? block.input : {},
             isMCP: isMcpToolName(block.name),
@@ -279,7 +259,7 @@ function normalizeClaudeAssistant(entry: ClaudeAssistantEntry): TranscriptAssist
       }
 
       return [];
-    }
+    },
   );
 
   const outputTokens = getNumber(entry.message.usage?.output_tokens);
@@ -289,7 +269,7 @@ function normalizeClaudeAssistant(entry: ClaudeAssistantEntry): TranscriptAssist
     (outputTokens || estimateAssistantContentTokens(content));
 
   return {
-    type: 'assistant',
+    type: "assistant",
     message: {
       content,
       usage: {
@@ -303,11 +283,14 @@ function normalizeClaudeAssistant(entry: ClaudeAssistantEntry): TranscriptAssist
   };
 }
 
-function normalizeClaudeUser(entry: ClaudeUserEntry, index: number): TranscriptUserMessage {
+function normalizeClaudeUser(
+  entry: ClaudeUserEntry,
+  index: number,
+): UserMessage {
   const content = entry.message.content.map((block, blockIndex) => ({
-    type: 'tool_result' as const,
+    type: "tool_result" as const,
     tool_use_id:
-      typeof block.tool_use_id === 'string'
+      typeof block.tool_use_id === "string"
         ? block.tool_use_id
         : `tool-result-${index}-${blockIndex}`,
     content: normalizeToolResultContent(block.content),
@@ -315,10 +298,13 @@ function normalizeClaudeUser(entry: ClaudeUserEntry, index: number): TranscriptU
 
   const tokenCount =
     getOptionalNumber(entry.tokenCount) ??
-    content.reduce((sum, block) => sum + estimateToolResultTokens(block.content), 0);
+    content.reduce(
+      (sum, block) => sum + estimateToolResultTokens(block.content),
+      0,
+    );
 
   return {
-    type: 'user',
+    type: "user",
     message: { content },
     ms: getNumber(entry.ms),
     tokenCount: tokenCount || undefined,
@@ -328,37 +314,43 @@ function normalizeClaudeUser(entry: ClaudeUserEntry, index: number): TranscriptU
 
 function normalizeClaudeResult(
   entry: ClaudeResultEntry,
-  summary?: EvalSummaryLike
-): TranscriptResultMessage {
+  summary?: EvalSummaryLike,
+): ResultMessage {
   return {
-    type: 'result',
-    subtype: entry.subtype,
+    type: "result",
+    subtype: entry.subtype === "success" ? "success" : "error",
     duration_ms:
-      getNumber(entry.duration_ms) || Math.round(getNumber(summary?.execution?.duration) * 1000),
+      getNumber(entry.duration_ms) ||
+      Math.round(getNumber(summary?.execution?.duration) * 1000),
     duration_api_ms:
       getNumber(entry.duration_api_ms) ||
       Math.round(getNumber(summary?.execution?.durationApi) * 1000),
-    num_turns: getNumber(entry.num_turns) || getNumber(summary?.execution?.turns),
-    total_cost_usd: getNumber(entry.total_cost_usd) || getNumber(summary?.execution?.cost),
+    num_turns:
+      getNumber(entry.num_turns) || getNumber(summary?.execution?.turns),
+    total_cost_usd:
+      getNumber(entry.total_cost_usd) || getNumber(summary?.execution?.cost),
     ms: getNumber(entry.ms),
     tokenCount: getOptionalNumber(entry.tokenCount),
     costUSD: getOptionalNumber(entry.costUSD),
   };
 }
 
-function normalizeCodexCommand(entry: CodexCommandEntry, index: number): TranscriptMessage[] {
+function normalizeCodexCommand(
+  entry: CodexCommandEntry,
+  index: number,
+): TranscriptMessage[] {
   const id = `codex-command-${index}`;
   const output = buildCodexCommandOutput(entry);
 
   return [
     {
-      type: 'assistant',
+      type: "assistant",
       message: {
         content: [
           {
-            type: 'tool_use',
+            type: "tool_use",
             id,
-            name: 'Bash',
+            name: "Bash",
             input: { command: entry.command },
             isMCP: false,
           },
@@ -372,11 +364,11 @@ function normalizeCodexCommand(entry: CodexCommandEntry, index: number): Transcr
       tokenCount: estimateTokenCount(entry.command),
     },
     {
-      type: 'user',
+      type: "user",
       message: {
         content: [
           {
-            type: 'tool_result',
+            type: "tool_result",
             tool_use_id: id,
             content: output,
           },
@@ -388,8 +380,11 @@ function normalizeCodexCommand(entry: CodexCommandEntry, index: number): Transcr
   ];
 }
 
-function ensureSystemMessage(messages: TranscriptMessage[], summary?: EvalSummaryLike) {
-  if (messages.some((message) => message.type === 'system')) {
+function ensureSystemMessage(
+  messages: TranscriptMessage[],
+  summary?: EvalSummaryLike,
+) {
+  if (messages.some((message) => message.type === "system")) {
     return;
   }
 
@@ -398,19 +393,22 @@ function ensureSystemMessage(messages: TranscriptMessage[], summary?: EvalSummar
   }
 
   messages.unshift({
-    type: 'system',
-    subtype: 'init',
+    type: "system",
+    subtype: "init",
     agent: formatAgentName(summary.variant.agent),
-    model: summary.variant.model ?? 'unknown',
+    model: summary.variant.model ?? "unknown",
     tools: [],
     mcp_servers: [],
-    cwd: '',
+    cwd: "",
     ms: 0,
   });
 }
 
-function ensureResultMessage(messages: TranscriptMessage[], summary?: EvalSummaryLike) {
-  if (messages.some((message) => message.type === 'result')) {
+function ensureResultMessage(
+  messages: TranscriptMessage[],
+  summary?: EvalSummaryLike,
+) {
+  if (messages.some((message) => message.type === "result")) {
     return;
   }
 
@@ -419,25 +417,35 @@ function ensureResultMessage(messages: TranscriptMessage[], summary?: EvalSummar
   }
 
   messages.push({
-    type: 'result',
-    subtype: 'success',
+    type: "result",
+    subtype:
+      summary.execution.terminalResultSubtype &&
+      summary.execution.terminalResultSubtype !== "success"
+        ? "error"
+        : "success",
     duration_ms: Math.round(getNumber(summary.execution.duration) * 1000),
-    duration_api_ms: Math.round(getNumber(summary.execution.durationApi) * 1000),
+    duration_api_ms: Math.round(
+      getNumber(summary.execution.durationApi) * 1000,
+    ),
     num_turns: getNumber(summary.execution.turns),
     total_cost_usd: getNumber(summary.execution.cost),
     ms: 0,
   });
 }
 
-function normalizeToolResultContent(content: unknown): string | TranscriptToolResultBlock[] {
-  if (typeof content === 'string') {
+function normalizeToolResultContent(
+  content: unknown,
+): ToolResultContent["content"] {
+  if (typeof content === "string") {
     return content;
   }
 
   if (Array.isArray(content)) {
     return content.map((item) => ({
-      type: isRecord(item) && typeof item.type === 'string' ? item.type : 'text',
-      text: isRecord(item) && typeof item.text === 'string' ? item.text : undefined,
+      type:
+        isRecord(item) && typeof item.type === "string" ? item.type : "text",
+      text:
+        isRecord(item) && typeof item.text === "string" ? item.text : undefined,
       isError: isRecord(item) && item.isError === true,
     }));
   }
@@ -445,13 +453,13 @@ function normalizeToolResultContent(content: unknown): string | TranscriptToolRe
   return JSON.stringify(content, null, 2);
 }
 
-function normalizeMcpServers(value: unknown): TranscriptSystemMessage['mcp_servers'] {
+function normalizeMcpServers(value: unknown): SystemMessage["mcp_servers"] {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value.flatMap((server) => {
-    if (!isRecord(server) || typeof server.name !== 'string') {
+    if (!isRecord(server) || typeof server.name !== "string") {
       return [];
     }
 
@@ -460,9 +468,11 @@ function normalizeMcpServers(value: unknown): TranscriptSystemMessage['mcp_serve
       {
         name: server.name,
         status:
-          status === 'connected' || status === 'disconnected' || status === 'unknown'
+          status === "connected" ||
+          status === "disconnected" ||
+          status === "unknown"
             ? status
-            : 'unknown',
+            : "unknown",
       },
     ];
   });
@@ -471,26 +481,29 @@ function normalizeMcpServers(value: unknown): TranscriptSystemMessage['mcp_serve
 function buildCodexCommandOutput(entry: CodexCommandEntry) {
   const lines = [];
 
-  if (typeof entry.exit_code === 'number') {
+  if (typeof entry.exit_code === "number") {
     lines.push(`Exit code: ${entry.exit_code}`);
   }
-  if (typeof entry.aggregated_output === 'string' && entry.aggregated_output.trim()) {
+  if (
+    typeof entry.aggregated_output === "string" &&
+    entry.aggregated_output.trim()
+  ) {
     lines.push(entry.aggregated_output.trim());
   }
   if (lines.length === 0) {
     lines.push(entry.command);
   }
 
-  return lines.join('\n\n');
+  return lines.join("\n\n");
 }
 
-function createAssistantTextMessage(text: string, ms = 0): TranscriptAssistantMessage {
+function createAssistantTextMessage(text: string, ms = 0): AssistantMessage {
   const tokenCount = estimateTokenCount(text);
 
   return {
-    type: 'assistant',
+    type: "assistant",
     message: {
-      content: [{ type: 'text', text }],
+      content: [{ type: "text", text }],
       usage: {
         input_tokens: 0,
         output_tokens: tokenCount,
@@ -502,25 +515,29 @@ function createAssistantTextMessage(text: string, ms = 0): TranscriptAssistantMe
 }
 
 function estimateAssistantContentTokens(
-  content: Array<TranscriptTextContent | TranscriptToolUseContent>
+  content: AssistantMessage["message"]["content"],
 ) {
   return content.reduce((sum, item) => {
-    if (item.type === 'text') {
+    if (item.type === "text") {
       return sum + estimateTokenCount(item.text);
     }
 
-    return sum + estimateTokenCount(`${item.name}\n${JSON.stringify(item.input)}`);
+    return (
+      sum + estimateTokenCount(`${item.name}\n${JSON.stringify(item.input)}`)
+    );
   }, 0);
 }
 
-function estimateToolResultTokens(content: string | TranscriptToolResultBlock[]) {
-  if (typeof content === 'string') {
+function estimateToolResultTokens(content: ToolResultContent["content"]) {
+  if (typeof content === "string") {
     return estimateTokenCount(content);
   }
 
   return content.reduce(
-    (sum, item) => sum + estimateTokenCount([item.type, item.text].filter(Boolean).join('\n')),
-    0
+    (sum, item) =>
+      sum +
+      estimateTokenCount([item.type, item.text].filter(Boolean).join("\n")),
+    0,
   );
 }
 
@@ -533,18 +550,18 @@ function estimateTokenCount(text: string) {
 }
 
 function formatAgentName(agent?: string) {
-  if (agent === 'claude') {
-    return 'Claude';
+  if (agent === "claude") {
+    return "Claude";
   }
-  if (agent === 'codex') {
-    return 'Codex';
+  if (agent === "codex") {
+    return "Codex";
   }
 
-  return agent ?? 'Agent';
+  return agent ?? "Agent";
 }
 
 function isMcpToolName(name: string) {
-  return /^mcp/i.test(name) || name.includes('mcp__') || name.includes('mcp_');
+  return /^mcp/i.test(name) || name.includes("mcp__") || name.includes("mcp_");
 }
 
 function isEvalSummaryLike(value: unknown): value is EvalSummaryLike {
@@ -552,90 +569,26 @@ function isEvalSummaryLike(value: unknown): value is EvalSummaryLike {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === "object" && value !== null;
 }
 
 function isString(value: unknown): value is string {
-  return typeof value === 'string';
+  return typeof value === "string";
 }
 
 function getNumber(value: unknown) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
 function getOptionalNumber(value: unknown) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-async function readOptionalText(path: string) {
-  try {
-    return await readFile(path, 'utf-8');
-  } catch {
-    return undefined;
-  }
-}
-
-async function readOptionalJson(path: string) {
-  try {
-    return JSON.parse(await readFile(path, 'utf-8')) as unknown;
-  } catch {
-    return undefined;
-  }
-}
-
-function createSummaryMdx() {
-  return `import summary from './summary.json';
-
-# Eval Summary
-
-<table>
-  <tbody>
-    <tr><td><strong>Project</strong></td><td>{summary.project.name}</td></tr>
-    <tr><td><strong>Prompt</strong></td><td>{summary.prompt}</td></tr>
-    <tr><td><strong>Agent</strong></td><td>{summary.variant.agent}</td></tr>
-    <tr><td><strong>Model</strong></td><td>{summary.variant.model}</td></tr>
-    <tr><td><strong>Effort</strong></td><td>{summary.variant.effort}</td></tr>
-    <tr><td><strong>Score</strong></td><td>{summary.score.score}</td></tr>
-    <tr><td><strong>Build</strong></td><td>{summary.grade.buildSuccess ? 'PASS' : 'FAIL'}</td></tr>
-    <tr><td><strong>TypeScript errors</strong></td><td>{summary.grade.typeCheckErrors}</td></tr>
-  </tbody>
-</table>
-
-## Changed Files
-
-<ul>
-  {summary.grade.fileChanges.map((change) => (
-    <li key={change.path}>
-      <code>{change.gitStatus}</code> <code>{change.path}</code>
-    </li>
-  ))}
-</ul>
-
-## Screenshots
-
-<ul>
-  {(summary.publish?.screenshots ?? []).map((screenshot) => (
-    <li key={screenshot.imagePath}>
-      <code>{screenshot.storyFilePath}</code> → <code>{screenshot.imagePath}</code>
-    </li>
-  ))}
-</ul>
-`;
-}
-
-function createTranscriptMdx() {
-  return `import transcriptData from './transcript-data.json';
-import { Transcript } from './transcript';
-
-# Transcript
-
-<Transcript {...transcriptData} />
-`;
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 interface ClaudeSystemEntry {
-  type: 'system';
-  subtype: 'init';
+  type: "system";
+  subtype: "init";
   agent?: string;
   model?: string;
   tools?: unknown[];
@@ -647,15 +600,15 @@ interface ClaudeSystemEntry {
 }
 
 interface ClaudeAssistantEntry {
-  type: 'assistant';
+  type: "assistant";
   message: {
     content: Array<
       | {
-          type: 'text';
+          type: "text";
           text: string;
         }
       | {
-          type: 'tool_use';
+          type: "tool_use";
           id?: string;
           name: string;
           input: Record<string, unknown>;
@@ -672,10 +625,10 @@ interface ClaudeAssistantEntry {
 }
 
 interface ClaudeUserEntry {
-  type: 'user';
+  type: "user";
   message: {
     content: Array<{
-      type: 'tool_result';
+      type: "tool_result";
       tool_use_id?: string;
       content:
         | string
@@ -692,8 +645,8 @@ interface ClaudeUserEntry {
 }
 
 interface ClaudeResultEntry {
-  type: 'result';
-  subtype: 'success' | 'error';
+  type: "result";
+  subtype: string;
   duration_ms?: number;
   duration_api_ms?: number;
   num_turns?: number;
@@ -704,30 +657,31 @@ interface ClaudeResultEntry {
 }
 
 interface CodexCommandEntry {
-  type: 'command_execution';
+  type: "command_execution";
   command: string;
   exit_code?: number;
   aggregated_output?: string;
 }
 
 function looksLikeClaudeSystem(entry: unknown): entry is ClaudeSystemEntry {
-  return isRecord(entry) && entry.type === 'system' && entry.subtype === 'init';
+  return isRecord(entry) && entry.type === "system" && entry.subtype === "init";
 }
 
-function looksLikeClaudeAssistant(entry: unknown): entry is ClaudeAssistantEntry {
+function looksLikeClaudeAssistant(
+  entry: unknown,
+): entry is ClaudeAssistantEntry {
   return (
     isRecord(entry) &&
-    entry.type === 'assistant' &&
+    entry.type === "assistant" &&
     isRecord(entry.message) &&
     Array.isArray(entry.message.content)
   );
 }
 
-function looksLikeClaudeUser(entry: unknown, index: number): entry is ClaudeUserEntry {
-  void index;
+function looksLikeClaudeUser(entry: unknown): entry is ClaudeUserEntry {
   return (
     isRecord(entry) &&
-    entry.type === 'user' &&
+    entry.type === "user" &&
     isRecord(entry.message) &&
     Array.isArray(entry.message.content)
   );
@@ -736,61 +690,101 @@ function looksLikeClaudeUser(entry: unknown, index: number): entry is ClaudeUser
 function looksLikeClaudeResult(entry: unknown): entry is ClaudeResultEntry {
   return (
     isRecord(entry) &&
-    entry.type === 'result' &&
-    (entry.subtype === 'success' || entry.subtype === 'error')
+    entry.type === "result" &&
+    typeof entry.subtype === "string"
   );
 }
 
 function looksLikeClaudeStatus(
-  entry: unknown
-): entry is { type: 'system'; subtype: 'status'; status?: string; ms?: number } {
-  return isRecord(entry) && entry.type === 'system' && entry.subtype === 'status';
+  entry: unknown,
+): entry is {
+  type: "system";
+  subtype: "status";
+  status?: string;
+  ms?: number;
+} {
+  return (
+    isRecord(entry) && entry.type === "system" && entry.subtype === "status"
+  );
 }
 
 function looksLikeClaudeApiRetry(entry: unknown): entry is {
-  type: 'system';
-  subtype: 'api_retry';
+  type: "system";
+  subtype: "api_retry";
   attempt?: number;
   max_retries?: number;
   ms?: number;
 } {
-  return isRecord(entry) && entry.type === 'system' && entry.subtype === 'api_retry';
+  return (
+    isRecord(entry) && entry.type === "system" && entry.subtype === "api_retry"
+  );
 }
 
 function looksLikeClaudeToolUseSummary(
-  entry: unknown
-): entry is { type: 'tool_use_summary'; summary: string; ms?: number } {
-  return isRecord(entry) && entry.type === 'tool_use_summary' && typeof entry.summary === 'string';
+  entry: unknown,
+): entry is { type: "tool_use_summary"; summary: string; ms?: number } {
+  return (
+    isRecord(entry) &&
+    entry.type === "tool_use_summary" &&
+    typeof entry.summary === "string"
+  );
 }
 
 function looksLikeClaudeRateLimitEvent(entry: unknown): entry is {
-  type: 'rate_limit_event';
+  type: "rate_limit_event";
   rate_limit_info?: { status?: string; resetsAt?: string };
   ms?: number;
 } {
-  return isRecord(entry) && entry.type === 'rate_limit_event';
+  return isRecord(entry) && entry.type === "rate_limit_event";
 }
 
 function looksLikeCodexAgentMessage(
-  entry: unknown
-): entry is { type: 'agent_message'; text: string } {
-  return isRecord(entry) && entry.type === 'agent_message' && typeof entry.text === 'string';
+  entry: unknown,
+): entry is { type: "agent_message"; text: string } {
+  return (
+    isRecord(entry) &&
+    entry.type === "agent_message" &&
+    typeof entry.text === "string"
+  );
 }
 
-function looksLikeCodexReasoning(entry: unknown): entry is { type: 'reasoning'; text: string } {
-  return isRecord(entry) && entry.type === 'reasoning' && typeof entry.text === 'string';
+function looksLikeCodexReasoning(
+  entry: unknown,
+): entry is { type: "reasoning"; text: string } {
+  return (
+    isRecord(entry) &&
+    entry.type === "reasoning" &&
+    typeof entry.text === "string"
+  );
 }
 
 function looksLikeCodexCommand(entry: unknown): entry is CodexCommandEntry {
-  return isRecord(entry) && entry.type === 'command_execution' && typeof entry.command === 'string';
+  return (
+    isRecord(entry) &&
+    entry.type === "command_execution" &&
+    typeof entry.command === "string"
+  );
 }
 
 function looksLikeCodexFileChange(
-  entry: unknown
-): entry is { type: 'file_change'; changes: Array<{ kind: string; path: string }> } {
-  return isRecord(entry) && entry.type === 'file_change' && Array.isArray(entry.changes);
+  entry: unknown,
+): entry is {
+  type: "file_change";
+  changes: Array<{ kind: string; path: string }>;
+} {
+  return (
+    isRecord(entry) &&
+    entry.type === "file_change" &&
+    Array.isArray(entry.changes)
+  );
 }
 
-function looksLikeCodexError(entry: unknown): entry is { type: 'error'; message: string } {
-  return isRecord(entry) && entry.type === 'error' && typeof entry.message === 'string';
+function looksLikeCodexError(
+  entry: unknown,
+): entry is { type: "error"; message: string } {
+  return (
+    isRecord(entry) &&
+    entry.type === "error" &&
+    typeof entry.message === "string"
+  );
 }

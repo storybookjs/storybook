@@ -1,22 +1,33 @@
-import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk';
-import { query } from '@anthropic-ai/claude-agent-sdk';
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { AGENTS, resolveClaudeSdkModel, type AgentDriver, type Execution } from './config.ts';
-import type { Logger } from '../utils.ts';
+import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import {
+  AGENTS,
+  resolveClaudeSdkModel,
+  type AgentDriver,
+  type AgentExecutionResult,
+  type Execution,
+} from "./config.ts";
+import type { Logger } from "../utils.ts";
 
 export const claudeAgent: AgentDriver = {
-  name: 'claude',
+  name: "claude",
 
-  async execute({ prompt, projectPath, variant, resultsDir, logger }): Promise<Execution> {
-    if (variant.agent !== 'claude') {
-      throw new Error(`Claude driver received unsupported variant: ${variant.agent}`);
+  async execute({
+    prompt,
+    projectPath,
+    variant,
+    logger,
+  }): Promise<AgentExecutionResult> {
+    if (variant.agent !== "claude") {
+      throw new Error(
+        `Claude driver received unsupported variant: ${variant.agent}`,
+      );
     }
 
     const startTime = Date.now();
     const settings = AGENTS.claude.execution;
     const { model } = variant;
-    const effort = variant.effort as 'low' | 'medium' | 'high' | 'max';
+    const effort = variant.effort as "low" | "medium" | "high" | "max";
     const sdkModel = resolveClaudeSdkModel(model);
 
     let cost: number | undefined;
@@ -31,7 +42,6 @@ export const claudeAgent: AgentDriver = {
           model: sdkModel,
           cwd: projectPath,
           allowedTools: [...settings.allowedTools],
-          maxTurns: settings.maxTurns,
           effort,
           debug: settings.debug,
           systemPrompt: settings.systemPrompt,
@@ -40,38 +50,44 @@ export const claudeAgent: AgentDriver = {
         logMessage(message, logger);
         messages.push(message);
 
-        if (message.type === 'result' && message.subtype === 'success') {
+        if (message.type === "result") {
           cost = message.total_cost_usd as number | undefined;
           turns = (message.num_turns as number) ?? 0;
           durationApi =
-            typeof message.duration_api_ms === 'number'
+            typeof message.duration_api_ms === "number"
               ? message.duration_api_ms / 1000
               : undefined;
         }
       }
-    } finally {
-      await writeTranscript(resultsDir, messages, logger);
+    } catch (error) {
+      logger.logError(
+        `Claude execution failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
     }
 
-    const duration = (Date.now() - startTime) / 1000;
-
-    return {
+    const execution: Execution = {
       cost,
-      duration,
+      duration: (Date.now() - startTime) / 1000,
       durationApi,
       turns,
+      terminalResultSubtype: getLastResultSubtype(messages),
     };
+
+    return { execution, transcript: messages };
   },
 };
 
 function logMessage(message: SDKMessage, logger: Logger) {
   switch (message.type) {
-    case 'assistant': {
+    case "assistant": {
       for (const block of message.message.content) {
-        if (block.type === 'text') {
+        if (block.type === "text") {
           logger.log(`💬 ${block.text}`);
-        } else if (block.type === 'tool_use') {
-          logger.log(`🔧 ${block.name}(${JSON.stringify(block.input).slice(0, 200)})`);
+        } else if (block.type === "tool_use") {
+          logger.log(
+            `🔧 ${block.name}(${JSON.stringify(block.input).slice(0, 200)})`,
+          );
         }
       }
       if (message.error) {
@@ -79,51 +95,57 @@ function logMessage(message: SDKMessage, logger: Logger) {
       }
       break;
     }
-    case 'user': {
+    case "user": {
       const content = message.message.content;
       if (!Array.isArray(content)) break;
       for (const block of content) {
-        if (block.type === 'tool_result') {
+        if (block.type === "tool_result") {
           const text =
-            typeof block.content === 'string'
+            typeof block.content === "string"
               ? block.content.slice(0, 200)
               : Array.isArray(block.content)
                 ? block.content
                     .map((b: { type: string; text?: string }) =>
-                      'text' in b ? b.text : `[${b.type}]`
+                      "text" in b ? b.text : `[${b.type}]`,
                     )
-                    .join('')
+                    .join("")
                     .slice(0, 200)
-                : '[no content]';
-          logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${text}`);
+                : "[no content]";
+          logger.log(
+            `📎 tool_result(${block.tool_use_id?.slice(-8)}): ${text}`,
+          );
         }
       }
       break;
     }
-    case 'result':
-      if (message.subtype === 'success') {
+    case "result":
+      if (message.subtype === "success") {
         logger.logSuccess(
-          `Done — ${message.num_turns} turns, $${message.total_cost_usd?.toFixed(4)}`
+          `Done — ${message.num_turns} turns, $${message.total_cost_usd?.toFixed(4)}`,
         );
       } else {
-        logger.logError(`Error (${message.subtype}): ${message.errors?.join(', ')}`);
+        logger.logError(
+          `Error (${message.subtype}): ${message.errors?.join(", ")}`,
+        );
       }
       break;
-    case 'system':
-      if (message.subtype === 'init') {
+    case "system":
+      if (message.subtype === "init") {
         logger.log(`🚀 Session started — model: ${message.model}`);
-      } else if (message.subtype === 'api_retry') {
-        logger.log(`🔄 API retry: attempt ${message.attempt}/${message.max_retries}`);
-      } else if (message.subtype === 'status') {
-        logger.log(`📊 status: ${message.status ?? 'unknown'}`);
+      } else if (message.subtype === "api_retry") {
+        logger.log(
+          `🔄 API retry: attempt ${message.attempt}/${message.max_retries}`,
+        );
+      } else if (message.subtype === "status") {
+        logger.log(`📊 status: ${message.status ?? "unknown"}`);
       }
       break;
-    case 'tool_use_summary':
+    case "tool_use_summary":
       logger.log(`📋 ${message.summary.slice(0, 200)}`);
       break;
-    case 'rate_limit_event':
+    case "rate_limit_event":
       logger.log(
-        `⏳ Rate limited — status: ${message.rate_limit_info?.status}, resets at: ${message.rate_limit_info?.resetsAt}`
+        `⏳ Rate limited — status: ${message.rate_limit_info?.status}, resets at: ${message.rate_limit_info?.resetsAt}`,
       );
       break;
     default:
@@ -131,12 +153,20 @@ function logMessage(message: SDKMessage, logger: Logger) {
   }
 }
 
-async function writeTranscript(resultsDir: string, messages: unknown[], logger: Logger) {
-  try {
-    await writeFile(join(resultsDir, 'transcript.json'), JSON.stringify(messages, null, 2));
-  } catch (error) {
-    logger.logError(
-      `Failed to persist transcript: ${error instanceof Error ? error.message : String(error)}`
-    );
+function getLastResultSubtype(messages: unknown[]): string | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (
+      message &&
+      typeof message === "object" &&
+      "type" in message &&
+      message.type === "result" &&
+      "subtype" in message &&
+      typeof message.subtype === "string"
+    ) {
+      return message.subtype;
+    }
   }
+
+  return undefined;
 }

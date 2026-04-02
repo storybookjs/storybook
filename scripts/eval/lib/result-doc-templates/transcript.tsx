@@ -1,9 +1,9 @@
 /*
- * Copied from https://github.com/storybookjs/mcp/blob/7402e98b18ed62a73a2e212bf48af83bbeb0828e/eval/templates/result-docs/transcript.tsx
+ * Keep the baseline copies exact to ~/code/github/mcp/eval/templates/result-docs/transcript.tsx.
+ * This repo-local template keeps only the minimum lint shims required by Storybook's monorepo.
  */
 /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, @typescript-eslint/no-explicit-any */
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import type {
   AssistantMessage,
   TranscriptMessage,
@@ -14,18 +14,18 @@ import type {
   ToolResultContent,
   ToolUseContent,
   UserMessage,
-} from './transcript.types.ts';
+} from "./transcript.types.ts";
 
 const formatJsonWithPreservedWhitespace = (obj: any): string => {
   return JSON.stringify(obj, null, 2)
-    .replace(/\\\\n/g, '\\n')
-    .replace(/\\n/g, '\n')
-    .replace(/\\\\t/g, '\\t')
-    .replace(/\\t/g, '\t');
+    .replace(/\\\\n/g, "\\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\\\\t/g, "\\t")
+    .replace(/\\t/g, "\t");
 };
 
 const truncateText = (text: string, maxLength: number): string => {
-  return text.length <= maxLength ? text : text.substring(0, maxLength) + '...';
+  return text.length <= maxLength ? text : text.substring(0, maxLength) + "...";
 };
 
 const getPercentageStyle = (percentage: number): React.CSSProperties => {
@@ -35,7 +35,7 @@ const getPercentageStyle = (percentage: number): React.CSSProperties => {
   const green = Math.round(245 * (1 - intensity));
   const blue = Math.round(245 * (1 - intensity));
   const bgColor = `rgb(${red}, ${green}, ${blue})`;
-  const textColor = intensity > 0.4 ? '#ffffff' : '#666';
+  const textColor = intensity > 0.4 ? "#ffffff" : "#666";
   return { background: bgColor, color: textColor };
 };
 
@@ -52,20 +52,20 @@ const MetadataCard = ({
 }) => (
   <div
     style={{
-      padding: '1.5rem',
-      backgroundColor: '#f9fafb',
-      border: '1px solid #e5e7eb',
-      borderRadius: '8px',
+      padding: "1.5rem",
+      backgroundColor: "#f9fafb",
+      border: "1px solid #e5e7eb",
+      borderRadius: "8px",
     }}
   >
     <h3
       style={{
-        margin: '0 0 0.5rem 0',
-        fontSize: '0.875rem',
+        margin: "0 0 0.5rem 0",
+        fontSize: "0.875rem",
         fontWeight: 600,
-        color: '#6b7280',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
+        color: "#6b7280",
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
       }}
     >
       {title}
@@ -74,13 +74,15 @@ const MetadataCard = ({
       <div dangerouslySetInnerHTML={{ __html: html }} />
     ) : (
       <>
-        <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>{value}</div>
+        <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827" }}>
+          {value}
+        </div>
         {subvalue && (
           <div
             style={{
-              fontSize: '0.875rem',
-              color: '#6b7280',
-              marginTop: '0.25rem',
+              fontSize: "0.875rem",
+              color: "#6b7280",
+              marginTop: "0.25rem",
             }}
           >
             {subvalue}
@@ -93,7 +95,7 @@ const MetadataCard = ({
 
 const CodeBlock = ({
   content,
-  language = '',
+  language = "",
   isError = false,
 }: {
   content: string;
@@ -110,39 +112,39 @@ const CodeBlock = ({
   }, [content, isTruncated]);
 
   return (
-    <div style={{ position: 'relative', marginBottom: '1rem' }}>
+    <div style={{ position: "relative", marginBottom: "1rem" }}>
       <pre
         style={{
           margin: 0,
-          padding: '1rem',
-          backgroundColor: isError ? '#fef2f2' : '#1e1e1e',
-          color: isError ? '#991b1b' : '#d4d4d4',
-          borderRadius: '6px',
-          overflow: isTruncated ? 'hidden' : 'auto',
-          fontSize: '0.875rem',
-          fontFamily: 'monospace',
-          border: isError ? '1px solid #fecaca' : 'none',
-          maxHeight: isTruncated ? '300px' : 'none',
-          position: 'relative',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
+          padding: "1rem",
+          backgroundColor: isError ? "#fef2f2" : "#1e1e1e",
+          color: isError ? "#991b1b" : "#d4d4d4",
+          borderRadius: "6px",
+          overflow: isTruncated ? "hidden" : "auto",
+          fontSize: "0.875rem",
+          fontFamily: "monospace",
+          border: isError ? "1px solid #fecaca" : "none",
+          maxHeight: isTruncated ? "300px" : "none",
+          position: "relative",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
         }}
       >
-        <code ref={codeRef} className={language ? `language-${language}` : ''}>
+        <code ref={codeRef} className={language ? `language-${language}` : ""}>
           {content}
         </code>
         {isTruncated && content.length > 500 && (
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               bottom: 0,
               left: 0,
               right: 0,
-              height: '60px',
+              height: "60px",
               background: isError
-                ? 'linear-gradient(transparent, #fef2f2)'
-                : 'linear-gradient(transparent, #1e1e1e)',
-              pointerEvents: 'none',
+                ? "linear-gradient(transparent, #fef2f2)"
+                : "linear-gradient(transparent, #1e1e1e)",
+              pointerEvents: "none",
             }}
           />
         )}
@@ -151,33 +153,39 @@ const CodeBlock = ({
         <button
           onClick={() => setIsTruncated(!isTruncated)}
           style={{
-            marginTop: '0.5rem',
-            padding: '0.5rem 1rem',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.875rem',
+            marginTop: "0.5rem",
+            padding: "0.5rem 1rem",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "0.875rem",
           }}
         >
-          {isTruncated ? 'Show more' : 'Show less'}
+          {isTruncated ? "Show more" : "Show less"}
         </button>
       )}
     </div>
   );
 };
 
-const ContentSection = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div style={{ marginBottom: '1rem' }}>
+const ContentSection = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div style={{ marginBottom: "1rem" }}>
     <div
       style={{
-        fontSize: '0.75rem',
+        fontSize: "0.75rem",
         fontWeight: 600,
-        color: '#6b7280',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        marginBottom: '0.5rem',
+        color: "#6b7280",
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
+        marginBottom: "0.5rem",
       }}
     >
       {label}
@@ -189,7 +197,7 @@ const ContentSection = ({ label, children }: { label: string; children: React.Re
 const FileContent = ({
   filePath,
   content,
-  language = 'typescript',
+  language = "typescript",
 }: {
   filePath: string;
   content: string;
@@ -199,11 +207,11 @@ const FileContent = ({
     <ContentSection label="File Path">
       <code
         style={{
-          background: '#f9f9f9',
-          padding: '0.25rem 0.5rem',
-          borderRadius: '4px',
-          fontSize: '0.875rem',
-          fontFamily: 'monospace',
+          background: "#f9f9f9",
+          padding: "0.25rem 0.5rem",
+          borderRadius: "4px",
+          fontSize: "0.875rem",
+          fontFamily: "monospace",
         }}
       >
         {filePath}
@@ -226,26 +234,26 @@ const FileDiff = ({
 }) => {
   const diff = `--- a/${filePath}
 +++ b/${filePath}
-@@ -1,${oldString.split('\n').length} +1,${newString.split('\n').length} @@
+@@ -1,${oldString.split("\n").length} +1,${newString.split("\n").length} @@
 ${oldString
-  .split('\n')
-  .map((line) => '-' + line)
-  .join('\n')}
+  .split("\n")
+  .map((line) => "-" + line)
+  .join("\n")}
 ${newString
-  .split('\n')
-  .map((line) => '+' + line)
-  .join('\n')}`;
+  .split("\n")
+  .map((line) => "+" + line)
+  .join("\n")}`;
 
   return (
     <>
       <ContentSection label="File Path">
         <code
           style={{
-            background: '#f9f9f9',
-            padding: '0.25rem 0.5rem',
-            borderRadius: '4px',
-            fontSize: '0.875rem',
-            fontFamily: 'monospace',
+            background: "#f9f9f9",
+            padding: "0.25rem 0.5rem",
+            borderRadius: "4px",
+            fontSize: "0.875rem",
+            fontFamily: "monospace",
           }}
         >
           {filePath}
@@ -258,20 +266,24 @@ ${newString
   );
 };
 
-const TodoList = ({ todos }: { todos: Array<{ content: string; status?: string }> }) => (
-  <div style={{ padding: '1rem' }}>
+const TodoList = ({
+  todos,
+}: {
+  todos: Array<{ content: string; status?: string }>;
+}) => (
+  <div style={{ padding: "1rem" }}>
     {todos.map((todo, i) => {
-      const status = todo.status || 'pending';
-      const checked = status === 'completed';
-      const indeterminate = status === 'in_progress';
+      const status = todo.status || "pending";
+      const checked = status === "completed";
+      const indeterminate = status === "in_progress";
 
       return (
         <div
           key={i}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0.5rem 0',
+            display: "flex",
+            alignItems: "center",
+            padding: "0.5rem 0",
           }}
         >
           <input
@@ -281,7 +293,7 @@ const TodoList = ({ todos }: { todos: Array<{ content: string; status?: string }
               if (el) el.indeterminate = indeterminate;
             }}
             readOnly
-            style={{ marginRight: '0.5rem' }}
+            style={{ marginRight: "0.5rem" }}
           />
           <span>{todo.content}</span>
         </div>
@@ -290,33 +302,39 @@ const TodoList = ({ todos }: { todos: Array<{ content: string; status?: string }
   </div>
 );
 
-const ElapsedTime = ({ elapsedMs, percentage }: { elapsedMs: number; percentage: number }) => (
+const ElapsedTime = ({
+  elapsedMs,
+  percentage,
+}: {
+  elapsedMs: number;
+  percentage: number;
+}) => (
   <div
     style={{
-      display: 'flex',
-      justifyContent: 'center',
-      margin: '1rem 0',
+      display: "flex",
+      justifyContent: "center",
+      margin: "1rem 0",
     }}
   >
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem 1rem',
-        backgroundColor: '#f9fafb',
-        borderRadius: '4px',
-        fontSize: '0.875rem',
-        color: '#6b7280',
+        display: "flex",
+        alignItems: "center",
+        gap: "0.5rem",
+        padding: "0.5rem 1rem",
+        backgroundColor: "#f9fafb",
+        borderRadius: "4px",
+        fontSize: "0.875rem",
+        color: "#6b7280",
       }}
     >
       <span>{(elapsedMs / 1000).toFixed(1)}s</span>
       <span
         style={{
           ...getPercentageStyle(percentage),
-          padding: '0.125rem 0.5rem',
-          borderRadius: '9999px',
-          fontSize: '0.75rem',
+          padding: "0.125rem 0.5rem",
+          borderRadius: "9999px",
+          fontSize: "0.75rem",
           fontWeight: 600,
         }}
       >
@@ -327,12 +345,12 @@ const ElapsedTime = ({ elapsedMs, percentage }: { elapsedMs: number; percentage:
 );
 
 const TYPE_COLORS = {
-  assistant: { bg: '#dbeafe', text: '#1e40af' },
-  user: { bg: '#f3e8ff', text: '#6b21a8' },
-  system: { bg: '#e0e7ff', text: '#3730a3' },
-  result: { bg: '#dcfce7', text: '#166534' },
-  tool: { bg: '#fef3c7', text: '#92400e' },
-  prompt: { bg: '#fce7f3', text: '#9f1239' },
+  assistant: { bg: "#dbeafe", text: "#1e40af" },
+  user: { bg: "#f3e8ff", text: "#6b21a8" },
+  system: { bg: "#e0e7ff", text: "#3730a3" },
+  result: { bg: "#dcfce7", text: "#166534" },
+  tool: { bg: "#fef3c7", text: "#92400e" },
+  prompt: { bg: "#fce7f3", text: "#9f1239" },
 } as const;
 
 const Turn = ({
@@ -359,42 +377,42 @@ const Turn = ({
   return (
     <div
       style={{
-        marginBottom: '1rem',
-        border: isMCP ? '2px solid #06b6d4' : '1px solid #e5e7eb',
-        borderRadius: '8px',
-        overflow: 'hidden',
+        marginBottom: "1rem",
+        border: isMCP ? "2px solid #06b6d4" : "1px solid #e5e7eb",
+        borderRadius: "8px",
+        overflow: "hidden",
       }}
     >
       <div
         onClick={() => setIsExpanded(!isExpanded)}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          padding: '1rem',
-          backgroundColor: '#f9fafb',
-          cursor: 'pointer',
-          userSelect: 'none',
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
+          padding: "1rem",
+          backgroundColor: "#f9fafb",
+          cursor: "pointer",
+          userSelect: "none",
         }}
       >
         <div
           style={{
-            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s',
-            fontSize: '0.75rem',
+            transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+            transition: "transform 0.2s",
+            fontSize: "0.75rem",
           }}
         >
           ▶
         </div>
         <span
           style={{
-            padding: '0.25rem 0.75rem',
-            borderRadius: '4px',
-            fontSize: '0.75rem',
+            padding: "0.25rem 0.75rem",
+            borderRadius: "4px",
+            fontSize: "0.75rem",
             fontWeight: 600,
             backgroundColor: colors.bg,
             color: colors.text,
-            textTransform: 'uppercase',
+            textTransform: "uppercase",
           }}
         >
           {type}
@@ -402,12 +420,12 @@ const Turn = ({
         {isMCP && (
           <span
             style={{
-              padding: '0.25rem 0.5rem',
-              borderRadius: '4px',
-              fontSize: '0.75rem',
+              padding: "0.25rem 0.5rem",
+              borderRadius: "4px",
+              fontSize: "0.75rem",
               fontWeight: 600,
-              backgroundColor: '#06b6d4',
-              color: 'white',
+              backgroundColor: "#06b6d4",
+              color: "white",
             }}
           >
             MCP
@@ -417,9 +435,9 @@ const Turn = ({
         {subtitle && (
           <span
             style={{
-              color: '#6b7280',
-              fontSize: '0.875rem',
-              fontFamily: 'monospace',
+              color: "#6b7280",
+              fontSize: "0.875rem",
+              fontFamily: "monospace",
               flex: 1,
             }}
           >
@@ -430,14 +448,16 @@ const Turn = ({
         {tokenCount && (
           <>
             <span style={{ flex: 1 }} />
-            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{tokenCount}</span>
+            <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+              {tokenCount}
+            </span>
             {percentage !== undefined && (
               <span
                 style={{
                   ...getPercentageStyle(percentage),
-                  padding: '0.125rem 0.5rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.75rem',
+                  padding: "0.125rem 0.5rem",
+                  borderRadius: "9999px",
+                  fontSize: "0.75rem",
                   fontWeight: 600,
                 }}
               >
@@ -447,7 +467,11 @@ const Turn = ({
           </>
         )}
       </div>
-      {isExpanded && <div style={{ padding: '1rem', backgroundColor: 'white' }}>{children}</div>}
+      {isExpanded && (
+        <div style={{ padding: "1rem", backgroundColor: "white" }}>
+          {children}
+        </div>
+      )}
     </div>
   );
 };
@@ -456,18 +480,19 @@ export const Transcript = (props: TranscriptProps) => {
   const { prompt, promptTokenCount, messages } = props;
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'module';
+    const script = document.createElement("script");
+    script.type = "module";
     script.textContent = `import hljs from 'https://esm.sh/highlight.js@11.9.0'; window.hljs = hljs;`;
     document.head.appendChild(script);
 
-    const style = document.createElement('link');
-    style.rel = 'stylesheet';
-    style.href = 'https://esm.sh/highlight.js@11.9.0/styles/github-dark-dimmed.css';
+    const style = document.createElement("link");
+    style.rel = "stylesheet";
+    style.href =
+      "https://esm.sh/highlight.js@11.9.0/styles/github-dark-dimmed.css";
     document.head.appendChild(style);
 
-    const codeStyle = document.createElement('style');
-    codeStyle.textContent = 'code * { font-family: monospace !important; }';
+    const codeStyle = document.createElement("style");
+    codeStyle.textContent = "code * { font-family: monospace !important; }";
     document.head.appendChild(codeStyle);
 
     return () => {
@@ -477,10 +502,17 @@ export const Transcript = (props: TranscriptProps) => {
     };
   }, []);
 
-  const systemTurn = messages.find((t) => t.type === 'system') as SystemMessage | undefined;
-  const resultTurn = messages.find((t) => t.type === 'result') as ResultMessage | undefined;
+  const systemTurn = messages.find((t) => t.type === "system") as
+    | SystemMessage
+    | undefined;
+  const resultTurn = messages.find((t) => t.type === "result") as
+    | ResultMessage
+    | undefined;
 
-  const messageTokens = messages.reduce((sum, turn) => sum + (turn.tokenCount || 0), 0);
+  const messageTokens = messages.reduce(
+    (sum, turn) => sum + (turn.tokenCount || 0),
+    0,
+  );
 
   const totalTime = messages.reduce((sum, turn) => sum + (turn.ms || 0), 0);
   const totalMessageTokens = messageTokens;
@@ -489,21 +521,22 @@ export const Transcript = (props: TranscriptProps) => {
 
   if (systemTurn) {
     metadataCards.push({
-      title: 'Agent',
-      value: systemTurn.agent || 'N/A',
+      title: "Agent",
+      value: systemTurn.agent || "N/A",
     });
 
     metadataCards.push({
-      title: 'Model',
-      value: systemTurn.model || 'N/A',
+      title: "Model",
+      value: systemTurn.model || "N/A",
     });
 
     if (systemTurn.tools) {
-      const mcpTools = systemTurn.tools.filter((t) => t.includes('mcp'));
+      const mcpTools = systemTurn.tools.filter((t) => t.includes("mcp"));
       metadataCards.push({
-        title: 'Available Tools',
+        title: "Available Tools",
         value: systemTurn.tools.length,
-        subvalue: mcpTools.length > 0 ? `${mcpTools.length} MCP tools` : 'unknown',
+        subvalue:
+          mcpTools.length > 0 ? `${mcpTools.length} MCP tools` : "unknown",
       });
     }
 
@@ -514,20 +547,20 @@ export const Transcript = (props: TranscriptProps) => {
           .map(
             (s) =>
               `<div style="display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; background-color: #f3f4f6; border-radius: 9999px; font-size: 0.875rem; margin-right: 0.5rem; margin-bottom: 0.5rem;">
-								<span title="${s.status}" style="width: 8px; height: 8px; border-radius: 50%; background-color: ${s.status === 'connected' ? '#10b981' : s.status === 'unknown' ? '#6b7280' : '#ef4444'}; margin-right: 0.5rem;"></span>
+								<span title="${s.status}" style="width: 8px; height: 8px; border-radius: 50%; background-color: ${s.status === "connected" ? "#10b981" : s.status === "unknown" ? "#6b7280" : "#ef4444"}; margin-right: 0.5rem;"></span>
 								${s.name}
-							</div>`
+							</div>`,
           )
-          .join('') +
-        '</div>';
+          .join("") +
+        "</div>";
       metadataCards.push({
-        title: 'MCP Servers',
+        title: "MCP Servers",
         html: mcpServersHtml,
       });
     } else {
       metadataCards.push({
-        title: 'MCP Servers',
-        value: 'None',
+        title: "MCP Servers",
+        value: "None",
       });
     }
   }
@@ -535,43 +568,45 @@ export const Transcript = (props: TranscriptProps) => {
   if (resultTurn) {
     if (resultTurn.num_turns !== undefined) {
       metadataCards.push({
-        title: 'Turns',
+        title: "Turns",
         value: resultTurn.num_turns,
       });
     }
 
     if (messageTokens > 0) {
       metadataCards.push({
-        title: 'Total Message Tokens',
+        title: "Total Message Tokens",
         value: messageTokens.toLocaleString(),
       });
     }
   }
 
-  const turns = messages.filter((t) => ['assistant', 'user', 'system', 'result'].includes(t.type));
+  const turns = messages.filter((t) =>
+    ["assistant", "user", "system", "result"].includes(t.type),
+  );
 
   const groupedTurns = groupToolCallsWithResults(turns);
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
+    <div style={{ fontFamily: "system-ui, sans-serif", padding: "2rem" }}>
       <h1 style={{ marginTop: 0 }}>Agent Transcript</h1>
 
       {metadataCards.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: "2rem" }}>
           <h2
             style={{
-              fontSize: '1.125rem',
+              fontSize: "1.125rem",
               fontWeight: 600,
-              marginBottom: '1rem',
+              marginBottom: "1rem",
             }}
           >
             Metadata
           </h2>
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '1rem',
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "1rem",
             }}
           >
             {metadataCards.map((card, index) => (
@@ -583,9 +618,9 @@ export const Transcript = (props: TranscriptProps) => {
 
       <h2
         style={{
-          fontSize: '1.125rem',
+          fontSize: "1.125rem",
           fontWeight: 600,
-          marginBottom: '1rem',
+          marginBottom: "1rem",
         }}
       >
         Turns
@@ -607,12 +642,12 @@ export const Transcript = (props: TranscriptProps) => {
       {groupedTurns.map((group, index) => {
         const isTodoWrite =
           group.toolCall &&
-          'message' in group.toolCall &&
+          "message" in group.toolCall &&
           group.toolCall.message?.content?.find(
-            (c) => c.type === 'tool_use' && c.name === 'TodoWrite'
+            (c) => c.type === "tool_use" && c.name === "TodoWrite",
           );
 
-        if (isTodoWrite && 'input' in isTodoWrite && isTodoWrite.input?.todos) {
+        if (isTodoWrite && "input" in isTodoWrite && isTodoWrite.input?.todos) {
           return <TodoList key={index} todos={isTodoWrite.input.todos} />;
         }
 
@@ -629,7 +664,7 @@ export const Transcript = (props: TranscriptProps) => {
                   key={`elapsed-${index}`}
                   elapsedMs={elapsedMs}
                   percentage={percentage}
-                />
+                />,
               );
             }
           }
@@ -642,8 +677,8 @@ export const Transcript = (props: TranscriptProps) => {
               toolCall={group.toolCall as AssistantMessage}
               toolResult={group.toolResult as UserMessage}
               totalMessageTokens={totalMessageTokens}
-              cwd={systemTurn?.cwd || ''}
-            />
+              cwd={systemTurn?.cwd || ""}
+            />,
           );
         } else if (group.turn) {
           elements.push(
@@ -651,7 +686,7 @@ export const Transcript = (props: TranscriptProps) => {
               key={`turn-${index}`}
               turn={group.turn}
               totalMessageTokens={totalMessageTokens}
-            />
+            />,
           );
         }
 
@@ -677,20 +712,23 @@ function groupToolCallsWithResults(turns: TranscriptMessage[]): Array<{
     if (usedResultIndices.has(i)) continue;
 
     const toolUseContent =
-      turn.type === 'assistant' &&
-      'message' in turn &&
-      turn.message?.content?.find((c) => c.type === 'tool_use');
+      turn.type === "assistant" &&
+      "message" in turn &&
+      turn.message?.content?.find((c) => c.type === "tool_use");
 
-    if (toolUseContent && 'id' in toolUseContent) {
+    if (toolUseContent && "id" in toolUseContent) {
       const toolUseId = toolUseContent.id;
       const resultIndex = turns.findIndex(
         (t, j) =>
           j > i &&
-          t.type === 'user' &&
-          'message' in t &&
+          t.type === "user" &&
+          "message" in t &&
           t.message?.content?.some(
-            (c) => c.type === 'tool_result' && 'tool_use_id' in c && c.tool_use_id === toolUseId
-          )
+            (c) =>
+              c.type === "tool_result" &&
+              "tool_use_id" in c &&
+              c.tool_use_id === toolUseId,
+          ),
       );
 
       if (resultIndex !== -1) {
@@ -717,14 +755,17 @@ const ToolCallGroup = ({
   totalMessageTokens: number;
   cwd: string;
 }) => {
-  const toolUse = toolCall.message.content.find((c) => c.type === 'tool_use') as ToolUseContent;
-  const toolName = toolUse?.name || 'Unknown Tool';
+  const toolUse = toolCall.message.content.find(
+    (c) => c.type === "tool_use",
+  ) as ToolUseContent;
+  const toolName = toolUse?.name || "Unknown Tool";
   const isMCP = toolUse?.isMCP;
 
   const additionalInfo = extractToolAdditionalInfo(toolUse, toolName, cwd);
 
   const totalTokens = (toolCall.tokenCount || 0) + (toolResult.tokenCount || 0);
-  const percentage = totalMessageTokens > 0 ? (totalTokens / totalMessageTokens) * 100 : 0;
+  const percentage =
+    totalMessageTokens > 0 ? (totalTokens / totalMessageTokens) * 100 : 0;
 
   const tokenCountStr =
     toolCall.tokenCount && toolResult.tokenCount
@@ -754,23 +795,29 @@ const TurnRenderer = ({
   totalMessageTokens: number;
 }) => {
   const isMCP =
-    turn.type === 'assistant' &&
-    'message' in turn &&
-    turn.message?.content?.some((c) => c.type === 'tool_use' && c.isMCP);
+    turn.type === "assistant" &&
+    "message" in turn &&
+    turn.message?.content?.some((c) => c.type === "tool_use" && c.isMCP);
 
   const title = getTurnTitle(turn);
   const percentage =
-    turn.tokenCount && totalMessageTokens > 0 ? (turn.tokenCount / totalMessageTokens) * 100 : 0;
+    turn.tokenCount && totalMessageTokens > 0
+      ? (turn.tokenCount / totalMessageTokens) * 100
+      : 0;
 
   return (
     <Turn
       type={turn.type}
       title={title}
-      tokenCount={turn.tokenCount ? `${turn.tokenCount.toLocaleString()} tokens` : undefined}
+      tokenCount={
+        turn.tokenCount
+          ? `${turn.tokenCount.toLocaleString()} tokens`
+          : undefined
+      }
       percentage={turn.tokenCount ? percentage : undefined}
       isMCP={isMCP}
     >
-      {'message' in turn && turn.message?.content
+      {"message" in turn && turn.message?.content
         ? renderTurnContent(turn.message.content)
         : renderSystemOrResult(turn)}
     </Turn>
@@ -778,54 +825,64 @@ const TurnRenderer = ({
 };
 
 function getTurnTitle(turn: TranscriptMessage): string {
-  if (turn.type === 'assistant' && 'message' in turn && turn.message?.content) {
-    const toolUse = turn.message.content.find((c) => c.type === 'tool_use');
-    if (toolUse && 'name' in toolUse) return toolUse.name;
+  if (turn.type === "assistant" && "message" in turn && turn.message?.content) {
+    const toolUse = turn.message.content.find((c) => c.type === "tool_use");
+    if (toolUse && "name" in toolUse) return toolUse.name;
 
-    const text = turn.message.content.find((c) => c.type === 'text');
-    if (text && 'text' in text) return truncateText(text.text, 80);
+    const text = turn.message.content.find((c) => c.type === "text");
+    if (text && "text" in text) return truncateText(text.text, 80);
   }
 
-  if (turn.type === 'user' && 'message' in turn && turn.message?.content) {
-    const toolResult = turn.message.content.find((c) => c.type === 'tool_result');
-    if (toolResult && 'tool_use_id' in toolResult) return `Result: ${toolResult.tool_use_id}`;
+  if (turn.type === "user" && "message" in turn && turn.message?.content) {
+    const toolResult = turn.message.content.find(
+      (c) => c.type === "tool_result",
+    );
+    if (toolResult && "tool_use_id" in toolResult)
+      return `Result: ${toolResult.tool_use_id}`;
   }
 
-  return 'subtype' in turn && turn.subtype ? turn.subtype : turn.type;
+  return "subtype" in turn && turn.subtype ? turn.subtype : turn.type;
 }
 
 function extractToolAdditionalInfo(
   toolUse: ToolUseContent | undefined,
   toolName: string,
-  cwd: string
+  cwd: string,
 ): string {
-  if (!toolUse?.input) return '';
+  if (!toolUse?.input) return "";
 
-  if (['Read', 'Write', 'Edit'].includes(toolName)) {
+  if (["Read", "Write", "Edit"].includes(toolName)) {
     const fullPath = toolUse.input.file_path || toolUse.input.path;
     if (fullPath) {
       return cwd && fullPath.startsWith(cwd)
-        ? fullPath.substring(cwd.length).replace(/^\//, '')
+        ? fullPath.substring(cwd.length).replace(/^\//, "")
         : fullPath;
     }
   }
 
-  if (toolName === 'Glob' && toolUse.input.pattern) {
+  if (toolName === "Glob" && toolUse.input.pattern) {
     return toolUse.input.pattern;
   }
 
-  if (toolName === 'Bash' && toolUse.input.command) {
+  if (toolName === "Bash" && toolUse.input.command) {
     const cmd = toolUse.input.command;
-    return cmd.length > 80 ? cmd.slice(0, 80) + '...' : cmd;
+    return cmd.length > 80 ? cmd.slice(0, 80) + "..." : cmd;
   }
 
-  return '';
+  return "";
 }
 
-function renderToolInput(toolUse: ToolUseContent | undefined, toolName: string): React.ReactNode {
+function renderToolInput(
+  toolUse: ToolUseContent | undefined,
+  toolName: string,
+): React.ReactNode {
   if (!toolUse?.input) return null;
 
-  if (toolName === 'Write' && toolUse.input.file_path && toolUse.input.content) {
+  if (
+    toolName === "Write" &&
+    toolUse.input.file_path &&
+    toolUse.input.content
+  ) {
     return (
       <FileContent
         filePath={toolUse.input.file_path}
@@ -836,7 +893,7 @@ function renderToolInput(toolUse: ToolUseContent | undefined, toolName: string):
   }
 
   if (
-    toolName === 'Edit' &&
+    toolName === "Edit" &&
     toolUse.input.file_path &&
     toolUse.input.old_string &&
     toolUse.input.new_string
@@ -857,14 +914,19 @@ function renderToolInput(toolUse: ToolUseContent | undefined, toolName: string):
   );
 }
 
-function renderToolOutput(toolResult: UserMessage, isMCP: boolean): React.ReactNode {
-  const toolResultContent = toolResult.message.content.find((c) => c.type === 'tool_result');
+function renderToolOutput(
+  toolResult: UserMessage,
+  isMCP: boolean,
+): React.ReactNode {
+  const toolResultContent = toolResult.message.content.find(
+    (c) => c.type === "tool_result",
+  );
   if (!toolResultContent) return null;
 
   if (isMCP) {
     try {
       const content =
-        typeof toolResultContent.content === 'string'
+        typeof toolResultContent.content === "string"
           ? JSON.parse(toolResultContent.content)
           : toolResultContent.content;
 
@@ -873,8 +935,14 @@ function renderToolOutput(toolResult: UserMessage, isMCP: boolean): React.ReactN
           <ContentSection label="Output">
             <>
               {content.map((item, index) => {
-                if (item.type !== 'text' || !item.text) return null;
-                return <CodeBlock key={index} content={item.text} isError={item.isError} />;
+                if (item.type !== "text" || !item.text) return null;
+                return (
+                  <CodeBlock
+                    key={index}
+                    content={item.text}
+                    isError={item.isError}
+                  />
+                );
               })}
             </>
           </ContentSection>
@@ -889,7 +957,7 @@ function renderToolOutput(toolResult: UserMessage, isMCP: boolean): React.ReactN
     <ContentSection label="Output">
       <CodeBlock
         content={
-          typeof toolResultContent.content === 'string'
+          typeof toolResultContent.content === "string"
             ? toolResultContent.content
             : JSON.stringify(toolResultContent.content, null, 2)
         }
@@ -899,48 +967,50 @@ function renderToolOutput(toolResult: UserMessage, isMCP: boolean): React.ReactN
 }
 
 function renderTurnContent(
-  content: (TextContent | ToolUseContent | ToolResultContent)[]
+  content: (TextContent | ToolUseContent | ToolResultContent)[],
 ): React.ReactNode {
   return (
     <>
       {content.map((item, index) => {
-        if (item.type === 'text' && 'text' in item) {
+        if (item.type === "text" && "text" in item) {
           return (
             <ContentSection key={index} label="Text">
               <CodeBlock content={item.text} language="markdown" />
             </ContentSection>
           );
         }
-        if (item.type === 'tool_use' && 'name' in item) {
+        if (item.type === "tool_use" && "name" in item) {
           return (
             <div key={index}>
               <ContentSection label="Tool">
                 <code
                   style={{
-                    background: '#f9f9f9',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem',
-                    fontFamily: 'monospace',
+                    background: "#f9f9f9",
+                    padding: "0.25rem 0.5rem",
+                    borderRadius: "4px",
+                    fontSize: "0.875rem",
+                    fontFamily: "monospace",
                   }}
                 >
                   {item.name}
                 </code>
               </ContentSection>
-              {'input' in item && item.input && (
+              {"input" in item && item.input && (
                 <ContentSection label="Input">
-                  <CodeBlock content={formatJsonWithPreservedWhitespace(item.input)} />
+                  <CodeBlock
+                    content={formatJsonWithPreservedWhitespace(item.input)}
+                  />
                 </ContentSection>
               )}
             </div>
           );
         }
-        if (item.type === 'tool_result' && 'content' in item) {
+        if (item.type === "tool_result" && "content" in item) {
           return (
             <ContentSection key={index} label="Result">
               <CodeBlock
                 content={
-                  typeof item.content === 'string'
+                  typeof item.content === "string"
                     ? item.content
                     : JSON.stringify(item.content, null, 2)
                 }

@@ -1,10 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { isAutomaticScreenshotCaptureEnabledMock } = vi.hoisted(() => ({
+  isAutomaticScreenshotCaptureEnabledMock: vi.fn(() => false),
+}));
+
 import { page } from '@vitest/browser/context';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import {
   DEFAULT_VIEWPORT_DIMENSIONS,
+  SCREENSHOT_VIEWPORT_DIMENSIONS,
   type ViewportsGlobal,
   type ViewportsParam,
   setViewport,
@@ -16,9 +21,14 @@ vi.mock('@vitest/browser/context', () => ({
   },
 }));
 
+vi.mock('./screenshots', () => ({
+  isAutomaticScreenshotCaptureEnabled: isAutomaticScreenshotCaptureEnabledMock,
+}));
+
 describe('setViewport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isAutomaticScreenshotCaptureEnabledMock.mockReturnValue(false);
     globalThis.__vitest_browser__ = true;
   });
 
@@ -31,6 +41,17 @@ describe('setViewport', () => {
 
     await setViewport();
     expect(page.viewport).not.toHaveBeenCalled();
+  });
+
+  it('uses the mobile screenshot viewport when automatic capture is enabled', async () => {
+    isAutomaticScreenshotCaptureEnabledMock.mockReturnValue(true);
+
+    await setViewport();
+
+    expect(page.viewport).toHaveBeenCalledWith(
+      SCREENSHOT_VIEWPORT_DIMENSIONS.width,
+      SCREENSHOT_VIEWPORT_DIMENSIONS.height
+    );
   });
 
   describe('globals API', () => {

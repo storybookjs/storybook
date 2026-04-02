@@ -10,6 +10,7 @@ import type {
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
+import { normalizePath } from '../../common/utils/normalize-path.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
@@ -45,8 +46,7 @@ function getStoryIdsByAbsolutePath(
       return;
     }
 
-    const absolutePath = resolve(workingDir, entry.importPath);
-    // logger.info(`Story ${entry.id} absolute path: ${absolutePath}`);
+    const absolutePath = normalizePath(resolve(workingDir, entry.importPath));
     const storyIds = storyIdsByFile.get(absolutePath) ?? new Set<string>();
     storyIds.add(entry.id);
     storyIdsByFile.set(absolutePath, storyIds);
@@ -244,10 +244,10 @@ export class ChangeDetectionService {
     ]);
 
     const changedFiles = new Set(
-      Array.from(changes.changed).map((filePath) => resolve(repoRoot, filePath))
+      Array.from(changes.changed).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
     );
     const newFiles = new Set(
-      Array.from(changes.new).map((filePath) => resolve(repoRoot, filePath))
+      Array.from(changes.new).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
     );
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
 

@@ -1,17 +1,38 @@
 import type { ModuleGraph, ModuleNode } from 'storybook/internal/types';
 
+import { normalizePath } from '../../common/utils/normalize-path.ts';
+
+function getModuleNodesByNormalizedPath(
+  moduleGraph: ModuleGraph,
+  normalizedPath: string
+): Set<ModuleNode> | undefined {
+  const directMatch = moduleGraph.get(normalizedPath);
+  if (directMatch) {
+    return directMatch;
+  }
+
+  for (const [modulePath, nodes] of moduleGraph.entries()) {
+    if (normalizePath(modulePath) === normalizedPath) {
+      return nodes;
+    }
+  }
+
+  return undefined;
+}
+
 export function findAffectedStoryFiles(
   changedFile: string,
   moduleGraph: ModuleGraph,
   storyIdsByFile: Map<string, Set<string>>
 ): Map<string, { distance: number }> {
   const affectedStoryFiles = new Map<string, { distance: number }>();
+  const normalizedChangedFile = normalizePath(changedFile);
 
-  if (storyIdsByFile.has(changedFile)) {
-    affectedStoryFiles.set(changedFile, { distance: 0 });
+  if (storyIdsByFile.has(normalizedChangedFile)) {
+    affectedStoryFiles.set(normalizedChangedFile, { distance: 0 });
   }
 
-  const startingNodes = moduleGraph.get(changedFile);
+  const startingNodes = getModuleNodesByNormalizedPath(moduleGraph, normalizedChangedFile);
   if (!startingNodes?.size) {
     return affectedStoryFiles;
   }
@@ -35,11 +56,12 @@ export function findAffectedStoryFiles(
       }
 
       visited.set(importer, distance);
-      if (storyIdsByFile.has(importer.file)) {
-        const previousStoryDistance = affectedStoryFiles.get(importer.file)?.distance;
+      const normalizedImporterFile = normalizePath(importer.file);
+      if (storyIdsByFile.has(normalizedImporterFile)) {
+        const previousStoryDistance = affectedStoryFiles.get(normalizedImporterFile)?.distance;
 
         if (previousStoryDistance === undefined || distance < previousStoryDistance) {
-          affectedStoryFiles.set(importer.file, { distance });
+          affectedStoryFiles.set(normalizedImporterFile, { distance });
         }
       }
 

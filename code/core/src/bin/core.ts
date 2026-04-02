@@ -189,6 +189,7 @@ command('build')
     });
 
     logger.outro('Storybook build completed successfully');
+    process.exit(0);
   });
 
 command('index')
@@ -216,6 +217,7 @@ command('index')
       ...options,
       packageJson,
     }).catch(() => process.exit(1));
+    process.exit(0);
   });
 
 program.on('command:*', ([invalidCmd]) => {

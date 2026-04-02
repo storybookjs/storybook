@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface TextContent {
-  type: "text";
+  type: 'text';
   text: string;
 }
 
 export interface ToolUseContent {
-  type: "tool_use";
+  type: 'tool_use';
   id: string;
   name: string;
   input: Record<string, any>;
@@ -14,7 +14,7 @@ export interface ToolUseContent {
 
 export interface ToolResultContent {
   tool_use_id: string;
-  type: "tool_result";
+  type: 'tool_result';
   content: string | Array<{ type: string; text?: string; isError?: boolean }>;
 }
 
@@ -24,7 +24,7 @@ export interface MessageUsage {
 }
 
 export interface AssistantMessage {
-  type: "assistant";
+  type: 'assistant';
   message: {
     content: (TextContent | ToolUseContent)[];
     usage: MessageUsage;
@@ -35,7 +35,7 @@ export interface AssistantMessage {
 }
 
 export interface UserMessage {
-  type: "user";
+  type: 'user';
   message: {
     content: ToolResultContent[];
   };
@@ -45,14 +45,14 @@ export interface UserMessage {
 }
 
 export interface SystemMessage {
-  type: "system";
-  subtype: "init";
+  type: 'system';
+  subtype: 'init';
   agent: string;
   model: string;
   tools: string[];
   mcp_servers: Array<{
     name: string;
-    status: "connected" | "disconnected" | "unknown";
+    status: 'connected' | 'disconnected' | 'unknown';
   }>;
   cwd: string;
   ms: number;
@@ -61,8 +61,8 @@ export interface SystemMessage {
 }
 
 export interface ResultMessage {
-  type: "result";
-  subtype: "success" | "error";
+  type: 'result';
+  subtype: 'success' | 'error';
   duration_ms: number;
   duration_api_ms: number;
   num_turns: number;
@@ -72,11 +72,7 @@ export interface ResultMessage {
   costUSD?: number;
 }
 
-export type TranscriptMessage =
-  | AssistantMessage
-  | UserMessage
-  | SystemMessage
-  | ResultMessage;
+export type TranscriptMessage = AssistantMessage | UserMessage | SystemMessage | ResultMessage;
 
 export interface TranscriptProps {
   prompt: string;

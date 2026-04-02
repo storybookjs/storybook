@@ -14,11 +14,11 @@
  *   node eval/eval.ts --list-models
  *   node eval/eval.ts --list-prompts
  */
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { parseArgs } from "node:util";
-import { z } from "zod";
-import pc from "picocolors";
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { parseArgs } from 'node:util';
+import { z } from 'zod';
+import pc from 'picocolors';
 import {
   AGENT_IDS,
   AGENTS,
@@ -28,10 +28,10 @@ import {
   CODEX_MODELS,
   type AgentId,
   type AgentVariant,
-} from "./lib/agents/config.ts";
-import { prepareTrial } from "./lib/prepare-trial.ts";
-import { PROJECTS } from "./lib/projects.ts";
-import { runTrial, type TrialConfig } from "./lib/run-trial.ts";
+} from './lib/agents/config.ts';
+import { prepareTrial } from './lib/prepare-trial.ts';
+import { PROJECTS } from './lib/projects.ts';
+import { runTrial, type TrialConfig } from './lib/run-trial.ts';
 import {
   captureEnvironment,
   createLogger,
@@ -40,13 +40,13 @@ import {
   generateTrialId,
   listPrompts,
   loadPrompt,
-} from "./lib/utils.ts";
+} from './lib/utils.ts';
 
 const PROJECT_NAMES = PROJECTS.map((p) => p.name) as [string, ...string[]];
 
 const base = {
   project: z.enum(PROJECT_NAMES).optional(),
-  prompt: z.string().default("setup"),
+  prompt: z.string().default('setup'),
   verbose: z.boolean().default(false),
   manual: z.boolean().default(false),
   listProjects: z.boolean().default(false),
@@ -54,16 +54,16 @@ const base = {
   listPrompts: z.boolean().default(false),
 };
 
-const argsSchema = z.discriminatedUnion("agent", [
+const argsSchema = z.discriminatedUnion('agent', [
   z.object({
     ...base,
-    agent: z.literal("claude"),
+    agent: z.literal('claude'),
     model: z.enum(CLAUDE_MODELS).default(AGENTS.claude.defaultModel),
     effort: z.enum(CLAUDE_EFFORTS).default(AGENTS.claude.defaultEffort),
   }),
   z.object({
     ...base,
-    agent: z.literal("codex"),
+    agent: z.literal('codex'),
     model: z.enum(CODEX_MODELS).default(AGENTS.codex.defaultModel),
     effort: z.enum(CODEX_EFFORTS).default(AGENTS.codex.defaultEffort),
   }),
@@ -71,36 +71,35 @@ const argsSchema = z.discriminatedUnion("agent", [
 
 const { values } = parseArgs({
   options: {
-    project: { type: "string", short: "p" },
-    agent: { type: "string", short: "a" },
-    model: { type: "string", short: "m" },
-    effort: { type: "string", short: "e" },
-    prompt: { type: "string" },
-    verbose: { type: "boolean", short: "v" },
-    manual: { type: "boolean" },
-    "list-projects": { type: "boolean" },
-    "list-models": { type: "boolean" },
-    "list-prompts": { type: "boolean" },
+    project: { type: 'string', short: 'p' },
+    agent: { type: 'string', short: 'a' },
+    model: { type: 'string', short: 'm' },
+    effort: { type: 'string', short: 'e' },
+    prompt: { type: 'string' },
+    verbose: { type: 'boolean', short: 'v' },
+    manual: { type: 'boolean' },
+    'list-projects': { type: 'boolean' },
+    'list-models': { type: 'boolean' },
+    'list-prompts': { type: 'boolean' },
   },
   args: process.argv.slice(2),
   strict: true,
 });
 
 // Resolve the discriminator: explicit --agent, inferred from --model, or default to claude.
-const agent =
-  values.agent ?? (values.model ? inferAgent(values.model) : "claude");
+const agent = values.agent ?? (values.model ? inferAgent(values.model) : 'claude');
 
 const parsed = argsSchema.safeParse({
   ...values,
   agent,
-  listProjects: values["list-projects"],
-  listModels: values["list-models"],
-  listPrompts: values["list-prompts"],
+  listProjects: values['list-projects'],
+  listModels: values['list-models'],
+  listPrompts: values['list-prompts'],
 });
 
 if (!parsed.success) {
   for (const issue of parsed.error.issues) {
-    console.error(pc.red(`  ${issue.path.join(".")}: ${issue.message}`));
+    console.error(pc.red(`  ${issue.path.join('.')}: ${issue.message}`));
   }
   process.exit(1);
 }
@@ -127,9 +126,7 @@ if (args.listPrompts) {
 }
 
 if (!args.project) {
-  logger.log(
-    pc.red(`Specify a project with -p. Available: ${PROJECT_NAMES.join(", ")}`),
-  );
+  logger.log(pc.red(`Specify a project with -p. Available: ${PROJECT_NAMES.join(', ')}`));
   process.exit(1);
 }
 const project = PROJECTS.find((p) => p.name === args.project)!;
@@ -137,7 +134,7 @@ const variant = toVariant(args);
 
 logger.log(pc.bold(`\nStorybook Setup Eval — ${project.name}`));
 logger.log(
-  `Agent: ${variant.agent} | Model: ${variant.model} | Effort: ${variant.effort} | Prompt: ${args.prompt}\n`,
+  `Agent: ${variant.agent} | Model: ${variant.model} | Effort: ${variant.effort} | Prompt: ${args.prompt}\n`
 );
 
 if (args.manual) {
@@ -146,17 +143,17 @@ if (args.manual) {
   await captureEnvironment();
 
   const prompt = loadPrompt(args.prompt);
-  const promptPath = join(workspace.resultsDir, "prompt.md");
+  const promptPath = join(workspace.resultsDir, 'prompt.md');
   await writeFile(promptPath, prompt);
 
   const cliCommand = buildManualCommand(variant, promptPath);
 
-  logger.log(pc.bold("\n── Manual mode ──"));
+  logger.log(pc.bold('\n── Manual mode ──'));
   logger.log(`\n  Trial dir:    ${pc.cyan(workspace.trialDir)}`);
   logger.log(`  Project dir:  ${pc.cyan(workspace.projectPath)}`);
   logger.log(`  Prompt file:  ${pc.cyan(promptPath)}`);
-  logger.log(pc.bold("\nRun the agent yourself:\n"));
-  logger.log(`  ${pc.green("cd")} ${workspace.projectPath}`);
+  logger.log(pc.bold('\nRun the agent yourself:\n'));
+  logger.log(`  ${pc.green('cd')} ${workspace.projectPath}`);
   logger.log(`  ${pc.green(cliCommand)}\n`);
 } else {
   const result = await runTrial(
@@ -166,18 +163,16 @@ if (args.manual) {
       prompt: args.prompt,
       verbose: args.verbose,
     } satisfies TrialConfig,
-    logger,
+    logger
   );
 
   const ghost = result.grade.ghostStories;
   const ghostStr = ghost
     ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)`
-    : "-";
+    : '-';
 
-  logger.log(pc.bold("\nResult"));
-  logger.log(
-    `  Build:   ${result.grade.buildSuccess ? pc.green("PASS") : pc.red("FAIL")}`,
-  );
+  logger.log(pc.bold('\nResult'));
+  logger.log(`  Build:   ${result.grade.buildSuccess ? pc.green('PASS') : pc.red('FAIL')}`);
   logger.log(`  Ghost:   ${ghostStr}`);
   logger.log(`  TS Err:  ${result.grade.typeCheckErrors}`);
   logger.log(`  Score:   ${result.score.score}`);
@@ -185,7 +180,7 @@ if (args.manual) {
   logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
   logger.log(`  Turns:   ${result.execution.turns}`);
 
-  logger.log("\nDone.");
+  logger.log('\nDone.');
 }
 
 function inferAgent(model: string): AgentId {
@@ -197,7 +192,7 @@ function inferAgent(model: string): AgentId {
 
 function buildManualCommand(variant: AgentVariant, promptPath: string): string {
   const promptArg = `"$(cat ${promptPath})"`;
-  if (variant.agent === "claude") {
+  if (variant.agent === 'claude') {
     const sdkModel = AGENTS.claude.sdkModelIds[variant.model] ?? variant.model;
     return `claude --model ${sdkModel} ${promptArg}`;
   }
@@ -205,7 +200,7 @@ function buildManualCommand(variant: AgentVariant, promptPath: string): string {
 }
 
 function toVariant(args: z.infer<typeof argsSchema>): AgentVariant {
-  return args.agent === "claude"
-    ? { agent: "claude", model: args.model, effort: args.effort }
-    : { agent: "codex", model: args.model, effort: args.effort };
+  return args.agent === 'claude'
+    ? { agent: 'claude', model: args.model, effort: args.effort }
+    : { agent: 'codex', model: args.model, effort: args.effort };
 }

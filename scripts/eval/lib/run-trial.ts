@@ -1,21 +1,16 @@
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import type { Logger } from "./utils.ts";
-import type { AgentId, AgentDriver, AgentVariant } from "./agents/config.ts";
-import type { Project } from "./projects.ts";
-import { grade } from "./grade.ts";
-import { claudeAgent } from "./agents/claude-code.ts";
-import { codexAgent } from "./agents/codex.ts";
-import { publishTrialBranch, type PublishMetadata } from "./publish-trial.ts";
-import { prepareTrial } from "./prepare-trial.ts";
-import { runStorybookScreenshots } from "./screenshots.ts";
-import { buildEvalData, type EvalData } from "./result-docs.ts";
-import {
-  generateTrialId,
-  loadPrompt,
-  captureEnvironment,
-  createLogger,
-} from "./utils.ts";
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import type { Logger } from './utils.ts';
+import type { AgentId, AgentDriver, AgentVariant } from './agents/config.ts';
+import type { Project } from './projects.ts';
+import { grade } from './grade.ts';
+import { claudeAgent } from './agents/claude-code.ts';
+import { codexAgent } from './agents/codex.ts';
+import { publishTrialBranch, type PublishMetadata } from './publish-trial.ts';
+import { prepareTrial } from './prepare-trial.ts';
+import { runStorybookScreenshots } from './screenshots.ts';
+import { buildEvalData, type EvalData } from './result-docs.ts';
+import { generateTrialId, loadPrompt, captureEnvironment, createLogger } from './utils.ts';
 
 export interface TrialConfig {
   /** Which project to evaluate from its normalized benchmark baseline branch. */
@@ -42,14 +37,11 @@ const drivers: Record<AgentId, AgentDriver> = {
 /**
  * Run a full eval trial: prepare -> execute agent -> grade -> save.
  */
-export async function runTrial(
-  config: TrialConfig,
-  logger?: Logger,
-): Promise<RunTrialResult> {
+export async function runTrial(config: TrialConfig, logger?: Logger): Promise<RunTrialResult> {
   const { project, variant, prompt: promptName } = config;
   const { agent: agentName, model } = variant;
   const log = logger ?? createLogger();
-  const resolvedPromptName = promptName || "setup";
+  const resolvedPromptName = promptName || 'setup';
   const trialId = generateTrialId();
   const timestamp = new Date().toISOString();
 
@@ -63,7 +55,7 @@ export async function runTrial(
 
   // 3. Load the prompt
   const prompt = loadPrompt(promptName);
-  await writeFile(join(workspace.resultsDir, "prompt.md"), prompt);
+  await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
   // 4. Execute the agent
   log.log(`  Running ${agentName} (${model}, effort=${variant.effort})...`);
@@ -76,15 +68,11 @@ export async function runTrial(
     logger: log,
   });
   log.logSuccess(
-    `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : "cost N/A"}, ${execution.turns} turns)`,
+    `Agent completed (${Math.round(execution.duration)}s, ${execution.cost ? `$${execution.cost.toFixed(2)}` : 'cost N/A'}, ${execution.turns} turns)`
   );
 
   // 5. Grade the results (pass agent duration for performance scoring)
-  const { grade: trialGrade, score } = await grade(
-    workspace,
-    log,
-    execution.duration,
-  );
+  const { grade: trialGrade, score } = await grade(workspace, log, execution.duration);
 
   // 6. Generate screenshots for the created or modified story files
   const screenshotRun = trialGrade.buildSuccess
@@ -116,16 +104,16 @@ export async function runTrial(
     transcript,
     artifacts: {
       buildOutput: {
-        path: "eval-results/build-output.txt",
+        path: 'eval-results/build-output.txt',
         success: trialGrade.buildSuccess,
       },
       typecheckOutput: {
-        path: "eval-results/typecheck-output.txt",
+        path: 'eval-results/typecheck-output.txt',
         errorCount: trialGrade.typeCheckErrors,
       },
       screenshotOutput: screenshotRun.attempted
         ? {
-            path: "eval-results/screenshot-output.txt",
+            path: 'eval-results/screenshot-output.txt',
             attempted: screenshotRun.attempted,
             success: screenshotRun.success,
           }
@@ -134,8 +122,8 @@ export async function runTrial(
   });
 
   await writeFile(
-    join(workspace.resultsDir, "data.json"),
-    JSON.stringify(reportForCommit, null, 2),
+    join(workspace.resultsDir, 'data.json'),
+    JSON.stringify(reportForCommit, null, 2)
   );
 
   // 8. Commit, push, and open the benchmark PR

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   formatDuration,
@@ -7,134 +7,130 @@ import {
   loadPrompt,
   listPrompts,
   formatTable,
-} from "./utils";
+} from './utils';
 
-describe("formatDuration", () => {
-  it("formats seconds under a minute", () => {
-    expect(formatDuration(0)).toBe("0s");
-    expect(formatDuration(1)).toBe("1s");
-    expect(formatDuration(45)).toBe("45s");
+describe('formatDuration', () => {
+  it('formats seconds under a minute', () => {
+    expect(formatDuration(0)).toBe('0s');
+    expect(formatDuration(1)).toBe('1s');
+    expect(formatDuration(45)).toBe('45s');
   });
 
-  it("rounds fractional seconds", () => {
-    expect(formatDuration(2.7)).toBe("3s");
-    expect(formatDuration(59.4)).toBe("59s");
+  it('rounds fractional seconds', () => {
+    expect(formatDuration(2.7)).toBe('3s');
+    expect(formatDuration(59.4)).toBe('59s');
   });
 
-  it("formats minutes and seconds", () => {
-    expect(formatDuration(60)).toBe("1m0s");
-    expect(formatDuration(61)).toBe("1m1s");
-    expect(formatDuration(90)).toBe("1m30s");
-    expect(formatDuration(125)).toBe("2m5s");
-    expect(formatDuration(3661)).toBe("61m1s");
-  });
-});
-
-describe("formatCost", () => {
-  it("returns dash for undefined", () => {
-    expect(formatCost(undefined)).toBe("-");
-    expect(formatCost()).toBe("-");
-  });
-
-  it("formats dollar amounts", () => {
-    expect(formatCost(0)).toBe("$0.00");
-    expect(formatCost(1.5)).toBe("$1.50");
+  it('formats minutes and seconds', () => {
+    expect(formatDuration(60)).toBe('1m0s');
+    expect(formatDuration(61)).toBe('1m1s');
+    expect(formatDuration(90)).toBe('1m30s');
+    expect(formatDuration(125)).toBe('2m5s');
+    expect(formatDuration(3661)).toBe('61m1s');
   });
 });
 
-describe("generateTrialId", () => {
-  it("starts with a compact UTC timestamp", () => {
+describe('formatCost', () => {
+  it('returns dash for undefined', () => {
+    expect(formatCost(undefined)).toBe('-');
+    expect(formatCost()).toBe('-');
+  });
+
+  it('formats dollar amounts', () => {
+    expect(formatCost(0)).toBe('$0.00');
+    expect(formatCost(1.5)).toBe('$1.50');
+  });
+});
+
+describe('generateTrialId', () => {
+  it('starts with a compact UTC timestamp', () => {
     const id = generateTrialId();
     expect(id).toMatch(/^\d{8}T\d{9}Z-[a-f0-9]{8}$/);
   });
 
-  it("generates unique IDs", () => {
+  it('generates unique IDs', () => {
     const a = generateTrialId();
     const b = generateTrialId();
     expect(a).not.toBe(b);
   });
 });
 
-describe("listPrompts", () => {
-  it("lists available prompt names", () => {
+describe('listPrompts', () => {
+  it('lists available prompt names', () => {
     const prompts = listPrompts();
-    expect(prompts).toContain("setup");
+    expect(prompts).toContain('setup');
   });
 
-  it("returns only names without .md extension", () => {
+  it('returns only names without .md extension', () => {
     for (const name of listPrompts()) {
-      expect(name).not.toContain(".md");
+      expect(name).not.toContain('.md');
     }
   });
 });
 
-describe("loadPrompt", () => {
-  it("loads setup prompt by default", () => {
+describe('loadPrompt', () => {
+  it('loads setup prompt by default', () => {
     const prompt = loadPrompt();
-    expect(prompt).toContain("Storybook");
+    expect(prompt).toContain('Storybook');
     expect(prompt.length).toBeGreaterThan(0);
   });
 
-  it("loads setup prompt by name", () => {
-    const prompt = loadPrompt("setup");
-    expect(prompt).toContain("Storybook");
-    expect(prompt).toContain("### Step 1");
+  it('loads setup prompt by name', () => {
+    const prompt = loadPrompt('setup');
+    expect(prompt).toContain('Storybook');
+    expect(prompt).toContain('### Step 1');
   });
 
-  it("throws for unknown prompt", () => {
-    expect(() => loadPrompt("nonexistent-prompt-xyz")).toThrow(
-      "Prompt not found",
-    );
+  it('throws for unknown prompt', () => {
+    expect(() => loadPrompt('nonexistent-prompt-xyz')).toThrow('Prompt not found');
   });
 
-  it("returns trimmed content", () => {
-    const prompt = loadPrompt("setup");
+  it('returns trimmed content', () => {
+    const prompt = loadPrompt('setup');
     expect(prompt).toBe(prompt.trim());
   });
 });
 
-describe("formatTable", () => {
-  it("formats a simple table with aligned columns", () => {
+describe('formatTable', () => {
+  it('formats a simple table with aligned columns', () => {
     const result = formatTable(
-      ["Name", "Score"],
+      ['Name', 'Score'],
       [
-        ["Alice", "100"],
-        ["Bob", "95"],
-      ],
+        ['Alice', '100'],
+        ['Bob', '95'],
+      ]
     );
-    const lines = result.split("\n");
+    const lines = result.split('\n');
     expect(lines).toHaveLength(4); // header + divider + 2 rows
-    expect(lines[0]).toContain("Name");
-    expect(lines[0]).toContain("Score");
+    expect(lines[0]).toContain('Name');
+    expect(lines[0]).toContain('Score');
     expect(lines[1]).toMatch(/^-+\+-+$/);
-    expect(lines[2]).toContain("Alice");
-    expect(lines[3]).toContain("Bob");
+    expect(lines[2]).toContain('Alice');
+    expect(lines[3]).toContain('Bob');
   });
 
-  it("auto-sizes columns to fit content", () => {
-    const result = formatTable(["X", "Y"], [["short", "a-much-longer-value"]]);
-    const lines = result.split("\n");
+  it('auto-sizes columns to fit content', () => {
+    const result = formatTable(['X', 'Y'], [['short', 'a-much-longer-value']]);
+    const lines = result.split('\n');
     // Header column for Y should be padded to match the data width
-    const headerCols = lines[0].split(" | ");
-    const dataCols = lines[2].split(" | ");
-    expect(headerCols[1].trim().length).toBeLessThanOrEqual(
-      dataCols[1].trim().length,
-    );
+    const headerCols = lines[0].split(' | ');
+    const dataCols = lines[2].split(' | ');
+    expect(headerCols[1].trim().length).toBeLessThanOrEqual(dataCols[1].trim().length);
   });
 
-  it("handles ANSI escape codes in cells", () => {
-    const green = "\x1b[32mPASS\x1b[39m";
-    const result = formatTable(["Status"], [[green], ["FAIL"]]);
-    const lines = result.split("\n");
+  it('handles ANSI escape codes in cells', () => {
+    const green = '\x1b[32mPASS\x1b[39m';
+    const result = formatTable(['Status'], [[green], ['FAIL']]);
+    const lines = result.split('\n');
     // Both rows should be the same visible width
     // The ANSI row has extra invisible chars but should still align
-    expect(lines[2]).toContain("PASS");
-    expect(lines[3]).toContain("FAIL");
+    expect(lines[2]).toContain('PASS');
+    expect(lines[3]).toContain('FAIL');
   });
 
-  it("handles empty rows", () => {
-    const result = formatTable(["A", "B"], []);
-    const lines = result.split("\n");
+  it('handles empty rows', () => {
+    const result = formatTable(['A', 'B'], []);
+    const lines = result.split('\n');
     expect(lines).toHaveLength(2); // header + divider only
   });
 });

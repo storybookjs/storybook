@@ -1,14 +1,14 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const { queryMock } = vi.hoisted(() => ({
   queryMock: vi.fn(),
 }));
 
-vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
+vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: queryMock,
 }));
 
-import { claudeAgent } from "./claude-code.ts";
+import { claudeAgent } from './claude-code.ts';
 
 const logger = {
   log: vi.fn(),
@@ -17,16 +17,16 @@ const logger = {
   logError: vi.fn(),
 };
 
-describe("claudeAgent.execute", () => {
+describe('claudeAgent.execute', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("does not pass maxTurns to the Claude SDK query", async () => {
+  it('does not pass maxTurns to the Claude SDK query', async () => {
     queryMock.mockImplementation(async function* () {
       yield {
-        type: "result",
-        subtype: "success",
+        type: 'result',
+        subtype: 'success',
         num_turns: 2,
         total_cost_usd: 0.42,
         duration_api_ms: 4000,
@@ -34,10 +34,10 @@ describe("claudeAgent.execute", () => {
     });
 
     await claudeAgent.execute({
-      prompt: "prompt",
-      projectPath: "/repo",
-      variant: { agent: "claude", model: "sonnet-4.6", effort: "medium" },
-      resultsDir: "/results",
+      prompt: 'prompt',
+      projectPath: '/repo',
+      variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'medium' },
+      resultsDir: '/results',
       logger,
     });
 
@@ -46,15 +46,15 @@ describe("claudeAgent.execute", () => {
         options: expect.not.objectContaining({
           maxTurns: expect.anything(),
         }),
-      }),
+      })
     );
   });
 
-  it("preserves terminal result metadata for non-success Claude results", async () => {
+  it('preserves terminal result metadata for non-success Claude results', async () => {
     queryMock.mockImplementation(async function* () {
       yield {
-        type: "result",
-        subtype: "error_max_turns",
+        type: 'result',
+        subtype: 'error_max_turns',
         num_turns: 51,
         total_cost_usd: 1.3491844,
         duration_api_ms: 490424,
@@ -62,10 +62,10 @@ describe("claudeAgent.execute", () => {
     });
 
     const result = await claudeAgent.execute({
-      prompt: "prompt",
-      projectPath: "/repo",
-      variant: { agent: "claude", model: "sonnet-4.6", effort: "medium" },
-      resultsDir: "/results",
+      prompt: 'prompt',
+      projectPath: '/repo',
+      variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'medium' },
+      resultsDir: '/results',
       logger,
     });
 
@@ -73,12 +73,12 @@ describe("claudeAgent.execute", () => {
       turns: 51,
       cost: 1.3491844,
       durationApi: 490.424,
-      terminalResultSubtype: "error_max_turns",
+      terminalResultSubtype: 'error_max_turns',
     });
     expect(result.transcript).toEqual([
       expect.objectContaining({
-        type: "result",
-        subtype: "error_max_turns",
+        type: 'result',
+        subtype: 'error_max_turns',
       }),
     ]);
   });

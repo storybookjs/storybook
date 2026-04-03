@@ -105,7 +105,36 @@ interface TanStackPreview<
     }
   >;
 
-  // Overload 2: without route — uses the preview-level TRoute
+  // Overload 2: component is a Route — infers route type from the component itself
+  meta<
+    TMetaRoute extends AnyRoute,
+    TArgs extends Args,
+    Decorators extends DecoratorFunction<ReactTypes & TanStackTypes<TMetaRoute> & T, any>,
+    TMetaArgs extends Partial<TArgs & (TanStackTypes<TMetaRoute> & T)['args']>,
+  >(
+    meta: {
+      render?: ArgsStoryFn<
+        ReactTypes & TanStackTypes<TMetaRoute> & T,
+        TArgs & (TanStackTypes<TMetaRoute> & T)['args']
+      >;
+      component: TMetaRoute;
+      decorators?: Decorators | Decorators[];
+      args?: TMetaArgs;
+    } & Omit<
+      ComponentAnnotations<ReactTypes & TanStackTypes<TMetaRoute> & T, TArgs>,
+      'decorators' | 'component' | 'args' | 'render'
+    >
+  ): ReactMeta<
+    InferCombinedTypes<TanStackTypes<TMetaRoute> & T, TArgs, Decorators>,
+    Omit<
+      ComponentAnnotations<InferCombinedTypes<TanStackTypes<TMetaRoute> & T, TArgs, Decorators>>,
+      'args'
+    > & {
+      args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs;
+    }
+  >;
+
+  // Overload 3: without route — uses the preview-level TRoute
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & TanStackTypes<TRoute> & T, any>,

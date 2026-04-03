@@ -5,8 +5,9 @@ import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 
-import { STORY_PREPARED } from '../../core-events';
-import { AddonPanel } from '../components/panel/Panel';
+import { STORY_PREPARED } from '../../core-events/index.ts';
+import { focusableUIElements } from '../../manager-api/modules/layout.ts';
+import { AddonPanel } from '../components/panel/Panel.tsx';
 
 const Panel: FC<any> = (props) => {
   const api = useStorybookApi();
@@ -27,7 +28,17 @@ const Panel: FC<any> = (props) => {
   const panelActions = useMemo(
     () => ({
       onSelect: (panel: string) => api.setSelectedPanel(panel),
-      toggleVisibility: () => api.togglePanel(),
+      toggleVisibility: async () => {
+        const wasPanelShown = api.getIsPanelShown();
+        api.togglePanel();
+        if (wasPanelShown) {
+          const success = await api.focusOnUIElement(focusableUIElements.showAddonPanel);
+          // Fallback to body for predictable behavior.
+          if (success === false) {
+            document.body.focus();
+          }
+        }
+      },
       togglePosition: () => api.togglePanelPosition(),
     }),
     [api]

@@ -271,7 +271,7 @@ PrimaryDisabled.test('should be disabled', async ({ canvas, userEvent, args }) =
   const button = await canvas.findByRole('button');
   await userEvent.click(button);
 
-  await expect(button).toBeDisabled();
+  await expect(button).toHaveAttribute('aria-disabled', 'true');
   await expect(args.onClick).not.toHaveBeenCalled();
 });
 ```
@@ -289,6 +289,12 @@ Before proceeding, be sure you're using the latest version of Storybook. You can
 You can automatically upgrade all of your project's stories from CSF 3 to CSF Next with this command:
 
 <CodeSnippets path="csf-factories-automigrate.md" />
+
+#### Monorepos
+
+If your project has multiple Storybook configurations, run the command with the `-c` flag pointing to each config directory:
+
+<CodeSnippets path="csf-factories-automigrate-with-config-directory.md" />
 
 It will run through each of the manual upgrade steps below on all of your story files.
 

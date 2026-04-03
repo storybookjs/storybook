@@ -70,10 +70,10 @@
         if (hostname !== 'localhost' && globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
           const message = `Failed to load the Storybook preview file 'vite-app.js':
 
-It looks like you're visiting the Storybook development server on another hostname than localhost: '${hostname}', but you haven't configured the necessary security features to support this.
-Please re-run your Storybook development server with the '--host ${hostname}' flag, or manually configure your Vite allowedHosts configuration with viteFinal.
+      It looks like you're visiting the Storybook development server on another hostname than localhost: '${hostname}', but you haven't configured the necessary security features to support this.
+      Please re-run your Storybook development server with the '--host ${hostname}' flag, or manually configure your Vite allowedHosts configuration with viteFinal.
 
-See:`;
+      See:`;
           const docs = [
             'https://storybook.js.org/docs/api/cli-options#dev',
             'https://storybook.js.org/docs/api/main-config/main-config-vite-final',
@@ -85,7 +85,7 @@ See:`;
             `<p style="color: red; max-width: 70ch">${message.replaceAll(
               '\n',
               '<br/>'
-            )}<ul>${docs.map((doc) => `<li><a href='${doc}' target='_blank'>${doc}</a></li>`).join('')}<ul></p>`;
+            )}<ul>${docs.map((doc) => `<li><a href='${doc}' target='_blank'>${doc}</a></li>`).join('')}</ul></p>`;
           return;
         }
       }

@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { x as exec } from 'tinyexec';
 
-import type { BuildEntries } from '../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   prebuild: async (cwd) => {
@@ -188,6 +188,16 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/manager/globals-runtime'],
         entryPoint: './src/manager/globals-runtime.ts',
+        dts: false,
+      },
+      /**
+       * It is required to be a runtime entry point, because it is used to inject the mocker runtime
+       * into the preview iframe in builder-vite and builder-webpack5. To guarantee that the mocker
+       * runtime is transpiled correctly, code splitting needs to be disabled for this entry point.
+       */
+      {
+        exportEntries: ['./internal/mocking-utils/mocker-runtime'],
+        entryPoint: './src/mocking-utils/mocker-runtime.js',
         dts: false,
       },
     ],

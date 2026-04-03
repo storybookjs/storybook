@@ -1,11 +1,11 @@
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { Status } from './shared/status-store';
-import type { StatusTypeId } from './shared/status-store';
-import { StorybookError } from './storybook-error';
+import type { Status } from './shared/status-store/index.ts';
+import type { StatusTypeId } from './shared/status-store/index.ts';
+import { StorybookError } from './storybook-error.ts';
 
-export { StorybookError } from './storybook-error';
+export { StorybookError } from './storybook-error.ts';
 
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
@@ -482,22 +482,6 @@ export class AddonVitestPostinstallFailedAddonA11yError extends StorybookError {
   }
 }
 
-export class AddonVitestPostinstallExistingSetupFileError extends StorybookError {
-  constructor(public data: { filePath: string }) {
-    super({
-      name: 'AddonVitestPostinstallExistingSetupFileError',
-      category: Category.CLI_INIT,
-      isHandledError: true,
-      code: 7,
-      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced`,
-      message: dedent`
-        Found an existing Vitest setup file: ${data.filePath}
-        Please refer to the documentation to complete the setup manually.
-      `,
-    });
-  }
-}
-
 export class AddonVitestPostinstallWorkspaceUpdateError extends StorybookError {
   constructor(public data: { filePath: string }) {
     super({
@@ -589,6 +573,17 @@ export class NoStatsForViteDevError extends StorybookError {
         Unable to write preview stats as the Vite builder does not support stats in dev mode.
         
         Please remove the \`--stats-json\` flag when running in dev mode.`,
+    });
+  }
+}
+
+export class ViteModuleGraphSubscriptionError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ViteModuleGraphSubscriptionError',
+      category: Category.BUILDER_VITE,
+      code: 2,
+      message: 'Vite module graph listeners must be registered before the builder starts.',
     });
   }
 }

@@ -1,11 +1,11 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 
+import { Channel } from 'storybook/internal/channels';
 import {
   loadAllPresets,
   loadMainConfig,
   logConfig,
-  normalizeStories,
   resolveAddonName,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -17,16 +17,16 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
-import { resolvePackageDir } from '../shared/utils/module';
-import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
-import { buildOrThrow } from './utils/build-or-throw';
-import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
-import { getBuilders } from './utils/get-builders';
-import { writeIndexJson } from './utils/index-json';
-import { writeManifests } from './utils/manifests/manifests';
-import { extractStorybookMetadata } from './utils/metadata';
-import { outputStats } from './utils/output-stats';
-import { summarizeIndex } from './utils/summarizeIndex';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { buildOrThrow } from './utils/build-or-throw.ts';
+import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files.ts';
+import { getBuilders } from './utils/get-builders.ts';
+import { writeIndexJson } from './utils/index-json.ts';
+import { writeManifests } from './utils/manifests/manifests.ts';
+import { extractStorybookMetadata } from './utils/metadata.ts';
+import { outputStats } from './utils/output-stats.ts';
+import { summarizeIndex } from './utils/summarizeIndex.ts';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
@@ -68,16 +68,25 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     .resolve('storybook/internal/core-server/presets/common-override-preset');
 
   logger.step('Loading presets');
+
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],
     isCritical: true,
+    channel,
     ...options,
   });
 
   const { renderer } = await presets.apply('core', {});
   const build = await presets.apply('build', {});
-  const [previewBuilder, managerBuilder] = await getBuilders({ ...options, presets, build });
+  const [previewBuilder, managerBuilder] = await getBuilders({
+    ...options,
+    presets,
+    build,
+    channel,
+  });
 
   const resolvedRenderer = renderer
     ? resolveAddonName(options.configDir, renderer, options)
@@ -91,8 +100,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       ...corePresets,
     ],
     overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
-    ...options,
     build,
+    channel,
+    ...options,
   });
 
   const [features, core, staticDirs] = await Promise.all([
@@ -110,6 +120,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const fullOptions: Options = {
     ...options,
+    channel,
     presets,
     features,
     build,
@@ -146,7 +157,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       )
     );
 
-    if (features?.experimentalComponentsManifest) {
+    if (features?.componentsManifest) {
       effects.push(writeManifests(options.outputDir, presets));
     }
   }

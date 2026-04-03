@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 
-import { VersionService } from './VersionService';
+import { VersionService } from './VersionService.ts';
 
 vi.mock('storybook/internal/common', async () => {
   const actual = await vi.importActual('storybook/internal/common');
@@ -130,6 +130,65 @@ describe('VersionService', () => {
       const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
 
       expect(integration).toBeUndefined();
+    });
+
+    it('should detect create-rsbuild command', () => {
+      const ancestry = [{ command: 'npx create-rsbuild' }, { command: 'node /usr/local/bin/npm' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBe('create-rsbuild');
+    });
+
+    it('should detect create rsbuild with version specifier', () => {
+      const ancestry = [{ command: 'npx create-rsbuild@1.0.0 init' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBe('create-rsbuild');
+    });
+
+    it('should detect "create rsbuild" with space instead of dash', () => {
+      const ancestry = [{ command: 'npm create rsbuild -- my-app' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBe('create-rsbuild');
+    });
+
+    it('should NOT detect creatersbuild without separator', () => {
+      const ancestry = [{ command: 'npx creatersbuild' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBeUndefined();
+    });
+
+    it('should detect @tanstack/start command', () => {
+      const ancestry = [{ command: 'npx @tanstack/start@latest create my-app' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBe('@tanstack/start');
+    });
+
+    it('should detect @tanstack/start in middle of command chain', () => {
+      const ancestry = [
+        { command: 'pnpm @tanstack/start init' },
+        { command: 'node /usr/local/bin/pnpm' },
+      ];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBe('@tanstack/start');
+    });
+
+    it('should detect vike new command', () => {
+      const ancestry = [{ command: 'pnpm create vike@latest --- --react --storybook' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBe('vike');
     });
   });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ArgsToTemplateOptions } from './argsToTemplate';
-import { argsToTemplate } from './argsToTemplate';
+import type { ArgsToTemplateOptions } from './argsToTemplate.ts';
+import { argsToTemplate } from './argsToTemplate.ts';
 
 // adjust path
 

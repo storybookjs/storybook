@@ -10,11 +10,11 @@ import { useOverlayTriggerState } from '@react-stately/overlays';
 import { darken, transparentize } from 'polished';
 import { styled, useTheme } from 'storybook/theming';
 
-import { Button, type ButtonProps } from '../Button/Button';
-import { Form } from '../Form/Form';
-import { Popover } from '../Popover/Popover';
-import { SelectOption } from './SelectOption';
-import type { InternalOption, Option, ResetOption, Value } from './helpers';
+import { Button, type ButtonProps } from '../Button/Button.tsx';
+import { Form } from '../Form/Form.tsx';
+import { Popover } from '../Popover/Popover.tsx';
+import { SelectOption } from './SelectOption.tsx';
+import type { InternalOption, Option, ResetOption, Value } from './helpers.tsx';
 import {
   Listbox,
   PAGE_STEP_SIZE,
@@ -23,7 +23,7 @@ import {
   optionOrResetToInternal,
   optionToInternal,
   valueToExternal,
-} from './helpers';
+} from './helpers.tsx';
 
 export interface SelectProps extends Omit<
   ButtonProps,
@@ -78,6 +78,13 @@ export interface SelectProps extends Omit<
   onSelect?: (option: Value) => void;
   onDeselect?: (option: Value) => void;
   onChange?: (selected: Value[]) => void;
+  /**
+   * Legacy option for ToolbarMenuSelect. Do not use in new code. Controls whether to show the
+   * selected option's title.
+   *
+   * @default true
+   */
+  showSelectedOptionTitle?: boolean;
 }
 
 function valueToId(parentId: string, { value }: InternalOption | ResetOption): string {
@@ -208,6 +215,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       onChange,
       tooltip,
       ariaLabel,
+      showSelectedOptionTitle = true,
       ...props
     },
     ref
@@ -522,7 +530,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           {!multiSelect && (
             <>
               {icon}
-              {selectedOptions[0]?.title ?? children}
+              {(showSelectedOptionTitle && selectedOptions[0]?.title) || children}
             </>
           )}
 

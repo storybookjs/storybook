@@ -11,6 +11,10 @@ describe('getControlId', () => {
   ])('%s', (name, input, expected) => {
     expect(getControlId(input)).toBe(expected);
   });
+
+  it('includes storyId when provided', () => {
+    expect(getControlId('some-id', 'story--name')).toBe('control-story--name-some-id');
+  });
 });
 
 describe('getControlSetterButtonId', () => {
@@ -21,5 +25,9 @@ describe('getControlSetterButtonId', () => {
     ['all valid characters', 'some_weird-:custom.id', 'set-some_weird-:custom.id'],
   ])('%s', (name, input, expected) => {
     expect(getControlSetterButtonId(input)).toBe(expected);
+  });
+
+  it('includes storyId when provided', () => {
+    expect(getControlSetterButtonId('some-id', 'story--name')).toBe('set-story--name-some-id');
   });
 });

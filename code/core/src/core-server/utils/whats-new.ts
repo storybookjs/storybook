@@ -17,7 +17,7 @@ import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
-import { sendTelemetryError } from '../withTelemetry';
+import { sendTelemetryError } from '../withTelemetry.ts';
 
 export type OptionsWithRequiredCache = Exclude<Options, 'cache'> & Required<Pick<Options, 'cache'>>;
 
@@ -101,7 +101,11 @@ export function initializeWhatsNew(
         if (isTelemetryEnabled) {
           await sendTelemetryError(error, 'core-config', {
             cliOptions: options,
-            presetOptions: { ...options, corePresets: [], overridePresets: [] },
+            presetOptions: {
+              ...options,
+              corePresets: [],
+              overridePresets: [],
+            },
             skipPrompt: true,
           });
         }
@@ -115,7 +119,11 @@ export function initializeWhatsNew(
     if (isTelemetryEnabled) {
       await sendTelemetryError(error, 'browser', {
         cliOptions: options,
-        presetOptions: { ...options, corePresets: [], overridePresets: [] },
+        presetOptions: {
+          ...options,
+          corePresets: [],
+          overridePresets: [],
+        },
         skipPrompt: true,
       });
     }

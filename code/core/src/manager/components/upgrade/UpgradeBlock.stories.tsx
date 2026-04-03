@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
-import { UpgradeBlock } from './UpgradeBlock';
+import { UpgradeBlock } from './UpgradeBlock.tsx';
 
 const meta = {
   component: UpgradeBlock,

@@ -11,14 +11,14 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
-import { logger } from '../../node-logger';
-import type { ExecuteCommandOptions } from '../utils/command';
-import { executeCommand } from '../utils/command';
-import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager';
-import type { PackageJson } from './PackageJson';
-import type { InstallationMetadata, PackageMetadata } from './types';
-import { parsePackageData } from './util';
+import { logger } from '../../node-logger/index.ts';
+import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { executeCommand } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import type { PackageJson } from './PackageJson.ts';
+import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import { parsePackageData } from './util.ts';
 
 // more info at https://yarnpkg.com/advanced/error-codes
 const CRITICAL_YARN2_ERROR_CODES = {
@@ -100,11 +100,15 @@ export class Yarn2Proxy extends JsPackageManager {
 
   public runPackageCommand({
     args,
+    useRemotePkg = false,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ResultPromise {
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     return executeCommand({
       command: 'yarn',
-      args: ['exec', ...args],
+      args: [useRemotePkg ? 'dlx' : 'exec', ...args],
       ...options,
     });
   }

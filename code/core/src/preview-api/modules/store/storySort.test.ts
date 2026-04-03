@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
-import { storySort } from './storySort';
+import { storySort } from './storySort.ts';
 
 describe('preview.storySort', () => {
   const fixture: Record<StoryId, StoryIndexEntry> = Object.fromEntries(

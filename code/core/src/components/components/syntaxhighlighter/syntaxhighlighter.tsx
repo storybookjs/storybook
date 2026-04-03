@@ -23,15 +23,15 @@ import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
 import { styled } from 'storybook/theming';
 
-import { ActionBar } from '../ActionBar/ActionBar';
-import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
-import { ScrollArea } from '../ScrollArea/ScrollArea';
-import { createCopyToClipboardFunction } from './clipboard';
+import { ActionBar } from '../ActionBar/ActionBar.tsx';
+import type { ScrollAreaProps } from '../ScrollArea/ScrollArea.tsx';
+import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
+import { createCopyToClipboardFunction } from './clipboard.ts';
 import type {
   SyntaxHighlighterProps,
   SyntaxHighlighterRenderer,
   SyntaxHighlighterRendererProps,
-} from './syntaxhighlighter-types';
+} from './syntaxhighlighter-types.ts';
 
 const { window: globalWindow } = global;
 
@@ -68,6 +68,8 @@ export interface WrapperProps {
 const Wrapper = styled.div<WrapperProps>(
   ({ theme }) => ({
     position: 'relative',
+    display: 'flex',
+    flexWrap: 'wrap',
     overflow: 'hidden',
     color: theme.color.defaultText,
   }),
@@ -91,13 +93,16 @@ const Wrapper = styled.div<WrapperProps>(
 );
 
 const UnstyledScroller = ({ children, className }: ScrollAreaProps) => (
-  <ScrollArea horizontal vertical className={className}>
+  <ScrollArea horizontal vertical focusable className={className}>
     {children}
   </ScrollArea>
 );
 const Scroller = styled(UnstyledScroller)(
   {
-    position: 'relative',
+    flex: 1,
+    flexShrink: 0,
+    flexBasis: 'fit-content',
+    maxWidth: '100%',
   },
   ({ theme }) => themedSyntax(theme)
 );
@@ -247,7 +252,7 @@ export const SyntaxHighlighter = ({
       </Scroller>
 
       {copyable ? (
-        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} />
+        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} flexLayout />
       ) : null}
     </Wrapper>
   );

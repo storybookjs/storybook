@@ -7,7 +7,7 @@ import type { Options, Ref } from 'storybook/internal/types';
 import * as pkg from 'empathic/package';
 import * as resolve from 'empathic/resolve';
 
-import { getProjectRoot } from './paths';
+import { getProjectRoot } from './paths.ts';
 
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
   const location = pkg.up({ cwd: options.configDir, last: getProjectRoot() });
@@ -58,7 +58,7 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   );
 };
 
-const checkRef = (url: string) =>
+export const checkRef = (url: string) =>
   fetch(`${url}/iframe.html`).then(
     async ({ ok, status }) => {
       if (ok) {

@@ -9,12 +9,13 @@ import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
-import { resolvePackageDir } from '../shared/utils/module';
-import { getAnonymousProjectId } from './anonymous-id';
-import { set as saveToCache } from './event-cache';
-import { fetch } from './fetch';
-import { getSessionId } from './session-id';
-import type { Options, TelemetryData } from './types';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
+import { detectAgent } from './detect-agent.ts';
+import { set as saveToCache } from './event-cache.ts';
+import { fetch } from './fetch.ts';
+import { getSessionId } from './session-id.ts';
+import type { Options, TelemetryData } from './types.ts';
 
 const retryingFetch = retry(fetch);
 
@@ -49,9 +50,12 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
 // context info sent with all events, provided
 // by the app. currently:
 // - cliVersion
+const inCI = isCI();
+const agentDetection = detectAgent();
 const globalContext = {
-  inCI: isCI(),
+  inCI,
   isTTY: process.stdout.isTTY,
+  agent: agentDetection,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,
   storybookVersion: getVersionNumber(),
@@ -103,6 +107,7 @@ export async function sendTelemetry(
     : {
         ...globalContext,
         anonymousId: getAnonymousProjectId(),
+        projectSince: getProjectSince()?.getTime(),
       };
 
   let request: any;

@@ -1,16 +1,20 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { ComponentsManifest, Manifests, Presets } from 'storybook/internal/types';
+import type { Manifests, Presets } from 'storybook/internal/types';
 
 import { join } from 'pathe';
 import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
-import { Tag } from '../../../shared/constants/tags';
-import { renderComponentsManifest } from './render-components-manifest';
+import { Tag } from '../../../shared/constants/tags.ts';
+import { type DocsManifest, renderComponentsManifest } from './render-components-manifest.ts';
 
-async function getManifests(presets: Presets) {
+function isDocsManifest(manifest: unknown): manifest is DocsManifest {
+  return typeof manifest === 'object' && manifest !== null && 'docs' in manifest;
+}
+
+async function getManifests(presets: Presets, { watch }: { watch?: boolean } = {}) {
   const generator = await presets.apply('storyIndexGenerator');
   invariant(generator, 'storyIndexGenerator must be configured');
   const index = await generator.getIndex();
@@ -21,6 +25,7 @@ async function getManifests(presets: Presets) {
   return (
     (await presets.apply<Manifests>('experimental_manifests', undefined, {
       manifestEntries,
+      watch,
     })) ?? {}
   );
 }
@@ -28,6 +33,8 @@ async function getManifests(presets: Presets) {
 export async function writeManifests(outputDir: string, presets: Presets) {
   try {
     const manifests = await getManifests(presets);
+    const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
+
     if (Object.keys(manifests).length === 0) {
       return;
     }
@@ -37,10 +44,10 @@ export async function writeManifests(outputDir: string, presets: Presets) {
         writeFile(join(outputDir, 'manifests', `${name}.json`), JSON.stringify(content))
       )
     );
-    if ('components' in manifests) {
+    if ('components' in manifests || 'docs' in manifests) {
       await writeFile(
         join(outputDir, 'manifests', 'components.html'),
-        renderComponentsManifest(manifests.components as ComponentsManifest)
+        renderComponentsManifest(manifests.components, docsManifest)
       );
     }
   } catch (e) {
@@ -52,7 +59,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
 export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
   app.get('/manifests/:name.json', async (req, res) => {
     try {
-      const manifests = await getManifests(presets);
+      const manifests = await getManifests(presets, { watch: true });
       const manifest = manifests[req.params.name];
 
       if (manifest) {
@@ -71,18 +78,19 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
 
   app.get('/manifests/components.html', async (req, res) => {
     try {
-      const manifests = await getManifests(presets);
-      const manifest = manifests.components;
+      const manifests = await getManifests(presets, { watch: true });
+      const componentsManifest = manifests.components;
+      const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
-      if (!manifest) {
+      if (!componentsManifest && !docsManifest) {
         res.statusCode = 404;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end(`<pre>No components manifest configured.</pre>`);
+        res.end(`<pre>No components or docs manifest configured.</pre>`);
         return;
       }
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.end(renderComponentsManifest(manifest));
+      res.end(renderComponentsManifest(componentsManifest, docsManifest));
     } catch (e) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');

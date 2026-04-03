@@ -8,8 +8,8 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 // Relative path import to avoid dependency to storybook/test
-import { getFrameworkPackageName } from '../helpers/mainConfigFile';
-import type { Fix } from '../types';
+import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
+import type { Fix } from '../types.ts';
 
 export const fileExtensions = [
   '.js',
@@ -141,7 +141,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
 
     const errorMessage: string[] = [];
     if (!skipVitestSetupTransformation) {
-      if (transformedSetupCode === null) {
+      if (transformedSetupCode === null && setupFile) {
         errorMessage.push(dedent`
           ${counter++}) We couldn't find or automatically update ${picocolors.cyan(`.storybook/vitest.setup.<ts|js>`)} in your project to smoothly set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
           Please manually update your ${picocolors.cyan(`vitest.setup.ts`)} file to include the following:

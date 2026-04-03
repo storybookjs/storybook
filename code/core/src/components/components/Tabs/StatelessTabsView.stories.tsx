@@ -6,11 +6,11 @@ import { CrossIcon, ExpandIcon } from '@storybook/icons';
 
 import { fn } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { StatelessTab } from './StatelessTab';
-import { StatelessTabList } from './StatelessTabList';
-import { StatelessTabPanel } from './StatelessTabPanel';
-import { StatelessTabsView, type StatelessTabsViewProps } from './StatelessTabsView';
+import preview from '../../../../../.storybook/preview.tsx';
+import { StatelessTab } from './StatelessTab.tsx';
+import { StatelessTabList } from './StatelessTabList.tsx';
+import { StatelessTabPanel } from './StatelessTabPanel.tsx';
+import { StatelessTabsView, type StatelessTabsViewProps } from './StatelessTabsView.tsx';
 
 const RenderDefault = (args: StatelessTabsViewProps) => (
   <StatelessTabsView {...args}>

@@ -4,10 +4,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { transformStoryIndexToStoriesHash } from '../lib/stories';
-import { getSourceType, init as initRefs } from '../modules/refs';
-import type { State } from '../root';
-import type Store from '../store';
+import { transformStoryIndexToStoriesHash } from '../lib/stories.ts';
+import { getSourceType, init as initRefs } from '../modules/refs.ts';
+import type { State } from '../root.tsx';
+import type Store from '../store.ts';
 
 const { fetch } = global;
 
@@ -73,6 +73,7 @@ function createMockStore(initialState: Partial<State> = {}) {
 
 interface ResponseResult {
   ok?: boolean;
+  status?: number;
   err?: Error;
   response?: () => never | object | Promise<object>;
 }
@@ -86,13 +87,14 @@ type ResponseKeys =
   | 'metadata';
 
 function respond(result: ResponseResult): Promise<Response> {
-  const { err, ok, response } = result;
+  const { err, ok, status, response } = result;
   if (err) {
     return Promise.reject(err);
   }
 
   return Promise.resolve({
     ok: ok ?? !!response,
+    status: status ?? (ok ? 200 : 500),
     json: response,
   } as Response);
 }
@@ -765,6 +767,52 @@ describe('Refs API', () => {
           ],
         ]
       `);
+
+      expect(store.setState.mock.calls[0][0]).toMatchInlineSnapshot(`
+        {
+          "refs": {
+            "fake": {
+              "filteredIndex": undefined,
+              "id": "fake",
+              "index": undefined,
+              "internal_index": undefined,
+              "loginUrl": "https://example.com/login",
+              "title": "Fake",
+              "type": "auto-inject",
+              "url": "https://example.com",
+            },
+          },
+        }
+      `);
+    });
+
+    it('checks refs (auth with 401)', async () => {
+      // given
+      const { api } = initRefs({ provider, store } as any, { runCheck: false });
+
+      setupResponses({
+        indexPrivate: {
+          ok: false,
+          status: 401,
+          response: async () => ({ loginUrl: 'https://example.com/login' }),
+        },
+        storiesPrivate: {
+          ok: false,
+          status: 401,
+          response: async () => ({ loginUrl: 'https://example.com/login' }),
+        },
+        metadata: {
+          ok: false,
+          status: 401,
+          response: async () => ({ loginUrl: 'https://example.com/login' }),
+        },
+      });
+
+      await api.checkRef({
+        id: 'fake',
+        url: 'https://example.com',
+        title: 'Fake',
+      });
 
       expect(store.setState.mock.calls[0][0]).toMatchInlineSnapshot(`
         {

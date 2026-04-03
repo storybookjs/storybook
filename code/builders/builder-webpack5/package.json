@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "10.2.0-beta.5",
+  "version": "10.4.0-alpha.7",
   "description": "A Storybook builder to dev and build with Webpack",
   "keywords": [
     "storybook",
@@ -29,6 +29,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./loaders/export-order-loader": "./dist/loaders/export-order-loader.js",
@@ -52,7 +53,6 @@
   ],
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "@vitest/mocker": "3.2.4",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
     "cjs-module-lexer": "^1.2.3",
     "css-loader": "^7.1.2",
@@ -61,7 +61,7 @@
     "html-webpack-plugin": "^5.5.0",
     "magic-string": "^0.30.5",
     "style-loader": "^4.0.0",
-    "terser-webpack-plugin": "^5.3.14",
+    "terser-webpack-plugin": "^5.3.17",
     "ts-dedent": "^2.0.0",
     "webpack": "5",
     "webpack-dev-middleware": "^6.1.2",

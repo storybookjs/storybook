@@ -13,7 +13,7 @@ import {
 } from 'storybook/manager-api';
 import { keyframes, styled } from 'storybook/theming';
 
-import SettingsFooter from './SettingsFooter';
+import SettingsFooter from './SettingsFooter.tsx';
 
 const Header = styled.header(({ theme }) => ({
   marginBottom: 20,

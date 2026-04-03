@@ -4,7 +4,7 @@ import type { PluginItem, TransformOptions } from '@babel/core';
 import semver from 'semver';
 import type { Configuration, RuleSetCondition, RuleSetRule } from 'webpack';
 
-import type { PluginOptions } from '../types';
+import type { PluginOptions } from '../types.ts';
 
 type RuleSetConditions = RuleSetCondition[];
 

@@ -12,11 +12,11 @@ import Fuse from 'fuse.js';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { useLandmark } from '../../hooks/useLandmark';
-import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status';
-import { scrollIntoView, searchItem } from '../../utils/tree';
-import { useLayout } from '../layout/LayoutProvider';
-import { DEFAULT_REF_ID } from './Sidebar';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
+import { scrollIntoView, searchItem } from '../../utils/tree.ts';
+import { useLayout } from '../layout/LayoutProvider.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import type {
   CombinedDataset,
   DownshiftItem,
@@ -24,8 +24,8 @@ import type {
   SearchItem,
   SearchResult,
   Selection,
-} from './types';
-import { isExpandType, isSearchResult } from './types';
+} from './types.ts';
+import { isExpandType, isSearchResult } from './types.ts';
 
 const { document } = global;
 

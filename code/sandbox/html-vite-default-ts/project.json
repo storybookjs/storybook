@@ -12,11 +12,18 @@
     "html-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "html-vite-default-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "html-vite-default-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "html-vite-default-ts" } },
-    "prepare-build-sandbox": {},
+    "vitest-integration": {},
+    "build": {
+      "options": {
+        "dir": "html-vite-default-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

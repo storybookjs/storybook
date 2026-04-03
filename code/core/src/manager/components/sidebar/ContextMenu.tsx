@@ -17,13 +17,13 @@ import { useStorybookApi } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
-import { getMostCriticalStatusValue } from '../../utils/status';
-import { Shortcut } from '../Shortcut';
-import { UseSymbol } from './IconSymbols';
-import { StatusButton } from './StatusButton';
-import { StatusContext } from './StatusContext';
-import type { ExcludesNull } from './Tree';
+import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import { getMostCriticalStatusValue } from '../../utils/status.tsx';
+import { Shortcut } from '../Shortcut.tsx';
+import { UseSymbol } from './IconSymbols.tsx';
+import { StatusButton } from './StatusButton.tsx';
+import { StatusContext } from './StatusContext.tsx';
+import type { ExcludesNull } from './Tree.tsx';
 
 const empty = {
   onMouseEnter: () => {},
@@ -196,6 +196,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
       onMouseEnter: handlers.onMouseEnter,
       node: shouldRender ? (
         <PopoverProvider
+          ariaLabel="Context menu"
           placement="bottom-end"
           defaultVisible={false}
           visible={isOpen}

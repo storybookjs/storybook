@@ -3,7 +3,7 @@ import { isAbsolute, join } from 'node:path';
 
 import type { Options } from 'storybook/internal/types';
 
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 
 /**
  * Get react-dom version from the resolvedReact preset, which points to either a root react-dom
@@ -50,8 +50,20 @@ export const webpackFinal = async (config: any, options: Options) => {
 
 export const viteFinal = async (config: any, options: Options) => {
   const isReactVersion18 = await getIsReactVersion18or19(options);
+
+  const optimizeDeps = {
+    ...(config?.optimizeDeps ?? {}),
+    include: [
+      ...(config.optimizeDeps?.include || []),
+      ...(isReactVersion18 ? ['react-dom/client'] : []),
+    ],
+  };
+
   if (isReactVersion18) {
-    return config;
+    return {
+      ...config,
+      optimizeDeps,
+    };
   }
 
   const alias = Array.isArray(config.resolve?.alias)
@@ -66,6 +78,7 @@ export const viteFinal = async (config: any, options: Options) => {
 
   return {
     ...config,
+    optimizeDeps,
     resolve: {
       ...config.resolve,
       alias,

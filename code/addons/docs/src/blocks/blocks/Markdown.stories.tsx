@@ -48,9 +48,17 @@ export const Markdown = {
     ###### [Link](https://storybook.js.org/) in heading
     
     He stared at the clinic, [Molly](https://storybook.js.org/) took him to the *[Tank War](https://storybook.js.org/)*, mouth touched with hot gold as a gliding cursor struck sparks from the wall of a **[skyscraper](https://storybook.js.org/)** canyon.
-    
+
+    Check out [\`inline-code\`](https://storybook.js.org/) inside a link.
+
+    Visit the [\`@storybook/addon-essentials\`](https://storybook.js.org/) package for more details.
+
+    Mixed: [regular text and \`code text\` together](https://storybook.js.org/).
+
+    For comparison, regular \`inline-code\` outside a link.
+
     { brackets, valid MD but invalid MDX - works here }
-    
+
     <Looks like a JSX tag/>
     <!-- above is valid MD but invalid in markdown-to-jsx, so it will not be rendered -->
 

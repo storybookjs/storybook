@@ -7,8 +7,8 @@ import { logger } from 'storybook/internal/node-logger';
 import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import versions from '../common/versions';
-import { resolvePackageDir } from '../shared/utils/module';
+import versions from '../common/versions.ts';
+import { resolvePackageDir } from '../shared/utils/module.ts';
 
 /**
  * Dispatches Storybook CLI commands to the appropriate handler.

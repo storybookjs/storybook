@@ -56,8 +56,8 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
-      directory: '../addons/docs/src/blocks',
-      titlePrefix: 'addons/docs/blocks',
+      directory: '../core/src/actions/containers',
+      titlePrefix: 'actions',
     },
     {
       directory: '../addons/a11y/src',
@@ -69,6 +69,10 @@ const config = defineMain({
     },
     {
       directory: '../addons/docs/template/stories',
+      titlePrefix: 'addons/docs',
+    },
+    {
+      directory: '../addons/docs/src',
       titlePrefix: 'addons/docs',
     },
     {
@@ -143,7 +147,6 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    experimentalComponentsManifest: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig, { configType }) => {

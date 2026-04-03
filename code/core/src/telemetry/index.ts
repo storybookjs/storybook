@@ -1,26 +1,26 @@
 import { logger } from 'storybook/internal/node-logger';
 
-import { notify } from './notify';
-import { sanitizeError } from './sanitize';
-import { getStorybookMetadata } from './storybook-metadata';
-import { sendTelemetry } from './telemetry';
-import type { EventType, Options, Payload, TelemetryData } from './types';
+import { notify } from './notify.ts';
+import { sanitizeError } from './sanitize.ts';
+import { getStorybookMetadata } from './storybook-metadata.ts';
+import { sendTelemetry } from './telemetry.ts';
+import type { EventType, Options, Payload, TelemetryData } from './types.ts';
 
-export { oneWayHash } from './one-way-hash';
+export { oneWayHash } from './one-way-hash.ts';
 
-export * from './storybook-metadata';
+export * from './storybook-metadata.ts';
 
-export * from './types';
+export * from './types.ts';
 
-export * from './sanitize';
+export * from './sanitize.ts';
 
-export * from './error-collector';
+export * from './error-collector.ts';
 
-export { getPrecedingUpgrade, getLastEvents, type CacheEntry } from './event-cache';
+export { getPrecedingUpgrade, getLastEvents, type CacheEntry } from './event-cache.ts';
 
-export { getSessionId } from './session-id';
+export { getSessionId } from './session-id.ts';
 
-export { addToGlobalContext } from './telemetry';
+export { addToGlobalContext } from './telemetry.ts';
 
 /** Is this story part of the CLI generated examples, including user-created stories in those files */
 export const isExampleStoryId = (storyId: string) =>

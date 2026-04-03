@@ -26,7 +26,7 @@ export const Basic: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -54,7 +54,7 @@ export const Basic = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -88,7 +88,7 @@ export const Basic: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -119,7 +119,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -131,7 +131,7 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.svelte';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
 export default meta;
@@ -154,7 +154,7 @@ export const Basic: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -163,7 +163,7 @@ export const Basic: Story = {
 ```js filename="Page.stories.js" renderer="svelte" language="js"
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.svelte';
 
 export default { component: Page };
 
@@ -183,18 +183,18 @@ export const Basic = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue3" language="ts"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.vue';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
 export default meta;
@@ -217,16 +217,16 @@ export const Basic: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
 ```
 
-```js filename="Page.stories.js" renderer="vue3" language="js"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.vue';
 
 export default { component: Page };
 
@@ -246,7 +246,7 @@ export const Basic = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -276,7 +276,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -309,7 +309,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -340,7 +340,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -373,7 +373,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });

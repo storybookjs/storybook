@@ -6,7 +6,7 @@ import { Feature } from 'storybook/internal/types';
 
 import { getProcessAncestry } from 'process-ancestry';
 
-import { TelemetryService } from './TelemetryService';
+import { TelemetryService } from './TelemetryService.ts';
 
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('process-ancestry', { spy: true });

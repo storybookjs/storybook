@@ -3,7 +3,7 @@ import React, { Fragment } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { ScrollArea } from './ScrollArea';
+import { ScrollArea } from './ScrollArea.tsx';
 
 const Block = styled.span({
   display: 'inline-block',
@@ -113,6 +113,40 @@ export const CustomOffset = () => (
 
 export const CustomSize = () => (
   <ScrollArea horizontal vertical scrollbarSize={20}>
+    {list((i) => (
+      <Fragment key={i}>
+        {list((ii) => (
+          <Block key={ii}>{ii * i}</Block>
+        ))}
+        <br />
+      </Fragment>
+    ))}
+  </ScrollArea>
+);
+
+export const FocusableVertical = () => (
+  <ScrollArea vertical focusable>
+    {list((i) => (
+      <Fragment key={i}>
+        <Block>{i}</Block>
+        <br />
+      </Fragment>
+    ))}
+  </ScrollArea>
+);
+
+export const FocusableHorizontal = () => (
+  <ScrollArea horizontal focusable>
+    <div style={{ padding: 5 }}>
+      {list((i) => (
+        <Block key={i}>{i}</Block>
+      ))}
+    </div>
+  </ScrollArea>
+);
+
+export const FocusableBoth = () => (
+  <ScrollArea horizontal vertical focusable>
     {list((i) => (
       <Fragment key={i}>
         {list((ii) => (

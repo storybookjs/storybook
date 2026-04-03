@@ -12,21 +12,25 @@ import {
   commonJobsNoOpJob,
   knip,
   lint,
-  prettyDocs,
+  fmt,
   storybookChromatic,
   testUnit_windows,
   testsStories_linux,
   testsUnit_linux,
-} from './common-jobs';
-import { getInitEmpty, initEmptyNoOpJob } from './init-empty';
-import { getSandboxes, sandboxesNoOpJob } from './sandboxes';
-import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks';
-import { executors } from './utils/executors';
-import { ensureRequiredJobs } from './utils/helpers';
-import { orbs } from './utils/orbs';
-import { parameters } from './utils/parameters';
-import type { JobImplementationObj, JobOrNoOpJob, NoOpJobImplementationObj } from './utils/types';
-import { type Workflow, isWorkflowOrAbove } from './utils/types';
+} from './common-jobs.ts';
+import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
+import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
+import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
+import { executors } from './utils/executors.ts';
+import { ensureRequiredJobs } from './utils/helpers.ts';
+import { orbs } from './utils/orbs.ts';
+import { parameters } from './utils/parameters.ts';
+import type {
+  JobImplementationObj,
+  JobOrNoOpJob,
+  NoOpJobImplementationObj,
+} from './utils/types.ts';
+import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
@@ -39,7 +43,7 @@ const dirname = import.meta.dirname;
 function generateConfig(workflow: Workflow) {
   const jobs: JobOrNoOpJob[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
-    jobs.push(prettyDocs);
+    jobs.push(fmt);
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks(workflow);
@@ -56,6 +60,7 @@ function generateConfig(workflow: Workflow) {
 
       commonJobsNoOpJob,
       lint,
+      fmt,
       check,
       knip,
 

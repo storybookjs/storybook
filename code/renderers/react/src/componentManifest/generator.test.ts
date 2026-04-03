@@ -5,237 +5,275 @@ import { Tag } from 'storybook/internal/core-server';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { fsMocks, indexJson } from './fixtures';
-import { manifests } from './generator';
+import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
+import { indexJson } from './fixtures.ts';
+import { manifests } from './generator.ts';
+import { setupMemfsMocks } from './memfs-test-setup.ts';
+
+// Opt into memfs for this file (loads from __mocks__/fs.cjs)
+vi.mock('node:fs');
+vi.mock('node:fs/promises');
+
+vi.mock(import('./utils.ts'), { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('empathic/find', { spy: true });
+vi.mock('tsconfig-paths', { spy: true });
+
+/** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
+type ManifestOptions = Parameters<typeof manifests>[1];
+type ManifestEntries = ManifestOptions['manifestEntries'];
+const createManifestOptions = (
+  manifestEntries: ManifestEntries,
+  options: Partial<ManifestOptions> = {}
+): ManifestOptions => ({ watch: false, manifestEntries, ...options }) as ManifestOptions;
+
+const runManifests = (manifestEntries: ManifestEntries) =>
+  manifests(undefined, createManifestOptions(manifestEntries));
+
+const runManifestsWithOptions = (
+  manifestEntries: ManifestEntries,
+  options: Partial<ManifestOptions> = {}
+) => manifests(undefined, createManifestOptions(manifestEntries, options));
 
 beforeEach(() => {
-  vi.spyOn(process, 'cwd').mockReturnValue('/app');
-  vol.fromJSON(fsMocks, '/app');
+  setupMemfsMocks();
 });
 
 test('manifests generates correct id, name, description and examples ', async () => {
   const manifestEntries = Object.values(indexJson.entries).filter(
     (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
+  const { meta: _meta, ...components } = result?.components ?? {};
 
-  expect(result?.components).toMatchInlineSnapshot(`
-  {
-    "components": {
-      "example-button": {
-        "description": "Primary UI component for user interaction",
-        "error": undefined,
-        "id": "example-button",
-        "import": "import { Button } from "@design-system/components/override";",
-        "jsDocTags": {
-          "import": [
-            "import { Button } from '@design-system/components/override';",
+  expect(components).toMatchInlineSnapshot(`
+    {
+      "components": {
+        "example-button": {
+          "description": "Primary UI component for user interaction",
+          "error": undefined,
+          "id": "example-button",
+          "import": "import { Button } from "@design-system/components/override";",
+          "jsDocTags": {
+            "import": [
+              "import { Button } from '@design-system/components/override';",
+            ],
+          },
+          "name": "Button",
+          "path": "./src/stories/Button.stories.ts",
+          "reactComponentMeta": undefined,
+          "reactDocgen": {
+            "actualName": "Button",
+            "definedInFile": "./src/stories/Button.tsx",
+            "description": "Primary UI component for user interaction
+    @import import { Button } from '@design-system/components/override';",
+            "displayName": "Button",
+            "exportName": "Button",
+            "methods": [],
+            "props": {
+              "backgroundColor": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "string",
+                },
+              },
+              "label": {
+                "description": "",
+                "required": true,
+                "tsType": {
+                  "name": "string",
+                },
+              },
+              "onClick": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
+                  },
+                  "type": "function",
+                },
+              },
+              "primary": {
+                "defaultValue": {
+                  "computed": false,
+                  "value": "false",
+                },
+                "description": "Description of primary",
+                "required": false,
+                "tsType": {
+                  "name": "boolean",
+                },
+              },
+              "size": {
+                "defaultValue": {
+                  "computed": false,
+                  "value": "'medium'",
+                },
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "elements": [
+                    {
+                      "name": "literal",
+                      "value": "'small'",
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'medium'",
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'large'",
+                    },
+                  ],
+                  "name": "union",
+                  "raw": "'small' | 'medium' | 'large'",
+                },
+              },
+            },
+          },
+          "reactDocgenTypescript": undefined,
+          "stories": [
+            {
+              "description": undefined,
+              "id": "example-button--primary",
+              "name": "Primary",
+              "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
+              "summary": undefined,
+            },
+            {
+              "description": undefined,
+              "id": "example-button--secondary",
+              "name": "Secondary",
+              "snippet": "const Secondary = () => <Button onClick={fn()} label="Button" />;",
+              "summary": undefined,
+            },
+            {
+              "description": undefined,
+              "id": "example-button--large",
+              "name": "Large",
+              "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button" />;",
+              "summary": undefined,
+            },
+            {
+              "description": undefined,
+              "id": "example-button--small",
+              "name": "Small",
+              "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button" />;",
+              "summary": undefined,
+            },
           ],
+          "summary": undefined,
         },
-        "name": "Button",
-        "path": "./src/stories/Button.stories.ts",
-        "reactDocgen": {
-          "actualName": "Button",
-          "definedInFile": "./src/stories/Button.tsx",
-          "description": "Primary UI component for user interaction
-  @import import { Button } from '@design-system/components/override';",
-          "displayName": "Button",
-          "exportName": "Button",
-          "methods": [],
-          "props": {
-            "backgroundColor": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "string",
-              },
-            },
-            "label": {
-              "description": "",
-              "required": true,
-              "tsType": {
-                "name": "string",
-              },
-            },
-            "onClick": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
+        "example-header": {
+          "description": "Description from meta and very long.",
+          "error": undefined,
+          "id": "example-header",
+          "import": "import { Header } from "some-package";",
+          "jsDocTags": {
+            "summary": [
+              "Component summary",
+            ],
+          },
+          "name": "Header",
+          "path": "./src/stories/Header.stories.ts",
+          "reactComponentMeta": undefined,
+          "reactDocgen": {
+            "actualName": "",
+            "definedInFile": "./src/stories/Header.tsx",
+            "description": "",
+            "exportName": "default",
+            "methods": [],
+            "props": {
+              "onCreateAccount": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
                   },
+                  "type": "function",
                 },
-                "type": "function",
+              },
+              "onLogin": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
+                  },
+                  "type": "function",
+                },
+              },
+              "onLogout": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
+                  },
+                  "type": "function",
+                },
+              },
+              "user": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "User",
+                },
               },
             },
-            "primary": {
-              "defaultValue": {
-                "computed": false,
-                "value": "false",
-              },
-              "description": "Description of primary",
-              "required": false,
-              "tsType": {
-                "name": "boolean",
-              },
+          },
+          "reactDocgenTypescript": undefined,
+          "stories": [
+            {
+              "description": undefined,
+              "id": "example-header--logged-in",
+              "name": "Logged In",
+              "snippet": "const LoggedIn = () => <Header
+        onLogin={fn()}
+        onLogout={fn()}
+        onCreateAccount={fn()}
+        user={{ name: 'Jane Doe' }} />;",
+              "summary": undefined,
             },
-            "size": {
-              "defaultValue": {
-                "computed": false,
-                "value": "'medium'",
-              },
-              "description": "",
-              "required": false,
-              "tsType": {
-                "elements": [
-                  {
-                    "name": "literal",
-                    "value": "'small'",
-                  },
-                  {
-                    "name": "literal",
-                    "value": "'medium'",
-                  },
-                  {
-                    "name": "literal",
-                    "value": "'large'",
-                  },
-                ],
-                "name": "union",
-                "raw": "'small' | 'medium' | 'large'",
-              },
+            {
+              "description": undefined,
+              "id": "example-header--logged-out",
+              "name": "Logged Out",
+              "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()} />;",
+              "summary": undefined,
             },
-          },
-        },
-        "stories": [
-          {
-            "description": undefined,
-            "name": "Primary",
-            "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
-            "summary": undefined,
-          },
-          {
-            "description": undefined,
-            "name": "Secondary",
-            "snippet": "const Secondary = () => <Button onClick={fn()} label="Button" />;",
-            "summary": undefined,
-          },
-          {
-            "description": undefined,
-            "name": "Large",
-            "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button" />;",
-            "summary": undefined,
-          },
-          {
-            "description": undefined,
-            "name": "Small",
-            "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button" />;",
-            "summary": undefined,
-          },
-        ],
-        "summary": undefined,
-      },
-      "example-header": {
-        "description": "Description from meta and very long.",
-        "error": undefined,
-        "id": "example-header",
-        "import": "import { Header } from "some-package";",
-        "jsDocTags": {
-          "summary": [
-            "Component summary",
           ],
+          "summary": "Component summary",
         },
-        "name": "Header",
-        "path": "./src/stories/Header.stories.ts",
-        "reactDocgen": {
-          "actualName": "",
-          "definedInFile": "./src/stories/Header.tsx",
-          "description": "",
-          "exportName": "default",
-          "methods": [],
-          "props": {
-            "onCreateAccount": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
-                  },
-                },
-                "type": "function",
-              },
-            },
-            "onLogin": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
-                  },
-                },
-                "type": "function",
-              },
-            },
-            "onLogout": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
-                  },
-                },
-                "type": "function",
-              },
-            },
-            "user": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "User",
-              },
-            },
-          },
-        },
-        "stories": [
-          {
-            "description": undefined,
-            "name": "LoggedIn",
-            "snippet": "const LoggedIn = () => <Header
-      onLogin={fn()}
-      onLogout={fn()}
-      onCreateAccount={fn()}
-      user={{ name: 'Jane Doe' }} />;",
-            "summary": undefined,
-          },
-          {
-            "description": undefined,
-            "name": "LoggedOut",
-            "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()} />;",
-            "summary": undefined,
-          },
-        ],
-        "summary": "Component summary",
       },
-    },
-    "v": 0,
-  }
-`);
+      "v": 0,
+    }
+  `);
 });
 
 async function getManifestForStory(code: string) {
@@ -265,7 +303,7 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const manifestEntries = [
+  const manifestEntries: ManifestEntries = [
     {
       type: 'story',
       subtype: 'story',
@@ -279,7 +317,7 @@ async function getManifestForStory(code: string) {
     },
   ];
 
-  const result = await manifests(undefined, { manifestEntries } as any);
+  const result = await runManifests(manifestEntries);
 
   return result?.components?.components?.['example-button'];
 }
@@ -322,6 +360,7 @@ test('fall back to index title when no component name', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -343,9 +382,11 @@ test('fall back to index title when no component name', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "description": undefined,
+          "id": "example-button--primary",
           "name": "Primary",
           "snippet": "const Primary = () => <Button csf1="story" />;",
           "summary": undefined,
@@ -369,6 +410,7 @@ test('component exported from other file', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -390,6 +432,7 @@ test('component exported from other file', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "error": {
@@ -400,6 +443,7 @@ test('component exported from other file', async () => {
          | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
             "name": "SyntaxError",
           },
+          "id": "example-button--primary",
           "name": "Primary",
         },
       ],
@@ -421,6 +465,7 @@ test('unknown expressions', async () => {
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
         "definedInFile": "./src/stories/Button.tsx",
@@ -442,6 +487,7 @@ test('unknown expressions', async () => {
           },
         },
       },
+      "reactDocgenTypescript": undefined,
       "stories": [
         {
           "error": {
@@ -452,12 +498,187 @@ test('unknown expressions', async () => {
          |                        ^^^^^^^^^^^^^^^^^^^",
             "name": "SyntaxError",
           },
+          "id": "example-button--primary",
           "name": "Primary",
         },
       ],
       "summary": undefined,
     }
   `);
+});
+
+test('generator uses reactComponentMeta displayName from batch extraction', async () => {
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component) {
+          entry.component.reactComponentMeta = {
+            displayName: 'Header',
+            exportName: 'default',
+            filePath: '/app/src/stories/Header.tsx',
+            description: '',
+            props: {},
+          };
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [indexJson.entries['example-header--logged-in']];
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const header = result?.components?.components?.['example-header'];
+
+  expect(
+    header && 'reactComponentMeta' in header
+      ? (header as any).reactComponentMeta?.displayName
+      : undefined
+  ).toBe('Header');
+  expect(batchExtract).toHaveBeenCalled();
+});
+
+test('generator preserves @import override when reactComponentMeta is enabled', async () => {
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component) {
+          entry.component.reactComponentMeta = {
+            displayName: 'Button',
+            exportName: 'Button',
+            filePath: '/app/src/stories/Button.tsx',
+            description: 'Primary UI component for user interaction',
+            props: {},
+          };
+          entry.component.componentJsDocTags = {
+            import: ["import { Button } from '@design-system/components/override';"],
+            summary: ['Fast summary'],
+          };
+          entry.component.importOverride =
+            "import { Button } from '@design-system/components/override';";
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries: ManifestEntries = [indexJson.entries['example-button--primary']];
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const button = result?.components?.components?.['example-button'];
+
+  expect(button?.import).toBe('import { Button } from "@design-system/components/override";');
+  expect(button?.jsDocTags.import).toEqual([
+    "import { Button } from '@design-system/components/override';",
+  ]);
+  expect(button?.description).toBe('Primary UI component for user interaction');
+  expect(button?.summary).toBe('Fast summary');
+  expect(batchExtract).toHaveBeenCalled();
+});
+
+test('generator falls back to title-based matching when meta.component aliases a compound member', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Accordion.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import * as Accordion from './accordion';
+
+        const Root = Accordion.Root;
+
+        const meta = {
+          title: 'Example/Accordion',
+          component: Root,
+        } satisfies Meta<typeof Root>;
+        export default meta;
+
+        export const Default = () => <Accordion.Root multiple />;
+      `,
+      ['./src/stories/accordion.tsx']: dedent`
+        import React from 'react';
+
+        type RootProps = {
+          /** Allow multiple items open */
+          multiple?: boolean;
+        };
+
+        const Root = ({ multiple = false }: RootProps) => <div data-multiple={multiple} />;
+
+        export const Accordion = { Root };
+      `,
+    },
+    '/app'
+  );
+
+  const batchExtract = vi
+    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
+    .mockImplementation((entries) => {
+      for (const entry of entries) {
+        if (entry.component?.componentName === 'Accordion.Root') {
+          entry.component.reactComponentMeta = {
+            displayName: 'Accordion.Root',
+            exportName: 'Root',
+            filePath: '/app/src/stories/accordion.tsx',
+            description: '',
+            props: {},
+          };
+        }
+      }
+    });
+
+  const presets = {
+    apply: async (extension: string, config?: unknown) => {
+      if (extension === 'typescript') {
+        return {};
+      }
+      if (extension === 'features') {
+        return { experimentalReactComponentMeta: true };
+      }
+      return config;
+    },
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const manifestEntries = [
+    {
+      type: 'story' as const,
+      subtype: 'story' as const,
+      id: 'example-accordion--default',
+      name: 'Default',
+      title: 'Example/Accordion',
+      importPath: './src/stories/Accordion.stories.tsx',
+      componentPath: './src/stories/accordion.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ] satisfies ManifestEntries;
+
+  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const accordion = result?.components?.components?.['example-accordion'];
+
+  expect(accordion?.error).toBeUndefined();
+  expect(accordion?.name).toBe('Root');
+  expect(accordion?.import).toBe('import { Root } from "some-package";');
+  expect(batchExtract).toHaveBeenCalled();
 });
 
 test('should create component manifest when only attached-mdx docs have manifest tag', async () => {
@@ -506,7 +727,7 @@ test('should create component manifest when only attached-mdx docs have manifest
   // Only docs entry has manifest tag, story does not
   const manifestEntries = [
     {
-      type: 'docs',
+      type: 'docs' as const,
       id: 'example-button--docs',
       name: 'Docs',
       title: 'Example/Button',
@@ -514,9 +735,12 @@ test('should create component manifest when only attached-mdx docs have manifest
       tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
       storiesImports: ['./src/stories/Button.stories.ts'],
     },
-  ];
+  ] satisfies ManifestEntries;
 
-  expect(await manifests(undefined, { manifestEntries } as any)).toMatchInlineSnapshot(`
+  const result = await runManifests(manifestEntries);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
+  const { meta: _meta, ...components } = result?.components ?? {};
+  expect({ components }).toMatchInlineSnapshot(`
     {
       "components": {
         "components": {
@@ -528,6 +752,7 @@ test('should create component manifest when only attached-mdx docs have manifest
             "jsDocTags": {},
             "name": "Button",
             "path": "./src/stories/Button.stories.ts",
+            "reactComponentMeta": undefined,
             "reactDocgen": {
               "actualName": "Button",
               "definedInFile": "./src/stories/Button.tsx",
@@ -556,6 +781,7 @@ test('should create component manifest when only attached-mdx docs have manifest
                 },
               },
             },
+            "reactDocgenTypescript": undefined,
             "stories": [],
             "summary": undefined,
           },
@@ -563,5 +789,202 @@ test('should create component manifest when only attached-mdx docs have manifest
         "v": 0,
       },
     }
+  `);
+});
+
+test('should prefer story entries over attached-mdx docs entries for the same component id', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/Primary/Primary.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { Primary } from './Primary';
+
+        const meta = {
+          title: 'Example/Primary',
+          component: Primary,
+        } satisfies Meta<typeof Primary>;
+        export default meta;
+
+        export const Default = () => <Primary title="Primary title" />;
+      `,
+      ['./src/Primary/Primary.tsx']: dedent`
+        import React from 'react';
+
+        export interface PrimaryProps {
+          title: string;
+        }
+
+        /** Primary component description */
+        export const Primary = ({ title }: PrimaryProps) => <div>{title}</div>;
+      `,
+      ['./src/OtherFile/OtherFile.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { OtherFile } from './OtherFile';
+
+        const meta = {
+          title: 'Example/Other File',
+          component: OtherFile,
+        } satisfies Meta<typeof OtherFile>;
+        export default meta;
+
+        export const Default = () => <OtherFile label="Other file label" />;
+      `,
+      ['./src/OtherFile/OtherFile.tsx']: dedent`
+        import React from 'react';
+
+        export interface OtherFileProps {
+          label: string;
+        }
+
+        /** Other file component description */
+        export const OtherFile = ({ label }: OtherFileProps) => (
+          <button type="button">{label}</button>
+        );
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'docs' as const,
+      id: 'example-primary--docs',
+      name: 'Docs',
+      title: 'Example/Primary',
+      importPath: './src/Primary/Primary.mdx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
+      storiesImports: [
+        './src/OtherFile/OtherFile.stories.tsx',
+        './src/Primary/Primary.stories.tsx',
+      ],
+    },
+    {
+      type: 'story' as const,
+      subtype: 'story' as const,
+      id: 'example-primary--default',
+      name: 'Default',
+      title: 'Example/Primary',
+      importPath: './src/Primary/Primary.stories.tsx',
+      componentPath: './src/Primary/Primary.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const result = await runManifests(manifestEntries);
+
+  const component = result?.components?.components?.['example-primary'];
+
+  expect(component?.name).toBe('Primary');
+  expect(component?.path).toBe('./src/Primary/Primary.stories.tsx');
+  expect(component?.stories).toMatchObject([
+    {
+      id: 'example-primary--default',
+      name: 'Default',
+    },
+  ]);
+  expect(component?.stories[0]?.snippet).toContain('<Primary');
+});
+
+test('stories are populated when meta has no explicit title', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Card.stories.ts']: dedent`
+        import type { Meta, StoryObj } from '@storybook/react';
+        import { Card } from './Card';
+
+        const meta: Meta<typeof Card> = {
+          component: Card,
+        };
+        export default meta;
+        type Story = StoryObj<typeof meta>;
+
+        export const Default: Story = { args: { label: 'Click me' } };
+        export const Large: Story = { args: { label: 'Big button', size: 'large' } };
+      `,
+      ['./src/stories/Card.tsx']: dedent`
+        import React from 'react';
+        /** A simple card component */
+        export const Card = ({ label, size }) => {
+          return <div className={size}>{label}</div>;
+        };
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'card--default',
+      name: 'Default',
+      title: 'Card',
+      importPath: './src/stories/Card.stories.ts',
+      componentPath: './src/stories/Card.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'card--large',
+      name: 'Large',
+      title: 'Card',
+      importPath: './src/stories/Card.stories.ts',
+      componentPath: './src/stories/Card.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Large',
+    },
+  ];
+
+  const result = await runManifests(manifestEntries);
+  const component = result?.components?.components?.['card'];
+
+  // When no explicit title is in the meta, stories should still be populated
+  // because the generator should use the index entry's title as fallback
+  expect(component?.stories).toMatchInlineSnapshot(`
+    [
+      {
+        "description": undefined,
+        "id": "card--default",
+        "name": "Default",
+        "snippet": "const Default = () => <Card label="Click me" />;",
+        "summary": undefined,
+      },
+      {
+        "description": undefined,
+        "id": "card--large",
+        "name": "Large",
+        "snippet": "const Large = () => <Card label="Big button" size="large" />;",
+        "summary": undefined,
+      },
+    ]
+  `);
+});
+
+test('should extract story description and summary from JSDoc comments', async () => {
+  const code = withCSF3(dedent`
+    /**
+     * This is a longer description of the Primary story
+     * 
+     * @summary This is a brief summary
+     */
+    export const Primary = () => <Button onClick={fn()} primary label="Button" />;
+  `);
+  const manifest = await getManifestForStory(code);
+
+  expect(manifest?.stories).toMatchInlineSnapshot(`
+    [
+      {
+        "description": "This is a longer description of the Primary story",
+        "id": "example-button--primary",
+        "name": "Primary",
+        "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
+        "summary": "This is a brief summary",
+      },
+    ]
   `);
 });

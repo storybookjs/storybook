@@ -6,7 +6,7 @@ import { expect } from 'storybook/test';
 import { saveNote } from '../app/actions';
 import { createNotes } from '../app/mocks/notes';
 
-import NoteUI from './note-ui';
+import NoteUI from './note-ui.component';
 
 const meta: Meta<NoteUI> = { component: NoteUI };
 export default meta;
@@ -39,7 +39,7 @@ import preview from '../.storybook/preview';
 import { saveNote } from '../app/actions';
 import { createNotes } from '../app/mocks/notes';
 
-import NoteUI from './note-ui';
+import NoteUI from './note-ui.component';
 
 const meta = preview.meta({ component: NoteUI });
 
@@ -71,7 +71,7 @@ export const SaveFlow = meta.story({
 
   import NoteUI from './note-ui.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     title: 'Mocked/NoteUI',
     component: NoteUI,
   });
@@ -133,7 +133,7 @@ export const SaveFlow = {
 
   import NoteUI from './note-ui.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     title: 'Mocked/NoteUI',
     component: NoteUI,
   });

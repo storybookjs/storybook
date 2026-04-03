@@ -5,12 +5,13 @@ import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
-import type { FileInfo } from '../../automigrate/codemod';
+import type { FileInfo } from '../../automigrate/codemod.ts';
 import {
+  addImportToTop,
   cleanupTypeImports,
   getConfigProperties,
   removeExportDeclarations,
-} from './csf-factories-utils';
+} from './csf-factories-utils.ts';
 
 export async function configToCsfFactory(
   info: FileInfo,
@@ -32,6 +33,47 @@ export async function configToCsfFactory(
   const defineConfigProps = getConfigProperties(exportDecls, { configType });
   const hasNamedExports = defineConfigProps.length > 0;
 
+  // Early return if the code is already transformed (default export is already defineMain/definePreview)
+  const isAlreadyTransformed = programNode.body.some((node) => {
+    if (!t.isExportDefaultDeclaration(node)) return false;
+
+    // Unwrap TS syntax (e.g. `as`, `satisfies`) around the default export expression
+    const declaration =
+      typeof (config as any)._unwrap === 'function'
+        ? (config as any)._unwrap(node.declaration)
+        : node.declaration;
+
+    return (
+      t.isCallExpression(declaration) &&
+      t.isIdentifier(declaration.callee) &&
+      declaration.callee.name === methodName
+    );
+  });
+
+  // Check whether the required framework import (e.g. defineMain from '@storybook/react-vite/node') is already present
+  const expectedImportSource = frameworkPackage + (configType === 'main' ? '/node' : '');
+  const hasCorrectImport = programNode.body.some(
+    (node) =>
+      t.isImportDeclaration(node) &&
+      node.importKind !== 'type' &&
+      node.source.value === expectedImportSource &&
+      node.specifiers.some(
+        (spec) =>
+          t.isImportSpecifier(spec) &&
+          t.isIdentifier(spec.imported) &&
+          spec.imported.name === methodName
+      )
+  );
+
+  // For main configs, always return early when already transformed and imports are valid.
+  // For preview configs, only return early when there are no named exports to merge.
+  const shouldSkipTransform =
+    configType === 'main' ? isAlreadyTransformed : isAlreadyTransformed && !hasNamedExports;
+
+  if (shouldSkipTransform && hasCorrectImport) {
+    return info.source;
+  }
+
   function findDeclarationNodeIndex(declarationName: string): number {
     return programNode.body.findIndex(
       (n) =>
@@ -51,19 +93,21 @@ export async function configToCsfFactory(
     );
   }
 
-  /**
-   * Scenario 1: Mixed exports
-   *
-   * ```
-   * export const tags = [];
-   * export default {
-   *   parameters: {},
-   * };
-   * ```
-   *
-   * Transform into: `export default defineMain({ tags: [], parameters: {} })`
-   */
-  if (config._exportsObject && hasNamedExports) {
+  if (shouldSkipTransform) {
+    // already transformed — skip transformation but still run import fixup below
+  } else if (config._exportsObject && hasNamedExports) {
+    /**
+     * Scenario 1: Mixed exports
+     *
+     * ```
+     * export const tags = [];
+     * export default {
+     *   parameters: {},
+     * };
+     * ```
+     *
+     * Transform into: `export default defineMain({ tags: [], parameters: {} })`
+     */
     // when merging named exports with default exports, add the named exports first in the list
     config._exportsObject.properties = [...defineConfigProps, ...config._exportsObject.properties];
     programNode.body = removeExportDeclarations(programNode, exportDecls);
@@ -165,6 +209,21 @@ export async function configToCsfFactory(
 
     // Add the new export default declaration
     programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
+  } else if (configType === 'preview') {
+    /**
+     * Scenario 4: No exports (empty file or only side-effect imports)
+     *
+     * ```
+     * import './preview.scss';
+     * ```
+     *
+     * Transform into: `import './preview.scss'; export default definePreview({})`
+     *
+     * This is needed because story files using CSF factories import from preview, so the preview
+     * file must have a default export.
+     */
+    const defineConfigCall = t.callExpression(t.identifier(methodName), [t.objectExpression([])]);
+    programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
   }
 
   const configImport = t.importDeclaration(
@@ -197,7 +256,7 @@ export async function configToCsfFactory(
     }
   } else {
     // if not, add import { defineMain } from '@storybook/framework'
-    programNode.body.unshift(configImport);
+    addImportToTop(programNode, configImport);
   }
 
   // Remove type imports – now inferred – from @storybook/* packages

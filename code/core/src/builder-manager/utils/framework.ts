@@ -7,9 +7,9 @@ import {
 import { type Options, SupportedBuilder } from 'storybook/internal/types';
 
 export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
-  const globals: Record<string, string | undefined> = {};
+  const globals: Record<string, any> = {};
 
-  const builderConfig = (await options.presets.apply('core')).builder;
+  const { builder: builderConfig, channelOptions } = await options.presets.apply('core');
   const builderName = typeof builderConfig === 'string' ? builderConfig : builderConfig?.name;
   const builder = Object.values(SupportedBuilder).find((builder) => builderName?.includes(builder));
 
@@ -18,6 +18,10 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const framework = frameworkPackages[frameworkPackageName];
   const renderer = frameworkToRenderer[framework];
 
+  if (options.configType === 'DEVELOPMENT') {
+    // Manager only needs the token currently, so we don't pass any other channel options.
+    globals.CHANNEL_OPTIONS = { wsToken: channelOptions?.wsToken };
+  }
   globals.STORYBOOK_BUILDER = builder;
   globals.STORYBOOK_FRAMEWORK = framework;
   globals.STORYBOOK_RENDERER = renderer;

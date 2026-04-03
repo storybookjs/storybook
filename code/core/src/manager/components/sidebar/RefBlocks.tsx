@@ -15,9 +15,9 @@ import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import { useLayout } from '../layout/LayoutProvider';
-import { Contained, Loader } from './Loader';
-import { NoResults } from './NoResults';
+import { useLayout } from '../layout/LayoutProvider.tsx';
+import { Contained, Loader } from './Loader.tsx';
+import { NoResults } from './NoResults.tsx';
 
 const { window: globalWindow } = global;
 
@@ -127,6 +127,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
           Oh no! Something went wrong loading this Storybook.
           <br />
           <PopoverProvider
+            ariaLabel="Error details"
             hasCloseButton
             offset={isMobile ? 0 : 8}
             placement={isMobile ? 'bottom-end' : 'bottom-start'}
@@ -136,7 +137,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
               </ErrorDisplay>
             }
           >
-            <Link isButton>
+            <Link>
               View error <ChevronDownIcon />
             </Link>
           </PopoverProvider>{' '}

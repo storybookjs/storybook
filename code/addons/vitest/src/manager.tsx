@@ -10,17 +10,17 @@ import {
 } from '#manager-store';
 import { Tag, addons } from 'storybook/manager-api';
 
-import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
-import { SidebarContextMenu } from './components/SidebarContextMenu';
-import { TestProviderRender } from './components/TestProviderRender';
+import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal.tsx';
+import { SidebarContextMenu } from './components/SidebarContextMenu.tsx';
+import { TestProviderRender } from './components/TestProviderRender.tsx';
 import {
   A11Y_PANEL_ID,
   ADDON_ID,
   COMPONENT_TESTING_PANEL_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
   TEST_PROVIDER_ID,
-} from './constants';
-import { useTestProvider } from './use-test-provider-state';
+} from './constants.ts';
+import { useTestProvider } from './use-test-provider-state.ts';
 
 addons.register(ADDON_ID, (api) => {
   if (globalThis.STORYBOOK_BUILDER === SupportedBuilder.VITE) {
@@ -42,14 +42,8 @@ addons.register(ADDON_ID, (api) => {
         },
       });
     });
-    store.untilReady().then(() => {
-      store.setState((state) => ({
-        ...state,
-        indexUrl: new URL('index.json', window.location.href).toString(),
-      }));
-      store.subscribe('TEST_RUN_COMPLETED', ({ payload }) => {
-        api.emit(STORYBOOK_ADDON_TEST_CHANNEL, { type: 'test-run-completed', payload });
-      });
+    store.subscribe('TEST_RUN_COMPLETED', ({ payload }) => {
+      api.emit(STORYBOOK_ADDON_TEST_CHANNEL, { type: 'test-run-completed', payload });
     });
 
     addons.add(TEST_PROVIDER_ID, {

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util';
+import { SbPage } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 
@@ -32,6 +32,6 @@ test.describe('addon-toolbars', () => {
     await expect(sbPage.previewRoot()).toContainText('안녕하세요');
 
     const button = sbPage.page.getByLabel('Internationalization locale');
-    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
   });
 });

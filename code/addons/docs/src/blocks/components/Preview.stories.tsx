@@ -51,6 +51,19 @@ export const CodeError = () => (
   </Preview>
 );
 
+export const ActionBarWrapping = {
+  render: () => (
+    <Preview inline isExpanded withSource={sourceStories.JSX.args}>
+      <Button ariaLabel={false} variant="outline">
+        Button with long text
+      </Button>
+    </Preview>
+  ),
+  globals: {
+    viewport: { value: 'mobile1' },
+  },
+};
+
 export const Single = () => (
   <Preview inline>
     <Button ariaLabel={false} variant="outline">
@@ -340,3 +353,29 @@ export const WithAdditionalActions = () => (
     </Button>
   </Preview>
 );
+
+export const SingleSmallViewport = () => (
+  <div style={{ width: 320 }}>
+    <Preview inline>
+      <Button ariaLabel={false} variant="outline">
+        Button 1
+      </Button>
+    </Preview>
+  </div>
+);
+SingleSmallViewport.parameters = {
+  chromatic: { viewports: [320] },
+};
+
+export const CodeExpandedSmallViewport = () => (
+  <div style={{ width: 320 }}>
+    <Preview inline isExpanded withSource={sourceStories.JSX.args}>
+      <Button ariaLabel={false} variant="outline">
+        Button 1
+      </Button>
+    </Preview>
+  </div>
+);
+CodeExpandedSmallViewport.parameters = {
+  chromatic: { viewports: [320] },
+};

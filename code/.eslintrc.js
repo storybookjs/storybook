@@ -160,10 +160,9 @@ module.exports = {
         'import-x/no-named-as-default-member': 'warn',
         'react/destructuring-assignment': 'warn',
 
-        // This warns about importing interfaces and types in a normal import, it's arguably better to import with the `type` prefix separate from the runtime imports,
-        // I leave this as a warning right now because we haven't really decided yet, and the codebase is riddled with errors if I set to 'error'.
+        // Our codebase is mostly TypeScript, and typescript will warn when imports are not found.
         // It IS set to 'error' for JS files.
-        'import-x/named': 'warn',
+        'import-x/named': 'off',
       },
     },
     {
@@ -228,6 +227,32 @@ module.exports = {
       files: ['**/renderers/**/*.stories.*', '**/core/template/**/*.stories.*'],
       rules: {
         'storybook/no-renderer-packages': 'off',
+      },
+    },
+    {
+      files: ['**/*.ts', '**/*.tsx'],
+      excludedFiles: [
+        '**/*.d.ts',
+        '**/docs/**/*',
+        '**/template/**/*',
+        '**/templates/**/*',
+        '**/__testfixtures__/**/*',
+        '**/__mocks-ng-workspace__/**/*',
+      ],
+      rules: {
+        'import-x/extensions': [
+          'error',
+          'always',
+          {
+            ignorePackages: true,
+            checkTypeImports: true,
+            fix: true,
+            pathGroupOverrides: [
+              { pattern: 'storybook/**', action: 'ignore' },
+              { pattern: '@storybook/**', action: 'ignore' },
+            ],
+          },
+        ],
       },
     },
   ],

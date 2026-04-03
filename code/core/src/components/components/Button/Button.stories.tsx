@@ -2,11 +2,11 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { Button } from './Button';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Button } from './Button.tsx';
 
 const meta = preview.meta({
   id: 'button-component',
@@ -291,6 +291,32 @@ export const Disabled = meta.story({
     ariaLabel: false,
     disabled: true,
     children: 'Disabled Button',
+    onClick: fn(),
+  },
+  render: (args) => (
+    <Row>
+      <Button variant="solid" {...args}>
+        Disabled Button
+      </Button>
+    </Row>
+  ),
+  play: async ({ args, canvas, step }) => {
+    const button = canvas.getByRole('button', { name: 'Disabled Button' });
+
+    await step('Disabled button should be aria-disabled', async () => {
+      expect(button).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    await step('Disabled button should not be clickable', async () => {
+      button.click();
+      expect(args.onClick).not.toHaveBeenCalled();
+    });
+
+    await step('Disabled button should be focusable for accessibility', async () => {
+      const button = canvas.getByRole('button', { name: 'Disabled Button' });
+      button.focus();
+      expect(button).toHaveFocus();
+    });
   },
 });
 

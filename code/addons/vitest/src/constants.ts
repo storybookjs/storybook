@@ -1,12 +1,12 @@
 import type { StoreOptions } from 'storybook/internal/types';
 
-import type { RunTrigger, StoreState } from './types';
+import type { CurrentRun, RunTrigger, StoreState } from './types.ts';
 
-export { PANEL_ID as COMPONENT_TESTING_PANEL_ID } from '../../../core/src/component-testing/constants';
+export { PANEL_ID as COMPONENT_TESTING_PANEL_ID } from '../../../core/src/component-testing/constants.ts';
 export {
   PANEL_ID as A11Y_PANEL_ID,
   ADDON_ID as A11Y_ADDON_ID,
-} from '../../../addons/a11y/src/constants';
+} from '../../../addons/a11y/src/constants.ts';
 
 export const ADDON_ID = 'storybook/test';
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
@@ -28,7 +28,7 @@ export const storeOptions = {
     watching: false,
     cancelling: false,
     fatalError: undefined,
-    indexUrl: undefined,
+    index: { entries: {}, v: 5 },
     previewAnnotations: [],
     currentRun: {
       triggeredBy: undefined,
@@ -36,6 +36,9 @@ export const storeOptions = {
         coverage: false,
         a11y: false,
       },
+      componentTestStatuses: [],
+      a11yStatuses: [],
+      a11yReports: {},
       componentTestCount: {
         success: 0,
         error: 0,
@@ -63,3 +66,26 @@ export const TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook
 
 export const STATUS_TYPE_ID_COMPONENT_TEST = 'storybook/component-test';
 export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';
+
+// Channel event names for programmatic test triggering
+export const TRIGGER_TEST_RUN_REQUEST = `${ADDON_ID}/trigger-test-run-request`;
+export const TRIGGER_TEST_RUN_RESPONSE = `${ADDON_ID}/trigger-test-run-response`;
+
+export type TriggerTestRunRequestPayload = {
+  requestId: string;
+  actor: string;
+  storyIds?: string[];
+  config?: Partial<StoreState['config']>;
+};
+
+export type TestRunResult = CurrentRun;
+
+export type TriggerTestRunResponsePayload = {
+  requestId: string;
+  status: 'completed' | 'error' | 'cancelled';
+  result?: TestRunResult;
+  error?: {
+    message: string;
+    error?: import('./types').ErrorLike;
+  };
+};

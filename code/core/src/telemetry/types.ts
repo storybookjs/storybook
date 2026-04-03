@@ -2,8 +2,9 @@ import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/type
 
 import type { DetectResult } from 'package-manager-detector';
 
-import type { KnownPackagesList } from './get-known-packages';
-import type { MonorepoType } from './get-monorepo-type';
+import type { AgentInfo } from './detect-agent.ts';
+import type { KnownPackagesList } from './get-known-packages.ts';
+import type { MonorepoType } from './get-monorepo-type.ts';
 
 export type EventType =
   | 'boot'
@@ -18,6 +19,7 @@ export type EventType =
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
+  | 'exit'
   | 'error'
   | 'error-metadata'
   | 'version-update'
@@ -41,6 +43,7 @@ export type EventType =
   | 'migrate'
   | 'preview-first-load'
   | 'doctor'
+  | 'share'
   | 'ghost-stories';
 export interface Dependency {
   version: string | undefined;
@@ -56,6 +59,8 @@ export type StorybookMetadata = {
   storybookVersionSpecifier: string;
   generatedAt?: number;
   userSince?: number;
+  /** If we can identify the agent, report it; otherwise `unknown` when detected heuristically. */
+  agent?: AgentInfo;
   language: 'typescript' | 'javascript';
   framework?: {
     name?: string;

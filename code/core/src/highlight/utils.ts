@@ -1,13 +1,13 @@
 /* eslint-env browser */
-import { MIN_TOUCH_AREA_SIZE } from './constants';
-import { type IconName, iconPaths } from './icons';
+import { MIN_TOUCH_AREA_SIZE } from './constants.ts';
+import { type IconName, iconPaths } from './icons.ts';
 import type {
   Box,
   ClickEventDetails,
   Highlight,
   HighlightOptions,
   RawHighlightOptions,
-} from './types';
+} from './types.ts';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 

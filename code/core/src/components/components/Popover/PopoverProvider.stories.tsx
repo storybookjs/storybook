@@ -3,9 +3,9 @@ import React from 'react';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers';
-import { PopoverProvider } from './PopoverProvider';
+import preview from '../../../../../.storybook/preview.tsx';
+import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers.tsx';
+import { PopoverProvider } from './PopoverProvider.tsx';
 
 const StyledSamplePopover = styled.div({
   padding: 10,
@@ -28,6 +28,7 @@ const meta = preview.meta({
   title: 'Overlay/PopoverProvider',
   component: PopoverProvider,
   args: {
+    ariaLabel: 'Sample popover',
     hasChrome: true,
     offset: 8,
     placement: 'top',

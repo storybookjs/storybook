@@ -120,7 +120,6 @@ export const RemoveHighlight: Story = {
   import { useChannel } from 'storybook/preview-api';
   import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
-
   import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
@@ -175,7 +174,6 @@ export const RemoveHighlight = {
 
   import { useChannel } from 'storybook/preview-api';
   import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
-
 
   import MyComponent from './MyComponent.svelte';
 

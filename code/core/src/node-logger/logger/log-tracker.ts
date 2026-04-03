@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 
-import type { LogLevel } from './logger';
+import type { LogLevel } from './logger.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Metadata = Record<string, any>;

@@ -1,7 +1,8 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
+import type { ChannelLike } from 'storybook/internal/channels';
 import type { FileSystemCache } from 'storybook/internal/common';
-import { type StoryIndexGenerator } from 'storybook/internal/core-server';
-import { type CsfFile } from 'storybook/internal/csf-tools';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
@@ -9,19 +10,15 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { SupportedBuilder } from './builders';
-import type { SupportedFramework } from './frameworks';
-import type { Indexer, StoriesEntry } from './indexer';
-import type { SupportedRenderer } from './renderers';
+import type { SupportedBuilder } from './builders.ts';
+import type { SupportedFramework } from './frameworks.ts';
+import type { Indexer, StoriesEntry } from './indexer.ts';
+import type { SupportedRenderer } from './renderers.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
 export type BuilderName = 'webpack5' | '@storybook/builder-webpack5' | string;
 export type RendererName = string;
-
-interface ServerChannel {
-  emit(type: string, args?: any): void;
-}
 
 export interface CoreConfig {
   builder?:
@@ -32,7 +29,7 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<TelejsonOptions>;
+  channelOptions?: Partial<TelejsonOptions> & { wsToken?: string };
   /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**
@@ -50,6 +47,11 @@ export interface CoreConfig {
    * @see https://storybook.js.org/telemetry
    */
   enableCrashReports?: boolean;
+  /**
+   * Enable hostname validation, currently only for WebSocket connections. Set to `[]` to disallow
+   * all hosts except known local/network address, or `true` to allow all hosts.
+   */
+  allowedHosts?: string[] | true;
   /**
    * Enable CORS headings to run document in a "secure context" see:
    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
@@ -215,12 +217,14 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  localAddress?: string;
   networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {
   presets: Presets;
   presetsList?: LoadedPreset[];
+  channel: ChannelLike;
 }
 
 export type Options = LoadOptions &
@@ -259,7 +263,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
     startTime: ReturnType<typeof process.hrtime>;
     router: ServerApp;
     server: HttpServer;
-    channel: ServerChannel;
+    channel: ChannelLike;
   }) => Promise<void | {
     stats?: BuilderStats;
     totalTime: ReturnType<typeof process.hrtime>;
@@ -272,6 +276,26 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
+  onModuleGraphChange?(cb: (event: ModuleGraphChangeEvent) => void): () => void;
+}
+
+/**
+ * Builder-agnostic module graph for dependency tracking. Modeled after Vite's module graph.
+ * The same file can be imported in multiple ways (e.g. based on query params or import context),
+ * each representing a unique module identity, hence the value is a Set<ModuleNode>.
+ */
+export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
+
+export type ModuleGraphChangeEvent =
+  | { type: 'moduleGraph'; moduleGraph: ModuleGraph }
+  | { type: 'unavailable'; reason: string; error?: Error }
+  | { type: 'error'; error: Error };
+
+export interface ModuleNode {
+  file: string;
+  type: 'js' | 'css' | 'asset';
+  importers: Set<ModuleNode>;
+  importedModules: Set<ModuleNode>;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -343,7 +367,7 @@ type Tag = string;
 
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
-  defaultFilterSelection?: 'include' | 'exclude';
+  defaultFilterSelection?: 'include' | 'exclude' | undefined;
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }
@@ -371,6 +395,10 @@ export interface ComponentManifest {
 export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
+  meta?: {
+    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+    durationMs: number;
+  };
 }
 
 type ManifestName = string;
@@ -499,7 +527,21 @@ export interface StorybookConfigRaw {
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
 
-    experimentalComponentsManifest?: boolean;
+    /**
+     * Enable component manifest generation for MCP and other tooling integrations.
+     *
+     * @default true
+     */
+    componentsManifest?: boolean;
+
+    /**
+     * Use TypeScript LanguageService (react-component-meta) for extracting React component props
+     * instead of react-docgen / react-docgen-typescript.
+     *
+     * @default false
+     * @experimental
+     */
+    experimentalReactComponentMeta?: boolean;
 
     /**
      * Enables the new code example generation for React components. You can see those examples when
@@ -513,6 +555,13 @@ export interface StorybookConfigRaw {
      * @experimental This feature is in early development and may change significantly in future releases.
      */
     experimentalCodeExamples?: boolean;
+
+    /**
+     * Enable change detection
+     * TODO: Turn to true before 10.4 release
+     * @default false
+     */
+    changeDetection?: boolean;
   };
 
   build?: TestBuildConfig;

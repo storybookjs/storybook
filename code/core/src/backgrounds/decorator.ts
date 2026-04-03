@@ -2,10 +2,10 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { useEffect } from 'storybook/preview-api';
 
-import { PARAM_KEY } from './constants';
-import { DEFAULT_BACKGROUNDS } from './defaults';
-import type { BackgroundsParameters, GridConfig } from './types';
-import { addBackgroundStyle, addGridStyle, clearStyles, isReduceMotionEnabled } from './utils';
+import { PARAM_KEY } from './constants.ts';
+import { DEFAULT_BACKGROUNDS } from './defaults.ts';
+import type { BackgroundsParameters, GridConfig } from './types.ts';
+import { addBackgroundStyle, addGridStyle, clearStyles, isReduceMotionEnabled } from './utils.ts';
 
 const defaultGrid: GridConfig = {
   cellSize: 100,
@@ -34,8 +34,14 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const showGrid = typeof data === 'string' ? false : data.grid || false;
   const shownBackground = !!item && !disable;
 
-  const backgroundSelector = viewMode === 'docs' ? `#anchor--${id} .docs-story` : '.sb-show-main';
-  const gridSelector = viewMode === 'docs' ? `#anchor--${id} .docs-story` : '.sb-show-main';
+  const backgroundSelector =
+    viewMode === 'docs'
+      ? `#anchor--${id} .docs-story, #anchor--primary--${id} .docs-story`
+      : '.sb-show-main';
+  const gridSelector =
+    viewMode === 'docs'
+      ? `#anchor--${id} .docs-story, #anchor--primary--${id} .docs-story`
+      : '.sb-show-main';
 
   const isLayoutPadded = parameters.layout === undefined || parameters.layout === 'padded';
   const defaultOffset = viewMode === 'docs' ? 20 : isLayoutPadded ? 16 : 0;

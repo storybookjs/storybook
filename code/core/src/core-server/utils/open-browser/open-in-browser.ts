@@ -3,31 +3,44 @@ import { logger } from 'storybook/internal/node-logger';
 import open from 'open';
 import { dedent } from 'ts-dedent';
 
-import { openBrowser } from './opener';
+import { openBrowser } from './opener.ts';
 
 export async function openInBrowser(address: string) {
-  let errorOccured = false;
+  let errorOccurred = false;
+  let openBrowserResult: boolean | undefined;
 
   try {
-    await openBrowser(address);
+    openBrowserResult = await openBrowser(address);
   } catch (error) {
-    errorOccured = true;
+    errorOccurred = true;
+  }
+
+  // If openBrowser returned false, it means BROWSER=none was set intentionally
+  // In this case, don't try to open a browser at all (fixes #24191)
+  if (openBrowserResult === false) {
+    return;
   }
 
   try {
-    if (errorOccured) {
+    if (errorOccurred) {
       await open(address);
-      errorOccured = false;
+      errorOccurred = false;
     }
   } catch (error) {
-    errorOccured = true;
+    errorOccurred = true;
   }
 
-  if (errorOccured) {
+  if (errorOccurred) {
+    const browserEnv = process.env.BROWSER;
+    const browserHint = browserEnv
+      ? `\n\nNote: BROWSER environment variable is set to "${browserEnv}". ` +
+        `To disable browser opening, use BROWSER=none or the --ci flag.`
+      : '';
+
     logger.error(dedent`
         Could not open ${address} inside a browser. If you're running this command inside a
         docker container or on a CI, you need to pass the '--ci' flag to prevent opening a
-        browser by default.
+        browser by default.${browserHint}
       `);
   }
 }

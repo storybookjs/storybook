@@ -96,6 +96,10 @@ enum events {
   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
   // Emitted when the manager UI sets up a focus trap
   MANAGER_INERT_ATTRIBUTE_CHANGED = 'managerInertAttributeChanged',
+
+  SHARE_STORY_LINK = 'shareStoryLink',
+  SHARE_ISOLATE_MODE = 'shareIsolateMode',
+  SHARE_POPOVER_OPENED = 'sharePopoverOpened',
 }
 
 // Enables: `import Events from ...`
@@ -167,13 +171,16 @@ export const {
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
   MANAGER_INERT_ATTRIBUTE_CHANGED,
+  SHARE_STORY_LINK,
+  SHARE_ISOLATE_MODE,
+  SHARE_POPOVER_OPENED,
 } = events;
 
-export * from './data/create-new-story';
-export * from './data/file-component-search';
-export * from './data/argtypes-info';
-export * from './data/request-response';
-export * from './data/save-story';
-export * from './data/whats-new';
-export * from './data/phases';
-export * from './data/open-in-editor';
+export * from './data/create-new-story.ts';
+export * from './data/file-component-search.ts';
+export * from './data/argtypes-info.ts';
+export * from './data/request-response.ts';
+export * from './data/save-story.ts';
+export * from './data/whats-new.ts';
+export * from './data/phases.ts';
+export * from './data/open-in-editor.ts';

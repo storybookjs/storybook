@@ -7,13 +7,13 @@ import type { ReactTypes } from '@storybook/react';
 
 import type vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
 
-import * as nextPreview from './preview';
-import type { NextJsTypes } from './types';
+import * as nextPreview from './preview.tsx';
+import type { NextJsTypes } from './types.ts';
 
 export * from '@storybook/react';
 // @ts-expect-error (double exports)
-export * from './portable-stories';
-export * from './types';
+export * from './portable-stories.ts';
+export * from './types.ts';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -31,4 +31,4 @@ export function definePreview<Addons extends PreviewAddon<never>[]>(
   });
 }
 
-interface NextPreview<T extends AddonTypes> extends ReactPreview<NextJsTypes & T> {}
+export interface NextPreview<T extends AddonTypes> extends ReactPreview<NextJsTypes & T> {}

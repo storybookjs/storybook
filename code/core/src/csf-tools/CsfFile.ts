@@ -23,9 +23,9 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { Tag } from '../shared/constants/tags';
-import type { PrintResultType } from './PrintResultType';
-import { findVarInitialization } from './findVarInitialization';
+import { Tag } from '../shared/constants/tags.ts';
+import type { PrintResultType } from './PrintResultType.ts';
+import { findVarInitialization } from './findVarInitialization.ts';
 
 // We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
 interface BabelFile {
@@ -858,7 +858,10 @@ export class CsfFile {
                     : callee.property.name;
                   const metaNode = node.arguments[0] as t.ObjectExpression;
                   self._parseMeta(metaNode, self._ast.program);
-                } else {
+                } else if (rootObject.name === 'preview') {
+                  // Only throw if the variable is named "preview" - this indicates
+                  // the user is trying to use CSF Factories but with a wrong import path.
+                  // Other .meta() calls (e.g., Zod v4's .meta()) are silently ignored.
                   throw new BadMetaError(
                     'meta() factory must be imported from .storybook/preview configuration',
                     configParent,

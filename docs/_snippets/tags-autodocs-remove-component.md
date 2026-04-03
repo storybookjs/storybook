@@ -1,7 +1,7 @@
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
-import { Page } from './Page';
+import { Page } from './Page.component';
 
 const meta: Meta<Page> = {
   component: Page,
@@ -14,7 +14,7 @@ export default meta;
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Page } from './Page';
+import { Page } from './Page.component';
 
 const meta = preview.meta({
   component: Page,

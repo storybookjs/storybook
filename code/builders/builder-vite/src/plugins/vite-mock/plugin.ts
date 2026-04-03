@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import {
   babelParser,
   extractMockCalls,
+  findMockRedirect,
   getAutomockCode,
   getRealPath,
   rewriteSbMockImportCalls,
@@ -10,11 +11,10 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import type { CoreConfig } from 'storybook/internal/types';
 
-import { findMockRedirect } from '@vitest/mocker/redirect';
 import { normalize } from 'pathe';
 import type { Plugin, ResolvedConfig } from 'vite';
 
-import { type MockCall, getCleanId, invalidateAllRelatedModules } from './utils';
+import { type MockCall, getCleanId, invalidateAllRelatedModules } from './utils.ts';
 
 export interface MockPluginOptions {
   /** The absolute path to the preview.tsx file where mocks are defined. */
@@ -162,16 +162,19 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
     },
     {
       name: 'storybook:mock-loader-preview',
-      transform(code, id) {
-        if (id === normalizedPreviewConfigPath) {
-          try {
-            return rewriteSbMockImportCalls(code);
-          } catch (e) {
-            logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
-            return null;
+      transform: {
+        filter: { id: normalizedPreviewConfigPath },
+        handler(code, id) {
+          if (id === normalizedPreviewConfigPath) {
+            try {
+              return rewriteSbMockImportCalls(code);
+            } catch (e) {
+              logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
+              return null;
+            }
           }
-        }
-        return null;
+          return null;
+        },
       },
     },
   ];

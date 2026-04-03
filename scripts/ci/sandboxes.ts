@@ -1,8 +1,9 @@
 import { join } from 'path';
 
-import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { build_linux } from './common-jobs';
-import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
+import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { build_linux } from './common-jobs.ts';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   CACHE_KEYS,
   artifact,
@@ -13,9 +14,26 @@ import {
   verdaccio,
   workflow,
   workspace,
-} from './utils/helpers';
-import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types';
-import type { JobOrNoOpJob, Workflow } from './utils/types';
+} from './utils/helpers.ts';
+import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
+import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
+
+function getSandboxSetupSteps(template: string) {
+  const extraSteps = [];
+  const templateData = sandboxTemplates.allTemplates[template as TemplateKey];
+
+  if (templateData.extraCiSteps?.ensureMinNodeVersion) {
+    extraSteps.push({
+      'node/install': {
+        'install-yarn': true,
+        // Currently using Node 22.22.1 as minimum supported version for Angular sandboxes
+        'node-version': '22.22.1',
+      },
+    });
+  }
+
+  return extraSteps;
+}
 
 function defineSandboxJob_build({
   directory,
@@ -33,9 +51,10 @@ function defineSandboxJob_build({
     () => ({
       executor: {
         name: 'sb_node_22_classic',
-        class: 'large',
+        class: 'medium+',
       },
       steps: [
+        ...getSandboxSetupSteps(template),
         ...workflow.restoreLinux(),
         {
           run: {
@@ -68,13 +87,14 @@ function defineSandboxJob_dev({
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: 'xlarge',
+            class: 'medium+',
           }
         : {
             name: 'sb_node_22_classic',
-            class: 'large',
+            class: 'medium',
           },
       steps: [
+        ...getSandboxSetupSteps(template),
         ...workflow.restoreLinux(),
         ...(options.e2e
           ? [
@@ -97,6 +117,10 @@ function defineSandboxJob_dev({
                 },
               },
               artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
+              artifact.persist(
+                join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
+                'playwright-results'
+              ),
               testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
             ]
           : [
@@ -130,6 +154,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'large',
       },
       steps: [
+        ...getSandboxSetupSteps(key),
         ...workflow.restoreLinux(),
         verdaccio.start(),
         {
@@ -219,6 +244,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'medium',
       },
       steps: [
+        ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
         cache.attach(CACHE_KEYS()),
@@ -250,6 +276,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'medium',
       },
       steps: [
+        ...getSandboxSetupSteps(key),
         ...workflow.restoreLinux(),
         {
           run: {
@@ -267,9 +294,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'xlarge',
+        class: 'medium+',
       },
       steps: [
+        ...getSandboxSetupSteps(key),
         ...workflow.restoreLinux(),
         {
           run: {
@@ -289,6 +317,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           },
         },
         artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
+        artifact.persist(
+          join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
+          'playwright-results'
+        ),
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
@@ -302,6 +334,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'medium',
       },
       steps: [
+        ...getSandboxSetupSteps(key),
         ...workflow.restoreLinux(),
         {
           run: {
@@ -351,6 +384,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         class: 'medium',
       },
       steps: [
+        ...getSandboxSetupSteps(sandbox.name),
         ...workflow.restoreLinux(),
         {
           run: {
@@ -371,7 +405,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
     () => ({
       executor: {
         name: 'win/default',
-        size: 'xlarge',
+        size: 'large',
         shell: 'bash.exe',
       },
       steps: [
@@ -420,7 +454,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
     () => ({
       executor: {
         name: 'win/default',
-        size: 'xlarge',
+        size: 'large',
         shell: 'bash.exe',
       },
       steps: [

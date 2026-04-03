@@ -8,8 +8,8 @@ import * as pico from 'picomatch';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { globToRegexp } from './glob-to-regexp';
-import { normalizeStoryPath } from './paths';
+import { globToRegexp } from './glob-to-regexp.ts';
+import { normalizeStoryPath } from './paths.ts';
 
 const DEFAULT_TITLE_PREFIX = '';
 export const DEFAULT_FILES_PATTERN = '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))';

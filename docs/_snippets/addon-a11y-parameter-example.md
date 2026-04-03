@@ -146,7 +146,7 @@ export const NoA11yFail = {
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { Button } from './Button.svelte';
+import Button from './Button.svelte';
 
 const meta = {
   component: Button,
@@ -205,7 +205,7 @@ export const NoA11yFail: Story = {
 ```
 
 ```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { Button } from './Button.svelte';
+import Button from './Button.svelte';
 
 export default {
   component: Button,

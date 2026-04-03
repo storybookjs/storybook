@@ -462,6 +462,7 @@ export const Basic = meta.story({
 
 ```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { YourComponent } from './YourComponent';
 
 const meta = preview.meta({

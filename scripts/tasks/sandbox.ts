@@ -4,9 +4,10 @@ import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
 
-import { now, saveBench } from '../bench/utils';
-import type { Task, TaskKey } from '../task';
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants';
+import { now, saveBench } from '../bench/utils.ts';
+import type { Task, TaskKey } from '../task.ts';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
 
 const logger = console;
 
@@ -82,7 +83,7 @@ export const sandbox: Task = {
       setImportMap,
       setupVitest,
       runMigrations,
-    } = await import('./sandbox-parts');
+    } = await import('./sandbox-parts.ts');
 
     const extraDeps = [
       ...(details.template.modifications?.extraDependencies ?? []),
@@ -167,7 +168,7 @@ export const sandbox: Task = {
     await setImportMap(details.sandboxDir);
 
     const { JsPackageManagerFactory } =
-      await import('../../code/core/src/common/js-package-manager/JsPackageManagerFactory');
+      await import('../../code/core/src/common/js-package-manager/JsPackageManagerFactory.ts');
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
@@ -178,14 +179,14 @@ export const sandbox: Task = {
 
     await extendPreview(details, options);
 
-    logger.info('✅ Moving sandbox to cache directory');
-    const sandboxDir = join(details.sandboxDir);
-    const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
-
     // For NX we move the sandbox to a directory that can be cached.
     // We remove node_modules to keep the remote cache small and fast
     // node_modules are already cached in the global yarn cache
-    if (process.env.NX_CLI_SET === 'true') {
+    if (isNxTaskExecution()) {
+      logger.info('✅ Moving sandbox to cache directory');
+      const sandboxDir = join(details.sandboxDir);
+      const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
+
       if (sandboxDir !== cacheDir) {
         logger.info(`✅ Removing cache directory ${cacheDir}`);
         await rm(cacheDir, { recursive: true, force: true });

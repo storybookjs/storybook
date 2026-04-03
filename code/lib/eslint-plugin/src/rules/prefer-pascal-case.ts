@@ -8,10 +8,10 @@ import { isExportStory } from 'storybook/internal/csf';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { ASTUtils } from '@typescript-eslint/utils';
 
-import { getDescriptor, getMetaObjectExpression } from '../utils';
-import { isIdentifier, isVariableDeclaration } from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+import { getDescriptor, getMetaObjectExpression } from '../utils/index.ts';
+import { isIdentifier, isVariableDeclaration } from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition
@@ -91,7 +91,7 @@ export default createStorybookRule({
             {
               messageId: 'convertToPascalCase',
               *fix(fixer) {
-                const fullText = context.getSourceCode().text;
+                const fullText = context.sourceCode.text;
                 const fullName = fullText.slice(id.range[0], id.range[1]);
                 const suffix = fullName.substring(name.length);
                 const pascal = toPascalCase(name);

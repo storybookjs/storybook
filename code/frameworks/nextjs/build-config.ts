@@ -1,4 +1,4 @@
-import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   entries: {
@@ -27,6 +27,10 @@ const config: BuildEntries = {
       {
         exportEntries: ['./navigation.mock'],
         entryPoint: './src/export-mocks/navigation/index.ts',
+      },
+      {
+        exportEntries: ['./link.mock'],
+        entryPoint: './src/export-mocks/link/index.tsx',
       },
       {
         exportEntries: ['./router.mock'],

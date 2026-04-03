@@ -16,7 +16,7 @@
     "vitest": "SKIP_FAIL_ON_PURPOSE=true vitest run"
   },
   "resolutions": {
-    "@playwright/test": "1.52.0",
+    "@playwright/test": "1.58.2",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
     "@storybook/addon-links": "file:../../../code/addons/links",
@@ -50,7 +50,7 @@
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
     "eslint-plugin-storybook": "file:../../../code/lib/eslint-plugin",
-    "playwright": "1.52.0",
+    "playwright": "1.58.2",
     "storybook": "portal:../../../code/core"
   },
   "dependencies": {
@@ -58,8 +58,8 @@
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-react": "1.52.0",
-    "@playwright/test": "1.52.0",
+    "@playwright/experimental-ct-react": "1.58.2",
+    "@playwright/test": "1.58.2",
     "@storybook/addon-a11y": "^10.0.0",
     "@storybook/addon-vitest": "^10.0.0",
     "@storybook/react": "^10.0.0",

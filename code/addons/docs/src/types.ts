@@ -85,7 +85,7 @@ type CanvasBlockParameters = {
   /** Specifies which story is rendered */
   of: ModuleExport;
   /** Show story source code */
-  sourceState?: 'hidden' | 'shown';
+  sourceState?: 'hidden' | 'shown' | 'none';
   /**
    * Story configuration
    *

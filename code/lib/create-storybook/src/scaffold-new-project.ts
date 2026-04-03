@@ -6,7 +6,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import type { CommandOptions } from './generators/types';
+import type { CommandOptions } from './generators/types.ts';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';
 
@@ -135,6 +135,13 @@ export const scaffoldNewProject = async (
   }
 
   if (projectStrategy === 'other') {
+    if (!disableTelemetry) {
+      await telemetry(
+        'exit',
+        { eventType: 'init', reason: 'scaffold-other' },
+        { stripMetadata: true, immediate: true }
+      );
+    }
     logger.warn(
       'To install Storybook on another framework, first generate a project with that framework and then rerun this command.'
     );

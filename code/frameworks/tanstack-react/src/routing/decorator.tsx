@@ -1,5 +1,5 @@
 import React, { type ComponentType } from 'react';
-import type { Decorator, Loader } from '@storybook/react-vite';
+import type { Decorator } from '@storybook/react-vite';
 import {
   createMemoryHistory,
   createRootRoute,
@@ -8,6 +8,8 @@ import {
   RouterProvider,
   createRoute,
   RootRoute,
+  interpolatePath,
+  defaultStringifySearch,
 } from '@tanstack/react-router';
 import type { Router, AnyRootRoute } from '@tanstack/react-router';
 import type { RouterParameters } from './types';
@@ -19,13 +21,18 @@ export type MockRouterOptions = {
   initialPath?: string;
 };
 
+/**
+ * Checks whether a value is a TanStack Router Route instance.
+ */
+function isRoute(value: unknown): value is InstanceType<typeof Route> {
+  return value instanceof Route || value instanceof RootRoute;
+}
+
 function createInternalStoryRoute(
   Story: ComponentType,
   routeParameter?: RouterParameters['route']
 ): AnyRootRoute {
   if (routeParameter instanceof RootRoute) {
-    // createStoryRoute() returns a root with a child route that has the loader/options.
-    // Set the Story component on the child so useLoaderData() works inside it.
     const children = routeParameter.children as BaseRoute[] | undefined;
     if (children?.length) {
       children[0].update({ component: () => <Story /> });
@@ -36,9 +43,15 @@ function createInternalStoryRoute(
   }
 
   if (routeParameter instanceof Route) {
-    routeParameter.update({ component: () => <Story /> });
     const root = createRootRoute();
-    root.addChildren([routeParameter as any]);
+    const { id: _id, ...routeOpts } = (routeParameter as any).options ?? {};
+
+    const child = createRoute({
+      ...routeOpts,
+      component: () => <Story />,
+      getParentRoute: () => root,
+    });
+    root.addChildren([child]);
     return root;
   }
 
@@ -60,22 +73,27 @@ export function createStoryRouter({
   routeTree,
   initialPath = '/',
 }: MockRouterOptions): Router<AnyRootRoute> {
-  const history = createMemoryHistory();
+  const history = createMemoryHistory({
+    initialEntries: [initialPath],
+  });
 
   console.log('init mock router with path:', initialPath);
+  history.replace(initialPath);
   const router = createRouter({
     routeTree,
     history,
+    defaultNotFoundComponent(props) {
+      return <div>Route not found: {props.routeId}</div>;
+    },
   });
 
-  history.replace(initialPath);
   history.block({
     blockerFn() {
       onNavigate(history.location.pathname);
       return true;
     },
   });
-
+  console.log(router, routeTree);
   return router;
 }
 
@@ -84,20 +102,48 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
 
   const routeOptions = routerParams.route;
 
+  // we override certain route options from the story parameters if they are set
+  if (routeOptions && isRoute(routeOptions)) {
+    const overrides: Record<string, unknown> = {};
+    if (routerParams.loader) overrides.loader = routerParams.loader;
+    if (routerParams.beforeLoad) overrides.beforeLoad = routerParams.beforeLoad;
+    if (routerParams.validateSearch) overrides.validateSearch = routerParams.validateSearch;
+    if (routerParams.loaderDeps) overrides.loaderDeps = routerParams.loaderDeps;
+
+    if (Object.keys(overrides).length > 0) {
+      (routeOptions as InstanceType<typeof Route>).update(overrides);
+    }
+  }
+
   const route = createInternalStoryRoute(Story, routeOptions);
 
-  // Auto-detect initial path from the route tree's first child if not explicitly set
+  // Auto-detect initial path from the route or its first child if not explicitly set
   let initialPath = routerParams.path;
-  if (!initialPath && route instanceof RootRoute) {
-    const children = (route as any).children as BaseRoute[] | undefined;
-    if (children?.length) {
-      initialPath = (children[0].options as any)?.path;
+  if (!initialPath) {
+    if (routeOptions && isRoute(routeOptions) && !(routeOptions instanceof RootRoute)) {
+      initialPath = (routeOptions as any).options?.path ?? (routeOptions as any).path;
+    } else if (route instanceof RootRoute) {
+      const children = (route as any).children as BaseRoute[] | undefined;
+      if (children?.length) {
+        initialPath = (children[0].options as any)?.path;
+      }
     }
+  }
+
+  // Interpolate params into the path and append query/search params
+  let resolvedPath = interpolatePath({
+    path: initialPath ?? '/',
+    params: routerParams.params ?? {},
+  }).interpolatedPath;
+  console.log('interpolated path:', resolvedPath);
+  const search = routerParams.query ? defaultStringifySearch(routerParams.query) : '';
+  if (search) {
+    resolvedPath += search;
   }
 
   const router = createStoryRouter({
     routeTree: route,
-    initialPath: initialPath,
+    initialPath: resolvedPath,
   });
 
   return <RouterProvider router={router}></RouterProvider>;

@@ -110,8 +110,10 @@ describe('handleUnsupportedNodeRuntime', () => {
 
     await handleUnsupportedNodeRuntime(18, 0, 0);
 
-    const selectCall = vi.mocked(prompt.select).mock.calls[0][0] as any;
-    const labels = selectCall.options.map((o: any) => o.label);
+    const selectCall = vi.mocked(prompt.select).mock.calls[0][0] as {
+      options: Array<{ label: string; value: string }>;
+    };
+    const labels = selectCall.options.map((o) => o.label);
     expect(labels).not.toEqual(
       expect.arrayContaining([expect.stringContaining('current runtime')])
     );

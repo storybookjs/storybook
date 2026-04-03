@@ -1,18 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
-  reactDocgen: vi.fn(),
-}));
+vi.mock(import('./plugins/react-docgen.ts'), { spy: true });
 
-vi.mock('./plugins/react-docgen.ts', () => ({
-  reactDocgen: mocks.reactDocgen,
-}));
-
+import * as reactDocgenModule from './plugins/react-docgen.ts';
 import { viteFinal } from './preset.ts';
 
 describe('react-vite preset', () => {
   beforeEach(() => {
-    mocks.reactDocgen.mockReset().mockResolvedValue({ name: 'storybook:react-docgen-plugin' });
+    vi.mocked(reactDocgenModule.reactDocgen)
+      .mockReset()
+      .mockResolvedValue({ name: 'storybook:react-docgen-plugin' });
   });
 
   it('passes reactDocgenOptions to the react-docgen plugin', async () => {
@@ -36,7 +33,7 @@ describe('react-vite preset', () => {
       },
     } as any);
 
-    expect(mocks.reactDocgen).toHaveBeenCalledWith({
+    expect(reactDocgenModule.reactDocgen).toHaveBeenCalledWith({
       include: /\.(mjs|tsx?|jsx?)$/,
       ...reactDocgenOptions,
     });
@@ -64,6 +61,6 @@ describe('react-vite preset', () => {
       },
     } as any);
 
-    expect(mocks.reactDocgen).toHaveBeenCalledWith(reactDocgenOptions);
+    expect(reactDocgenModule.reactDocgen).toHaveBeenCalledWith(reactDocgenOptions);
   });
 });

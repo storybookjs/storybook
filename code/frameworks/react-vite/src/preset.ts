@@ -7,6 +7,11 @@ export const core: PresetProperty<'core'> = {
   renderer: import.meta.resolve('@storybook/react/preset'),
 };
 
+type TypescriptPresetOptions = Pick<
+  NonNullable<StorybookConfig['typescript']>,
+  'reactDocgen' | 'reactDocgenOptions' | 'reactDocgenTypescriptOptions'
+>;
+
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {
   const plugins = [...(config?.plugins ?? [])];
 
@@ -15,7 +20,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     reactDocgen: reactDocgenOption,
     reactDocgenOptions,
     reactDocgenTypescriptOptions,
-  } = await presets.apply<any>('typescript', {});
+  } = await presets.apply<TypescriptPresetOptions>('typescript', {});
   let typescriptPresent;
 
   try {

@@ -28,7 +28,6 @@ function createMockServerFnBuilder(): any {
   builder.handler = (handlerFn?: (...args: any[]) => any) => {
     const mock = fn().mockName('@tanstack/start-client-core::createServerFn.handler()');
 
-    // todo: find a way to allow users to provide their own implementation of the mock fn, instead of just using jest.fn() and not allowing them to customize it.
     if (handlerFn) {
       mock.mockImplementation(async (opts?: any) => handlerFn(opts));
     }

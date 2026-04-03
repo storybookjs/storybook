@@ -32,7 +32,6 @@ function createInternalStoryRoute(
   Story: ComponentType,
   routeParameter?: RouterParameters['route']
 ): AnyRootRoute {
-  console.log('paameter ', routeParameter);
   if (routeParameter instanceof RootRoute) {
     const children = routeParameter.children as BaseRoute[] | undefined;
     if (children?.length) {
@@ -65,7 +64,6 @@ function createInternalStoryRoute(
     path: '/',
     getParentRoute: () => root,
   });
-  console.log('???');
   root.addChildren([route]);
   return root;
 }
@@ -79,7 +77,6 @@ export function createStoryRouter({
   });
   history.replace(initialPath);
 
-  console.log('init mock router with path:', initialPath);
   const router = createRouter({
     routeTree,
     history,
@@ -94,7 +91,6 @@ export function createStoryRouter({
       return true;
     },
   });
-  console.log(router, routeTree);
   return router;
 }
 
@@ -136,7 +132,6 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
     path: initialPath ?? '/',
     params: routerParams.params ?? {},
   }).interpolatedPath;
-  console.log('interpolated path:', resolvedPath);
   const search = routerParams.query ? defaultStringifySearch(routerParams.query) : '';
   if (search) {
     resolvedPath += search;

@@ -21,7 +21,6 @@ import type { TanStackTypes } from './types';
 import type { StoryObj as _StoryObj } from '@storybook/react';
 export * from '@storybook/react';
 export * from './types';
-export * from './routing/helper';
 export type {
   CreateStoryRouteOptions,
   StoryRouteFileOptions,

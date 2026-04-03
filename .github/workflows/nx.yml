@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - next
+      - valentin/next-2
   # TODO use pull_request_target in the future to also run on forks
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, labeled, reopened]
   schedule:
     - cron: '0 23 * * *'
@@ -38,6 +39,15 @@ jobs:
         with:
           filter: tree:0
           fetch-depth: 0
+      - name: Debug Nx access token
+        shell: bash
+        run: |
+          if [[ -n "${NX_CLOUD_ACCESS_TOKEN}" ]]; then
+        echo "NX_CLOUD_ACCESS_TOKEN is set"
+        echo "NX_CLOUD_ACCESS_TOKEN length: ${#NX_CLOUD_ACCESS_TOKEN}"
+          else
+        echo "NX_CLOUD_ACCESS_TOKEN is not set"
+          fi
       - name: Set Nx tag(s)
         id: tag
         run: |

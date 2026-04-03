@@ -13,7 +13,7 @@ Storybook is architected to support multiple builders, including [Webpack](https
 
 In Storybook, a builder is responsible for compiling your components and stories into JS bundles that run in the browser. A builder also provides a development server for interactive development and a production mode for optimized bundles.
 
-To opt into a builder, the user must add it as a dependency and then edit their configuration file (`.storybook/main.js`) to enable it. For example, with the Vite builder:
+To opt into a builder, the user must add it as a dependency and then edit their configuration file ([`.storybook/main.*`](../api/main-config/main-config.mdx)) to enable it. For example, with the Vite builder:
 
 {/* prettier-ignore-start */}
 
@@ -52,7 +52,7 @@ The `stories` configuration field enables story loading in Storybook. It defines
 
 ### Provide configuration options
 
-By default, Storybook's configuration is handled in a dedicated file (`storybook/main.js|ts`), giving the user the option to customize it to suit its needs. The builder should also provide its own configuration support through additional fields or some other builder-appropriate mechanism. For example:
+By default, Storybook's configuration is handled in a dedicated file ([`.storybook/main.*`](../api/main-config/main-config.mdx)), giving the user the option to customize it to suit its needs. The builder should also provide its own configuration support through additional fields or some other builder-appropriate mechanism. For example:
 
 {/* prettier-ignore-start */}
 
@@ -60,9 +60,9 @@ By default, Storybook's configuration is handled in a dedicated file (`storybook
 
 {/* prettier-ignore-end */}
 
-### Handle preview.js exports
+### Handle preview.* exports
 
-The [`preview.js`](../configure/index.mdx#configure-story-rendering) configuration file allows users to control how the story renders in the UI. This is provided via the [decorators](../writing-stories/decorators.mdx) named export. When Storybook starts, it converts these named exports into internal API calls via virtual module entry, for example, `addDecorator()`. The builder must also provide a similar implementation. For example:
+The [`preview.*`](../configure/index.mdx#configure-story-rendering) configuration file allows users to control how the story renders in the UI. This is provided via the [decorators](../writing-stories/decorators.mdx) named export. When Storybook starts, it converts these named exports into internal API calls via virtual module entry, for example, `addDecorator()`. The builder must also provide a similar implementation. For example:
 
 {/* prettier-ignore-start */}
 

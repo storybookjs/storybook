@@ -9,7 +9,7 @@ Storybook Webpack builder is the default builder for Storybook. This builder ena
 
 ## Configure
 
-By default, Storybook provides zero-config support for Webpack and automatically sets up a baseline configuration created to work with the most common use cases. However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional options to improve your Storybook's performance or customize it to your needs. Listed below are the available options and examples of how to use them.
+By default, Storybook provides zero-config support for Webpack and automatically sets up a baseline configuration created to work with the most common use cases. However, you can extend your Storybook configuration file (i.e., [`.storybook/main.*`](../api/main-config/main-config.mdx)) and provide additional options to improve your Storybook's performance or customize it to your needs. Listed below are the available options and examples of how to use them.
 
 | Option            | Description                                                                                                                                                                                        |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -24,7 +24,7 @@ By default, Storybook provides zero-config support for Webpack and automatically
 
 ### Override the default configuration
 
-Storybook's Webpack configuration is based on [Webpack 5](https://webpack.js.org/), allowing it to be extended to fit your project's needs. If you need to add a loader or a plugin, you can provide the `webpackFinal` configuration element in your [`.storybook/main.js|ts`](../configure/index.mdx#configure-your-storybook-project) file. The configuration element should export a function that receives the baseline configuration as the first argument and Storybook's options object as the second argument. For example:
+Storybook's Webpack configuration is based on [Webpack 5](https://webpack.js.org/), allowing it to be extended to fit your project's needs. If you need to add a loader or a plugin, you can provide the `webpackFinal` configuration element in your [`.storybook/main.*`](../api/main-config/main-config.mdx) file. The configuration element should export a function that receives the baseline configuration as the first argument and Storybook's options object as the second argument. For example:
 
 {/* prettier-ignore-start */}
 
@@ -126,7 +126,7 @@ Storybook's default Webpack configuration provides support for most project setu
 
 {/* prettier-ignore-end */}
 
-However, if you're working with a framework that provides a default aliasing configuration (e.g., Next.js, Nuxt) and you want to configure Storybook to use the same aliases, you may not need to install any additional packages. Instead, you can extend the default configuration of Storybook to use the same aliases provided by the framework. For example, to set up an alias for the `@` import path, you can add the following to your `.storybook/main.js|ts` file:
+However, if you're working with a framework that provides a default aliasing configuration (e.g., Next.js, Nuxt) and you want to configure Storybook to use the same aliases, you may not need to install any additional packages. Instead, you can extend the default configuration of Storybook to use the same aliases provided by the framework. For example, to set up an alias for the `@` import path, you can add the following to your [`.storybook/main.*`](../api/main-config/main-config.mdx) file:
 
 {/* prettier-ignore-start */}
 

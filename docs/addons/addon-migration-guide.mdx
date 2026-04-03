@@ -276,7 +276,7 @@ export function managerEntries(entry = []) {
 export * from "../dist/preset.js";
 ```
 
-Next, update your `main.ts` to reference the new preset file:
+Next, update your [`main.*`](../api/main-config/main-config.mdx) to reference the new preset file:
 
 ```diff title=".storybook/main.ts"
 - addons: ["@storybook/addon-docs", "./local-preset.cjs"],

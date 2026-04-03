@@ -240,7 +240,7 @@ Finally, open a new terminal window and run the test-runner with:
 
 ### Configure
 
-By default, the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@storybook/addon-coverage) offers zero-config support for Storybook and instruments your code via [`istanbul-lib-instrument`](https://www.npmjs.com/package/istanbul-lib-instrument) for [Webpack](https://webpack.js.org/), or [`vite-plugin-istanbul`](https://github.com/iFaxity/vite-plugin-istanbul) for [Vite](https://vitejs.dev/). However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional options to the addon. Listed below are the available options divided by builder and examples of how to use them.
+By default, the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@storybook/addon-coverage) offers zero-config support for Storybook and instruments your code via [`istanbul-lib-instrument`](https://www.npmjs.com/package/istanbul-lib-instrument) for [Webpack](https://webpack.js.org/), or [`vite-plugin-istanbul`](https://github.com/iFaxity/vite-plugin-istanbul) for [Vite](https://vitejs.dev/). However, you can extend your Storybook configuration file (i.e., [`.storybook/main.*`](../../api/main-config/main-config.mdx)) and provide additional options to the addon. Listed below are the available options divided by builder and examples of how to use them.
 
 {/* prettier-ignore-start */}
 
@@ -558,7 +558,7 @@ If you intend on running coverage tests in frameworks with special files like Vu
 
 ### The coverage addon doesn't support optimized builds
 
-If you generated a production build optimized for performance with the [`--test`](../../sharing/publish-storybook.mdx#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../../writing-docs/index.mdx), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and include the [`disabledAddons`](../../api/main-config/main-config-build.mdx#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
+If you generated a production build optimized for performance with the [`--test`](../../sharing/publish-storybook.mdx#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../../writing-docs/index.mdx), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., [`.storybook/main.*`](../../api/main-config/main-config.mdx)) and include the [`disabledAddons`](../../api/main-config/main-config-build.mdx#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
 
 {/* prettier-ignore-start */}
 

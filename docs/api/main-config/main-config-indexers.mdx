@@ -11,7 +11,7 @@ sidebar:
   While this feature is experimental, it must be specified by the `experimental_indexers` property of [`StorybookConfig`](./main-config.mdx).
 </Callout>
 
-Parent: [main.js|ts configuration](./main-config.mdx)
+Parent: [main.* configuration](main-config.mdx)
 
 Type: `(existingIndexers: Indexer[]) => Promise<Indexer[]>`
 
@@ -444,9 +444,9 @@ Some example usages of custom indexers include:
   })
   ```
 
-  Update your Storybook configuration (i.e., `.storybook/main.js|ts`) to include the custom indexer.
+  Update your Storybook configuration (i.e., [`.storybook/main.*`](main-config.mdx)) to include the custom indexer.
 
-  ```ts title=".storybook/main.js|ts"
+  ```ts title=".storybook/main.ts"
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import type { StorybookConfig } from '@storybook/your-framework';
   import type { Indexer } from 'storybook/internal/types';

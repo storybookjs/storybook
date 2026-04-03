@@ -46,11 +46,11 @@ Storybook for Vue 3 with Vite is designed to work out of the box with minimal co
 
 ### Extending the Vue application
 
-Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js|ts` file.
+Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the [`.storybook/preview.*`](../../configure/index.mdx#configure-story-rendering) file.
 
 Therefore, Storybook provides you with a `setup` function exported from this package. This function receives your Storybook instance as a callback, which you can interact with and add your custom configuration.
 
-```js title=".storybook/preview.js|ts"
+```js title=".storybook/preview.js"
 import { setup } from '@storybook/vue3-vite';
 
 setup((app) => {
@@ -70,7 +70,7 @@ setup((app) => {
 
 [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
 
-If you want to use `vue-component-meta`, you can configure it in your `.storybook/main.js|ts` file:
+If you want to use `vue-component-meta`, you can configure it in your [`.storybook/main.*`](../../api/main-config/main-config.mdx) file:
 
 ```ts title=".storybook/main.ts"
 import type { StorybookConfig } from '@storybook/vue3-vite';
@@ -210,7 +210,7 @@ The definition above will generate the following controls:
 
 #### Override the default configuration
 
-If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g., `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [`.storybook/main.js|ts`](../../configure/index.mdx) configuration file and add the following:
+If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g., `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [`.storybook/main.*`](../../api/main-config/main-config.mdx) configuration file and add the following:
 
 ```ts title=".storybook/main.ts"
 import type { StorybookConfig } from '@storybook/vue3-vite';
@@ -248,7 +248,7 @@ First, install the framework:
 
 {/* prettier-ignore-end */}
 
-Then, update your `.storybook/main.js|ts` to change the framework property:
+Then, update your [`.storybook/main.*`](../../api/main-config/main-config.mdx) to change the framework property:
 
 {/* prettier-ignore-start */}
 

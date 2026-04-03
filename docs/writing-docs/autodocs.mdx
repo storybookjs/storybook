@@ -15,7 +15,7 @@ Storybook infers the relevant metadata (e.g., [`args`](../writing-stories/args.m
 
 Autodocs is configured through [tags](../writing-stories/tags.mdx). If a [CSF](../api/csf/index.mdx) file contains at least one story tagged with `autodocs`, then a documentation page will be generated for that component.
 
-To enable automatic documentation for all stories in a project, add it to `tags` in your `.storybook/preview.js|ts` file:
+To enable automatic documentation for all stories in a project, add it to `tags` in your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) file:
 
 {/* prettier-ignore-start */}
 
@@ -49,7 +49,7 @@ Similarly, you can exclude a particular story from the auto docs page, by removi
 
 ### Configure
 
-In addition to enabling the feature with `tags`, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts|cjs`) and provide additional options to control how documentation gets created. Listed below are the available options and examples of how to use them.
+In addition to enabling the feature with `tags`, you can extend your Storybook configuration file (i.e., [`.storybook/main.*`](../api/main-config/main-config.mdx)) and provide additional options to control how documentation gets created. Listed below are the available options and examples of how to use them.
 
 {/* prettier-ignore-start */}
 
@@ -65,7 +65,7 @@ In addition to enabling the feature with `tags`, you can extend your Storybook c
 
 ### Write a custom template
 
-To replace the default documentation template used by Storybook, you can extend your UI configuration file (i.e., `.storybook/preview.js|ts`) and introduce a `docs` [parameter](./doc-blocks.mdx#customizing-the-automatic-docs-page). This parameter accepts a `page` function that returns a React component, which you can use to generate the required template. For example:
+To replace the default documentation template used by Storybook, you can extend your UI configuration file (i.e., [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering)) and introduce a `docs` [parameter](./doc-blocks.mdx#customizing-the-automatic-docs-page). This parameter accepts a `page` function that returns a React component, which you can use to generate the required template. For example:
 
 {/* prettier-ignore-start */}
 
@@ -94,7 +94,7 @@ You can also use MDX to generate the documentation template. This is useful in n
 
 {/* prettier-ignore-end */}
 
-Then you can use it in your `.storybook/preview.js|ts` or an individual story file by importing it:
+Then you can use it in your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) or an individual story file by importing it:
 
 {/* prettier-ignore-start */}
 
@@ -110,7 +110,7 @@ Then you can use it in your `.storybook/preview.js|ts` or an individual story fi
 
 ### Generate a table of contents
 
-Storybook's auto-generated documentation pages can be quite long and difficult to navigate. To help with this, you can enable the table of contents feature to provide a quick overview of the documentation page and allow users to jump to a specific section. To enable it, extend your Storybook UI configuration file (i.e., `.storybook/preview.js|ts`) and provide a `docs` [parameter](../writing-stories/parameters.mdx#global-parameters) with a `toc` property.
+Storybook's auto-generated documentation pages can be quite long and difficult to navigate. To help with this, you can enable the table of contents feature to provide a quick overview of the documentation page and allow users to jump to a specific section. To enable it, extend your Storybook UI configuration file (i.e., [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering)) and provide a `docs` [parameter](../writing-stories/parameters.mdx#global-parameters) with a `toc` property.
 
 {/* prettier-ignore-start */}
 
@@ -179,7 +179,7 @@ If you want to organize your documentation differently for component groups, we 
 
 ### Customize the Docs Container
 
-The Docs Container is the component that wraps up the documentation page. It's responsible for rendering the documentation page in Storybook's UI. You can customize it by creating your own component and updating your Storybook UI configuration file (i.e., `.storybook/preview.js|ts`) to reference it.
+The Docs Container is the component that wraps up the documentation page. It's responsible for rendering the documentation page in Storybook's UI. You can customize it by creating your own component and updating your Storybook UI configuration file (i.e., [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering)) to reference it.
 
 {/* prettier-ignore-start */}
 
@@ -189,7 +189,7 @@ The Docs Container is the component that wraps up the documentation page. It's r
 
 ### Override the default theme
 
-By default, Storybook provides two themes for the UI: `light` and `dark`. If you need to customize the theme used by the documentation to match the existing one, you can update your Storybook UI configuration file (i.e., `.storybook/preview.js|ts`) and apply it.
+By default, Storybook provides two themes for the UI: `light` and `dark`. If you need to customize the theme used by the documentation to match the existing one, you can update your Storybook UI configuration file (i.e., [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering)) and apply it.
 
 {/* prettier-ignore-start */}
 
@@ -215,7 +215,7 @@ Out of the box, Storybook has a set of components that you can use to customize 
 
 ### Addon options
 
-The docs addon accepts options to customize the behavior of the documentation page. You can add them to your Storybook UI configuration file (i.e., `.storybook/main.js|ts`), as part of registering the addon. The following options are available:
+The docs addon accepts options to customize the behavior of the documentation page. You can add them to your Storybook UI configuration file (i.e., [`.storybook/main.*`](../api/main-config/main-config.mdx)), as part of registering the addon. The following options are available:
 
 | Option             | Description                                                                                                                                                    |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -256,7 +256,7 @@ Update your import statements to reference the component directly instead of the
 
 {/* prettier-ignore-end */}
 
-Additionally, if you're developing using TypeScript, you may need to update Storybook's configuration file (i.e., `.storybook/main.js|ts`) to include the following:
+Additionally, if you're developing using TypeScript, you may need to update Storybook's configuration file (i.e., [`.storybook/main.*`](../api/main-config/main-config.mdx)) to include the following:
 
 {/* prettier-ignore-start */}
 

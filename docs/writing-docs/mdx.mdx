@@ -114,7 +114,7 @@ While MDX supports a variety of runtimes ([React](https://mdxjs.com/packages/rea
 
 ## Setup custom documentation
 
-In addition, to document your components with MDX, you can also extend it to write other types of content, such as guidelines or best practices on how to use them. To enable custom documentation for your stories with this format, start by updating your Storybook configuration file (i.e., `.storybook/main.js|ts|cjs`).
+In addition, to document your components with MDX, you can also extend it to write other types of content, such as guidelines or best practices on how to use them. To enable custom documentation for your stories with this format, start by updating your Storybook configuration file (i.e., [`.storybook/main.*`](../api/main-config/main-config.mdx)).
 
 {/* prettier-ignore-start */}
 
@@ -248,7 +248,7 @@ Applying this pattern with the [Controls](../essentials/controls.mdx) feature, a
 
 ### Markdown tables aren't rendering correctly
 
-If you're extending your documentation to include specific features (e.g., tables, footnotes), you may run into some issues rendering them correctly using the current MDX version supported by Storybook. We recommend enabling the [`remark-gfm`](https://github.com/remarkjs/remark-gfm) plugin in your configuration file (i.e., [`.storybook/main.js|ts`](../configure/index.mdx)) to render them correctly.
+If you're extending your documentation to include specific features (e.g., tables, footnotes), you may run into some issues rendering them correctly using the current MDX version supported by Storybook. We recommend enabling the [`remark-gfm`](https://github.com/remarkjs/remark-gfm) plugin in your configuration file (i.e., [`.storybook/main.*`](../api/main-config/main-config.mdx)) to render them correctly.
 
 {/* prettier-ignore-start */}
 
@@ -266,7 +266,7 @@ As Storybook relies on [MDX 3](https://mdxjs.com/) to render documentation, some
 
 #### Storybook doesn't create documentation for my component stories
 
-If you run into a situation where Storybook is not able to detect and render the documentation for your component stories, it may be due to a misconfiguration in your Storybook. Check your configuration file (i.e., `.storybook/main.js|ts`) and ensure the `stories` configuration element provides the correct path to your stories location (e.g., `../src/**/*.stories.@(js|jsx|mjs|ts|tsx)`).
+If you run into a situation where Storybook is not able to detect and render the documentation for your component stories, it may be due to a misconfiguration in your Storybook. Check your configuration file (i.e., [`.storybook/main.*`](../api/main-config/main-config.mdx)) and ensure the `stories` configuration element provides the correct path to your stories location (e.g., `../src/**/*.stories.@(js|jsx|mjs|ts|tsx)`).
 
 ### The migration seems flaky and keeps failing
 

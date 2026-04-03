@@ -191,7 +191,7 @@ Or via the `STORYBOOK_DISABLE_TELEMETRY` environment variable.
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  There is a `boot` event containing no metadata (used to ensure the telemetry is working). It is sent prior to evaluating your [Storybook configuration file](../api/main-config/main-config.mdx) (i.e., `main.js|ts`), so it is unaffected by the `disableTelemetry` option. If you want to ensure that the event is not sent, use the `STORYBOOK_DISABLE_TELEMETRY` environment variable.
+  There is a `boot` event containing no metadata (used to ensure the telemetry is working). It is sent prior to evaluating your [Storybook configuration file](../api/main-config/main-config.mdx) (i.e., [`main.*`](../api/main-config/main-config.mdx)), so it is unaffected by the `disableTelemetry` option. If you want to ensure that the event is not sent, use the `STORYBOOK_DISABLE_TELEMETRY` environment variable.
 </Callout>
 
 ## Crash reports (disabled by default)

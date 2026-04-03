@@ -22,7 +22,7 @@ Run the following command to install the builder.
 
 {/* prettier-ignore-end */}
 
-Update your Storybook configuration (in `.storybook/main.js|ts`) to include the builder.
+Update your Storybook configuration (in [`.storybook/main.*`](../api/main-config/main-config.mdx)) to include the builder.
 
 {/* prettier-ignore-start */}
 
@@ -34,7 +34,7 @@ Update your Storybook configuration (in `.storybook/main.js|ts`) to include the 
 
 Out of the box, Storybook's Vite builder includes a set of configuration defaults for the supported frameworks, which are merged alongside your existing configuration file. For an optimal experience when using the Vite builder, we recommend applying any configuration directly inside Vite's configuration file (i.e., [`vite.config.js|ts`](https://vitejs.dev/config/)).
 
-When Storybook loads, it automatically merges the configuration into its own. However, since different projects may have specific requirements, you may need to provide a custom configuration for Storybook. In such cases, you can modify your configuration file (`.storybook/main.js|ts`) and add the `viteFinal` configuration function as follows:
+When Storybook loads, it automatically merges the configuration into its own. However, since different projects may have specific requirements, you may need to provide a custom configuration for Storybook. In such cases, you can modify your configuration file ([`.storybook/main.*`](../api/main-config/main-config.mdx)) and add the `viteFinal` configuration function as follows:
 
 {/* prettier-ignore-start */}
 

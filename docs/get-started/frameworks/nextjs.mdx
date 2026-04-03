@@ -263,7 +263,7 @@ If your story imports components that use `next/navigation`, you need to set the
 
 {/* prettier-ignore-end */}
 
-If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.js|ts`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
+If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.*`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
 
 {/* prettier-ignore-start */}
 
@@ -450,9 +450,9 @@ export default function HomePage() {
 }
 ```
 
-Also OK for global styles in `.storybook/preview.js|ts`!
+Also OK for global styles in [`.storybook/preview.*`](../../configure/index.mdx#configure-story-rendering)!
 
-```js title=".storybook/preview.js|ts"
+```js title=".storybook/preview.js"
 import 'styles/globals.scss';
 
 // ...
@@ -571,9 +571,9 @@ Calls to `getConfig` would return the following object when called within Storyb
 
 Next.js comes with a lot of things for free out of the box like Sass support, but sometimes you add [custom Webpack config modifications to Next.js](https://nextjs.org/docs/pages/api-reference/next-config-js/webpack). This framework takes care of most of the Webpack modifications you would want to add. If Next.js supports a feature out of the box, then that feature will work out of the box in Storybook. If Next.js doesn't support something out of the box, but makes it easy to configure, then this framework will do the same for that thing for Storybook.
 
-Any Webpack modifications desired for Storybook should be made in [`.storybook/main.js|ts`](../../builders/webpack.mdx#extending-storybooks-webpack-config).
+Any Webpack modifications desired for Storybook should be made in [`.storybook/main.*`](../../api/main-config/main-config.mdx).
 
-Note: Not all Webpack modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Webpack config and on how [Webpack works](https://webpack.js.org/concepts/).
+Note: Not all Webpack modifications are copy/paste-able between `next.config.js` and [`.storybook/main.*`](../../api/main-config/main-config.mdx). It is recommended to do your research on how to properly make your modification to Storybook's Webpack config and on how [Webpack works](https://webpack.js.org/concepts/).
 
 Below is an example of how to add SVGR support to Storybook with this framework.
 
@@ -604,7 +604,7 @@ Storybook handles most [Typescript](https://www.typescriptlang.org/) configurati
 
 If your app uses [React Server Components (RSC)](https://nextjs.org/docs/app/building-your-application/rendering/server-components), Storybook can render them in stories in the browser.
 
-To enable this set the `experimentalRSC` feature flag in your `.storybook/main.js|ts` config:
+To enable this set the `experimentalRSC` feature flag in your [`.storybook/main.*`](../../api/main-config/main-config.mdx) config:
 
 {/* prettier-ignore-start */}
 
@@ -657,7 +657,7 @@ First, install the framework:
 
 {/* prettier-ignore-end */}
 
-Then, update your `.storybook/main.js|ts` to change the framework property:
+Then, update your [`.storybook/main.*`](../../api/main-config/main-config.mdx) to change the framework property:
 
 {/* prettier-ignore-start */}
 

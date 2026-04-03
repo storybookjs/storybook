@@ -35,7 +35,7 @@ Supposing you have a Storybook theme defined for the main UI in [`.storybook/man
 
 {/* prettier-ignore-end */}
 
-Here's how you'd specify the same theme for docs in [`.storybook/preview.js`](../index.mdx#configure-story-rendering):
+Here's how you'd specify the same theme for docs in [`.storybook/preview.*`](../index.mdx#configure-story-rendering):
 
 {/* prettier-ignore-start */}
 
@@ -122,7 +122,7 @@ To style these elements, insert style tags into:
 
 If you're using MDX for docs, there's one more level of "themability". MDX allows you to completely override the rendered components from Markdown using a `components` parameter. It's an advanced usage that we don't officially support in Storybook, but it's a powerful construct if you need it.
 
-Here's how you might insert a custom code renderer for `code` blocks on the page, in [`.storybook/preview.js`](../index.mdx#configure-story-rendering):
+Here's how you might insert a custom code renderer for `code` blocks on the page, in [`.storybook/preview.*`](../index.mdx#configure-story-rendering):
 
 {/* prettier-ignore-start */}
 

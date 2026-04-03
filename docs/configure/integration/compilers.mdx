@@ -45,7 +45,7 @@ If you're working with a project that was initialized with [Create React App](ht
 <IfRenderer renderer="react">
   ### The SWC compiler doesn't work with React
 
-  If you have enabled the SWC builder option in a React-based project and you are not explicitly importing React in your `jsx|tsx` files, it can cause Storybook to fail to load. SWC does not automatically import the `jsx-runtime` module when using the SWC builder. To resolve this issue, you need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and configure the `swc` option as follows:
+  If you have enabled the SWC builder option in a React-based project and you are not explicitly importing React in your `jsx|tsx` files, it can cause Storybook to fail to load. SWC does not automatically import the `jsx-runtime` module when using the SWC builder. To resolve this issue, you need to adjust your Storybook configuration file (i.e., [`.storybook/main.*`](../../api/main-config/main-config.mdx)) and configure the `swc` option as follows:
 
   {/* prettier-ignore-start */}
 

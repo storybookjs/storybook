@@ -264,7 +264,7 @@ If your story imports components that use `next/navigation`, you need to set the
 
 {/* prettier-ignore-end */}
 
-If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.js|ts`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
+If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.*`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
 
 {/* prettier-ignore-start */}
 
@@ -438,9 +438,9 @@ export default function HomePage() {
 }
 ```
 
-Also OK for global styles in `.storybook/preview.js|ts`!
+Also OK for global styles in [`.storybook/preview.*`](../../configure/index.mdx#configure-story-rendering)!
 
-```js title=".storybook/preview.js|ts"
+```js title=".storybook/preview.js"
 import 'styles/globals.scss';
 
 // ...
@@ -561,9 +561,9 @@ Calls to `getConfig` would return the following object when called within Storyb
 
 ### Custom Vite configuration
 
-You can customize the [Vite configuration](../../builders/vite.mdx#configuration) used by Storybook in your `.storybook/main.js|ts` file. By default, Storybook's configuration extends the Vite configuration used by your project, but you can configure it to not do so.
+You can customize the [Vite configuration](../../builders/vite.mdx#configuration) used by Storybook in your [`.storybook/main.*`](../../api/main-config/main-config.mdx) file. By default, Storybook's configuration extends the Vite configuration used by your project, but you can configure it to not do so.
 
-Not all Vite modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Vite config and on how [Vite works](https://vitejs.dev/guide/).
+Not all Vite modifications are copy/paste-able between `next.config.js` and [`.storybook/main.*`](../../api/main-config/main-config.mdx). It is recommended to do your research on how to properly make your modification to Storybook's Vite config and on how [Vite works](https://vitejs.dev/guide/).
 
 ### Typescript
 
@@ -586,7 +586,7 @@ Storybook handles most [Typescript](https://www.typescriptlang.org/) configurati
 
 If your app uses [React Server Components (RSC)](https://nextjs.org/docs/app/building-your-application/rendering/server-components), Storybook can render them in stories in the browser.
 
-To enable this set the `experimentalRSC` feature flag in your `.storybook/main.js|ts` config:
+To enable this set the `experimentalRSC` feature flag in your [`.storybook/main.*`](../../api/main-config/main-config.mdx) config:
 
 {/* prettier-ignore-start */}
 
@@ -625,12 +625,12 @@ npx storybook automigrate nextjs-to-nextjs-vite
 This automigration tool performs the following actions:
 
 1. Updates `package.json` files to replace `@storybook/nextjs` with `@storybook/nextjs-vite`
-2. Updates `.storybook/main.js|ts` to change the framework property
+2. Updates [`.storybook/main.*`](../../api/main-config/main-config.mdx) to change the framework property
 3. Scans and updates import statements in your story files and configuration files
 
 <Callout variant="info">
 
-If your project has custom Webpack configurations in `.storybook/main.js|ts` (via `webpackFinal`), you'll need to migrate those to Vite configuration (via `viteFinal`) after running this automigration. See the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack) for more information.
+If your project has custom Webpack configurations in [`.storybook/main.*`](../../api/main-config/main-config.mdx) (via `webpackFinal`), you'll need to migrate those to Vite configuration (via `viteFinal`) after running this automigration. See the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack) for more information.
 
 </Callout>
 
@@ -644,7 +644,7 @@ First, install the framework:
 
 {/* prettier-ignore-end */}
 
-Then, update your `.storybook/main.js|ts` to change the framework property:
+Then, update your [`.storybook/main.*`](../../api/main-config/main-config.mdx) to change the framework property:
 
 {/* prettier-ignore-start */}
 

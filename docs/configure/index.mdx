@@ -13,7 +13,7 @@ Storybook is configured via a folder called `.storybook`, which contains various
 
 ## Configure your Storybook project
 
-Storybook's main configuration (i.e., the `main.js|ts`) defines your Storybook project's behavior, including the location of your stories, the addons you use, feature flags and other project-specific settings. This file should be in the `.storybook` folder in your project's root directory. You can author this file in either JavaScript or [TypeScript](./integration/typescript.mdx). Listed below are the available options and examples of how to use them.
+Storybook's main configuration (i.e., the [`main.*`](../api/main-config/main-config.mdx)) defines your Storybook project's behavior, including the location of your stories, the addons you use, feature flags and other project-specific settings. This file should be in the `.storybook` folder in your project's root directory. You can author this file in either JavaScript or [TypeScript](./integration/typescript.mdx). Listed below are the available options and examples of how to use them.
 
 {/* prettier-ignore-start */}
 
@@ -27,7 +27,7 @@ Storybook's main configuration (i.e., the `main.js|ts`) defines your Storybook p
 
 | Configuration element | Description                                                                                                                                                                                                                       |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `stories`             | The array of globs that indicates the [location of your story files](#configure-story-loading), relative to `main.js`                                                                                                             |
+| `stories`             | The array of globs that indicates the [location of your story files](#configure-story-loading), relative to [`main.*`](../api/main-config/main-config.mdx)                                                                                                             |
 | `staticDirs`          | Sets a list of directories of [static files](./integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration) to be loaded by Storybook <br /> `staticDirs: ['../public']`                                   |
 | `addons`              | Sets the list of [addons](https://storybook.js.org/integrations) loaded by Storybook <br /> `addons: ['@storybook/addon-docs']`                                                                                             |
 | `typescript`          | Configures how Storybook handles [TypeScript files](./integration/typescript.mdx) <br /> `typescript: { check: false, checkOptions: {} }`                                                                                         |
@@ -44,7 +44,7 @@ Storybook's main configuration (i.e., the `main.js|ts`) defines your Storybook p
 
 ## Configure story loading
 
-By default, Storybook will load stories from your project based on a glob (pattern matching string) in `.storybook/main.js|ts` that matches all files in your project with extension `.stories.*`. The intention is for you to colocate a story file along with the component it documents.
+By default, Storybook will load stories from your project based on a glob (pattern matching string) in [`.storybook/main.*`](../api/main-config/main-config.mdx) that matches all files in your project with extension `.stories.*`. The intention is for you to colocate a story file along with the component it documents.
 
 ```
 •
@@ -104,9 +104,9 @@ Because of the way stories are currently indexed in Storybook, loading stories o
 
 ## Configure story rendering
 
-To control the way stories are rendered and add global [decorators](../writing-stories/decorators.mdx#global-decorators) and [parameters](../writing-stories/parameters.mdx#global-parameters), create a `.storybook/preview.js` file. This is loaded in the Canvas UI, the “preview” iframe that renders your components in isolation. Use `preview.js` for global code (such as [CSS imports](../get-started/setup.mdx#render-component-styles) or JavaScript mocks) that applies to all stories.
+To control the way stories are rendered and add global [decorators](../writing-stories/decorators.mdx#global-decorators) and [parameters](../writing-stories/parameters.mdx#global-parameters), create a [`.storybook/preview.*`](#configure-story-rendering) file. This is loaded in the Canvas UI, the “preview” iframe that renders your components in isolation. Use [`preview.*`](#configure-story-rendering) for global code (such as [CSS imports](../get-started/setup.mdx#render-component-styles) or JavaScript mocks) that applies to all stories.
 
-The `preview.js` file can be an ES module and export the following keys:
+The [`preview.*`](#configure-story-rendering) file can be an ES module and export the following keys:
 
 * `decorators` - an array of global [decorators](../writing-stories/decorators.mdx#global-decorators)
 * `parameters` - an object of global [parameters](../writing-stories/parameters.mdx#global-parameters)

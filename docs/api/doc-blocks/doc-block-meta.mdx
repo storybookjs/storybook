@@ -76,7 +76,7 @@ import * as ButtonStories from './Button.stories';
 
 Attaching an MDX file to a component’s stories with the `of` prop serves two purposes:
 
-1. Ensures the MDX content appears in the sidebar inside the component’s story list. By default, it will be named whatever the `docs.defaultName` (which defaults to `"Docs"`) option is set to in `main.js`. But this can be overridden with the [`name` prop](#name).
+1. Ensures the MDX content appears in the sidebar inside the component’s story list. By default, it will be named whatever the `docs.defaultName` (which defaults to `"Docs"`) option is set to in [`main.*`](../main-config/main-config.mdx). But this can be overridden with the [`name` prop](#name).
 2. Attaches the component and its stories to the MDX file, allowing you to use other doc blocks in “attached” mode (for instance to use the `Stories` block).
 
 <Callout variant="info" icon="💡">
@@ -106,7 +106,7 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 <Callout variant="info" icon="💡">
 
-  If you want to change the sorting of the docs entry with the component’s stories, use [Story Sorting](../../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories), or add specific MDX files to your `stories` field in `main.js` in order.
+  If you want to change the sorting of the docs entry with the component’s stories, use [Story Sorting](../../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories), or add specific MDX files to your `stories` field in [`main.*`](../main-config/main-config.mdx) in order.
   
 </Callout>
 

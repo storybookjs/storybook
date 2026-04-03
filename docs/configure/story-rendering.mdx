@@ -9,7 +9,7 @@ In Storybook, your stories render in a particular “preview” iframe (also cal
 
 ## Running code for every story
 
-Code executed in the preview file (`.storybook/preview.js|ts`) runs for every story in your Storybook. This is useful for setting up global styles, initializing libraries, or anything else required to render your components.
+Code executed in the preview file ([`.storybook/preview.*`](index.mdx#configure-story-rendering)) runs for every story in your Storybook. This is useful for setting up global styles, initializing libraries, or anything else required to render your components.
 
 <If notRenderer={['angular', 'vue']}>
   Here's an example of how you might use the preview file to initialize a library that must run before your components render:
@@ -41,7 +41,7 @@ If you need to add extra elements to the `head` of the preview iframe, for insta
   Storybook will inject these tags into the *preview iframe* where your components render, not the Storybook application UI.
 </Callout>
 
-However, it's also possible to modify the preview head HTML programmatically using a preset defined in the `main.js` file. Read the [presets documentation](../addons/writing-presets.mdx#ui-configuration) for more information.
+However, it's also possible to modify the preview head HTML programmatically using a preset defined in the [`main.*`](../api/main-config/main-config.mdx) file. Read the [presets documentation](../addons/writing-presets.mdx#ui-configuration) for more information.
 
 ## Adding to \<body>
 

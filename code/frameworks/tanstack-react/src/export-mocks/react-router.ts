@@ -25,6 +25,7 @@ import {
   useLinkProps as _useLinkProps,
 } from '@tanstack/react-router';
 import type { Navigate as _Navigate } from '@tanstack/react-router';
+import { onNavigate } from './spies';
 
 // Mock navigation hooks — backed by real implementations so they work in stories
 export const useNavigate = fn(_useNavigate).mockName('@tanstack/react-router::useNavigate');
@@ -57,8 +58,7 @@ export const Outlet = () => null;
 
 export const Navigate: typeof _Navigate = ({ to, href }) => {
   useEffect(() => {
-    // log the navigation in the aciton panel
-    useNavigate({ to, href });
+    onNavigate(to || href);
   }, []);
 
   return null;

@@ -1,27 +1,14 @@
 import { dedent } from 'ts-dedent';
 
-import { getComponentVariableName } from '../get-component-variable-name.ts';
+import { type BaseTemplateData, resolveComponentImport } from './helpers.ts';
 
-interface CsfFactoryTemplateData {
-  /** The components file name without the extension */
-  basenameWithoutExtension: string;
-  componentExportName: string;
-  componentIsDefaultExport: boolean;
-  /** The exported name of the default story */
-  exportedStoryName: string;
+interface CsfFactoryTemplateData extends BaseTemplateData {
   /** The import path for the preview config (if not provided, uses '#.storybook/preview') */
   previewImportPath?: string;
-  /** The args to include in the story */
-  args?: Record<string, any>;
 }
 
 export async function getCsfFactoryTemplateForNewStoryFile(data: CsfFactoryTemplateData) {
-  const importName = data.componentIsDefaultExport
-    ? await getComponentVariableName(data.basenameWithoutExtension)
-    : data.componentExportName;
-  const importStatement = data.componentIsDefaultExport
-    ? `import ${importName} from './${data.basenameWithoutExtension}';`
-    : `import { ${importName} } from './${data.basenameWithoutExtension}';`;
+  const { importName, importStatement } = await resolveComponentImport(data);
   const previewImport = data.previewImportPath
     ? `import preview from '${data.previewImportPath}';`
     : `import preview from '#.storybook/preview';`;

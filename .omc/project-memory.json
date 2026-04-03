@@ -1,0 +1,513 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775030641598,
+  "projectRoot": "/Users/valentinpalkovic/Projects/storybook",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "@playwright/test",
+        "version": "1.58.2",
+        "category": "testing"
+      },
+      {
+        "name": "vite",
+        "version": "7.0.4",
+        "category": "build"
+      },
+      {
+        "name": "vitest",
+        "version": "4.1.0",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "yarn",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": "yarn test",
+    "lintCommand": "yarn lint",
+    "devCommand": "yarn start",
+    "scripts": {
+      "ci-tests": "cd code; yarn ci-tests",
+      "fmt:check": "oxfmt --check .",
+      "fmt:write": "oxfmt .",
+      "get-report-message": "cd scripts; yarn get-report-message",
+      "get-sandbox-dir": "cd scripts; yarn get-sandbox-dir",
+      "i": "yarn",
+      "postinstall": "husky",
+      "knip": "cd code; yarn knip",
+      "lint": "cd code; yarn lint",
+      "nx": "nx",
+      "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
+      "storybook:vitest": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch --project storybook-ui",
+      "storybook:vitest:inspect": "INSPECT=true NODE_OPTIONS=--max_old_space_size=4096 vitest run --project storybook-ui",
+      "svelte-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh svelte-kit/skeleton-ts",
+      "svelte-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh svelte-kit/skeleton-ts svelte",
+      "svelte-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh svelte-kit/skeleton-ts",
+      "task": "yarn --cwd=./scripts task",
+      "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
+      "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
+      "upload-bench": "cd scripts; yarn upload-bench",
+      "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",
+      "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
+      "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [
+      "code",
+      "code/addons/*",
+      "code/builders/*",
+      "code/core",
+      "code/frameworks/*",
+      "code/lib/*",
+      "code/presets/*",
+      "code/renderers/*",
+      "scripts"
+    ],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "next",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "CONTRIBUTING": {
+      "path": "CONTRIBUTING",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1775030641510,
+      "keyFiles": [
+        "RELEASING.md",
+        "prerelease-workflow-inputs.png"
+      ]
+    },
+    "code": {
+      "path": "code",
+      "purpose": null,
+      "fileCount": 16,
+      "lastAccessed": 1775030641535,
+      "keyFiles": [
+        "build-storybook.log",
+        "chromatic.config.json",
+        "package.json",
+        "playwright.config.ts",
+        "project.json"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 3,
+      "lastAccessed": 1775030641563,
+      "keyFiles": [
+        "faq.mdx",
+        "frameworks.js",
+        "index.mdx"
+      ]
+    },
+    "packs": {
+      "path": "packs",
+      "purpose": null,
+      "fileCount": 43,
+      "lastAccessed": 1775030641570,
+      "keyFiles": [
+        "create-storybook.tgz",
+        "eslint-plugin-storybook.tgz",
+        "sb.tgz",
+        "storybook-addon-a11y.tgz",
+        "storybook-addon-docs.tgz"
+      ]
+    },
+    "repros": {
+      "path": "repros",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775030641570,
+      "keyFiles": []
+    },
+    "sandbox": {
+      "path": "sandbox",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775030641571,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 27,
+      "lastAccessed": 1775030641572,
+      "keyFiles": [
+        "build-package.ts",
+        "check-dependencies.js",
+        "check-package.ts",
+        "clean-merged-branches.sh",
+        "combine-compodoc.ts"
+      ]
+    },
+    "test-results": {
+      "path": "test-results",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1775030641572,
+      "keyFiles": [
+        "e2e-tests-dev.xml",
+        "test-runner-dev.xml"
+      ]
+    },
+    "test-storybooks": {
+      "path": "test-storybooks",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775030641575,
+      "keyFiles": []
+    },
+    "docs/api": {
+      "path": "docs/api",
+      "purpose": "API routes",
+      "fileCount": 5,
+      "lastAccessed": 1775030641581,
+      "keyFiles": [
+        "arg-types.mdx",
+        "cli-options.mdx",
+        "index.mdx"
+      ]
+    },
+    "scripts/build": {
+      "path": "scripts/build",
+      "purpose": "Build output",
+      "fileCount": 2,
+      "lastAccessed": 1775030641589,
+      "keyFiles": [
+        "build-package.ts",
+        "entry-configs.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "code/addons/before-after/src/node/before-server.ts",
+      "accessCount": 18,
+      "lastAccessed": 1775038327779,
+      "type": "file"
+    },
+    {
+      "path": "code",
+      "accessCount": 13,
+      "lastAccessed": 1775035500191,
+      "type": "directory"
+    },
+    {
+      "path": "code/core/src/core-server/dev-server.ts",
+      "accessCount": 10,
+      "lastAccessed": 1775034063433,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/common/presets.ts",
+      "accessCount": 8,
+      "lastAccessed": 1775034271473,
+      "type": "directory"
+    },
+    {
+      "path": "code/core/src/common",
+      "accessCount": 6,
+      "lastAccessed": 1775034152165,
+      "type": "directory"
+    },
+    {
+      "path": "code/addons",
+      "accessCount": 5,
+      "lastAccessed": 1775033156610,
+      "type": "directory"
+    },
+    {
+      "path": "code/core/src",
+      "accessCount": 5,
+      "lastAccessed": 1775034141683,
+      "type": "directory"
+    },
+    {
+      "path": "code/core/src/core-server",
+      "accessCount": 5,
+      "lastAccessed": 1775034340236,
+      "type": "directory"
+    },
+    {
+      "path": "code/addons/before-after/src/preset.ts",
+      "accessCount": 5,
+      "lastAccessed": 1775038392482,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/core-server/change-detection/GitDiffProvider.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775034072971,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/a11y/src",
+      "accessCount": 4,
+      "lastAccessed": 1775035130378,
+      "type": "directory"
+    },
+    {
+      "path": "code/core/src/core-server/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775034340173,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/common/versions.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775034716770,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/package.json",
+      "accessCount": 3,
+      "lastAccessed": 1775035066814,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/src/node/before-content-plugin.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775038301776,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/docs/src/preset.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775031705912,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/core-server/change-detection/ChangeDetectionService.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775032354079,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/types/modules/core-common.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775034101919,
+      "type": "directory"
+    },
+    {
+      "path": "code/addons/a11y/src/preset.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775034102460,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/a11y/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1775034623637,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/a11y/src/constants.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775034624234,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/a11y/src/index.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775034624414,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/a11y/src/manager.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1775034624693,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/src/components/BeforeAfterPanel.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1775035139489,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/mocking-utils/automock.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030740554,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/mocking-utils/mocker-runtime.js",
+      "accessCount": 1,
+      "lastAccessed": 1775030740787,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/test/spy.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030741222,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/test/preview.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030741280,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/mocking-utils/resolve.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030745921,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/mocking-utils/runtime.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030745985,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/mocking-utils/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030746226,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/mocking-utils/extract.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030756135,
+      "type": "file"
+    },
+    {
+      "path": "code/core/template/stories/test/ClearModuleMocksMocking.stories.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030765338,
+      "type": "file"
+    },
+    {
+      "path": "code/core/template/stories/test/ClearModuleMocksMocking.api.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030765400,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/mocking-utils/redirect.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030773509,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/test/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775030784647,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/core-server/change-detection/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775031736667,
+      "type": "file"
+    },
+    {
+      "path": "code/core/src/types",
+      "accessCount": 1,
+      "lastAccessed": 1775032562283,
+      "type": "directory"
+    },
+    {
+      "path": "code/core",
+      "accessCount": 1,
+      "lastAccessed": 1775034073875,
+      "type": "directory"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1775034095167,
+      "type": "directory"
+    },
+    {
+      "path": "code/addons/a11y/tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1775034623982,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1775034703634,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/src/constants.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775034705884,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/src/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775034706577,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/src/node/git-file-at-head.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775034741417,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/src/manager.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775034805896,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/before-after/project.json",
+      "accessCount": 1,
+      "lastAccessed": 1775034961324,
+      "type": "file"
+    },
+    {
+      "path": "code/addons/vitest/src/preset.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775035004833,
+      "type": "directory"
+    },
+    {
+      "path": "code/addons/before-after/src",
+      "accessCount": 1,
+      "lastAccessed": 1775035010439,
+      "type": "directory"
+    },
+    {
+      "path": "code/addons/a11y/src/components",
+      "accessCount": 1,
+      "lastAccessed": 1775035134686,
+      "type": "directory"
+    }
+  ],
+  "userDirectives": []
+}

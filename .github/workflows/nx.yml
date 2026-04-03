@@ -21,16 +21,6 @@ env:
 
 jobs:
   nx:
-    if: >
-      github.repository == 'storybookjs/storybook' &&
-        ((github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository &&
-          (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
-           contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
-           contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-        ) || (github.event_name == 'push' && github.ref == 'refs/heads/next') ||
-        (github.event_name == 'schedule'))
-
     runs-on: ubuntu-latest
     env:
       ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct

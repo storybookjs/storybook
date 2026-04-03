@@ -182,7 +182,7 @@ sidebar:
   This API should be called once, before the tests run, typically in a [setup file](https://vitest.dev/config/#setupfiles). This will make sure that whenever `composeStories` or `composeStory` are called, the project annotations are taken into account as well.
 
   These are the configurations needed in the setup file:
-  - preview annotations: those defined in `.storybook/preview.*`
+  - preview annotations: those defined in `.storybook/preview.tsx`
   - addon annotations (optional): those exported by addons
   - beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
 

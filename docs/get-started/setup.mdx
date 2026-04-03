@@ -66,10 +66,10 @@ Your project may have additional requirements before components can be rendered 
 
   A common frontend pattern is for components to assume that they render in a specific “context” with parent components higher up the rendering hierarchy (for instance, theme providers).
 
-  <IfRenderer renderer={[ 'react', 'preact', 'react-native' ]}>
+  <IfRenderer renderer={[ 'react', 'preact', 'react-native', 'solid' ]}>
     Use [decorators](../writing-stories/decorators.mdx) to “wrap” every story in the necessary context providers. The [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) file allows you to customize how components render in Canvas, the preview iframe. This file can be written in JavaScript (`preview.jsx`) or TypeScript (`preview.tsx`). See how you can wrap every component rendered in Storybook with [Styled Components](https://styled-components.com/) `ThemeProvider`, [Vue's Vuetify](https://vuetifyjs.com/en/), Svelte's [Bits UI](https://bits-ui.com/) `BitsConfig`, or with an Angular theme provider component in the example below.
   </IfRenderer>
-  <If notRenderer={[ 'react', 'preact', 'react-native' ]}>
+  <If notRenderer={[ 'react', 'preact', 'react-native', 'solid' ]}>
     Use [decorators](../writing-stories/decorators.mdx) to “wrap” every story in the necessary context providers. The [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) file allows you to customize how components render in Canvas, the preview iframe. This file can be written in JavaScript (`preview.js`) or TypeScript (`preview.ts`). See how you can wrap every component rendered in Storybook with [Styled Components](https://styled-components.com/) `ThemeProvider`, [Vue's Vuetify](https://vuetifyjs.com/en/), Svelte's [Bits UI](https://bits-ui.com/) `BitsConfig`, or with an Angular theme provider component in the example below.
   </If>
 

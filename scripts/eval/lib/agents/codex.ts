@@ -36,7 +36,8 @@ export const codexAgent: AgentDriver = {
     let totalInput = 0;
     let totalCached = 0;
     let totalOutput = 0;
-    let turns = 0;
+    let sdkTurns = 0;
+    let agentMessageTurns = 0;
 
     const { events } = await thread.runStreamed(prompt);
     for await (const event of events) {
@@ -46,6 +47,7 @@ export const codexAgent: AgentDriver = {
           items.push(item);
           switch (item.type) {
             case 'agent_message':
+              agentMessageTurns += 1;
               logger.log(`💬 ${item.text}`);
               break;
             case 'command_execution':
@@ -70,7 +72,7 @@ export const codexAgent: AgentDriver = {
           totalInput += event.usage.input_tokens;
           totalCached += event.usage.cached_input_tokens;
           totalOutput += event.usage.output_tokens;
-          turns++;
+          sdkTurns += 1;
           logger.log(
             `📊 tokens: ${event.usage.input_tokens}in / ${event.usage.output_tokens}out (${event.usage.cached_input_tokens} cached)`
           );
@@ -83,6 +85,10 @@ export const codexAgent: AgentDriver = {
           break;
       }
     }
+
+    // Codex often reports a single SDK turn for the whole autonomous run.
+    // Counting completed assistant messages gives a more useful "effective turns" metric.
+    const turns = agentMessageTurns || sdkTurns;
 
     const execution: Execution = {
       cost: estimateCost('codex', model, {

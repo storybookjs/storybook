@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatDuration,
   formatCost,
+  formatScore,
   formatReadableUtcTimestamp,
   generateTrialId,
   loadPrompt,
@@ -43,6 +44,19 @@ describe('formatCost', () => {
   });
 });
 
+describe('formatScore', () => {
+  it('keeps integer scores compact', () => {
+    expect(formatScore(1)).toBe('1');
+    expect(formatScore(0)).toBe('0');
+  });
+
+  it('formats gain scores without unnecessary trailing zeroes', () => {
+    expect(formatScore(0.25)).toBe('0.25');
+    expect(formatScore(1 / 3)).toBe('0.333');
+    expect(formatScore(-0.125)).toBe('-0.125');
+  });
+});
+
 describe('generateTrialId', () => {
   it('starts with a readable branch-safe UTC timestamp', () => {
     const id = generateTrialId();
@@ -58,9 +72,7 @@ describe('generateTrialId', () => {
 
 describe('formatReadableUtcTimestamp', () => {
   it('formats ISO timestamps in UTC for PR output', () => {
-    expect(formatReadableUtcTimestamp('2026-04-02T10:23:40.000Z')).toBe(
-      'Apr 2 2026 10:23:40 UTC'
-    );
+    expect(formatReadableUtcTimestamp('2026-04-02T10:23:40.000Z')).toBe('Apr 2 2026 10:23:40 UTC');
   });
 
   it('falls back to the original value for invalid dates', () => {

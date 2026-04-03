@@ -33,6 +33,9 @@ export const formatDuration = (s: number) =>
 
 export const formatCost = (cost?: number) => (cost == null ? '-' : `$${cost.toFixed(2)}`);
 
+export const formatScore = (score: number) =>
+  score.toFixed(3).replace(/(?:\.0+|(\.\d*?)0+)$/, '$1');
+
 export function getProjectPath(repoRoot: string, projectDir?: string) {
   return projectDir ? join(repoRoot, projectDir) : repoRoot;
 }
@@ -51,7 +54,9 @@ export function getEvalResultsDir(projectPath: string) {
 
 export function getEvalResultsRelativeDir(projectDir?: string) {
   return toPosixPath(
-    projectDir ? join(projectDir, STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME) : join(STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME)
+    projectDir
+      ? join(projectDir, STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME)
+      : join(STORYBOOK_DIRNAME, EVAL_RESULTS_DIRNAME)
   );
 }
 
@@ -60,7 +65,10 @@ export function getEvalResultsRelativePath(fileName: string, projectDir?: string
 }
 
 export function generateTrialId() {
-  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z').replace(/:/g, '-');
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/\.\d{3}Z$/, 'Z')
+    .replace(/:/g, '-');
   return `${timestamp}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
@@ -70,9 +78,20 @@ export function formatReadableUtcTimestamp(timestamp: string) {
     return timestamp;
   }
 
-  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][
-    date.getUTCMonth()
-  ];
+  const month = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ][date.getUTCMonth()];
   const day = date.getUTCDate();
   const year = date.getUTCFullYear();
   const hour = `${date.getUTCHours()}`.padStart(2, '0');

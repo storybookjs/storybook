@@ -86,12 +86,10 @@ describe('grading helpers', () => {
     // Total includes package.json
     expect(changedFiles).toHaveLength(storybookFiles.length + 1);
 
-    // Step 3: Build passed, no TS errors, 100% ghost stories, fast agent → perfect score
+    // Step 3: Score is now just ghost-story success-rate gain.
     const quality = computeQualityScore({
-      buildSuccess: true,
-      typeCheckErrors: 0,
-      ghostSuccessRate: 1.0,
-      durationSeconds: 60,
+      baselinePreviewStories: { passed: 1, total: 4 },
+      storyRender: { passed: 4, total: 4 },
     });
     expect(quality.score).toBe(1);
   });
@@ -119,15 +117,11 @@ describe('grading helpers', () => {
     const errorCount = countTypeCheckErrors(tscLines.join('\n'));
     expect(errorCount).toBe(candidates.length + 1);
 
-    // Build failed, no ghost stories, errors, slow → low quality
+    // Missing post-run ghost data means no measurable gain.
     const quality = computeQualityScore({
-      buildSuccess: false,
-      typeCheckErrors: errorCount,
-      ghostSuccessRate: 0,
-      durationSeconds: 600,
+      baselinePreviewStories: { passed: 2, total: 5 },
     });
-    expect(quality.score).toBeLessThan(0.3);
-    expect(quality.breakdown.build).toBe(0);
+    expect(quality.score).toBe(0);
   });
 
   it('keeps helper output stable as candidate count grows', async () => {
@@ -153,13 +147,11 @@ describe('grading helpers', () => {
     const storybookFiles = filterStorybookFiles(parseChangedFiles(gitOutput));
     expect(storybookFiles).toHaveLength(candidates.length);
 
-    // Clean build + 100% ghost stories + fast → perfect
+    // Score tracks only the increase in ghost-story success rate.
     expect(
       computeQualityScore({
-        buildSuccess: true,
-        typeCheckErrors: 0,
-        ghostSuccessRate: 1.0,
-        durationSeconds: 60,
+        baselinePreviewStories: { passed: 3, total: 5 },
+        storyRender: { passed: 5, total: 5 },
       }).score
     ).toBe(1);
   });

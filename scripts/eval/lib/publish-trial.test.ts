@@ -167,7 +167,13 @@ describe('publishTrialBranch', () => {
             candidateCount: 10,
             total: 8,
             passed: 4,
-            successRate: 0.5,
+            successRate: 0.11,
+          },
+          baselinePreviewStories: {
+            total: 8,
+            passed: 4,
+            emptyRenderFailures: 2,
+            storyFiles: 3,
           },
           buildSuccess: true,
           typeCheckErrors: 0,
@@ -177,16 +183,21 @@ describe('publishTrialBranch', () => {
             candidateCount: 10,
             total: 8,
             passed: 6,
-            successRate: 0.75,
+            successRate: 0.22,
+          },
+          storyRender: {
+            total: 8,
+            passed: 6,
+            emptyRenderFailures: 1,
+            storyFiles: 3,
           },
         },
         score: {
-          score: 0.91,
+          score: 0.5,
           breakdown: {
-            build: 1,
-            typecheck: 1,
-            ghostStories: 0.75,
-            performance: 0.5,
+            beforeRate: 0.5,
+            afterRate: 0.75,
+            gain: 0.5,
           },
         },
         screenshots: [
@@ -244,10 +255,13 @@ describe('publishTrialBranch', () => {
     const prBody = prCreateCall!.args[prCreateCall!.args.indexOf('--body') + 1];
     expect(prBody).toContain('ID: `trial-123`');
     expect(prBody).toContain('Created at: `Apr 2 2026 00:00:00 UTC`');
-    expect(prBody).toContain('Score: `0.91`');
+    expect(prBody).toContain('Score (preview gain): `0.5`');
     expect(prBody).toContain('Ghost stories before: `4/8 (50%)`');
     expect(prBody).toContain('Ghost stories after: `6/8 (75%)`');
-    expect(prBody).toContain('Ghost stories delta: `+2 passed, +25 pts`');
+    expect(prBody).toContain('Generated stories before: `4/8 (50%)`');
+    expect(prBody).toContain('Generated stories after: `6/8 (75%)`');
+    expect(prBody).toContain('Empty render failures after: `1`');
+    expect(prBody).toContain('Preview gain: `0.5`');
     expect(prBody).toContain('Screenshot count: `1`');
     expect(prBody).toContain('[.storybook/eval-results/data.json](');
     expect(prBody).toContain('<summary>Full prompt</summary>');
@@ -299,7 +313,6 @@ describe('publishTrialBranch', () => {
     const repoRoot = join(TMP, 'repo');
     const projectPath = join(repoRoot, 'packages', 'app');
     const resultsDir = join(projectPath, '.storybook', 'eval-results');
-    
 
     mkdirSync(join(projectPath, '.storybook'), { recursive: true });
     mkdirSync(resultsDir, { recursive: true });
@@ -348,10 +361,9 @@ describe('publishTrialBranch', () => {
           score: {
             score: 1,
             breakdown: {
-              build: 1,
-              typecheck: 1,
-              ghostStories: 1,
-              performance: 1,
+              beforeRate: 0,
+              afterRate: 1,
+              gain: 1,
             },
           },
           screenshots: [],
@@ -469,10 +481,9 @@ describe('publishTrialBranch', () => {
         score: {
           score: 1,
           breakdown: {
-            build: 1,
-            typecheck: 1,
-            ghostStories: 1,
-            performance: 1,
+            beforeRate: 0,
+            afterRate: 1,
+            gain: 1,
           },
         },
         screenshots: [],

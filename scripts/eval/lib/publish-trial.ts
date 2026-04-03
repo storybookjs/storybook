@@ -8,6 +8,7 @@ import {
   formatCost,
   formatDuration,
   formatReadableUtcTimestamp,
+  formatScore,
   getEvalResultsDir,
   getEvalResultsRelativePath,
   type Logger,
@@ -140,10 +141,7 @@ async function ensureLabels(repo: string, labels: string[]) {
   }
 }
 
-async function validateEvalSupportSetup(opts: {
-  projectName: string;
-  projectPath: string;
-}) {
+async function validateEvalSupportSetup(opts: { projectName: string; projectPath: string }) {
   const missing: string[] = [];
   const configPath = await findStorybookMainFile(opts.projectPath);
   if (!configPath) {
@@ -241,6 +239,8 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     : undefined;
   const baselineGhostStories = formatGhostStories(opts.data.grade.baselineGhostStories);
   const postAgentGhostStories = formatGhostStories(opts.data.grade.ghostStories);
+  const baselinePreviewStories = formatStoryRender(opts.data.grade.baselinePreviewStories);
+  const postAgentStoryRender = formatStoryRender(opts.data.grade.storyRender);
   const lines = [
     '# Eval Trial',
     '',
@@ -251,12 +251,15 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     `- Model: \`${opts.data.variant.model}\``,
     `- Effort: \`${opts.data.variant.effort}\``,
     `- Prompt: \`${opts.data.prompt.name}\``,
-    `- Score: \`${opts.data.score.score}\``,
+    `- Score (preview gain): \`${formatScore(opts.data.score.score)}\``,
     `- Build: \`${opts.data.grade.buildSuccess ? 'PASS' : 'FAIL'}\``,
     `- TypeScript errors: \`${opts.data.grade.typeCheckErrors}\``,
     `- Ghost stories before: \`${baselineGhostStories}\``,
     `- Ghost stories after: \`${postAgentGhostStories}\``,
-    `- Ghost stories delta: \`${formatGhostStoryDelta(opts.data)}\``,
+    `- Generated stories before: \`${baselinePreviewStories}\``,
+    `- Generated stories after: \`${postAgentStoryRender}\``,
+    `- Empty render failures after: \`${opts.data.grade.storyRender?.emptyRenderFailures ?? 0}\``,
+    `- Preview gain: \`${formatScore(opts.data.score.score)}\``,
     `- Duration: \`${formatDuration(opts.data.execution.duration)}\``,
     `- Cost: \`${formatCost(opts.data.execution.cost)}\``,
     `- Screenshot count: \`${opts.data.screenshots.length}\``,
@@ -293,24 +296,20 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
   return lines.join('\n');
 }
 
+function formatStoryRender(storyRender?: EvalData['grade']['storyRender']) {
+  if (!storyRender) {
+    return '-';
+  }
+
+  const rate = storyRender.total > 0 ? storyRender.passed / storyRender.total : 0;
+  return `${storyRender.passed}/${storyRender.total} (${Math.round(rate * 100)}%)`;
+}
+
 function formatGhostStories(ghost?: EvalData['grade']['ghostStories']) {
   if (!ghost) {
     return '-';
   }
 
-  return `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)`;
-}
-
-function formatGhostStoryDelta(data: EvalData) {
-  const before = data.grade.baselineGhostStories;
-  const after = data.grade.ghostStories;
-  if (!before || !after) {
-    return '-';
-  }
-
-  const passedDelta = after.passed - before.passed;
-  const percentDelta = Math.round((after.successRate - before.successRate) * 100);
-  const passedPrefix = passedDelta > 0 ? '+' : '';
-  const percentPrefix = percentDelta > 0 ? '+' : '';
-  return `${passedPrefix}${passedDelta} passed, ${percentPrefix}${percentDelta} pts`;
+  const rate = ghost.total > 0 ? ghost.passed / ghost.total : 0;
+  return `${ghost.passed}/${ghost.total} (${Math.round(rate * 100)}%)`;
 }

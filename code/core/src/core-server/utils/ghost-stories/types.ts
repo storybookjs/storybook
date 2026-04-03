@@ -24,6 +24,7 @@ export interface TestRunSummary {
     total: number;
     passed: number;
     passedButEmptyRender: number;
+    emptyRenderFailures: number;
     successRate: number;
     successRateWithoutEmptyRender: number;
     uniqueErrorCount: number;

@@ -127,7 +127,10 @@ export async function syncBaselines(options: SyncBaselinesOptions = {}) {
   return results;
 }
 
-export async function resolveProjectPaths(project: Project, repoRoot: string): Promise<ProjectPaths> {
+export async function resolveProjectPaths(
+  project: Project,
+  repoRoot: string
+): Promise<ProjectPaths> {
   const projectPath = getProjectPath(repoRoot, project.projectDir);
   const storybookDir = getStorybookDir(projectPath);
   if (!(await findStorybookMainFile(projectPath))) {
@@ -169,9 +172,7 @@ async function preflightRepos(
       const allowedFiles = new Set(getManagedPaths(paths));
       const unexpected = dirtyFiles.filter((file) => !isManagedPath(file, allowedFiles));
       if (unexpected.length > 0) {
-        throw new Error(
-          `${project.name} has unrelated local changes: ${unexpected.join(', ')}`
-        );
+        throw new Error(`${project.name} has unrelated local changes: ${unexpected.join(', ')}`);
       }
 
       const isBehind = await isBehindOrigin(paths.repoRoot, project.branch);
@@ -295,10 +296,7 @@ async function findStorybookMainFile(projectPath: string) {
 }
 
 function getManagedPaths(paths: ProjectPaths) {
-  return [
-    relative(paths.repoRoot, paths.storybookDir),
-    'eval-results',
-  ];
+  return [relative(paths.repoRoot, paths.storybookDir), 'eval-results'];
 }
 
 async function getDirtyFiles(repoRoot: string) {
@@ -327,14 +325,10 @@ async function getCurrentBranch(repoRoot: string) {
 }
 
 async function isBehindOrigin(repoRoot: string, branch: string) {
-  const result = await x(
-    'git',
-    ['merge-base', '--is-ancestor', `origin/${branch}`, 'HEAD'],
-    {
-      throwOnError: false,
-      nodeOptions: { cwd: repoRoot },
-    }
-  );
+  const result = await x('git', ['merge-base', '--is-ancestor', `origin/${branch}`, 'HEAD'], {
+    throwOnError: false,
+    nodeOptions: { cwd: repoRoot },
+  });
   return result.exitCode !== 0;
 }
 

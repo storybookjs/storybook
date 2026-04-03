@@ -120,10 +120,16 @@ describe('runTrial pipeline', () => {
           passed: 2,
           successRate: 0.33,
         },
+        baselinePreviewStories: {
+          total: 6,
+          passed: 2,
+          emptyRenderFailures: 1,
+          storyFiles: 3,
+        },
         buildSuccess: true,
       },
       score: {
-        score: 1,
+        score: 0.5,
       },
       screenshots: [
         {
@@ -179,6 +185,12 @@ describe('runTrial pipeline', () => {
       resultsDir: join(TMP, '.storybook', 'eval-results'),
     });
     expect(vi.mocked(grade).mock.calls[0][1]).toBeDefined();
+    expect(vi.mocked(grade).mock.calls[0][2]).toMatchObject({
+      candidateCount: 12,
+      total: 6,
+      passed: 2,
+      successRate: 0.33,
+    });
     expect(vi.mocked(collectGhostStoriesGrade)).toHaveBeenCalledWith(
       TMP,
       expect.anything(),
@@ -246,7 +258,7 @@ describe('runTrial pipeline', () => {
 
     await expect(runTrial(baseConfig)).resolves.toMatchObject({
       grade: { buildSuccess: false, typeCheckErrors: 5 },
-      score: { score: 0.3 },
+      score: { score: 0 },
     });
   });
 
@@ -305,12 +317,11 @@ describe('runTrial pipeline', () => {
           storybookChanges: [],
         },
         score: {
-          score: 1,
+          score: 0,
           breakdown: {
-            build: 1,
-            typecheck: 1,
-            ghostStories: 0,
-            performance: 0,
+            beforeRate: 0,
+            afterRate: 0,
+            gain: 0,
           },
         },
       };
@@ -339,13 +350,6 @@ function setupMocks(overrides?: {
     trialBranch: 'trial/test-branch',
   });
 
-  vi.mocked(collectGhostStoriesGrade).mockResolvedValue({
-    candidateCount: 12,
-    total: 6,
-    passed: 2,
-    successRate: 0.33,
-  });
-
   vi.mocked(claudeAgent.execute).mockResolvedValue({
     execution: {
       cost,
@@ -364,6 +368,13 @@ function setupMocks(overrides?: {
     ],
   });
 
+  vi.mocked(collectGhostStoriesGrade).mockImplementation(async () => ({
+    candidateCount: 12,
+    total: 6,
+    passed: 2,
+    successRate: 0.33,
+  }));
+
   vi.mocked(grade).mockResolvedValue({
     grade: {
       baselineGhostStories: {
@@ -371,6 +382,12 @@ function setupMocks(overrides?: {
         total: 6,
         passed: 2,
         successRate: 0.33,
+      },
+      baselinePreviewStories: {
+        total: 6,
+        passed: 2,
+        emptyRenderFailures: 1,
+        storyFiles: 3,
       },
       buildSuccess,
       typeCheckErrors,
@@ -382,20 +399,29 @@ function setupMocks(overrides?: {
         { path: '.storybook/preview.tsx', gitStatus: 'A' },
         { path: 'src/Button.stories.tsx', gitStatus: 'A' },
       ],
-      ghostStories: {
-        candidateCount: 12,
-        total: 6,
-        passed: 4,
-        successRate: 0.67,
-      },
+      ...(buildSuccess
+        ? {
+            ghostStories: {
+              candidateCount: 12,
+              total: 6,
+              passed: 3,
+              successRate: 0.5,
+            },
+            storyRender: {
+              total: 6,
+              passed: 4,
+              emptyRenderFailures: 1,
+              storyFiles: 3,
+            },
+          }
+        : {}),
     },
     score: {
-      score: buildSuccess ? 1 : 0.3,
+      score: buildSuccess ? 0.5 : 0,
       breakdown: {
-        build: buildSuccess ? 1 : 0,
-        typecheck: 1,
-        ghostStories: 0,
-        performance: 0,
+        beforeRate: 2 / 6,
+        afterRate: buildSuccess ? 4 / 6 : 0,
+        gain: buildSuccess ? 0.5 : 0,
       },
     },
   });

@@ -37,6 +37,7 @@ import {
   createLogger,
   formatCost,
   formatDuration,
+  formatScore,
   generateTrialId,
   listPrompts,
   loadPrompt,
@@ -166,16 +167,21 @@ if (args.manual) {
     logger
   );
 
-  const ghost = result.grade.ghostStories;
-  const ghostStr = ghost
-    ? `${ghost.passed}/${ghost.total} (${Math.round(ghost.successRate * 100)}%)`
+  const storyRender = result.grade.storyRender;
+  const storyRenderStr = storyRender
+    ? `${storyRender.passed}/${storyRender.total} (${Math.round((storyRender.total > 0 ? storyRender.passed / storyRender.total : 0) * 100)}%)`
+    : '-';
+  const ghostStories = result.grade.ghostStories;
+  const ghostStoriesStr = ghostStories
+    ? `${ghostStories.passed}/${ghostStories.total} (${Math.round((ghostStories.total > 0 ? ghostStories.passed / ghostStories.total : 0) * 100)}%)`
     : '-';
 
   logger.log(pc.bold('\nResult'));
   logger.log(`  Build:   ${result.grade.buildSuccess ? pc.green('PASS') : pc.red('FAIL')}`);
-  logger.log(`  Ghost:   ${ghostStr}`);
+  logger.log(`  Stories: ${storyRenderStr}`);
+  logger.log(`  Ghost:   ${ghostStoriesStr}`);
   logger.log(`  TS Err:  ${result.grade.typeCheckErrors}`);
-  logger.log(`  Score:   ${result.score.score}`);
+  logger.log(`  Score:   ${formatScore(result.score.score)} preview gain`);
   logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
   logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
   logger.log(`  Turns:   ${result.execution.turns}`);

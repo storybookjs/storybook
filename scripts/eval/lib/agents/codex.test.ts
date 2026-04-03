@@ -85,4 +85,51 @@ describe('codexAgent.execute', () => {
       })
     );
   });
+
+  it('uses completed agent messages as the effective turn count when available', async () => {
+    runStreamedMock.mockResolvedValue({
+      events: (async function* () {
+        yield {
+          type: 'item.completed',
+          item: {
+            type: 'agent_message',
+            text: 'First response',
+          },
+        };
+        yield {
+          type: 'item.completed',
+          item: {
+            type: 'command_execution',
+            command: 'echo test',
+            exit_code: 0,
+          },
+        };
+        yield {
+          type: 'item.completed',
+          item: {
+            type: 'agent_message',
+            text: 'Second response',
+          },
+        };
+        yield {
+          type: 'turn.completed',
+          usage: {
+            input_tokens: 10,
+            cached_input_tokens: 2,
+            output_tokens: 4,
+          },
+        };
+      })(),
+    });
+
+    const result = await codexAgent.execute({
+      prompt: 'prompt',
+      projectPath: '/repo',
+      variant: { agent: 'codex', model: 'gpt-5.4', effort: 'medium' },
+      resultsDir: '/results',
+      logger,
+    });
+
+    expect(result.execution.turns).toBe(2);
+  });
 });

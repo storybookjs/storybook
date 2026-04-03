@@ -63,8 +63,9 @@ describe('syncBaselines', () => {
         'summary.mdx': "import data from '../../eval-results/data.json';\n\n# Source Summary\n",
         'transcript.mdx':
           "import data from '../../eval-results/data.json';\nimport { Transcript } from './transcript';\n\n# Transcript\n\n<Transcript {...data.docs.transcript} />\n",
-        'transcript.tsx': "export const Transcript = () => null;\n",
-        'transcript.types.ts': "export interface TranscriptProps { messages: unknown[]; prompt: string; promptTokenCount: number; promptCost: number; }\n",
+        'transcript.tsx': 'export const Transcript = () => null;\n',
+        'transcript.types.ts':
+          'export interface TranscriptProps { messages: unknown[]; prompt: string; promptTokenCount: number; promptCost: number; }\n',
       },
       previewContents: "export default { parameters: { a11y: { test: 'todo' } } };\n",
       rootEvalResultsFiles: {
@@ -89,7 +90,7 @@ describe('syncBaselines', () => {
       evalSupportFiles: {
         'old-helper.ts': 'export const stale = true;\n',
       },
-      previewContents: "export default { parameters: { old: true } };\n",
+      previewContents: 'export default { parameters: { old: true } };\n',
       rootEvalResultsFiles: {
         'data.json': '{}\n',
         'summary.json': '{ "empty": true }\n',
@@ -115,7 +116,7 @@ describe('syncBaselines', () => {
       evalSupportFiles: {
         'old.txt': 'stale\n',
       },
-      previewContents: "export default { parameters: { old: true } };\n",
+      previewContents: 'export default { parameters: { old: true } };\n',
       rootEvalResultsFiles: {
         'transcript.json': '[]\n',
       },
@@ -136,7 +137,7 @@ describe('syncBaselines', () => {
 
     expect(
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
-    ).toContain("../eval-results/data.json");
+    ).toContain('../eval-results/data.json');
     expect(
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
     ).toContain('# Source Summary Updated');
@@ -145,7 +146,7 @@ describe('syncBaselines', () => {
         join(reposRoot, 'wikitok', 'frontend', '.storybook', 'eval-support', 'transcript.mdx'),
         'utf-8'
       )
-    ).toContain("../eval-results/data.json");
+    ).toContain('../eval-results/data.json');
 
     expect(
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-results', 'data.json'), 'utf-8')
@@ -163,22 +164,24 @@ describe('syncBaselines', () => {
     expect(existsSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'old-helper.ts'))).toBe(
       false
     );
-    expect(existsSync(join(reposRoot, 'wikitok', 'frontend', '.storybook', 'eval-support', 'old.txt'))).toBe(
-      false
-    );
+    expect(
+      existsSync(join(reposRoot, 'wikitok', 'frontend', '.storybook', 'eval-support', 'old.txt'))
+    ).toBe(false);
 
     expect(readFileSync(join(reposRoot, 'edgy', '.storybook', 'main.ts'), 'utf-8')).toContain(
-      "./eval-support/*.mdx"
+      './eval-support/*.mdx'
+    );
+    expect(readFileSync(join(reposRoot, 'edgy', '.storybook', 'preview.tsx'), 'utf-8')).toBe(
+      "export default { parameters: { a11y: { test: 'todo' } } };\n"
     );
     expect(
-      readFileSync(join(reposRoot, 'edgy', '.storybook', 'preview.tsx'), 'utf-8')
-    ).toBe("export default { parameters: { a11y: { test: 'todo' } } };\n");
-    expect(
       readFileSync(join(reposRoot, 'wikitok', 'frontend', '.storybook', 'main.ts'), 'utf-8')
-    ).toContain("./eval-support/*.mdx");
+    ).toContain('./eval-support/*.mdx');
 
     expect(getHead(join(reposRoot, 'edgy'))).toBe(getRemoteHead(join(remotesRoot, 'edgy.git')));
-    expect(getHead(join(reposRoot, 'wikitok'))).toBe(getRemoteHead(join(remotesRoot, 'wikitok.git')));
+    expect(getHead(join(reposRoot, 'wikitok'))).toBe(
+      getRemoteHead(join(remotesRoot, 'wikitok.git'))
+    );
   });
 
   it('fails fast when a non-source target repo is dirty', async () => {

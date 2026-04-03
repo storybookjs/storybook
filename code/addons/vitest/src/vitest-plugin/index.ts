@@ -400,6 +400,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   };
                 }
 
+                if (process.env.STORYBOOK_FAIL_ON_EMPTY_RENDER === 'true') {
+                  globals.emptyRenderFailure = {
+                    enabled: true,
+                  };
+                }
+
                 return globals;
               },
             },

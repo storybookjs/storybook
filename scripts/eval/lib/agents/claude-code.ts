@@ -101,7 +101,7 @@ function logMessage(message: SDKMessage, logger: Logger) {
               : Array.isArray(block.content)
                 ? block.content
                     .map((b: { type: string; text?: string }) =>
-                      'text' in b ? b.text ?? '' : `[${b.type}]`
+                      'text' in b ? (b.text ?? '') : `[${b.type}]`
                     )
                     .join('')
                 : '[no content]';

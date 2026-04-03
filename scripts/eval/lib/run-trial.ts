@@ -118,10 +118,9 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     score: {
       score: 0,
       breakdown: {
-        build: 0,
-        typecheck: 0,
-        ghostStories: 0,
-        performance: 0,
+        beforeRate: 0,
+        afterRate: 0,
+        gain: 0,
       },
     },
     screenshots: [],
@@ -134,8 +133,8 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
     JSON.stringify(provisionalData, null, 2)
   );
 
-  // 6. Grade the results (pass agent duration for performance scoring)
-  const { grade: postAgentGrade, score } = await grade(workspace, log, execution.duration);
+  // 6. Grade the results using story-render preview gain as the score.
+  const { grade: postAgentGrade, score } = await grade(workspace, log, baselineGhostStories);
   const trialGrade = {
     ...postAgentGrade,
     baselineGhostStories,

@@ -265,7 +265,7 @@ describe('normalizeTranscriptForDocs', () => {
       },
       score: {
         score: 1,
-        breakdown: { build: 1, typecheck: 1, ghostStories: 1, performance: 1 },
+        breakdown: { beforeRate: 0, afterRate: 1, gain: 1 },
       },
       screenshots: [],
       transcript: [],

@@ -7,7 +7,7 @@ import {
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
-import { handleUnsupportedNodeRuntime } from './node-version-check';
+import { handleUnsupportedNodeRuntime } from './node-version-check.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
@@ -29,12 +29,8 @@ describe('handleUnsupportedNodeRuntime', () => {
 
     await handleUnsupportedNodeRuntime(18, 0, 0);
 
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('20.19+ or 22.12+')
-    );
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Please upgrade and re-run')
-    );
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('20.19+ or 22.12+'));
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Please upgrade and re-run'));
     expect(process.exit).toHaveBeenCalledWith(1);
   });
 
@@ -87,9 +83,7 @@ describe('handleUnsupportedNodeRuntime', () => {
     await handleUnsupportedNodeRuntime(18, 0, 0);
 
     expect(updateNvmrc).not.toHaveBeenCalled();
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Please upgrade and re-run')
-    );
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Please upgrade and re-run'));
   });
 
   it('does not include current runtime in options (it is too old)', async () => {

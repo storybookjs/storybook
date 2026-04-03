@@ -12,25 +12,25 @@ import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
-import { PackageManagerName } from '../../code/core/src/common/js-package-manager';
-import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
-import storybookVersions from '../../code/core/src/common/versions';
+import { PackageManagerName } from '../../code/core/src/common/js-package-manager/index.ts';
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
+import storybookVersions from '../../code/core/src/common/versions.ts';
 import {
   type Template,
   allTemplates as sandboxTemplates,
-} from '../../code/lib/cli-storybook/src/sandbox-templates';
+} from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import {
   AFTER_DIR_NAME,
   BEFORE_DIR_NAME,
   LOCAL_REGISTRY_URL,
   REPROS_DIRECTORY,
   SCRIPT_TIMEOUT,
-} from '../utils/constants';
-import { esMain } from '../utils/esmain';
-import type { OptionValues } from '../utils/options';
-import { createOptions } from '../utils/options';
-import { getStackblitzUrl, renderTemplate } from './utils/template';
-import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
+} from '../utils/constants.ts';
+import { esMain } from '../utils/esmain.ts';
+import type { OptionValues } from '../utils/options.ts';
+import { createOptions } from '../utils/options.ts';
+import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
+import { localizeYarnConfigFiles, setupYarn } from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 

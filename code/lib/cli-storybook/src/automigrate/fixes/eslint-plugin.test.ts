@@ -4,8 +4,8 @@ import * as cliImports from 'storybook/internal/cli';
 import type { PackageJson } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { makePackageManager } from '../helpers/testing-helpers';
-import { eslintPlugin } from './eslint-plugin';
+import { makePackageManager } from '../helpers/testing-helpers.ts';
+import { eslintPlugin } from './eslint-plugin.ts';
 
 const defaultHasEslintValues = {
   hasEslint: false,

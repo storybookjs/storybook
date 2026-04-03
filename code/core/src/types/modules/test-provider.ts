@@ -4,4 +4,4 @@ export type {
   TestProviderStateByProviderId,
   TestProviderStoreById,
   UseTestProviderStore,
-} from '../../shared/test-provider-store';
+} from '../../shared/test-provider-store/index.ts';

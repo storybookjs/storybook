@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { getChromaticVersionSpecifier } from './get-chromatic-version';
+import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
 
 it('works for dependencies', () => {
   expect(getChromaticVersionSpecifier({ dependencies: { chromatic: '^6.11.4' } })).toBe('^6.11.4');

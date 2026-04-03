@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, resolve } from 'pathe';
 import { exports as resolveExports } from 'resolve.exports';
 
-import { isModuleDirectory } from './extract';
+import { isModuleDirectory } from './extract.ts';
 
 const require = createRequire(import.meta.url);
 

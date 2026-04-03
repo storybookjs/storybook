@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { searchFiles } from './search-files';
+import { searchFiles } from './search-files.ts';
 
 describe('search-files', () => {
   it('should automatically convert static search to a dynamic glob search', async (t) => {

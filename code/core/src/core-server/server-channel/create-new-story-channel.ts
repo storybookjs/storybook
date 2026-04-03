@@ -13,7 +13,7 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { generateStoryFile } from '../utils/generate-story';
+import { generateStoryFile } from '../utils/generate-story.ts';
 
 export function initCreateNewStoryChannel(
   channel: Channel,

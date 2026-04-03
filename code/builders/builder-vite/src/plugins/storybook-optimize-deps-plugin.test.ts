@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { escapeGlobPath, getMockRedirectIncludeEntries } from './storybook-optimize-deps-plugin';
+import { escapeGlobPath, getMockRedirectIncludeEntries } from './storybook-optimize-deps-plugin.ts';
 
 describe('escapeGlobPath', () => {
   it('should not modify a plain path without special characters', () => {

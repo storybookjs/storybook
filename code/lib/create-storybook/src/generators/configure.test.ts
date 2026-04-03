@@ -7,7 +7,7 @@ import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/interna
 
 import { dedent } from 'ts-dedent';
 
-import { configureMain, configurePreview } from './configure';
+import { configureMain, configurePreview } from './configure.ts';
 
 vi.mock('node:fs/promises');
 

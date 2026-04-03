@@ -1,3 +1,3 @@
-import { withLinks } from './index';
+import { withLinks } from './index.ts';
 
 export const decorators = [withLinks];

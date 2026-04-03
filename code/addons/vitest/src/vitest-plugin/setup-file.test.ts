@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { type Task, modifyErrorMessage } from './setup-file';
+import { type Task, modifyErrorMessage } from './setup-file.ts';
 
 describe('modifyErrorMessage', () => {
   const originalUrl = import.meta.env.__STORYBOOK_URL__;

@@ -6,7 +6,7 @@ import type { OutputFile } from 'esbuild';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import type { Compilation } from '../types';
+import type { Compilation } from '../types.ts';
 
 export async function readOrderedFiles(
   addonsDir: string,

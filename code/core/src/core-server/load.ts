@@ -13,7 +13,7 @@ import { global } from '@storybook/global';
 
 import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
-import { resolvePackageDir } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module.ts';
 
 export async function loadStorybook(
   options: CLIOptions &

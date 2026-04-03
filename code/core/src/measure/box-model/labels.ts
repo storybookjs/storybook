@@ -1,4 +1,4 @@
-import type { ElementMeasurements, FloatingAlignment } from '../util-types';
+import type { ElementMeasurements, FloatingAlignment } from '../util-types.ts';
 
 type LabelType = 'margin' | 'padding' | 'border' | 'content';
 type LabelPosition = 'top' | 'right' | 'bottom' | 'left' | 'center';

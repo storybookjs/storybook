@@ -7,7 +7,7 @@ import AnsiToHtml from 'ansi-to-html';
 import { parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
-import type { View } from './View';
+import type { View } from './View.ts';
 
 const { document } = global;
 

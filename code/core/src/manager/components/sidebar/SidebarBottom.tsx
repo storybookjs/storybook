@@ -16,9 +16,9 @@ import {
 import { type API, type State, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
-import { NotificationList } from '../notifications/NotificationList';
-import { TestingWidget } from './TestingWidget';
+import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store/index.ts';
+import { NotificationList } from '../notifications/NotificationList.tsx';
+import { TestingWidget } from './TestingWidget.tsx';
 
 // This ID is used dynamically add/remove space at the bottom to prevent overlapping the main sidebar content.
 const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';

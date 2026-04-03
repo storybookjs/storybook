@@ -8,8 +8,8 @@ import { CloseIcon, CogIcon } from '@storybook/icons';
 import { transparentize } from 'polished';
 import { type Theme, css, styled } from 'storybook/theming';
 
-import type { useMenu } from '../../container/Menu';
-import { useLayout } from '../layout/LayoutProvider';
+import type { useMenu } from '../../container/Menu.tsx';
+import { useLayout } from '../layout/LayoutProvider.tsx';
 
 export type MenuList = ReturnType<typeof useMenu>;
 

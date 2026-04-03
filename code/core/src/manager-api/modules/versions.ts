@@ -5,8 +5,8 @@ import { global } from '@storybook/global';
 import memoize from 'memoizerific';
 import semver from 'semver';
 
-import type { ModuleFn } from '../lib/types';
-import { version as currentVersion } from '../version';
+import type { ModuleFn } from '../lib/types.tsx';
+import { version as currentVersion } from '../version.ts';
 
 const { VERSIONCHECK } = global;
 

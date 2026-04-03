@@ -4,8 +4,8 @@ import { normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
 
-import { loadStorybook } from './load';
-import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { loadStorybook } from './load.ts';
+import { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 
 export type BuildIndexOptions = CLIOptions & LoadOptions & BuilderOptions;
 

@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as sbcc from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 
-import { getStorybookVersion } from './upgrade';
-import { generateUpgradeSpecs } from './util';
+import { getStorybookVersion } from './upgrade.ts';
+import { generateUpgradeSpecs } from './util.ts';
 
 const findInstallationsMock =
   vi.fn<(arg: string[]) => Promise<sbcc.InstallationMetadata | undefined>>();

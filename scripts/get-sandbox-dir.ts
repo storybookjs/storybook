@@ -2,8 +2,8 @@ import { join } from 'node:path';
 
 import { program } from 'commander';
 
-import { SANDBOX_DIRECTORY } from './utils/constants';
-import { esMain } from './utils/esmain';
+import { SANDBOX_DIRECTORY } from './utils/constants.ts';
+import { esMain } from './utils/esmain.ts';
 
 type RunOptions = {
   template?: string;

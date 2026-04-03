@@ -18,7 +18,7 @@ import addonTest from '@storybook/addon-vitest';
 import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
-import { sb } from 'storybook/test';
+import { expect, sb } from 'storybook/test';
 import {
   Global,
   ThemeProvider,
@@ -29,12 +29,16 @@ import {
   useTheme,
 } from 'storybook/theming';
 
-import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
-import * as templatePreview from '../core/template/stories/preview';
-import '../renderers/react/template/components/index';
-import { isChromatic } from './isChromatic';
+import { DocsPageWrapper } from '../addons/docs/src/blocks/components/index.ts';
+import { toHaveLiveRegion } from '../core/src/shared/utils/toHaveLiveRegion.ts';
+import * as templatePreview from '../core/template/stories/preview.ts';
+import '../renderers/react/template/components/index.js';
+import { isChromatic } from './isChromatic.ts';
 
 sb.mock(import('@storybook/global'), { spy: true });
+
+// Register custom matchers on storybook/test's expect so play functions can use them
+expect.extend({ toHaveLiveRegion });
 
 sb.mock('../core/template/stories/test/ModuleMocking.utils.ts');
 sb.mock('../core/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });

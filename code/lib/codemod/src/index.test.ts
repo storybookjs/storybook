@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { runCodemod } from './index';
+import { runCodemod } from './index.ts';
 
 const logger = {
   step: vi.fn(),

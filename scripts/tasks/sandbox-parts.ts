@@ -11,34 +11,34 @@ import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { babelParse, types as t } from '../../code/core/src/babel';
-import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
-import storybookPackages from '../../code/core/src/common/versions';
-import type { ConfigFile } from '../../code/core/src/csf-tools';
+import { babelParse, types as t } from '../../code/core/src/babel/index.ts';
+import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
+import storybookPackages from '../../code/core/src/common/versions.ts';
+import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
 import {
   readConfig as csfReadConfig,
   formatConfig,
   writeConfig,
-} from '../../code/core/src/csf-tools';
-import { SupportedLanguage } from '../../code/core/src/types';
-import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService';
-import type { PassedOptionValues, Task, TemplateDetails } from '../task';
-import { executeCLIStep, steps } from '../utils/cli-step';
-import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
-import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
-import { addPreviewAnnotations, readConfig } from '../utils/main-js';
-import { updatePackageScripts } from '../utils/package-json';
-import { findFirstPath } from '../utils/paths';
-import { workspacePath } from '../utils/workspace';
+} from '../../code/core/src/csf-tools/index.ts';
+import { SupportedLanguage } from '../../code/core/src/types/index.ts';
+import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
+import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
+import { executeCLIStep, steps } from '../utils/cli-step.ts';
+import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir.ts';
+import { addPreviewAnnotations, readConfig } from '../utils/main-js.ts';
+import { updatePackageScripts } from '../utils/package-json.ts';
+import { findFirstPath } from '../utils/paths.ts';
+import { workspacePath } from '../utils/workspace.ts';
 import {
   addPackageResolutions,
   addWorkaroundResolutions,
   configureYarn2ForVerdaccio,
   installYarn2,
   isViteSandbox,
-} from '../utils/yarn';
+} from '../utils/yarn.ts';
 
 async function ensureSymlink(src: string, dest: string): Promise<void> {
   await mkdir(dirname(dest), { recursive: true });

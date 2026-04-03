@@ -14,7 +14,7 @@ import type { CoreConfig } from 'storybook/internal/types';
 import { normalize } from 'pathe';
 import type { Plugin, ResolvedConfig } from 'vite';
 
-import { type MockCall, getCleanId, invalidateAllRelatedModules } from './utils';
+import { type MockCall, getCleanId, invalidateAllRelatedModules } from './utils.ts';
 
 export interface MockPluginOptions {
   /** The absolute path to the preview.tsx file where mocks are defined. */

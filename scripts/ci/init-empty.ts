@@ -1,13 +1,13 @@
-import { build_linux } from './common-jobs';
-import { WINDOWS_ROOT_DIR } from './utils/constants';
-import { server, verdaccio, workflow } from './utils/helpers';
+import { build_linux } from './common-jobs.ts';
+import { WINDOWS_ROOT_DIR } from './utils/constants.ts';
+import { server, verdaccio, workflow } from './utils/helpers.ts';
 import {
   type JobOrNoOpJob,
   type Workflow,
   defineJob,
   defineNoOpJob,
   isWorkflowOrAbove,
-} from './utils/types';
+} from './utils/types.ts';
 
 export const defineEmptyInitFlow = (template: string) =>
   defineJob(

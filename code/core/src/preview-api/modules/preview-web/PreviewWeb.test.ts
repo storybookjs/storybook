@@ -33,9 +33,9 @@ import { global } from '@storybook/global';
 
 import { toMerged } from 'es-toolkit/object';
 
-import { addons } from '../addons';
-import type { StoryStore } from '../store';
-import { PreviewWeb } from './PreviewWeb';
+import { addons } from '../addons/index.ts';
+import type { StoryStore } from '../store/index.ts';
+import { PreviewWeb } from './PreviewWeb.tsx';
 import {
   componentOneExports,
   componentTwoExports,
@@ -52,8 +52,8 @@ import {
   waitForQuiescence,
   waitForRender,
   waitForRenderPhase,
-} from './PreviewWeb.mockdata';
-import { WebView } from './WebView';
+} from './PreviewWeb.mockdata.ts';
+import { WebView } from './WebView.ts';
 
 const { history, document } = global;
 

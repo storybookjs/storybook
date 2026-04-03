@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
-import * as mainConfigFile from './helpers/mainConfigFile';
-import { doAutomigrate, runFixes } from './index';
-import type { Fix } from './types';
+import * as mainConfigFile from './helpers/mainConfigFile.ts';
+import { doAutomigrate, runFixes } from './index.ts';
+import type { Fix } from './types.ts';
 
 const check1 = vi.fn();
 const run1 = vi.fn();

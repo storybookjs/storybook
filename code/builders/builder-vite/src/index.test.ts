@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
 import type { ModuleNode as StorybookModuleNode, Options } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
-import { bail, onModuleGraphChange, start } from './index';
-import { createViteServer } from './vite-server';
+import { bail, onModuleGraphChange, start } from './index.ts';
+import { createViteServer } from './vite-server.ts';
 
-vi.mock('./vite-server', () => ({
-  createViteServer: vi.fn(),
-}));
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('./vite-server', { spy: true });
 
 type ViteModuleNodeLike = {
   file: string | null;
@@ -73,6 +73,7 @@ function createFakeViteServer() {
     middlewares: {
       handle: vi.fn(),
     },
+    warmupRequest: vi.fn().mockResolvedValue(undefined),
     transformIndexHtml: vi.fn().mockResolvedValue(''),
     waitForRequestsIdle: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
@@ -81,10 +82,22 @@ function createFakeViteServer() {
   };
 }
 
-function createStartArgs(): Parameters<typeof start>[0] {
+function createStartArgs(storyImportPaths: string[] = []): Parameters<typeof start>[0] {
+  const indexGenerator = {
+    getIndex: vi.fn().mockResolvedValue({
+      entries: Object.fromEntries(
+        storyImportPaths.map((importPath, index) => [`story-${index}`, { importPath }])
+      ),
+    }),
+  };
+
   return {
     startTime: process.hrtime(),
-    options: {} as Options,
+    options: {
+      presets: {
+        apply: vi.fn().mockResolvedValue(indexGenerator),
+      },
+    } as unknown as Options,
     router: {
       get: vi.fn(),
       use: vi.fn(),
@@ -97,10 +110,22 @@ function createStartArgs(): Parameters<typeof start>[0] {
 describe('onModuleGraphChange', () => {
   let fakeViteServer: ReturnType<typeof createFakeViteServer>;
 
+  async function startChangeDetection(
+    fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ])
+  ) {
+    fakeViteServer.moduleGraph.fileToModulesMap = fileToModulesMap;
+    await start(createStartArgs([...fileToModulesMap.keys()]));
+    await vi.advanceTimersByTimeAsync(1000);
+  }
+
   beforeEach(() => {
     vi.useFakeTimers();
     fakeViteServer = createFakeViteServer();
     vi.mocked(createViteServer).mockResolvedValue(fakeViteServer);
+    vi.mocked(logger.error).mockImplementation(() => undefined);
   });
 
   afterEach(async () => {
@@ -115,7 +140,9 @@ describe('onModuleGraphChange', () => {
 
     expect(unsubscribe).toEqual(expect.any(Function));
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -132,22 +159,25 @@ describe('onModuleGraphChange', () => {
 
   it('passes the module graph payload to listeners', async () => {
     const entry = createViteModuleNode('/src/Button.tsx');
-    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
-      '/src/Button.tsx',
-      new Set([entry]),
-    ]);
+    const fileToModulesMap = createFileToModulesMap(['/src/Button.tsx', new Set([entry])]);
 
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection(fileToModulesMap);
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
 
-    const moduleGraph = cb.mock.calls[0]?.[0];
+    const event = cb.mock.calls[0]?.[0];
+    const moduleGraph = event?.moduleGraph;
 
-    expect(cb).toHaveBeenCalledWith(expect.any(Map));
+    expect(cb).toHaveBeenCalledWith({
+      type: 'moduleGraph',
+      moduleGraph: expect.any(Map),
+    });
     expect(moduleGraph?.has('/src/Button.tsx')).toBe(true);
   });
 
@@ -155,7 +185,9 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(50);
@@ -169,7 +201,9 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('add', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -181,7 +215,9 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('unlink', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -193,7 +229,9 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
     fakeViteServer.watcher.emit('add', '/src/Button.tsx');
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
@@ -210,7 +248,10 @@ describe('onModuleGraphChange', () => {
     onModuleGraphChange(cb1);
     onModuleGraphChange(cb2);
 
-    await start(createStartArgs());
+    await startChangeDetection();
+    cb1.mockClear();
+    cb2.mockClear();
+
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
 
     await vi.advanceTimersByTimeAsync(100);
@@ -223,14 +264,15 @@ describe('onModuleGraphChange', () => {
     const cb = vi.fn();
     onModuleGraphChange(cb);
 
-    await start(createStartArgs());
+    await startChangeDetection();
     expect(fakeViteServer.watcher.listenerCount('all')).toBe(1);
 
     await bail();
     expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
 
-    await start(createStartArgs());
-    expect(fakeViteServer.watcher.listenerCount('all')).toBe(1);
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
 
     fakeViteServer.watcher.emit('change', '/src/Button.tsx');
     await vi.advanceTimersByTimeAsync(100);
@@ -240,7 +282,10 @@ describe('onModuleGraphChange', () => {
   });
 
   it('clears the module-graph polling interval during bail', async () => {
+    onModuleGraphChange(vi.fn());
+
     await start(createStartArgs());
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(vi.getTimerCount()).toBe(1);
 
@@ -255,5 +300,103 @@ describe('onModuleGraphChange', () => {
 
     expect(vi.getTimerCount()).toBe(0);
     expect(fakeViteServer.waitForRequestsIdle).not.toHaveBeenCalled();
+  });
+
+  it('rejects listeners registered after start', async () => {
+    await start(createStartArgs());
+
+    expect(() => onModuleGraphChange(vi.fn())).toThrow(
+      'Vite module graph listeners must be registered before the builder starts.'
+    );
+  });
+
+  it('does not reattach the watcher if bail runs while waiting for idle requests', async () => {
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
+
+    let resolveIdle: (() => void) | undefined;
+    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ]);
+    fakeViteServer.waitForRequestsIdle = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveIdle = resolve;
+        })
+    );
+
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await bail();
+    resolveIdle?.();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
+    expect(fakeViteServer.watcher.on).not.toHaveBeenCalledWith('all', expect.any(Function));
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('logs and swallows rejected startup work', async () => {
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
+
+    const args = createStartArgs();
+    vi.mocked(args.options.presets.apply).mockResolvedValue({
+      getIndex: vi.fn().mockRejectedValue(new Error('index failed')),
+    } as never);
+
+    await expect(start(args)).resolves.toBeDefined();
+    await Promise.resolve();
+
+    expect(logger.error).toHaveBeenCalledWith('Failed to initialize Vite change detection');
+    expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'index failed' }));
+    expect(cb).toHaveBeenCalledWith({
+      type: 'error',
+      error: expect.objectContaining({ message: 'index failed' }),
+    });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('logs polling failures and clears the interval', async () => {
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
+    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ]);
+    fakeViteServer.waitForRequestsIdle = vi.fn().mockRejectedValue(new Error('idle failed'));
+
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(logger.error).toHaveBeenCalledWith('Failed to complete Vite change detection startup');
+    expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ message: 'idle failed' }));
+    expect(cb).toHaveBeenCalledWith({
+      type: 'error',
+      error: expect.objectContaining({ message: 'idle failed' }),
+    });
+    expect(vi.getTimerCount()).toBe(0);
+    expect(fakeViteServer.watcher.listenerCount('all')).toBe(0);
+  });
+
+  it('notifies listeners when module graph startup times out', async () => {
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
+
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(31_000);
+
+    expect(logger.error).toHaveBeenCalledWith('Failed to complete Vite change detection startup');
+    expect(cb).toHaveBeenCalledWith({
+      type: 'unavailable',
+      reason: 'Timed out while waiting for the Vite module graph to initialize',
+      error: expect.objectContaining({
+        message: 'Timed out while waiting for the Vite module graph to initialize',
+      }),
+    });
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

@@ -5,6 +5,18 @@ vi.mock(import('./plugins/react-docgen.ts'), { spy: true });
 import * as reactDocgenModule from './plugins/react-docgen.ts';
 import { viteFinal } from './preset.ts';
 
+type ViteFinalOptions = Parameters<typeof viteFinal>[1];
+
+const createTypescriptPresetOptions = (
+  reactDocgenOptions: Record<string, unknown>
+): ViteFinalOptions =>
+  ({
+    presets: {
+      apply: async (name: string) =>
+        name === 'typescript' ? { reactDocgen: 'react-docgen', reactDocgenOptions } : undefined,
+    },
+  }) as ViteFinalOptions;
+
 describe('react-vite preset', () => {
   beforeEach(() => {
     vi.mocked(reactDocgenModule.reactDocgen)
@@ -18,20 +30,10 @@ describe('react-vite preset', () => {
       exclude: [/node_modules\/.*/, /packages\/.*/],
     };
 
-    const config = await viteFinal({ plugins: [existingPlugin] }, {
-      presets: {
-        apply: async (name: string) => {
-          if (name === 'typescript') {
-            return {
-              reactDocgen: 'react-docgen',
-              reactDocgenOptions,
-            };
-          }
-
-          return undefined;
-        },
-      },
-    } as any);
+    const config = await viteFinal(
+      { plugins: [existingPlugin] },
+      createTypescriptPresetOptions(reactDocgenOptions)
+    );
 
     expect(reactDocgenModule.reactDocgen).toHaveBeenCalledWith({
       include: /\.(mjs|tsx?|jsx?)$/,
@@ -46,20 +48,7 @@ describe('react-vite preset', () => {
       exclude: [/packages\/.*/],
     };
 
-    await viteFinal({}, {
-      presets: {
-        apply: async (name: string) => {
-          if (name === 'typescript') {
-            return {
-              reactDocgen: 'react-docgen',
-              reactDocgenOptions,
-            };
-          }
-
-          return undefined;
-        },
-      },
-    } as any);
+    await viteFinal({}, createTypescriptPresetOptions(reactDocgenOptions));
 
     expect(reactDocgenModule.reactDocgen).toHaveBeenCalledWith(reactDocgenOptions);
   });

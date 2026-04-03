@@ -212,25 +212,5 @@ async function restoreSnapshots(repoRoot: string, snapshots: FileSnapshot[]) {
 
 function isPreviewEnvironmentPath(path: string) {
   const normalized = path.replace(/\\/g, '/');
-  const segments = normalized.split('/');
-  const storybookIndex = segments.lastIndexOf('.storybook');
-
-  if (storybookIndex === -1) {
-    return false;
-  }
-
-  const after = segments[storybookIndex + 1];
-  if (!after) {
-    return false;
-  }
-
-  if (/^main\.[^/]+$/.test(after)) {
-    return false;
-  }
-
-  if (after === 'eval-support' || after === 'eval-results') {
-    return false;
-  }
-
-  return true;
+  return /(^|\/)\.storybook\/preview\.[^/]+$/.test(normalized);
 }

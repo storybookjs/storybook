@@ -5,7 +5,7 @@ Make Storybook match the real app.
 - copy real patterns from the codebase
 - keep the app code unchanged
 - put the default setup in `.storybook/preview.tsx`
-- keep stories thin: simple JSX copied from real usage
+- keep app mocking and runtime setup in `.storybook/preview.tsx`, not in the stories
 
 ## 1. Read the real app first
 
@@ -17,7 +17,6 @@ Follow imports into providers, pages, hooks, and shared components until you kno
 - which CSS files are injected
 - which queries fetch data
 - which browser-state reads happen
-- which side-effect actions happen
 - which portals and portal roots exist
 - which pages and components show the real usage patterns
 
@@ -62,22 +61,24 @@ const response = await fetch(apiBaseUrl + '/products?page=1');
 const savedTheme = localStorage.getItem('theme');
 ```
 
-```tsx
-// src/components/ProductCard.tsx
-await navigator.share(...);
-await navigator.clipboard.writeText(product.url);
-```
-
 That means the default Storybook setup should discover and prepare:
 - provider state
-- fetch mocks
-- localStorage state
-- share and clipboard spies
-- any dates, observers, images, or browser APIs on those paths
+- MSW handlers for queries
+- browser-state values that are actually read during render
 
 ## 2. Build one default app environment in preview
 
 Set up Storybook once so most stories work without story-specific setup.
+
+Start with the smallest faithful environment:
+- the real provider tree
+- the real root CSS
+- seeded browser state if the app reads it during render
+- MSW for network/data queries
+
+It is fine to seed browser state such as `localStorage`, `sessionStorage`, and cookies when the app reads them during render.
+Do not mock or redefine the browser runtime itself.
+The stories run in Vitest browser mode, so the real browser environment should already exist.
 
 Example:
 
@@ -110,7 +111,22 @@ Use this same idea for:
 - providers
 - root CSS
 - browser state
-- dates
+- dates, and if the app logic depends on them during render then always use `mockdate`
+
+Example with the `mockdate` package:
+
+```tsx
+import type { Preview } from '@storybook/react-vite';
+import MockDate from 'mockdate';
+
+const preview: Preview = {
+  async beforeEach() {
+    MockDate.set('2024-04-01T12:00:00Z');
+  },
+};
+
+export default preview;
+```
 
 ## 3. Support portals with preview-body.html
 
@@ -152,10 +168,11 @@ Make sure the copied page shell, CSS, and layout still allow overlays, fixed pos
 
 ## 4. Mock side effects globally
 
-All side effects should be handled by the default Storybook environment.
+All network/data queries should be handled by the default Storybook environment.
 
-- side effect queries should return deterministic mock data
-- side effect actions should be stubbed and spied on
+- Always use `msw-storybook-addon` for query mocking.
+- Do not mock `fetch` directly.
+- Network/data queries should return deterministic mock data.
 
 Example of copying a real fetch pattern into shared handlers:
 
@@ -225,59 +242,27 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-Example action setup:
-
-```tsx
-import type { Preview } from '@storybook/react-vite';
-import { fn } from 'storybook/test';
-
-const shareSpy = fn();
-const clipboardSpy = fn();
-const reloadSpy = fn();
-
-const preview: Preview = {
-  async beforeEach() {
-    Object.defineProperty(navigator, 'share', {
-      configurable: true,
-      value: shareSpy,
-    });
-
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: {
-        writeText: clipboardSpy,
-      },
-    });
-
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: {
-        ...window.location,
-        reload: reloadSpy,
-      },
-    });
-  },
-};
-
-export default preview;
-```
-
 Keep these mocks global.
 Do not put fetch mocks in individual stories.
 If the defaults are not enough, improve the shared default setup instead.
+Seed browser state when needed, but do not mock `window`, `document`, `navigator`, observers, or similar runtime APIs.
+The only exception is `mockdate` when date-based rendering exists.
 
-## 5. Write thin stories
+## 5. Write stories
 
+Try to find around 10 good candidate components for story files.
 Write colocated stories for top-level components, from low-level reusable components up to page components.
-Write up to 10 story files, or fewer if the codebase has fewer meaningful targets.
+Write up to 10 story files, or fewer only if the codebase clearly has fewer meaningful targets.
 
-The story files should be thin.
-They should mostly just render JSX copied from real usage patterns in:
+The stories should use JSX copied from real usage patterns in:
 - pages
 - app shells
 - routes
 - tests
 - existing feature code
+
+As a rule of thumb, each story file should have around 3 story exports when the component or page has enough meaningful states.
+It can have more when the real usage supports it, up to 10 story exports in one file.
 
 Example:
 
@@ -335,11 +320,12 @@ export const Default: Story = {
 };
 ```
 
-Keep the setup in preview, not in the stories.
-Do not build story-specific harnesses.
+Keep app mocking and runtime setup in preview, not in the stories.
+Do not build large story-specific harnesses.
 Do not write story files for subcomponents, hooks, contexts, or helpers.
 Do not create new application components.
 Do not add a custom `title`.
+Do not stop after only a few easy targets if the codebase has more meaningful components or pages available.
 
 ## 6. Cover the patterns you found
 

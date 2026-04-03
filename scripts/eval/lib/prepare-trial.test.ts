@@ -17,6 +17,7 @@ afterEach(() => {
   vi.doUnmock('./utils.ts');
   vi.restoreAllMocks();
   vi.resetModules();
+  delete process.env.EVAL_SYNC_LOCAL_STORYBOOK_PACKAGES;
 
   if (TMP) {
     rmSync(TMP, { recursive: true, force: true });
@@ -235,5 +236,82 @@ describe('prepareTrial', () => {
       ])
     );
     expect(installDeps).toHaveBeenCalledTimes(1);
+  });
+
+  it('can sync local built storybook packages into the trial node_modules when enabled', async () => {
+    const reposDir = join(TMP, 'repos');
+    const trialsDir = join(TMP, 'trials');
+    const repoRoot = join(trialsDir, 'trial-sync', 'project');
+    const projectPath = join(repoRoot, 'packages', 'app');
+    const localRepoRoot = join(TMP, 'storybook-repo');
+    const installDeps = vi.fn().mockResolvedValue(undefined);
+
+    process.env.EVAL_SYNC_LOCAL_STORYBOOK_PACKAGES = 'true';
+
+    mkdirSync(join(localRepoRoot, 'code', 'core', 'dist'), { recursive: true });
+    mkdirSync(join(localRepoRoot, 'code', 'addons', 'vitest', 'dist'), { recursive: true });
+    mkdirSync(join(projectPath, 'node_modules', 'storybook', 'dist'), { recursive: true });
+    mkdirSync(
+      join(projectPath, 'node_modules', '@storybook', 'addon-vitest', 'dist'),
+      { recursive: true }
+    );
+    mkdirSync(join(reposDir, 'wikitok', '.git'), { recursive: true });
+
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(join(localRepoRoot, 'code', 'core', 'dist', 'runtime.js'), 'core build\n');
+    writeFileSync(
+      join(localRepoRoot, 'code', 'addons', 'vitest', 'dist', 'index.js'),
+      'addon build\n'
+    );
+    writeFileSync(join(projectPath, 'node_modules', 'storybook', 'dist', 'old.js'), 'old core\n');
+    writeFileSync(
+      join(projectPath, 'node_modules', '@storybook', 'addon-vitest', 'dist', 'old.js'),
+      'old addon\n'
+    );
+
+    vi.doMock('tinyexec', () => ({
+      x: vi.fn(async (cmd: string, args: string[]) => {
+        if (cmd === 'git' && args[0] === 'rev-parse') {
+          return createExecResult('feedface\n');
+        }
+
+        return createExecResult();
+      }),
+    }));
+
+    vi.doMock('./package-manager.ts', () => ({ installDeps }));
+    vi.doMock('./utils.ts', async () => {
+      const actual = await vi.importActual<typeof import('./utils.ts')>('./utils.ts');
+      return {
+        ...actual,
+        REPO_ROOT: localRepoRoot,
+        REPOS_DIR: reposDir,
+        TRIALS_DIR: trialsDir,
+      };
+    });
+
+    const { prepareTrial } = await import('./prepare-trial.ts');
+    const logger = createLogger();
+    const project = {
+      name: 'wikitok',
+      repo: 'https://github.com/storybook-tmp/wikitok',
+      branch: 'main',
+      githubSlug: 'storybook-tmp/wikitok',
+      projectDir: 'packages/app',
+    };
+
+    await prepareTrial(project, 'trial-sync', logger);
+
+    expect(existsSync(join(projectPath, 'node_modules', 'storybook', 'dist', 'runtime.js'))).toBe(
+      true
+    );
+    expect(
+      existsSync(
+        join(projectPath, 'node_modules', '@storybook', 'addon-vitest', 'dist', 'index.js')
+      )
+    ).toBe(true);
+    expect(existsSync(join(projectPath, 'node_modules', 'storybook', 'dist', 'old.js'))).toBe(
+      false
+    );
   });
 });

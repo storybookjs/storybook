@@ -22,7 +22,7 @@ describe('getGeneratedStoryFiles', () => {
 });
 
 describe('getPreviewEnvironmentFiles', () => {
-  it('returns preview-owned storybook files but excludes main and eval docs/results', () => {
+  it('returns only preview files for baseline rollback', () => {
     const fileChanges: FileChange[] = [
       { path: 'frontend/.storybook/main.ts', gitStatus: 'M' },
       { path: 'frontend/.storybook/preview.tsx', gitStatus: 'M' },
@@ -32,25 +32,21 @@ describe('getPreviewEnvironmentFiles', () => {
       { path: 'frontend/.storybook/eval-results/data.json', gitStatus: 'M' },
     ];
 
-    expect(getPreviewEnvironmentFiles(fileChanges)).toEqual([
-      'frontend/.storybook/preview-body.html',
-      'frontend/.storybook/preview.tsx',
-      'frontend/.storybook/wiki-mocks.ts',
-    ]);
+    expect(getPreviewEnvironmentFiles(fileChanges)).toEqual(['frontend/.storybook/preview.tsx']);
   });
 
   it('considers renamed preview files via previousPath', () => {
     const fileChanges: FileChange[] = [
       {
-        path: 'frontend/.storybook/runtime-mocks.ts',
-        previousPath: 'frontend/.storybook/wiki-mocks.ts',
+        path: 'frontend/.storybook/preview.ts',
+        previousPath: 'frontend/.storybook/preview.tsx',
         gitStatus: 'R',
       },
     ];
 
     expect(getPreviewEnvironmentFiles(fileChanges)).toEqual([
-      'frontend/.storybook/runtime-mocks.ts',
-      'frontend/.storybook/wiki-mocks.ts',
+      'frontend/.storybook/preview.ts',
+      'frontend/.storybook/preview.tsx',
     ]);
   });
 });

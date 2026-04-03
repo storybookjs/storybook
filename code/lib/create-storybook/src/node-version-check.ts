@@ -29,11 +29,14 @@ export async function handleUnsupportedNodeRuntime(
   const runtimeVersion = `${major}.${minor}.${patch}`;
   const declared = detectDeclaredNodeVersions();
 
+  const isInteractive =
+    process.stdout.isTTY && process.stdin.isTTY && !process.env.CI && !process.env.STORYBOOK_CI;
+
   let nvmrcBumped: string | undefined;
   let enginesBumped: string | undefined;
 
   // Check .nvmrc
-  if (declared.nvmrcPath && declared.nvmrcVersion) {
+  if (isInteractive && declared.nvmrcPath && declared.nvmrcVersion) {
     const parsed = parseNodeVersionString(declared.nvmrcVersion);
     if (parsed && !isNodeVersionSupported(parsed.major, parsed.minor, parsed.patch)) {
       logger.warn(dedent`
@@ -50,7 +53,7 @@ export async function handleUnsupportedNodeRuntime(
   }
 
   // Check engines.node
-  if (declared.enginesNode && declared.packageJsonPath) {
+  if (isInteractive && declared.enginesNode && declared.packageJsonPath) {
     const min = minVersion(declared.enginesNode);
     if (min && !isNodeVersionSupported(min.major, min.minor, min.patch)) {
       logger.warn(dedent`
@@ -68,7 +71,17 @@ export async function handleUnsupportedNodeRuntime(
   }
 
   // Show context-aware exit message
-  if (nvmrcBumped) {
+  if (nvmrcBumped && enginesBumped) {
+    logger.error(dedent`
+      To run Storybook, you need Node.js version ${MIN_SUPPORTED_NODE_DESCRIPTION}.
+      You are currently running Node.js v${runtimeVersion}.
+
+      Your .nvmrc has been updated to ${nvmrcBumped} and your package.json engines.node has been updated to "${enginesBumped}".
+      Switch to a supported Node.js version and re-run:
+        nvm use
+        npx storybook@latest init
+    `);
+  } else if (nvmrcBumped) {
     logger.error(dedent`
       To run Storybook, you need Node.js version ${MIN_SUPPORTED_NODE_DESCRIPTION}.
       You are currently running Node.js v${runtimeVersion}.
@@ -97,13 +110,10 @@ export async function handleUnsupportedNodeRuntime(
 }
 
 async function promptBump(type: 'nvmrc' | 'engines'): Promise<string> {
-  const options: Array<{ value: string; label: string }> = MIN_SUPPORTED_NODE_VERSIONS.map(
-    (v) => ({
-      value:
-        type === 'nvmrc' ? `${v.major}.${v.minor}.${v.patch}` : `>=${v.major}.${v.minor}`,
-      label: formatMinVersion(v).replace('+', ''),
-    })
-  );
+  const options: Array<{ value: string; label: string }> = MIN_SUPPORTED_NODE_VERSIONS.map((v) => ({
+    value: type === 'nvmrc' ? `${v.major}.${v.minor}.${v.patch}` : `>=${v.major}.${v.minor}`,
+    label: formatMinVersion(v).replace('+', ''),
+  }));
 
   options.push({ value: 'skip', label: "Don't change" });
 

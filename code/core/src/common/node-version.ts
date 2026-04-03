@@ -3,6 +3,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import * as find from 'empathic/find';
 import { join } from 'pathe';
 
+import { getProjectRoot } from './utils/paths.ts';
+
 export interface MinNodeVersion {
   major: number;
   minor: number;
@@ -35,9 +37,8 @@ export function formatMinVersion(v: MinNodeVersion): string {
 }
 
 /** Human-readable description like "20.19+ or 22.12+" */
-export const MIN_SUPPORTED_NODE_DESCRIPTION = MIN_SUPPORTED_NODE_VERSIONS.map(
-  formatMinVersion
-).join(' or ');
+export const MIN_SUPPORTED_NODE_DESCRIPTION =
+  MIN_SUPPORTED_NODE_VERSIONS.map(formatMinVersion).join(' or ');
 
 /**
  * Check whether a Node.js version (major.minor.patch) meets the minimum requirement.
@@ -112,9 +113,10 @@ export function detectDeclaredNodeVersions(cwd?: string): DeclaredNodeVersions {
     packageJsonPath: undefined,
   };
 
-  // Check .nvmrc
+  // Check .nvmrc — bound the upward search to the project root so we never
+  // accidentally read/modify an unrelated .nvmrc higher up (e.g. in $HOME).
   try {
-    const nvmrcPath = find.up('.nvmrc', { cwd });
+    const nvmrcPath = find.up('.nvmrc', { cwd, last: getProjectRoot() });
     if (nvmrcPath) {
       const content = readFileSync(nvmrcPath, 'utf-8').trim();
       const parsed = parseNodeVersionString(content);

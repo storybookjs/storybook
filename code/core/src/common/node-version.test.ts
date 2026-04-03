@@ -2,6 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('empathic/find', { spy: true });
 vi.mock('node:fs', { spy: true });
+vi.mock('./utils/paths.ts', () => ({
+  getProjectRoot: vi.fn(() => '/project'),
+  invalidateProjectRootCache: vi.fn(),
+}));
 
 import {
   MIN_SUPPORTED_NODE_DESCRIPTION,
@@ -11,7 +15,7 @@ import {
   parseNodeVersionString,
   updateEnginesNode,
   updateNvmrc,
-} from './node-version';
+} from './node-version.ts';
 
 describe('node-version', () => {
   describe('formatMinVersion', () => {
@@ -115,6 +119,50 @@ describe('node-version', () => {
       vi.clearAllMocks();
     });
 
+    it('bounds .nvmrc search to project root to avoid picking up unrelated files', async () => {
+      const findModule = await import('empathic/find');
+      const fsModule = await import('node:fs');
+      const pathsModule = await import('./utils/paths.ts');
+      vi.mocked(pathsModule.getProjectRoot).mockReturnValue('/project');
+      vi.mocked(findModule.up).mockReturnValue('/project/.nvmrc');
+      vi.mocked(fsModule.readFileSync).mockImplementation((path: any) => {
+        if (String(path) === '/project/.nvmrc') {
+          return '20.19.0\n';
+        }
+        if (String(path) === '/project/package.json') {
+          return JSON.stringify({});
+        }
+        return '';
+      });
+
+      detectDeclaredNodeVersions('/project');
+
+      expect(findModule.up).toHaveBeenCalledWith('.nvmrc', {
+        cwd: '/project',
+        last: '/project',
+      });
+    });
+
+    it('does not traverse above project root when searching for .nvmrc', async () => {
+      const findModule = await import('empathic/find');
+      const fsModule = await import('node:fs');
+      const pathsModule = await import('./utils/paths.ts');
+      // Simulate project root at /project, but .nvmrc only exists at /home/user
+      vi.mocked(pathsModule.getProjectRoot).mockReturnValue('/project');
+      vi.mocked(findModule.up).mockReturnValue(undefined as any);
+      vi.mocked(fsModule.readFileSync).mockImplementation((path: any) => {
+        if (String(path) === '/project/package.json') {
+          return JSON.stringify({});
+        }
+        return '';
+      });
+
+      const result = detectDeclaredNodeVersions('/project');
+
+      expect(result.nvmrcPath).toBeUndefined();
+      expect(result.nvmrcVersion).toBeUndefined();
+    });
+
     it('detects .nvmrc version', async () => {
       const findModule = await import('empathic/find');
       const fsModule = await import('node:fs');
@@ -186,11 +234,7 @@ describe('node-version', () => {
       const fsModule = await import('node:fs');
       vi.mocked(fsModule.writeFileSync).mockImplementation(() => {});
       updateNvmrc('/project/.nvmrc', '22.12.0');
-      expect(fsModule.writeFileSync).toHaveBeenCalledWith(
-        '/project/.nvmrc',
-        '22.12.0\n',
-        'utf-8'
-      );
+      expect(fsModule.writeFileSync).toHaveBeenCalledWith('/project/.nvmrc', '22.12.0\n', 'utf-8');
     });
   });
 
@@ -220,11 +264,7 @@ describe('node-version', () => {
 
     it('adds engines.node when engines object exists but node is missing', async () => {
       const fsModule = await import('node:fs');
-      const originalContent = JSON.stringify(
-        { name: 'my-app', engines: { npm: '>=8' } },
-        null,
-        2
-      );
+      const originalContent = JSON.stringify({ name: 'my-app', engines: { npm: '>=8' } }, null, 2);
       vi.mocked(fsModule.readFileSync).mockReturnValue(originalContent);
       vi.mocked(fsModule.writeFileSync).mockImplementation(() => {});
 

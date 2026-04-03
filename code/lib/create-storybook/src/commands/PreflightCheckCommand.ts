@@ -164,9 +164,7 @@ export class PreflightCheckCommand {
     filePath: string,
     currentValue: string
   ): Promise<void> {
-    const [runtimeMajor, runtimeMinor, runtimePatch] = process.versions.node
-      .split('.')
-      .map(Number);
+    const [runtimeMajor, runtimeMinor, runtimePatch] = process.versions.node.split('.').map(Number);
     const runtimeVersion = `${runtimeMajor}.${runtimeMinor}.${runtimePatch}`;
 
     if (type === 'nvmrc') {
@@ -183,17 +181,23 @@ export class PreflightCheckCommand {
       `);
     }
 
+    // Skip the interactive prompt in non-interactive/CI environments
+    const isInteractive =
+      process.stdout.isTTY && process.stdin.isTTY && !process.env.CI && !process.env.STORYBOOK_CI;
+    if (!isInteractive) {
+      return;
+    }
+
     const options: Array<{ value: string; label: string }> = MIN_SUPPORTED_NODE_VERSIONS.map(
       (v) => ({
-        value:
-          type === 'nvmrc' ? `${v.major}.${v.minor}.${v.patch}` : `>=${v.major}.${v.minor}`,
+        value: type === 'nvmrc' ? `${v.major}.${v.minor}.${v.patch}` : `>=${v.major}.${v.minor}`,
         label: formatMinVersion(v).replace('+', ''),
       })
     );
 
     if (isNodeVersionSupported(runtimeMajor, runtimeMinor, runtimePatch)) {
       options.push({
-        value: type === 'nvmrc' ? runtimeVersion : `>=${runtimeVersion}`,
+        value: type === 'nvmrc' ? runtimeVersion : `>=${runtimeMajor}.${runtimeMinor}`,
         label: `${runtimeVersion}  (your current runtime)`,
       });
     }
@@ -208,10 +212,20 @@ export class PreflightCheckCommand {
     const selected = await prompt.select<string>({ message, options });
 
     if (selected !== 'skip') {
-      if (type === 'nvmrc') {
-        updateNvmrc(filePath, selected);
-      } else {
-        updateEnginesNode(filePath, selected);
+      try {
+        if (type === 'nvmrc') {
+          updateNvmrc(filePath, selected);
+        } else {
+          updateEnginesNode(filePath, selected);
+        }
+      } catch (error) {
+        logger.warn(
+          dedent`
+            Could not update ${type === 'nvmrc' ? '.nvmrc' : 'package.json engines.node'} at ${filePath}.
+            Storybook initialization will continue without applying the Node.js version bump.
+            ${error instanceof Error ? error.message : String(error)}
+          `
+        );
       }
     }
   }

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { execa, execaCommandSync } from 'execa';
 
-import { executeCommand, executeCommandSync } from './command';
+import { executeCommand, executeCommandSync } from './command.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {

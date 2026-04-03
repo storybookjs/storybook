@@ -114,6 +114,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     SupportedRenderer.REACT,
     SupportedRenderer.PREACT,
     SupportedRenderer.REACT_NATIVE,
+    SupportedRenderer.SOLID,
   ].includes(options.renderer);
 
   const previewConfigPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}${isJsx ? 'x' : ''}`;

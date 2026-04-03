@@ -75,7 +75,6 @@
     "@storybook/react-vite": "workspace:*"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-router": "^1.168.10",
     "@tanstack/react-start": "^1.167.16",
     "@tanstack/router-core": "^1.168.9",
@@ -86,7 +85,6 @@
     "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.59.0",
     "@tanstack/react-router": "^1.168.10",
     "@tanstack/router-core": "^1.168.9",
     "@tanstack/start-client-core": "^1.167.9",
@@ -96,9 +94,6 @@
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
-    "@tanstack/react-query": {
-      "optional": false
-    },
     "@tanstack/react-router": {
       "optional": false
     }

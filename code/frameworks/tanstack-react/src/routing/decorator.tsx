@@ -77,6 +77,7 @@ export function createStoryRouter({
   const history = createMemoryHistory({
     initialEntries: [initialPath],
   });
+  history.replace(initialPath);
 
   console.log('init mock router with path:', initialPath);
   const router = createRouter({
@@ -86,7 +87,6 @@ export function createStoryRouter({
       return <div>Route not found: {props.routeId}</div>;
     },
   });
-  history.push(initialPath);
 
   history.block({
     blockerFn() {

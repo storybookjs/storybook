@@ -32,7 +32,7 @@ jobs:
       - name: Debug Nx access token
         shell: bash
         run: |
-          echo $NX_CLOUD_ACCESS_TOKEN
+          echo "$NX_CLOUD_ACCESS_TOKEN"
       - name: Set Nx tag(s)
         id: tag
         run: |

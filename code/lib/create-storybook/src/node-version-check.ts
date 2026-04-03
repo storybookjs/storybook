@@ -3,6 +3,7 @@ import {
   MIN_SUPPORTED_NODE_VERSIONS,
   detectDeclaredNodeVersions,
   formatMinVersion,
+  isCI,
   isNodeVersionSupported,
   parseNodeVersionString,
   updateEnginesNode,
@@ -29,8 +30,7 @@ export async function handleUnsupportedNodeRuntime(
   const runtimeVersion = `${major}.${minor}.${patch}`;
   const declared = detectDeclaredNodeVersions();
 
-  const isInteractive =
-    process.stdout.isTTY && process.stdin.isTTY && !process.env.CI && !process.env.STORYBOOK_CI;
+  const isInteractive = process.stdout.isTTY && !isCI();
 
   let nvmrcBumped: string | undefined;
   let enginesBumped: string | undefined;

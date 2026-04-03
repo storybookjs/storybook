@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   detectDeclaredNodeVersions,
@@ -13,10 +13,23 @@ vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('semver', { spy: true });
 
+const originalStdoutIsTTY = process.stdout.isTTY;
+
+const setStdoutIsTTY = (value: boolean | undefined) => {
+  Object.defineProperty(process.stdout, 'isTTY', {
+    value,
+    configurable: true,
+  });
+};
+
 describe('handleUnsupportedNodeRuntime', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    setStdoutIsTTY(true);
+  });
+  afterEach(() => {
+    setStdoutIsTTY(originalStdoutIsTTY);
   });
 
   it('exits with error when no declared version files exist', async () => {

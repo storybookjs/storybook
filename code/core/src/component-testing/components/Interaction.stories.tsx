@@ -28,7 +28,7 @@ export default {
   component: Interaction,
   decorators: [
     (Story) => (
-      <ul style={{ listStyleType: 'none' }}>
+      <ul style={{ listStyleType: 'none', margin: 0, padding: 0 }}>
         <Story />
       </ul>
     ),

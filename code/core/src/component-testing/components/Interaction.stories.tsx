@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent } from 'storybook/test';
 
 import { type Call, CallStates } from '../../instrumenter/types.ts';
 import { getCalls } from '../mocks/index.ts';
@@ -76,13 +76,12 @@ export const Failed: Story = {
 
 export const Done: Story = {
   args: {
-    call: getCalls(CallStates.DONE)[1],
+    call: getCalls(CallStates.DONE, -1)[0],
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('button', {
-        name: 'Go to interaction row: Click button. Status: passed.',
+        name: 'Go to interaction row: toHaveBeenCalled. Status: passed.',
       })
     ).toBeInTheDocument();
   },
@@ -96,13 +95,11 @@ export const WithParent: Story = {
 
 export const Disabled: Story = {
   args: { ...Done.args, controlStates: { ...ToolbarStories.args.controlStates, goto: false } },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(
-      canvas.getByRole('button', {
-        name: 'Interaction row: Click button. Status: passed.',
-      })
-    ).toBeInTheDocument();
+  play: async ({ canvas }) => {
+    const button = canvas.getByRole('button', {
+      name: 'Interaction row: toHaveBeenCalled. Status: passed.',
+    });
+    await expect(button).toBeInTheDocument();
   },
 };
 
@@ -110,8 +107,7 @@ export const TrimmedStepLabelAria: Story = {
   args: {
     call: createCall({ args: ['  My step  '] }),
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('button', {
         name: 'Go to interaction row: My step. Status: passed.',
@@ -126,8 +122,7 @@ export const EmptyStepLabelFallbackAria: Story = {
       args: ['   '],
     }),
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('button', {
         name: 'Go to interaction row: step. Status: passed.',
@@ -155,8 +150,7 @@ export const StepMethodFallbackAria: Story = {
       status: CallStates.WAITING,
     },
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('button', {
         name: 'Go to interaction row: step. Status: pending.',
@@ -172,8 +166,7 @@ export const NestedStepMethodFallbackAria: Story = {
       args: ['Should be ignored'],
     }),
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('button', {
         name: 'Go to interaction row: step. Status: passed.',
@@ -188,8 +181,7 @@ export const ExpandedNestedStepAria: Story = {
     childCallIds: ['child-call-id'],
     isCollapsed: false,
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('button', {
         name: 'Collapse nested interaction steps for Click button',
@@ -204,8 +196,7 @@ export const CollapsedNestedStepAria: Story = {
     childCallIds: ['child-call-id'],
     isCollapsed: true,
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('button', {
         name: 'Expand nested interaction steps for Click button',
@@ -217,8 +208,7 @@ export const CollapsedNestedStepAria: Story = {
 export const Hovered: Story = {
   ...Done,
   globals: { sb_theme: 'light' },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await userEvent.hover(canvas.getByRole('button'));
     await expect(canvas.getByTestId('icon-active')).toBeInTheDocument();
   },

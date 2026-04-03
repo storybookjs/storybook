@@ -42,12 +42,7 @@ jobs:
       - name: Debug Nx access token
         shell: bash
         run: |
-          if [[ -n "${NX_CLOUD_ACCESS_TOKEN}" ]]; then
-        echo "NX_CLOUD_ACCESS_TOKEN is set"
-        echo "NX_CLOUD_ACCESS_TOKEN length: ${#NX_CLOUD_ACCESS_TOKEN}"
-          else
-        echo "NX_CLOUD_ACCESS_TOKEN is not set"
-          fi
+          echo ${NX_CLOUD_ACCESS_TOKEN}"
       - name: Set Nx tag(s)
         id: tag
         run: |

@@ -7,6 +7,7 @@ import type {
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
 import type docgenTypescript from '@joshwooding/vite-plugin-react-docgen-typescript';
+import type { reactDocgen } from './plugins/react-docgen.ts';
 
 type FrameworkName = CompatibleString<'@storybook/react-vite'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
@@ -25,6 +26,8 @@ export type FrameworkOptions = {
    */
   legacyRootApi?: boolean;
 };
+
+export type ReactDocgenOptions = Parameters<typeof reactDocgen>[0];
 
 type StorybookConfigFramework = {
   framework:
@@ -58,6 +61,8 @@ type TypescriptOptions = TypescriptOptionsBase & {
    * @default `'react-docgen'`
    */
   reactDocgen: 'react-docgen-typescript' | 'react-docgen' | false;
+  /** Configures the built-in Vite `react-docgen` plugin */
+  reactDocgenOptions: ReactDocgenOptions;
   /** Configures `@joshwooding/vite-plugin-react-docgen-typescript` */
   reactDocgenTypescriptOptions: Parameters<typeof docgenTypescript>[0];
 };

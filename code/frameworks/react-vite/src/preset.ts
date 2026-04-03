@@ -11,10 +11,11 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   const plugins = [...(config?.plugins ?? [])];
 
   // Add docgen plugin
-  const { reactDocgen: reactDocgenOption, reactDocgenTypescriptOptions } = await presets.apply<any>(
-    'typescript',
-    {}
-  );
+  const {
+    reactDocgen: reactDocgenOption,
+    reactDocgenOptions,
+    reactDocgenTypescriptOptions,
+  } = await presets.apply<any>('typescript', {});
   let typescriptPresent;
 
   try {
@@ -42,6 +43,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
       // If react-docgen is specified, use it for everything, otherwise only use it for non-typescript files
       await reactDocgen({
         include: reactDocgenOption === 'react-docgen' ? /\.(mjs|tsx?|jsx?)$/ : /\.(mjs|jsx?)$/,
+        ...reactDocgenOptions,
       })
     );
   }

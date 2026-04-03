@@ -15,6 +15,10 @@ Type:
     check?: boolean;
     checkOptions?: CheckOptions;
     reactDocgen?: 'react-docgen' | 'react-docgen-typescript' | false;
+    reactDocgenOptions?: {
+      include?: string | RegExp | (string | RegExp)[];
+      exclude?: string | RegExp | (string | RegExp)[];
+    };
     reactDocgenTypescriptOptions?: ReactDocgenTypescriptOptions;
     skipCompiler?: boolean;
   }
@@ -72,6 +76,20 @@ Options to pass to `fork-ts-checker-webpack-plugin`, if [enabled](#check). See [
   {/* prettier-ignore-start */}
 
   <CodeSnippets path="main-config-typescript-react-docgen.md" />
+
+  {/* prettier-ignore-end */}
+
+  ## `reactDocgenOptions`
+
+  Type: `{ include?: string | RegExp | (string | RegExp)[]; exclude?: string | RegExp | (string | RegExp)[] }`
+
+  Available for Vite-based React projects when `reactDocgen` is enabled.
+
+  Configures the options passed to Storybook's built-in `react-docgen` Vite plugin, which can be useful in monorepos where you need to narrow the files that Storybook analyzes.
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="main-config-typescript-react-docgen-options.md" />
 
   {/* prettier-ignore-end */}
 

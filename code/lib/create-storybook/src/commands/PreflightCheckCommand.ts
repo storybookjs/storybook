@@ -90,7 +90,7 @@ export class PreflightCheckCommand {
 
     await this.displayVersionInfo(packageManager);
 
-    await this.checkDeclaredNodeVersion();
+    await this.checkDeclaredNodeVersion(!!options.yes);
 
     return { packageManager, isEmptyProject: isEmptyDirProject };
   }
@@ -139,14 +139,20 @@ export class PreflightCheckCommand {
   }
 
   /** Check declared Node.js versions (.nvmrc, engines.node) and offer to bump if below minimum */
-  private async checkDeclaredNodeVersion(): Promise<void> {
+  private async checkDeclaredNodeVersion(yes = false): Promise<void> {
     const declared = detectDeclaredNodeVersions();
 
     // Check .nvmrc
     if (declared.nvmrcPath && declared.nvmrcVersion) {
       const parsed = parseNodeVersionString(declared.nvmrcVersion);
-      if (parsed && !isNodeVersionSupported(parsed.major, parsed.minor, parsed.patch)) {
-        await this.promptVersionBump('nvmrc', declared.nvmrcPath, declared.nvmrcVersion);
+      if (
+        parsed &&
+        !isNodeVersionSupported(parsed.major, parsed.minor, parsed.patch, {
+          mode: 'nvmrc',
+          precision: parsed.precision,
+        })
+      ) {
+        await this.promptVersionBump('nvmrc', declared.nvmrcPath, declared.nvmrcVersion, yes);
       }
     }
 
@@ -154,7 +160,12 @@ export class PreflightCheckCommand {
     if (declared.enginesNode && declared.packageJsonPath) {
       const min = minVersion(declared.enginesNode);
       if (min && !isNodeVersionSupported(min.major, min.minor, min.patch)) {
-        await this.promptVersionBump('engines', declared.packageJsonPath, declared.enginesNode);
+        await this.promptVersionBump(
+          'engines',
+          declared.packageJsonPath,
+          declared.enginesNode,
+          yes
+        );
       }
     }
   }
@@ -162,7 +173,8 @@ export class PreflightCheckCommand {
   private async promptVersionBump(
     type: 'nvmrc' | 'engines',
     filePath: string,
-    currentValue: string
+    currentValue: string,
+    yes = false
   ): Promise<void> {
     const [runtimeMajor, runtimeMinor, runtimePatch] = process.versions.node.split('.').map(Number);
     const runtimeVersion = `${runtimeMajor}.${runtimeMinor}.${runtimePatch}`;
@@ -181,9 +193,13 @@ export class PreflightCheckCommand {
       `);
     }
 
-    // Skip the interactive prompt in non-interactive/CI environments
+    // Skip the interactive prompt in non-interactive/CI environments or when --yes is passed
     const isInteractive =
-      process.stdout.isTTY && process.stdin.isTTY && !process.env.CI && !process.env.STORYBOOK_CI;
+      !yes &&
+      process.stdout.isTTY &&
+      process.stdin.isTTY &&
+      !process.env.CI &&
+      !process.env.STORYBOOK_CI;
     if (!isInteractive) {
       return;
     }

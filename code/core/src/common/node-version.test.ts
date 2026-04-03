@@ -33,62 +33,146 @@ describe('node-version', () => {
   });
 
   describe('isNodeVersionSupported', () => {
-    it('accepts exact minimum version (20.19.0)', () => {
-      expect(isNodeVersionSupported(20, 19, 0)).toBe(true);
+    describe('strict mode (default)', () => {
+      it('accepts exact minimum version (20.19.0)', () => {
+        expect(isNodeVersionSupported(20, 19, 0)).toBe(true);
+      });
+
+      it('accepts exact minimum version (22.12.0)', () => {
+        expect(isNodeVersionSupported(22, 12, 0)).toBe(true);
+      });
+
+      it('rejects version below minimum minor (20.18.0)', () => {
+        expect(isNodeVersionSupported(20, 18, 0)).toBe(false);
+      });
+
+      it('rejects version below minimum major (18.0.0)', () => {
+        expect(isNodeVersionSupported(18, 0, 0)).toBe(false);
+      });
+
+      it('accepts version above minimum minor (20.20.0)', () => {
+        expect(isNodeVersionSupported(20, 20, 0)).toBe(true);
+      });
+
+      it('rejects odd major between ranges (21.0.0)', () => {
+        expect(isNodeVersionSupported(21, 0, 0)).toBe(false);
+      });
+
+      it('accepts future major above highest defined (24.0.0)', () => {
+        expect(isNodeVersionSupported(24, 0, 0)).toBe(true);
+      });
+
+      it('rejects 22.11.0 (one minor below 22.12)', () => {
+        expect(isNodeVersionSupported(22, 11, 0)).toBe(false);
+      });
+
+      it('accepts 22.12.1 (patch above minimum)', () => {
+        expect(isNodeVersionSupported(22, 12, 1)).toBe(true);
+      });
+
+      it('rejects 19.99.99', () => {
+        expect(isNodeVersionSupported(19, 99, 99)).toBe(false);
+      });
+
+      it('rejects major-only "22" (treated as 22.0.0 which is below 22.12)', () => {
+        expect(isNodeVersionSupported(22, 0, 0)).toBe(false);
+      });
     });
 
-    it('accepts exact minimum version (22.12.0)', () => {
-      expect(isNodeVersionSupported(22, 12, 0)).toBe(true);
-    });
+    describe('nvmrc mode', () => {
+      it('accepts major-only "22" (latest 22.x is supported)', () => {
+        expect(isNodeVersionSupported(22, 0, 0, { mode: 'nvmrc', precision: 'major' })).toBe(true);
+      });
 
-    it('rejects version below minimum minor (20.18.0)', () => {
-      expect(isNodeVersionSupported(20, 18, 0)).toBe(false);
-    });
+      it('accepts major-only "20" (latest 20.x is supported)', () => {
+        expect(isNodeVersionSupported(20, 0, 0, { mode: 'nvmrc', precision: 'major' })).toBe(true);
+      });
 
-    it('rejects version below minimum major (18.0.0)', () => {
-      expect(isNodeVersionSupported(18, 0, 0)).toBe(false);
-    });
+      it('rejects major-only "18" (no supported version exists for major 18)', () => {
+        expect(isNodeVersionSupported(18, 0, 0, { mode: 'nvmrc', precision: 'major' })).toBe(false);
+      });
 
-    it('accepts version above minimum minor (20.20.0)', () => {
-      expect(isNodeVersionSupported(20, 20, 0)).toBe(true);
-    });
+      it('rejects major-only "21" (no supported version exists for major 21)', () => {
+        expect(isNodeVersionSupported(21, 0, 0, { mode: 'nvmrc', precision: 'major' })).toBe(false);
+      });
 
-    it('rejects odd major between ranges (21.0.0)', () => {
-      expect(isNodeVersionSupported(21, 0, 0)).toBe(false);
-    });
+      it('accepts future major-only "24" (above highest defined major)', () => {
+        expect(isNodeVersionSupported(24, 0, 0, { mode: 'nvmrc', precision: 'major' })).toBe(true);
+      });
 
-    it('accepts future major above highest defined (24.0.0)', () => {
-      expect(isNodeVersionSupported(24, 0, 0)).toBe(true);
-    });
+      it('accepts major.minor "22.14" (22.14 >= 22.12)', () => {
+        expect(isNodeVersionSupported(22, 14, 0, { mode: 'nvmrc', precision: 'minor' })).toBe(true);
+      });
 
-    it('rejects 22.11.0 (one minor below 22.12)', () => {
-      expect(isNodeVersionSupported(22, 11, 0)).toBe(false);
-    });
+      it('accepts major.minor "22.12" (exactly the minimum minor)', () => {
+        expect(isNodeVersionSupported(22, 12, 0, { mode: 'nvmrc', precision: 'minor' })).toBe(true);
+      });
 
-    it('accepts 22.12.1 (patch above minimum)', () => {
-      expect(isNodeVersionSupported(22, 12, 1)).toBe(true);
-    });
+      it('rejects major.minor "22.11" (22.11 < 22.12)', () => {
+        expect(isNodeVersionSupported(22, 11, 0, { mode: 'nvmrc', precision: 'minor' })).toBe(
+          false
+        );
+      });
 
-    it('rejects 19.99.99', () => {
-      expect(isNodeVersionSupported(19, 99, 99)).toBe(false);
+      it('rejects major.minor "20.18" (20.18 < 20.19)', () => {
+        expect(isNodeVersionSupported(20, 18, 0, { mode: 'nvmrc', precision: 'minor' })).toBe(
+          false
+        );
+      });
+
+      it('uses strict patch comparison when precision is patch', () => {
+        expect(isNodeVersionSupported(22, 12, 0, { mode: 'nvmrc', precision: 'patch' })).toBe(true);
+        expect(isNodeVersionSupported(22, 11, 9, { mode: 'nvmrc', precision: 'patch' })).toBe(
+          false
+        );
+      });
     });
   });
 
   describe('parseNodeVersionString', () => {
     it('parses full version with v prefix', () => {
-      expect(parseNodeVersionString('v22.14.2')).toEqual({ major: 22, minor: 14, patch: 2 });
+      expect(parseNodeVersionString('v22.14.2')).toEqual({
+        major: 22,
+        minor: 14,
+        patch: 2,
+        precision: 'patch',
+      });
     });
 
     it('parses full version without v prefix', () => {
-      expect(parseNodeVersionString('22.14.2')).toEqual({ major: 22, minor: 14, patch: 2 });
+      expect(parseNodeVersionString('22.14.2')).toEqual({
+        major: 22,
+        minor: 14,
+        patch: 2,
+        precision: 'patch',
+      });
     });
 
     it('parses major.minor (no patch)', () => {
-      expect(parseNodeVersionString('20.19')).toEqual({ major: 20, minor: 19, patch: 0 });
+      expect(parseNodeVersionString('20.19')).toEqual({
+        major: 20,
+        minor: 19,
+        patch: 0,
+        precision: 'minor',
+      });
     });
 
     it('parses bare major', () => {
-      expect(parseNodeVersionString('18')).toEqual({ major: 18, minor: 0, patch: 0 });
+      expect(parseNodeVersionString('18')).toEqual({
+        major: 18,
+        minor: 0,
+        patch: 0,
+        precision: 'major',
+      });
+    });
+
+    it('parses bare major-only supported version "22"', () => {
+      expect(parseNodeVersionString('22')).toEqual({
+        major: 22,
+        minor: 0,
+        patch: 0,
+        precision: 'major',
+      });
     });
 
     it('returns undefined for lts/*', () => {
@@ -104,7 +188,12 @@ describe('node-version', () => {
     });
 
     it('handles whitespace and newlines', () => {
-      expect(parseNodeVersionString('  22.14.2\n')).toEqual({ major: 22, minor: 14, patch: 2 });
+      expect(parseNodeVersionString('  22.14.2\n')).toEqual({
+        major: 22,
+        minor: 14,
+        patch: 2,
+        precision: 'patch',
+      });
     });
   });
 
@@ -288,6 +377,32 @@ describe('node-version', () => {
       const writtenContent = vi.mocked(fsModule.writeFileSync).mock.calls[0][1] as string;
       const parsed = JSON.parse(writtenContent);
       expect(parsed.engines.node).toBe('>=22.12');
+    });
+
+    it('preserves tab indentation using detect-indent', async () => {
+      const fsModule = await import('node:fs');
+      const originalContent = '{\n\t"name": "my-app",\n\t"engines": {\n\t\t"node": ">=16"\n\t}\n}';
+      vi.mocked(fsModule.readFileSync).mockReturnValue(originalContent);
+      vi.mocked(fsModule.writeFileSync).mockImplementation(() => {});
+
+      updateEnginesNode('/project/package.json', '>=22.12');
+
+      const writtenContent = vi.mocked(fsModule.writeFileSync).mock.calls[0][1] as string;
+      expect(writtenContent).toContain('\t"engines"');
+      expect(writtenContent).toContain('"node": ">=22.12"');
+    });
+
+    it('defaults to 2-space indent for minified JSON', async () => {
+      const fsModule = await import('node:fs');
+      const originalContent = '{"name":"my-app","engines":{"node":">=16"}}';
+      vi.mocked(fsModule.readFileSync).mockReturnValue(originalContent);
+      vi.mocked(fsModule.writeFileSync).mockImplementation(() => {});
+
+      updateEnginesNode('/project/package.json', '>=22.12');
+
+      const writtenContent = vi.mocked(fsModule.writeFileSync).mock.calls[0][1] as string;
+      // Should expand to 2-space indent (the default) instead of staying minified
+      expect(writtenContent).toContain('  "');
     });
   });
 });

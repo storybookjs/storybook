@@ -38,7 +38,13 @@ export async function handleUnsupportedNodeRuntime(
   // Check .nvmrc
   if (isInteractive && declared.nvmrcPath && declared.nvmrcVersion) {
     const parsed = parseNodeVersionString(declared.nvmrcVersion);
-    if (parsed && !isNodeVersionSupported(parsed.major, parsed.minor, parsed.patch)) {
+    if (
+      parsed &&
+      !isNodeVersionSupported(parsed.major, parsed.minor, parsed.patch, {
+        mode: 'nvmrc',
+        precision: parsed.precision,
+      })
+    ) {
       logger.warn(dedent`
         Your .nvmrc specifies Node.js ${declared.nvmrcVersion}, which is below Storybook's
         minimum supported version (${MIN_SUPPORTED_NODE_DESCRIPTION}).

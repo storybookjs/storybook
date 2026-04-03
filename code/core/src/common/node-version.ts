@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import * as find from 'empathic/find';
+import detectIndent from 'detect-indent';
 import { join } from 'pathe';
 
 import { getProjectRoot } from './utils/paths.ts';
@@ -40,18 +41,50 @@ export function formatMinVersion(v: MinNodeVersion): string {
 export const MIN_SUPPORTED_NODE_DESCRIPTION =
   MIN_SUPPORTED_NODE_VERSIONS.map(formatMinVersion).join(' or ');
 
+/** Precision of a parsed Node.js version string: how many components were specified. */
+export type NodeVersionPrecision = 'major' | 'minor' | 'patch';
+
 /**
  * Check whether a Node.js version (major.minor.patch) meets the minimum requirement.
  *
- * A version is supported if:
- * - It matches one of the defined major versions AND meets that major's minor.patch minimum
- * - Its major version is above the highest defined major (future-proofing)
+ * **`mode: 'strict'`** (default — use for runtime version checks):
+ * - Treats missing minor/patch as 0 (`"22"` → 22.0.0, which is NOT supported).
+ * - A version is supported if its major matches one of the defined supported majors
+ *   and its minor.patch meets that major's minimum, or its major is above the highest defined.
+ *
+ * **`mode: 'nvmrc'`** (use when checking a declared `.nvmrc` version):
+ * - Treats missing components as "latest of that level" instead of 0.
+ * - `precision: 'major'` (e.g. `"22"`): supported if the major itself appears in
+ *   MIN_SUPPORTED_NODE_VERSIONS (meaning some supported version exists for that major).
+ * - `precision: 'minor'` (e.g. `"22.14"`): supported if the declared minor meets or
+ *   exceeds the minimum minor for that major.
+ * - `precision: 'patch'`: same as strict mode.
  */
-export function isNodeVersionSupported(major: number, minor: number, patch: number): boolean {
+export function isNodeVersionSupported(
+  major: number,
+  minor: number,
+  patch: number,
+  {
+    mode = 'strict',
+    precision = 'patch',
+  }: { mode?: 'strict' | 'nvmrc'; precision?: NodeVersionPrecision } = {}
+): boolean {
   const maxDefinedMajor = Math.max(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
 
   if (major > maxDefinedMajor) {
     return true;
+  }
+
+  if (mode === 'nvmrc') {
+    if (precision === 'major') {
+      // "22" in .nvmrc means "latest 22.x" — supported if any supported version exists for major 22
+      return MIN_SUPPORTED_NODE_VERSIONS.some((v) => v.major === major);
+    }
+    if (precision === 'minor') {
+      // "22.14" in .nvmrc means "latest 22.14.x" — supported if 22.14 >= minimum minor for major 22
+      return MIN_SUPPORTED_NODE_VERSIONS.some((v) => v.major === major && minor >= v.minor);
+    }
+    // precision === 'patch': fall through to strict comparison
   }
 
   return MIN_SUPPORTED_NODE_VERSIONS.some((min) => {
@@ -66,14 +99,19 @@ export function isNodeVersionSupported(major: number, minor: number, patch: numb
 }
 
 /**
- * Parse a Node.js version string into { major, minor, patch }.
+ * Parse a Node.js version string into { major, minor, patch, precision }.
  *
  * Handles formats: "v22.14.2", "22.14.2", "20.19", "18".
  * Returns undefined for unparseable values (e.g., "lts/*", "lts/hydrogen", "").
+ *
+ * `precision` reflects how many version components were present:
+ *   "22"       → precision 'major'
+ *   "22.14"    → precision 'minor'
+ *   "22.14.2"  → precision 'patch'
  */
 export function parseNodeVersionString(
   str: string
-): { major: number; minor: number; patch: number } | undefined {
+): { major: number; minor: number; patch: number; precision: NodeVersionPrecision } | undefined {
   const trimmed = str.trim().replace(/^v/i, '');
 
   if (!trimmed || !/^\d/.test(trimmed)) {
@@ -90,6 +128,7 @@ export function parseNodeVersionString(
     major: parts[0],
     minor: parts[1] ?? 0,
     patch: parts[2] ?? 0,
+    precision: parts.length >= 3 ? 'patch' : parts.length === 2 ? 'minor' : 'major',
   };
 }
 
@@ -151,7 +190,7 @@ export function updateNvmrc(filePath: string, version: string): void {
   writeFileSync(filePath, `${version}\n`, 'utf-8');
 }
 
-/** Update the engines.node field in a package.json file, preserving formatting. */
+/** Update the engines.node field in a package.json file, preserving indentation. */
 export function updateEnginesNode(packageJsonPath: string, range: string): void {
   const content = readFileSync(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(content);
@@ -161,9 +200,7 @@ export function updateEnginesNode(packageJsonPath: string, range: string): void 
   }
   packageJson.engines.node = range;
 
-  // Detect indentation from the original file
-  const indentMatch = content.match(/^(\s+)"/m);
-  const indent = indentMatch ? indentMatch[1].length : 2;
+  const indent = detectIndent(content).indent || '  ';
 
   writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, indent) + '\n', 'utf-8');
 }

@@ -55,7 +55,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/preview.ts" renderer="solid" language="ts"
+```js filename=".storybook/preview.tsx" renderer="solid" language="ts"
 import type { Preview } from 'storybook-solidjs-vite';
 
 const preview: Preview = {

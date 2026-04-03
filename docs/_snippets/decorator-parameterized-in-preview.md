@@ -93,7 +93,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.js" renderer="solid" language="js"
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js"
 export default {
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
@@ -123,7 +123,7 @@ export default {
 };
 ```
 
-```tsx filename=".storybook/preview.ts" renderer="solid" language="ts"
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts"
 import type { Preview } from 'storybook-solidjs-vite';
 
 const preview: Preview = {

@@ -378,7 +378,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.js" renderer="solid" language="js"
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js"
 import { ThemeProvider } from 'solid-styled-components';
 
 const theme = {
@@ -396,7 +396,7 @@ export const decorators = [
 ];
 ```
 
-```tsx filename=".storybook/preview.ts" renderer="solid" language="ts"
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts"
 import type { Preview } from 'storybook-solidjs-vite';
 
 import { ThemeProvider, DefaultTheme } from 'solid-styled-components';

@@ -28,6 +28,7 @@ export interface BatchRunDescriptor {
   agent: (typeof BATCH_VARIANTS)[number]['agent'];
   model: (typeof BATCH_VARIANTS)[number]['model'];
   effort: (typeof BATCH_VARIANTS)[number]['effort'];
+  prompt: string;
   repetition: number;
   label: string;
   args: string[];
@@ -65,6 +66,7 @@ export interface RunBatchOptions {
   repoRoot?: string;
   evalRoot?: string;
   batchTimestamp?: string;
+  prompt?: string;
   claudeEffort?: (typeof CLAUDE_EFFORTS)[number];
   codexEffort?: (typeof CODEX_EFFORTS)[number];
   log?: (message: string) => void;
@@ -102,6 +104,7 @@ export async function runBatch(
   const descriptors =
     options.descriptors ??
     buildBatchRunDescriptors({
+      prompt: options.prompt,
       claudeEffort: options.claudeEffort,
       codexEffort: options.codexEffort,
     });
@@ -197,6 +200,7 @@ export function buildBatchVariants(
 
 export function buildBatchRunDescriptors(
   options: {
+    prompt?: RunBatchOptions['prompt'];
     claudeEffort?: RunBatchOptions['claudeEffort'];
     codexEffort?: RunBatchOptions['codexEffort'];
   } = {}
@@ -215,10 +219,10 @@ export function buildBatchRunDescriptors(
       ? BATCH_VARIANTS
       : buildBatchVariants(options);
 
-  for (const project of BATCH_PROJECT_NAMES) {
+  for (let repetition = 1; repetition <= BATCH_REPETITIONS; repetition += 1) {
     for (const variant of variants) {
-      for (let repetition = 1; repetition <= BATCH_REPETITIONS; repetition += 1) {
-        descriptors.push(createBatchRunDescriptor(project, variant, repetition));
+      for (const project of BATCH_PROJECT_NAMES) {
+        descriptors.push(createBatchRunDescriptor(project, variant, repetition, options.prompt));
       }
     }
   }
@@ -287,14 +291,16 @@ async function runBatchDescriptor(
 function createBatchRunDescriptor(
   project: BatchRunDescriptor['project'],
   variant: AgentVariant,
-  repetition: number
+  repetition: number,
+  prompt = 'setup'
 ): BatchRunDescriptor {
-  const label = `${project}-${variant.agent}-${variant.model}-${variant.effort}-r${String(repetition).padStart(2, '0')}`;
+  const label = `${project}-${variant.agent}-${variant.model}-${variant.effort}-${prompt}-r${String(repetition).padStart(2, '0')}`;
   return {
     project,
     agent: variant.agent,
     model: variant.model,
     effort: variant.effort,
+    prompt,
     repetition,
     label,
     args: [
@@ -307,6 +313,8 @@ function createBatchRunDescriptor(
       variant.model,
       '-e',
       variant.effort,
+      '--prompt',
+      prompt,
     ],
   };
 }
@@ -321,18 +329,20 @@ function defaultSpawn(
 
 const runBatchArgsSchema = z.object({
   concurrency: z.coerce.number().int().positive().optional(),
+  prompt: z.string().optional(),
   claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
   codexEffort: z.enum(CODEX_EFFORTS).optional(),
 });
 
 export function parseRunBatchArgs(
   argv: string[]
-): Pick<RunBatchOptions, 'claudeEffort' | 'codexEffort' | 'concurrency'> {
+): Pick<RunBatchOptions, 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt'> {
   const { values } = parseArgs({
     args: argv,
     strict: true,
     options: {
       concurrency: { type: 'string' },
+      prompt: { type: 'string' },
       'claude-effort': { type: 'string' },
       'codex-effort': { type: 'string' },
     },
@@ -340,6 +350,7 @@ export function parseRunBatchArgs(
 
   const parsed = runBatchArgsSchema.safeParse({
     concurrency: values.concurrency,
+    prompt: values.prompt,
     claudeEffort: values['claude-effort'],
     codexEffort: values['codex-effort'],
   });

@@ -56,6 +56,8 @@ describe('buildBatchRunDescriptors', () => {
         descriptor.model,
         '-e',
         descriptor.effort,
+        '--prompt',
+        descriptor.prompt,
       ]);
     }
 
@@ -89,6 +91,36 @@ describe('buildBatchRunDescriptors', () => {
       )
     ).toEqual(new Set(['medium']));
   });
+
+  it('uses a prompt override for every batch run descriptor', () => {
+    const descriptors = buildBatchRunDescriptors({ prompt: 'pattern-copy' });
+
+    expect(new Set(descriptors.map((descriptor) => descriptor.prompt))).toEqual(
+      new Set(['pattern-copy'])
+    );
+    expect(descriptors[0]?.args).toContain('--prompt');
+    expect(descriptors[0]?.args).toContain('pattern-copy');
+    expect(descriptors[0]?.label).toContain('-pattern-copy-');
+  });
+
+  it('interleaves projects first so batch startup spreads across repos', () => {
+    const descriptors = buildBatchRunDescriptors();
+
+    expect(
+      descriptors.slice(0, BATCH_PROJECT_NAMES.length * BATCH_VARIANTS.length).map((descriptor) => ({
+        project: descriptor.project,
+        agent: descriptor.agent,
+        repetition: descriptor.repetition,
+      }))
+    ).toEqual([
+      { project: 'edgy', agent: 'claude', repetition: 1 },
+      { project: 'baklava', agent: 'claude', repetition: 1 },
+      { project: 'wikitok', agent: 'claude', repetition: 1 },
+      { project: 'edgy', agent: 'codex', repetition: 1 },
+      { project: 'baklava', agent: 'codex', repetition: 1 },
+      { project: 'wikitok', agent: 'codex', repetition: 1 },
+    ]);
+  });
 });
 
 describe('buildBatchVariants', () => {
@@ -102,9 +134,11 @@ describe('buildBatchVariants', () => {
 });
 
 describe('parseRunBatchArgs', () => {
-  it('parses optional effort overrides and concurrency from the CLI', () => {
+  it('parses optional effort overrides, prompt, and concurrency from the CLI', () => {
     expect(
       parseRunBatchArgs([
+        '--prompt',
+        'pattern-copy',
         '--claude-effort',
         'high',
         '--codex-effort',
@@ -113,6 +147,7 @@ describe('parseRunBatchArgs', () => {
         '3',
       ])
     ).toEqual({
+      prompt: 'pattern-copy',
       claudeEffort: 'high',
       codexEffort: 'medium',
       concurrency: 3,
@@ -204,7 +239,7 @@ describe('runBatch', () => {
 
   it('writes summary metadata and per-run logs under the batch directory', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-run-batch-summary-'));
-    const descriptor = buildBatchRunDescriptors()[0];
+    const descriptor = buildBatchRunDescriptors({ prompt: 'pattern-copy' })[0];
     const spawn = createAutoSpawn([0]);
 
     const summary = await runBatch(
@@ -237,6 +272,7 @@ describe('runBatch', () => {
 
     const logContents = readFileSync(logPath, 'utf-8');
     expect(logContents).toContain('$ node ./scripts/eval/eval.ts');
+    expect(logContents).toContain('--prompt pattern-copy');
     expect(logContents).toContain(`stdout:${descriptor.label}`);
     expect(logContents).toContain(`stderr:${descriptor.label}`);
   });
@@ -262,7 +298,7 @@ function createControlledSpawn() {
     finish: (exitCode?: number | null, signal?: NodeJS.Signals | null) => void;
   }> = [];
 
-  const spawn = vi.fn((_command: string, _args: string[]) => {
+  const spawn = vi.fn(() => {
     active += 1;
     maxActive = Math.max(maxActive, active);
 
@@ -320,7 +356,9 @@ function createAutoSpawn(outcomes: Array<number | Error>) {
 }
 
 function getDescriptorFromArgs(args: string[]) {
-  const descriptors = buildBatchRunDescriptors();
+  const promptIndex = args.indexOf('--prompt');
+  const prompt = promptIndex === -1 ? undefined : args[promptIndex + 1];
+  const descriptors = buildBatchRunDescriptors(prompt ? { prompt } : undefined);
   const descriptor = descriptors.find((candidate) => {
     return candidate.args.join('\0') === args.join('\0');
   });

@@ -1,4 +1,6 @@
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { existsSync } from 'node:fs';
+import { delimiter, join } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import {
@@ -115,42 +117,33 @@ function shouldRetry(error: any, isLastVariation: boolean): boolean {
 }
 
 /**
- * Try executing a command with multiple variations until one succeeds. This is needed on Windows
- * where package managers can be installed in different ways.
- *
- * @param commandVariations - Array of command variations to try
- * @param args - Command arguments
- * @param options - Execa options
- * @returns Promise from execa
+ * Check if a command is available in PATH by looking for the file directly.
+ * This avoids spawning a process just to check existence.
  */
+function isExecutableInPath(command: string): boolean {
+  const pathDirs = (process.env.PATH || '').split(delimiter);
+  return pathDirs.some((dir) => existsSync(join(dir, command)));
+}
+
 function tryCommandVariations(
   commandVariations: string[],
   args: string[],
   options: Options
 ): ResultPromise {
-  let lastError: any;
+  if (commandVariations.length <= 1) {
+    return execa(commandVariations[0], args, options);
+  }
 
-  const tryNext = async (index: number): Promise<any> => {
-    if (index >= commandVariations.length) {
-      throw lastError;
+  // Resolve the best variation synchronously via PATH lookup
+  for (const cmd of commandVariations.slice(0, -1)) {
+    if (isExecutableInPath(cmd)) {
+      logger.debug(`Resolved command variation: ${cmd}`);
+      return execa(cmd, args, options);
     }
+  }
 
-    const cmd = commandVariations[index];
-    try {
-      return await execa(cmd, args, options);
-    } catch (error: any) {
-      lastError = error;
-
-      if (!shouldRetry(error, index === commandVariations.length - 1)) {
-        throw error;
-      }
-
-      logger.debug(`Command "${cmd}" not found, trying next variation...`);
-      return tryNext(index + 1);
-    }
-  };
-
-  return tryNext(0) as ResultPromise;
+  // Fallback to the last variation (bare command name)
+  return execa(commandVariations[commandVariations.length - 1], args, options);
 }
 
 /**

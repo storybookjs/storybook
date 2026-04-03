@@ -51,6 +51,9 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   };
 
   const stubPath = fileURLToPath(import.meta.resolve('./export-mocks/start.js'));
+  const routerMockPath = fileURLToPath(
+    import.meta.resolve('@storybook/tanstack-react/react-router')
+  );
   const basePlugins = reactConfig.plugins ?? [];
   const plugins = [
     ...basePlugins.filter((p) => !isTanStackStartPlugin(p)),
@@ -60,6 +63,16 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
       resolveId: {
         order: 'pre' as const,
         handler(id: string, importer: string | undefined) {
+          // Redirect @tanstack/react-router to our mock, except when
+          // the importer IS the mock (to avoid a circular alias).
+          if (
+            (id === '@tanstack/react-router' || id.startsWith('@tanstack/react-router/')) &&
+            importer &&
+            !importer.includes('export-mocks')
+          ) {
+            return routerMockPath;
+          }
+
           // Intercept TanStack Start packages and sub-paths
           for (const mod of INTERCEPTED_MODULES) {
             if (id === mod || id.startsWith(`${mod}/`)) {

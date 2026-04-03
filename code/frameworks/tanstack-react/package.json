@@ -50,6 +50,11 @@
       "code": "./src/preview.tsx",
       "default": "./dist/preview.js"
     },
+    "./react-router": {
+      "types": "./dist/export-mocks/react-router.d.ts",
+      "code": "./src/export-mocks/react-router.ts",
+      "default": "./dist/export-mocks/react-router.js"
+    },
     "./start": {
       "types": "./dist/export-mocks/start.d.ts",
       "code": "./src/export-mocks/start.ts",

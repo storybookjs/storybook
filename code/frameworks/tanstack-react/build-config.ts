@@ -15,6 +15,10 @@ const config: BuildEntries = {
         exportEntries: ['./start'],
         entryPoint: './src/export-mocks/start.ts',
       },
+      {
+        exportEntries: ['./react-router'],
+        entryPoint: './src/export-mocks/react-router.ts',
+      },
     ],
     node: [
       {

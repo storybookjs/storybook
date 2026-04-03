@@ -1,9 +1,6 @@
 import React from 'react';
 import { fn } from 'storybook/test';
-import type {
-  createServerFn as _createServerFn,
-  ServerFnBuilder,
-} from '@tanstack/start-client-core';
+import type { createServerFn as _createServerFn } from '@tanstack/start-client-core';
 import { onNavigate } from './spies';
 
 export function useServerFn<T extends (...args: Array<any>) => Promise<any>>(

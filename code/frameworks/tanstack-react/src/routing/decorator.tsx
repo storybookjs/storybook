@@ -32,6 +32,7 @@ function createInternalStoryRoute(
   Story: ComponentType,
   routeParameter?: RouterParameters['route']
 ): AnyRootRoute {
+  console.log('paameter ', routeParameter);
   if (routeParameter instanceof RootRoute) {
     const children = routeParameter.children as BaseRoute[] | undefined;
     if (children?.length) {
@@ -64,7 +65,7 @@ function createInternalStoryRoute(
     path: '/',
     getParentRoute: () => root,
   });
-
+  console.log('???');
   root.addChildren([route]);
   return root;
 }
@@ -78,7 +79,6 @@ export function createStoryRouter({
   });
 
   console.log('init mock router with path:', initialPath);
-  history.replace(initialPath);
   const router = createRouter({
     routeTree,
     history,
@@ -86,6 +86,7 @@ export function createStoryRouter({
       return <div>Route not found: {props.routeId}</div>;
     },
   });
+  history.push(initialPath);
 
   history.block({
     blockerFn() {
@@ -100,7 +101,7 @@ export function createStoryRouter({
 export const tanstackRouteDecorator: Decorator = (Story, context) => {
   const routerParams: RouterParameters = context.parameters.tanstack?.router ?? {};
 
-  const routeOptions = routerParams.route;
+  const routeOptions = routerParams.route || context.route;
 
   // we override certain route options from the story parameters if they are set
   if (routeOptions && isRoute(routeOptions)) {

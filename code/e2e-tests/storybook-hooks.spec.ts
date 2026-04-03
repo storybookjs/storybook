@@ -18,7 +18,7 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const sandboxDir =
   process.env.STORYBOOK_SANDBOX_DIR || join(SANDBOX_DIRECTORY, 'react-vite-default-ts');
-const previewFilePath = join(sandboxDir, '.storybook', 'preview.ts');
+const previewFilePath = join(sandboxDir, '.storybook', 'preview.tsx');
 const isStorybookDev = process.env.STORYBOOK_TYPE === 'dev';
 
 test.describe('Storybook hooks', () => {

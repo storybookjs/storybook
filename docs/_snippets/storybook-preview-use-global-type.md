@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.js" renderer="angular" language="ts"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts"
 import { type Preview, componentWrapperDecorator } from '@storybook/angular';
 
 const preview: Preview = {
@@ -30,7 +30,7 @@ export default definePreview({
 });
 ```
 
-```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { ThemeProvider } from 'styled-components';
 
 import { MyThemes } from '../my-theme-folder/my-theme-file';
@@ -51,7 +51,7 @@ const preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Preview } from '@storybook/your-framework';
 
@@ -205,7 +205,7 @@ export default definePreview({
 });
 ```
 
-```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -229,7 +229,7 @@ export default definePreview({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import { ThemeProvider } from 'styled-components';

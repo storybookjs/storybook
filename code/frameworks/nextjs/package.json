@@ -71,6 +71,11 @@
       "code": "./src/preview.tsx",
       "default": "./dist/preview.js"
     },
+    "./preview-shared": {
+      "types": "./dist/preview-shared.d.ts",
+      "code": "./src/preview-shared.ts",
+      "default": "./dist/preview-shared.js"
+    },
     "./router.mock": {
       "types": "./dist/export-mocks/router/index.d.ts",
       "code": "./src/export-mocks/router/index.ts",

@@ -84,6 +84,7 @@
   ],
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
+    "@storybook/nextjs": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "styled-jsx": "5.1.6",

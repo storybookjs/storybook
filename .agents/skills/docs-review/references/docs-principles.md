@@ -27,7 +27,7 @@ The page assumes the right level of prior knowledge. It does not over-explain we
 
 ### 3. Information Shape
 
-The page is organized around the reader's task or question, not around the feature's implementation. Sections follow a logical progression: context → action → result, or definition → usage → edge cases.
+The page is organized around the reader's task or question, not around the feature's implementation. Sections follow a logical progression: context → action → result, or definition → usage → edge cases. When a page contains secondary sections of a different doc type, each section follows the progression appropriate to its own type.
 
 ### 4. Conceptual Clarity
 

@@ -65,8 +65,59 @@ The mocking providers approach is most relevant for frameworks with context prov
 
 ### Avoiding mocking dependencies
 
-You can avoid mocking connected “container” components by splitting container and presentational logic and passing data via props or context. This requires a strict separation — if a component handles both data fetching and rendering, it will still need mocking.
+You can avoid mocking connected “container” components entirely by splitting container and presentational logic, passing data via props or context. This requires a strict separation — if a component handles both data fetching and rendering, it will still need mocking.
 
-An alternative is to create a context that provides container components, allowing you to swap them with mocked presentational counterparts in Storybook. See [mocking providers](./mocking-data-and-modules/mocking-providers.mdx) for details on this approach.
+Rather than importing containers directly (which requires mocking their dependencies), you can create a context that provides the container components. This lets you freely embed containers at any level in the component hierarchy and swap them with mocked presentational counterparts in Storybook.
+
+We recommend dividing context containers by specific pages or views in your app. For example, if you have a `ProfilePage` component, you might set up a file structure like this:
+
+```
+ProfilePage.js
+ProfilePage.stories.js
+ProfilePageContainer.js
+ProfilePageContext.js
+```
+
+<Callout variant=”info” icon=”💡”>
+
+It’s also often helpful to set up a “global” container context (perhaps named `GlobalContainerContext`) for container components that may be rendered on every page of your app and add them to the top level of your application. While it’s possible to place every container within this global context, it should only provide globally required containers.
+
+</Callout>
+
+Here’s how to implement this approach:
+
+First, create a React context and name it `ProfilePageContext`. It does nothing more than export a React context:
+
+<CodeSnippets path=”mock-context-create.md” />
+
+`ProfilePage` is your presentational component. It uses the `useContext` hook to retrieve the container components from `ProfilePageContext`:
+
+<CodeSnippets path=”mock-context-in-use.md” />
+
+#### Mocking containers in Storybook
+
+In Storybook, instead of providing container components through context, you provide their mocked counterparts. In most cases, the mocked versions of these components can be borrowed directly from their associated stories.
+
+<CodeSnippets path=”mock-context-container.md” />
+
+<Callout variant=”info”>
+
+If the same context applies to all `ProfilePage` stories, you can use a [decorator](./decorators.mdx).
+
+</Callout>
+
+#### Providing containers to your application
+
+In your application, you need to provide `ProfilePage` with all of the container components it requires by wrapping it with `ProfilePageContext.Provider`:
+
+For example, in Next.js, this would be your `pages/profile.js` component.
+
+<CodeSnippets path=”mock-context-container-provider.md” />
+
+#### Mocking global containers in Storybook
+
+If you’ve set up `GlobalContainerContext`, you need to set up a decorator within Storybook’s `preview.js` to provide context to all stories. For example:
+
+<CodeSnippets path=”mock-context-container-global.md” />
 
 </If>

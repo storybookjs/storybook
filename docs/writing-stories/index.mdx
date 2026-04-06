@@ -78,7 +78,155 @@ Use the _named_ exports of a CSF file to define your component's stories. We rec
 
 <CodeSnippets path="button-story-with-args.md" />
 
-By default, Storybook renders the component from the meta with the story's `args` passed to it. If you need to customize how a story renders, you can provide a [`render` function](../api/csf/index.mdx) to control the output.
+<If renderer="svelte">
+
+Unlike regular CSF, when using Svelte CSF, you cannot use [`args`](./args.mdx) for children. Instead, you pass children in-between the opening and closing `Story` tags and it will be passed to the component as the `children` snippet prop.
+
+```svelte title="Alert.stories.svelte"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Alert from './Alert.svelte';
+
+  const { Story } = defineMeta({
+    component: Alert,
+  });
+</script>
+
+{/* Renders <Alert>Alert text</Alert> */}
+<Story name="Alert with children">
+  Alert text
+</Story>
+```
+
+If you want to render the children as the entire story itself, you can use the `asChild` prop of the `Story` component, which will ignore the default component rendering and render the children directly.
+
+```svelte title="Button.stories.svelte"
+<Story
+  name="Default Button in alert"
+  asChild
+/>
+  <Alert>
+    Alert text
+    <Button />
+  </Alert>
+</Story>
+```
+
+<Callout variant="warning">
+
+Features which require `args`, like [Controls](../essentials/controls.mdx), will not work when using `asChild`. You can customize the rendering of a story and retain the ability to use `args` by using a [custom render function](#custom-rendering).
+
+</Callout>
+
+</If>
+
+### Custom rendering
+
+<If renderer="svelte">
+
+By default, stories will render the component defined in the `defineMeta` call (for Svelte CSF) or in the default export (for CSF), with the `args` passed to it.
+
+If you need to customize the rendering of your story, you can provide a snippet (for Svelte CSF) or a `render` function (for CSF) that accepts `args` and renders whatever you need.
+
+For example, if you want to render a `Button` inside an `Alert`:
+
+```svelte title="Button.stories.svelte"
+<Story
+  name="Primary in alert"
+  args={{
+    label: 'Button',
+    primary: true,
+  }}>
+  {#snippet template(args)}
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  {/snippet}
+</Story>
+```
+
+<Callout variant="info">
+
+The template snippet or `render` function spreads `args` onto the Button component. This ensures that features like [Controls](../essentials/controls.mdx) will work as expected, allowing you to dynamically change the Button's properties in the Storybook UI.
+
+</Callout>
+
+You can re-use the same render function across stories by applying it at the meta level. For Svelte CSF, define the template snippet outside of the story and assign it to the `render` property of the `defineMeta` function. For CSF, define a `render` function in the meta (or default export).
+
+```svelte title="Button.stories.svelte"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    render: template,
+  });
+</script>
+
+{#snippet template(args)}
+  <Alert>
+    Alert text
+    <Button {...args} />
+  </Alert>
+{/snippet}
+
+<Story name="Default in alert" args={{ label: 'Button' }} />
+
+<Story name="Primary in alert" args={{ label: 'Button', primary: true }} />
+```
+
+Whatever you define at the meta level can be overridden at the story level, so you can still customize the rendering of individual stories if needed.
+
+Finally, `render` functions and template snippets receive a second `context` argument, which contains all other details for the story, including [`parameters`](./parameters.mdx), [`globals`](../essentials/toolbars-and-globals.mdx), and more.
+
+</If>
+
+<If notRenderer="svelte">
+
+By default, stories will render the component defined in the meta (or default export), with the `args` passed to it. If you need to render something else, you can provide a function to the `render` property that returns the desired output.
+
+For example, if you want to render a `Button` inside an `Alert`, you can define a custom render function like this:
+
+<CodeSnippets path="render-custom-in-story.md" />
+
+<Callout variant="info">
+
+The `render` function spreads `args` onto the Button component. This ensures that features like [Controls](../essentials/controls.mdx) will work as expected, allowing you to dynamically change the Button's properties in the Storybook UI.
+
+</Callout>
+
+You can re-use the same render function across stories by applying it at the meta level:
+
+<CodeSnippets path="render-custom-in-meta.md" />
+
+Whatever you define at the meta level can be overridden at the story level, so you can still customize the rendering of individual stories if needed.
+
+Finally, `render` functions receive a second `context` argument, which contains all other details for the story, including [`parameters`](./parameters.mdx), [`globals`](../essentials/toolbars-and-globals.mdx), and more.
+
+</If>
+
+<If renderer="react">
+
+#### Working with React Hooks
+
+[React Hooks](https://react.dev/reference/react) are convenient helper methods to create components using a more streamlined approach. You can use them while creating your component's stories if you need them, although you should treat them as an advanced use case. We **recommend** [args](./args.mdx) as much as possible when writing your own stories. As an example, here's a story that uses React Hooks to change the button's state:
+
+<CodeSnippets path="button-story.md" />
+
+</If>
+
+<If renderer="solid">
+
+#### Working with Solid Signals
+
+[Solid Signals](https://docs.solidjs.com/concepts/intro-to-reactivity) are convenient helper methods to create components using a more streamlined approach. You can use them while creating your component's stories if you need them, although you should treat them as an advanced use case. We **recommend** [args](./args.mdx) as much as possible when writing your own stories. As an example, here's a story that uses Solid Signals to change the button's state:
+
+<CodeSnippets path="button-story.md" />
+
+</If>
 
 ### Rename stories
 
@@ -131,15 +279,69 @@ Addons can enhance args. For instance, [Actions](../essentials/actions.mdx) auto
 
 <Video src="../_assets/writing-stories/addon-actions-demo-optimized.mp4" />
 
+## Using the play function
+
+Storybook's `play` function lets you test component scenarios that otherwise require user intervention. It's a small code snippet that executes once your story renders. For example, if you want to validate a form component, you could write the following story using the `play` function to check how the component responds when filling in the inputs with information:
+
+<CodeSnippets path="login-form-with-play-function.md" />
+
+You can interact with and debug your story's play function in the [interactions panel](../writing-tests/interaction-testing.mdx#debugging-interaction-tests).
+
+For more details, see [Play function](./play-function.mdx).
+
+## Using parameters
+
+Parameters are Storybook's method of defining static metadata for stories. A story's parameters can be used to provide configuration to various addons at the level of a story or group of stories.
+
+For instance, suppose you want to test your Button component against a different set of backgrounds than the other components in your app. You might add a component-level `backgrounds` parameter:
+
+<CodeSnippets path="parameters-in-meta.md" />
+
+![Parameters background color](../_assets/writing-stories/parameters-background-colors.png)
+
+This parameter instructs the backgrounds feature to reconfigure itself whenever a Button story is selected. Most features and addons are configured via a parameter-based API and can be influenced at a [global](./parameters.mdx#global-parameters), [component](./parameters.mdx#component-parameters), and [story](./parameters.mdx#story-parameters) level.
+
+For more details, see [Parameters](./parameters.mdx).
+
+## Using decorators
+
+Decorators are a mechanism to wrap a component in arbitrary markup when rendering a story. Components are often created with assumptions about 'where' they render. Your styles might expect a theme or layout wrapper, or your UI might expect specific context or data providers.
+
+A simple example is adding padding to a component's stories. Accomplish this using a decorator that wraps the stories in a `div` with padding, like so:
+
+<CodeSnippets path="button-story-component-decorator.md" />
+
+Decorators [can be more complex](./decorators.mdx#context-for-mocking) and are often provided by [addons](../configure/user-interface/storybook-addons.mdx). You can also configure decorators at the [story](./decorators.mdx#story-decorators), [component](./decorators.mdx#component-decorators), and [global](./decorators.mdx#global-decorators) level.
+
+For more details, see [Decorators](./decorators.mdx).
+
+## Stories for two or more components
+
+Sometimes you may have two or more components created to work together. For instance, if you have a parent `List` component, it may require child `ListItem` components.
+
+<CodeSnippets path="list-story-starter.md" />
+
+In such cases, it makes sense to [customize the rendering](#custom-rendering) to output the `List` component with different numbers of `ListItem` children.
+
+<CodeSnippets path="list-story-expanded.md" />
+
+You can also reuse _story data_ from the child `ListItem` in your `List` component. That's easier to maintain because you don't have to update it in multiple places.
+
+<CodeSnippets path="list-story-reuse-data.md" />
+
+<Callout variant="info" icon="💡">
+
+There are disadvantages in writing stories like this as you cannot take full advantage of the args mechanism and composing args as you build even more complex composite components. For more discussion, see the [multi component stories](./stories-for-multiple-components.mdx) workflow documentation.
+
+</Callout>
+
 ## Next steps
 
-Now that you understand the basics of writing stories, you can explore the rest of the story APIs:
+Now that you understand the basics of writing stories, explore the rest of the story APIs:
 
 - [**Args**](./args.mdx) to learn how args work in detail
 - [**TypeScript**](./typescript.mdx) to write type-safe stories
-- [**Parameters**](./parameters.mdx) to configure static metadata for stories and addons
-- [**Decorators**](./decorators.mdx) to wrap stories with extra rendering or context
-- [**Loaders**](./loaders.mdx) to load async data before a story renders
-- [**Play function**](./play-function.mdx) to simulate user interactions after a story renders
+- [**Choosing the right API**](./choosing-the-right-api.mdx) to pick the right approach for your use case
 - [**Naming and hierarchy**](./naming-components-and-hierarchy.mdx) to organize your stories in the sidebar
-- [**Stories for multiple components**](./stories-for-multiple-components.mdx) to compose stories across components
+- [**Tags**](./tags.mdx) to control which stories appear where
+- [**Mocking**](./mocking-data-and-modules/index.mdx) to isolate components from external dependencies

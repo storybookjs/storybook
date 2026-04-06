@@ -6,7 +6,7 @@ sidebar:
 
 Loaders are asynchronous functions that run before a story renders, letting you fetch data from a remote API, load assets, or perform other async setup. The loaded data is injected into the story via its render context.
 
-Use loaders when your story needs async data that can't be defined statically. For static story data, use [args](./args.mdx) instead. For mocking API responses or modules, see [mocking data and modules](./mocking-data-and-modules/index.mdx).
+Use loaders when your story needs async data that can't be defined statically. For static story data, use [args](./args.mdx) instead. For mocking API responses or modules, see [mocking data and modules](./mocking-data-and-modules/index.mdx). For help deciding between loaders, args, and parameters, see [choosing the right API](./choosing-the-right-api.mdx).
 
 ## Fetching API data
 
@@ -18,7 +18,9 @@ The response obtained from the remote API call is combined into a `loaded` field
 
 ## Component loaders
 
-To define a loader for all stories of a component, use the `loaders` key of the default CSF export. This works the same as a story loader, but applies to every story in the file.
+To define a loader for all stories of a component, use the `loaders` key of the default CSF export. This works the same as a story loader, but applies to every story in the file:
+
+<CodeSnippets path="component-loader.md" />
 
 ## Global loaders
 

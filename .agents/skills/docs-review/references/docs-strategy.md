@@ -23,7 +23,7 @@ The skill operates in one of five modes. Select the mode before doing any substa
 
 ## Doc Types
 
-Every page has one primary doc type. Select it before editing. If the page contains secondary elements of another type, that is fine — but the primary type determines the page's shape and evaluation criteria.
+Every page has one primary doc type. Select it before editing. A page may also contain **secondary sections** — clearly headed sections whose content follows a different doc type's shape. This is normal and expected. The primary type determines the page's overall shape and evaluation criteria; each secondary section is evaluated by its own type's criteria.
 
 | Doc Type | Page Job | Shape |
 |----------|----------|-------|
@@ -41,13 +41,37 @@ Overview pages in `/docs` (e.g., section landing pages) do not get a special typ
 - Default to `concept` — most overviews explain what a feature area is and how its parts relate.
 - Use `decision guide` when the page is primarily comparative (e.g., choosing a builder or renderer).
 
+### Common Secondary Sections
+
+Some doc type combinations appear frequently and are well-structured by convention:
+
+| Primary Type | Common Secondary Section | Example |
+|---|---|---|
+| `task` | `reference` — API options or configuration table at the end | A "Configure visual tests" task page ending with a table of config options. |
+| `task` | `troubleshooting` — common errors after the procedure | A "Set up Storybook" task page ending with "Common issues" entries. |
+| `concept` | `task` — brief how-to showing the concept in action | A "Decorators" concept page including a short "Add a decorator" procedure. |
+| `concept` | `reference` — summary table of related API surface | A "Controls" concept page ending with a table of annotation types. |
+| `migration` | `troubleshooting` — known issues during migration | A migration guide ending with "If you see error X" fix entries. |
+| `decision guide` | `reference` — comparison table of options | A "Choose a builder" page with a detailed feature-comparison table. |
+
+A secondary section is well-structured when it:
+
+1. Has its own clear heading that signals the content shift (e.g., "API reference", "Troubleshooting", "Quick start").
+2. Follows the shape expected for its doc type (e.g., a reference section uses structured entries, not prose).
+3. Supports the primary page job rather than introducing an unrelated topic.
+
 ### Split and Escalation
 
-If diagnosis reveals the page is overloaded — serving multiple jobs with no clear primary — switch to `strategy` mode or recommend a page split before polishing. Signs of overload:
+If diagnosis reveals the page is overloaded — serving multiple jobs with no clear primary — switch to `strategy` mode or recommend a page split before polishing.
 
-- The page mixes a conceptual explanation with a step-by-step procedure that could stand alone.
+**Not overload:** A page with well-structured secondary sections (see above) is not overloaded. A task page with a reference table at the end, or a concept page with a brief procedure, is normal.
+
+**Signs of genuine overload:**
+
+- The page has no clear primary doc type — two or more types compete for dominance with roughly equal weight.
 - The page covers multiple unrelated features under one heading.
-- The page has grown an FAQ or troubleshooting section that rivals the main content in length.
+- A secondary section has grown large enough to stand alone as its own page (rough signal: it exceeds half the length of the primary content).
+- Conceptual prose and step-by-step instructions are interleaved throughout the page rather than separated into distinct sections.
 
 ## Intervention Thresholds
 

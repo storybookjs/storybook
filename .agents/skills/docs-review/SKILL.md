@@ -73,6 +73,8 @@ Read the page and classify it using the doc types in `references/docs-strategy.m
 
 Always select **one** primary type, even if the page contains secondary elements.
 
+After selecting the primary type, identify any **secondary sections** — sections with their own heading whose content follows a different doc type's shape. Note these for Step 3. See "Common Secondary Sections" in `references/docs-strategy.md` for expected combinations.
+
 ### 3. Diagnose the Draft
 
 Evaluate the page against the quality dimensions in `references/docs-principles.md`, in order:
@@ -84,6 +86,8 @@ Evaluate the page against the quality dimensions in `references/docs-principles.
 5. Task usability
 6. Example quality
 7. Economy
+
+For secondary sections, evaluate dimensions 3 (Information Shape) and 5 (Task Usability) against the secondary section's own doc type, not the page's primary type. All other dimensions apply page-wide.
 
 If the page shows signs of structural weakness, load `references/docs-antipatterns.md` and check for common patterns.
 
@@ -99,7 +103,7 @@ Use the thresholds in `references/docs-strategy.md`:
 
 **Hard rule:** When the draft is structurally weak, do not stop at sentence-level edits. Reorder, split, replace examples, or rewrite the page shape.
 
-**Split/escalation rule:** If the dominant job is unclear or the page serves multiple unrelated jobs, switch to `strategy` mode or recommend a page split before polishing.
+**Split/escalation rule:** If the dominant job is unclear or the page serves multiple unrelated jobs, switch to `strategy` mode or recommend a page split before polishing. Well-structured secondary sections (see `references/docs-strategy.md`) are not a reason to split.
 
 ### 5. Improve or Plan
 

@@ -10,13 +10,15 @@ Each antipattern includes the problem, how to recognize it, and what to do about
 
 **Fix:** Open with what the thing is and what the reader can do with it. Move background to a later section or inline it where it supports a specific point.
 
-## 2. Mixed Concept/Task/Reference Shape
+## 2. Unseparated Mixed Doc Types
 
-**Problem:** A single page tries to explain a concept, walk through a procedure, and serve as an API reference. The reader cannot scan for what they need.
+**Problem:** A single page interleaves explanatory prose, step-by-step instructions, and reference tables without clear sectional boundaries. The reader cannot scan for what they need.
 
-**Recognize it:** The page alternates between explanatory prose, step-by-step instructions, and option/config tables with no clear structure guiding the transitions.
+**Recognize it:** The page alternates between doc type shapes *within the same sections* — e.g., conceptual paragraphs between procedure steps, or config tables dropped mid-narrative with no heading. There are no clear headings signaling a transition from one type of content to another.
 
-**Fix:** Identify the primary doc type. Extract secondary content into its own section with a clear heading, or recommend splitting into separate pages. The primary type determines the page's shape.
+**Not this antipattern:** A page with a clear primary type and well-separated secondary sections (each with its own heading and following its own type's shape) is fine. See "Common Secondary Sections" in `docs-strategy.md`.
+
+**Fix:** Identify the primary doc type. For secondary content that belongs on this page, extract it into its own clearly headed section and ensure it follows its type's shape. For secondary content large enough to stand alone, recommend splitting into a separate page. The primary type determines the page's overall shape.
 
 ## 3. Edge Cases Before the Default Path
 

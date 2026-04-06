@@ -11,17 +11,13 @@ import type {
 
 import type { Meta, ReactRenderer } from '@storybook/react';
 
-import {
-  composeConfigs,
-  composeStories as originalComposeStories,
-  composeStory as originalComposeStory,
-  setProjectAnnotations as originalSetProjectAnnotations,
-  setDefaultProjectAnnotations,
-} from 'storybook/preview-api';
-
-// ! ATTENTION: This needs to be a relative import so it gets prebundled. This is to avoid ESM issues in Nextjs + Jest setups
-import { INTERNAL_DEFAULT_PROJECT_ANNOTATIONS as reactAnnotations } from '../../../renderers/react/src/portable-stories.tsx';
+import { createPortableStoriesImpl } from './portable-stories-impl.ts';
 import * as nextJsAnnotations from './preview.tsx';
+
+const { setProjectAnnotations: _setProjectAnnotations, composeStory: _composeStory, composeStories: _composeStories, INTERNAL_DEFAULT_PROJECT_ANNOTATIONS } =
+  createPortableStoriesImpl(nextJsAnnotations);
+
+export { INTERNAL_DEFAULT_PROJECT_ANNOTATIONS };
 
 /**
  * Function that sets the globalConfig of your storybook. The global config is the preview module of
@@ -47,17 +43,8 @@ export function setProjectAnnotations(
     | NamedOrDefaultProjectAnnotations<any>
     | NamedOrDefaultProjectAnnotations<any>[]
 ): NormalizedProjectAnnotations<ReactRenderer> {
-  setDefaultProjectAnnotations(INTERNAL_DEFAULT_PROJECT_ANNOTATIONS);
-  return originalSetProjectAnnotations(
-    projectAnnotations
-  ) as NormalizedProjectAnnotations<ReactRenderer>;
+  return _setProjectAnnotations(projectAnnotations);
 }
-
-// This will not be necessary once we have auto preset loading
-const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> = composeConfigs([
-  reactAnnotations,
-  nextJsAnnotations,
-]);
 
 /**
  * Function that will receive a story along with meta (e.g. a default export from a .stories file)
@@ -93,13 +80,7 @@ export function composeStory<TArgs extends Args = Args>(
   projectAnnotations?: ProjectAnnotations<ReactRenderer>,
   exportsName?: string
 ): ComposedStoryFn<ReactRenderer, Partial<TArgs>> {
-  return originalComposeStory<ReactRenderer, TArgs>(
-    story as StoryAnnotationsOrFn<ReactRenderer, Args>,
-    componentAnnotations,
-    projectAnnotations,
-    globalThis.globalProjectAnnotations ?? INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
-    exportsName
-  );
+  return _composeStory(story, componentAnnotations, projectAnnotations, exportsName);
 }
 
 /**
@@ -132,12 +113,6 @@ export function composeStory<TArgs extends Args = Args>(
 export function composeStories<TModule extends Store_CSFExports<ReactRenderer, any>>(
   csfExports: TModule,
   projectAnnotations?: ProjectAnnotations<ReactRenderer>
-) {
-  // @ts-expect-error (Converted from ts-ignore)
-  const composedStories = originalComposeStories(csfExports, projectAnnotations, composeStory);
-
-  return composedStories as unknown as Omit<
-    StoriesWithPartialProps<ReactRenderer, TModule>,
-    keyof Store_CSFExports
-  >;
+): Omit<StoriesWithPartialProps<ReactRenderer, TModule>, keyof Store_CSFExports> {
+  return _composeStories(csfExports, projectAnnotations);
 }

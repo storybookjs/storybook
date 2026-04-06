@@ -65,6 +65,11 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
+    "./portable-stories-impl": {
+      "types": "./dist/portable-stories-impl.d.ts",
+      "code": "./src/portable-stories-impl.ts",
+      "default": "./dist/portable-stories-impl.js"
+    },
     "./preset": "./dist/preset.js",
     "./preview": {
       "types": "./dist/preview.d.ts",

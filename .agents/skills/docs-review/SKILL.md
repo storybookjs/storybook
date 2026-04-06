@@ -71,7 +71,7 @@ Read the page and classify it using the doc types in `references/docs-strategy.m
 - `migration` — move from one version or approach to another
 - `decision guide` — choose between options
 
-Always select **one** primary type, even if the page contains secondary elements.
+Always select **one** primary type. If the page contains sections serving a different type, note those as secondary types. The primary type determines the page's overall shape; secondary sections should be clearly headed and internally follow their own type's shape.
 
 ### 3. Diagnose the Draft
 

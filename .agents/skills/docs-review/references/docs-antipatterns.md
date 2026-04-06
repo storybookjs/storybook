@@ -10,13 +10,13 @@ Each antipattern includes the problem, how to recognize it, and what to do about
 
 **Fix:** Open with what the thing is and what the reader can do with it. Move background to a later section or inline it where it supports a specific point.
 
-## 2. Mixed Concept/Task/Reference Shape
+## 2. Unseparated Type Mixing
 
-**Problem:** A single page tries to explain a concept, walk through a procedure, and serve as an API reference. The reader cannot scan for what they need.
+**Problem:** A page contains content serving different doc types (concept, task, reference) but does not clearly separate them. The reader cannot scan for what they need.
 
-**Recognize it:** The page alternates between explanatory prose, step-by-step instructions, and option/config tables with no clear structure guiding the transitions.
+**Recognize it:** The page alternates between explanatory prose, step-by-step instructions, and option/config tables without clear section boundaries. Content of different types is interleaved rather than grouped.
 
-**Fix:** Identify the primary doc type. Extract secondary content into its own section with a clear heading, or recommend splitting into separate pages. The primary type determines the page's shape.
+**Fix:** Identify the primary doc type. Group secondary-type content into clearly headed sections that follow their own type's shape. If no clear primary type emerges, recommend splitting into separate pages. Note: a task page with a headed reference section at the end, or a concept page with a short troubleshooting section, is fine — the antipattern is interleaving, not coexistence.
 
 ## 3. Edge Cases Before the Default Path
 

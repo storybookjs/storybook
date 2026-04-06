@@ -23,7 +23,13 @@ The skill operates in one of five modes. Select the mode before doing any substa
 
 ## Doc Types
 
-Every page has one primary doc type. Select it before editing. If the page contains secondary elements of another type, that is fine — but the primary type determines the page's shape and evaluation criteria.
+Every page has one primary doc type that determines its overall shape and evaluation criteria. Sections within a page may serve a secondary doc type — for example, an API reference table at the end of a task page, or a short troubleshooting section within a concept page.
+
+Rules for secondary sections:
+- The primary type still governs the page's opening, overall progression, and evaluation.
+- Each secondary section must be clearly headed and self-contained enough to serve its type's job.
+- A secondary section should support the primary type's goal, not compete with it.
+- If a secondary section grows large enough to rival the primary content, consider splitting it into its own page.
 
 | Doc Type | Page Job | Shape |
 |----------|----------|-------|
@@ -45,9 +51,9 @@ Overview pages in `/docs` (e.g., section landing pages) do not get a special typ
 
 If diagnosis reveals the page is overloaded — serving multiple jobs with no clear primary — switch to `strategy` mode or recommend a page split before polishing. Signs of overload:
 
-- The page mixes a conceptual explanation with a step-by-step procedure that could stand alone.
+- A secondary section has grown large enough to rival or exceed the primary content.
 - The page covers multiple unrelated features under one heading.
-- The page has grown an FAQ or troubleshooting section that rivals the main content in length.
+- The page has no clear primary type — sections compete rather than support each other.
 
 ## Intervention Thresholds
 

@@ -1,6 +1,59 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { makePayload } from './telemetry-channel.ts';
+import { SIDEBAR_FILTER_CHANGED } from 'storybook/internal/core-events';
+
+import { initTelemetryChannel, makePayload } from './telemetry-channel.ts';
+
+vi.mock('storybook/internal/telemetry', () => ({
+  telemetry: vi.fn(),
+  getLastEvents: vi.fn().mockResolvedValue({}),
+  getSessionId: vi.fn().mockResolvedValue('test-session-id'),
+}));
+
+const { telemetry } = await import('storybook/internal/telemetry');
+
+describe('telemetry-channel', () => {
+  describe('SIDEBAR_FILTER_CHANGED', () => {
+    it('forwards sidebar-filter event to telemetry', () => {
+      const listeners: Record<string, Function> = {};
+      const channel = {
+        on: (event: string, listener: Function) => {
+          listeners[event] = listener;
+        },
+      } as any;
+
+      initTelemetryChannel(channel, { disableTelemetry: false } as any);
+
+      const payload = {
+        trigger: 'interaction' as const,
+        changed: {
+          filterType: 'status' as const,
+          filterId: 'status-value:new',
+          action: 'include' as const,
+        },
+        activeTagFilters: { included: [], excluded: [] },
+        activeStatusFilters: { included: ['status-value:new'], excluded: [] },
+        storyCounts: { 'status-value:new': 3 },
+      };
+
+      listeners[SIDEBAR_FILTER_CHANGED](payload);
+      expect(telemetry).toHaveBeenCalledWith('sidebar-filter', payload);
+    });
+
+    it('does not register listener when telemetry is disabled', () => {
+      const listeners: Record<string, Function> = {};
+      const channel = {
+        on: (event: string, listener: Function) => {
+          listeners[event] = listener;
+        },
+      } as any;
+
+      initTelemetryChannel(channel, { disableTelemetry: true } as any);
+
+      expect(listeners[SIDEBAR_FILTER_CHANGED]).toBeUndefined();
+    });
+  });
+});
 
 describe('makePayload', () => {
   beforeEach(() => {

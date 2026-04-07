@@ -4,6 +4,7 @@ import {
   SHARE_ISOLATE_MODE,
   SHARE_POPOVER_OPENED,
   SHARE_STORY_LINK,
+  SIDEBAR_FILTER_CHANGED,
 } from 'storybook/internal/core-events';
 import { type InitPayload, telemetry } from 'storybook/internal/telemetry';
 import { type CacheEntry, getLastEvents } from 'storybook/internal/telemetry';
@@ -51,6 +52,9 @@ export function initTelemetryChannel(channel: Channel, options: Options) {
     });
     channel.on(SHARE_ISOLATE_MODE, async () => {
       telemetry('share', { action: 'isolate-mode-opened' });
+    });
+    channel.on(SIDEBAR_FILTER_CHANGED, async (payload) => {
+      telemetry('sidebar-filter', payload);
     });
   }
 }

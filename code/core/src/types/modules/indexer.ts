@@ -83,6 +83,7 @@ export type StoryIndexEntry = BaseIndexEntry & {
 export type DocsIndexEntry = BaseIndexEntry & {
   storiesImports: Path[];
   type: 'docs';
+  headings: string[];
 };
 
 export type IndexEntry = StoryIndexEntry | DocsIndexEntry;

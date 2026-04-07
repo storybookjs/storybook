@@ -306,8 +306,14 @@ const Node = React.memo<NodeProps>(function Node(props) {
   ) {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryLeafNode;
 
-    const { testStatus } = getChangeDetectionStatus(statuses || {});
-    const { icon: testIcon, textColor } = getStatus(theme, testStatus);
+    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses || {});
+    // Show test statuses and "new" change detection status at the story level;
+    // other change detection statuses appear at the branch/component level instead
+    const storyStatus =
+      changeStatus === 'status-value:new'
+        ? getMostCriticalStatusValue([changeStatus, testStatus])
+        : testStatus;
+    const { icon: testIcon, textColor } = getStatus(theme, storyStatus);
 
     return (
       <LeafNodeStyleWrapper
@@ -348,10 +354,10 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {contextMenu.node}
         {testIcon ? (
           <StatusButton
-            ariaLabel={`Test status: ${testStatus.replace('status-value:', '')}`}
+            ariaLabel={`${storyStatus === testStatus ? 'Test Status' : 'Change Detection Status'}: ${storyStatus.replace('status-value:', '')}`}
             data-testid="tree-status-button"
             type="button"
-            status={testStatus}
+            status={storyStatus}
             selectedItem={isSelected}
           >
             {testIcon}
@@ -404,21 +410,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
       </RootNode>
     );
   }
-
-  const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const { icon: itemIcon, textColor: itemColor } = getStatus(theme, itemStatus);
-  const itemStatusButton = itemIcon ? (
-    <StatusButton
-      ariaLabel={`Status: ${itemStatus.replace('status-value:', '')}`}
-      data-testid="tree-status-button"
-      role="status"
-      type="button"
-      status={itemStatus}
-      selectedItem={isSelected}
-    >
-      {itemIcon}
-    </StatusButton>
-  ) : null;
 
   if (
     item.type === 'component' ||
@@ -552,6 +543,29 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const LeafNode = isTest ? TestNode : { docs: DocumentNode, story: StoryLeafNode }[item.type];
   const nodeType = isTest ? 'test' : { docs: 'document', story: 'story' }[item.type];
 
+  // For leaf nodes, filter out change detection statuses (except "new")
+  // because change detection statuses should appear at the branch/component level instead
+  const leafStatuses = Object.fromEntries(
+    Object.entries(statuses || {}).filter(
+      ([, status]) =>
+        status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID || status.value === 'status-value:new'
+    )
+  );
+  const leafStatus = getMostCriticalStatusValue(Object.values(leafStatuses).map((s) => s.value));
+  const { icon: leafIcon, textColor: leafColor } = getStatus(theme, leafStatus);
+  const leafStatusButton = leafIcon ? (
+    <StatusButton
+      ariaLabel={`Status: ${leafStatus.replace('status-value:', '')}`}
+      data-testid="tree-status-button"
+      role="status"
+      type="button"
+      status={leafStatus}
+      selectedItem={isSelected}
+    >
+      {leafIcon}
+    </StatusButton>
+  ) : null;
+
   return (
     <LeafNodeStyleWrapper
       key={id}
@@ -565,7 +579,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       onMouseEnter={contextMenu.onMouseEnter}
     >
       <LeafNode
-        style={itemColor && !isSelected ? { color: itemColor } : {}}
+        style={leafColor && !isSelected ? { color: leafColor } : {}}
         href={getLink(item, refId)}
         id={id}
         depth={isOrphan ? item.depth : item.depth - 1}
@@ -587,7 +601,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         </SkipToContentLink>
       )}
       {contextMenu.node}
-      {itemStatusButton}
+      {leafStatusButton}
     </LeafNodeStyleWrapper>
   );
 });

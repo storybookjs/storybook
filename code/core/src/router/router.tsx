@@ -7,6 +7,8 @@ import * as R from 'react-router-dom';
 
 import type { LinkProps, NavigateOptions, RenderData } from './types.ts';
 import { getMatch, parsePath, queryFromLocation } from './utils.ts';
+import { addons } from '../manager-api/index.ts';
+import { NAVIGATE_URL } from '../core-events/index.ts';
 
 const { document } = global;
 
@@ -56,6 +58,14 @@ export const useNavigate = () => {
     }
     if (typeof to === 'string') {
       const target = plain ? to : `?path=${to}`;
+      const [search, hash] = target.split('#');
+
+      if (search === document.location.search && hash) {
+        addons.getChannel().emit(NAVIGATE_URL, `#${hash}`);
+
+        return undefined;
+      }
+
       return navigate(target, options);
     }
     if (typeof to === 'number') {

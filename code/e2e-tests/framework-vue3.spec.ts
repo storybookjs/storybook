@@ -46,4 +46,18 @@ test.describe('Vue 3', () => {
     await sbPage.selectToolbar('[aria-label^="Internationalization locale"]', 'text=/Español/');
     await expect(sbPage.previewRoot()).toContainText('Hola');
   });
+
+  test('Forced globals are cleared when navigating to a story without globals', async ({
+    page,
+  }) => {
+    const sbPage = new SbPage(page, expect);
+
+    // Navigate to a story that forces a background global
+    await sbPage.navigateToStory('core/backgrounds/globals', 'set');
+    await expect(sbPage.getCanvasBodyElement()).toHaveCSS('background-color', 'rgb(255, 0, 0)');
+
+    // Navigate to a story without any forced globals
+    await sbPage.navigateToStory('example/button', 'primary');
+    await expect(sbPage.getCanvasBodyElement()).not.toHaveCSS('background-color', 'rgb(255, 0, 0)');
+  });
 });

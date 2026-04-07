@@ -733,6 +733,26 @@ export const baseTemplates = {
     },
     skipTasks: ['bench', 'vitest-integration'],
   },
+  'angular-cli/vite-default-ts': {
+    name: 'Angular CLI Latest (Vite | TypeScript)',
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      extraDependencies: ['@angular/forms@latest'],
+      useCsfFactory: true,
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    inDevelopment: true,
+    skipTasks: ['bench', 'vitest-integration'],
+    initOptions: { builder: SupportedBuilder.VITE },
+  },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',
     script:

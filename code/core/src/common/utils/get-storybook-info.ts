@@ -38,6 +38,7 @@ export const rendererPackages: Record<string, SupportedRenderer> = {
 
 export const frameworkPackages: Record<string, SupportedFramework> = {
   '@storybook/angular': SupportedFramework.ANGULAR,
+  '@storybook/angular-vite': SupportedFramework.ANGULAR_VITE,
   '@storybook/ember': SupportedFramework.EMBER,
   '@storybook/html-vite': SupportedFramework.HTML_VITE,
   '@storybook/nextjs': SupportedFramework.NEXTJS,

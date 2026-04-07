@@ -107,6 +107,7 @@ const hasFrameworkTemplates = (framework?: string) => {
 
   const frameworksWithTemplates: SupportedFramework[] = [
     SupportedFramework.ANGULAR,
+    SupportedFramework.ANGULAR_VITE,
     SupportedFramework.EMBER,
     SupportedFramework.HTML_VITE,
     SupportedFramework.NEXTJS,

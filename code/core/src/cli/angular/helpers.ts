@@ -36,7 +36,10 @@ export class AngularJSON {
     return Object.keys(this.projects).some((projectName) => {
       const { architect } = this.projects[projectName];
       return Object.keys(architect).some((key) => {
-        return architect[key].builder === '@storybook/angular:start-storybook';
+        return (
+          architect[key].builder === '@storybook/angular:start-storybook' ||
+          architect[key].builder === '@storybook/angular-vite:start-storybook'
+        );
       });
     });
   }
@@ -73,14 +76,18 @@ export class AngularJSON {
     storybookFolder,
     useCompodoc,
     root,
+    useVite = false,
   }: {
     angularProjectName: string;
     storybookFolder: string;
     useCompodoc: boolean;
     root: string;
+    useVite?: boolean;
   }) {
     // add an entry to the angular.json file to setup the storybook builders
     const { architect } = this.projects[angularProjectName];
+
+    const builderPackage = useVite ? '@storybook/angular-vite' : '@storybook/angular';
 
     const baseOptions = {
       configDir: storybookFolder,
@@ -91,7 +98,7 @@ export class AngularJSON {
 
     if (!architect.storybook) {
       architect.storybook = {
-        builder: '@storybook/angular:start-storybook',
+        builder: `${builderPackage}:start-storybook`,
         options: {
           ...baseOptions,
           port: 6006,
@@ -101,7 +108,7 @@ export class AngularJSON {
 
     if (!architect['build-storybook']) {
       architect['build-storybook'] = {
-        builder: '@storybook/angular:build-storybook',
+        builder: `${builderPackage}:build-storybook`,
         options: {
           ...baseOptions,
           outputDir:

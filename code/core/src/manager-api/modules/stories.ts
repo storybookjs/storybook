@@ -11,6 +11,7 @@ import {
   SET_FILTER,
   SET_INDEX,
   SET_STORIES,
+  SIDEBAR_FILTER_CHANGED,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
   STORY_INDEX_INVALIDATED,
@@ -62,6 +63,7 @@ import type { ModuleFn } from '../lib/types.tsx';
 import { buildNavigationUrl } from '../lib/url.ts';
 import type { ComposedRef } from '../root.tsx';
 import { fullStatusStore } from '../stores/status.ts';
+import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
 import { computeStatusFilterFn, parseStatusesParam, serializeStatusesParam } from './statuses.ts';
 import {
   computeStaticFilterFn,
@@ -1248,6 +1250,54 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       provider.channel?.on(STORY_INDEX_INVALIDATED, () => api.fetchIndex());
 
       await api.fetchIndex();
+
+      // Emit telemetry if filters were set via URL params
+      const builtInTagIds = new Set(['_docs', '_play', '_test']);
+      const builtInIncludedTags = initialIncluded.filter((id) => builtInTagIds.has(id));
+      const builtInExcludedTags = initialExcluded.filter((id) => builtInTagIds.has(id));
+      const hasBuiltInTagFilters = builtInIncludedTags.length > 0 || builtInExcludedTags.length > 0;
+      const hasStatusFilters =
+        initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0;
+
+      if (hasBuiltInTagFilters || hasStatusFilters) {
+        // Gather story counts from the now-loaded index and status store
+        const storyCounts: Record<string, number> = {};
+        const { internal_index: currentIndex } = store.getState();
+        if (currentIndex) {
+          const entries = Object.values(currentIndex.entries);
+          // Count stories per active built-in tag filter
+          for (const tagId of [...builtInIncludedTags, ...builtInExcludedTags]) {
+            if (Object.hasOwn(BUILT_IN_FILTERS, tagId)) {
+              const filterDef = BUILT_IN_FILTERS[tagId as keyof typeof BUILT_IN_FILTERS];
+              storyCounts[tagId] = entries.filter((entry) => filterDef(entry)).length;
+            }
+          }
+        }
+        // Count stories per active status filter
+        const allStatuses = fullStatusStore.getAll();
+        for (const statusValue of [...initialIncludedStatuses, ...initialExcludedStatuses]) {
+          let count = 0;
+          Object.values(allStatuses).forEach((statusByTypeId) => {
+            Object.values(statusByTypeId).forEach((status) => {
+              if (status.value === statusValue) count++;
+            });
+          });
+          storyCounts[statusValue] = count;
+        }
+
+        provider.channel?.emit(SIDEBAR_FILTER_CHANGED, {
+          trigger: 'url',
+          activeTagFilters: {
+            included: builtInIncludedTags,
+            excluded: builtInExcludedTags,
+          },
+          activeStatusFilters: {
+            included: [...initialIncludedStatuses],
+            excluded: [...initialExcludedStatuses],
+          },
+          storyCounts,
+        });
+      }
     },
   };
 };

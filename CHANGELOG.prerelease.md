@@ -1,3 +1,13 @@
+## 10.4.0-alpha.8
+
+- A11y: Add aria-live announcements via @react-aria/live-announcer - [#33970](https://github.com/storybookjs/storybook/pull/33970), thanks @copilot-swe-agent!
+- Actions: Fix state mutation and keep newest actions when limit reached - [#34286](https://github.com/storybookjs/storybook/pull/34286), thanks @Sidnioulz!
+- Core: Disable component manifest by default - [#34408](https://github.com/storybookjs/storybook/pull/34408), thanks @yannbf!
+- Core: Implement Git change detection - [#34420](https://github.com/storybookjs/storybook/pull/34420), thanks @ghengeveld!
+- Core: Rename preview.ts to preview.tsx in generated projects - [#34396](https://github.com/storybookjs/storybook/pull/34396), thanks @Sidnioulz!
+- Sidebar: Add dual-slot status icons for change detection and test results - [#34346](https://github.com/storybookjs/storybook/pull/34346), thanks @valentinpalkovic!
+- UI: Improve interactions panel accessibility - [#34110](https://github.com/storybookjs/storybook/pull/34110), thanks @anchmelev!
+
 ## 10.4.0-alpha.7
 
 - CLI: Explicitly tell whether smoke tests passed or failed - [#34419](https://github.com/storybookjs/storybook/pull/34419), thanks @Sidnioulz!

@@ -1,8 +1,6 @@
-import { createStoryRoute, type Meta, type StoryObj } from '@storybook/tanstack-react';
-
+import { type Meta, type StoryObj } from '@storybook/tanstack-react';
 import { expect, userEvent, within } from 'storybook/test';
-
-import { Page, type PageLoaderData } from './Page';
+import { Route, type PageLoaderData } from './Page';
 
 const sampleLoaderData: PageLoaderData = {
   featuredItems: [
@@ -14,22 +12,30 @@ const sampleLoaderData: PageLoaderData = {
 
 const meta = {
   title: 'Example/Page',
-  component: Page,
   parameters: {
     // More on how to position stories at: https://storybook.js.org/docs/configure/story-layout
     layout: 'fullscreen',
+  },
+  component: Route,
+} satisfies Meta<typeof Route>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const LoggedOut: Story = {
+  parameters: {
     tanstack: {
       router: {
-        route: createStoryRoute('/')({ loader: async () => sampleLoaderData }),
+        route: {
+          loader: async () => ({
+            featuredItems: sampleLoaderData.featuredItems,
+          }),
+        },
       },
     },
   },
-} satisfies Meta<typeof Page>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const LoggedOut: Story = {};
+};
 
 // More on component testing: https://storybook.js.org/docs/writing-tests/interaction-testing
 export const LoggedIn: Story = {

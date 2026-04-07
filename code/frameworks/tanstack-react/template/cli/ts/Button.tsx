@@ -1,7 +1,5 @@
 import React from 'react';
 
-import './button.css';
-
 export interface ButtonProps {
   /** Is this the principal call to action on the page? */
   primary?: boolean;

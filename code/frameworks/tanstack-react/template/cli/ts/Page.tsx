@@ -1,19 +1,37 @@
 import React from 'react';
 
-import { Link, useLoaderData, useRouterState } from '@tanstack/react-router';
+import { Link, useLoaderData, useRouterState, createFileRoute } from '@tanstack/react-router';
 
 import { Header } from './Header';
-import './page.css';
 
 type User = {
   name: string;
 };
 
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/storybook': {};
+  }
+}
+
+export const Route = createFileRoute('/storybook')({
+  loader: async () => {
+    return {
+      featuredItems: [
+        { id: 1, title: 'Item 1', description: 'This is the first item.' },
+        { id: 2, title: 'Item 2', description: 'This is the second item.' },
+        { id: 3, title: 'Item 3', description: 'This is the third item.' },
+      ],
+    };
+  },
+  component: () => <Page />,
+});
+
 export type PageLoaderData = {
   featuredItems: Array<{ id: number; title: string; description: string }>;
 };
 
-export const Page: React.FC = () => {
+const Page: React.FC = () => {
   const [user, setUser] = React.useState<User>();
   const { featuredItems } = useLoaderData({ strict: false }) as PageLoaderData;
 

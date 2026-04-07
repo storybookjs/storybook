@@ -5,11 +5,13 @@ import type {
   Builder,
   ModuleGraph,
   ModuleGraphChangeEvent,
+  ModuleNode,
   Status,
   StatusStoreByTypeId,
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
+import { normalizePath } from '../../common/utils/normalize-path.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
@@ -39,6 +41,11 @@ function getStoryIdsByAbsolutePath(
   workingDir: string
 ): Map<string, Set<string>> {
   const storyIdsByFile = new Map<string, Set<string>>();
+  const addStoryId = (filePath: string, storyId: string) => {
+    const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
+    storyIds.add(storyId);
+    storyIdsByFile.set(filePath, storyIds);
+  };
 
   Object.values(storyIndex.entries).forEach((entry) => {
     if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
@@ -46,10 +53,9 @@ function getStoryIdsByAbsolutePath(
     }
 
     const absolutePath = resolve(workingDir, entry.importPath);
-    // logger.info(`Story ${entry.id} absolute path: ${absolutePath}`);
-    const storyIds = storyIdsByFile.get(absolutePath) ?? new Set<string>();
-    storyIds.add(entry.id);
-    storyIdsByFile.set(absolutePath, storyIds);
+    const normalizedAbsolutePath = normalizePath(absolutePath);
+    addStoryId(absolutePath, entry.id);
+    addStoryId(normalizedAbsolutePath, entry.id);
   });
 
   return storyIdsByFile;
@@ -86,7 +92,7 @@ function toRepoRelativePath(repoRoot: string, filePath: string): string {
  */
 export class ChangeDetectionService {
   private disposed = false;
-  private unsubscribe: (() => void) | undefined;
+  private unsubscribeModuleGraph: (() => void) | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private latestModuleGraph: ModuleGraph | undefined;
   private hasReceivedModuleGraph = false;
@@ -94,7 +100,7 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private previousStatuses = new Map<string, Status>();
-  private readonly gitDiffProvider: Pick<GitDiffProvider, 'getChangedFiles' | 'getRepoRoot'>;
+  private gitDiffProvider: GitDiffProvider | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -102,12 +108,12 @@ export class ChangeDetectionService {
     private readonly options: {
       storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
       statusStore: StatusStoreByTypeId;
-      gitDiffProvider?: Pick<GitDiffProvider, 'getChangedFiles' | 'getRepoRoot'>;
+      gitDiffProvider?: GitDiffProvider;
       workingDir?: string;
       debounceMs?: number;
     }
   ) {
-    this.gitDiffProvider = options.gitDiffProvider ?? new GitDiffProvider(options.workingDir);
+    this.gitDiffProvider = options.gitDiffProvider;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
     resetChangeDetectionReadiness();
@@ -136,7 +142,7 @@ export class ChangeDetectionService {
     }
 
     logger.debug('Change detection enabled.');
-    this.unsubscribe = onModuleGraphChange((event) => {
+    this.unsubscribeModuleGraph = onModuleGraphChange((event) => {
       if (this.disposed) {
         return;
       }
@@ -150,6 +156,11 @@ export class ChangeDetectionService {
 
       this.handleBuilderStartupEvent(event);
     });
+    this.getGitDiffProvider().onGitStateChange(() => {
+      if (!this.disposed) {
+        this.scheduleScan(this.debounceMs);
+      }
+    });
   }
 
   async dispose(): Promise<void> {
@@ -161,8 +172,8 @@ export class ChangeDetectionService {
       this.debounceTimer = undefined;
     }
 
-    this.unsubscribe?.();
-    this.unsubscribe = undefined;
+    this.unsubscribeModuleGraph?.();
+    this.unsubscribeModuleGraph = undefined;
   }
 
   private scheduleScan(delayMs: number): void {
@@ -237,26 +248,41 @@ export class ChangeDetectionService {
   }
 
   private async buildStatuses(moduleGraph: ModuleGraph): Promise<Map<string, Status>> {
+    const gitDiffProvider = this.getGitDiffProvider();
     const [changes, repoRoot, storyIndexGenerator] = await Promise.all([
-      this.gitDiffProvider.getChangedFiles(),
-      this.gitDiffProvider.getRepoRoot(),
+      gitDiffProvider.getChangedFiles(),
+      gitDiffProvider.getRepoRoot(),
       this.options.storyIndexGeneratorPromise,
     ]);
 
     const changedFiles = new Set(
-      Array.from(changes.changed).map((filePath) => resolve(repoRoot, filePath))
+      Array.from(changes.changed).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
     );
     const newFiles = new Set(
-      Array.from(changes.new).map((filePath) => resolve(repoRoot, filePath))
+      Array.from(changes.new).map((filePath) => normalizePath(resolve(repoRoot, filePath)))
     );
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
+    const normalizedModuleGraph = new Map<string, Set<ModuleNode>>();
+    moduleGraph.forEach((nodes, filePath) => {
+      const normalizedPath = normalizePath(filePath);
+      const existingNodes = normalizedModuleGraph.get(normalizedPath);
+      if (existingNodes) {
+        nodes.forEach((node) => void existingNodes.add(node));
+      } else {
+        normalizedModuleGraph.set(normalizedPath, new Set(nodes));
+      }
+    });
 
     const storyIndex = await storyIndexGenerator.getIndex();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {
-      const affectedStoryFiles = findAffectedStoryFiles(changedFile, moduleGraph, storyIdsByFile);
+      const affectedStoryFiles = findAffectedStoryFiles(
+        changedFile,
+        normalizedModuleGraph,
+        storyIdsByFile
+      );
       const lowestDistance = Math.min(
         ...Array.from(affectedStoryFiles.values(), ({ distance }) => distance)
       );
@@ -294,6 +320,11 @@ export class ChangeDetectionService {
     }
 
     return statuses;
+  }
+
+  private getGitDiffProvider(): GitDiffProvider {
+    this.gitDiffProvider ??= new GitDiffProvider(this.workingDir);
+    return this.gitDiffProvider;
   }
 
   private applyStatusStorePatch(nextStatuses: Map<string, Status>): void {

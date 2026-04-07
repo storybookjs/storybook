@@ -1,4 +1,4 @@
-import React, { type ComponentProps, type FC } from 'react';
+import React, { type ComponentProps, type FC, useEffect, useRef } from 'react';
 
 import {
   ActionList,
@@ -12,6 +12,7 @@ import type { API_HashEntry, TestProviderState } from 'storybook/internal/types'
 import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 import { store } from '#manager-store';
+import { announce } from '@react-aria/live-announcer';
 import { addons } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -141,6 +142,71 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           : a11yStatusValueToStoryIds['status-value:success'].length > 0
             ? ['positive', 'Accessibility tests passed']
             : ['unknown', 'Run tests to see accessibility results'];
+
+  const prevTestProviderStateRef = useRef(testProviderState);
+  useEffect(() => {
+    const prevState = prevTestProviderStateRef.current;
+    prevTestProviderStateRef.current = testProviderState;
+
+    if (prevState === testProviderState) {
+      return;
+    }
+
+    if (testProviderState === 'test-provider-state:running') {
+      announce('Test run started.', 'polite');
+    } else if (testProviderState === 'test-provider-state:crashed') {
+      announce('Test run crashed.', 'assertive');
+    } else if (
+      testProviderState === 'test-provider-state:succeeded' &&
+      prevState === 'test-provider-state:running'
+    ) {
+      const parts: string[] = [];
+      const errorCount = componentTestStatusValueToStoryIds['status-value:error'].length;
+      const warningCount = componentTestStatusValueToStoryIds['status-value:warning'].length;
+      const passedCount = componentTestStatusValueToStoryIds['status-value:success'].length;
+
+      if (errorCount > 0) {
+        parts.push(`${errorCount} ${errorCount === 1 ? 'component' : 'components'} errored`);
+      }
+      if (warningCount > 0) {
+        parts.push(
+          `${warningCount} ${warningCount === 1 ? 'component' : 'components'} with warnings`
+        );
+      }
+      if (passedCount > 0) {
+        parts.push(`${passedCount} ${passedCount === 1 ? 'component' : 'components'} passed`);
+      }
+
+      let a11yErrorCount = 0;
+      if (hasA11yAddon) {
+        a11yErrorCount = a11yStatusValueToStoryIds['status-value:error'].length;
+        const a11yWarningCount = a11yStatusValueToStoryIds['status-value:warning'].length;
+        if (a11yErrorCount > 0) {
+          parts.push(
+            `${a11yErrorCount} accessibility ${a11yErrorCount === 1 ? 'error' : 'errors'}`
+          );
+        }
+        if (a11yWarningCount > 0) {
+          parts.push(
+            `${a11yWarningCount} accessibility ${a11yWarningCount === 1 ? 'warning' : 'warnings'}`
+          );
+        }
+      }
+
+      const message =
+        parts.length > 0
+          ? `Test run finished. ${parts.join(', ')}.`
+          : 'Test run finished. No results.';
+
+      const hasErrors = errorCount > 0 || (hasA11yAddon && a11yErrorCount > 0);
+      announce(message, hasErrors ? 'assertive' : 'polite');
+    }
+  }, [
+    testProviderState,
+    componentTestStatusValueToStoryIds,
+    a11yStatusValueToStoryIds,
+    hasA11yAddon,
+  ]);
 
   return (
     <Container {...props} inContextMenu={!!entry}>

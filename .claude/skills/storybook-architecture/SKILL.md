@@ -1,0 +1,1 @@
+@../../../.agents/skills/storybook-architecture/SKILL.md

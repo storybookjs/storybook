@@ -206,7 +206,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   argTypeTargetsV7: true,
   backgrounds: true,
   changeDetection: false,
-  componentsManifest: true,
+  componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
   highlight: true,

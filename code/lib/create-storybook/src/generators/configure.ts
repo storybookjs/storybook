@@ -2,7 +2,7 @@ import { stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
-import { Feature, SupportedLanguage } from 'storybook/internal/types';
+import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -35,6 +35,7 @@ interface ConfigurePreviewOptions {
   storybookConfigFolder: string;
   language: SupportedLanguage;
   frameworkPackage?: string;
+  renderer: SupportedRenderer;
 }
 
 const pathExists = async (path: string) => {
@@ -109,8 +110,14 @@ export async function configureMain({
 export async function configurePreview(options: ConfigurePreviewOptions) {
   const { prefix: frameworkPrefix = '' } = options.frameworkPreviewParts || {};
   const isTypescript = options.language === SupportedLanguage.TYPESCRIPT;
+  const isJsx = [
+    SupportedRenderer.REACT,
+    SupportedRenderer.PREACT,
+    SupportedRenderer.REACT_NATIVE,
+    SupportedRenderer.SOLID,
+  ].includes(options.renderer);
 
-  const previewConfigPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
+  const previewConfigPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}${isJsx ? 'x' : ''}`;
 
   // If the framework template included a preview then we have nothing to do
   if (await pathExists(previewConfigPath)) {

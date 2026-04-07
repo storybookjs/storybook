@@ -163,6 +163,7 @@ export type SearchProps = {
   dataset: CombinedDataset;
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
+  updateLastViewed?: (story: { storyId: string; refId: string; anchor?: string }) => void;
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
@@ -173,6 +174,7 @@ export const Search = React.memo<SearchProps>(function Search({
   dataset,
   enableShortcuts = true,
   getLastViewed,
+  updateLastViewed,
   initialQuery = '',
   searchBarContent,
   searchFieldContent,
@@ -283,6 +285,14 @@ export const Search = React.memo<SearchProps>(function Search({
       if (isSearchResult(selectedItem)) {
         const { id: rawId, refId } = selectedItem.item;
         const [storyId, anchor] = rawId.split('#');
+        const previousStoryId = api.getUrlState().storyId;
+
+        const isSamePage = previousStoryId === storyId;
+        if (isSamePage) {
+          // In docs mode, the effect that calls `updateLastViewed` is not triggered when
+          // selecting a story inside the current docs page.
+          updateLastViewed?.({ storyId, refId, anchor });
+        }
 
         api?.selectStory(storyId, undefined, {
           // @ts-expect-error (non strict)
@@ -387,16 +397,33 @@ export const Search = React.memo<SearchProps>(function Search({
         const lastViewed = !input && getLastViewed();
         if (lastViewed && lastViewed.length) {
           // @ts-expect-error (non strict)
-          results = lastViewed.reduce((acc, { storyId, refId }) => {
+          results = lastViewed.reduce((acc, { storyId, refId, anchor }) => {
             const data = dataset.hash[refId];
             if (data && data.index && data.index[storyId]) {
               const story = data.index[storyId];
               const item = story.type === 'story' ? data.index[story.parent] : story;
+              const entryId = anchor ? `${item.id}#${anchor}` : item.id;
               // prevent duplicates
               // @ts-expect-error (non strict)
-              if (!acc.some((res) => res.item.refId === refId && res.item.id === item.id)) {
+              if (!acc.some((res) => res.item.refId === refId && res.item.id === entryId)) {
+                const baseItem = searchItem(item, dataset.hash[refId]);
+                let resultItem = baseItem;
+                if (anchor && item.type === 'docs') {
+                  const matchingHeading = item.headings?.find(
+                    (h: string) => h.replaceAll(' ', '-').toLowerCase() === anchor
+                  );
+                  if (matchingHeading) {
+                    const namePostfix =
+                      baseItem.path?.[0] === matchingHeading ? '' : ` / ${matchingHeading}`;
+                    resultItem = {
+                      ...baseItem,
+                      id: entryId,
+                      name: `${item.name}${namePostfix}`,
+                    };
+                  }
+                }
                 // @ts-expect-error (non strict)
-                acc.push({ item: searchItem(item, dataset.hash[refId]), matches: [], score: 0 });
+                acc.push({ item: resultItem, matches: [], score: 0 });
               }
             }
             return acc;

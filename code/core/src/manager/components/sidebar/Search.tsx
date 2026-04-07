@@ -281,9 +281,15 @@ export const Search = React.memo<SearchProps>(function Search({
         return;
       }
       if (isSearchResult(selectedItem)) {
-        const { id, refId } = selectedItem.item;
-        // @ts-expect-error (non strict)
-        api?.selectStory(id, undefined, { ref: refId !== DEFAULT_REF_ID && refId });
+        const { id: rawId, refId } = selectedItem.item;
+        const [storyId, anchor] = rawId.split('#');
+
+        api?.selectStory(storyId, undefined, {
+          // @ts-expect-error (non strict)
+          ref: refId !== DEFAULT_REF_ID && refId,
+          scrollTo: anchor,
+        });
+
         // @ts-expect-error (non strict)
         inputRef.current.blur();
         showAllComponents(false);

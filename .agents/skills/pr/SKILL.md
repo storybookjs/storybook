@@ -47,10 +47,14 @@ Read `.github/PULL_REQUEST_TEMPLATE.md` from the repository root.
 
 Copy that template **EXACTLY**, including all HTML comments (`<!-- ... -->`). Fill in the relevant sections based on the changes, but keep all comments intact.
 
+## Base branch
+
+Always target `next` — not `main`. The `next` branch is the default development branch for this repository.
+
 ## Command
 
 Always create PRs in draft mode:
 
 ```bash
-gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<ci>"
+gh pr create --draft --base next --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<ci>"
 ```

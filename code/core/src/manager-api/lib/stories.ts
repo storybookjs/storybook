@@ -69,6 +69,7 @@ export const transformSetStoriesStoryDataToPreparedStoryIndex = (
           type: 'docs',
           tags: ['stories-mdx'],
           storiesImports: [],
+          headings: [],
           ...base,
         };
       } else {
@@ -125,7 +126,7 @@ export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStor
         }
         acc[entry.id] = {
           type,
-          ...(type === 'docs' && { tags: ['stories-mdx'], storiesImports: [] }),
+          ...(type === 'docs' && { tags: ['stories-mdx'], storiesImports: [], headings: [] }),
           ...entry,
         } as API_PreparedIndexEntry;
 

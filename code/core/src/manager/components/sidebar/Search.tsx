@@ -203,6 +203,29 @@ export const Search = React.memo<SearchProps>(function Search({
           ...searchItem(datasetValue, dataset.hash[refId]),
           status: mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null,
         });
+
+        // Narrow down type to more specific API_DocsEntry with headings
+        if (datasetValue.type !== 'docs') {
+          continue;
+        }
+
+        if (!globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
+          continue;
+        }
+
+        const headings = datasetValue.headings ?? [];
+        headings.forEach((heading: string) => {
+          const searchItemRef = searchItem(datasetValue, dataset.hash[refId]);
+          const namePostfix = searchItemRef.path?.[0] === heading ? '' : ` / ${heading}`;
+
+          list.push({
+            ...searchItemRef,
+            // TODO add comment about why -> fuse breaks if id is not unique
+            id: `${datasetValue.id}#${heading.replaceAll(' ', '-').toLowerCase()}`,
+            name: `${datasetValue.name}${namePostfix}`,
+            status: mostCriticalStatusValue || groupStatus[datasetValue.id] || null,
+          });
+        });
       }
     }
 

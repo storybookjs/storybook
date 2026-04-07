@@ -1252,7 +1252,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       await api.fetchIndex();
 
       // Emit telemetry if filters were set via URL params
-      const builtInTagIds = new Set(['_docs', '_play', '_test']);
+      const builtInTagIds = new Set(Object.keys(BUILT_IN_FILTERS));
       const builtInIncludedTags = initialIncluded.filter((id) => builtInTagIds.has(id));
       const builtInExcludedTags = initialExcluded.filter((id) => builtInTagIds.has(id));
       const hasBuiltInTagFilters = builtInIncludedTags.length > 0 || builtInExcludedTags.length > 0;

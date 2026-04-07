@@ -282,7 +282,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {contextMenu.node}
         {testIcon ? (
           <StatusButton
-            ariaLabel={`${storyStatus === testStatus ? 'Test Status' : 'Change Detection Status'}: ${storyStatus.replace('status-value:', '')}`}
+            ariaLabel={`${storyStatus === testStatus ? 'Test status' : 'Change Detection Status'}: ${storyStatus.replace('status-value:', '')}`}
             data-testid="tree-status-button"
             type="button"
             status={storyStatus}

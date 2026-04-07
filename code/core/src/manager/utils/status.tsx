@@ -5,6 +5,7 @@ import type { StatusValue } from 'storybook/internal/types';
 import {
   CHANGE_DETECTION_STATUS_TYPE_ID,
   type API_HashEntry,
+  type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
@@ -124,6 +125,22 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
   };
   return statusMapping[status];
 });
+
+export function getChangeDetectionStatus(statuses: StatusByTypeId): {
+  changeStatus: StatusValue;
+  testStatus: StatusValue;
+} {
+  const changeValues = Object.values(statuses)
+    .filter((status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
+    .map((status) => status.value);
+  const testValues = Object.values(statuses)
+    .filter((status) => status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
+    .map((status) => status.value);
+  return {
+    changeStatus: getMostCriticalStatusValue(changeValues),
+    testStatus: getMostCriticalStatusValue(testValues),
+  };
+}
 
 export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusValue => {
   return statusPriority.reduce(

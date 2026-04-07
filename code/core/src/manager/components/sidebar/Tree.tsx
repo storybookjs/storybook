@@ -1,4 +1,4 @@
-import type { ComponentProps, FC, MutableRefObject } from 'react';
+import type { MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, ListItem } from 'storybook/internal/components';
@@ -12,7 +12,7 @@ import {
   type StoryId,
 } from 'storybook/internal/types';
 
-import { CollapseIcon as CollapseIconSvg, ExpandAltIcon, SyncIcon } from '@storybook/icons';
+import { CollapseIcon as CollapseIconSvg, ExpandAltIcon } from '@storybook/icons';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken } from 'polished';
@@ -29,10 +29,12 @@ import { styled, useTheme } from 'storybook/theming';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import {
+  getChangeDetectionStatus,
   getGroupDualStatus,
   getGroupStatus,
   getMostCriticalStatusValue,
   getStatus,
+  statusPriority,
 } from '../../utils/status.tsx';
 import {
   createId,
@@ -151,12 +153,6 @@ const StatusSlots = styled.div({
   alignItems: 'center',
 });
 
-const StatusSlotPlaceholder = styled.span({
-  display: 'inline-flex',
-  width: 28,
-  height: 28,
-});
-
 interface NodeProps {
   item: Item;
   refId: string;
@@ -170,82 +166,14 @@ interface NodeProps {
   setFullyExpanded?: () => void;
   onSelectStoryId: (itemId: string) => void;
   statuses: StatusByTypeId;
-  groupStatus: Record<StoryId, StatusValue>;
   groupDualStatus: Record<StoryId, { change: StatusValue; test: StatusValue }>;
   api: API;
   collapsedData: Record<string, API_HashEntry>;
 }
 
-const PendingStatusIcon: FC<ComponentProps<typeof SyncIcon>> = (props) => {
-  const theme = useTheme();
-  return <SyncIcon {...props} size={12} color={theme.color.defaultText} />;
-};
-
-const StatusIconMap: Record<StatusValue, React.ReactNode | null> = {
-  'status-value:affected': (
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="affected" />
-    </svg>
-  ),
-  'status-value:error': (
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="error" />
-    </svg>
-  ),
-  'status-value:modified': (
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="modified" />
-    </svg>
-  ),
-  'status-value:new': (
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="new" />
-    </svg>
-  ),
-  'status-value:pending': <PendingStatusIcon />,
-  'status-value:success': (
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="success" />
-    </svg>
-  ),
-  'status-value:unknown': null,
-  'status-value:warning': (
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="warning" />
-    </svg>
-  ),
-};
-
 export const ContextMenu = {
   ListItem,
 };
-
-const statusOrder: StatusValue[] = [
-  'status-value:unknown',
-  'status-value:pending',
-  'status-value:success',
-  'status-value:affected',
-  'status-value:modified',
-  'status-value:new',
-  'status-value:warning',
-  'status-value:error',
-];
-
-export function getChangeDetectionStatus(statuses: StatusByTypeId): {
-  changeStatus: StatusValue;
-  testStatus: StatusValue;
-} {
-  const changeValues = Object.values(statuses)
-    .filter((status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
-    .map((status) => status.value);
-  const testValues = Object.values(statuses)
-    .filter((status) => status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
-    .map((status) => status.value);
-  return {
-    changeStatus: getMostCriticalStatusValue(changeValues),
-    testStatus: getMostCriticalStatusValue(testValues),
-  };
-}
 
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
@@ -275,13 +203,13 @@ const Node = React.memo<NodeProps>(function Node(props) {
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
-        .sort((a, b) => statusOrder.indexOf(a[1].value) - statusOrder.indexOf(b[1].value))
+        .sort((a, b) => statusPriority.indexOf(a[1].value) - statusPriority.indexOf(b[1].value))
         .map(([typeId, status]) => ({
           id: typeId,
           title: status.title,
           description: status.description,
           'aria-label': `Test status for ${status.title}: ${status.value}`,
-          icon: StatusIconMap[status.value],
+          icon: getStatus(theme, status.value).icon,
           onClick: () => {
             onSelectStoryId(item.id);
             fullStatusStore.selectStatuses([status]);
@@ -290,7 +218,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     }
 
     return [];
-  }, [item.id, item.type, onSelectStoryId, statuses]);
+  }, [item.id, item.type, onSelectStoryId, statuses, theme]);
 
   const id = createId(item.id, refId);
   const contextMenu =
@@ -497,44 +425,48 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </SkipToContentLink>
         )}
         {contextMenu.node}
-        {(branchChangeIcon || branchTestIcon) && (
+        {branchChangeIcon && branchTestIcon ? (
           <StatusSlots>
-            {branchChangeIcon && branchTestIcon ? (
-              <StatusButton
-                ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
-                data-testid="tree-change-status-button"
-                type="button"
-                status={branchChange}
-                selectedItem={isSelected}
-              >
-                {branchChangeIcon}
-              </StatusButton>
-            ) : (
-              <StatusSlotPlaceholder aria-hidden="true" />
-            )}
-            {branchTestIcon ? (
-              <StatusButton
-                ariaLabel={`Test status: ${branchTest.replace('status-value:', '')}`}
-                data-testid="tree-status-button"
-                type="button"
-                status={branchTest}
-                selectedItem={isSelected}
-              >
-                {branchTestIcon}
-              </StatusButton>
-            ) : (
-              <StatusButton
-                ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
-                data-testid="tree-change-status-button"
-                type="button"
-                status={branchChange}
-                selectedItem={isSelected}
-              >
-                {branchChangeIcon}
-              </StatusButton>
-            )}
+            <StatusButton
+              ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
+              data-testid="tree-change-status-button"
+              type="button"
+              status={branchChange}
+              selectedItem={isSelected}
+            >
+              {branchChangeIcon}
+            </StatusButton>
+            <StatusButton
+              ariaLabel={`Test status: ${branchTest.replace('status-value:', '')}`}
+              data-testid="tree-status-button"
+              type="button"
+              status={branchTest}
+              selectedItem={isSelected}
+            >
+              {branchTestIcon}
+            </StatusButton>
           </StatusSlots>
-        )}
+        ) : branchChangeIcon ? (
+          <StatusButton
+            ariaLabel={`Change status: ${branchChange.replace('status-value:', '')}`}
+            data-testid="tree-change-status-button"
+            type="button"
+            status={branchChange}
+            selectedItem={isSelected}
+          >
+            {branchChangeIcon}
+          </StatusButton>
+        ) : branchTestIcon ? (
+          <StatusButton
+            ariaLabel={`Test status: ${branchTest.replace('status-value:', '')}`}
+            data-testid="tree-status-button"
+            type="button"
+            status={branchTest}
+            selectedItem={isSelected}
+          >
+            {branchTestIcon}
+          </StatusButton>
+        ) : null}
       </LeafNodeStyleWrapper>
     );
   }
@@ -822,7 +754,6 @@ export const Tree = React.memo<{
           key={id}
           item={item}
           statuses={allStatuses?.[itemId] ?? {}}
-          groupStatus={groupStatus}
           groupDualStatus={groupDualStatus}
           refId={refId}
           docsMode={docsMode}

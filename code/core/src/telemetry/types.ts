@@ -44,6 +44,7 @@ export type EventType =
   | 'preview-first-load'
   | 'doctor'
   | 'share'
+  | 'sidebar-filter'
   | 'ghost-stories';
 export interface Dependency {
   version: string | undefined;

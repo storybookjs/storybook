@@ -1,3 +1,10 @@
+## 10.3.5
+
+- Core: Disable component manifest by default - [#34408](https://github.com/storybookjs/storybook/pull/34408), thanks @yannbf!
+
+> [!NOTE]
+> [Version >=0.5.0 of `@storybook/addon-mcp`](https://github.com/storybookjs/mcp/releases/tag/%40storybook%2Faddon-mcp%400.5.0) enables component manifests again. If you're upgrading Storybook from version >= 10.3.0 to >= 10.3.5 and are using the MCP addon, you should also upgrade `@storybook/addon-mcp` to keep the docs toolset in the MCP server.
+
 ## 10.3.4
 
 - Addon-a11y: Clear status transition timer on unmount to prevent test flake - [#34203](https://github.com/storybookjs/storybook/pull/34203), thanks @mixelburg!

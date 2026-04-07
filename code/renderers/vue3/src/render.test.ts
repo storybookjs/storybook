@@ -109,4 +109,20 @@ describe('Render Story', () => {
     expect(observedTheme).toBe('dark');
     expect(reactiveGlobals).toEqual({ theme: 'dark', locale: 'en' });
   });
+
+  it('clears reactive Args when nextArgs is empty', () => {
+    const reactiveArgs = reactive({ argFoo: 'foo', argBar: 'bar' });
+
+    updateArgs(reactiveArgs, {});
+
+    expect(reactiveArgs).toEqual({});
+  });
+
+  it('clears reactive Globals when nextGlobals is empty', () => {
+    const reactiveGlobals = reactive<Globals>({ theme: 'light', locale: 'en' });
+
+    updateArgs<Globals>(reactiveGlobals, {});
+
+    expect(reactiveGlobals).toEqual({});
+  });
 });

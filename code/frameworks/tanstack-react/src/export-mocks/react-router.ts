@@ -99,6 +99,7 @@ export function createFileRoute(path: string) {
     }).update({
       id: path,
       path: path,
+      fullPath: path,
       // any because tanstack router does that
     } as any);
   };

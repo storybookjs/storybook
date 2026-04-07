@@ -51,7 +51,7 @@ export type StoryRouteFileOptions<TRoute extends AnyRoute | undefined = undefine
 
 export type CreateStoryRouteOptions<TRoute extends AnyRoute | undefined = undefined> =
   StoryRouteFileOptions<TRoute> & {
-    path: StoryRoutePath<TRoute>;
+    path?: StoryRoutePath<TRoute>;
   };
 
 export type StoryRouteOptions<TRoute extends AnyRoute | undefined = undefined> =

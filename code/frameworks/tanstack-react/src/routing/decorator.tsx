@@ -13,12 +13,10 @@ import {
 } from '@tanstack/react-router';
 import type { Router, AnyRootRoute } from '@tanstack/react-router';
 import type { RouterParameters } from './types';
-import type { BaseRoute } from '@tanstack/router-core';
-import { onNavigate } from '../export-mocks/spies';
 
 export type MockRouterOptions = {
-  routeTree?: AnyRootRoute;
-  initialPath?: string;
+  Story: ComponentType;
+  context: Parameters<Decorator>[1];
 };
 
 /**
@@ -28,54 +26,89 @@ function isRoute(value: unknown): value is InstanceType<typeof Route> {
   return value instanceof Route || value instanceof RootRoute;
 }
 
-function createInternalStoryRoute(
+// Priority: route from parameters > route from context meta > create new route
+function getRouteFromContext(
   Story: ComponentType,
-  routeParameter?: RouterParameters['route']
+  context: Parameters<Decorator>[1]
 ): AnyRootRoute {
-  if (routeParameter instanceof RootRoute) {
-    const children = routeParameter.children as BaseRoute[] | undefined;
+  const metaRoute = context.route as Route | RootRoute | undefined;
+  const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
+  const routerParameterRoute = routerParameters.route;
+
+  const { route: _route, ...routeOverrides } = routerParameters ?? {};
+
+  const resolvedRoute = isRoute(routerParameterRoute)
+    ? routerParameterRoute
+    : isRoute(metaRoute)
+      ? metaRoute
+      : undefined;
+
+  if (resolvedRoute instanceof RootRoute) {
+    const children = resolvedRoute.children as Route[] | undefined;
     if (children?.length) {
-      children[0].update({ component: () => <Story /> });
+      children[0].update({ component: () => <Story />, ...routeOverrides });
     } else {
-      routeParameter.update({ component: () => <Story /> });
+      resolvedRoute.update({ component: () => <Story />, ...routeOverrides });
     }
-    return routeParameter;
+    return resolvedRoute;
   }
 
-  if (routeParameter instanceof Route) {
+  if (resolvedRoute instanceof Route) {
     const root = createRootRoute();
-    const { id: _id, ...routeOpts } = (routeParameter as any).options ?? {};
+    const { id: _id, ...routeOpts } = (resolvedRoute as any).options ?? {};
 
     const child = createRoute({
       ...routeOpts,
+      ...routeOverrides,
       component: () => <Story />,
       getParentRoute: () => root,
     });
+
     root.addChildren([child]);
     return root;
   }
 
+  // No route instance
+  // create from plain options or default
   const root = createRootRoute();
-
-  // @ts-expect-error route options. HARD to make it work when spreading obj.
-  const route = createRoute({
+  // @ts-expect-error route options spread
+  const child = createRoute({
     component: () => <Story />,
-    ...routeParameter,
-    path: '/',
+    ...routerParameterRoute,
+    path: (routerParameterRoute as any)?.path ?? '/',
     getParentRoute: () => root,
   });
-  root.addChildren([route]);
+  root.addChildren([child]);
   return root;
 }
 
-export function createStoryRouter({
-  routeTree,
-  initialPath = '/',
-}: MockRouterOptions): Router<AnyRootRoute> {
+function createStoryRouter({ Story, context }: MockRouterOptions): Router<AnyRootRoute> {
+  const routerParameters: RouterParameters = context.parameters.tanstack?.router ?? {};
+
+  const routeTree: AnyRootRoute = getRouteFromContext(Story, context);
+
+  const inferredPath =
+    routerParameters?.path ||
+    routeTree.children[0]?.fullPath ||
+    routeTree.children[0]?.path ||
+    routeTree.children[0]?.options?.path;
+
+  const initialPath = inferredPath ?? '/';
+
+  // Interpolate params into the path and append query/search params.
+  let resolvedPath = interpolatePath({
+    path: initialPath,
+    params: routerParameters?.params ?? context.args.params ?? {},
+  }).interpolatedPath;
+  const search = routerParameters?.query ? defaultStringifySearch(routerParameters.query) : '';
+  if (search) {
+    resolvedPath += search;
+  }
   const history = createMemoryHistory({
-    initialEntries: [initialPath],
+    initialEntries: [resolvedPath],
   });
-  history.replace(initialPath);
+
+  history.replace(resolvedPath);
 
   const router = createRouter({
     routeTree,
@@ -84,62 +117,13 @@ export function createStoryRouter({
       return <div>Route not found: {props.routeId}</div>;
     },
   });
-
-  history.block({
-    blockerFn() {
-      onNavigate(history.location.pathname);
-      return true;
-    },
-  });
   return router;
 }
 
 export const tanstackRouteDecorator: Decorator = (Story, context) => {
-  const routerParams: RouterParameters = context.parameters.tanstack?.router ?? {};
-
-  const routeOptions = routerParams.route || context.route;
-
-  // we override certain route options from the story parameters if they are set
-  if (routeOptions && isRoute(routeOptions)) {
-    const overrides: Record<string, unknown> = {};
-    if (routerParams.loader) overrides.loader = routerParams.loader;
-    if (routerParams.beforeLoad) overrides.beforeLoad = routerParams.beforeLoad;
-    if (routerParams.validateSearch) overrides.validateSearch = routerParams.validateSearch;
-    if (routerParams.loaderDeps) overrides.loaderDeps = routerParams.loaderDeps;
-
-    if (Object.keys(overrides).length > 0) {
-      (routeOptions as InstanceType<typeof Route>).update(overrides);
-    }
-  }
-
-  const route = createInternalStoryRoute(Story, routeOptions);
-
-  // Auto-detect initial path from the route or its first child if not explicitly set
-  let initialPath = routerParams.path;
-  if (!initialPath) {
-    if (routeOptions && isRoute(routeOptions) && !(routeOptions instanceof RootRoute)) {
-      initialPath = (routeOptions as any).options?.path ?? (routeOptions as any).path;
-    } else if (route instanceof RootRoute) {
-      const children = (route as any).children as BaseRoute[] | undefined;
-      if (children?.length) {
-        initialPath = (children[0].options as any)?.path;
-      }
-    }
-  }
-
-  // Interpolate params into the path and append query/search params
-  let resolvedPath = interpolatePath({
-    path: initialPath ?? '/',
-    params: routerParams.params ?? {},
-  }).interpolatedPath;
-  const search = routerParams.query ? defaultStringifySearch(routerParams.query) : '';
-  if (search) {
-    resolvedPath += search;
-  }
-
   const router = createStoryRouter({
-    routeTree: route,
-    initialPath: resolvedPath,
+    Story,
+    context,
   });
 
   return <RouterProvider router={router}></RouterProvider>;

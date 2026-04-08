@@ -111,11 +111,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('staticDirs'),
   ]);
 
-  if (core?.disableTelemetry) {
-    await setTelemetryEnabled(false);
-  } else {
-    await setTelemetryEnabled(true);
-  }
+  await setTelemetryEnabled(!core?.disableTelemetry);
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
   if (invokedBy) {

@@ -1,4 +1,3 @@
-import type { AnyRoute } from '@tanstack/react-router';
 import type { CompatibleString } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
@@ -34,16 +33,16 @@ type StorybookConfigFramework = {
 export type StorybookConfig = Omit<StorybookConfigReactVite, keyof StorybookConfigFramework> &
   StorybookConfigFramework;
 
-export interface TanStackPreviewOptions<TRoute extends AnyRoute | undefined = undefined> {
+export interface TanStackPreviewOptions<TRoute = undefined> {
   /** Router configuration for stories */
   router?: RouterParameters<TRoute>;
 }
 
-export interface TanStackParameters<TRoute extends AnyRoute | undefined = undefined> {
+export interface TanStackParameters<TRoute = undefined> {
   /** TanStack framework configuration (router integration). */
   tanstack?: TanStackPreviewOptions<TRoute>;
 }
 
-export interface TanStackTypes<TRoute extends AnyRoute | undefined = undefined> {
+export interface TanStackTypes<TRoute = undefined> {
   parameters: TanStackParameters<TRoute>;
 }

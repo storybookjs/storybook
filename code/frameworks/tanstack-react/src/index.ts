@@ -8,6 +8,7 @@ import type {
   DecoratorFunction,
   ProjectAnnotations,
   Renderer,
+  StoryAnnotations,
 } from 'storybook/internal/types';
 import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 import type { AnyRoute } from '@tanstack/react-router';
@@ -18,11 +19,15 @@ import type { ReactTypes } from '@storybook/react';
 
 import * as tanstackPreview from './preview';
 import type { TanStackTypes } from './types';
-import type { StoryObj as _StoryObj } from '@storybook/react';
+import type { IsRoute } from './routing/types';
+import type { ReactRenderer } from '@storybook/react';
+
+import type { StoryObj as _StoryObj, Meta as _Meta } from '@storybook/react';
 export * from '@storybook/react';
 export * from './types';
 export type {
   CreateStoryRouteOptions,
+  IsRoute,
   StoryRouteFileOptions,
   StoryRouteOptions,
   RouterParameters,
@@ -64,8 +69,35 @@ export function definePreview<
   });
 }
 
-export type StoryObj<TMetaOrCmpOrArgs = unknown> = _StoryObj<TMetaOrCmpOrArgs> &
-  Partial<TanStackTypes>;
+/**
+ * Metadata to configure stories for a component or a TanStack Route.
+ *
+ * When `TCmpOrArgs` is a TanStack Route, the `component` field accepts the
+ * Route object directly and TanStack parameters (params, query, loader, etc.)
+ * are inferred from the route's types.
+ */
+export type Meta<TCmpOrArgs = Args> =
+  IsRoute<TCmpOrArgs> extends true
+    ? Omit<ComponentAnnotations<ReactRenderer, Args>, 'component'> &
+        Partial<TanStackTypes<TCmpOrArgs>> & {
+          component?: TCmpOrArgs;
+        }
+    : _Meta<TCmpOrArgs>;
+
+/**
+ * When the meta's `component` is a TanStack Route, the story inherits
+ * TanStack parameter types for type-safe params/query/loader configuration.
+ */
+export type StoryObj<TMetaOrCmpOrArgs = unknown> = [TMetaOrCmpOrArgs] extends [
+  { component?: infer Component },
+]
+  ? IsRoute<Component> extends true
+    ? StoryAnnotations<ReactRenderer, Args, Partial<Args>> & Partial<TanStackTypes<Component>>
+    : _StoryObj<TMetaOrCmpOrArgs> & Partial<TanStackTypes>
+  : IsRoute<TMetaOrCmpOrArgs> extends true
+    ? StoryAnnotations<ReactRenderer, Args, Partial<Args>> &
+        Partial<TanStackTypes<TMetaOrCmpOrArgs>>
+    : _StoryObj<TMetaOrCmpOrArgs> & Partial<TanStackTypes>;
 
 interface TanStackPreview<
   T extends AddonTypes,

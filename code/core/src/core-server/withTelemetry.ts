@@ -161,6 +161,33 @@ export function isTelemetryEnabled(options: TelemetryOptions) {
   return !options.cliOptions.disableTelemetry;
 }
 
+/**
+ * Resolve telemetry state by loading presets from configDir to check core.disableTelemetry.
+ * Used when run() completes without resolving telemetry state (e.g. CLI commands like
+ * add/remove/doctor/upgrade/migrate that don't load presets themselves).
+ */
+async function resolveTelemetryStateFromConfig(options: TelemetryOptions) {
+  const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
+  if (!configDir) {
+    // No config dir available — default to enabled
+    await setTelemetryEnabled(true);
+    return;
+  }
+
+  try {
+    const presets = await loadAllPresets({
+      configDir,
+      corePresets: [],
+      overridePresets: [],
+    });
+    const core = await presets.apply('core');
+    await setTelemetryEnabled(!core?.disableTelemetry);
+  } catch {
+    // If presets fail to load, conservatively disable
+    await setTelemetryEnabled(false);
+  }
+}
+
 export async function withTelemetry<T>(
   eventType: EventType,
   options: TelemetryOptions,
@@ -189,10 +216,10 @@ export async function withTelemetry<T>(
   try {
     const result = await run();
 
-    // If run() succeeded but telemetry state was never resolved (e.g. CLI commands like
-    // add/remove/doctor that don't load presets), flush the queue — telemetry is on by default.
+    // If run() completed but telemetry state was never resolved (e.g. CLI commands like
+    // add/remove/doctor that don't load presets themselves), load the config to resolve it.
     if (!isTelemetryStateResolved()) {
-      await setTelemetryEnabled(true);
+      await resolveTelemetryStateFromConfig(options);
     }
 
     return result;

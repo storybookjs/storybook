@@ -16,9 +16,14 @@ export * from './sanitize.ts';
 
 export * from './error-collector.ts';
 
-export { getPrecedingUpgrade, getLastEvents, type CacheEntry } from './event-cache.ts';
+export {
+  getPrecedingUpgrade,
+  getLastEvents,
+  type CacheEntry,
+  getAiSetupPending,
+} from './event-cache.ts';
 
-export { getSessionId } from './session-id.ts';
+export { getSessionId, SESSION_TIMEOUT } from './session-id.ts';
 
 export { addToGlobalContext } from './telemetry.ts';
 

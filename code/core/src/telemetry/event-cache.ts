@@ -81,3 +81,18 @@ export const getPrecedingUpgrade = async (
     ? upgradeFields(lastUpgradeEvent)
     : undefined;
 };
+
+/** Shape of the cached ai-setup-pending record. Kept in sync with setup-requirements.ts. */
+interface AiSetupPendingRecord {
+  timestamp: number;
+  sessionId: string;
+  configDir: string;
+  previewFile: string | null;
+  previewHash: string | null;
+  traits: Record<string, string>;
+}
+
+export const getAiSetupPending = async (): Promise<AiSetupPendingRecord | undefined> => {
+  await processingPromise;
+  return (await cache.get('ai-setup-pending')) ?? undefined;
+};

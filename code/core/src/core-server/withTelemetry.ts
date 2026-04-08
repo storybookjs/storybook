@@ -1,7 +1,19 @@
-import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+
+import {
+  HandledError,
+  cache,
+  findConfigFile,
+  isCI,
+  loadAllPresets,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   ErrorCollector,
+  SESSION_TIMEOUT,
+  getAiSetupPending,
+  getLastEvents,
   getPrecedingUpgrade,
   oneWayHash,
   telemetry,
@@ -10,6 +22,7 @@ import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
 import { StorybookError } from '../storybook-error.ts';
+import { detectAgent } from '../telemetry/detect-agent.ts';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;
@@ -158,6 +171,103 @@ export function isTelemetryEnabled(options: TelemetryOptions) {
   return !(options.cliOptions.disableTelemetry || options.cliOptions.test === true);
 }
 
+/**
+ * Check whether the preview file has changed from an ai-setup baseline.
+ * Inlined here to avoid cross-package imports from cli-storybook.
+ */
+async function checkPreviewChanged(
+  configDir: string,
+  baselineFile: string | null,
+  baselineHash: string | null
+): Promise<boolean> {
+  const currentPath = findConfigFile('preview', configDir);
+  if (currentPath !== baselineFile) {
+    return true;
+  }
+  if (!currentPath) {
+    return false;
+  }
+  try {
+    const content = await readFile(currentPath, 'utf-8');
+    const hash = createHash('sha256').update(content).digest('hex');
+    return hash !== baselineHash;
+  } catch {
+    return baselineHash !== null;
+  }
+}
+
+/**
+ * Check for a pending ai-setup record and fire an evidence event if found.
+ * Called from withTelemetry after the boot event for every CLI command.
+ * Gated on: agent detected → pending record exists → within session window.
+ */
+async function collectAiSetupEvidence(
+  eventType: EventType,
+  options: TelemetryOptions
+): Promise<void> {
+  try {
+    // Gate 1: Is this an agent? (cheapest check)
+    const agent = detectAgent();
+    if (!agent) {
+      return;
+    }
+
+    // Gate 2: Is there a pending ai-setup record?
+    const pending = await getAiSetupPending();
+    if (!pending) {
+      return;
+    }
+
+    // Gate 3: Is it within the session window?
+    const msSinceAiPrepare = Date.now() - pending.timestamp;
+    if (msSinceAiPrepare > SESSION_TIMEOUT) {
+      return;
+    }
+
+    // Don't fire evidence for ai-prepare itself
+    if (eventType === 'ai-prepare') {
+      return;
+    }
+
+    // Skip for dev/build — these could be enriched in doTelemetry with story index access
+    if (eventType === 'dev' || eventType === 'build') {
+      return;
+    }
+
+    // Check if preview file changed from baseline
+    const previewChanged = await checkPreviewChanged(
+      pending.configDir,
+      pending.previewFile,
+      pending.previewHash
+    );
+
+    // Check if doctor ran since ai-prepare
+    const lastEvents = await getLastEvents();
+    const doctorBoot = lastEvents.doctor;
+    const doctorRanSinceSetup = Boolean(doctorBoot && doctorBoot.timestamp > pending.timestamp);
+
+    await telemetry(
+      'ai-setup-evidence',
+      {
+        trigger: eventType,
+        msSinceAiPrepare,
+        evidence: {
+          previewChanged,
+          aiAuthoredStories: 0,
+          doctorRanSinceSetup,
+        },
+        traits: pending.traits,
+      },
+      {
+        immediate: true,
+        configDir: options.cliOptions.configDir || options.presetOptions?.configDir,
+      }
+    );
+  } catch {
+    // Evidence collection is best-effort — never block the actual command
+  }
+}
+
 export async function withTelemetry<T>(
   eventType: EventType,
   options: TelemetryOptions,
@@ -183,6 +293,11 @@ export async function withTelemetry<T>(
 
   if (enableTelemetry) {
     telemetry('boot', { eventType }, { stripMetadata: true });
+  }
+
+  if (enableTelemetry) {
+    // Fire-and-forget: don't await, don't block the command
+    collectAiSetupEvidence(eventType, options).catch(() => {});
   }
 
   try {

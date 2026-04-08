@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
 
-import type { ProjectInfo, AiPrompt } from './types.ts';
+import type { ProjectInfo, AiPrompt, AiPrepareTraits } from './types.ts';
 
 /**
  * Builds a markdown-format docs URL with renderer and language query parameters.
@@ -21,7 +21,12 @@ export function getDocsMarkdownUrl(
   return `https://storybook.js.org/docs${versionSegment}/${path}.md${query ? `?${query}` : ''}`;
 }
 
-export function getPrompts(projectInfo: ProjectInfo): AiPrompt[] {
+export function getPrompts(projectInfo: ProjectInfo): { prompts: AiPrompt[]; traits: AiPrepareTraits } {
+  const traits: AiPrepareTraits = {
+    csfSyntax: projectInfo.hasCsfFactoryPreview ? 'factory-v1' : 'csf3-v1',
+    setupGenericV1: 'v1',
+  };
+
   const aiPrompts: AiPrompt[] = [];
 
   aiPrompts.push({
@@ -30,7 +35,7 @@ export function getPrompts(projectInfo: ProjectInfo): AiPrompt[] {
     instructions: getSetupInstructions(projectInfo),
   });
 
-  return aiPrompts;
+  return { prompts: aiPrompts, traits };
 }
 
 function getSetupInstructions(projectInfo: ProjectInfo): string {
@@ -288,8 +293,8 @@ function getProjectOverview(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function generateMarkdownOutput(projectInfo: ProjectInfo): string {
-  const aiPrompts = getPrompts(projectInfo);
+export function generateMarkdownOutput(projectInfo: ProjectInfo): { markdown: string; traits: AiPrepareTraits } {
+  const { prompts: aiPrompts, traits } = getPrompts(projectInfo);
 
   const sections: string[] = [];
 
@@ -303,5 +308,5 @@ export function generateMarkdownOutput(projectInfo: ProjectInfo): string {
     sections.push(aiPrompt.instructions);
   }
 
-  return sections.join('\n\n');
+  return { markdown: sections.join('\n\n'), traits };
 }

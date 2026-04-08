@@ -11,7 +11,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
-import type { AnyRoute } from '@tanstack/react-router';
+import type { AnyRoute, FileRoutesByPath } from '@tanstack/react-router';
 
 import type { ReactMeta, ReactPreview } from '@storybook/react';
 import { __definePreview } from '@storybook/react';
@@ -138,7 +138,7 @@ interface TanStackPreview<
 
   // Overload 2: component is a Route — infers route type from the component itself
   meta<
-    TMetaRoute extends AnyRoute,
+    TMetaRoute extends AnyRoute | FileRoutesByPath[keyof FileRoutesByPath],
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & TanStackTypes<TMetaRoute> & T, any>,
     TMetaArgs extends Partial<TArgs & (TanStackTypes<TMetaRoute> & T)['args']>,

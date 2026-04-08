@@ -1,17 +1,11 @@
 import type { AnyRootRoute, AnyRoute, Route, FileRoutesByPath } from '@tanstack/react-router';
 import type { RouteOptions } from '@tanstack/router-core';
 
-/**
- * Structural check for tanstack Route
- * use invariance `in out` to prevent conditional types from distributing over unions, which causes issues with the `AnyRoute` type.
- */
-export type IsRoute<T> = T extends {
-  types: { allParams: any };
-  options: { loader?: any };
-  path: any;
-}
+export type IsRoute<T> = T extends AnyRoute
   ? true
-  : false;
+  : T extends FileRoutesByPath[keyof FileRoutesByPath]
+    ? true
+    : false;
 
 type StoryRoutePathForRoute<TRoute> = TRoute extends { path: infer P }
   ? unknown extends P

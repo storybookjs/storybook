@@ -1,3 +1,8 @@
+import type { FC, ReactNode } from 'react';
+import React from 'react';
+
+import { Button } from 'storybook/internal/components';
+
 /**
  * Adds `control` prefix to make ID attribute more specific. Removes spaces because spaces are not
  * allowed in ID attributes
@@ -31,3 +36,30 @@ export const getControlSetterButtonId = (value: string, storyId?: string) => {
   const base = value.replace(/\s+/g, '-');
   return storyId ? `set-${storyId}-${base}` : `set-${base}`;
 };
+
+interface SetValueButtonProps {
+  name: string;
+  storyId?: string;
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+export const SetValueButton: FC<SetValueButtonProps> = ({
+  name,
+  storyId,
+  children,
+  onClick,
+  disabled,
+}) => (
+  <Button
+    ariaLabel={false}
+    variant="outline"
+    size="medium"
+    id={getControlSetterButtonId(name, storyId)}
+    onClick={onClick}
+    disabled={disabled}
+  >
+    {children}
+  </Button>
+);

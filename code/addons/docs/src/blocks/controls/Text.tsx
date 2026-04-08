@@ -5,8 +5,7 @@ import { Form } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-import { getControlId } from './helpers';
-import { SetValueButton } from './SetValueButton';
+import { getControlId, SetValueButton } from './helpers';
 import type { ControlProps, TextConfig, TextValue } from './types';
 
 export type TextProps = ControlProps<TextValue | undefined> & TextConfig;
@@ -49,10 +48,9 @@ export const TextControl: FC<TextProps> = ({
       <SetValueButton
         name={name}
         storyId={storyId}
-        label="Set string"
         onClick={onForceVisible}
         disabled={readonly}
-      />
+      >Set string</SetValueButton>
     );
   }
 

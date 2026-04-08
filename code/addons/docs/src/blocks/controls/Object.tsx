@@ -8,8 +8,7 @@ import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 import { cloneDeep } from 'es-toolkit/object';
 import { styled, useTheme } from 'storybook/theming';
 
-import { getControlId } from './helpers';
-import { SetValueButton } from './SetValueButton';
+import { getControlId, SetValueButton } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
 import type { ControlProps, ObjectConfig, ObjectValue } from './types';
 
@@ -209,10 +208,9 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
       <SetValueButton
         name={name}
         storyId={storyId}
-        label="Set object"
         onClick={onForceVisible}
         disabled={readonly}
-      />
+      >Set object</SetValueButton>
     );
   }
 

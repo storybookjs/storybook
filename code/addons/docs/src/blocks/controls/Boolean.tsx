@@ -4,8 +4,7 @@ import React, { useCallback } from 'react';
 import { opacify, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
-import { getControlId } from './helpers';
-import { SetValueButton } from './SetValueButton';
+import { getControlId, SetValueButton } from './helpers';
 import type { BooleanConfig, BooleanValue, ControlProps } from './types';
 
 const Label = styled.label(({ theme }) => ({
@@ -129,10 +128,9 @@ export const BooleanControl: FC<BooleanProps> = ({
       <SetValueButton
         name={name}
         storyId={storyId}
-        label="Set boolean"
         onClick={onSetFalse}
         disabled={readonly}
-      />
+      >Set boolean</SetValueButton>
     );
   }
   const controlId = getControlId(name, storyId);

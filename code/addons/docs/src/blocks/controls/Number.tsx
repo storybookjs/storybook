@@ -5,8 +5,7 @@ import { Form } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-import { getControlId } from './helpers';
-import { SetValueButton } from './SetValueButton';
+import { getControlId, SetValueButton } from './helpers';
 import type { ControlProps, NumberConfig, NumberValue } from './types';
 
 const Wrapper = styled.label({
@@ -103,10 +102,9 @@ export const NumberControl: FC<NumberProps> = ({
       <SetValueButton
         name={name}
         storyId={storyId}
-        label="Set number"
         onClick={onForceVisible}
         disabled={readonly}
-      />
+      >Set number</SetValueButton>
     );
   }
 

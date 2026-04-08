@@ -143,7 +143,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
-  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
+  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
 
   let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);

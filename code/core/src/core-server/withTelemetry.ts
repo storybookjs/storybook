@@ -1,4 +1,10 @@
-import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
+import {
+  HandledError,
+  cache,
+  getStorybookInfo,
+  isCI,
+  loadAllPresets,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   ErrorCollector,
@@ -12,6 +18,7 @@ import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
 import { StorybookError } from '../storybook-error.ts';
+import { dirname } from 'path';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;
@@ -166,22 +173,22 @@ export function isTelemetryEnabled(options: TelemetryOptions) {
  * Used when run() completes without resolving telemetry state (e.g. CLI commands like
  * add/remove/doctor/upgrade/migrate that don't load presets themselves).
  */
-async function resolveTelemetryStateFromConfig(options: TelemetryOptions) {
+async function tryResolveTelemetryStateFromConfig(options: TelemetryOptions) {
   const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
-  if (!configDir) {
-    // No config dir available — default to enabled
-    await setTelemetryEnabled(true);
-    return;
-  }
 
   try {
-    const presets = await loadAllPresets({
+    const { mainConfig } = await getStorybookInfo(
       configDir,
-      corePresets: [],
-      overridePresets: [],
-    });
-    const core = await presets.apply('core');
-    await setTelemetryEnabled(!core?.disableTelemetry);
+      configDir ? dirname(configDir) : undefined
+    );
+
+    if (!mainConfig) {
+      // No config dir available — default to enabled
+      await setTelemetryEnabled(true);
+      return;
+    }
+
+    await setTelemetryEnabled(!mainConfig.core?.disableTelemetry);
   } catch {
     // If presets fail to load, conservatively disable
     await setTelemetryEnabled(false);
@@ -219,15 +226,13 @@ export async function withTelemetry<T>(
     // If run() completed but telemetry state was never resolved (e.g. CLI commands like
     // add/remove/doctor that don't load presets themselves), load the config to resolve it.
     if (!isTelemetryStateResolved()) {
-      await resolveTelemetryStateFromConfig(options);
+      await tryResolveTelemetryStateFromConfig(options);
     }
 
     return result;
   } catch (error: any) {
-    // If telemetry state was never resolved and run() threw (e.g. broken main.js preventing
-    // preset evaluation), conservatively disable — drop any queued events.
     if (!isTelemetryStateResolved()) {
-      await setTelemetryEnabled(false);
+      await tryResolveTelemetryStateFromConfig(options);
     }
 
     if (canceled) {

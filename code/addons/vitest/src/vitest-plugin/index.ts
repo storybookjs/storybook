@@ -218,6 +218,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply('features', {}),
   ]);
 
+  if (core?.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)) {
+    await setTelemetryEnabled(false);
+  } else {
+    await setTelemetryEnabled(true);
+  }
+
   const pluginsToIgnore = [
     'storybook:react-docgen-plugin',
     'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
@@ -441,10 +447,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
-
-      if (core?.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)) {
-        setTelemetryEnabled(false);
-      }
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
       // before the tests do. If not we may miss the event, we are OK with that.

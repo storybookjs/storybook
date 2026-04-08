@@ -3,6 +3,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   ErrorCollector,
   getPrecedingUpgrade,
+  isTelemetryStateResolved,
   oneWayHash,
   setTelemetryEnabled,
   telemetry,
@@ -140,6 +141,7 @@ export async function sendTelemetryError(
           immediate: true,
           configDir: options.cliOptions.configDir || options.presetOptions?.configDir,
           enableCrashReports: errorLevel === 'full',
+          force: true,
         }
       );
 
@@ -165,7 +167,7 @@ export async function withTelemetry<T>(
   run: () => Promise<T>
 ): Promise<T | undefined> {
   if (!isTelemetryEnabled(options)) {
-    setTelemetryEnabled(false);
+    await setTelemetryEnabled(false);
   }
 
   let canceled = false;
@@ -203,6 +205,12 @@ export async function withTelemetry<T>(
 
     throw error;
   } finally {
+    // If telemetry state was never resolved (presets failed to load or never called
+    // setTelemetryEnabled), conservatively disable it — drop any queued events.
+    if (!isTelemetryStateResolved()) {
+      await setTelemetryEnabled(false);
+    }
+
     const errors = ErrorCollector.getErrors();
     for (const error of errors) {
       await sendTelemetryError(error, eventType, options, false);

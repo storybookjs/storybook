@@ -72,6 +72,11 @@ export function isTelemetryModuleEnabled() {
   return _state !== 'disabled';
 }
 
+/** Check whether the telemetry state has been resolved (is no longer uninitialized). */
+export function isTelemetryStateResolved() {
+  return _state !== 'uninitialized';
+}
+
 // --- Internal send logic ---
 
 async function _processAndSend(

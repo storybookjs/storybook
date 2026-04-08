@@ -45,14 +45,16 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              labels: ['possible bot'],
+              labels: [`agent-scan:${classification}`],
             });
             await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
                 body: [
-              
+                  `⚠️ This PR has been flagged by AgentScan as **${classification}**. Please review the changes carefully and ensure they adhere to our contribution guidelines.`,
+                  '',
+                  'If you believe this is a false positive, please comment on the PR or reach out to the maintainers.',
                 ].join('\n'),
             });
       - name: Close community flagged accounts

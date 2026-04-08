@@ -3,12 +3,12 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import type { StatusValue } from 'storybook/internal/types';
-import {
-  type API_HashEntry,
-  type StatusByTypeId,
-  type StatusesByStoryIdAndTypeId,
-  type StoryId,
+import type {
+  API_HashEntry,
+  StatusByTypeId,
+  StatusesByStoryIdAndTypeId,
+  StatusValue,
+  StoryId,
 } from 'storybook/internal/types';
 
 import {
@@ -208,6 +208,19 @@ const statusOrder: StatusValue[] = [
   'status-value:unknown',
 ];
 
+const HIDDEN_STORY_STATUSES: ReadonlySet<StatusValue> = new Set([
+  'status-value:modified',
+  'status-value:affected',
+]);
+
+const getDisplayStatus = (
+  itemType: Item['type'],
+  status: StatusValue
+): { status: StatusValue; label: string } =>
+  (itemType === 'story' || itemType === 'docs') && HIDDEN_STORY_STATUSES.has(status)
+    ? { status: 'status-value:unknown', label: 'Unknown' }
+    : { status, label: status.split(':')[1].replace(/^./, (char) => char.toUpperCase()) };
+
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
     item,
@@ -227,10 +240,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
   } = props;
   const theme = useTheme();
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
-
-  if (!isDisplayed) {
-    return null;
-  }
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
@@ -253,11 +262,16 @@ const Node = React.memo<NodeProps>(function Node(props) {
     return [];
   }, [item.id, item.type, onSelectStoryId, statuses]);
 
+  let contextMenu = useContextMenu(item, statusLinks, api);
+  if (refId !== 'storybook_internal') {
+    contextMenu = { node: null, onMouseEnter: () => {} };
+  }
+
+  if (!isDisplayed) {
+    return null;
+  }
+
   const id = createId(item.id, refId);
-  const contextMenu =
-    refId === 'storybook_internal'
-      ? useContextMenu(item, statusLinks, api)
-      : { node: null, onMouseEnter: () => {} };
 
   if (
     (item.type === 'story' &&
@@ -270,7 +284,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const statusValue = getMostCriticalStatusValue(
       Object.values(statuses || {}).map((s) => s.value)
     );
-    const { icon, textColor } = getStatus(theme, statusValue);
+    const { status, label } = getDisplayStatus(item.type, statusValue);
+    const { icon, textColor } = getStatus(theme, status);
 
     return (
       <LeafNodeStyleWrapper
@@ -311,10 +326,10 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {contextMenu.node}
         {icon ? (
           <StatusButton
-            ariaLabel={`Status: ${statusValue.replace('status-value:', '')}`}
+            ariaLabel={`Status: ${label}`}
             data-testid="tree-status-button"
             type="button"
-            status={statusValue}
+            status={status}
             selectedItem={isSelected}
           >
             {icon}
@@ -369,14 +384,15 @@ const Node = React.memo<NodeProps>(function Node(props) {
   }
 
   const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const { icon: itemIcon, textColor: itemColor } = getStatus(theme, itemStatus);
+  const { status, label } = getDisplayStatus(item.type, itemStatus);
+  const { icon: itemIcon, textColor: itemColor } = getStatus(theme, status);
   const itemStatusButton = itemIcon ? (
     <StatusButton
-      ariaLabel={`Status: ${itemStatus.replace('status-value:', '')}`}
+      ariaLabel={`Status: ${label}`}
       data-testid="tree-status-button"
       role="status"
       type="button"
-      status={itemStatus}
+      status={status}
       selectedItem={isSelected}
     >
       {itemIcon}
@@ -393,7 +409,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
       item.type
     ];
     const status = getMostCriticalStatusValue([itemStatus, groupStatus?.[item.id]]);
-    const color = status ? getStatus(theme, status).textColor : null;
+    const { status: displayedStatus, label } = getDisplayStatus(item.type, status);
+    const color = displayedStatus ? getStatus(theme, displayedStatus).textColor : null;
     const showBranchStatus = (
       [
         'status-value:modified',
@@ -402,7 +419,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         'status-value:warning',
         'status-value:error',
       ] as StatusValue[]
-    ).includes(status);
+    ).includes(displayedStatus);
 
     return (
       <LeafNodeStyleWrapper
@@ -460,18 +477,19 @@ const Node = React.memo<NodeProps>(function Node(props) {
         {contextMenu.node}
         {showBranchStatus ? (
           <StatusButton
-            ariaLabel={`Status: ${status.replace('status-value:', '')}`}
+            ariaLabel={`Status: ${label}`}
             data-testid="tree-status-button"
             type="button"
-            status={status}
+            status={displayedStatus}
             selectedItem={isSelected}
           >
-            {status === 'status-value:error' || status === 'status-value:warning' ? (
+            {displayedStatus === 'status-value:error' ||
+            displayedStatus === 'status-value:warning' ? (
               <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
                 <UseSymbol type="dot" />
               </svg>
             ) : (
-              getStatus(theme, status).icon
+              getStatus(theme, displayedStatus).icon
             )}
           </StatusButton>
         ) : (

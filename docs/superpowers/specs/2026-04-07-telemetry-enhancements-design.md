@@ -1,18 +1,19 @@
 # Telemetry Enhancements Design
 
-> **Status**: In progress. Co-design between Steve (user) and Claude.
+> **Status**: Design approved. Writing implementation plans.
 > **Started**: 2026-04-07
-> **Mode**: Co-designing → about to write the implementation plan
+> **Updated**: 2026-04-08
+> **Mode**: All sections approved → writing implementation plans
 > **Resume**: see [§ Resume Tomorrow](#resume-tomorrow) at the bottom
 
 ## Resume tomorrow
 
 If you're picking this up fresh:
 1. Read this whole document. It captures every decision made so far.
-2. **Where we left off**: Section 1 (Overview) was approved. Sections 2–8 are written below but **not yet user-reviewed**. Walk through each section, make changes if needed, then mark them as approved.
-3. After all sections are approved: invoke the writing-plans skill (Superpowers) and produce three implementation plans, one per stream (A, B, C).
-4. Then begin executing Stream A first.
-5. **Spike script**: `scripts/spike-extract-features.ts` — run with `node scripts/spike-extract-features.ts ./code` to reproduce the timing numbers if needed. Delete at end of Stream A.
+2. **Where we left off**: All sections approved (2026-04-08). Two workstreams: WS1 (agentic telemetry) and WS2 (feature adoption tracking).
+3. Check if implementation plan files exist at `docs/superpowers/specs/2026-04-08-ws1-*.md` and `2026-04-08-ws2-*.md`. If not, invoke writing-plans skill to produce them.
+4. Execute WS1 first.
+5. **Spike script**: `scripts/spike-extract-features.ts` — delete during WS2 (or whenever convenient).
 6. **Outstanding clarifications** (if any) are listed in [§ Open Questions](#open-questions).
 
 ---
@@ -83,25 +84,28 @@ Ran `scripts/spike-extract-features.ts` against `./code` (which has 505 indexed 
 
 ### Decisions captured in chronological order
 
-1. ✓ **Sequencing**: Three sequential PRs in order A → B → C
+1. ✓ **Sequencing**: ~~Three sequential PRs A → B → C~~ → Two workstreams: WS1 (agentic telemetry) then WS2 (feature adoption tracking)
 2. ✓ **Field-metric collection location**: Originally browser+server hybrid, but the spike showed full server-side extraction is feasible. Now: full extraction inline in CsfFile.parse() and summarizeStats.
 3. ✓ **Sample size**: N/A (no sampling needed)
 4. ✓ **Visit-tracking**: Deferred. Not part of this iteration.
 5. ✓ **Static build handling**: Feature data in `build` event payload only.
 6. ✓ **Preview HMR resend**: No, first measurement is final.
 7. ✓ **Whole-file telemetry**: When extracting features, return data for the whole file (already happens since we extend the existing per-file parse loop).
-8. ✓ **Addon shape**: Sanitize at wire layer only. In-memory `metadata.addons` stays unchanged. Add new `metadata.addonCategories` field (bucket counts).
-9. ✓ **Ghost stories trigger**: Replace modal trigger with post-`PREVIEW_INITIALIZED + delay`. Confirmed safe — ghost-stories shares no code with create-new-story flow.
-10. ✓ **Ghost stories gate broadening**: Once-per-24h-per-project. Drop the same-init-session check.
+8. ✓ **Addon shape**: Sanitize at wire layer only. In-memory `metadata.addons` stays unchanged. Add new `metadata.addonCategories` field (bucket counts). → **Moved to WS2**.
+9. ✓ **Ghost stories trigger**: Replace modal trigger with post-`PREVIEW_INITIALIZED + 10min delay`. ~~+ 5-second debounce~~ → 10 minutes.
+10. ✓ **Ghost stories gate**: ~~Once-per-24h-per-project~~ → Once-ever per project. Use `lastEvents['ghost-stories']` existence as gate.
 11. ✓ **`sb ai prepare` events**: Two events — `ai-prepare` (start) + `ai-prepare-end` (with traits, output mode, duration, success).
-12. ✓ **Prompt trait modeling**: Single flat object with enum values (e.g. `{monorepo: 'v1', themes: 'none', csfSyntax: 'factory-v1'}`).
+12. ✓ **Prompt trait modeling**: Single flat object with enum values. ~~22 traits with placeholders~~ → 2 active traits only (`csfSyntax`, `setupGenericV1`), add more as prompt evolves.
 13. ✓ **Agent in CI fix**: `isCI() && !detectAgent() ? undefined : globalSettings()` — drop the CI guard when agent is detected, so `userSince` is preserved for agent-in-CI runs.
 14. ✓ **Test strategy**: Unit tests + sandbox smoke verification + full e2e telemetry receiver in CI.
 15. ✓ **MCP addon installation**: Add to `react-vite/default-ts` sandbox via `sandbox-templates.ts:382-383` (already partially there — verify wiring and use for our debugging + future e2e).
-16. ✓ **Addon keyword allowlist**: Catalog category names directly without synonyms — `code`, `data`, `state`, `test`, `style`, `design`, `appearance`, `organize`, `mocking`. Common-noise keywords (`storybook`, `storybook-addon`, `component`, `react`, etc.) ignored. Anything outside the allowlist dropped (no fingerprinting risk).
-17. ✓ **Absence vs zero distinction**: Add `complete?: boolean` marker on `IndexInputStats`. Aggregate to `storiesWithCompleteStats` count at the summary level. Metabase can compute coverage and exclude incomplete projects from averages.
+16. ✓ **Addon keyword allowlist**: → **Moved to WS2**.
+17. ✓ **Absence vs zero distinction**: → **Moved to WS2**.
 18. ✓ **No `userType` field needed**: `context.agent` already attached to every event. The agent-in-CI fix preserves `userSince` so subsequent runs in the same agent session are correlatable.
-19. ✓ **userType is implicit** from `context.agent` × `context.inCI`:
+19. ✓ **userType is implicit** from `context.agent` × `context.inCI`.
+20. ✓ **Workstream split (2026-04-08)**: Collapsed three streams into two workstreams by concern. Addon sanitization + addonCategories → WS2. Ghost stories → WS1 with redesigned timing.
+21. ✓ **Ghost stories once-ever cache**: Use existing `lastEvents['ghost-stories']` key existence check.
+22. ✓ **Trait trimming**: Only ship traits inferable from actual prompt.ts branching.
     - `agent` undefined + `inCI` false → human user
     - `agent` undefined + `inCI` true → human in CI (probably build job)
     - `agent` set + `inCI` false → agent on user's machine
@@ -122,21 +126,27 @@ The mock receiver will live at `scripts/mock-telemetry-receiver.ts` (small, reus
 
 ---
 
-## Section 1: Overview & stream sequencing — APPROVED ✓
+## Section 1: Overview & workstream sequencing — APPROVED ✓ (updated 2026-04-08)
 
-Three sequential PRs:
+Two sequential workstreams (changed from the original three-stream plan):
 
-| Stream | Title | Scope |
+| Workstream | Title | Scope |
 |---|---|---|
-| **A** | Metadata enrichment | Feature extraction in csf-tools, summarizeStats expansion, preview.ts deeper parse, addon allowlist sanitizer at wire layer, agent-in-CI userSince fix, add `@storybook/addon-mcp` to satellite-addons.ts |
-| **B** | `sb ai prepare` events | New `ai-prepare` start/end payloads, prompt-trait extraction, optional `--frontmatter` flag for output mode |
-| **C** | Ghost-stories broadening | Trigger change to post-`PREVIEW_INITIALIZED + delay`, 24h-per-project gate, manager-side trigger module |
+| **WS1** | Agentic telemetry | Agent-in-CI `userSince` fix, `sb ai prepare` start event with rich payload, prompt trait extraction (active traits only), `--frontmatter` flag, evidence-based completion tracking (`ai-setup-evidence` events at CLI entry points within 2h session window), `isStoryAIGenerated()` checker colocated with prompt, add `@storybook/addon-mcp` to satellite-addons.ts, ghost stories redesign (10min delay + once-ever gate via lastEvents cache), mock telemetry receiver |
+| **WS2** | Feature adoption tracking | Feature extraction in csf-tools (`IndexInputStats` enrichment, own/meta fields, `complete` marker), `summarizeStats` expansion, `summarizeIndex` `metaStats`, preview.ts deeper parse, addon allowlist sanitizer at wire layer (hash community addons), `addonCategories` bucketing |
 
 **Out of scope**: browser-side visit-tracking, per-visit feature collection, static-build runtime telemetry, preview HMR resend, A/B serving of prompt traits.
 
+**Key changes from original three-stream plan**:
+- Streams A+B+C collapsed into two workstreams by concern (agentic vs feature adoption)
+- Addon sanitization + addonCategories moved from agentic to feature adoption
+- Ghost stories: changed from 24h gate to once-ever with 10min delay
+- Trait set trimmed from 22 to 2 active traits (add more as prompt evolves)
+- `ai-prepare-end` replaced with evidence-based `ai-setup-evidence` events fired from CLI entry points (2026-04-08)
+
 ---
 
-## Section 2: Architecture — end-to-end data flow
+## Section 2: Architecture — end-to-end data flow — APPROVED ✓ (re-scoped to WS1/WS2)
 
 ### Where the new data comes from and where it goes
 
@@ -195,13 +205,42 @@ storyStats: indexAndStats.stats,
 
 `indexAndStats.stats` is an `IndexStatsSummary` produced by `summarizeStats.ts:5-14` from each story's `__stats`. Today it has counters for `loaders, play, tests, render, storyFn, mount, beforeEach, moduleMock, globals, factory, tags`. We extend `IndexInputStats` (the per-story shape) and `IndexStatsSummary` (the rolled-up shape) with new fields. **No new event fires** — the existing `dev` event payload just grows.
 
-### Stream-B specific path: ai-prepare events
+### Stream-B specific path: ai-prepare events + evidence-based completion tracking
+
+**Problem**: `sb ai prepare` exits in seconds (it prints a prompt). The agent then spends 5–120 minutes following the instructions: writing stories, adding decorators, running Vitest, starting dev. We cannot delegate observation to the agent — only SB CLI/Node processes can observe and report.
+
+**Solution**: Evidence-based checkpoint events fired from CLI entry points within the existing 2h session window.
 
 Today, `code/lib/cli-storybook/src/bin/run.ts:326` wraps `aiPrepare()` in `withTelemetry('ai-prepare', ...)`. That sends only the `boot` event. We add:
 - An explicit `telemetry('ai-prepare', startPayload)` call at the start of `aiPrepare()`
-- An explicit `telemetry('ai-prepare-end', endPayload, { immediate: true })` call after the prompt is written
 - A new `traits` accumulator threaded through `prompt.ts` so each conditional trait records its current version
+- A cached `'ai-setup-pending'` record written at ai-prepare time containing a baseline snapshot (preview file hash, configDir, timestamp)
 - Optional `--frontmatter` flag that prepends YAML frontmatter with the same trait data + project context, for use with `--output`
+
+**Evidence collection at subsequent CLI entry points** (replaces the synchronous `ai-prepare-end` event):
+
+```
+  sb ai prepare                    sb dev / sb build / sb doctor / ...
+  ─────────────                    ────────────────────────────────────
+  │                                │
+  ├─ fire telemetry('ai-prepare')  ├─ withTelemetry() boot event
+  ├─ snapshot preview file hash    ├─ detectAgent() → agent present?
+  ├─ cache 'ai-setup-pending'      │    └─ no → skip evidence check
+  ├─ generate prompt + traits      ├─ read 'ai-setup-pending' from cache
+  └─ exit                          │    └─ missing or >2h old → skip
+                                   ├─ collect evidence:
+                                   │   ├─ preview file changed? (hash comparison)
+                                   │   ├─ AI-authored stories? (isStoryAIGenerated check, dev/build only)
+                                   │   └─ doctor ran since setup? (cache timestamp check)
+                                   ├─ fire telemetry('ai-setup-evidence', evidence)
+                                   └─ continue with normal command
+```
+
+**Observation requirements are colocated with the prompt** in `code/lib/cli-storybook/src/ai/setup-requirements.ts`. When the prompt changes (different title prefix, different expected count), both the prompt output and the observation logic update together. The `isStoryAIGenerated()` checker function provides a single swappable point for the planned title→tag migration.
+
+**The single integration point** is `withTelemetry()` (`code/core/src/core-server/withTelemetry.ts`), which already wraps every CLI command. The evidence check runs there after the `boot` event, gated on agent detection (cheap — computed at module load) and cache presence.
+
+**For `dev` specifically**, the story index is available inside `doTelemetry()`. Evidence collection hooks there to get the AI-authored story count from the index. For non-`dev`/`build` commands, `aiAuthoredStories` is `0` (no index available).
 
 ### Stream-C specific path: ghost-stories trigger
 
@@ -216,7 +255,7 @@ The current trigger at `CreateNewStoryFileModal.tsx:177-188` (modal `useEffect` 
 
 ---
 
-## Section 3: Data model — types & event payloads
+## Section 3: Data model — types & event payloads — APPROVED ✓ (§3.1-3.5 → WS2, §3.6-3.7 → WS1)
 
 ### 3.1 New per-story stats fields
 
@@ -380,7 +419,7 @@ metadata.preview = {
 }
 ```
 
-### 3.6 New `ai-prepare` event payloads
+### 3.6 New `ai-prepare` event payload and evidence-based completion tracking
 
 ```ts
 // EXISTING ai-prepare event (sent by withTelemetry's boot wrapper) stays
@@ -403,23 +442,50 @@ type AiPrepareStartPayload = {
     hasCsfFactoryPreview?: boolean;
   };
 };
+```
 
-// NEW ai-prepare-end event payload
-type AiPrepareEndPayload = {
-  success: boolean;
-  durationMs: number;
-  outputMode: 'stdout' | 'file';
-  outputBytes?: number;     // size of generated prompt
-  /**
-   * Flat object of trait names → version strings.
-   * 'none' means the trait was not active.
-   * Otherwise, an enum value like 'v1', 'v2', 'minimal', etc.
-   * See § Section 5 for the full trait list.
-   */
-  traits: Record<string, string>;
-  error?: string;           // if success === false
+#### Cached pending-setup record
+
+Written to the event cache at `ai-prepare` time under the key `'ai-setup-pending'`. Read by subsequent CLI entry points to decide whether to collect evidence.
+
+```ts
+interface AiSetupPendingRecord {
+  timestamp: number;          // Date.now() at ai-prepare time
+  sessionId: string;          // current session ID
+  configDir: string;          // resolved configDir path
+  previewFile: string | null; // filename of preview.{ts,tsx,js,jsx,...} or null
+  previewHash: string | null; // SHA-256 of preview file contents, or null if no file
+  traits: AiPrepareTraits;    // traits from prompt generation
+}
+```
+
+#### Evidence event (replaces synchronous `ai-prepare-end`)
+
+Instead of firing `ai-prepare-end` when the CLI command exits (which only means "we printed the prompt"), we fire `ai-setup-evidence` from subsequent CLI entry points when an agent is detected and a pending setup record exists within the 2h session window.
+
+```ts
+// NEW: ai-setup-evidence event payload
+type AiSetupEvidencePayload = {
+  trigger: EventType;               // which CLI command triggered this check ('dev', 'build', 'doctor', etc.)
+  msSinceAiPrepare: number;         // Date.now() - cached ai-setup-pending timestamp
+  evidence: {
+    previewChanged: boolean;         // content hash differs from baseline (any reason: modified, created, deleted, renamed)
+    aiAuthoredStories: number;       // count of stories passing isStoryAIGenerated() — only at dev/build time, 0 otherwise
+    doctorRanSinceSetup: boolean;    // 'doctor' boot event in cache with timestamp > ai-prepare timestamp
+  };
+  traits: AiPrepareTraits;           // carried from the cached pending record
 };
 ```
+
+**Session window**: Uses the existing `SESSION_TIMEOUT` (2h) from `session-id.ts`. After 2h the cache entry expires silently — no cleanup event, manageable in Metabase.
+
+**Detection order at CLI entry points** (in `withTelemetry()`):
+1. Check `detectAgent()` — bail if no agent (cheap, computed at module load)
+2. Check `'ai-setup-pending'` in event cache — bail if missing
+3. Check timestamp: bail if `Date.now() - pending.timestamp > SESSION_TIMEOUT`
+4. Collect evidence, fire `telemetry('ai-setup-evidence', payload)`
+
+**AI story detection via `isStoryAIGenerated()`**: A checker function in `setup-requirements.ts` that currently checks title prefix (`AI Generated/`). When we migrate to a tag-based approach, this single function is the swap point. The story index is only available at `dev`/`build` time; for other CLI commands, `aiAuthoredStories` is `0`.
 
 ### 3.7 No `userType` field
 
@@ -436,7 +502,7 @@ The `userSince` value (`metadata.userSince`) is currently dropped in CI to avoid
 
 ---
 
-## Section 4: Stream A — Metadata enrichment
+## Section 4: Stream A — Metadata enrichment — APPROVED ✓ (split: agentic items → WS1, feature extraction → WS2)
 
 ### 4.1 Files touched
 
@@ -483,51 +549,32 @@ End-to-end:
 
 ---
 
-## Section 5: Stream B — `sb ai prepare` events + prompt traits
+## Section 5: Stream B — `sb ai prepare` events, prompt traits, and evidence-based completion — APPROVED ✓ (revised 2026-04-08)
 
 ### 5.1 Files touched
 
 | File | Change |
 |---|---|
-| `code/core/src/telemetry/types.ts` | Add `'ai-prepare-end'` to the `EventType` union (line 9-48 area). |
+| `code/core/src/telemetry/types.ts` | Add `'ai-setup-evidence'` to the `EventType` union (line 9-48 area). |
 | `code/lib/cli-storybook/src/ai/types.ts` | Add `AiPrepareTraits` flat object type. Extend `AiPrepareOptions` with `frontmatter?: boolean` (CLI flag). |
 | `code/lib/cli-storybook/src/ai/prompt.ts` | Refactor `getPrompts` and `getSetupInstructions` to thread a `traits: AiPrepareTraits` accumulator. Each conditional branch records its trait value. Today only `csfSyntax: 'factory-v1' \| 'csf3-v1'` is detectable (the only existing branch). New traits like `themes`, `mocking`, `monorepo` get their initial `'v1'` value when their corresponding sections are added (or wired with `'none'` placeholder for now, ready for future expansion). |
-| `code/lib/cli-storybook/src/ai/index.ts` | Fire `telemetry('ai-prepare', startPayload)` at start. Run `aiPrepare`. Fire `telemetry('ai-prepare-end', endPayload, { immediate: true })` at end. Project context (monorepo, packageManager, framework, builder, renderer, language, hasCsfFactoryPreview) is gathered into the start payload. |
-| `code/lib/cli-storybook/src/ai/index.ts` | New `--frontmatter` flag handling: when both `--output` and `--frontmatter` are present, prepend YAML frontmatter to the markdown output containing all traits + project context. |
+| `code/lib/cli-storybook/src/ai/setup-requirements.ts` (NEW) | Colocated with prompt.ts. Contains `AI_STORY_TITLE_PREFIX`, `AI_EXPECTED_STORY_COMPONENTS`, and `isStoryAIGenerated()` checker function. The checker currently uses title prefix; will swap to tag presence check when tag-based approach ships. Also contains the `AiSetupPendingRecord` type and `snapshotPreviewFile()` helper for recording the baseline. |
+| `code/lib/cli-storybook/src/ai/index.ts` | Fire `telemetry('ai-prepare', startPayload)` at start. Cache `'ai-setup-pending'` record (preview file hash, configDir, timestamp, traits). Handle `--frontmatter` flag. No `ai-prepare-end` event — completion is tracked via `ai-setup-evidence` from subsequent CLI entry points. |
 | `code/lib/cli-storybook/src/bin/run.ts` | Add `--frontmatter` option to the `prepare` subcommand. |
-| `code/lib/cli-storybook/src/automigrate/helpers/mainConfigFile.ts` | Extend `getStorybookData` to also return monorepo type, package manager name (today only used as the package manager *factory*, not exposed). |
+| `code/core/src/core-server/withTelemetry.ts` | Add evidence collection hook: after `boot` event, check for agent → check for pending setup → collect evidence → fire `ai-setup-evidence`. |
+| `code/core/src/core-server/utils/doTelemetry.ts` | Pass story index to evidence collector for `dev` events so `aiAuthoredStories` can be counted via `isStoryAIGenerated()`. |
 | Tests as in §4.2 |
 
-### 5.2 Initial trait set (Stream B baseline)
+### 5.2 Initial trait set (WS1 baseline — trimmed to active traits only)
 
-These ship with Stream B as version `'v1'` for the active trait, `'none'` for the placeholders:
+Only traits that can be inferred from actual conditional branching in `prompt.ts` today:
 
-| Trait name | Stream-B value | Description |
+| Trait name | Value | Source |
 |---|---|---|
-| `csfSyntax` | `'factory-v1'` or `'csf3-v1'` | Already has the only existing branch in prompt.ts |
-| `setupGenericV1` | `'v1'` | The current overall setup instructions baseline |
-| `monorepo` | `'none'` (placeholder, not yet generated) | Reserved for future monorepo-specific instructions |
-| `themes` | `'none'` | Reserved |
-| `mocking` | `'none'` | Reserved |
-| `webpackStyling` | `'none'` | Reserved |
-| `cliDiscovery` | `'none'` | Reserved |
-| `imports` | `'none'` | Reserved |
-| `headTail` | `'none'` | Reserved |
-| `autodocsFeature` | `'none'` | Reserved |
-| `playFeature` | `'none'` | Reserved |
-| `argsFeature` | `'none'` | Reserved |
-| `actionsFeature` | `'none'` | Reserved |
-| `layoutFeature` | `'none'` | Reserved |
-| `loadersFeature` | `'none'` | Reserved |
-| `viewportsFeature` | `'none'` | Reserved |
-| `globalsFeature` | `'none'` | Reserved |
-| `decoratorsFeature` | `'none'` | Reserved |
-| `argTypesFeature` | `'none'` | Reserved |
-| `docsContent` | `'none'` | Reserved |
-| `storyContent` | `'none'` | Reserved |
-| `healEmptyRenders` | `'none'` | Reserved |
+| `csfSyntax` | `'factory-v1'` or `'csf3-v1'` | `hasCsfFactoryPreview` branch at `prompt.ts:96` |
+| `setupGenericV1` | `'v1'` | Overall setup instructions baseline version |
 
-The point of registering these as `'none'` placeholders is to lock in the schema so future PRs that add prompt sections can simply flip them to `'v1'`/`'v2'`/etc. without telemetry-side migrations.
+More traits will be added as prompt generation evolves. Each new conditional section in `prompt.ts` should register its trait and version.
 
 ### 5.3 Frontmatter shape
 
@@ -559,39 +606,35 @@ Evals can read the frontmatter to compute trait-correlated quality metrics.
 
 - **`'none'` proliferation**: declaring 20+ reserved traits when only 2 are active feels heavy. Trade-off: schema is locked from day one and analytics is ready.
 - **Frontmatter parser conflicts**: agents reading the prompt might misinterpret YAML frontmatter as part of the markdown body. We make `--frontmatter` opt-in for that reason.
-- **`ai-prepare-end` may not fire on uncaught exceptions** — we use `immediate: true` and a try/finally pattern but agents that kill the process won't always let us flush. We accept partial data; the existing `withTelemetry` error path catches uncaught throws as `error` events, which we can join in queries.
+- **Evidence event never fires if agent crashes early and no subsequent CLI command runs**: Acceptable — if no work was done, no evidence fires. If partial work was done but no CLI command runs, we lose the signal. This is inherent to the "observe at CLI entry points" approach.
+- **Preview hash false positive from unrelated edits**: If a developer (not the agent) edits preview.ts within the 2h window, `previewChanged` will be true. At statistical scale (Metabase dashboards), this washes out. Within the 2h post-ai-prepare window with an agent detected, it's overwhelmingly likely the agent did it.
+- **`isStoryAIGenerated()` title prefix is brittle**: Planned migration to tag-based approach. The checker function in `setup-requirements.ts` is the single swap point — one-line change when tags ship.
+- **`withTelemetry` runs evidence check on every CLI command**: The `detectAgent()` check is module-level (near-zero cost), and the cache read only happens when an agent is detected. Negligible overhead for non-agent usage.
 
 ---
 
-## Section 6: Stream C — Ghost-stories broadening
+## Section 6: Ghost-stories redesign — APPROVED ✓ (10min delay + once-ever, WS1)
 
 ### 6.1 Files touched
 
 | File | Change |
 |---|---|
 | `code/core/src/manager/components/sidebar/CreateNewStoryFileModal.tsx` | Remove the `executeGhostStoriesFlow` `useEffect` and `hasRunGhostStoriesFlow` ref. The modal no longer triggers ghost stories. |
-| `code/core/src/manager/components/sidebar/Sidebar.tsx` (or new module) | Add a new `useGhostStoriesTrigger()` hook (or render a tiny `<GhostStoriesTrigger />` component in the manager root) that listens to `api.once(PREVIEW_INITIALIZED, ...)` + 5-second debounce, then emits `GHOST_STORIES_REQUEST`. |
-| `code/core/src/core-server/server-channel/ghost-stories-channel.ts` | Replace `lastEvents['ghost-stories']` cache key check with `Date.now() - lastFiredAt > 24h` (where `lastFiredAt` is stored in a new dedicated cache key). Remove the `lastInit.body.sessionId !== sessionId` check entirely. Keep React + Vitest gate. |
-| `code/core/src/telemetry/event-cache.ts` | Possibly extend with a generic timestamp-cache helper if `ghost-stories-channel.ts` doesn't already have a clean way to read/write a single timestamp. |
+| `code/core/src/manager/components/sidebar/Sidebar.tsx` (or new module) | Add a new `useGhostStoriesTrigger()` hook (or render a tiny `<GhostStoriesTrigger />` component in the manager root) that listens to `api.once(PREVIEW_INITIALIZED, ...)` + 10-minute `setTimeout`, then emits `GHOST_STORIES_REQUEST`. |
+| `code/core/src/core-server/server-channel/ghost-stories-channel.ts` | Replace `lastEvents['ghost-stories']` cache key check with a simple existence check: if `lastEvents['ghost-stories']` exists, skip (already ran). Remove the `lastInit.body.sessionId !== sessionId` check entirely. Keep React + Vitest gate. |
 
-### 6.2 24h gate implementation
+### 6.2 Once-ever gate implementation
 
-The cleanest implementation: use the existing `lastEvents['ghost-stories']` body, which is already written by the telemetry pipeline after a successful `telemetry('ghost-stories', ...)` call, and contains a wall-clock timestamp (the receive time, available via `eventsCache.set` chain). Read it at the top of the handler:
+Use the existing `lastEvents` cache. Ghost-stories already writes to it after a successful `telemetry('ghost-stories', ...)` call. The gate is simply: does the key exist?
 
 ```ts
 const lastEvents = await getLastEvents();
 const lastGhostStoriesRun = lastEvents['ghost-stories'];
-const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-if (
-  lastGhostStoriesRun &&
-  Date.now() - new Date(lastGhostStoriesRun.timestamp).getTime() < TWENTY_FOUR_HOURS
-) {
-  return; // already ran in the last 24h, skip
+if (lastGhostStoriesRun) {
+  return; // already ran once for this project, never run again
 }
 // (remove the `lastInit.body.sessionId !== sessionId` check)
 ```
-
-If `lastEvents` entries don't have a serialized timestamp today, we add one in the cache layer (single small change in `event-cache.ts`).
 
 ### 6.3 Manager-side trigger module
 
@@ -601,7 +644,7 @@ import { useEffect, useRef } from 'react';
 import { PREVIEW_INITIALIZED, GHOST_STORIES_REQUEST } from 'storybook/internal/core-events';
 import { useStorybookApi } from 'storybook/manager-api';
 
-const TRIGGER_DELAY_MS = 5000;
+const TRIGGER_DELAY_MS = 10 * 60 * 1000; // 10 minutes
 
 export function useGhostStoriesTrigger() {
   const api = useStorybookApi();
@@ -622,31 +665,27 @@ export function useGhostStoriesTrigger() {
     };
 
     api.once(PREVIEW_INITIALIZED, onInit);
-    // Fallback: if PREVIEW_INITIALIZED never fires (broken preview), still try
-    // after a longer delay
-    const fallbackId = setTimeout(fire, 30000);
 
     return () => {
       api.off(PREVIEW_INITIALIZED, onInit);
       if (timeoutId) clearTimeout(timeoutId);
-      clearTimeout(fallbackId);
     };
   }, [api]);
 }
 ```
 
-Hook is called once from the sidebar's top component (or from a new tiny container at the root).
+Hook is called once from the sidebar's top component (or from a new tiny container at the root). No fallback timeout — if `PREVIEW_INITIALIZED` never fires (broken preview), ghost stories simply don't run.
 
 ### 6.4 Risks
 
-- **Vitest startup cost**: ghost-stories runs Vitest. Once per 24h is fine, but we should make sure the trigger doesn't overlap with the user's first interaction (the 5s delay helps).
-- **PREVIEW_INITIALIZED re-fire on reload**: `api.once(...)` ensures we only register one listener, and `fired.current` ensures we never fire twice in the same manager tab.
-- **Race with the existing modal trigger**: nothing — we remove that path entirely as part of this stream.
-- **Cache timestamp format**: today `lastEvents` entries are `{ body, ... }`. We need to confirm there's a timestamp in there or add one. Implementation detail, will verify in the plan.
+- **10min delay means user may close the tab first**: acceptable — ghost stories is best-effort telemetry. If they close before 10min, we don't fire, and next session we'll try again (since the lastEvents key won't exist).
+- **PREVIEW_INITIALIZED re-fire on reload**: `api.once(...)` ensures we only register one listener, and `fired.current` ensures we never fire twice in the same manager tab. A full page reload restarts the 10min timer — that's fine, the server-side gate prevents duplicate telemetry.
+- **Race with the existing modal trigger**: nothing — we remove that path entirely.
+- **Ghost-stories runs Vitest and can be slow**: the 10min delay gives the user time to finish their initial work session undisturbed.
 
 ---
 
-## Section 7: Local debugging + test strategy + MCP installation
+## Section 7: Local debugging + test strategy + MCP installation — APPROVED ✓ (re-scoped per workstream)
 
 ### 7.1 Mock telemetry receiver
 
@@ -768,7 +807,7 @@ Once the sandbox is regenerated, MCP is at `http://localhost:<storybook-port>/mc
 
 ---
 
-## Section 8: Risks, open questions, migration
+## Section 8: Risks, open questions, migration — APPROVED ✓ (re-scoped per workstream)
 
 ### 8.1 Risks
 
@@ -780,7 +819,9 @@ Once the sandbox is regenerated, MCP is at `http://localhost:<storybook-port>/mc
 | Ghost-stories trigger fires while user's first interaction | Low | 5s debounce after PREVIEW_INITIALIZED |
 | Vitest run inside ghost-stories blocks user | Medium | 24h gate ensures it only runs once per project per day |
 | Mock telemetry receiver has port conflicts | Low | Configurable PORT env, default 6007 (matches existing CI scripts) |
-| `ai-prepare-end` doesn't fire on agent crash | Medium | Use `immediate: true`; document partial-data handling in queries |
+| Evidence event never fires if agent crashes and no CLI runs after | Medium | Acceptable — no work done means no evidence. Partial work without subsequent CLI entry is a known blind spot. |
+| Preview hash false positive from unrelated developer edits in 2h window | Low | At statistical scale, this washes out. Agent detection + 2h window makes it overwhelmingly likely the agent did it. |
+| `isStoryAIGenerated()` title prefix is brittle | Medium | Single swap point in `setup-requirements.ts`; planned migration to tag-based detection |
 | Adding `'@storybook/addon-mcp'` to satellite-addons.ts breaks something elsewhere | Low | The list is consumed by `isSatelliteAddon` in 3 known sites; verify each |
 | Frontmatter YAML interferes with prompt parsing for some agents | Low | `--frontmatter` is opt-in |
 | `lastEvents` cache schema migration for the new timestamp | Low | If timestamps aren't there today, add them with backward-compat |
@@ -802,6 +843,10 @@ Once the sandbox is regenerated, MCP is at `http://localhost:<storybook-port>/mc
 6. **Trait detection for `'csfSyntax'`** is currently keyed off `hasCsfFactoryPreview`, but if the user has CSF Factory preview but also writes some CSF3 stories, we'd want to know the *prompt's* output style, not the project's existing style. Might need a second trait for "what we generated" vs "what we detected".
 
 7. **Telemetry debug logging size**: the `STORYBOOK_TELEMETRY_DEBUG` output for the new fields could grow large. Consider truncating arrays in the debug output but not in the wire payload.
+
+8. **Evidence collection in `doTelemetry` vs `withTelemetry`**: For `dev` events, the story index is available in `doTelemetry()` (after `generator.getIndexAndStats()`). The evidence hook in `withTelemetry()` runs earlier (at boot time), before the index exists. We need to either: (a) fire evidence from both `withTelemetry` (without story count) and `doTelemetry` (with story count), or (b) delay the evidence check for `dev` commands until `doTelemetry` runs. Option (b) avoids duplicate events. Resolve during implementation.
+
+9. **Event cache key for `ai-setup-pending`**: The existing cache uses `EventType` keys. `'ai-setup-pending'` is not an event type — it's internal state. Should we store it in the same `lastEvents` record (adding it to the EventType union) or in a separate cache key? Separate key is cleaner but requires a new cache read.
 
 ### 8.3 Migration
 
@@ -830,50 +875,46 @@ node scripts/spike-extract-features.ts ../storybook-sandboxes/react-vite-default
 If you're picking this up fresh:
 
 1. **Read this whole document.** It captures every decision made.
-2. Where we left off: **Section 1 was approved by Steve.** Sections 2–8 are written but not yet user-reviewed.
-3. **Walk Steve through Sections 2–8** one by one, accepting changes. Use mcp_question for each section with "Approved / Make changes" options.
-4. After all sections approved: **invoke writing-plans skill** (Superpowers) and produce three implementation plans, one per stream. Save them as separate files in `docs/superpowers/specs/2026-04-07-stream-a-plan.md`, `2026-04-07-stream-b-plan.md`, `2026-04-07-stream-c-plan.md`.
-5. **Get plan approval** from Steve. Make changes if asked.
-6. **Begin executing Stream A first.** Use the executing-plans / subagent-driven-development skill if appropriate.
-7. **Local debugging**: when implementing, use the workflow in §7.2 (sandbox + mock receiver + STORYBOOK_TELEMETRY_DEBUG).
-8. **Tests**: run `yarn test` in `code/` for unit tests and the new e2e suite as it's built up.
-
-### Outstanding decisions / Steve to confirm or correct
-
-These are the items where I'd like Steve to glance at the choice once more before locking in:
-
-- [ ] Section 2 (Architecture) — please confirm the data flow is right
-- [ ] Section 3 (Data model) — review the new field names for `IndexInputStats` and `metadata.preview`. Especially: do you want `ownXxx` / `metaXxx` naming, or `selfXxx` / `inheritedXxx`, or something else?
-- [ ] Section 5.2 (Initial trait set) — you might want to drop some of the `'none'` placeholders if 20+ feels excessive
-- [ ] Section 6.2 (24h gate) — confirm the timestamp source in `lastEvents` is acceptable (need to verify this exists) or if we need a new cache field
-- [ ] Open questions in §8.2 — at least #2 (parameters.layout precision) and #6 (csfSyntax trait split)
+2. Where we left off: **All sections approved (2026-04-08).** Two workstreams defined.
+3. **Implementation plans** should exist at:
+   - `docs/superpowers/specs/2026-04-08-ws1-agentic-telemetry-plan.md`
+   - `docs/superpowers/specs/2026-04-08-ws2-feature-adoption-plan.md`
+4. **Execute WS1 first.**
+5. **Spike script**: `scripts/spike-extract-features.ts` — delete during WS2 (or whenever convenient).
 
 ### How to keep Claude on track when resuming
 
-Drop this exact prompt to Claude when you wake up:
-
-> Read `docs/superpowers/specs/2026-04-07-telemetry-enhancements-design.md` from start to finish. Section 1 is approved. Walk me through sections 2-8 one at a time and get my approval/changes for each section. Then invoke the writing-plans skill and produce three plan files (one per stream). Then we'll begin executing Stream A.
+> Read `docs/superpowers/specs/2026-04-07-telemetry-enhancements-design.md`. All sections are approved. Check if plan files exist under `docs/superpowers/specs/`. If they do, begin executing WS1. If they don't, invoke writing-plans and produce them first.
 
 ---
 
 ## Appendix: Decisions log (chronological)
 
-1. **Sequencing**: Three sequential PRs A → B → C
+1. **Sequencing**: ~~Three sequential PRs A → B → C~~ → Two workstreams (WS1 agentic, WS2 feature adoption)
 2. **Field-metric collection**: Hybrid → all server-side (after spike)
 3. **Sample size**: N/A (no sampling)
 4. **Visit-tracking**: Deferred
 5. **Static build handling**: Feature data in `build` event payload only
 6. **Preview HMR resend**: Don't
 7. **Whole-file telemetry**: Yes (free, since we extend per-file parse loop)
-8. **Addon shape**: Sanitize at wire layer only
-9. **Ghost-stories trigger**: Replace modal trigger with post-PREVIEW_INITIALIZED
-10. **Ghost-stories gate**: Once-per-24h-per-project, drop init-session check
-11. **`sb ai prepare` events**: Two events (start + end)
-12. **Prompt traits**: Flat object with enum values
+8. **Addon shape**: Sanitize at wire layer only → **WS2**
+9. **Ghost-stories trigger**: Replace modal trigger with post-PREVIEW_INITIALIZED + 10min delay
+10. **Ghost-stories gate**: ~~Once-per-24h-per-project~~ → Once-ever, `lastEvents` existence check
+11. **`sb ai prepare` events**: ~~Two events (start + end)~~ → Start event + evidence-based completion tracking (decision 23)
+12. **Prompt traits**: Flat object with enum values, 2 active traits only
 13. **Agent in CI fix**: `isCI() && !detectAgent() ? undefined : globalSettings()`
 14. **Test strategy**: Unit + sandbox smoke + e2e in CI
 15. **MCP addon**: Add to react-vite sandbox-templates.ts
-16. **Keyword allowlist**: Strict catalog category names, no synonyms
-17. **Absence vs zero**: `complete?: boolean` marker on stats entries
+16. **Keyword allowlist**: → **WS2**
+17. **Absence vs zero**: → **WS2**
 18. **No `userType` field**: implied by `agent` × `inCI`
 19. **userSince in CI+agent**: Preserve when agent detected
+20. **Workstream split**: Two workstreams by concern (2026-04-08)
+21. **Ghost-stories once-ever cache**: `lastEvents['ghost-stories']` existence
+22. **Trait trimming**: Only ship traits with actual prompt.ts branching
+23. **Evidence-based completion** (2026-04-08): `sb ai prepare` exits in seconds; the agent works for 5-120min after. Replace synchronous `ai-prepare-end` with `ai-setup-evidence` events fired from CLI entry points. SB CLI observes and reports — no delegation to agents.
+24. **Evidence collection hook point** (2026-04-08): `withTelemetry()` in `code/core/src/core-server/withTelemetry.ts` — single integration point. Agent check first (`detectAgent()`), then cache check. Near-zero overhead for non-agent usage.
+25. **Preview file change detection** (2026-04-08): Content hash (SHA-256) comparison. Record baseline hash at `ai-prepare` time for whichever `preview.{ts,tsx,js,jsx,mjs,cjs}` exists. At checkpoint, re-scan and compare. Binary changed/unchanged — no distinction between modified, created, deleted, or renamed.
+26. **AI story detection** (2026-04-08): `isStoryAIGenerated()` checker function in `setup-requirements.ts` colocated with prompt code. Currently title-prefix based (`AI Generated/`), planned migration to tag-based. Field named `aiAuthoredStories` (not `storiesWithAiTitle`). Not added to `summarizeIndex` to avoid cross-contamination when users adopt AI-written stories.
+27. **Session window for evidence** (2026-04-08): Use existing `SESSION_TIMEOUT` (2h) instead of 24h. Cache expires silently — manageable in Metabase.
+28. **Setup requirements colocation** (2026-04-08): `setup-requirements.ts` lives next to `prompt.ts` so prompt changes naturally accompany observation logic updates. Contains title prefix, expected count, and `isStoryAIGenerated()` checker.

@@ -9,6 +9,9 @@ import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetr
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('../telemetry/detect-agent.ts', () => ({
+  detectAgent: vi.fn(() => undefined),
+}));
 
 const cliOptions = {};
 const originalStdoutIsTTY = process.stdout.isTTY;

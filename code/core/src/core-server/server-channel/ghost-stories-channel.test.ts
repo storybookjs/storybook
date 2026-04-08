@@ -25,7 +25,6 @@ vi.mock('storybook/internal/telemetry', async (importOriginal) => {
   return {
     ...actual,
     getLastEvents: vi.fn(),
-    getSessionId: vi.fn(),
     getStorybookMetadata: vi.fn(),
     telemetry: vi.fn(),
   };
@@ -92,7 +91,6 @@ describe('ghostStoriesChannel', () => {
     vi.mocked(mockCommon.executeCommand).mockReset();
     vi.mocked(mockCommon.resolvePathInStorybookCache).mockReset();
     vi.mocked(mockTelemetry.getLastEvents).mockReset();
-    vi.mocked(mockTelemetry.getSessionId).mockReset();
     vi.mocked(mockTelemetry.getStorybookMetadata).mockReset();
     vi.mocked(mockTelemetry.telemetry).mockReset();
     vi.mocked(mockStoryGeneration.getComponentCandidates).mockReset();
@@ -109,11 +107,10 @@ describe('ghostStoriesChannel', () => {
   describe('initGhostStoriesChannel', { retry: 3 }, () => {
     it('should execute successful discovery run', async () => {
       mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-      // Has not run yet (no ghost stories event and session matches)
+      // Has not run yet (no ghost stories event)
       vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
         init: { body: { sessionId: 'test-session' } },
       } as any);
-      vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
 
       // Has React + Vitest
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
@@ -208,11 +205,10 @@ describe('ghostStoriesChannel', () => {
 
     it('should execute successful discovery run with test failure', async () => {
       mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-      // Has not run yet (no ghost stories event and session matches)
+      // Has not run yet (no ghost stories event)
       vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
         init: { body: { sessionId: 'test-session' } },
       } as any);
-      vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
 
       // Has React + Vitest
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
@@ -332,7 +328,6 @@ describe('ghostStoriesChannel', () => {
           'ghost-stories': { timestamp: Date.now(), body: {} },
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
 
         initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
 
@@ -343,18 +338,16 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
 
       it('should skip discovery run when not in a React + Vitest project', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-        // Has not run yet (no ghost stories event and session matches)
+        // Has not run yet (no ghost stories event)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/vue',
           addons: { '@storybook/addon-vitest': {} },
@@ -369,18 +362,16 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
 
       it('should skip discovery run when vitest addon not present', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-        // Has not run yet (no ghost stories event and session matches)
+        // Has not run yet (no ghost stories event)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: {},
@@ -395,7 +386,6 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
@@ -404,11 +394,10 @@ describe('ghostStoriesChannel', () => {
     describe('error conditions', () => {
       it('should handle error in getComponentCandidates', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-        // Has not run yet (no ghost stories event and session matches)
+        // Has not run yet (no ghost stories event)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: { '@storybook/addon-vitest': {} },
@@ -443,11 +432,10 @@ describe('ghostStoriesChannel', () => {
 
       it('should handle no candidates found', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-        // Has not run yet (no ghost stories event and session matches)
+        // Has not run yet (no ghost stories event)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: { '@storybook/addon-vitest': {} },
@@ -483,11 +471,10 @@ describe('ghostStoriesChannel', () => {
 
       it('should handle JSON report not found', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-        // Has not run yet (no ghost stories event and session matches)
+        // Has not run yet (no ghost stories event)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: { '@storybook/addon-vitest': {} },
@@ -528,11 +515,10 @@ describe('ghostStoriesChannel', () => {
 
       it('should handle test startup error', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-        // Has not run yet (no ghost stories event and session matches)
+        // Has not run yet (no ghost stories event)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: { '@storybook/addon-vitest': {} },

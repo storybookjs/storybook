@@ -182,7 +182,9 @@ export async function buildDevStandalone(
   const { allowedHosts, renderer, builder, disableTelemetry } = await presets.apply('core', {});
 
   if (disableTelemetry) {
-    setTelemetryEnabled(false);
+    await setTelemetryEnabled(false);
+  } else {
+    await setTelemetryEnabled(true);
   }
 
   // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.

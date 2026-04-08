@@ -112,7 +112,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   ]);
 
   if (core?.disableTelemetry) {
-    setTelemetryEnabled(false);
+    await setTelemetryEnabled(false);
+  } else {
+    await setTelemetryEnabled(true);
   }
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;

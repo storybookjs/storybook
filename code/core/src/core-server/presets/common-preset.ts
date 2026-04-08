@@ -273,7 +273,9 @@ export const experimental_serverChannel = async (
   const coreOptions = await options.presets.apply('core');
 
   if (coreOptions?.disableTelemetry) {
-    setTelemetryEnabled(false);
+    await setTelemetryEnabled(false);
+  } else {
+    await setTelemetryEnabled(true);
   }
 
   initializeChecklist();

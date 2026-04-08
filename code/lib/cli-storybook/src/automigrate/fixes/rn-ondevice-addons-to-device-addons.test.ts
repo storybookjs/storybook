@@ -31,7 +31,10 @@ describe('rn-ondevice-addons-to-device-addons', () => {
     vi.clearAllMocks();
     // Restore the implementation that invokes the callback with our mock ConfigFile
     mocks.updateMainConfig.mockImplementation(
-      async (_opts: unknown, callback: (cfg: unknown) => Promise<void>) => {
+      async (
+        _opts: { mainConfigPath: string; dryRun: boolean },
+        callback: (cfg: unknown) => Promise<void>
+      ) => {
         await callback(mocks.configFile);
       }
     );

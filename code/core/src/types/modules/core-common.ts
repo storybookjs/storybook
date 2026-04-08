@@ -419,18 +419,6 @@ export interface StorybookConfigRaw {
    * ```
    */
   addons?: Preset[];
-  /**
-   * Sets the on-device addons for `@storybook/react-native`. These are injected into the generated
-   * `storybook.requires` file but are not evaluated as presets by Storybook Core.
-   *
-   * @example
-   *
-   * ```ts
-   * deviceAddons = ['@storybook/addon-ondevice-controls'];
-   * deviceAddons = [{ name: '@storybook/addon-ondevice-controls', options: {} }];
-   * ```
-   */
-  deviceAddons?: Preset[];
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;

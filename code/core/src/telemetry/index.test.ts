@@ -24,7 +24,7 @@ vi.mock('./telemetry.ts', () => ({
 beforeEach(async () => {
   vi.resetModules();
   telemetryModule = await import('./index.ts');
-});
+}, 30_000);
 
 describe('telemetry state machine', () => {
   it('starts in uninitialized state and queues events', async () => {

@@ -349,6 +349,27 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
+  'react-vite-plus/default-ts': {
+    name: 'React Vite-Plus Latest (Vite | TypeScript)',
+    script:
+      'npx vite-plus-cli create vite:application --directory {{beforeDir}} --no-interactive --no-agent --no-editor --no-hooks -- --template react-ts',
+    expected: {
+      framework: '@storybook/react-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: ['prop-types', '@types/prop-types'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+          experimentalTestSyntax: true,
+        },
+      },
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   'react-webpack/18-ts': {
     name: 'React Latest (Webpack | TypeScript)',
     script: 'npx create-webpack5-react {{beforeDir}}',
@@ -1012,6 +1033,7 @@ export const daily: TemplateKey[] = [
   // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
   // 'lit-rsbuild/default-ts',
   // 'html-rsbuild/default-ts',
+  'react-vite-plus/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
 ];
 

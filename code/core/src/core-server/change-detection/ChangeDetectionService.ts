@@ -6,6 +6,8 @@ import type {
   ModuleGraph,
   ModuleGraphChangeEvent,
   ModuleNode,
+  StatusValue,
+  StoryIndex,
   Status,
   StatusStoreByTypeId,
 } from 'storybook/internal/types';
@@ -16,6 +18,10 @@ import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
+import {
+  extractBaselineEntryIds,
+  IndexBaselineService as IndexBaselineService,
+} from './IndexBaselineService.ts';
 import { findAffectedStoryFiles } from './trace-changed.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
@@ -61,10 +67,23 @@ function getStoryIdsByAbsolutePath(
   return storyIdsByFile;
 }
 
-function mergeStatusValues(
-  previousValue: Status['value'] | undefined,
-  nextValue: Status['value']
-): Status['value'] {
+function getChangedFiles(status: Status | undefined): string[] {
+  const changedFiles = status?.data?.changedFiles;
+  if (!Array.isArray(changedFiles)) {
+    return [];
+  }
+
+  return changedFiles.filter((filePath): filePath is string => typeof filePath === 'string');
+}
+
+function mergeChangedFiles(existing: Status | undefined, incoming: Status): string[] {
+  return Array.from(new Set([...getChangedFiles(existing), ...getChangedFiles(incoming)])).sort();
+}
+
+export function mergeStatusValues(
+  previousValue: StatusValue | undefined,
+  nextValue: StatusValue
+): StatusValue {
   if (previousValue === 'status-value:new' || nextValue === 'status-value:new') {
     return 'status-value:new';
   }
@@ -78,6 +97,54 @@ function mergeStatusValues(
   }
 
   return nextValue;
+}
+
+export function mergeChangeDetectionStatuses(
+  existing: Status | undefined,
+  incoming: Status
+): Status {
+  const changedFiles = mergeChangedFiles(existing, incoming);
+  const mergedData = {
+    ...(existing?.data ?? {}),
+    ...(incoming.data ?? {}),
+    ...(changedFiles.length > 0 ? { changedFiles } : {}),
+  };
+
+  return {
+    ...incoming,
+    value: mergeStatusValues(existing?.value, incoming.value),
+    title: incoming.title || existing?.title || '',
+    description: incoming.description || existing?.description || '',
+    sidebarContextMenu: incoming.sidebarContextMenu ?? existing?.sidebarContextMenu ?? false,
+    data: Object.keys(mergedData).length > 0 ? mergedData : undefined,
+  };
+}
+
+export function buildIndexBaselineStatuses(
+  storyIndex: StoryIndex,
+  baselineEntryIds: Set<string>
+): Map<string, Status> {
+  const statuses = new Map<string, Status>();
+  if (baselineEntryIds.size === 0) {
+    return statuses;
+  }
+
+  for (const entryId of extractBaselineEntryIds(storyIndex)) {
+    if (baselineEntryIds.has(entryId)) {
+      continue;
+    }
+
+    statuses.set(entryId, {
+      storyId: entryId,
+      typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+      value: 'status-value:new',
+      title: '',
+      description: '',
+      sidebarContextMenu: false,
+    });
+  }
+
+  return statuses;
 }
 
 function toRepoRelativePath(repoRoot: string, filePath: string): string {
@@ -101,6 +168,7 @@ export class ChangeDetectionService {
   private readinessResolved = false;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
+  private indexBaselineService: IndexBaselineService | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -109,11 +177,13 @@ export class ChangeDetectionService {
       storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
       statusStore: StatusStoreByTypeId;
       gitDiffProvider?: GitDiffProvider;
+      IndexBaselineService?: IndexBaselineService;
       workingDir?: string;
       debounceMs?: number;
     }
   ) {
     this.gitDiffProvider = options.gitDiffProvider;
+    this.indexBaselineService = options.IndexBaselineService;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
     resetChangeDetectionReadiness();
@@ -142,6 +212,7 @@ export class ChangeDetectionService {
     }
 
     logger.debug('Change detection enabled.');
+    void this.getIndexBaselineService().start();
     this.unsubscribeModuleGraph = onModuleGraphChange((event) => {
       if (this.disposed) {
         return;
@@ -157,10 +228,21 @@ export class ChangeDetectionService {
       this.handleBuilderStartupEvent(event);
     });
     this.getGitDiffProvider().onGitStateChange(() => {
-      if (!this.disposed) {
-        this.scheduleScan(this.debounceMs);
+      if (this.disposed) {
+        return;
       }
+
+      this.scheduleScan(this.debounceMs);
+      void this.getIndexBaselineService()
+        .handleGitStateChange()
+        .catch(() => undefined);
     });
+  }
+
+  onStoryIndexInvalidated(): void {
+    if (!this.disposed) {
+      this.scheduleScan(this.debounceMs);
+    }
   }
 
   async dispose(): Promise<void> {
@@ -249,10 +331,11 @@ export class ChangeDetectionService {
 
   private async buildStatuses(moduleGraph: ModuleGraph): Promise<Map<string, Status>> {
     const gitDiffProvider = this.getGitDiffProvider();
-    const [changes, repoRoot, storyIndexGenerator] = await Promise.all([
+    const [changes, repoRoot, storyIndexGenerator, baselineEntryIds] = await Promise.all([
       gitDiffProvider.getChangedFiles(),
       gitDiffProvider.getRepoRoot(),
       this.options.storyIndexGeneratorPromise,
+      this.getIndexBaselineService().getBaselineEntryIds(),
     ]);
 
     const changedFiles = new Set(
@@ -274,6 +357,7 @@ export class ChangeDetectionService {
     });
 
     const storyIndex = await storyIndexGenerator.getIndex();
+    const baselineStatuses = buildIndexBaselineStatuses(storyIndex, baselineEntryIds);
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
 
@@ -304,7 +388,7 @@ export class ChangeDetectionService {
           const changedStoryFiles = new Set<string>(existingStatus?.data?.changedFiles ?? []);
           changedStoryFiles.add(toRepoRelativePath(repoRoot, changedFile));
 
-          statuses.set(storyId, {
+          const nextStatus: Status = {
             storyId,
             typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
             value: mergeStatusValues(existingStatus?.value, value),
@@ -314,10 +398,16 @@ export class ChangeDetectionService {
               changedFiles: Array.from(changedStoryFiles).sort(),
             },
             sidebarContextMenu: false,
-          });
+          };
+
+          statuses.set(storyId, mergeChangeDetectionStatuses(existingStatus, nextStatus));
         });
       }
     }
+
+    baselineStatuses.forEach((status, storyId) => {
+      statuses.set(storyId, mergeChangeDetectionStatuses(statuses.get(storyId), status));
+    });
 
     return statuses;
   }
@@ -327,11 +417,28 @@ export class ChangeDetectionService {
     return this.gitDiffProvider;
   }
 
+  private getIndexBaselineService(): IndexBaselineService {
+    this.indexBaselineService ??= new IndexBaselineService({
+      storyIndexGeneratorPromise: this.options.storyIndexGeneratorPromise,
+      gitDiffProvider: this.getGitDiffProvider(),
+      onBaselineUpdated: () => this.scheduleScan(this.debounceMs),
+    });
+    return this.indexBaselineService;
+  }
+
   private applyStatusStorePatch(nextStatuses: Map<string, Status>): void {
+    const mergedNextStatuses = new Map<string, Status>();
+    const allCurrentStatuses = this.options.statusStore.getAll();
+
+    nextStatuses.forEach((status, storyId) => {
+      const existingStatus = allCurrentStatuses[storyId]?.[CHANGE_DETECTION_STATUS_TYPE_ID];
+      mergedNextStatuses.set(storyId, mergeChangeDetectionStatuses(existingStatus, status));
+    });
+
     const removedStoryIds = Array.from(this.previousStatuses.keys()).filter(
-      (storyId) => !nextStatuses.has(storyId)
+      (storyId) => !mergedNextStatuses.has(storyId)
     );
-    const changedStatuses = Array.from(nextStatuses.values()).filter(
+    const changedStatuses = Array.from(mergedNextStatuses.values()).filter(
       (status) => !isSameStatus(this.previousStatuses.get(status.storyId), status)
     );
 
@@ -343,7 +450,7 @@ export class ChangeDetectionService {
       this.options.statusStore.set(changedStatuses);
     }
 
-    this.previousStatuses = nextStatuses;
+    this.previousStatuses = mergedNextStatuses;
   }
 
   private resolveReadiness(

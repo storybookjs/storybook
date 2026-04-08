@@ -48,6 +48,11 @@ export async function storybookDevServer(
 
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  const changeDetectionService = new ChangeDetectionService({
+    storyIndexGeneratorPromise,
+    statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+    workingDir,
+  });
 
   app.use(compression({ level: 1 }));
 
@@ -73,6 +78,7 @@ export async function storybookDevServer(
     channel: options.channel,
     workingDir,
     configDir,
+    onStoryIndexInvalidated: () => changeDetectionService.onStoryIndexInvalidated(),
   });
 
   (await getMiddleware(options.configDir))(app);

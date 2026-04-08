@@ -218,11 +218,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply('features', {}),
   ]);
 
-  if (core?.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)) {
-    await setTelemetryEnabled(false);
-  } else {
-    await setTelemetryEnabled(true);
-  }
+  await setTelemetryEnabled(!core?.disableTelemetry);
 
   const pluginsToIgnore = [
     'storybook:react-docgen-plugin',

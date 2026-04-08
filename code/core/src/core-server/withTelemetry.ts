@@ -187,8 +187,22 @@ export async function withTelemetry<T>(
   telemetry('boot', { eventType }, { stripMetadata: true });
 
   try {
-    return await run();
+    const result = await run();
+
+    // If run() succeeded but telemetry state was never resolved (e.g. CLI commands like
+    // add/remove/doctor that don't load presets), flush the queue — telemetry is on by default.
+    if (!isTelemetryStateResolved()) {
+      await setTelemetryEnabled(true);
+    }
+
+    return result;
   } catch (error: any) {
+    // If telemetry state was never resolved and run() threw (e.g. broken main.js preventing
+    // preset evaluation), conservatively disable — drop any queued events.
+    if (!isTelemetryStateResolved()) {
+      await setTelemetryEnabled(false);
+    }
+
     if (canceled) {
       return undefined;
     }
@@ -205,12 +219,6 @@ export async function withTelemetry<T>(
 
     throw error;
   } finally {
-    // If telemetry state was never resolved (presets failed to load or never called
-    // setTelemetryEnabled), conservatively disable it — drop any queued events.
-    if (!isTelemetryStateResolved()) {
-      await setTelemetryEnabled(false);
-    }
-
     const errors = ErrorCollector.getErrors();
     for (const error of errors) {
       await sendTelemetryError(error, eventType, options, false);

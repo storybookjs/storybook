@@ -195,7 +195,8 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     ...(existing?.channelOptions ?? {}),
     ...(options.configType === 'DEVELOPMENT' ? { wsToken: getWsToken() } : {}),
   },
-  disableTelemetry: options.disableTelemetry === true,
+  disableTelemetry:
+    options.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY),
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });

@@ -4,7 +4,7 @@ export default {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    componentsManifest: false,
+    componentsManifest: true,
   },
 };
 ```
@@ -17,7 +17,7 @@ const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    componentsManifest: false,
+    componentsManifest: true,
   },
 };
 
@@ -32,7 +32,7 @@ export default defineMain({
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    componentsManifest: false,
+    componentsManifest: true,
   },
 });
 ```
@@ -47,7 +47,7 @@ export default defineMain({
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    componentsManifest: false,
+    componentsManifest: true,
   },
 });
 ```

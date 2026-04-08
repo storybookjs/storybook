@@ -530,7 +530,7 @@ export interface StorybookConfigRaw {
     /**
      * Enable component manifest generation for MCP and other tooling integrations.
      *
-     * @default true
+     * @default false
      */
     componentsManifest?: boolean;
 

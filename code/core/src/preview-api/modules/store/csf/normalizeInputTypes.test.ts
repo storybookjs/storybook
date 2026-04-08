@@ -124,35 +124,35 @@ describe('normalizeInputTypes', () => {
   });
 });
 
-describe("normalizeInputType - options extraction", () => {
-  it("extracts options from inside control object to top level", () => {
+describe('normalizeInputType - options extraction', () => {
+  it('extracts options from inside control object to top level', () => {
     expect(
       normalizeInputType(
         {
-          control: { type: "select", options: ["a", "b", "c"] },
+          control: { type: 'select', options: ['a', 'b', 'c'] },
         },
-        "arg"
+        'arg'
       )
     ).toEqual({
-      name: "arg",
-      options: ["a", "b", "c"],
-      control: { type: "select", disable: false },
+      name: 'arg',
+      options: ['a', 'b', 'c'],
+      control: { type: 'select', disable: false },
     });
   });
 
-  it("does not override existing top-level options with control.options", () => {
+  it('does not override existing top-level options with control.options', () => {
     expect(
       normalizeInputType(
         {
-          options: ["x", "y"],
-          control: { type: "select", options: ["a", "b", "c"] },
+          options: ['x', 'y'],
+          control: { type: 'select', options: ['a', 'b', 'c'] },
         },
-        "arg"
+        'arg'
       )
     ).toEqual({
-      name: "arg",
-      options: ["x", "y"],
-      control: { type: "select", options: ["a", "b", "c"], disable: false },
+      name: 'arg',
+      options: ['x', 'y'],
+      control: { type: 'select', options: ['a', 'b', 'c'], disable: false },
     });
   });
 });

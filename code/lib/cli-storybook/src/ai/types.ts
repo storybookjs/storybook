@@ -4,6 +4,22 @@ export interface AiPrepareOptions {
   configDir?: string;
   packageManager?: string;
   output?: string;
+  frontmatter?: boolean;
+}
+
+/**
+ * Flat object mapping trait names to version strings.
+ * Each trait corresponds to a conditional branch in prompt generation.
+ * Active traits have a version like 'v1', 'factory-v1', etc.
+ * Add new traits here as prompt.ts gains new conditional sections.
+ */
+export interface AiPrepareTraits {
+  /** CSF syntax variant: 'factory-v1' when hasCsfFactoryPreview, else 'csf3-v1' */
+  csfSyntax: string;
+  /** Overall setup instructions baseline version */
+  setupGenericV1: string;
+  /** Extensible: add more traits as prompt.ts evolves */
+  [key: string]: string;
 }
 
 export interface ProjectInfo {

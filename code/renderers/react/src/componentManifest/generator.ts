@@ -12,19 +12,19 @@ import {
 
 import path from 'pathe';
 
-import { ComponentMetaManager } from './componentMeta/ComponentMetaManager';
-import type { ComponentDoc } from './componentMeta/componentMetaExtractor';
-import { getCodeSnippet } from './generateCodeSnippet';
+import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
+import type { ComponentDoc } from './componentMeta/componentMetaExtractor.ts';
+import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
   type TypescriptOptions,
   getComponents,
   getImports,
-} from './getComponentImports';
-import { extractJSDocInfo } from './jsdocTags';
-import { type DocObj } from './reactDocgen';
-import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
-import { cachedFindUp, cachedReadTextFileSync, invalidateCache, invariant } from './utils';
+} from './getComponentImports.ts';
+import { extractJSDocInfo } from './jsdocTags.ts';
+import { type DocObj } from './reactDocgen.ts';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript.ts';
+import { cachedFindUp, cachedReadTextFileSync, invalidateCache, invariant } from './utils.ts';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;

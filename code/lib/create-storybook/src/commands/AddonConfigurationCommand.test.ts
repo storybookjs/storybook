@@ -5,10 +5,13 @@ import { type JsPackageManager, PackageManagerName } from 'storybook/internal/co
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
-import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall';
-import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall';
-import type { TelemetryService } from '../services';
-import { AddonConfigurationCommand, executeAddonConfiguration } from './AddonConfigurationCommand';
+import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall.ts';
+import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall.ts';
+import type { TelemetryService } from '../services/index.ts';
+import {
+  AddonConfigurationCommand,
+  executeAddonConfiguration,
+} from './AddonConfigurationCommand.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
@@ -132,7 +135,7 @@ describe('AddonConfigurationCommand', () => {
     });
 
     it('should configure generic addon via postinstallAddon', async () => {
-      const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
+      const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon.ts');
       vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
 
       const result = await command.execute({

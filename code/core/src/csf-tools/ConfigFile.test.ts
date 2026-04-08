@@ -4,7 +4,7 @@ import { babelPrint } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
-import { loadConfig, printConfig } from './ConfigFile';
+import { loadConfig, printConfig } from './ConfigFile.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),

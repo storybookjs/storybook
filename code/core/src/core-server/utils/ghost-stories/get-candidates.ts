@@ -6,7 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 
-import { getComponentComplexity } from './component-analyzer';
+import { getComponentComplexity } from './component-analyzer.ts';
 
 // A valid candidate includes React code and at least one export
 function isValidCandidate(source: string): boolean {

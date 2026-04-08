@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { FileList, FileListItem } from './FileList';
+import { FileList, FileListItem } from './FileList.tsx';
 
 const FileListItemContentWrapperSkeleton = styled('div')(({ theme }) => ({
   display: 'flex',

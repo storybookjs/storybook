@@ -8,8 +8,8 @@ import type { Meta } from '@storybook/vue3';
 import { expectTypeOf } from 'expect-type';
 import { addons } from 'storybook/preview-api';
 
-import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
-import * as stories from './Button.stories';
+import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories.ts';
+import * as stories from './Button.stories.ts';
 import type Button from './Button.vue';
 
 setProjectAnnotations([]);

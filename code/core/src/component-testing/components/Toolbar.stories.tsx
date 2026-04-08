@@ -2,7 +2,7 @@ import React from 'react';
 
 import { action } from 'storybook/actions';
 
-import { Toolbar } from './Toolbar';
+import { Toolbar } from './Toolbar.tsx';
 
 export default {
   title: 'Toolbar',

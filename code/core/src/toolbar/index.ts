@@ -1,3 +1,3 @@
-export * from './types';
-export * from './constants';
-export * from './components/ToolbarManager';
+export * from './types.ts';
+export * from './constants.ts';
+export * from './components/ToolbarManager.tsx';

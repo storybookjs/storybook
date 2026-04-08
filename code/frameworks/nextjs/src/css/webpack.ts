@@ -8,7 +8,7 @@ import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/cs
 import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module.ts';
 
 // This tries to follow nextjs's css config, please refer to this file for more info:
 // https://github.com/vercel/next.js/blob/canary/packages/next/build/webpack-config.ts

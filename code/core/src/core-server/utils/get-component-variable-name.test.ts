@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getComponentVariableName } from './get-component-variable-name';
+import { getComponentVariableName } from './get-component-variable-name.ts';
 
 describe('get-variable-name', () => {
   it('should return a valid variable name for a given string', async () => {

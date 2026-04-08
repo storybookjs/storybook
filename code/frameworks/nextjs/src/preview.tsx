@@ -14,10 +14,10 @@ import { createRouter } from '@storybook/nextjs/router.mock';
 
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error.js';
 
-import { HeadManagerDecorator } from './head-manager/decorator';
-import { ImageDecorator } from './images/decorator';
-import { RouterDecorator } from './routing/decorator';
-import { StyledJsxDecorator } from './styledJsx/decorator';
+import { HeadManagerDecorator } from './head-manager/decorator.tsx';
+import { ImageDecorator } from './images/decorator.tsx';
+import { RouterDecorator } from './routing/decorator.tsx';
+import { StyledJsxDecorator } from './styledJsx/decorator.tsx';
 
 function addNextHeadCount() {
   const meta = document.createElement('meta');

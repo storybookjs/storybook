@@ -3376,19 +3376,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@joshwooding/vite-plugin-react-docgen-typescript@npm:^0.6.4":
-  version: 0.6.4
-  resolution: "@joshwooding/vite-plugin-react-docgen-typescript@npm:0.6.4"
+"@joshwooding/vite-plugin-react-docgen-typescript@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@joshwooding/vite-plugin-react-docgen-typescript@npm:0.7.0"
   dependencies:
     glob: "npm:^13.0.1"
     react-docgen-typescript: "npm:^2.2.2"
   peerDependencies:
     typescript: ">= 4.3.x"
-    vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+    vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/73149b2d41d5b8eff7dfe4d037a6903fe4123ae46f3928d88535020539f44159c4ea1b342e6a77d4c14219f2f743fea0ef96e81279cce8b6d247dc4d582e27ed
+  checksum: 10c0/6d1a353e4dd0d9d641beafcf8d5c36805ad7f916ae07b817642033bc85c388f819f92dc94db192117dedfaa5d981ac5ef72911315e3e4bf2fe9e23d8956618e6
   languageName: node
   linkType: hard
 
@@ -8217,7 +8217,6 @@ __metadata:
     happy-dom: "npm:^17.6.3"
     http-server: "npm:^14.1.1"
     knip: "npm:^5.70.2"
-    lint-staged: "npm:^16.2.7"
     mock-require: "npm:^3.0.3"
     oxfmt: "npm:^0.41.0"
     prettier: "npm:^3.7.1"
@@ -8397,7 +8396,7 @@ __metadata:
     semver: "npm:^7.7.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.9.3"
-    vite-plugin-storybook-nextjs: "npm:^3.1.9"
+    vite-plugin-storybook-nextjs: "npm:^3.2.4"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -8614,7 +8613,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react-vite@workspace:code/frameworks/react-vite"
   dependencies:
-    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.6.4"
+    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.7.0"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
@@ -8704,8 +8703,10 @@ __metadata:
     husky: "npm:^9.1.7"
     jiti: "npm:^2.6.1"
     kill-port: "npm:^2.0.1"
+    lint-staged: "npm:^16.4.0"
     nx: "npm:^22.6.1"
-    prettier: "npm:^3.7.1"
+    oxfmt: "npm:^0.41.0"
+    std-env: "npm:^4.0.0"
     vite: "npm:^7.0.4"
     vitest: "npm:^4.1.0"
   languageName: unknown
@@ -8791,7 +8792,6 @@ __metadata:
     json5: "npm:^2.2.3"
     junit-xml: "npm:^1.2.0"
     knip: "npm:^5.70.2"
-    lint-staged: "npm:^16.2.7"
     memoizerific: "npm:^1.11.3"
     minimatch: "npm:^10.0.1"
     node-gyp: "npm:^12.1.0"
@@ -12001,6 +12001,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"aria-live-capture@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "aria-live-capture@npm:2.0.0"
+  checksum: 10c0/c706051c507320908d48b014bfd90ad225ad7104e3eb359c317e75f13888c7ef55a4c1b7cefdece9a28164774ad1ff4fd83cb492ea5c5fecd8172697144b12a8
+  languageName: node
+  linkType: hard
+
 "aria-query@npm:5.1.3":
   version: 5.1.3
   resolution: "aria-query@npm:5.1.3"
@@ -14017,10 +14024,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"commander@npm:^14.0.2":
-  version: 14.0.2
-  resolution: "commander@npm:14.0.2"
-  checksum: 10c0/245abd1349dbad5414cb6517b7b5c584895c02c4f7836ff5395f301192b8566f9796c82d7bd6c92d07eba8775fe4df86602fca5d86d8d10bcc2aded1e21c2aeb
+"commander@npm:^14.0.2, commander@npm:^14.0.3":
+  version: 14.0.3
+  resolution: "commander@npm:14.0.3"
+  checksum: 10c0/755652564bbf56ff2ff083313912b326450d3f8d8c85f4b71416539c9a05c3c67dbd206821ca72635bf6b160e2afdefcb458e86b317827d5cb333b69ce7f1a24
   languageName: node
   linkType: hard
 
@@ -17254,6 +17261,15 @@ __metadata:
   version: 1.0.8
   resolution: "exsolve@npm:1.0.8"
   checksum: 10c0/65e44ae05bd4a4a5d87cfdbbd6b8f24389282cf9f85fa5feb17ca87ad3f354877e6af4cd99e02fc29044174891f82d1d68c77f69234410eb8f163530e6278c67
+  languageName: node
+  linkType: hard
+
+"extend-to-be-announced@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "extend-to-be-announced@npm:2.0.0"
+  dependencies:
+    aria-live-capture: "npm:^2.0.0"
+  checksum: 10c0/8ad88d8711ce69ec60384f1febae31d7e5fcc2c63d7340d217800bcd5a43e906da1861243fc572d3b7a0484227502d037b38a6d55f397d8e0aa497cb682c23aa
   languageName: node
   linkType: hard
 
@@ -21339,20 +21355,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lint-staged@npm:^16.2.7":
-  version: 16.2.7
-  resolution: "lint-staged@npm:16.2.7"
+"lint-staged@npm:^16.4.0":
+  version: 16.4.0
+  resolution: "lint-staged@npm:16.4.0"
   dependencies:
-    commander: "npm:^14.0.2"
+    commander: "npm:^14.0.3"
     listr2: "npm:^9.0.5"
-    micromatch: "npm:^4.0.8"
-    nano-spawn: "npm:^2.0.0"
-    pidtree: "npm:^0.6.0"
+    picomatch: "npm:^4.0.3"
     string-argv: "npm:^0.3.2"
-    yaml: "npm:^2.8.1"
+    tinyexec: "npm:^1.0.4"
+    yaml: "npm:^2.8.2"
   bin:
     lint-staged: bin/lint-staged.js
-  checksum: 10c0/9a677c21a8112d823ae5bc565ba2c9e7b803786f2a021c46827a55fe44ed59def96edb24fc99c06a2545cdbbf366022ad82addcb3bf60c712f3b98ef92069717
+  checksum: 10c0/67625a49a2a01368c7df2da7e553567a79c4b261d9faf3436e00fc3a2f9c4bbe7295909012c47b3d9029e269fd7d7469901a5120573527a032f15797aa497c26
   languageName: node
   linkType: hard
 
@@ -23069,13 +23084,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nano-spawn@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "nano-spawn@npm:2.0.0"
-  checksum: 10c0/d00f9b5739f86e28cb732ffd774793e110810cded246b8393c75c4f22674af47f98ee37b19f022ada2d8c9425f800e841caa0662fbff4c0930a10e39339fb366
-  languageName: node
-  linkType: hard
-
 "nanoid@npm:^3.3.11, nanoid@npm:^3.3.6, nanoid@npm:^3.3.8":
   version: 3.3.11
   resolution: "nanoid@npm:3.3.11"
@@ -24745,15 +24753,6 @@ __metadata:
   version: 1.5.0
   resolution: "picoquery@npm:1.5.0"
   checksum: 10c0/c4c3f971196c8ef4b836b7e0142ec4ea8667def4652afbdaecbea09f2ae4923ee56596e8032894388b45ce3835df1c40d82692d8d8574559a76db71ac7fd3233
-  languageName: node
-  linkType: hard
-
-"pidtree@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "pidtree@npm:0.6.0"
-  bin:
-    pidtree: bin/pidtree.js
-  checksum: 10c0/0829ec4e9209e230f74ebf4265f5ccc9ebfb488334b525cb13f86ff801dca44b362c41252cd43ae4d7653a10a5c6ab3be39d2c79064d6895e0d78dc50a5ed6e9
   languageName: node
   linkType: hard
 
@@ -28583,6 +28582,7 @@ __metadata:
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@react-aria/interactions": "npm:^3.25.5"
     "@react-aria/landmark": "npm:^3.0.8"
+    "@react-aria/live-announcer": "npm:^3.4.4"
     "@react-aria/overlays": "npm:^3.29.1"
     "@react-aria/tabs": "npm:^3.10.7"
     "@react-aria/toolbar": "npm:3.0.0-beta.20"
@@ -28641,6 +28641,7 @@ __metadata:
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
     execa: "npm:^9.6.1"
     exsolve: "npm:^1.0.7"
+    extend-to-be-announced: "npm:^2.0.0"
     fetch-retry: "npm:^6.0.0"
     flush-promises: "npm:^1.0.2"
     fuse.js: "npm:^3.6.1"
@@ -29547,7 +29548,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tinyexec@npm:^1.0.2":
+"tinyexec@npm:^1.0.2, tinyexec@npm:^1.0.4":
   version: 1.0.4
   resolution: "tinyexec@npm:1.0.4"
   checksum: 10c0/d4a5bbcf6bdb23527a4b74c4aa566f41432167112fe76f420ec7e3a90a3ecfd3a7d944383e2719fc3987b69400f7b928daf08700d145fb527c2e80ec01e198bd
@@ -30894,9 +30895,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:^3.1.9":
-  version: 3.1.9
-  resolution: "vite-plugin-storybook-nextjs@npm:3.1.9"
+"vite-plugin-storybook-nextjs@npm:^3.2.4":
+  version: 3.2.4
+  resolution: "vite-plugin-storybook-nextjs@npm:3.2.4"
   dependencies:
     "@next/env": "npm:16.0.0"
     image-size: "npm:^2.0.0"
@@ -30906,9 +30907,9 @@ __metadata:
     vite-tsconfig-paths: "npm:^5.1.4"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
-    storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
-  checksum: 10c0/2d854d47debd556154bd575f1e0d962561a73a88e2cdeb0b1719e3510a6b77475a75667213568466866c08e6c21c3c4a50e982814823f24de00e3759c30872d5
+    storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+  checksum: 10c0/74c4969ec5f19e3045d301cfc72c2702134c19223851a81f955ae2f26252305a6f5ebe101d21e91bd2d88fd76d2ed10b7ae22a5c63b47f085328b87864a63664
   languageName: node
   linkType: hard
 
@@ -32150,12 +32151,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yaml@npm:^2.0.0, yaml@npm:^2.6.0, yaml@npm:^2.8.1":
-  version: 2.8.1
-  resolution: "yaml@npm:2.8.1"
+"yaml@npm:^2.0.0, yaml@npm:^2.6.0, yaml@npm:^2.8.1, yaml@npm:^2.8.2":
+  version: 2.8.2
+  resolution: "yaml@npm:2.8.2"
   bin:
     yaml: bin.mjs
-  checksum: 10c0/7c587be00d9303d2ae1566e03bc5bc7fe978ba0d9bf39cc418c3139d37929dfcb93a230d9749f2cb578b6aa5d9ebebc322415e4b653cb83acd8bc0bc321707f3
+  checksum: 10c0/703e4dc1e34b324aa66876d63618dcacb9ed49f7e7fe9b70f1e703645be8d640f68ab84f12b86df8ac960bac37acf5513e115de7c970940617ce0343c8c9cd96
   languageName: node
   linkType: hard
 

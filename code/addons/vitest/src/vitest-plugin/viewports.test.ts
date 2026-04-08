@@ -8,7 +8,7 @@ import {
   type ViewportsGlobal,
   type ViewportsParam,
   setViewport,
-} from './viewports';
+} from './viewports.ts';
 
 vi.mock('@vitest/browser/context', () => ({
   page: {

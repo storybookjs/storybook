@@ -1,9 +1,9 @@
 /// <reference path="./typings.d.ts" />
 import { TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
-import { globalPackages, globalsNameReferenceMap } from './globals/globals';
-import { globalsNameValueMap } from './globals/runtime';
-import { prepareForTelemetry, shouldSkipError } from './utils/prepareForTelemetry';
+import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
+import { globalsNameValueMap } from './globals/runtime.ts';
+import { prepareForTelemetry, shouldSkipError } from './utils/prepareForTelemetry.ts';
 
 // Apply all the globals
 globalPackages.forEach((key) => {

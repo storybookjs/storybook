@@ -2,8 +2,8 @@ import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
 
-import { Tool } from './Tool';
-import { ADDON_ID, TOOL_ID } from './constants';
+import { Tool } from './Tool.tsx';
+import { ADDON_ID, TOOL_ID } from './constants.ts';
 
 export default addons.register(ADDON_ID, () => {
   if (globalThis?.FEATURES?.measure) {

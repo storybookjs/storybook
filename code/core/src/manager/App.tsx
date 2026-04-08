@@ -7,12 +7,12 @@ import type { Addon_PageType } from 'storybook/internal/types';
 import { addons } from 'storybook/manager-api';
 import { Global, createGlobal } from 'storybook/theming';
 
-import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary';
-import { Layout } from './components/layout/Layout';
-import { useLayout } from './components/layout/LayoutProvider';
-import Panel from './container/Panel';
-import Preview from './container/Preview';
-import Sidebar from './container/Sidebar';
+import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
+import { Layout } from './components/layout/Layout.tsx';
+import { useLayout } from './components/layout/LayoutProvider.tsx';
+import Panel from './container/Panel.tsx';
+import Preview from './container/Preview.tsx';
+import Sidebar from './container/Sidebar.tsx';
 
 type Props = {
   managerLayoutState: ComponentProps<typeof Layout>['managerLayoutState'];

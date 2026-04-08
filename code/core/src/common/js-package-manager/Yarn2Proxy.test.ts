@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
-import { executeCommand } from '../utils/command';
-import { JsPackageManager } from './JsPackageManager';
-import { Yarn2Proxy } from './Yarn2Proxy';
+import { executeCommand } from '../utils/command.ts';
+import { JsPackageManager } from './JsPackageManager.ts';
+import { Yarn2Proxy } from './Yarn2Proxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {

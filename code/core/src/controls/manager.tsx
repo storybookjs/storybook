@@ -15,11 +15,11 @@ import { dequal as deepEqual } from 'dequal';
 import { addons, experimental_requestResponse, types } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
-import { ControlsPanel } from './components/ControlsPanel';
-import { Title } from './components/Title';
-import { ADDON_ID, PARAM_KEY } from './constants';
-import { trySelectStory } from '../manager/utils/trySelectStory';
-import { stringifyArgs } from './stringifyArgs';
+import { ControlsPanel } from './components/ControlsPanel.tsx';
+import { Title } from './components/Title.tsx';
+import { ADDON_ID, PARAM_KEY } from './constants.ts';
+import { trySelectStory } from '../manager/utils/trySelectStory.ts';
+import { stringifyArgs } from './stringifyArgs.tsx';
 
 export default addons.register(ADDON_ID, (api) => {
   if (globalThis?.FEATURES?.controls) {
@@ -123,7 +123,7 @@ export default addons.register(ADDON_ID, (api) => {
           return null;
         }
         return (
-          <AddonPanel active={active}>
+          <AddonPanel active={active} hasHorizontalScrollbar hasScrollbar>
             <ControlsPanel saveStory={saveStory} createStory={createStory} />
           </AddonPanel>
         );

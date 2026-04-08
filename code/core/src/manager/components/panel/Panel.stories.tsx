@@ -9,8 +9,8 @@ import { BellIcon } from '@storybook/icons';
 
 import { action } from 'storybook/actions';
 
-import { defaultShortcuts } from '../../settings/defaultShortcuts';
-import { AddonPanel } from './Panel';
+import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
+import { AddonPanel } from './Panel.tsx';
 
 const onSelect = action('onSelect');
 const toggleVisibility = action('toggleVisibility');

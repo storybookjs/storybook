@@ -36,7 +36,15 @@ export const normalizeInputType = (inputType: InputType, key: string): StrictInp
     normalized.type = normalizeType(type);
   }
   if (control) {
-    normalized.control = normalizeControl(control);
+    // Extract options from control object if present (users may mistakenly nest
+    // options inside control, e.g. control: { type: 'select', options: [...] })
+    if (typeof control === 'object' && 'options' in control && !normalized.options) {
+      const { options: controlOptions, ...controlRest } = control;
+      normalized.options = controlOptions;
+      normalized.control = normalizeControl(controlRest);
+    } else {
+      normalized.control = normalizeControl(control);
+    }
   } else if (control === false) {
     normalized.control = { disable: true };
   }

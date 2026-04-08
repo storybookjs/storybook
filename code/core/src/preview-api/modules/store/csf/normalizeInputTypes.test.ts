@@ -123,3 +123,36 @@ describe('normalizeInputTypes', () => {
     });
   });
 });
+
+describe("normalizeInputType - options extraction", () => {
+  it("extracts options from inside control object to top level", () => {
+    expect(
+      normalizeInputType(
+        {
+          control: { type: "select", options: ["a", "b", "c"] },
+        },
+        "arg"
+      )
+    ).toEqual({
+      name: "arg",
+      options: ["a", "b", "c"],
+      control: { type: "select", disable: false },
+    });
+  });
+
+  it("does not override existing top-level options with control.options", () => {
+    expect(
+      normalizeInputType(
+        {
+          options: ["x", "y"],
+          control: { type: "select", options: ["a", "b", "c"] },
+        },
+        "arg"
+      )
+    ).toEqual({
+      name: "arg",
+      options: ["x", "y"],
+      control: { type: "select", options: ["a", "b", "c"], disable: false },
+    });
+  });
+});

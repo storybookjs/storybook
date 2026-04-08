@@ -3,7 +3,11 @@ import type { SBType } from 'storybook/internal/types';
 
 import type { FlowLiteralType, FlowSigType, FlowType } from './types.ts';
 
+// Type guards for narrowing FlowType discriminant unions
+type FlowVoidType = Extract<FlowType, { name: 'void' }>;
+
 const isLiteral = (type: FlowType): type is FlowLiteralType => type.name === 'literal';
+const isVoid = (type: FlowType): type is FlowVoidType => type.name === 'void';
 const toEnumOption = (element: FlowLiteralType) => element.value.replace(/['|"]/g, '');
 
 const convertSig = (type: FlowSigType) => {
@@ -45,11 +49,16 @@ export const convert = (type: FlowType): SBType | void => {
     }
     case 'signature':
       return { ...base, ...convertSig(type) };
-    case 'union':
-      if (type.elements?.every(isLiteral)) {
-        return { ...base, name: 'enum', value: type.elements?.map(toEnumOption) };
+    case 'union': {
+      const nonVoidElements = (type.elements ?? []).filter((element) => !isVoid(element));
+      const allLiterals = nonVoidElements.length > 0 && nonVoidElements.every(isLiteral);
+
+      if (allLiterals) {
+        const literalElements = nonVoidElements.filter(isLiteral);
+        return { ...base, name: 'enum', value: literalElements.map(toEnumOption) };
       }
       return { ...base, name, value: type.elements?.map(convert) };
+    }
 
     case 'intersection':
       return { ...base, name, value: type.elements?.map(convert) };

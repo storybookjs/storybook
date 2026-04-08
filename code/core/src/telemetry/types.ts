@@ -114,6 +114,10 @@ export interface Options {
   enableCrashReports?: boolean;
   stripMetadata?: boolean;
   notify?: boolean;
+  /** Override the event timestamp. Used when flushing queued events to preserve original timing. */
+  timestamp?: number;
+  /** When true, bypass the disabled state. Used for error telemetry with enableCrashReports. */
+  force?: boolean;
 }
 
 export interface TelemetryData {

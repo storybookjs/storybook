@@ -34,7 +34,7 @@ jobs:
           agent-scan-comment: false
           cache-path: .agentscan-cache
       - name: Label flagged PR
-        if: contains(fromJSON('["automation","suspicious"]'), steps.agentscan.outputs.classification) && !contains(steps.agentscan.outputs.community-flagged, 'true')
+        if: contains(fromJSON('["automation","suspicious"]'), steps.agentscan.outputs.classification) && steps.agentscan.outputs.community-flagged != 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |

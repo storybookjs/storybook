@@ -150,6 +150,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     instance,
     refs,
     template,
+    htmlLang,
     title,
     logLevel,
     docsOptions,
@@ -215,7 +216,8 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     docsOptions,
     tagsOptions,
     options,
-    globals
+    globals,
+    htmlLang
   );
 
   yield;
@@ -265,6 +267,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     instance,
     refs,
     template,
+    htmlLang,
     title,
     logLevel,
     docsOptions,
@@ -313,7 +316,8 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     docsOptions,
     tagsOptions,
     options,
-    globals
+    globals,
+    htmlLang
   );
 
   await Promise.all([writeFile(join(options.outputDir, 'index.html'), html), managerFiles]);

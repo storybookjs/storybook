@@ -5,7 +5,6 @@ import {
   CREATE_NEW_STORYFILE_RESPONSE,
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
-  GHOST_STORIES_REQUEST,
 } from 'storybook/internal/core-events';
 import type {
   CreateNewStoryErrorPayload,
@@ -17,7 +16,6 @@ import type {
   ResponseData,
 } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
 import { CheckIcon } from '@storybook/icons';
 
 import type { RequestResponseError } from 'storybook/manager-api';
@@ -33,8 +31,6 @@ interface CreateNewStoryFileModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const isRendererReact = global.STORYBOOK_RENDERER === 'react';
-
 export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFileModalProps) => {
   const [isLoading, setLoading] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
@@ -45,8 +41,6 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
     null
   );
   const api = useStorybookApi();
-
-  const hasRunGhostStoriesFlow = useRef(false);
 
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
 
@@ -173,19 +167,6 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
   useEffect(() => {
     return handleFileSearch();
   }, [handleFileSearch]);
-
-  const executeGhostStoriesFlow = useCallback(async () => {
-    const channel = addons.getChannel();
-    channel.emit(GHOST_STORIES_REQUEST);
-  }, []);
-
-  // Trigger the one-time flow when modal opens
-  useEffect(() => {
-    if (open && isRendererReact && !hasRunGhostStoriesFlow.current) {
-      hasRunGhostStoriesFlow.current = true;
-      executeGhostStoriesFlow();
-    }
-  }, [open, executeGhostStoriesFlow]);
 
   return (
     <FileSearchModal

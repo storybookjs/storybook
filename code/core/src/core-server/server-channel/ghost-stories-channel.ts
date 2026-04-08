@@ -1,11 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import { GHOST_STORIES_REQUEST, GHOST_STORIES_RESPONSE } from 'storybook/internal/core-events';
-import {
-  getLastEvents,
-  getSessionId,
-  getStorybookMetadata,
-  telemetry,
-} from 'storybook/internal/telemetry';
+import { getLastEvents, getStorybookMetadata, telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
@@ -40,13 +35,9 @@ export function initGhostStoriesChannel(
         return;
       }
 
-      const sessionId = await getSessionId();
       const lastGhostStoriesRun = lastEvents['ghost-stories'];
-      if (
-        lastGhostStoriesRun ||
-        (lastInit.body?.sessionId && lastInit.body.sessionId !== sessionId)
-      ) {
-        return;
+      if (lastGhostStoriesRun) {
+        return; // Already ran once for this project — never run again
       }
 
       const metadata = await getStorybookMetadata(options.configDir);

@@ -25,6 +25,7 @@ import { SearchResults } from './SearchResults.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
 import { Filter } from './Filter.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
+import { useGhostStoriesTrigger } from './useGhostStoriesTrigger.ts';
 import { useLastViewed } from './useLastViewed.ts';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
@@ -136,6 +137,8 @@ export const Sidebar = React.memo(function Sidebar({
     { 'aria-labelledby': 'global-site-h1', role: 'banner' },
     headerRef
   );
+
+  useGhostStoriesTrigger();
 
   const isPagesShown = viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs';
   const skipLinkHref = isPagesShown ? '#main-content-wrapper' : '#storybook-preview-wrapper';

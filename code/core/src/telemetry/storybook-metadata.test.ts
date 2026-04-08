@@ -15,6 +15,7 @@ import {
 import { detect } from 'package-manager-detector';
 
 import { type Settings, globalSettings } from '../cli/globalSettings.ts';
+import { detectAgent } from './detect-agent.ts';
 import { getApplicationFileCount } from '../telemetry/get-application-file-count.ts';
 import { analyzeEcosystemPackages } from '../telemetry/get-known-packages.ts';
 import { getMonorepoType } from '../telemetry/get-monorepo-type.ts';
@@ -32,6 +33,9 @@ import {
 } from './storybook-metadata.ts';
 
 vi.mock(import('../cli/globalSettings.ts'), { spy: true });
+vi.mock('./detect-agent.ts', () => ({
+  detectAgent: vi.fn().mockReturnValue(undefined),
+}));
 vi.mock(import('./package-json.ts'), { spy: true });
 vi.mock(import('./get-monorepo-type.ts'), { spy: true });
 vi.mock(import('./get-framework-info.ts'), { spy: true });
@@ -575,6 +579,26 @@ describe('storybook-metadata', () => {
 
       expect(globalSettings).not.toHaveBeenCalled();
       expect(res.userSince).not.toBeDefined();
+    });
+
+    it('should detect userSince info in CI when agent is detected', async () => {
+      vi.mocked(isCI).mockImplementation(() => true);
+      vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+      vi.mocked(globalSettings).mockResolvedValue({
+        value: {
+          userSince: 1717334400000,
+        },
+      } as Settings);
+
+      const res = await computeStorybookMetadata({
+        configDir: '.storybook',
+        packageJson: packageJsonMock,
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(globalSettings).toHaveBeenCalled();
+      expect(res.userSince).toEqual(1717334400000);
     });
 
     it('should include knownPackages in metadata', async () => {

@@ -52,7 +52,7 @@ export type NodeVersionPrecision = 'major' | 'minor' | 'patch';
  * - A version is supported if its major matches one of the defined supported majors
  *   and its minor.patch meets that major's minimum, or its major is above the highest defined.
  *
- * **`mode: 'nvmrc'`** (use when checking a declared `.nvmrc` version):
+ * **`mode: 'permissive'`** (use when checking a declared `.nvmrc` version):
  * - Treats missing components as "latest of that level" instead of 0.
  * - `precision: 'major'` (e.g. `"22"`): supported if the major itself appears in
  *   MIN_SUPPORTED_NODE_VERSIONS (meaning some supported version exists for that major).
@@ -67,7 +67,7 @@ export function isNodeVersionSupported(
   {
     mode = 'strict',
     precision = 'patch',
-  }: { mode?: 'strict' | 'nvmrc'; precision?: NodeVersionPrecision } = {}
+  }: { mode?: 'strict' | 'permissive'; precision?: NodeVersionPrecision } = {}
 ): boolean {
   const maxDefinedMajor = Math.max(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
 
@@ -75,7 +75,7 @@ export function isNodeVersionSupported(
     return true;
   }
 
-  if (mode === 'nvmrc') {
+  if (mode === 'permissive') {
     if (precision === 'major') {
       // "22" in .nvmrc means "latest 22.x" — supported if any supported version exists for major 22
       return MIN_SUPPORTED_NODE_VERSIONS.some((v) => v.major === major);
@@ -130,77 +130,4 @@ export function parseNodeVersionString(
     patch: parts[2] ?? 0,
     precision: parts.length >= 3 ? 'patch' : parts.length === 2 ? 'minor' : 'major',
   };
-}
-
-export interface DeclaredNodeVersions {
-  nvmrcPath: string | undefined;
-  nvmrcVersion: string | undefined;
-  enginesNode: string | undefined;
-  packageJsonPath: string | undefined;
-}
-
-/**
- * Detect declared Node.js version from .nvmrc and package.json engines.node.
- *
- * @param cwd - Directory to search from (defaults to process.cwd())
- */
-export function detectDeclaredNodeVersions(cwd?: string): DeclaredNodeVersions {
-  const result: DeclaredNodeVersions = {
-    nvmrcPath: undefined,
-    nvmrcVersion: undefined,
-    enginesNode: undefined,
-    packageJsonPath: undefined,
-  };
-
-  // Check .nvmrc — bound the upward search to the project root so we never
-  // accidentally read/modify an unrelated .nvmrc higher up (e.g. in $HOME).
-  try {
-    const nvmrcPath = find.up('.nvmrc', { cwd, last: getProjectRoot() });
-    if (nvmrcPath) {
-      const content = readFileSync(nvmrcPath, 'utf-8').trim();
-      const parsed = parseNodeVersionString(content);
-      if (parsed) {
-        result.nvmrcPath = nvmrcPath;
-        result.nvmrcVersion = content.replace(/^v/i, '').trim();
-      }
-    }
-  } catch {
-    // .nvmrc not readable — skip
-  }
-
-  // Check package.json engines.node
-  try {
-    const packageJsonPath = cwd ? join(cwd, 'package.json') : 'package.json';
-    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
-    const packageJson = JSON.parse(packageJsonContent);
-    const enginesNode = packageJson?.engines?.node;
-    if (typeof enginesNode === 'string' && enginesNode.trim()) {
-      result.enginesNode = enginesNode;
-      result.packageJsonPath = packageJsonPath;
-    }
-  } catch {
-    // package.json not readable or no engines — skip
-  }
-
-  return result;
-}
-
-/** Write a new version string to an .nvmrc file. */
-export function updateNvmrc(filePath: string, version: string): void {
-  writeFileSync(filePath, `${version}\n`, 'utf-8');
-}
-
-/** Update the engines.node field in a package.json file, preserving indentation. */
-export function updateEnginesNode(packageJsonPath: string, range: string): void {
-  const content = readFileSync(packageJsonPath, 'utf-8');
-  const packageJson = JSON.parse(content);
-
-  if (!packageJson.engines) {
-    packageJson.engines = {};
-  }
-  packageJson.engines.node = range;
-
-  const indent = detectIndent(content).indent || '  ';
-
-  writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, indent) + '\n', 'utf-8');
 }

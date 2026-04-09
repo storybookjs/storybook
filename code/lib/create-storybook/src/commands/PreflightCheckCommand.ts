@@ -2,20 +2,11 @@ import { detectPnp } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
-  MIN_SUPPORTED_NODE_DESCRIPTION,
-  MIN_SUPPORTED_NODE_VERSIONS,
   PackageManagerName,
-  detectDeclaredNodeVersions,
-  formatMinVersion,
   invalidateProjectRootCache,
-  isNodeVersionSupported,
-  parseNodeVersionString,
-  updateEnginesNode,
-  updateNvmrc,
 } from 'storybook/internal/common';
-import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
 
-import { minVersion } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
@@ -35,7 +26,6 @@ export interface PreflightCheckResult {
  * - Handle empty directory detection and scaffolding
  * - Initialize package manager
  * - Install base dependencies if needed
- * - Check declared Node.js version and offer to bump if below minimum
  */
 export class PreflightCheckCommand {
   /** Execute preflight checks */
@@ -90,8 +80,6 @@ export class PreflightCheckCommand {
 
     await this.displayVersionInfo(packageManager);
 
-    await this.checkDeclaredNodeVersion(!!options.yes);
-
     return { packageManager, isEmptyProject: isEmptyDirProject };
   }
 
@@ -135,114 +123,6 @@ export class PreflightCheckCommand {
       logger.warn(`This is a pre-release version: ${currentVersion}`);
     } else {
       logger.info(`Adding Storybook version ${currentVersion} to your project`);
-    }
-  }
-
-  /** Check declared Node.js versions (.nvmrc, engines.node) and offer to bump if below minimum */
-  private async checkDeclaredNodeVersion(yes = false): Promise<void> {
-    const declared = detectDeclaredNodeVersions();
-
-    // Check .nvmrc
-    if (declared.nvmrcPath && declared.nvmrcVersion) {
-      const parsed = parseNodeVersionString(declared.nvmrcVersion);
-      if (
-        parsed &&
-        !isNodeVersionSupported(parsed.major, parsed.minor, parsed.patch, {
-          mode: 'nvmrc',
-          precision: parsed.precision,
-        })
-      ) {
-        await this.promptVersionBump('nvmrc', declared.nvmrcPath, declared.nvmrcVersion, yes);
-      }
-    }
-
-    // Check engines.node
-    if (declared.enginesNode && declared.packageJsonPath) {
-      const min = minVersion(declared.enginesNode);
-      if (min && !isNodeVersionSupported(min.major, min.minor, min.patch)) {
-        await this.promptVersionBump(
-          'engines',
-          declared.packageJsonPath,
-          declared.enginesNode,
-          yes
-        );
-      }
-    }
-  }
-
-  private async promptVersionBump(
-    type: 'nvmrc' | 'engines',
-    filePath: string,
-    currentValue: string,
-    yes = false
-  ): Promise<void> {
-    const [runtimeMajor, runtimeMinor, runtimePatch] = process.versions.node.split('.').map(Number);
-    const runtimeVersion = `${runtimeMajor}.${runtimeMinor}.${runtimePatch}`;
-
-    if (type === 'nvmrc') {
-      logger.warn(dedent`
-        Your .nvmrc specifies Node.js ${currentValue}, which is below Storybook's
-        minimum supported version (${MIN_SUPPORTED_NODE_DESCRIPTION}).
-      `);
-    } else {
-      const min = minVersion(currentValue);
-      logger.warn(dedent`
-        Your package.json engines.node ("${currentValue}") resolves to a minimum of
-        Node.js ${min?.version ?? currentValue}, which is below Storybook's minimum supported version
-        (${MIN_SUPPORTED_NODE_DESCRIPTION}).
-      `);
-    }
-
-    // Skip the interactive prompt in non-interactive/CI environments or when --yes is passed
-    const isInteractive =
-      !yes &&
-      process.stdout.isTTY &&
-      process.stdin.isTTY &&
-      !process.env.CI &&
-      !process.env.STORYBOOK_CI;
-    if (!isInteractive) {
-      return;
-    }
-
-    const options: Array<{ value: string; label: string }> = MIN_SUPPORTED_NODE_VERSIONS.map(
-      (v) => ({
-        value: type === 'nvmrc' ? `${v.major}.${v.minor}.${v.patch}` : `>=${v.major}.${v.minor}`,
-        label: formatMinVersion(v).replace('+', ''),
-      })
-    );
-
-    if (isNodeVersionSupported(runtimeMajor, runtimeMinor, runtimePatch)) {
-      options.push({
-        value: type === 'nvmrc' ? runtimeVersion : `>=${runtimeMajor}.${runtimeMinor}`,
-        label: `${runtimeVersion}  (your current runtime)`,
-      });
-    }
-
-    options.push({ value: 'skip', label: "Don't change" });
-
-    const message =
-      type === 'nvmrc'
-        ? 'Update your .nvmrc to a supported version?'
-        : 'Update your package.json engines.node to a supported version?';
-
-    const selected = await prompt.select<string>({ message, options });
-
-    if (selected !== 'skip') {
-      try {
-        if (type === 'nvmrc') {
-          updateNvmrc(filePath, selected);
-        } else {
-          updateEnginesNode(filePath, selected);
-        }
-      } catch (error) {
-        logger.warn(
-          dedent`
-            Could not update ${type === 'nvmrc' ? '.nvmrc' : 'package.json engines.node'} at ${filePath}.
-            Storybook initialization will continue without applying the Node.js version bump.
-            ${error instanceof Error ? error.message : String(error)}
-          `
-        );
-      }
     }
   }
 }

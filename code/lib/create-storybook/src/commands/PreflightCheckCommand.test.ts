@@ -1,32 +1,22 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   JsPackageManagerFactory,
   PackageManagerName,
-  detectDeclaredNodeVersions,
   invalidateProjectRootCache,
-  updateEnginesNode,
-  updateNvmrc,
 } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
-import type { CommandOptions } from '../generators/types.ts';
 import * as scaffoldModule from '../scaffold-new-project.ts';
 import { PreflightCheckCommand } from './PreflightCheckCommand.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('../scaffold-new-project', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
-vi.mock('semver', { spy: true });
-
-const opts = (overrides?: Partial<CommandOptions>): CommandOptions =>
-  ({
-    ...overrides,
-  }) as CommandOptions;
 
 describe('PreflightCheckCommand', () => {
   let command: PreflightCheckCommand;
-  let mockPackageManager: ReturnType<typeof JsPackageManagerFactory.getPackageManager>;
+  let mockPackageManager: any;
 
   beforeEach(() => {
     command = new PreflightCheckCommand();
@@ -35,7 +25,7 @@ describe('PreflightCheckCommand', () => {
       latestVersion: vi.fn().mockResolvedValue('8.0.0'),
       type: PackageManagerName.NPM,
       primaryPackageJson: { packageJson: { name: 'my-app' } },
-    } as unknown as ReturnType<typeof JsPackageManagerFactory.getPackageManager>;
+    };
 
     vi.mocked(JsPackageManagerFactory.getPackageManager).mockReturnValue(mockPackageManager);
     vi.mocked(JsPackageManagerFactory.getPackageManagerType).mockReturnValue(
@@ -44,14 +34,6 @@ describe('PreflightCheckCommand', () => {
     vi.mocked(scaffoldModule.scaffoldNewProject).mockResolvedValue(undefined);
     vi.mocked(invalidateProjectRootCache).mockImplementation(() => {});
 
-    // Default: no declared version issues (prevents checkDeclaredNodeVersion from prompting)
-    vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
-      nvmrcPath: undefined,
-      nvmrcVersion: undefined,
-      enginesNode: undefined,
-      packageJsonPath: undefined,
-    });
-
     vi.clearAllMocks();
   });
 
@@ -59,7 +41,7 @@ describe('PreflightCheckCommand', () => {
     it('should return package manager for non-empty directory', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
 
-      const result = await command.execute(opts({ force: false }));
+      const result = await command.execute({ force: false } as any);
 
       expect(result.packageManager).toBe(mockPackageManager);
       expect(result.isEmptyProject).toBe(false);
@@ -70,15 +52,12 @@ describe('PreflightCheckCommand', () => {
     it('should scaffold new project when directory is empty', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(true);
 
-      const result = await command.execute(opts({ force: false, skipInstall: true }));
+      const result = await command.execute({ force: false, skipInstall: true } as any);
 
-      expect(scaffoldModule.scaffoldNewProject).toHaveBeenCalledWith(
-        'npm',
-        expect.objectContaining({
-          force: false,
-          skipInstall: true,
-        })
-      );
+      expect(scaffoldModule.scaffoldNewProject).toHaveBeenCalledWith('npm', {
+        force: false,
+        skipInstall: true,
+      });
       expect(invalidateProjectRootCache).toHaveBeenCalled();
       expect(result.isEmptyProject).toBe(true);
     });
@@ -86,7 +65,7 @@ describe('PreflightCheckCommand', () => {
     it('should install dependencies for empty project when not skipping install', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(true);
 
-      await command.execute(opts({ force: false, skipInstall: false }));
+      await command.execute({ force: false, skipInstall: false } as any);
 
       expect(mockPackageManager.installDependencies).toHaveBeenCalled();
     });
@@ -94,7 +73,7 @@ describe('PreflightCheckCommand', () => {
     it('should not install dependencies when skipInstall is true', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(true);
 
-      await command.execute(opts({ force: false, skipInstall: true }));
+      await command.execute({ force: false, skipInstall: true } as any);
 
       expect(mockPackageManager.installDependencies).not.toHaveBeenCalled();
     });
@@ -105,7 +84,7 @@ describe('PreflightCheckCommand', () => {
         PackageManagerName.YARN1
       );
 
-      await command.execute(opts({ force: false, skipInstall: true }));
+      await command.execute({ force: false, skipInstall: true } as any);
 
       expect(scaffoldModule.scaffoldNewProject).toHaveBeenCalledWith('npm', expect.any(Object));
     });
@@ -113,7 +92,7 @@ describe('PreflightCheckCommand', () => {
     it('should skip scaffolding when force is true', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(true);
 
-      const result = await command.execute(opts({ force: true }));
+      const result = await command.execute({ force: true } as any);
 
       expect(scaffoldModule.scaffoldNewProject).not.toHaveBeenCalled();
       expect(result.isEmptyProject).toBe(false);
@@ -122,11 +101,20 @@ describe('PreflightCheckCommand', () => {
     it('should use provided package manager', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
 
-      await command.execute(opts({ packageManager: 'yarn' as PackageManagerName }));
+      await command.execute({ packageManager: 'yarn' as PackageManagerName });
 
       expect(JsPackageManagerFactory.getPackageManager).toHaveBeenCalledWith({
         force: 'yarn',
       });
+    });
+
+    it('should log the detected package manager', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.type = PackageManagerName.YARN2;
+
+      await command.execute({ force: false } as any);
+
+      expect(vi.mocked(logger.intro)).toHaveBeenCalledWith('Package manager: Yarn Berry');
     });
 
     it('should warn when package.json name is "storybook"', async () => {
@@ -136,7 +124,7 @@ describe('PreflightCheckCommand', () => {
         configurable: true,
       });
 
-      await command.execute(opts({ force: false }));
+      await command.execute({ force: false } as any);
 
       expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
         expect.stringContaining('Your package.json "name" field is set to "storybook"')
@@ -150,149 +138,11 @@ describe('PreflightCheckCommand', () => {
         configurable: true,
       });
 
-      await command.execute(opts({ force: false }));
+      await command.execute({ force: false } as any);
 
       expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
         expect.stringContaining('Your package.json "name" field is set to "storybook"')
       );
-    });
-  });
-
-  describe('checkDeclaredNodeVersion', () => {
-    const originalStdoutIsTTY = process.stdout.isTTY;
-    const originalStdinIsTTY = process.stdin.isTTY;
-    const originalCI = process.env.CI;
-    const originalStorybookCI = process.env.STORYBOOK_CI;
-
-    beforeEach(() => {
-      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
-      // Make the interactive prompt path reachable
-      Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
-      Object.defineProperty(process.stdin, 'isTTY', { value: true, configurable: true });
-      delete process.env.CI;
-      delete process.env.STORYBOOK_CI;
-    });
-
-    afterEach(() => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: originalStdoutIsTTY,
-        configurable: true,
-      });
-      Object.defineProperty(process.stdin, 'isTTY', {
-        value: originalStdinIsTTY,
-        configurable: true,
-      });
-      if (originalCI !== undefined) process.env.CI = originalCI;
-      else delete process.env.CI;
-      if (originalStorybookCI !== undefined) process.env.STORYBOOK_CI = originalStorybookCI;
-      else delete process.env.STORYBOOK_CI;
-    });
-
-    it('should not show declared version prompt when .nvmrc is fine', async () => {
-      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
-        nvmrcPath: '/project/.nvmrc',
-        nvmrcVersion: '22.14.2',
-        enginesNode: undefined,
-        packageJsonPath: undefined,
-      });
-
-      await command.execute(opts({ force: false }));
-
-      expect(prompt.select).not.toHaveBeenCalled();
-    });
-
-    it('should show select prompt when .nvmrc is below minimum', async () => {
-      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
-        nvmrcPath: '/project/.nvmrc',
-        nvmrcVersion: '18.0.0',
-        enginesNode: undefined,
-        packageJsonPath: undefined,
-      });
-      vi.mocked(prompt.select).mockResolvedValue('skip');
-
-      await command.execute(opts({ force: false }));
-
-      expect(prompt.select).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('.nvmrc'),
-        })
-      );
-    });
-
-    it('should update .nvmrc when user selects a version', async () => {
-      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
-        nvmrcPath: '/project/.nvmrc',
-        nvmrcVersion: '18.0.0',
-        enginesNode: undefined,
-        packageJsonPath: undefined,
-      });
-      vi.mocked(prompt.select).mockResolvedValue('22.12.0');
-      vi.mocked(updateNvmrc).mockImplementation(() => {});
-
-      await command.execute(opts({ force: false }));
-
-      expect(updateNvmrc).toHaveBeenCalledWith('/project/.nvmrc', '22.12.0');
-    });
-
-    it('should not update .nvmrc when user selects skip', async () => {
-      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
-        nvmrcPath: '/project/.nvmrc',
-        nvmrcVersion: '18.0.0',
-        enginesNode: undefined,
-        packageJsonPath: undefined,
-      });
-      vi.mocked(prompt.select).mockResolvedValue('skip');
-
-      await command.execute(opts({ force: false }));
-
-      expect(updateNvmrc).not.toHaveBeenCalled();
-    });
-
-    it('should show prompt for engines.node when below minimum', async () => {
-      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
-        nvmrcPath: undefined,
-        nvmrcVersion: undefined,
-        enginesNode: '>=16',
-        packageJsonPath: '/project/package.json',
-      });
-      vi.mocked(prompt.select).mockResolvedValue('skip');
-
-      await command.execute(opts({ force: false }));
-
-      expect(prompt.select).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('engines.node'),
-        })
-      );
-    });
-
-    it('should show two prompts when both .nvmrc and engines.node are below minimum', async () => {
-      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
-        nvmrcPath: '/project/.nvmrc',
-        nvmrcVersion: '18.0.0',
-        enginesNode: '>=16',
-        packageJsonPath: '/project/package.json',
-      });
-      vi.mocked(prompt.select).mockResolvedValue('skip');
-
-      await command.execute(opts({ force: false }));
-
-      expect(prompt.select).toHaveBeenCalledTimes(2);
-    });
-
-    it('should update engines.node when user selects a version', async () => {
-      vi.mocked(detectDeclaredNodeVersions).mockReturnValue({
-        nvmrcPath: undefined,
-        nvmrcVersion: undefined,
-        enginesNode: '>=16',
-        packageJsonPath: '/project/package.json',
-      });
-      vi.mocked(prompt.select).mockResolvedValue('>=22.12');
-      vi.mocked(updateEnginesNode).mockImplementation(() => {});
-
-      await command.execute(opts({ force: false }));
-
-      expect(updateEnginesNode).toHaveBeenCalledWith('/project/package.json', '>=22.12');
     });
   });
 });

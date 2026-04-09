@@ -75,6 +75,7 @@ interface EvalDataPayload {
     evalCommit?: string;
   };
   execution?: {
+    cost?: number;
     duration?: number;
     durationApi?: number;
     turns?: number;
@@ -170,6 +171,7 @@ interface NormalizedTrialData {
   effort: string;
   buildSuccess: 0 | 1;
   typecheckErrors: number;
+  costUsd: number | null;
   durationS: number;
   durationApiS: number | null;
   turns: number;
@@ -194,6 +196,8 @@ interface CollectorSummary {
   skippedTrials: number;
   skippedWithoutDataJson: number;
   failedTrials: number;
+  backfilledTrialCosts: number;
+  failedTrialCostBackfills: number;
   backfilledScreenshotBlobs: number;
   failedScreenshotBlobBackfills: number;
 }
@@ -203,7 +207,10 @@ interface CollectPullRequestOptions {
   project: Project;
   projectId: number;
   pullRequest: PullRequestListItem;
+  skipImageFetch: boolean;
 }
+
+type PullRequestState = 'all' | 'open';
 
 type CollectPullRequestResult =
   | 'inserted'
@@ -234,6 +241,8 @@ export async function main() {
       skippedTrials: 0,
       skippedWithoutDataJson: 0,
       failedTrials: 0,
+      backfilledTrialCosts: 0,
+      failedTrialCostBackfills: 0,
       backfilledScreenshotBlobs: 0,
       failedScreenshotBlobBackfills: 0,
     };
@@ -241,7 +250,7 @@ export async function main() {
     for (const project of projects) {
       logger.logStep(`Collecting ${project.name} (${project.githubSlug})`);
       const projectId = upsertProject(db, project);
-      const pullRequests = await listEvalPullRequests(project.githubSlug, args.limit);
+      const pullRequests = await listEvalPullRequests(project.githubSlug, args.limit, args.prState);
 
       for (const pullRequest of pullRequests) {
         const result = await collectPullRequest({
@@ -249,6 +258,7 @@ export async function main() {
           project,
           projectId,
           pullRequest,
+          skipImageFetch: args.skipImageFetch,
         });
 
         if (result === 'inserted') {
@@ -263,24 +273,35 @@ export async function main() {
       }
     }
 
-    const screenshotBackfill = await backfillMissingScreenshotBlobs(db);
-    summary.backfilledScreenshotBlobs = screenshotBackfill.backfilled;
-    summary.failedScreenshotBlobBackfills = screenshotBackfill.failed;
+    const trialCostBackfill = await backfillMissingTrialCosts(db);
+    summary.backfilledTrialCosts = trialCostBackfill.backfilled;
+    summary.failedTrialCostBackfills = trialCostBackfill.failed;
+
+    if (args.skipImageFetch) {
+      logger.logStep('Skipped screenshot blob fetch/backfill (--skip-image-fetch).');
+    } else {
+      const screenshotBackfill = await backfillMissingScreenshotBlobs(db);
+      summary.backfilledScreenshotBlobs = screenshotBackfill.backfilled;
+      summary.failedScreenshotBlobBackfills = screenshotBackfill.failed;
+    }
 
     logger.logSuccess(
-      `Inserted ${summary.insertedTrials} trials, skipped ${summary.skippedTrials} existing trials, skipped ${summary.skippedWithoutDataJson} PRs without usable data.json, failed ${summary.failedTrials}, backfilled ${summary.backfilledScreenshotBlobs} screenshot blobs, failed ${summary.failedScreenshotBlobBackfills} screenshot backfills`
+      `Inserted ${summary.insertedTrials} trials, skipped ${summary.skippedTrials} existing trials, skipped ${summary.skippedWithoutDataJson} PRs without usable data.json, failed ${summary.failedTrials}, backfilled ${summary.backfilledTrialCosts} trial costs, failed ${summary.failedTrialCostBackfills} trial cost backfills, backfilled ${summary.backfilledScreenshotBlobs} screenshot blobs, failed ${summary.failedScreenshotBlobBackfills} screenshot backfills`
     );
   } finally {
     db.close();
   }
 }
 
-function parseCliArgs() {
+export function parseCliArgs(argv = process.argv.slice(2)) {
   const { values } = parseArgs({
+    args: argv,
     options: {
       'db-path': { type: 'string' },
       project: { type: 'string' },
       limit: { type: 'string' },
+      state: { type: 'string' },
+      'skip-image-fetch': { type: 'boolean' },
     },
     strict: true,
     allowPositionals: false,
@@ -291,10 +312,18 @@ function parseCliArgs() {
     throw new Error(`--limit must be a positive integer. Received: ${values.limit}`);
   }
 
+  const rawPrState = values.state;
+  if (rawPrState != null && rawPrState !== 'all' && rawPrState !== 'open') {
+    throw new Error(`--state must be "all" or "open". Received: ${rawPrState}`);
+  }
+  const prState: PullRequestState = rawPrState ?? 'all';
+
   return {
     dbPath: values['db-path'] ?? DEFAULT_DB_PATH,
     project: values.project ?? undefined,
     limit,
+    prState,
+    skipImageFetch: values['skip-image-fetch'] ?? false,
   };
 }
 
@@ -357,6 +386,7 @@ function ensureSchema(db: DatabaseSync) {
       effort TEXT NOT NULL,
       build_success INTEGER NOT NULL CHECK (build_success IN (0, 1)),
       typecheck_errors INTEGER NOT NULL,
+      cost_usd REAL,
       duration_s REAL NOT NULL,
       duration_api_s REAL,
       turns INTEGER NOT NULL,
@@ -437,6 +467,7 @@ function ensureSchema(db: DatabaseSync) {
   ensureTableColumn(db, 'trials', 'story_after_total', 'INTEGER');
   ensureTableColumn(db, 'trials', 'story_after_passed', 'INTEGER');
   ensureTableColumn(db, 'trials', 'story_after_empty', 'INTEGER');
+  ensureTableColumn(db, 'trials', 'cost_usd', 'REAL');
   ensureViews(db);
 }
 
@@ -444,6 +475,8 @@ function ensureViews(db: DatabaseSync) {
   db.exec(`
     DROP VIEW IF EXISTS ghost_story_rate_by_project_model_effort;
     DROP VIEW IF EXISTS story_render_rate_by_project_model_effort;
+    DROP VIEW IF EXISTS story_render_summary_by_project_model_effort;
+    DROP VIEW IF EXISTS story_render_scores_by_trial;
 
     CREATE VIEW ghost_story_rate_by_project_model_effort AS
     SELECT
@@ -508,6 +541,9 @@ function ensureViews(db: DatabaseSync) {
       AVG(t.story_after_passed) AS avg_after_passed,
       AVG(t.story_after_total) AS avg_after_total,
       AVG(t.story_after_empty) AS avg_after_empty,
+      AVG(t.cost_usd) AS avg_cost_usd,
+      AVG(t.duration_s) AS avg_duration_s,
+      AVG(t.turns) AS avg_turns,
       AVG(
         CASE
           WHEN t.story_before_total > 0
@@ -545,6 +581,132 @@ function ensureViews(db: DatabaseSync) {
       AND t.story_before_total IS NOT NULL
       AND t.story_after_total IS NOT NULL
     GROUP BY p.name, t.model, t.effort
+  `);
+
+  db.exec(`
+    CREATE VIEW story_render_scores_by_trial AS
+    SELECT
+      p.name AS project,
+      t.pr_number AS pr_number,
+      t.trial_id AS trial_id,
+      t.trial_timestamp AS trial_timestamp,
+      t.model AS model,
+      t.effort AS effort,
+      t.story_before_passed AS before_passed,
+      t.story_before_total AS before_total,
+      printf('%d/%d', t.story_before_passed, t.story_before_total) AS before_quotient,
+      CASE
+        WHEN t.story_before_total > 0
+          THEN 1.0 * t.story_before_passed / t.story_before_total
+        ELSE NULL
+      END AS before_rate,
+      CASE
+        WHEN t.story_before_total > 0
+          THEN 100.0 * t.story_before_passed / t.story_before_total
+        ELSE NULL
+      END AS before_percent,
+      t.story_after_passed AS after_passed,
+      t.story_after_total AS after_total,
+      printf('%d/%d', t.story_after_passed, t.story_after_total) AS after_quotient,
+      CASE
+        WHEN t.story_after_total > 0
+          THEN 1.0 * t.story_after_passed / t.story_after_total
+        ELSE NULL
+      END AS after_rate,
+      CASE
+        WHEN t.story_after_total > 0
+          THEN 100.0 * t.story_after_passed / t.story_after_total
+        ELSE NULL
+      END AS after_percent,
+      CASE
+        WHEN t.story_before_total > 0 AND t.story_after_total > 0
+          THEN
+            (1.0 * t.story_after_passed / t.story_after_total) -
+            (1.0 * t.story_before_passed / t.story_before_total)
+        ELSE NULL
+      END AS absolute_rate_gain,
+      CASE
+        WHEN t.story_before_total > 0 AND t.story_after_total > 0
+          THEN
+            100.0 * (
+              (1.0 * t.story_after_passed / t.story_after_total) -
+              (1.0 * t.story_before_passed / t.story_before_total)
+            )
+        ELSE NULL
+      END AS absolute_gain_percent,
+      CASE
+        WHEN t.story_before_total > 0
+          AND t.story_after_total > 0
+          AND t.story_before_passed < t.story_before_total
+          THEN (
+            (1.0 * t.story_after_passed / t.story_after_total) -
+            (1.0 * t.story_before_passed / t.story_before_total)
+          ) / (1.0 - (1.0 * t.story_before_passed / t.story_before_total))
+        WHEN t.story_before_total > 0
+          AND t.story_after_total > 0
+          AND t.story_before_passed = t.story_before_total
+          AND t.story_after_passed = t.story_after_total
+          THEN 1.0
+        ELSE 0
+      END AS normalized_preview_gain,
+      CASE
+        WHEN t.story_before_total > 0
+          AND t.story_after_total > 0
+          AND t.story_before_passed < t.story_before_total
+          THEN 100.0 * (
+            (
+              (1.0 * t.story_after_passed / t.story_after_total) -
+              (1.0 * t.story_before_passed / t.story_before_total)
+            ) / (1.0 - (1.0 * t.story_before_passed / t.story_before_total))
+          )
+        WHEN t.story_before_total > 0
+          AND t.story_after_total > 0
+          AND t.story_before_passed = t.story_before_total
+          AND t.story_after_passed = t.story_after_total
+          THEN 100.0
+        ELSE 0
+      END AS normalized_preview_gain_percent,
+      CASE
+        WHEN t.story_before_total > 0
+          AND t.story_after_total > 0
+          AND t.story_before_passed < t.story_before_total
+          THEN (
+            (1.0 * t.story_after_passed / t.story_after_total) -
+            (1.0 * t.story_before_passed / t.story_before_total)
+          ) / (1.0 - (1.0 * t.story_before_passed / t.story_before_total))
+        WHEN t.story_before_total > 0
+          AND t.story_after_total > 0
+          AND t.story_before_passed = t.story_before_total
+          AND t.story_after_passed = t.story_after_total
+          THEN 1.0
+        ELSE 0
+      END AS score
+    FROM trials t
+    JOIN projects p ON p.id = t.project_id
+    WHERE t.story_before_total IS NOT NULL
+      AND t.story_after_total IS NOT NULL
+  `);
+
+  db.exec(`
+    CREATE VIEW story_render_summary_by_project_model_effort AS
+    SELECT
+      project,
+      model,
+      effort,
+      trials,
+      before_rate AS before,
+      after_rate AS after,
+      normalized_preview_gain AS gain,
+      avg_cost_usd,
+      avg_duration_s,
+      printf(
+        '%dm %02ds',
+        CAST(ROUND(avg_duration_s) / 60 AS INTEGER),
+        CAST(ROUND(avg_duration_s) AS INTEGER) % 60
+      ) AS avg_duration_m_s,
+      avg_turns
+    FROM story_render_rate_by_project_model_effort
+    WHERE project <> 'baklava'
   `);
 }
 
@@ -629,6 +791,7 @@ async function collectPullRequest(
       ingestedAt: new Date().toISOString(),
       pullRequest: opts.pullRequest,
       normalized,
+      skipImageFetch: opts.skipImageFetch,
     });
 
     logger.logSuccess(`Inserted ${opts.project.githubSlug}#${prNumber} (${trialId})`);
@@ -676,7 +839,11 @@ function upsertPrompt(db: DatabaseSync, promptName: string, promptContent: strin
   return getRequiredInteger(row?.id, `prompts.id for ${promptName}`);
 }
 
-export async function listEvalPullRequests(repoSlug: string, limit: number) {
+export async function listEvalPullRequests(
+  repoSlug: string,
+  limit: number,
+  state: PullRequestState = 'all'
+) {
   try {
     return runGhJsonOrThrow<PullRequestListItem[]>([
       'pr',
@@ -684,7 +851,7 @@ export async function listEvalPullRequests(repoSlug: string, limit: number) {
       '--repo',
       repoSlug,
       '--state',
-      'all',
+      state,
       '--search',
       'label:eval',
       '--limit',
@@ -900,6 +1067,7 @@ function insertTrial(
     ingestedAt: string;
     pullRequest: PullRequestListItem;
     normalized: NormalizedTrialData;
+    skipImageFetch: boolean;
   }
 ) {
   db.exec('BEGIN');
@@ -927,6 +1095,7 @@ function insertTrial(
         effort,
         build_success,
         typecheck_errors,
+        cost_usd,
         duration_s,
         duration_api_s,
         turns,
@@ -951,7 +1120,7 @@ function insertTrial(
         typecheck_output_path,
         screenshot_output_path,
         ingested_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       input.trialId,
       input.projectId,
@@ -971,6 +1140,7 @@ function insertTrial(
       input.normalized.effort,
       input.normalized.buildSuccess,
       input.normalized.typecheckErrors,
+      input.normalized.costUsd,
       input.normalized.durationS,
       input.normalized.durationApiS,
       input.normalized.turns,
@@ -1003,6 +1173,7 @@ function insertTrial(
       screenshots: input.normalized.screenshots,
       headRepositorySlug: input.headRepositorySlug,
       headRefOid: input.headRefOid,
+      skipImageFetch: input.skipImageFetch,
     });
     insertTrialFileChanges(db, input.trialId, input.normalized.fileChanges);
     insertTrialTranscript(db, input.trialId, input.normalized.transcriptJson);
@@ -1076,6 +1247,7 @@ function insertTrialScreenshots(
     screenshots: NormalizedScreenshot[];
     headRepositorySlug: string;
     headRefOid: string;
+    skipImageFetch: boolean;
   }
 ) {
   const statement = db.prepare(`
@@ -1092,11 +1264,9 @@ function insertTrialScreenshots(
   `);
 
   for (const screenshot of input.screenshots) {
-    const blobRecord = fetchScreenshotBlobRecord(
-      input.headRepositorySlug,
-      screenshot.imagePath,
-      input.headRefOid
-    );
+    const blobRecord = input.skipImageFetch
+      ? null
+      : fetchScreenshotBlobRecord(input.headRepositorySlug, screenshot.imagePath, input.headRefOid);
 
     statement.run(
       input.trialId,
@@ -1221,6 +1391,78 @@ function insertTrialTranscript(db: DatabaseSync, trialId: string, transcriptJson
   `).run(trialId, transcriptJson);
 }
 
+async function backfillMissingTrialCosts(db: DatabaseSync) {
+  const rows = db
+    .prepare(`
+    SELECT
+      t.trial_id,
+      t.data_json_path,
+      t.head_ref_oid,
+      p.github_slug
+    FROM trials t
+    INNER JOIN projects p ON p.id = t.project_id
+    WHERE t.cost_usd IS NULL
+    ORDER BY t.trial_timestamp DESC
+  `)
+    .all() as Array<{
+    trial_id?: unknown;
+    data_json_path?: unknown;
+    head_ref_oid?: unknown;
+    github_slug?: unknown;
+  }>;
+
+  if (rows.length === 0) {
+    logger.logStep('No trial costs need backfill.');
+    return { backfilled: 0, failed: 0 };
+  }
+
+  logger.logStep(`Backfilling ${rows.length} trial cost(s)...`);
+  const limit = pLimit(8);
+  const statement = db.prepare(`
+    UPDATE trials
+    SET cost_usd = ?
+    WHERE trial_id = ?
+  `);
+
+  let backfilled = 0;
+  let failed = 0;
+
+  await Promise.all(
+    rows.map((row) =>
+      limit(async () => {
+        try {
+          const data = fetchDataJson(
+            getRequiredString(row.github_slug, 'trials.github_slug'),
+            getRequiredString(row.data_json_path, 'trials.data_json_path'),
+            getRequiredString(row.head_ref_oid, 'trials.head_ref_oid')
+          );
+
+          if (!data) {
+            failed += 1;
+            return;
+          }
+
+          const execution = getOptionalObject(data.execution);
+          const costUsd = getOptionalNumber(execution?.cost, 'data.json.execution.cost');
+
+          if (costUsd == null) {
+            return;
+          }
+
+          statement.run(costUsd, getRequiredString(row.trial_id, 'trials.trial_id'));
+          backfilled += 1;
+        } catch (error) {
+          logger.logError(`Failed to backfill trial cost: ${formatError(error)}`);
+          failed += 1;
+        }
+      })
+    )
+  );
+
+  logger.logSuccess(`Backfilled ${backfilled} trial cost(s), failed ${failed} trial cost fetch(es)`);
+  return { backfilled, failed };
+}
+
 function normalizeTrialData(opts: { data: EvalDataPayload; trialId: string }): NormalizedTrialData {
   const dataId = getRequiredString(opts.data.id, 'data.json.id');
   if (dataId !== opts.trialId) {
@@ -1245,6 +1487,7 @@ function normalizeTrialData(opts: { data: EvalDataPayload; trialId: string }): N
     effort: getRequiredString(variant.effort, 'data.json.variant.effort'),
     buildSuccess: getRequiredBoolean(grade.buildSuccess, 'data.json.grade.buildSuccess') ? 1 : 0,
     typecheckErrors: getRequiredInteger(grade.typeCheckErrors, 'data.json.grade.typeCheckErrors'),
+    costUsd: getOptionalNumber(execution.cost, 'data.json.execution.cost'),
     durationS: getRequiredNumber(execution.duration, 'data.json.execution.duration'),
     durationApiS: getOptionalNumber(execution.durationApi, 'data.json.execution.durationApi'),
     turns: getRequiredInteger(execution.turns, 'data.json.execution.turns'),

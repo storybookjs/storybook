@@ -14,9 +14,14 @@ import { CLAUDE_EFFORTS, CODEX_EFFORTS, type AgentVariant } from './lib/agents/c
 import { PROJECTS } from './lib/projects.ts';
 import { EVAL_ROOT, REPO_ROOT } from './lib/utils.ts';
 
-export const BATCH_PROJECT_NAMES = ['edgy', 'baklava', 'wikitok'] as const;
+export const BATCH_EXCLUDED_PROJECT_NAMES = ['baklava'] as const;
+export const BATCH_PROJECT_NAMES = PROJECTS.filter(
+  (project) => project.name !== 'baklava'
+).map((project) => project.name);
+export const BATCH_AGENT_IDS = ['claude', 'codex'] as const;
+export const BATCH_DEFAULT_AGENT_IDS = ['claude'] as const;
+export const BATCH_DEFAULT_CLAUDE_EFFORTS = ['max'] as const;
 export const BATCH_DEFAULT_EFFORTS = {
-  claude: 'max',
   codex: 'xhigh',
 } as const;
 export const BATCH_VARIANTS = buildBatchVariants();
@@ -25,9 +30,9 @@ export const BATCH_CONCURRENCY = 8;
 
 export interface BatchRunDescriptor {
   project: (typeof BATCH_PROJECT_NAMES)[number];
-  agent: (typeof BATCH_VARIANTS)[number]['agent'];
-  model: (typeof BATCH_VARIANTS)[number]['model'];
-  effort: (typeof BATCH_VARIANTS)[number]['effort'];
+  agent: AgentVariant['agent'];
+  model: AgentVariant['model'];
+  effort: AgentVariant['effort'];
   prompt: string;
   repetition: number;
   label: string;
@@ -67,6 +72,8 @@ export interface RunBatchOptions {
   evalRoot?: string;
   batchTimestamp?: string;
   prompt?: string;
+  agents?: (typeof BATCH_AGENT_IDS)[number][];
+  claudeEfforts?: (typeof CLAUDE_EFFORTS)[number][];
   claudeEffort?: (typeof CLAUDE_EFFORTS)[number];
   codexEffort?: (typeof CODEX_EFFORTS)[number];
   log?: (message: string) => void;
@@ -105,6 +112,8 @@ export async function runBatch(
     options.descriptors ??
     buildBatchRunDescriptors({
       prompt: options.prompt,
+      agents: options.agents,
+      claudeEfforts: options.claudeEfforts,
       claudeEffort: options.claudeEffort,
       codexEffort: options.codexEffort,
     });
@@ -180,27 +189,37 @@ export async function runBatch(
 
 export function buildBatchVariants(
   options: {
+    agents?: RunBatchOptions['agents'];
+    claudeEfforts?: RunBatchOptions['claudeEfforts'];
     claudeEffort?: RunBatchOptions['claudeEffort'];
     codexEffort?: RunBatchOptions['codexEffort'];
   } = {}
 ): AgentVariant[] {
-  return [
-    {
-      agent: 'claude',
-      model: 'opus-4.6',
-      effort: options.claudeEffort ?? BATCH_DEFAULT_EFFORTS.claude,
-    },
-    {
-      agent: 'codex',
-      model: 'gpt-5.4',
-      effort: options.codexEffort ?? BATCH_DEFAULT_EFFORTS.codex,
-    },
-  ];
+  const agents = resolveBatchAgents(options.agents);
+  const claudeEfforts = resolveClaudeEfforts(options);
+
+  return agents.flatMap((agent) =>
+    agent === 'claude'
+      ? claudeEfforts.map((effort) => ({
+          agent: 'claude' as const,
+          model: 'opus-4.6' as const,
+          effort,
+        }))
+      : [
+          {
+            agent: 'codex' as const,
+            model: 'gpt-5.4' as const,
+            effort: options.codexEffort ?? BATCH_DEFAULT_EFFORTS.codex,
+          },
+        ]
+  );
 }
 
 export function buildBatchRunDescriptors(
   options: {
     prompt?: RunBatchOptions['prompt'];
+    agents?: RunBatchOptions['agents'];
+    claudeEfforts?: RunBatchOptions['claudeEfforts'];
     claudeEffort?: RunBatchOptions['claudeEffort'];
     codexEffort?: RunBatchOptions['codexEffort'];
   } = {}
@@ -215,7 +234,10 @@ export function buildBatchRunDescriptors(
 
   const descriptors: BatchRunDescriptor[] = [];
   const variants =
-    options.claudeEffort == null && options.codexEffort == null
+    options.agents == null &&
+    options.claudeEfforts == null &&
+    options.claudeEffort == null &&
+    options.codexEffort == null
       ? BATCH_VARIANTS
       : buildBatchVariants(options);
 
@@ -330,19 +352,26 @@ function defaultSpawn(
 const runBatchArgsSchema = z.object({
   concurrency: z.coerce.number().int().positive().optional(),
   prompt: z.string().optional(),
+  agents: z.array(z.enum(BATCH_AGENT_IDS)).nonempty().optional(),
+  claudeEfforts: z.array(z.enum(CLAUDE_EFFORTS)).nonempty().optional(),
   claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
   codexEffort: z.enum(CODEX_EFFORTS).optional(),
 });
 
 export function parseRunBatchArgs(
   argv: string[]
-): Pick<RunBatchOptions, 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt'> {
+): Pick<
+  RunBatchOptions,
+  'agents' | 'claudeEfforts' | 'claudeEffort' | 'codexEffort' | 'concurrency' | 'prompt'
+> {
   const { values } = parseArgs({
     args: argv,
     strict: true,
     options: {
       concurrency: { type: 'string' },
       prompt: { type: 'string' },
+      agents: { type: 'string' },
+      'claude-efforts': { type: 'string' },
       'claude-effort': { type: 'string' },
       'codex-effort': { type: 'string' },
     },
@@ -351,6 +380,8 @@ export function parseRunBatchArgs(
   const parsed = runBatchArgsSchema.safeParse({
     concurrency: values.concurrency,
     prompt: values.prompt,
+    agents: parseAgentArgs(values.agents),
+    claudeEfforts: parseClaudeEfforts(values['claude-efforts']),
     claudeEffort: values['claude-effort'],
     codexEffort: values['codex-effort'],
   });
@@ -363,6 +394,51 @@ export function parseRunBatchArgs(
   }
 
   return parsed.data;
+}
+
+function parseAgentArgs(value?: string) {
+  if (value == null) {
+    return undefined;
+  }
+
+  return value
+    .split(',')
+    .map((agent) => agent.trim())
+    .filter(Boolean);
+}
+
+function parseClaudeEfforts(value?: string) {
+  if (value == null) {
+    return undefined;
+  }
+
+  return value
+    .split(',')
+    .map((effort) => effort.trim())
+    .filter(Boolean);
+}
+
+function resolveBatchAgents(agents?: RunBatchOptions['agents']) {
+  if (agents == null || agents.length === 0) {
+    return [...BATCH_DEFAULT_AGENT_IDS];
+  }
+
+  return BATCH_AGENT_IDS.filter((agent) => agents.includes(agent));
+}
+
+function resolveClaudeEfforts(options: {
+  claudeEfforts?: RunBatchOptions['claudeEfforts'];
+  claudeEffort?: RunBatchOptions['claudeEffort'];
+}) {
+  if (options.claudeEfforts != null && options.claudeEfforts.length > 0) {
+    return [...new Set(options.claudeEfforts)];
+  }
+
+  if (options.claudeEffort != null) {
+    return [options.claudeEffort];
+  }
+
+  return [...BATCH_DEFAULT_CLAUDE_EFFORTS];
 }
 
 function formatBatchTimestamp(date: Date) {

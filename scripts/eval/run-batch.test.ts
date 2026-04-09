@@ -7,7 +7,11 @@ import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  BATCH_AGENT_IDS,
+  BATCH_DEFAULT_CLAUDE_EFFORTS,
   BATCH_DEFAULT_EFFORTS,
+  BATCH_DEFAULT_AGENT_IDS,
+  BATCH_EXCLUDED_PROJECT_NAMES,
   BATCH_PROJECT_NAMES,
   BATCH_REPETITIONS,
   BATCH_VARIANTS,
@@ -29,7 +33,7 @@ afterEach(() => {
 });
 
 describe('buildBatchRunDescriptors', () => {
-  it('creates the fixed 60-run matrix with full repetition coverage', () => {
+  it('creates the default batch matrix with full repetition coverage', () => {
     const descriptors = buildBatchRunDescriptors();
     const combinations = new Map<string, number[]>();
 
@@ -42,6 +46,7 @@ describe('buildBatchRunDescriptors', () => {
     expect(new Set(descriptors.map((descriptor) => descriptor.project))).toEqual(
       new Set(BATCH_PROJECT_NAMES)
     );
+    expect(new Set(BATCH_PROJECT_NAMES)).not.toContain('baklava');
 
     for (const descriptor of descriptors) {
       const key = `${descriptor.project}:${descriptor.agent}:${descriptor.model}:${descriptor.effort}`;
@@ -70,11 +75,19 @@ describe('buildBatchRunDescriptors', () => {
     }
   });
 
-  it('uses configurable per-agent effort overrides when building descriptors', () => {
-    const descriptors = buildBatchRunDescriptors({
-      claudeEffort: 'high',
-      codexEffort: 'medium',
-    });
+  it('can opt back into codex runs when explicitly requested', () => {
+    const descriptors = buildBatchRunDescriptors({ agents: ['claude', 'codex'] });
+
+    expect(descriptors).toHaveLength(
+      BATCH_PROJECT_NAMES.length * BATCH_AGENT_IDS.length * BATCH_REPETITIONS
+    );
+    expect(new Set(descriptors.map((descriptor) => descriptor.agent))).toEqual(
+      new Set(BATCH_AGENT_IDS)
+    );
+  });
+
+  it('uses the configured Claude effort override when building descriptors', () => {
+    const descriptors = buildBatchRunDescriptors({ claudeEffort: 'high' });
 
     expect(
       new Set(
@@ -83,6 +96,27 @@ describe('buildBatchRunDescriptors', () => {
           .map((descriptor) => descriptor.effort)
       )
     ).toEqual(new Set(['high']));
+  });
+
+  it('supports multiple Claude efforts in a single batch', () => {
+    const descriptors = buildBatchRunDescriptors({ claudeEfforts: ['max', 'high'] });
+
+    expect(descriptors).toHaveLength(BATCH_PROJECT_NAMES.length * 2 * BATCH_REPETITIONS);
+    expect(
+      new Set(
+        descriptors
+          .filter((descriptor) => descriptor.agent === 'claude')
+          .map((descriptor) => descriptor.effort)
+      )
+    ).toEqual(new Set(['max', 'high']));
+  });
+
+  it('uses the configured codex effort override when codex is enabled', () => {
+    const descriptors = buildBatchRunDescriptors({
+      agents: ['claude', 'codex'],
+      codexEffort: 'medium',
+    });
+
     expect(
       new Set(
         descriptors
@@ -113,12 +147,11 @@ describe('buildBatchRunDescriptors', () => {
         repetition: descriptor.repetition,
       }))
     ).toEqual([
+      { project: 'mealdrop', agent: 'claude', repetition: 1 },
       { project: 'edgy', agent: 'claude', repetition: 1 },
-      { project: 'baklava', agent: 'claude', repetition: 1 },
       { project: 'wikitok', agent: 'claude', repetition: 1 },
-      { project: 'edgy', agent: 'codex', repetition: 1 },
-      { project: 'baklava', agent: 'codex', repetition: 1 },
-      { project: 'wikitok', agent: 'codex', repetition: 1 },
+      { project: 'echarts', agent: 'claude', repetition: 1 },
+      { project: 'evergreen-ci', agent: 'claude', repetition: 1 },
     ]);
   });
 });
@@ -127,8 +160,30 @@ describe('buildBatchVariants', () => {
   it('returns the default benchmark variants when no overrides are provided', () => {
     expect(buildBatchVariants()).toEqual(BATCH_VARIANTS);
     expect(BATCH_VARIANTS).toEqual([
-      { agent: 'claude', model: 'opus-4.6', effort: BATCH_DEFAULT_EFFORTS.claude },
+      { agent: 'claude', model: 'opus-4.6', effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
+    ]);
+  });
+
+  it('keeps claude-only as the default enabled agent set', () => {
+    expect(BATCH_DEFAULT_AGENT_IDS).toEqual(['claude']);
+  });
+
+  it('excludes baklava from the default batch projects', () => {
+    expect(BATCH_EXCLUDED_PROJECT_NAMES).toEqual(['baklava']);
+    expect(BATCH_PROJECT_NAMES).toEqual(['mealdrop', 'edgy', 'wikitok', 'echarts', 'evergreen-ci']);
+  });
+
+  it('supports enabling codex variants when requested', () => {
+    expect(buildBatchVariants({ agents: ['claude', 'codex'] })).toEqual([
+      { agent: 'claude', model: 'opus-4.6', effort: BATCH_DEFAULT_CLAUDE_EFFORTS[0] },
       { agent: 'codex', model: 'gpt-5.4', effort: BATCH_DEFAULT_EFFORTS.codex },
+    ]);
+  });
+
+  it('supports multiple Claude variants when multiple efforts are requested', () => {
+    expect(buildBatchVariants({ claudeEfforts: ['max', 'high'] })).toEqual([
+      { agent: 'claude', model: 'opus-4.6', effort: 'max' },
+      { agent: 'claude', model: 'opus-4.6', effort: 'high' },
     ]);
   });
 });
@@ -139,6 +194,8 @@ describe('parseRunBatchArgs', () => {
       parseRunBatchArgs([
         '--prompt',
         'pattern-copy',
+        '--agents',
+        'claude,codex',
         '--claude-effort',
         'high',
         '--codex-effort',
@@ -148,9 +205,16 @@ describe('parseRunBatchArgs', () => {
       ])
     ).toEqual({
       prompt: 'pattern-copy',
+      agents: ['claude', 'codex'],
       claudeEffort: 'high',
       codexEffort: 'medium',
       concurrency: 3,
+    });
+  });
+
+  it('parses multiple Claude efforts from the CLI', () => {
+    expect(parseRunBatchArgs(['--claude-efforts', 'max,high'])).toEqual({
+      claudeEfforts: ['max', 'high'],
     });
   });
 });
@@ -358,7 +422,17 @@ function createAutoSpawn(outcomes: Array<number | Error>) {
 function getDescriptorFromArgs(args: string[]) {
   const promptIndex = args.indexOf('--prompt');
   const prompt = promptIndex === -1 ? undefined : args[promptIndex + 1];
-  const descriptors = buildBatchRunDescriptors(prompt ? { prompt } : undefined);
+  const agentIndex = args.indexOf('-a');
+  const agent = agentIndex === -1 ? undefined : args[agentIndex + 1];
+  const effortIndex = args.indexOf('-e');
+  const effort = effortIndex === -1 ? undefined : args[effortIndex + 1];
+  const descriptors = buildBatchRunDescriptors({
+    ...(prompt ? { prompt } : {}),
+    ...(agent === 'claude' ? { agents: ['claude'] as const } : {}),
+    ...(agent === 'codex' ? { agents: ['codex'] as const } : {}),
+    ...(agent === 'claude' && effort ? { claudeEfforts: [effort] as const } : {}),
+    ...(agent === 'codex' && effort ? { codexEffort: effort as 'medium' | 'high' | 'xhigh' } : {}),
+  });
   const descriptor = descriptors.find((candidate) => {
     return candidate.args.join('\0') === args.join('\0');
   });

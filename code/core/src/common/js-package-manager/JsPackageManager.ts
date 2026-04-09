@@ -19,6 +19,7 @@ import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 import type { InstallationMetadata } from './types.ts';
+import { getVitePlusVersions } from './vite-plus-versions.ts';
 
 export enum PackageManagerName {
   NPM = 'npm',
@@ -653,7 +654,6 @@ export abstract class JsPackageManager {
       // When vite-plus is used, packages like vite and vitest are vendored and their node_modules entries report the vite-plus wrapper version (e.g. 0.1.16) instead of the actual vendored version.
       // Check vite-plus first so we always get the real version when it's available.
       let version: string | null = null;
-      const { getVitePlusVersions } = await import('./vite-plus-versions.ts');
       const vitePlusVersions = await getVitePlusVersions();
       if (vitePlusVersions?.[packageName]) {
         version = vitePlusVersions[packageName]!;

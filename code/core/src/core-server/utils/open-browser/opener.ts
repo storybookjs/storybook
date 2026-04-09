@@ -189,7 +189,11 @@ function startBrowserProcess(
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options = { app: { name: browser, arguments: args }, wait: false, url: true };
+    const options = {
+      app: browser ? { name: browser, arguments: args } : undefined,
+      wait: false,
+      url: true
+    };
     open(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
     return true;
   } catch {

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { getUsedProps } from './mount-utils';
+import { getUsedProps } from './mount-utils.ts';
 
 const StoryWithContext = {
   play: async (context: any) => {

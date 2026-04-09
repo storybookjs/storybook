@@ -1,6 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 
-import type { UniversalStore } from '.';
+import type { UniversalStore } from './index.ts';
 
 export type EnvironmentType =
   (typeof UniversalStore.Environment)[keyof typeof UniversalStore.Environment];

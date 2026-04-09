@@ -12,7 +12,7 @@ import * as find from 'empathic/find';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
-import type { CommandOptions } from '../generators/types';
+import type { CommandOptions } from '../generators/types.ts';
 
 type TemplateMatcher = {
   files?: boolean[];

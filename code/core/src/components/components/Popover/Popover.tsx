@@ -4,7 +4,7 @@ import { CloseIcon } from '@storybook/icons';
 
 import { lighten, styled } from 'storybook/theming';
 
-import { Button } from '../Button/Button';
+import { Button } from '../Button/Button.tsx';
 
 export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
   /** Content of the popover. */

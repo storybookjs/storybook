@@ -14,8 +14,8 @@ import {
 import { BrowserModule } from '@angular/platform-browser';
 import { dedent } from 'ts-dedent';
 
-import type { NgModuleMetadata } from '../../types';
-import { isComponentAlreadyDeclared } from './NgModulesAnalyzer';
+import type { NgModuleMetadata } from '../../types.ts';
+import { isComponentAlreadyDeclared } from './NgModulesAnalyzer.ts';
 
 export const reflectionCapabilities = new ReflectionCapabilities();
 export const REMOVED_MODULES = new InjectionToken('REMOVED_MODULES');

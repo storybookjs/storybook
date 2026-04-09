@@ -1,20 +1,24 @@
 /// <reference path="../typings.d.ts" />
 import { global } from '@storybook/global';
 
-import { UniversalStore } from '../shared/universal-store';
-import { Channel } from './main';
-import { PostMessageTransport } from './postmessage';
-import type { ChannelTransport, Config } from './types';
-import { WebsocketTransport } from './websocket';
+import { UniversalStore } from '../shared/universal-store/index.ts';
+import { Channel } from './main.ts';
+import { PostMessageTransport } from './postmessage/index.ts';
+import type { ChannelTransport, Config } from './types.ts';
+import { WebsocketTransport } from './websocket/index.ts';
 
 const { CHANNEL_OPTIONS, CONFIG_TYPE } = global;
 
-export * from './main';
+export * from './main.ts';
 
 export default Channel;
 
-export { PostMessageTransport } from './postmessage';
-export { WebsocketTransport, HEARTBEAT_INTERVAL, HEARTBEAT_MAX_LATENCY } from './websocket';
+export { PostMessageTransport } from './postmessage/index.ts';
+export {
+  WebsocketTransport,
+  HEARTBEAT_INTERVAL,
+  HEARTBEAT_MAX_LATENCY,
+} from './websocket/index.ts';
 
 type Options = Config & {
   extraTransports?: ChannelTransport[];
@@ -56,4 +60,4 @@ export type {
   ChannelTransport,
   ChannelHandler,
   ChannelLike,
-} from './types';
+} from './types.ts';

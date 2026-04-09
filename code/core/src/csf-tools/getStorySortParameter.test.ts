@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { getStorySortParameter } from './getStorySortParameter';
+import { getStorySortParameter } from './getStorySortParameter.ts';
 
 describe('getStorySortParameter', () => {
   describe('named exports', () => {

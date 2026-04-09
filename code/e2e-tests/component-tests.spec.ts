@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage, checkTemplate } from './util';
+import { SbPage, checkTemplate } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -77,7 +77,9 @@ test.describe('interactions', () => {
     await expect(panel).toBeVisible();
 
     // Test interactions debugger - Stepping through works, count is correct and values are as expected
-    const interactionsRow = panel.locator('[aria-label="Interaction step"]');
+    const interactionsRow = panel.getByRole('button', {
+      name: /^(Go to )?interaction row:/i,
+    });
 
     await expect(interactionsRow.first()).toBeVisible();
 

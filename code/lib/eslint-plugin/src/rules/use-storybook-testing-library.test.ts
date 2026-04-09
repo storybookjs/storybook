@@ -7,8 +7,8 @@
 //------------------------------------------------------------------------------
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 
-import ruleTester from '../test-utils';
-import rule from './use-storybook-testing-library';
+import ruleTester from '../test-utils.ts';
+import rule from './use-storybook-testing-library.ts';
 
 //------------------------------------------------------------------------------
 // Tests

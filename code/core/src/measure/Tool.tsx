@@ -6,7 +6,7 @@ import { RulerIcon } from '@storybook/icons';
 
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, TOOL_ID } from './constants';
+import { ADDON_ID, TOOL_ID } from './constants.ts';
 
 export const Tool = () => {
   const [globals, updateGlobals] = useGlobals();

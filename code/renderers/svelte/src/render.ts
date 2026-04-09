@@ -13,7 +13,7 @@ import { createReactiveProps } from '@storybook/svelte/internal/createReactivePr
 import { addons } from 'storybook/preview-api';
 import * as svelte from 'svelte';
 
-import type { SvelteRenderer } from './types';
+import type { SvelteRenderer } from './types.ts';
 
 /**
  * This is a workaround for the issue that when resetting args, the story needs to be remounted

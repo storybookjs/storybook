@@ -1,6 +1,6 @@
 import memoize from 'memoizerific';
 
-import type { Background, Color, Typography } from './types';
+import type { Background, Color, Typography } from './types.ts';
 
 type Value = string | number;
 interface Return {

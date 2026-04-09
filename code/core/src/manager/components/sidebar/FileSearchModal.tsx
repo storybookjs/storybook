@@ -6,9 +6,9 @@ import { CloseAltIcon, SearchIcon, SyncIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import { useMeasure } from '../../hooks/useMeasure';
-import type { NewStoryPayload, SearchResult } from './FileSearchList';
-import { FileSearchList } from './FileSearchList';
+import { useMeasure } from '../../hooks/useMeasure.tsx';
+import type { NewStoryPayload, SearchResult } from './FileSearchList.tsx';
+import { FileSearchList } from './FileSearchList.tsx';
 
 const MODAL_HEIGHT = 418;
 

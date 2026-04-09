@@ -4,7 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 import {
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
-} from '../../../../lib/cli-storybook/src/doctor/getIncompatibleStorybookPackages';
+} from '../../../../lib/cli-storybook/src/doctor/getIncompatibleStorybookPackages.ts';
 
 export const warnOnIncompatibleAddons = async (
   currentStorybookVersion: string,

@@ -8,6 +8,9 @@
     "source.fixAll.oxc": "explicit"
   },
   "editor.formatOnSave": true,
+  "[mdx]": {
+    "editor.formatOnSave": false
+  },
   "editor.tabSize": 2,
   "eslint.options": {
     "cache": true,
@@ -47,7 +50,7 @@
   "typescript.preferences.preferTypeOnlyAutoImports": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.preferGoToSourceDefinition": true,
-  "typescript.tsdk": "./typescript/lib",
+  "typescript.tsdk": "./node_modules/typescript/lib",
   "vitest.workspaceConfig": "./code/vitest.workspace.ts",
   "vitest.rootConfig": "./code/vitest.workspace.ts",
   "oxc.fmt.configPath": ".oxfmtrc.json",

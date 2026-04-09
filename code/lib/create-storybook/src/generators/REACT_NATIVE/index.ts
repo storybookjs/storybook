@@ -4,17 +4,17 @@ import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storyboo
 
 import { dedent } from 'ts-dedent';
 
-import { defineGeneratorModule } from '../modules/GeneratorModule';
-import { generateReactNativeEntrypoint } from './generateEntrypoint';
+import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
+import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
 import {
   deriveStorybookPlatformScripts,
   type StorybookPlatformScriptDerivationResult,
-} from './generateScripts';
+} from './generateScripts.ts';
 import {
   METRO_SETUP_DOCS_LINK,
   runMetroCodemodOrFallback,
   type MetroCodemodResult,
-} from './metroConfig';
+} from './metroConfig.ts';
 
 let lastMetroCodemodResult: MetroCodemodResult | undefined;
 let lastScriptDerivationResult: StorybookPlatformScriptDerivationResult | undefined;

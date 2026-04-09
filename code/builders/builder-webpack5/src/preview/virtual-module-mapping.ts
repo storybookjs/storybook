@@ -14,7 +14,7 @@ import { toImportFn } from '@storybook/core-webpack';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import type { BuilderOptions } from '../types';
+import type { BuilderOptions } from '../types.ts';
 
 export const getVirtualModules = async (options: Options) => {
   const virtualModules: Record<string, string> = {};

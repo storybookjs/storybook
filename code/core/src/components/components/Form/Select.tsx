@@ -2,8 +2,8 @@ import React, { type CSSProperties, type SelectHTMLAttributes } from 'react';
 
 import { lighten, styled } from 'storybook/theming';
 
-import { isTestEnvironment } from '../../../preview-api/modules/preview-web/render/animation-utils';
-import { type Alignments, type Sizes, type ValidationStates, sizes } from './styles';
+import { isTestEnvironment } from '../../../preview-api/modules/preview-web/render/animation-utils.ts';
+import { type Alignments, type Sizes, type ValidationStates, sizes } from './styles.ts';
 
 type SelectProps = Omit<
   SelectHTMLAttributes<HTMLSelectElement>,

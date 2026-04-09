@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/client-logger';
 
-import { inferArgTypes } from './inferArgTypes';
+import { inferArgTypes } from './inferArgTypes.ts';
 
 vi.mock('storybook/internal/client-logger');
 

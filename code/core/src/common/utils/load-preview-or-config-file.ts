@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 
 import { dedent } from 'ts-dedent';
 
-import { getInterpretedFile } from './interpret-files';
+import { getInterpretedFile } from './interpret-files.ts';
 
 export function loadPreviewOrConfigFile({ configDir }: { configDir: string }) {
   const storybookConfigPath = getInterpretedFile(resolve(configDir, 'config'));

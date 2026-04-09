@@ -3,8 +3,8 @@ import React from 'react';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
-import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
+import preview from '../../../../.storybook/preview.tsx';
+import { TestDiscrepancyMessage } from './TestDiscrepancyMessage.tsx';
 
 const managerContext: any = {
   state: {},

@@ -3,11 +3,11 @@ import { dirname } from 'node:path';
 
 import type { PluginItem } from '@babel/core';
 
-import ampAttributesPlugin from './plugins/amp-attributes';
+import ampAttributesPlugin from './plugins/amp-attributes.ts';
 // Static imports for relative requires
-import jsxPragmaPlugin from './plugins/jsx-pragma';
-import optimizeHookDestructuringPlugin from './plugins/optimize-hook-destructuring';
-import reactLoadablePlugin from './plugins/react-loadable-plugin';
+import jsxPragmaPlugin from './plugins/jsx-pragma.ts';
+import optimizeHookDestructuringPlugin from './plugins/optimize-hook-destructuring.ts';
+import reactLoadablePlugin from './plugins/react-loadable-plugin.ts';
 
 const isLoadIntentTest = process.env.NODE_ENV === 'test';
 const isLoadIntentDevelopment = process.env.NODE_ENV === 'development';

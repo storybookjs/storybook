@@ -251,10 +251,9 @@ describe('prepareTrial', () => {
     mkdirSync(join(localRepoRoot, 'code', 'core', 'dist'), { recursive: true });
     mkdirSync(join(localRepoRoot, 'code', 'addons', 'vitest', 'dist'), { recursive: true });
     mkdirSync(join(projectPath, 'node_modules', 'storybook', 'dist'), { recursive: true });
-    mkdirSync(
-      join(projectPath, 'node_modules', '@storybook', 'addon-vitest', 'dist'),
-      { recursive: true }
-    );
+    mkdirSync(join(projectPath, 'node_modules', '@storybook', 'addon-vitest', 'dist'), {
+      recursive: true,
+    });
     mkdirSync(join(reposDir, 'wikitok', '.git'), { recursive: true });
 
     const { writeFileSync } = await import('node:fs');

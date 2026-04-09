@@ -5,13 +5,7 @@ import type { Logger } from './utils.ts';
 import type { Project } from './projects.ts';
 import { x } from 'tinyexec';
 import { installDeps } from './package-manager.ts';
-import {
-  getEvalResultsDir,
-  getProjectPath,
-  REPO_ROOT,
-  REPOS_DIR,
-  TRIALS_DIR,
-} from './utils.ts';
+import { getEvalResultsDir, getProjectPath, REPO_ROOT, REPOS_DIR, TRIALS_DIR } from './utils.ts';
 
 export interface TrialWorkspace {
   trialDir: string;

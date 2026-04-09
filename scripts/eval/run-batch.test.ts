@@ -141,11 +141,13 @@ describe('buildBatchRunDescriptors', () => {
     const descriptors = buildBatchRunDescriptors();
 
     expect(
-      descriptors.slice(0, BATCH_PROJECT_NAMES.length * BATCH_VARIANTS.length).map((descriptor) => ({
-        project: descriptor.project,
-        agent: descriptor.agent,
-        repetition: descriptor.repetition,
-      }))
+      descriptors
+        .slice(0, BATCH_PROJECT_NAMES.length * BATCH_VARIANTS.length)
+        .map((descriptor) => ({
+          project: descriptor.project,
+          agent: descriptor.agent,
+          repetition: descriptor.repetition,
+        }))
     ).toEqual([
       { project: 'mealdrop', agent: 'claude', repetition: 1 },
       { project: 'edgy', agent: 'claude', repetition: 1 },

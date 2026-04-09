@@ -184,26 +184,30 @@ describe('ghostStoriesChannel', () => {
       } as any);
 
       // Telemetry is called with the correct data
-      expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
-        stats: {
-          globMatchCount: 10,
-          candidateAnalysisDuration: expect.any(Number),
-          totalRunDuration: expect.any(Number),
-          analyzedCount: 5,
-          avgComplexity: 2.5,
-          candidateCount: 2,
-          testRunDuration: expect.any(Number),
-        },
-        results: {
-          total: 2,
-          passed: 2,
-          successRate: 1,
-          successRateWithoutEmptyRender: 1,
-          categorizedErrors: expect.any(Object),
-          uniqueErrorCount: 0,
-          passedButEmptyRender: 0,
-        },
-      });
+      expect(mockTelemetry.telemetry).toHaveBeenCalledWith(
+        'ghost-stories',
+        expect.objectContaining({
+          stats: expect.objectContaining({
+            globMatchCount: 10,
+            candidateAnalysisDuration: expect.any(Number),
+            totalRunDuration: expect.any(Number),
+            analyzedCount: 5,
+            avgComplexity: 2.5,
+            candidateCount: 2,
+            testRunDuration: expect.any(Number),
+          }),
+          results: expect.objectContaining({
+            total: 2,
+            passed: 2,
+            successRate: 1,
+            successRateWithoutEmptyRender: 1,
+            categorizedErrors: expect.any(Object),
+            emptyRenderFailures: 0,
+            uniqueErrorCount: 0,
+            passedButEmptyRender: 0,
+          }),
+        })
+      );
     });
 
     it('should execute successful discovery run with test failure', async () => {

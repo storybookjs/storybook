@@ -1459,7 +1459,9 @@ async function backfillMissingTrialCosts(db: DatabaseSync) {
     )
   );
 
-  logger.logSuccess(`Backfilled ${backfilled} trial cost(s), failed ${failed} trial cost fetch(es)`);
+  logger.logSuccess(
+    `Backfilled ${backfilled} trial cost(s), failed ${failed} trial cost fetch(es)`
+  );
   return { backfilled, failed };
 }
 

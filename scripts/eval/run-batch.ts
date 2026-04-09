@@ -15,9 +15,9 @@ import { PROJECTS } from './lib/projects.ts';
 import { EVAL_ROOT, REPO_ROOT } from './lib/utils.ts';
 
 export const BATCH_EXCLUDED_PROJECT_NAMES = ['baklava'] as const;
-export const BATCH_PROJECT_NAMES = PROJECTS.filter(
-  (project) => project.name !== 'baklava'
-).map((project) => project.name);
+export const BATCH_PROJECT_NAMES = PROJECTS.filter((project) => project.name !== 'baklava').map(
+  (project) => project.name
+);
 export const BATCH_AGENT_IDS = ['claude', 'codex'] as const;
 export const BATCH_DEFAULT_AGENT_IDS = ['claude'] as const;
 export const BATCH_DEFAULT_CLAUDE_EFFORTS = ['max'] as const;

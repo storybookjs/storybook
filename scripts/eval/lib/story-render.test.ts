@@ -12,9 +12,7 @@ describe('getGeneratedStoryFiles', () => {
       { path: 'docs/Button.stories.tsx', gitStatus: 'A' },
     ];
 
-    expect(
-      getGeneratedStoryFiles('/repo', '/repo/frontend', fileChanges).sort()
-    ).toEqual([
+    expect(getGeneratedStoryFiles('/repo', '/repo/frontend', fileChanges).sort()).toEqual([
       '/repo/frontend/src/App.stories.tsx',
       '/repo/frontend/src/components/Button.stories.tsx',
     ]);

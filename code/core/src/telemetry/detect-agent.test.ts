@@ -1,8 +1,25 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { detectAgent } from './detect-agent';
 
+const AGENT_ENV_KEYS = [
+  'AI_AGENT',
+  'CLAUDECODE',
+  'CLAUDE_CODE',
+  'GEMINI_CLI',
+  'CODEX_SANDBOX',
+  'CODEX_THREAD_ID',
+  'CURSOR_AGENT',
+  'OPENCODE',
+] as const;
+
 describe('detectAgent', () => {
+  beforeEach(() => {
+    for (const envKey of AGENT_ENV_KEYS) {
+      vi.stubEnv(envKey, undefined);
+    }
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
   });

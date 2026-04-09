@@ -132,6 +132,7 @@ export const configureFlatConfig = async (
   let tsEslintLocalName = "";
   let eslintDefineConfigLocalName = "";
   let eslintConfigExpression: any = null;
+  let didRewriteFlatConfig = false;
 
   /**
    * What this supports:
@@ -139,10 +140,13 @@ export const configureFlatConfig = async (
    * 1. Export default []
    * 2. Const config; export default config
    * 3. Export default tseslint.config()
+   * 4. export default defineConfig([...]) from "eslint/config"
    *
    * What this does NOT support:
    *
-   * 1. Module.exports = [] Though it will add the import and a code comment that points to the docs
+   * 1. module.exports = []
+   *
+   * Unsupported formats are left unchanged.
    */
   traverse(ast, {
     ImportDeclaration(path) {
@@ -183,6 +187,7 @@ export const configureFlatConfig = async (
       // Case 1: Direct array
       if (t.isArrayExpression(eslintConfigExpression)) {
         eslintConfigExpression.elements.push(createStorybookConfigSpread());
+        didRewriteFlatConfig = true;
       }
 
       // Case 2: tseslint.config(...)
@@ -198,6 +203,7 @@ export const configureFlatConfig = async (
         })
       ) {
         eslintConfigExpression.arguments.push(storybookConfig);
+        didRewriteFlatConfig = true;
       }
 
       // Case 2b: export default defineConfig([...]) from "eslint/config"
@@ -217,6 +223,7 @@ export const configureFlatConfig = async (
                 castToAnyArray: shouldCastStorybookConfig,
               }),
             );
+            didRewriteFlatConfig = true;
           }
         }
       }
@@ -229,6 +236,7 @@ export const configureFlatConfig = async (
 
           if (t.isArrayExpression(init)) {
             init.elements.push(createStorybookConfigSpread());
+            didRewriteFlatConfig = true;
           } else if (
             t.isCallExpression(init) &&
             init.arguments.length > 0 &&
@@ -245,6 +253,7 @@ export const configureFlatConfig = async (
                     castToAnyArray: shouldCastStorybookConfig,
                   }),
                 );
+                didRewriteFlatConfig = true;
               }
             }
           }
@@ -252,19 +261,28 @@ export const configureFlatConfig = async (
       }
     },
 
-    Program(path) {
-      const alreadyImported = path.node.body.some(
-        (node) =>
-          t.isImportDeclaration(node) &&
-          node.source.value === "eslint-plugin-storybook",
-      );
+    Program: {
+      exit(path) {
+        if (!didRewriteFlatConfig) {
+          return;
+        }
 
-      if (!alreadyImported) {
+        const alreadyImported = path.node.body.some(
+          (node) =>
+            t.isImportDeclaration(node) &&
+            node.source.value === "eslint-plugin-storybook",
+        );
+
+        if (alreadyImported) {
+          return;
+        }
+
         // Add import: import storybook from "eslint-plugin-storybook"
         const importDecl = t.importDeclaration(
           [t.importDefaultSpecifier(t.identifier("storybook"))],
           t.stringLiteral("eslint-plugin-storybook"),
         );
+
         (importDecl as any).comments = [
           {
             type: "CommentLine",
@@ -272,8 +290,9 @@ export const configureFlatConfig = async (
               " For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format",
           },
         ];
+
         path.node.body.unshift(importDecl);
-      }
+      },
     },
   });
 

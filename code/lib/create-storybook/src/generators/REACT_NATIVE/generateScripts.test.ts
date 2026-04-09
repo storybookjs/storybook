@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { deriveStorybookPlatformScripts } from './generateScripts';
+import { deriveStorybookPlatformScripts } from './generateScripts.ts';
 
 describe('deriveStorybookPlatformScripts', () => {
   it('derives storybook platform scripts from ios and android scripts', () => {

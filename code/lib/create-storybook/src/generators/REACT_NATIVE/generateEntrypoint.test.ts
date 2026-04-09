@@ -6,7 +6,7 @@ import { SupportedLanguage } from 'storybook/internal/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { generateReactNativeEntrypoint } from './generateEntrypoint';
+import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
 
 describe('generateReactNativeEntrypoint', () => {
   it('generates .rnstorybook/index.ts for TypeScript projects', async () => {

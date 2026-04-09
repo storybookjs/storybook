@@ -4,10 +4,10 @@ import { copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli'
 import { logger } from 'storybook/internal/node-logger';
 import { SupportedLanguage } from 'storybook/internal/types';
 
-import { DependencyCollector } from '../../dependency-collector';
-import reactNativeGenerator from './index';
-import { generateReactNativeEntrypoint } from './generateEntrypoint';
-import { runMetroCodemodOrFallback } from './metroConfig';
+import { DependencyCollector } from '../../dependency-collector.ts';
+import reactNativeGenerator from './index.ts';
+import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
+import { runMetroCodemodOrFallback } from './metroConfig.ts';
 
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });

@@ -33,7 +33,6 @@ describe('PreflightCheckCommand', () => {
     );
     vi.mocked(scaffoldModule.scaffoldNewProject).mockResolvedValue(undefined);
     vi.mocked(invalidateProjectRootCache).mockImplementation(() => {});
-
     vi.clearAllMocks();
   });
 

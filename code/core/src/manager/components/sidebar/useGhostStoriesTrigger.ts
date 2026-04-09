@@ -11,8 +11,6 @@ const TRIGGER_DELAY_MS = 10 * 60 * 1000;
  * initializes. The server-side handler in ghost-stories-channel.ts enforces
  * the once-ever-per-project gate via lastEvents cache, so this hook is
  * fire-and-forget.
- *
- * Call this hook once at the top of the Sidebar component.
  */
 export function useGhostStoriesTrigger(): void {
   const api = useStorybookApi();

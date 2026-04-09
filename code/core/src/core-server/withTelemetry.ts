@@ -224,7 +224,9 @@ async function collectAiSetupEvidence(
       return;
     }
 
-    // Don't fire evidence for ai-prepare itself
+    // Don't fire evidence for ai-prepare itself, it's too early.
+    // The prepare command gives the prompt to the agent and exits,
+    // so we only expect changes after the agent has started processing it.
     if (eventType === 'ai-prepare') {
       return;
     }

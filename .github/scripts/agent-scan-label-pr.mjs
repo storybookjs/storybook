@@ -1,10 +1,14 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 
+/**
+ * agent scan classification rename
+ * - organic -> human
+ * - automated
+ * - mixed
+ */
 const CLASSIFICATION_MAP = {
   'organic': 'human',
-  'mixed': 'mixed',
-  'automated': 'automated',
 }
 
 async function main() {

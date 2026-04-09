@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - name: Install script dependencies
+        run: npm install --prefix .github/scripts
       - name: Cache AgentScan analysis
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
         with:
@@ -35,29 +37,12 @@ jobs:
           cache-path: .agentscan-cache
       - name: Label flagged PR
         if: contains(fromJSON('["automation","suspicious"]'), steps.agentscan.outputs.classification) && steps.agentscan.outputs.community-flagged != 'true'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        with:
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            const classification = '${{ steps.agentscan.outputs.classification }}';
-
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              labels: [`agent-scan:${classification}`],
-            });
-
+        env:
+          INPUT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_CLASSIFICATION: ${{ steps.agentscan.outputs.classification }}
+        run: node .github/scripts/agent-scan-label-pr.mjs
       - name: Close community flagged accounts
         if: steps.agentscan.outputs.community-flagged == 'true'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        with:
-          script: |
-            const prNumber = context.payload.pull_request.number;
-
-            await github.rest.pulls.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-              state: 'closed',
-            });
+        env:
+          INPUT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/agent-scan-close-pr.mjs

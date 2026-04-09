@@ -154,14 +154,6 @@
       "built": false
     }
   },
-  "peerDependencies": {
-    "vite-plus": "^0.1.15"
-  },
-  "peerDependenciesMeta": {
-    "vite-plus": {
-      "optional": true
-    }
-  },
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"

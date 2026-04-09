@@ -8557,8 +8557,6 @@ __metadata:
     vite-plugin-inspect: "npm:^11.0.0"
     vitest: "npm:^4.1.0"
     wait-on: "npm:^8.0.3"
-  peerDependencies:
-    vite-plus: ^0.1.15
   dependenciesMeta:
     ejs:
       built: false
@@ -8575,9 +8573,6 @@ __metadata:
       built: false
     yorkie:
       built: false
-  peerDependenciesMeta:
-    vite-plus:
-      optional: true
   languageName: unknown
   linkType: soft
 
@@ -29390,8 +29385,11 @@ __metadata:
     zod: "npm:^3.25.76"
   peerDependencies:
     prettier: ^2 || ^3
+    vite-plus: ^0.1.15
   peerDependenciesMeta:
     prettier:
+      optional: true
+    vite-plus:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js

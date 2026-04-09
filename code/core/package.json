@@ -373,6 +373,7 @@
     "typescript": "^5.8.3",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
+    "vite-plus": "^0.1.16",
     "watchpack": "^2.5.0",
     "wrap-ansi": "^9.0.2",
     "zod": "^3.25.76"

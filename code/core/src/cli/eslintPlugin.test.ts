@@ -485,6 +485,30 @@ describe("configureEslintPlugin", () => {
       `);
     });
 
+    it("should apply 'as any[]' cast for TypeScript defineConfig", async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import { defineConfig } from "eslint/config";
+    export default defineConfig([
+      { rules: { "no-console": "error" } },
+    ]);`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: "eslint.config.ts",
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+
+      expect(content).toContain('storybook.configs["flat/recommended"]');
+      expect(content).toContain("as any[]");
+    });
+
     it("should configure ESLint plugin correctly with direct export default defineConfig", async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),

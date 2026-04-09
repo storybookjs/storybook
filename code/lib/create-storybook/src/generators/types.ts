@@ -77,9 +77,13 @@ export interface GeneratorMetadata {
   /**
    * If the builder is a function, it will be called to determine the builder. This is useful for
    * generators that need to determine the builder based on the project type in cases where the
-   * builder cannot be detected (Webpack and Vite are both non-existent dependencies).
+   * builder cannot be detected (Webpack and Vite are both non-existent dependencies). The function
+   * receives the original CLI options so it can short-circuit prompts in non-interactive (`--yes`)
+   * mode.
    */
-  builderOverride?: SupportedBuilder | (() => SupportedBuilder | Promise<SupportedBuilder>);
+  builderOverride?:
+    | SupportedBuilder
+    | ((options: CommandOptions) => SupportedBuilder | Promise<SupportedBuilder>);
 }
 
 export interface GeneratorContext {

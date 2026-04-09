@@ -19,7 +19,18 @@ export default defineGeneratorModule({
         ? SupportedFramework.ANGULAR_VITE
         : SupportedFramework.ANGULAR;
     },
-    builderOverride: async () => {
+    builderOverride: async (options) => {
+      // In non-interactive contexts (--yes, CI, or no TTY) default to Vite without prompting,
+      // matching Phase 2 of #34012 ("Set default framework option for new Angular projects
+      // using Vite"). Interactive runs still get a prompt so users can opt into the legacy
+      // webpack builder.
+      const isInteractive =
+        !options.yes && !process.env.CI && !!process.stdout.isTTY && !!process.stdin.isTTY;
+
+      if (!isInteractive) {
+        return SupportedBuilder.VITE;
+      }
+
       logger.info(dedent`
         Storybook has two Angular builder options: Vite and Webpack 5.
 

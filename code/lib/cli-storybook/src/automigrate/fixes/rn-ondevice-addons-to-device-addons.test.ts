@@ -60,7 +60,9 @@ describe('rn-ondevice-addons-to-device-addons', () => {
     });
 
     it('returns null when there are no ondevice addons in `addons`', async () => {
-      const packageManager = makePackageManager({ '@storybook/react-native': '^8.0.0' });
+      const packageManager = makePackageManager({
+        '@storybook/react-native': '^8.0.0',
+      });
       const mainConfig: StorybookConfigRaw = {
         stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],
         addons: ['@storybook/addon-docs', '@storybook/addon-links'],
@@ -78,7 +80,9 @@ describe('rn-ondevice-addons-to-device-addons', () => {
     });
 
     it('returns null when there are no addons at all', async () => {
-      const packageManager = makePackageManager({ '@storybook/react-native': '^8.0.0' });
+      const packageManager = makePackageManager({
+        '@storybook/react-native': '^8.0.0',
+      });
       const mainConfig: StorybookConfigRaw = {
         stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],
       };
@@ -95,7 +99,9 @@ describe('rn-ondevice-addons-to-device-addons', () => {
     });
 
     it('returns the ondevice addons when string addons with "ondevice" are present', async () => {
-      const packageManager = makePackageManager({ '@storybook/react-native': '^8.0.0' });
+      const packageManager = makePackageManager({
+        '@storybook/react-native': '^8.0.0',
+      });
       const mainConfig: StorybookConfigRaw = {
         stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],
         addons: [
@@ -119,11 +125,16 @@ describe('rn-ondevice-addons-to-device-addons', () => {
     });
 
     it('returns the ondevice addons when object addons with "ondevice" are present', async () => {
-      const packageManager = makePackageManager({ '@storybook/react-native': '^8.0.0' });
+      const packageManager = makePackageManager({
+        '@storybook/react-native': '^8.0.0',
+      });
       const mainConfig: StorybookConfigRaw = {
         stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],
         addons: [
-          { name: '@storybook/addon-ondevice-controls', options: { expanded: true } },
+          {
+            name: '@storybook/addon-ondevice-controls',
+            options: { expanded: true },
+          },
           '@storybook/addon-docs',
         ],
       };
@@ -138,13 +149,18 @@ describe('rn-ondevice-addons-to-device-addons', () => {
 
       expect(result).toEqual({
         ondeviceAddons: [
-          { name: '@storybook/addon-ondevice-controls', options: { expanded: true } },
+          {
+            name: '@storybook/addon-ondevice-controls',
+            options: { expanded: true },
+          },
         ],
       });
     });
 
     it('handles the case where @storybook/react-native is in dependencies (not devDependencies)', async () => {
-      const packageManager = makePackageManager({ '@storybook/react-native': '^8.0.0' });
+      const packageManager = makePackageManager({
+        '@storybook/react-native': '^8.0.0',
+      });
       const mainConfig: StorybookConfigRaw = {
         stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],
         addons: ['@storybook/addon-ondevice-controls'],
@@ -205,7 +221,10 @@ describe('rn-ondevice-addons-to-device-addons', () => {
 
     it('preserves object-form addons when moving to `deviceAddons`', async () => {
       const ondeviceAddons = [
-        { name: '@storybook/addon-ondevice-controls', options: { expanded: true } },
+        {
+          name: '@storybook/addon-ondevice-controls',
+          options: { expanded: true },
+        },
       ];
 
       await rnOndeviceAddonsToDeviceAddons.run?.({

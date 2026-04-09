@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
+  - [React Native: on-device addons moved to `deviceAddons`](#react-native-on-device-addons-moved-to-deviceaddons)
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
@@ -76,7 +78,6 @@
     - [Type System Updates](#type-system-updates)
     - [CSF File Changes](#csf-file-changes)
     - [React-Native config dir renamed](#react-native-config-dir-renamed)
-    - [React Native: on-device addons moved to `deviceAddons`](#react-native-on-device-addons-moved-to-deviceaddons)
     - [`parameters.docs.source.format` removal](#parametersdocssourceformat-removal)
     - [`parameter docs.source.excludeDecorators` has no effect in React](#parameter-docssourceexcludedecorators-has-no-effect-in-react)
     - [Documentation Generation Changes](#documentation-generation-changes)
@@ -520,6 +521,36 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.3.0 to 10.4.0
+
+### React Native: on-device addons moved to `deviceAddons`
+
+In Storybook 9, on-device addons (those whose package name contains `"ondevice"`, such as `@storybook/addon-ondevice-controls` and `@storybook/addon-ondevice-actions`) must be listed under the `deviceAddons` key in your `.rnstorybook/main.ts` instead of the shared `addons` key.
+
+Listing them in `addons` caused `storybook extract` to fail because Storybook Core tries to evaluate every entry in `addons` as a Node.js preset, which these on-device addons are not.
+
+The automigration (`rn-ondevice-addons-to-device-addons`) handles this automatically, but you can also migrate manually:
+
+```ts
+// Before (.rnstorybook/main.ts)
+export default {
+  addons: [
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+    '@storybook/addon-docs',
+  ],
+};
+
+// After (.rnstorybook/main.ts)
+export default {
+  addons: ['@storybook/addon-docs'],
+  deviceAddons: [
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+  ],
+};
+```
 
 ## From version 10.0.0 to 10.1.0
 
@@ -1319,34 +1350,6 @@ In Storybook 9, React Native (RN) projects use the `.rnstorybook` config directo
 That makes it easier for RN and React Native Web (RNW) storybooks to co-exist in the same project.
 
 To upgrade, either rename your `.storybook` directory to `.rnstorybook` or if you wish to continue using `.storybook` (not recommended), you can use the [`configPath`](https://github.com/storybookjs/react-native#configpath) option to specify `.storybook` manually.
-
-#### React Native: on-device addons moved to `deviceAddons`
-
-In Storybook 9, on-device addons (those whose package name contains `"ondevice"`, such as `@storybook/addon-ondevice-controls` and `@storybook/addon-ondevice-actions`) must be listed under the `deviceAddons` key in your `.rnstorybook/main.ts` instead of the shared `addons` key.
-
-Listing them in `addons` caused `storybook extract` to fail because Storybook Core tries to evaluate every entry in `addons` as a Node.js preset, which these on-device addons are not.
-
-The automigration (`rn-ondevice-addons-to-device-addons`) handles this automatically, but you can also migrate manually:
-
-```ts
-// Before (.rnstorybook/main.ts)
-export default {
-  addons: [
-    '@storybook/addon-ondevice-controls',
-    '@storybook/addon-ondevice-actions',
-    '@storybook/addon-docs',
-  ],
-};
-
-// After (.rnstorybook/main.ts)
-export default {
-  addons: ['@storybook/addon-docs'],
-  deviceAddons: [
-    '@storybook/addon-ondevice-controls',
-    '@storybook/addon-ondevice-actions',
-  ],
-};
-```
 
 #### `parameters.docs.source.format` removal
 

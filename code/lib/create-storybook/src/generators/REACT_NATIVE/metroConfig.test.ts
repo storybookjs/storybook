@@ -50,7 +50,10 @@ describe('metroConfig codemod', () => {
       'utf-8'
     );
 
-    const result = await runMetroCodemodOrFallback({ packageManager, yes: true });
+    const result = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: true,
+    });
     const updatedSource = await readFile(filePath, 'utf-8');
 
     expect(result.status).toBe('updated');
@@ -62,7 +65,10 @@ describe('metroConfig codemod', () => {
     const filePath = path.join(tempDir, 'metro.config.js');
     await writeFile(filePath, 'module.exports = withExpo(defaultConfig);\n', 'utf-8');
 
-    const result = await runMetroCodemodOrFallback({ packageManager, yes: true });
+    const result = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: true,
+    });
     const updatedSource = await readFile(filePath, 'utf-8');
 
     expect(result.status).toBe('updated');
@@ -109,9 +115,15 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     const filePath = path.join(tempDir, 'metro.config.js');
     await writeFile(filePath, 'const config = {};\nmodule.exports = config;\n', 'utf-8');
 
-    const first = await runMetroCodemodOrFallback({ packageManager, yes: true });
+    const first = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: true,
+    });
     const firstOutput = await readFile(filePath, 'utf-8');
-    const second = await runMetroCodemodOrFallback({ packageManager, yes: true });
+    const second = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: true,
+    });
     const secondOutput = await readFile(filePath, 'utf-8');
 
     expect(first.status).toBe('updated');
@@ -127,7 +139,10 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
       'utf-8'
     );
 
-    const result = await runMetroCodemodOrFallback({ packageManager, yes: true });
+    const result = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: true,
+    });
 
     expect(result.status).toBe('skipped-existing-storybook-import');
   });
@@ -137,14 +152,20 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     await writeFile(path.join(tempDir, 'metro.config.ts'), 'export default {};\n', 'utf-8');
     vi.mocked(prompt.select).mockResolvedValue(path.join(tempDir, 'metro.config.ts'));
 
-    const result = await runMetroCodemodOrFallback({ packageManager, yes: false });
+    const result = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: false,
+    });
 
     expect(prompt.select).toHaveBeenCalled();
     expect(result.filePath).toBe(path.join(tempDir, 'metro.config.ts'));
   });
 
   it('skips automatically in --yes mode when non-expo metro config is missing', async () => {
-    const result = await runMetroCodemodOrFallback({ packageManager, yes: true });
+    const result = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: true,
+    });
 
     expect(result.status).toBe('skipped-missing-file');
   });
@@ -154,7 +175,10 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
       dep === 'expo' ? '^52.0.0' : null
     );
 
-    const result = await runMetroCodemodOrFallback({ packageManager, yes: true });
+    const result = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: true,
+    });
 
     expect(packageManager.runPackageCommand).toHaveBeenCalledWith({
       args: ['expo', 'customize', 'metro.config.js'],
@@ -181,7 +205,10 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     await writeFile(externalPath, 'module.exports = {};\n', 'utf-8');
     vi.mocked(prompt.text).mockResolvedValue('./custom-metro.config.js');
 
-    const result = await runMetroCodemodOrFallback({ packageManager, yes: false });
+    const result = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: false,
+    });
     const updated = await readFile(externalPath, 'utf-8');
 
     expect(prompt.text).toHaveBeenCalled();
@@ -193,7 +220,10 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     const filePath = path.join(tempDir, 'metro.config.js');
     await writeFile(filePath, 'const noExportHere = true;\n', 'utf-8');
 
-    const result = await runMetroCodemodOrFallback({ packageManager, yes: true });
+    const result = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: true,
+    });
     const updated = await readFile(filePath, 'utf-8');
 
     expect(result.status).toBe('fallback-commented');

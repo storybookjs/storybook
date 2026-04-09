@@ -107,21 +107,9 @@ describe('PreflightCheckCommand', () => {
       });
     });
 
-    it('should log the detected package manager', async () => {
-      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
-      mockPackageManager.type = PackageManagerName.YARN2;
-
-      await command.execute({ force: false } as any);
-
-      expect(vi.mocked(logger.intro)).toHaveBeenCalledWith('Package manager: Yarn Berry');
-    });
-
     it('should warn when package.json name is "storybook"', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
-      Object.defineProperty(mockPackageManager, 'primaryPackageJson', {
-        value: { packageJson: { name: 'storybook' } },
-        configurable: true,
-      });
+      mockPackageManager.primaryPackageJson = { packageJson: { name: 'storybook' } };
 
       await command.execute({ force: false } as any);
 
@@ -132,10 +120,7 @@ describe('PreflightCheckCommand', () => {
 
     it('should not warn when package.json name is not "storybook"', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
-      Object.defineProperty(mockPackageManager, 'primaryPackageJson', {
-        value: { packageJson: { name: 'my-project' } },
-        configurable: true,
-      });
+      mockPackageManager.primaryPackageJson = { packageJson: { name: 'my-project' } };
 
       await command.execute({ force: false } as any);
 

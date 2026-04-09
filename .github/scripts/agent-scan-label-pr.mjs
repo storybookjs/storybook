@@ -8,8 +8,9 @@ import * as github from '@actions/github';
  * - mixed
  */
 const CLASSIFICATION_MAP = {
-  'organic': 'human',
-}
+  organic: 'human',
+  automation: 'automated',
+};
 
 async function main() {
   const classification = core.getInput('classification', { required: true });
@@ -25,6 +26,6 @@ async function main() {
   });
 }
 
-main().catch(error => {
+main().catch((error) => {
   core.setFailed(error.message);
 });

@@ -1,9 +1,10 @@
 import type { PresetProperty } from 'storybook/internal/types';
 
-import { fileURLToPath, resolve } from 'node:url';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import type { StandaloneOptions } from './builders/utils/standalone-options';
-import type { FrameworkOptions } from './types';
+import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
+import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export const addons: PresetProperty<'addons'> = [];
@@ -12,14 +13,12 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
   options
 ) => {
-  const config = fileURLToPath(
-    import.meta.resolve('@storybook/angular-vite/client/config'),
-  );
+  const config = fileURLToPath(import.meta.resolve('@storybook/angular-vite/client/config'));
   const annotations = [...entries, config];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
     const previewProdPath = fileURLToPath(
-      import.meta.resolve('@storybook/angular-vite/client/preview-prod'),
+      import.meta.resolve('@storybook/angular-vite/client/preview-prod')
     );
     annotations.unshift(previewProdPath);
   }
@@ -28,7 +27,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   const docsEnabled = Object.keys(docsConfig).length > 0;
   if (docsEnabled) {
     const docsConfigPath = fileURLToPath(
-      import.meta.resolve('@storybook/angular-vite/client/docs/config'),
+      import.meta.resolve('@storybook/angular-vite/client/docs/config')
     );
     annotations.push(docsConfigPath);
   }
@@ -49,7 +48,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
 
 async function resolveExperimentalZoneless(
   frameworkOptions: FrameworkOptions,
-  angularBuilderOptions: StandaloneOptions['angularBuilderOptions'],
+  angularBuilderOptions: StandaloneOptions['angularBuilderOptions']
 ) {
   // 1. Explicit framework option (user's .storybook/main.ts)
   if (typeof frameworkOptions?.experimentalZoneless === 'boolean') {
@@ -80,11 +79,11 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   const { mergeConfig, normalizePath } = await import('vite');
   const { default: angular } = await import('@analogjs/vite-plugin-angular');
 
-  // @ts-ignore
+  // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
   const experimentalZoneless = await resolveExperimentalZoneless(
     framework.options,
-    options?.angularBuilderOptions,
+    options?.angularBuilderOptions
   );
   return mergeConfig(config, {
     // Add dependencies to pre-optimization
@@ -101,10 +100,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     },
     plugins: [
       angular({
-        jit:
-          typeof framework.options?.jit !== 'undefined'
-            ? framework.options?.jit
-            : true,
+        jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
         liveReload:
           typeof framework.options?.liveReload !== 'undefined'
             ? framework.options?.liveReload
@@ -131,31 +127,25 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
 function angularOptionsPlugin(
   options: StandaloneOptions,
-  { normalizePath, experimentalZoneless }: any,
+  { normalizePath, experimentalZoneless }: any
 ): Plugin {
   let resolvedConfig: UserConfig;
   return {
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {
       resolvedConfig = userConfig;
-      const loadPaths =
-        options?.angularBuilderOptions?.stylePreprocessorOptions?.loadPaths;
-      const sassOptions =
-        options?.angularBuilderOptions?.stylePreprocessorOptions?.sass;
+      const loadPaths = options?.angularBuilderOptions?.stylePreprocessorOptions?.loadPaths;
+      const sassOptions = options?.angularBuilderOptions?.stylePreprocessorOptions?.sass;
 
       if (Array.isArray(loadPaths)) {
         const workspaceRoot =
-          options.angularBuilderContext?.workspaceRoot ??
-          userConfig?.root ??
-          process.cwd();
+          options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
         return {
           css: {
             preprocessorOptions: {
               scss: {
                 ...sassOptions,
-                loadPaths: loadPaths.map(
-                  (loadPath) => `${resolve(workspaceRoot, loadPath)}`,
-                ),
+                loadPaths: loadPaths.map((loadPath) => `${resolve(workspaceRoot, loadPath)}`),
               },
             },
           },
@@ -165,11 +155,7 @@ function angularOptionsPlugin(
       return;
     },
     async transform(code, id) {
-      if (
-        normalizePath(id).endsWith(
-          normalizePath(`${options.configDir}/preview.ts`),
-        )
-      ) {
+      if (normalizePath(id).endsWith(normalizePath(`${options.configDir}/preview.ts`))) {
         const imports = [];
         const styles = options?.angularBuilderOptions?.styles;
 
@@ -191,12 +177,10 @@ function angularOptionsPlugin(
           code: `
             ${imports
               .map((extraImport) => {
-                if (
-                  extraImport.startsWith('.') ||
-                  extraImport.startsWith('src')
-                ) {
-                  // relative to root
-                  return `import '${resolve(projectRoot, extraImport)}';`;
+                if (extraImport.startsWith('.') || extraImport.startsWith('src')) {
+                  // relative to root — normalize to forward slashes so the
+                  // generated import specifier is valid on Windows.
+                  return `import '${normalizePath(resolve(projectRoot, extraImport))}';`;
                 }
 
                 // absolute import

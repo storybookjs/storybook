@@ -1,15 +1,7 @@
 import { logger } from 'storybook/internal/node-logger';
 
-export interface VitePlusVersions {
-  vite?: string;
-  vitest?: string;
-  rolldown?: string;
-  tsdown?: string;
-  [key: string]: string | undefined;
-}
-
 /** Cached result: undefined = not yet checked, null = not available */
-let cachedVersions: VitePlusVersions | null | undefined;
+let cachedVersions: Record<string, string> | null | undefined;
 
 /**
  * Attempts to load vendored package versions from `vite-plus/versions`.
@@ -20,14 +12,14 @@ let cachedVersions: VitePlusVersions | null | undefined;
  *
  * Returns null when vite-plus is not installed or lacks the `/versions` export (older versions).
  */
-export async function getVitePlusVersions(): Promise<VitePlusVersions | null> {
+export async function getVitePlusVersions(): Promise<Record<string, string> | null> {
   if (cachedVersions !== undefined) {
     return cachedVersions;
   }
 
   try {
     const mod = await import('vite-plus/versions');
-    const versions: VitePlusVersions = mod.versions ?? mod;
+    const versions = mod.versions ?? mod;
 
     if (versions && typeof versions.vite === 'string') {
       logger.debug(`Detected vite-plus: vite=${versions.vite}, vitest=${versions.vitest ?? 'N/A'}`);

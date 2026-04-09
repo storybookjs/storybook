@@ -1,3 +1,4 @@
+import { logger } from 'storybook/internal/client-logger';
 import { ImplicitActionsDuringRendering } from 'storybook/internal/preview-errors';
 import type { Renderer } from 'storybook/internal/types';
 
@@ -76,7 +77,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
           deprecated,
         });
         if (deprecated) {
-          console.warn(error);
+          logger.warn(error);
         } else {
           throw error;
         }

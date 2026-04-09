@@ -2,23 +2,36 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { global } from '@storybook/global';
 
-import { action } from './action';
+import { action } from './action.ts';
 
 vi.mock('storybook/preview-api', () => ({
   addons: { getChannel: () => ({ emit: vi.fn() }) },
 }));
 
 describe('action handler — implicit actions', () => {
+  const hadPreview = '__STORYBOOK_PREVIEW__' in (global as any);
+  const hadFeatures = 'FEATURES' in (globalThis as any);
   const originalPreview = (global as any).__STORYBOOK_PREVIEW__;
   const originalFeatures = (globalThis as any).FEATURES;
 
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     (globalThis as any).FEATURES = { disallowImplicitActionsInRenderV8: true };
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    (global as any).__STORYBOOK_PREVIEW__ = originalPreview;
-    (globalThis as any).FEATURES = originalFeatures;
+    if (hadPreview) {
+      (global as any).__STORYBOOK_PREVIEW__ = originalPreview;
+    } else {
+      delete (global as any).__STORYBOOK_PREVIEW__;
+    }
+    if (hadFeatures) {
+      (globalThis as any).FEATURES = originalFeatures;
+    } else {
+      delete (globalThis as any).FEATURES;
+    }
     vi.restoreAllMocks();
   });
 
@@ -36,10 +49,9 @@ describe('action handler — implicit actions', () => {
 
   it('warns instead of throwing when the render is in docs viewMode', () => {
     setRender({ phase: 'rendering', viewMode: 'docs' });
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const handler = action('onBlabla', { implicit: true });
     expect(() => handler()).not.toThrow();
-    expect(warn).toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
   });
 
   it('does not throw when there is no active render', () => {

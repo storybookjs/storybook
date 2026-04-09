@@ -116,6 +116,11 @@ describe("extractEslintInfo", () => {
 });
 
 describe("configureEslintPlugin", () => {
+  beforeEach(() => {
+    vi.mocked(readFile).mockReset();
+    vi.mocked(writeFile).mockReset();
+  });
+
   describe(".eslintrc.json format", () => {
     it("should not configure ESLint plugin if it is already configured", async () => {
       const mockPackageManager = {

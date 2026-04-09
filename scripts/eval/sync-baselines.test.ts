@@ -283,7 +283,7 @@ describe('syncBaselines', () => {
       mainFile: 'main.ts',
       mainContents: "export default { stories: ['./eval-support/*.mdx'] };\n",
       evalSupportFiles: {
-        'summary.mdx': "# Old Source Summary\n",
+        'summary.mdx': '# Old Source Summary\n',
         'transcript.mdx': '# Transcript\n',
         'transcript.tsx': 'export const Transcript = () => null;\n',
         'transcript.types.ts': 'export interface TranscriptProps {}\n',
@@ -326,12 +326,17 @@ describe('syncBaselines', () => {
     });
 
     expect(
-      readFileSync(join(reposRoot, 'mealdrop', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
+      readFileSync(
+        join(reposRoot, 'mealdrop', '.storybook', 'eval-support', 'summary.mdx'),
+        'utf-8'
+      )
     ).toBe('# New Source Summary\n');
     expect(
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
     ).toBe('# New Source Summary\n');
-    expect(getHead(join(reposRoot, 'mealdrop'))).toBe(getRemoteHead(join(remotesRoot, 'mealdrop.git')));
+    expect(getHead(join(reposRoot, 'mealdrop'))).toBe(
+      getRemoteHead(join(remotesRoot, 'mealdrop.git'))
+    );
   });
 });
 

@@ -92,11 +92,7 @@ export interface SpawnedBatchChild {
 
 export interface BatchRunnerDeps {
   now?: () => Date;
-  spawn?: (
-    command: string,
-    args: string[],
-    options: SpawnOptions
-  ) => SpawnedBatchChild;
+  spawn?: (command: string, args: string[], options: SpawnOptions) => SpawnedBatchChild;
 }
 
 export async function main(options: RunBatchOptions = {}, deps: BatchRunnerDeps = {}) {
@@ -348,11 +344,7 @@ function createBatchRunDescriptor(
   };
 }
 
-function defaultSpawn(
-  command: string,
-  args: string[],
-  options: SpawnOptions
-) {
+function defaultSpawn(command: string, args: string[], options: SpawnOptions) {
   return spawnChild(command, args, options);
 }
 

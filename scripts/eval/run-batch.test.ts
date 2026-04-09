@@ -428,13 +428,27 @@ function getDescriptorFromArgs(args: string[]) {
   const agent = agentIndex === -1 ? undefined : args[agentIndex + 1];
   const effortIndex = args.indexOf('-e');
   const effort = effortIndex === -1 ? undefined : args[effortIndex + 1];
-  const descriptors = buildBatchRunDescriptors({
-    ...(prompt ? { prompt } : {}),
-    ...(agent === 'claude' ? { agents: ['claude'] as const } : {}),
-    ...(agent === 'codex' ? { agents: ['codex'] as const } : {}),
-    ...(agent === 'claude' && effort ? { claudeEfforts: [effort] as const } : {}),
-    ...(agent === 'codex' && effort ? { codexEffort: effort as 'medium' | 'high' | 'xhigh' } : {}),
-  });
+  const options: Parameters<typeof buildBatchRunDescriptors>[0] = {};
+
+  if (prompt) {
+    options.prompt = prompt;
+  }
+
+  if (agent === 'claude') {
+    options.agents = ['claude'];
+    if (effort === 'low' || effort === 'medium' || effort === 'high' || effort === 'max') {
+      options.claudeEfforts = [effort];
+    }
+  }
+
+  if (agent === 'codex') {
+    options.agents = ['codex'];
+    if (effort === 'low' || effort === 'medium' || effort === 'high' || effort === 'xhigh') {
+      options.codexEffort = effort;
+    }
+  }
+
+  const descriptors = buildBatchRunDescriptors(options);
   const descriptor = descriptors.find((candidate) => {
     return candidate.args.join('\0') === args.join('\0');
   });

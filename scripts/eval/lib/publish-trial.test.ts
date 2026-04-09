@@ -35,7 +35,7 @@ function createExecResult(stdout = '', exitCode = 0) {
   return { stdout, stderr: '', exitCode };
 }
 
-function writeEvalSupportFixture(projectPath: string, repoRoot: string) {
+function writeEvalSupportFixture(projectPath: string) {
   const supportDir = join(projectPath, '.storybook', 'eval-support');
   const configPath = join(projectPath, '.storybook', 'main.ts');
   const resultsDir = join(projectPath, '.storybook', 'eval-results');
@@ -127,7 +127,7 @@ describe('publishTrialBranch', () => {
     const resultsDir = join(projectPath, '.storybook', 'eval-results');
     const configPath = join(projectPath, '.storybook', 'main.ts');
 
-    writeEvalSupportFixture(projectPath, repoRoot);
+    writeEvalSupportFixture(projectPath);
     const originalConfig = readFileSync(configPath, 'utf-8');
 
     const publish = await publishTrialBranch({
@@ -440,7 +440,7 @@ describe('publishTrialBranch', () => {
     const projectPath = join(repoRoot, 'packages', 'app');
     const resultsDir = join(projectPath, '.storybook', 'eval-results');
 
-    writeEvalSupportFixture(projectPath, repoRoot);
+    writeEvalSupportFixture(projectPath);
 
     await publishTrialBranch({
       data: {

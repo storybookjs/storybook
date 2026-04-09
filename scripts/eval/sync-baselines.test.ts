@@ -4,7 +4,8 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
-import { syncBaselines, type Project } from './sync-baselines.ts';
+import type { Project } from './lib/projects.ts';
+import { syncBaselines } from './sync-baselines.ts';
 
 let TMP = '';
 

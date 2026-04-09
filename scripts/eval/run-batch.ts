@@ -1,4 +1,4 @@
-import { spawn as spawnChild, type SpawnOptionsWithoutStdio } from 'node:child_process';
+import { spawn as spawnChild, type SpawnOptions } from 'node:child_process';
 import { once } from 'node:events';
 import { createWriteStream } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -95,7 +95,7 @@ export interface BatchRunnerDeps {
   spawn?: (
     command: string,
     args: string[],
-    options: SpawnOptionsWithoutStdio & { stdio: ['ignore', 'pipe', 'pipe'] }
+    options: SpawnOptions
   ) => SpawnedBatchChild;
 }
 
@@ -197,22 +197,28 @@ export function buildBatchVariants(
 ): AgentVariant[] {
   const agents = resolveBatchAgents(options.agents);
   const claudeEfforts = resolveClaudeEfforts(options);
+  const variants: AgentVariant[] = [];
 
-  return agents.flatMap((agent) =>
-    agent === 'claude'
-      ? claudeEfforts.map((effort) => ({
-          agent: 'claude' as const,
-          model: 'opus-4.6' as const,
+  for (const agent of agents) {
+    if (agent === 'claude') {
+      for (const effort of claudeEfforts) {
+        variants.push({
+          agent: 'claude',
+          model: 'opus-4.6',
           effort,
-        }))
-      : [
-          {
-            agent: 'codex' as const,
-            model: 'gpt-5.4' as const,
-            effort: options.codexEffort ?? BATCH_DEFAULT_EFFORTS.codex,
-          },
-        ]
-  );
+        });
+      }
+      continue;
+    }
+
+    variants.push({
+      agent: 'codex',
+      model: 'gpt-5.4',
+      effort: options.codexEffort ?? BATCH_DEFAULT_EFFORTS.codex,
+    });
+  }
+
+  return variants;
 }
 
 export function buildBatchRunDescriptors(
@@ -272,9 +278,10 @@ async function runBatchDescriptor(
   logStream.write(`$ node ${descriptor.args.join(' ')}\n\n`);
 
   try {
+    const stdio: ['ignore', 'pipe', 'pipe'] = ['ignore', 'pipe', 'pipe'];
     const child = context.spawn('node', descriptor.args, {
       cwd: context.repoRoot,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio,
     });
 
     pid = child.pid ?? undefined;
@@ -344,7 +351,7 @@ function createBatchRunDescriptor(
 function defaultSpawn(
   command: string,
   args: string[],
-  options: SpawnOptionsWithoutStdio & { stdio: ['ignore', 'pipe', 'pipe'] }
+  options: SpawnOptions
 ) {
   return spawnChild(command, args, options);
 }

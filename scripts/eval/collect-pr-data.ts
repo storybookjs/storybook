@@ -316,7 +316,7 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
   if (rawPrState != null && rawPrState !== 'all' && rawPrState !== 'open') {
     throw new Error(`--state must be "all" or "open". Received: ${rawPrState}`);
   }
-  const prState: PullRequestState = rawPrState ?? 'all';
+  const prState: PullRequestState = rawPrState === 'open' ? 'open' : 'all';
 
   return {
     dbPath: values['db-path'] ?? DEFAULT_DB_PATH,

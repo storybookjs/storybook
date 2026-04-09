@@ -93,6 +93,7 @@ interface AiSetupPendingRecord {
 }
 
 export const getAiSetupPending = async (): Promise<AiSetupPendingRecord | undefined> => {
+  // Wait for any pending set operations to complete before reading
   await processingPromise;
   return (await cache.get('ai-setup-pending')) ?? undefined;
 };

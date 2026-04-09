@@ -91,6 +91,7 @@ export async function syncBaselines(options: SyncBaselinesOptions = {}) {
   const source = resolvedProjects.find(({ project }) => project.name === sourceProjectName)!;
 
   await preflightRepos(resolvedProjects, source);
+  await syncSourceRepo(source, log);
 
   const sourceFiles = await readSourceStorybookDir(source.paths.storybookDir);
   const results: SyncResult[] = [];
@@ -189,6 +190,25 @@ async function preflightRepos(
       throw new Error(`${project.name} has local changes: ${dirtyFiles.join(', ')}`);
     }
   }
+}
+
+async function syncSourceRepo(
+  source: { project: Project; paths: ProjectPaths },
+  log: (message: string) => void
+) {
+  const dirtyFiles = await getDirtyFiles(source.paths.repoRoot);
+  if (dirtyFiles.length > 0) {
+    log(pc.dim(`Using local baseline edits from ${source.project.name}`));
+    return;
+  }
+
+  await x('git', ['checkout', source.project.branch], {
+    nodeOptions: { cwd: source.paths.repoRoot },
+  });
+  await x('git', ['pull', '--ff-only', 'origin', source.project.branch], {
+    timeout: 120_000,
+    nodeOptions: { cwd: source.paths.repoRoot },
+  });
 }
 
 async function syncProjectRepo(opts: {

@@ -253,6 +253,86 @@ describe('syncBaselines', () => {
     );
     expect(existsSync(join(reposRoot, 'edgy', 'eval-results'))).toBe(false);
   });
+
+  it('fast-forwards a clean source repo before copying the baseline', async () => {
+    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-baselines-source-behind-'));
+    const reposRoot = join(TMP, 'repos');
+    const remotesRoot = join(TMP, 'remotes');
+    await mkdir(reposRoot, { recursive: true });
+    await mkdir(remotesRoot, { recursive: true });
+
+    const projects: Project[] = [
+      {
+        name: 'mealdrop',
+        repo: join(remotesRoot, 'mealdrop.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+      {
+        name: 'edgy',
+        repo: join(remotesRoot, 'edgy.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/edgy',
+      },
+    ];
+
+    setupRepo({
+      repoRoot: join(reposRoot, 'mealdrop'),
+      remoteRoot: join(remotesRoot, 'mealdrop.git'),
+      storybookDir: '.storybook',
+      mainFile: 'main.ts',
+      mainContents: "export default { stories: ['./eval-support/*.mdx'] };\n",
+      evalSupportFiles: {
+        'summary.mdx': "# Old Source Summary\n",
+        'transcript.mdx': '# Transcript\n',
+        'transcript.tsx': 'export const Transcript = () => null;\n',
+        'transcript.types.ts': 'export interface TranscriptProps {}\n',
+      },
+      previewContents: 'export default {};\n',
+      rootEvalResultsFiles: {
+        'summary.json': '{ "empty": true }\n',
+      },
+    });
+
+    setupRepo({
+      repoRoot: join(reposRoot, 'edgy'),
+      remoteRoot: join(remotesRoot, 'edgy.git'),
+      storybookDir: '.storybook',
+      mainFile: 'main.ts',
+      mainContents: 'export default { stories: [] };\n',
+      evalSupportFiles: {},
+      previewContents: 'export default {};\n',
+      rootEvalResultsFiles: {},
+    });
+
+    const sourceRemoteWorktree = join(TMP, 'mealdrop-remote-worktree');
+    execFileSync('git', ['clone', join(remotesRoot, 'mealdrop.git'), sourceRemoteWorktree]);
+    execFileSync('git', ['-C', sourceRemoteWorktree, 'config', 'user.name', 'Test User']);
+    execFileSync('git', ['-C', sourceRemoteWorktree, 'config', 'user.email', 'test@example.com']);
+    writeFileSync(
+      join(sourceRemoteWorktree, '.storybook', 'eval-support', 'summary.mdx'),
+      '# New Source Summary\n'
+    );
+    execFileSync('git', ['-C', sourceRemoteWorktree, 'add', '-A']);
+    execFileSync('git', ['-C', sourceRemoteWorktree, 'commit', '-m', 'update source baseline']);
+    execFileSync('git', ['-C', sourceRemoteWorktree, 'push', 'origin', 'main']);
+
+    await syncBaselines({
+      reposRoot,
+      sourceProjectName: 'mealdrop',
+      projects,
+      push: true,
+      log: () => {},
+    });
+
+    expect(
+      readFileSync(join(reposRoot, 'mealdrop', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
+    ).toBe('# New Source Summary\n');
+    expect(
+      readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
+    ).toBe('# New Source Summary\n');
+    expect(getHead(join(reposRoot, 'mealdrop'))).toBe(getRemoteHead(join(remotesRoot, 'mealdrop.git')));
+  });
 });
 
 function setupRepo(opts: {

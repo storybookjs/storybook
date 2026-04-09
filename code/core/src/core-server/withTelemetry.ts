@@ -231,11 +231,6 @@ async function collectAiSetupEvidence(
       return;
     }
 
-    // Skip for dev/build — these could be enriched in doTelemetry with story index access
-    if (eventType === 'dev' || eventType === 'build') {
-      return;
-    }
-
     // Check if preview file changed from baseline
     const previewChanged = await checkPreviewChanged(
       pending.configDir,

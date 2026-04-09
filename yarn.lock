@@ -8992,7 +8992,6 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
-    "@tanstack/react-query": "npm:^5.90.20"
     "@tanstack/react-router": "npm:^1.168.10"
     "@tanstack/react-start": "npm:^1.167.16"
     "@tanstack/router-core": "npm:^1.168.9"
@@ -9002,7 +9001,6 @@ __metadata:
     typescript: "npm:^5.9.3"
     vite: "npm:^7.0.4"
   peerDependencies:
-    "@tanstack/react-query": ^5.59.0
     "@tanstack/react-router": ^1.168.10
     "@tanstack/router-core": ^1.168.9
     "@tanstack/start-client-core": ^1.167.9
@@ -9011,8 +9009,6 @@ __metadata:
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
-    "@tanstack/react-query":
-      optional: false
     "@tanstack/react-router":
       optional: false
   languageName: unknown
@@ -9155,24 +9151,6 @@ __metadata:
   version: 1.161.6
   resolution: "@tanstack/history@npm:1.161.6"
   checksum: 10c0/38be1af2ebb3511874f2ac922527b84fc01c568e24833a9fa85d483bcc88311e0daae38a97a80eee22581bf07350875a04f33a5c2d9d4edf421bed2f5f5da4a5
-  languageName: node
-  linkType: hard
-
-"@tanstack/query-core@npm:5.90.20":
-  version: 5.90.20
-  resolution: "@tanstack/query-core@npm:5.90.20"
-  checksum: 10c0/70637dfcecd5ed9d810629aa27f1632af8a4bcd083e75cf29408d058c32f8234704a3231ec280e2c4016ea0485b16124fdf70ab97793b5a7b670f43f7659e9fe
-  languageName: node
-  linkType: hard
-
-"@tanstack/react-query@npm:^5.90.20":
-  version: 5.90.20
-  resolution: "@tanstack/react-query@npm:5.90.20"
-  dependencies:
-    "@tanstack/query-core": "npm:5.90.20"
-  peerDependencies:
-    react: ^18 || ^19
-  checksum: 10c0/a8da6455d02ec769afc9ad528ec7b576d0becedfb5349e32592b9991a3c71a162f7115c054116d0101b55a473c689c06f8b03a7f56a9904f4329f75370e5a3f4
   languageName: node
   linkType: hard
 

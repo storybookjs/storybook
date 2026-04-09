@@ -64,7 +64,12 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
       );
 
       if (storyRenderer) {
-        const deprecated = !globalThis?.FEATURES?.disallowImplicitActionsInRenderV8;
+        // Stories embedded in a docs page render with viewMode === 'docs'.
+        // There's no play-function semantics in docs rendering, so an implicit
+        // action firing during a lifecycle hook should warn rather than throw —
+        // otherwise it crashes the entire docs page (see #33758).
+        const inDocs = storyRenderer.viewMode === 'docs';
+        const deprecated = inDocs || !globalThis?.FEATURES?.disallowImplicitActionsInRenderV8;
         const error = new ImplicitActionsDuringRendering({
           phase: storyRenderer.phase!,
           name,

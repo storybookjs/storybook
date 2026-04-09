@@ -365,8 +365,9 @@ export class VitestManager {
 
   async runTests(runPayload: TriggerRunEvent['payload']) {
     const { watching, config } = this.testManager.store.getState();
+    const effectiveConfig = runPayload.configOverride ?? config;
     const coverageShouldBeEnabled =
-      config.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
+      effectiveConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
     const currentCoverage = this.vitest?.config.coverage?.enabled;
 
     if (!this.vitest) {

@@ -42,6 +42,7 @@ import type { PluginOption } from 'vite';
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
+import { getCurrentRunConfig } from './run-config.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -377,9 +378,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           browser: {
             commands: {
               getInitialGlobals: () => {
-                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
+                const runConfig = getCurrentRunConfig();
 
-                const shouldRunA11yTests = isVitestStorybook ? (envConfig.a11y ?? false) : true;
+                const shouldRunA11yTests = isVitestStorybook ? (runConfig.a11y ?? false) : true;
                 const globals: Record<string, unknown> = {};
                 globals.a11y = {
                   manual: !shouldRunA11yTests,

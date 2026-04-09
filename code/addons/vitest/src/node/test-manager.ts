@@ -23,6 +23,7 @@ import type {
   VitestError,
 } from '../types.ts';
 import { errorToErrorLike } from '../utils.ts';
+import { setCurrentRunConfig } from '../vitest-plugin/run-config.ts';
 import { VitestManager } from './vitest-manager.ts';
 
 export type TestManagerOptions = {
@@ -149,7 +150,7 @@ export class TestManager {
     }));
     // set the config at the start of a test run,
     // so that changing the config during the test run does not affect the currently running test run
-    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(runConfig);
+    setCurrentRunConfig(runConfig);
 
     await this.testProviderStore.runWithState(async () => {
       await callback();

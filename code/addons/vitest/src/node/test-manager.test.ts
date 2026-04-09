@@ -403,6 +403,45 @@ describe('TestManager', () => {
     );
   });
 
+  it('should restart Vitest with coverage if configOverride enables coverage', async () => {
+    const testManager = await TestManager.start(options);
+    expect(createVitest).toHaveBeenCalledTimes(1);
+    createVitest.mockClear();
+
+    // Store config has coverage disabled
+    mockStore.setState((s) => ({ ...s, config: { coverage: false, a11y: false } }));
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'external:ci',
+        configOverride: { coverage: true, a11y: false },
+      },
+    });
+
+    expect(createVitest).toHaveBeenCalledTimes(1);
+    expect(createVitest).toHaveBeenCalledWith(
+      Tag.TEST,
+      expect.objectContaining({
+        coverage: expect.objectContaining({ enabled: true }),
+      })
+    );
+  });
+
+  it('should use configOverride config for current run state', async () => {
+    const testManager = await TestManager.start(options);
+
+    await testManager.runTestsWithState({
+      triggeredBy: 'external:ci',
+      configOverride: { coverage: false, a11y: true },
+      callback: async () => {
+        testManager.onTestRunEnd({ totalTestCount: 0, unhandledErrors: [] });
+      },
+    });
+
+    expect(mockStore.getState().currentRun.config).toEqual({ coverage: false, a11y: true });
+  });
+
   it('should not restart with coverage enabled Vitest before a focused test run', async () => {
     const testManager = await TestManager.start(options);
     expect(createVitest).toHaveBeenCalledTimes(1);

@@ -446,6 +446,47 @@ It may also contain at most one of the following operators:
 
 If no operator is provided, that is equivalent to `{ truthy: true }`.
 
+<Callout variant="info" icon="💡">
+  The `if` field only supports a single condition. There is no built-in syntax for combining multiple conditions with OR or AND logic.
+</Callout>
+
+#### Multiple conditions (OR logic)
+
+If you need to show a control when **any one of multiple args** is active, you can work around the single-condition limitation by declaring multiple argType keys that share the same `name`. Each key has its own `if` condition, but they render as a single control in the panel.
+
+For example, to show a `loading.hasOverline` control when either `loading.hasLabel` or `loading.hasValue` is `true`:
+
+```ts
+// In your meta's argTypes
+argTypes: {
+  'loading.hasLabel': { control: 'boolean' },
+  'loading.hasValue': { control: 'boolean' },
+  // Shows when hasLabel is true
+  'loading.hasOverline_label': {
+    name: 'loading.hasOverline',
+    control: 'boolean',
+    if: { arg: 'loading.hasLabel', eq: true },
+  },
+  // Shows when hasValue is true
+  'loading.hasOverline_value': {
+    name: 'loading.hasOverline',
+    control: 'boolean',
+    if: { arg: 'loading.hasValue', eq: true },
+  },
+}
+```
+
+Then, in your story's render function, merge the values:
+
+```ts
+render: (args) => {
+  const hasOverline = args['loading.hasOverline_label'] || args['loading.hasOverline_value'];
+  return <MyComponent loading={{ hasOverline }} />;
+}
+```
+
+Because the two keys are independent controls, toggling one does not affect the other's value. If the user activates the second condition, that control starts from its default value.
+
 ## Troubleshooting
 
 <IfRenderer renderer={['angular', 'ember', 'web-components']}>

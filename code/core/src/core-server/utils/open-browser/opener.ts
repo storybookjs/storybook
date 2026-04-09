@@ -186,16 +186,10 @@ function startBrowserProcess(
     browser = undefined;
   }
 
-  // If there are arguments, they must be passed as array with the browser
-  if (typeof browser === 'string' && args.length > 0) {
-    // @ts-expect-error - browser is a string
-    browser = [browser].concat(args);
-  }
-
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options = { app: browser, wait: false, url: true };
+    const options = { app: { name: browser, arguments: args }, wait: false, url: true };
     open(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
     return true;
   } catch {

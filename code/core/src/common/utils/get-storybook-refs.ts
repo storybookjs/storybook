@@ -5,7 +5,6 @@ import { logger } from 'storybook/internal/node-logger';
 import type { Options, Ref } from 'storybook/internal/types';
 
 import * as pkg from 'empathic/package';
-import * as resolve from 'empathic/resolve';
 
 import { getProjectRoot } from './paths.ts';
 
@@ -23,7 +22,7 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   const list = await Promise.all(
     deps.map(async (d) => {
       try {
-        const l = resolve.from(directory, join(d, 'package.json'));
+        const l = join(directory, 'node_modules', d, 'package.json');
 
         const { storybook, name, version } =
           JSON.parse(await readFile(l, { encoding: 'utf8' })) || {};
@@ -32,9 +31,7 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
           return { id: name, ...storybook, version };
         }
       } catch (error) {
-        if ((error as any).code === 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
-          // silent warning because user can't do anything about it
-          // "package.json" is not part of the package's "exports" field in its package.json
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
           return undefined;
         }
         logger.warn(`unable to find package.json for ${d}`);

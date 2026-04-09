@@ -5,6 +5,19 @@ import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storyboo
 import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
+import { generateReactNativeEntrypoint } from './generateEntrypoint.ts';
+import {
+  deriveStorybookPlatformScripts,
+  type StorybookPlatformScriptDerivationResult,
+} from './generateScripts.ts';
+import {
+  METRO_SETUP_DOCS_LINK,
+  runMetroCodemodOrFallback,
+  type MetroCodemodResult,
+} from './metroConfig.ts';
+
+let lastMetroCodemodResult: MetroCodemodResult | undefined;
+let lastScriptDerivationResult: StorybookPlatformScriptDerivationResult | undefined;
 
 export default defineGeneratorModule({
   metadata: {
@@ -29,8 +42,19 @@ export default defineGeneratorModule({
       'react-native-svg',
     ].filter((dep) => !packageManager.getDependencyVersion(dep));
 
+    const existingScripts = packageManager.primaryPackageJson.packageJson.scripts;
+    const scriptDerivationResult = deriveStorybookPlatformScripts(
+      existingScripts as Record<string, unknown> | undefined
+    );
+    lastScriptDerivationResult = scriptDerivationResult;
+
+    const needsCrossEnv =
+      Object.keys(scriptDerivationResult.scriptsToAdd).length > 0 &&
+      !packageManager.getDependencyVersion('cross-env');
+
     const packagesToResolve = [
       ...peerDependencies,
+      ...(needsCrossEnv ? ['cross-env'] : []),
       '@storybook/addon-ondevice-controls',
       '@storybook/addon-ondevice-actions',
       '@storybook/react-native',
@@ -51,6 +75,7 @@ export default defineGeneratorModule({
     // Add React Native specific scripts
     packageManager.addScripts({
       'storybook-generate': 'sb-rn-get-stories',
+      ...scriptDerivationResult.scriptsToAdd,
     });
 
     const storybookConfigFolder = '.rnstorybook';
@@ -63,6 +88,12 @@ export default defineGeneratorModule({
       destination: storybookConfigFolder,
       features: context.features,
     });
+    await generateReactNativeEntrypoint({ language: context.language });
+
+    lastMetroCodemodResult = await runMetroCodemodOrFallback({
+      packageManager,
+      yes: !!context.yes,
+    });
 
     // React Native doesn't use baseGenerator - return special config
     return {
@@ -74,26 +105,71 @@ export default defineGeneratorModule({
     };
   },
   postConfigure: ({ packageManager }) => {
+    const platformRunGuidance = (() => {
+      const scriptNames = Object.keys(lastScriptDerivationResult?.scriptsToAdd ?? {});
+
+      if (scriptNames.length === 0) {
+        return 'No platform launch scripts could be generated automatically.';
+      }
+
+      return scriptNames
+        .map((scriptName) => packageManager.getRunCommand(scriptName))
+        .join('\n      ');
+    })();
+
+    const scriptWarningSummary = (() => {
+      const missing = lastScriptDerivationResult?.missingBaseScripts ?? [];
+      if (missing.length === 0) {
+        return null;
+      }
+
+      return `Could not infer ${missing.join(', ')} app scripts from package.json. To launch Storybook manually, set STORYBOOK_ENABLED=true when running your app scripts.`;
+    })();
+
+    const metroCodemodSummary = (() => {
+      if (!lastMetroCodemodResult) {
+        return 'Metro config could not be evaluated automatically.';
+      }
+
+      if (lastMetroCodemodResult.status === 'updated') {
+        return 'Metro config was updated automatically with withStorybook(...).';
+      }
+
+      if (lastMetroCodemodResult.status === 'already-configured') {
+        return 'Metro config already appears to be configured for Storybook.';
+      }
+
+      if (lastMetroCodemodResult.status === 'skipped-existing-storybook-import') {
+        return 'Metro config already contains Storybook imports, so auto-modification was skipped.';
+      }
+
+      if (lastMetroCodemodResult.status === 'fallback-commented') {
+        return 'Metro config could not be transformed automatically; guidance was added to your Metro config file.';
+      }
+
+      return 'No Metro config file was selected; please update Metro manually.';
+    })();
+
     logger.log(dedent`
       ${CLI_COLORS.warning('The Storybook for React Native installation is not 100% automated.')}
   
-      To run Storybook for React Native, you will need to:
+      Storybook run scripts:
+
+      ${CLI_COLORS.cta(' ' + platformRunGuidance + ' ')}
+
+      Metro config status:
+
+      ${CLI_COLORS.info(' ' + metroCodemodSummary + ' ')}
+
+      If manual setup is needed, wrap your Metro config with withStorybook like this:
   
-      1. Replace the contents of your app entry with the following
-  
-      ${CLI_COLORS.info(' ' + "export {default} from './.rnstorybook';" + ' ')}
-  
-      2. Wrap your metro config with the withStorybook enhancer function like this:
-  
-      ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/metro/withStorybook');" + ' ')}
+      ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/metro');" + ' ')}
       ${CLI_COLORS.info(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
+
+      ${scriptWarningSummary ? `${CLI_COLORS.warning(scriptWarningSummary)}\n` : ''}
   
       For more details go to:
-      https://github.com/storybookjs/react-native#getting-started
-  
-      Then to start Storybook for React Native, run:
-  
-      ${CLI_COLORS.cta(' ' + packageManager.getRunCommand('start') + ' ')}
+      ${METRO_SETUP_DOCS_LINK}
     `);
   },
 });

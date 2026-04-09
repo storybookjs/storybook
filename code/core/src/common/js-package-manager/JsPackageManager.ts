@@ -650,14 +650,29 @@ export abstract class JsPackageManager {
 
       logger.debug(`Getting installed version for ${packageName}...`);
       const installations = await this.findInstallations([packageName]);
-      if (!installations) {
+
+      let version: string | null = null;
+
+      if (installations) {
+        version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
+      }
+
+      // Fallback: when vitest is not found as a standalone package, check if it's vendored
+      // inside vite-plus (which bundles vitest rather than installing it separately).
+      if (!version && packageName === 'vitest') {
+        const { getVitePlusVersions } = await import('./vite-plus-versions.ts');
+        const vitePlusVersions = await getVitePlusVersions();
+        if (vitePlusVersions?.vitest) {
+          version = vitePlusVersions.vitest;
+        }
+      }
+
+      if (!version) {
         logger.debug(`No installations found for ${packageName}`);
         // Cache the null result
         JsPackageManager.installedVersionCache.set(cacheKey, null);
         return null;
       }
-
-      const version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
 
       const coercedVersion = coerce(version, { includePrerelease: true })?.toString() ?? version;
 

@@ -1,4 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
+import { getVitePlusVersions } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -29,12 +30,26 @@ export async function findOutdatedPackage<M extends Record<string, string>>(
   }
 ): Promise<false | Result<M>> {
   const list = await Promise.all(
-    typedKeys(minimalVersionsMap).map(async (packageName) => ({
-      packageName,
-      installedVersion:
-        (await options.packageManager.getModulePackageJSON(packageName))?.version ?? null,
-      minimumVersion: minimalVersionsMap[packageName],
-    }))
+    typedKeys(minimalVersionsMap).map(async (packageName) => {
+      const packageJson = await options.packageManager.getModulePackageJSON(packageName);
+      let installedVersion = packageJson?.version ?? null;
+
+      // When vite is aliased to vite-plus, the package.json version reflects the wrapper
+      // version (e.g. 0.1.12) rather than the actual vendored Vite version. Use the
+      // vite-plus/versions export to get the real version.
+      if (packageName === 'vite' && packageJson?.name === 'vite-plus') {
+        const vitePlusVersions = await getVitePlusVersions();
+        if (vitePlusVersions?.vite) {
+          installedVersion = vitePlusVersions.vite;
+        }
+      }
+
+      return {
+        packageName,
+        installedVersion,
+        minimumVersion: minimalVersionsMap[packageName],
+      };
+    })
   );
 
   return list.reduce<false | Result<M>>(

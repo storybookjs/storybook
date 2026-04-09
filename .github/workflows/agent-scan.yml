@@ -10,12 +10,12 @@ concurrency:
   group: agent-scan-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-permissions:
-  issues: write
-  pull-requests: write
-
 jobs:
   agentscan:
+    if: github.repository_owner == 'storybookjs'
+    permissions:
+      issues: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -47,16 +47,7 @@ jobs:
               issue_number: prNumber,
               labels: [`agent-scan:${classification}`],
             });
-            await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: [
-                  `⚠️ This PR has been flagged by AgentScan as **${classification}**. Please review the changes carefully and ensure they adhere to our contribution guidelines.`,
-                  '',
-                  'If you believe this is a false positive, please comment on the PR or reach out to the maintainers.',
-                ].join('\n'),
-            });
+
       - name: Close community flagged accounts
         if: steps.agentscan.outputs.community-flagged == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0

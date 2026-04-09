@@ -17,9 +17,7 @@ describe('getVitePlusVersions', () => {
       versions: { vite: '6.1.0', vitest: '3.2.0', rolldown: '0.5.0' },
     }));
 
-    // Clear cache so fresh import is attempted
     clearVitePlusCache();
-    // Re-import to pick up the doMock
     const { getVitePlusVersions: fn } = await import('./vite-plus-versions.ts');
     clearVitePlusCache();
 
@@ -36,47 +34,65 @@ describe('getVitePlusVersions', () => {
   });
 
   it('returns null when vite-plus/versions is not available', async () => {
-    // By default, vite-plus/versions is not installed in this repo, so import will fail
-    const result = await getVitePlusVersions();
+    vi.doMock('vite-plus/versions', () => {
+      throw new Error("Cannot find module 'vite-plus/versions'");
+    });
 
-    expect(result).toBeNull();
-  });
-
-  it('caches results across calls', async () => {
-    const result1 = await getVitePlusVersions();
-    const result2 = await getVitePlusVersions();
-
-    expect(result1).toBeNull();
-    expect(result2).toBeNull();
-    // Both should be the same cached reference
-    expect(result1).toBe(result2);
-  });
-
-  it('clearVitePlusCache resets the cache', async () => {
-    const result1 = await getVitePlusVersions();
-    expect(result1).toBeNull();
-
-    // Mock vite-plus/versions after first call
-    vi.doMock('vite-plus/versions', () => ({
-      versions: { vite: '6.1.0', vitest: '3.2.0' },
-    }));
-
-    // Without clearing, should still return cached null
-    const result2 = await getVitePlusVersions();
-    expect(result2).toBeNull();
-
-    // After clearing cache, should pick up the mock
     clearVitePlusCache();
     const { getVitePlusVersions: fn } = await import('./vite-plus-versions.ts');
     clearVitePlusCache();
 
-    const result3 = await fn();
-    expect(result3).toEqual(
-      expect.objectContaining({
-        vite: '6.1.0',
-        vitest: '3.2.0',
-      })
-    );
+    const result = await fn();
+
+    expect(result).toBeNull();
+
+    vi.doUnmock('vite-plus/versions');
+  });
+
+  it('caches results across calls', async () => {
+    vi.doMock('vite-plus/versions', () => ({
+      versions: { vite: '6.1.0', vitest: '3.2.0' },
+    }));
+
+    clearVitePlusCache();
+    const { getVitePlusVersions: fn } = await import('./vite-plus-versions.ts');
+    clearVitePlusCache();
+
+    const result1 = await fn();
+    const result2 = await fn();
+
+    expect(result1).toEqual(result2);
+    // Same cached reference
+    expect(result1).toBe(result2);
+
+    vi.doUnmock('vite-plus/versions');
+  });
+
+  it('clearVitePlusCache resets the cache allowing new values', async () => {
+    vi.doMock('vite-plus/versions', () => ({
+      versions: { vite: '6.1.0', vitest: '3.2.0' },
+    }));
+
+    clearVitePlusCache();
+    const mod = await import('./vite-plus-versions.ts');
+    mod.clearVitePlusCache();
+
+    const result1 = await mod.getVitePlusVersions();
+    expect(result1?.vite).toBe('6.1.0');
+
+    vi.doUnmock('vite-plus/versions');
+
+    // After clearing, mock with different values
+    vi.doMock('vite-plus/versions', () => ({
+      versions: { vite: '7.0.0', vitest: '4.0.0' },
+    }));
+
+    mod.clearVitePlusCache();
+    const { getVitePlusVersions: fn2 } = await import('./vite-plus-versions.ts');
+    mod.clearVitePlusCache();
+
+    const result2 = await fn2();
+    expect(result2?.vite).toBe('7.0.0');
 
     vi.doUnmock('vite-plus/versions');
   });

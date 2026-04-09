@@ -649,21 +649,20 @@ export abstract class JsPackageManager {
       }
 
       logger.debug(`Getting installed version for ${packageName}...`);
-      const installations = await this.findInstallations([packageName]);
 
+      // When vite-plus is used, packages like vite and vitest are vendored and their node_modules entries report the vite-plus wrapper version (e.g. 0.1.16) instead of the actual vendored version.
+      // Check vite-plus first so we always get the real version when it's available.
       let version: string | null = null;
-
-      if (installations) {
-        version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
+      const { getVitePlusVersions } = await import('./vite-plus-versions.ts');
+      const vitePlusVersions = await getVitePlusVersions();
+      if (vitePlusVersions?.[packageName]) {
+        version = vitePlusVersions[packageName]!;
       }
 
-      // Fallback: when vitest is not found as a standalone package, check if it's vendored
-      // inside vite-plus (which bundles vitest rather than installing it separately).
-      if (!version && packageName === 'vitest') {
-        const { getVitePlusVersions } = await import('./vite-plus-versions.ts');
-        const vitePlusVersions = await getVitePlusVersions();
-        if (vitePlusVersions?.vitest) {
-          version = vitePlusVersions.vitest;
+      if (!version) {
+        const installations = await this.findInstallations([packageName]);
+        if (installations) {
+          version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
         }
       }
 

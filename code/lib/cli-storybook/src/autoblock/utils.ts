@@ -31,17 +31,15 @@ export async function findOutdatedPackage<M extends Record<string, string>>(
 ): Promise<false | Result<M>> {
   const list = await Promise.all(
     typedKeys(minimalVersionsMap).map(async (packageName) => {
-      const packageJson = await options.packageManager.getModulePackageJSON(packageName);
-      let installedVersion = packageJson?.version ?? null;
+      // When vite-plus is used, packages like vite are overridden and their
+      // package.json reports the vite-plus wrapper version (e.g. 0.1.16) instead
+      // of the actual vendored version. Check vite-plus first.
+      const vitePlusVersions = await getVitePlusVersions();
+      let installedVersion = vitePlusVersions?.[packageName] ?? null;
 
-      // When vite is aliased to vite-plus, the package.json version reflects the wrapper
-      // version (e.g. 0.1.12) rather than the actual vendored Vite version. Use the
-      // vite-plus/versions export to get the real version.
-      if (packageName === 'vite' && packageJson?.name === 'vite-plus') {
-        const vitePlusVersions = await getVitePlusVersions();
-        if (vitePlusVersions?.vite) {
-          installedVersion = vitePlusVersions.vite;
-        }
+      if (!installedVersion) {
+        const packageJson = await options.packageManager.getModulePackageJSON(packageName);
+        installedVersion = packageJson?.version ?? null;
       }
 
       return {

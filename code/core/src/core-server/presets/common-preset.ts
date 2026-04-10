@@ -280,7 +280,7 @@ export const experimental_serverChannel = async (
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
-  initGhostStoriesChannel(channel, options, coreOptions);
+  initGhostStoriesChannel(channel, options, coreOptions, () => storyIndexGeneratorPromise);
   initOpenInEditorChannel(channel, options, coreOptions);
   initTelemetryChannel(channel, options);
 

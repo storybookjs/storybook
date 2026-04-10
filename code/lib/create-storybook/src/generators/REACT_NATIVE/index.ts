@@ -162,7 +162,7 @@ export default defineGeneratorModule({
 
       If manual setup is needed, wrap your Metro config with withStorybook like this:
   
-      ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/metro');" + ' ')}
+      ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/withStorybook');" + ' ')}
       ${CLI_COLORS.info(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
 
       ${scriptWarningSummary ? `${CLI_COLORS.warning(scriptWarningSummary)}\n` : ''}

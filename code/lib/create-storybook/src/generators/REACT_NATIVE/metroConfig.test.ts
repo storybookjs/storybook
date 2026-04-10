@@ -57,7 +57,7 @@ describe('metroConfig codemod', () => {
     const updatedSource = await readFile(filePath, 'utf-8');
 
     expect(result.status).toBe('updated');
-    expect(updatedSource).toContain("require('@storybook/react-native/metro');");
+    expect(updatedSource).toContain("require('@storybook/react-native/withStorybook');");
     expect(updatedSource).toContain('module.exports = withStorybook(defaultConfig);');
   });
 
@@ -86,7 +86,7 @@ export default async function makeMetroConfig() {
     expect(transformed.action).toBe('updated');
     if (transformed.action === 'updated') {
       expect(transformed.code).toContain(
-        "import { withStorybook } from '@storybook/react-native/metro';"
+        "import { withStorybook } from '@storybook/react-native/withStorybook';"
       );
       expect(transformed.code).toContain(
         'export default withStorybook(async function makeMetroConfig()'
@@ -135,7 +135,7 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
     const filePath = path.join(tempDir, 'metro.config.js');
     await writeFile(
       filePath,
-      "const { withStorybook } = require('@storybook/react-native/metro');\nmodule.exports = withStorybook({});\n",
+      "const { withStorybook } = require('@storybook/react-native/withStorybook');\nmodule.exports = withStorybook({});\n",
       'utf-8'
     );
 
@@ -232,7 +232,9 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
 
   it('containsStorybookImport detects both import and require usage', () => {
     expect(
-      containsStorybookImport("import { withStorybook } from '@storybook/react-native/metro';")
+      containsStorybookImport(
+        "import { withStorybook } from '@storybook/react-native/withStorybook';"
+      )
     ).toBe(true);
     expect(containsStorybookImport("const sb = require('storybook/internal/common');")).toBe(true);
     expect(containsStorybookImport('const x = require("react-native");')).toBe(false);

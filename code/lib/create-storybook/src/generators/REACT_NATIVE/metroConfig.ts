@@ -104,7 +104,7 @@ const hasWithStorybookBinding = (program: t.Program) => {
   for (const statement of program.body) {
     if (
       t.isImportDeclaration(statement) &&
-      statement.source.value === '@storybook/react-native/metro'
+      statement.source.value === '@storybook/react-native/withStorybook'
     ) {
       return statement.specifiers.some(
         (specifier) =>
@@ -131,7 +131,7 @@ const hasWithStorybookBinding = (program: t.Program) => {
         continue;
       }
 
-      if (firstArgument.value !== '@storybook/react-native/metro') {
+      if (firstArgument.value !== '@storybook/react-native/withStorybook') {
         continue;
       }
 
@@ -155,7 +155,7 @@ const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) =>
   if (useEsmImport) {
     const importDeclaration = t.importDeclaration(
       [t.importSpecifier(t.identifier('withStorybook'), t.identifier('withStorybook'))],
-      t.stringLiteral('@storybook/react-native/metro')
+      t.stringLiteral('@storybook/react-native/withStorybook')
     );
     const lastImportIndex = [...program.body]
       .reverse()
@@ -176,7 +176,9 @@ const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) =>
       t.objectPattern([
         t.objectProperty(t.identifier('withStorybook'), t.identifier('withStorybook'), false, true),
       ]),
-      t.callExpression(t.identifier('require'), [t.stringLiteral('@storybook/react-native/metro')])
+      t.callExpression(t.identifier('require'), [
+        t.stringLiteral('@storybook/react-native/withStorybook'),
+      ])
     ),
   ]);
   program.body.unshift(requireDeclaration);

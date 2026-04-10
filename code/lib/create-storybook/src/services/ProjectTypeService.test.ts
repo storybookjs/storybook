@@ -189,6 +189,28 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.REACT_NATIVE);
     });
 
+    it('detects REACT_NATIVE via peerDependencies', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        peerDependencies: { react: '^18.0.0', 'react-native': '^0.76.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT_NATIVE);
+    });
+
+    it('detects REACT_NATIVE via peerDependencies react-native-scripts', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        peerDependencies: { react: '^18.0.0', 'react-native-scripts': '^5.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT_NATIVE);
+    });
+
     it('detects NUXT via nuxt', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { nuxt: '^3.0.0' },
@@ -198,6 +220,53 @@ describe('ProjectTypeService', () => {
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
       const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
       expect(result).toBe(ProjectType.NUXT);
+    });
+
+    it('detects REACT via peerDependencies', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        peerDependencies: { react: '^18.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT);
+    });
+
+    it('detects REACT via devDependencies', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        devDependencies: { react: '^18.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT);
+    });
+
+    it('prefers REACT_NATIVE over REACT when markers are split across dependency sections', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { 'react-native': '^0.76.0' },
+        peerDependencies: { react: '^18.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.REACT_NATIVE);
+    });
+
+    it('does not detect REACT from react-dom alone', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        peerDependencies: { 'react-dom': '^18.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(
+        service.autoDetectProjectType({ html: false } as CommandOptions)
+      ).rejects.toThrowError('Storybook failed to detect your project type');
     });
   });
 

@@ -77,8 +77,9 @@ export class ProjectTypeService {
       {
         preset: ProjectType.REACT_NATIVE,
         dependencies: ['react-native', 'react-native-scripts'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.some(Boolean) ?? false;
+        peerDependencies: ['react-native', 'react-native-scripts'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
       {
@@ -139,8 +140,9 @@ export class ProjectTypeService {
       {
         preset: ProjectType.REACT,
         dependencies: ['react'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.every(Boolean) ?? true;
+        peerDependencies: ['react'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
     ];

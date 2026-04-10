@@ -2,16 +2,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import {
+  ErrorCollector,
+  collectAiPrepareEvidence,
+  oneWayHash,
+  telemetry,
+} from 'storybook/internal/telemetry';
 
 import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
-vi.mock('../telemetry/detect-agent.ts', () => ({
-  detectAgent: vi.fn(() => undefined),
-}));
 
 const cliOptions = {};
 const originalStdoutIsTTY = process.stdout.isTTY;
@@ -32,6 +34,8 @@ describe('withTelemetry', () => {
     vi.resetAllMocks();
     vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
     vi.mocked(telemetry).mockResolvedValue(undefined);
+    // Stub out evidence collection — it's tested separately in ai-prepare-evidence.test.ts
+    vi.mocked(collectAiPrepareEvidence).mockResolvedValue(undefined);
   });
   it('works in happy path', async () => {
     const run = vi.fn();

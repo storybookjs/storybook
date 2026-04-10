@@ -566,7 +566,7 @@ describe('storybook-metadata', () => {
       expect(res.userSince).toEqual(1717334400000);
     });
 
-    it('should not detect userSince info in CI when not running as an agent', async () => {
+    it('should not detect userSince info in CI when agent is not detected', async () => {
       vi.mocked(isCI).mockImplementation(() => true);
       vi.mocked(globalSettings).mockResolvedValue({} as Settings);
 

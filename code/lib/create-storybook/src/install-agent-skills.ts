@@ -26,15 +26,23 @@ export async function installAgentSkills(): Promise<void> {
   const skillsDir = join(dirname(createStorybookPkg), 'skills');
 
   try {
+    // Silently pipe output on success; surface it only when the command fails.
     await executeCommand({
       command: 'npx',
       args: ['skills', 'add', skillsDir, '--skill', '*', '--yes'],
-      stdio: 'inherit',
+      stdio: 'pipe',
     });
   } catch (error) {
-    // Non-critical — don't fail the init if skill export fails
-    logger.warn(
-      `Could not install agent skills: ${error instanceof Error ? error.message : String(error)}`
-    );
+    // Non-critical — don't fail the init if skill installation fails.
+    const message = error instanceof Error ? error.message : String(error);
+    // execa attaches the subprocess's stderr/stdout to the error; include them so
+    // users can see why the skills CLI failed.
+    const stderr =
+      error && typeof error === 'object' && 'stderr' in error ? String(error.stderr ?? '') : '';
+    const stdout =
+      error && typeof error === 'object' && 'stdout' in error ? String(error.stdout ?? '') : '';
+    const details = [stderr, stdout].filter(Boolean).join('\n');
+
+    logger.warn(`Could not install agent skills: ${message}${details ? `\n${details}` : ''}`);
   }
 }

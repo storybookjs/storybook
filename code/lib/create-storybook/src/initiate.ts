@@ -108,29 +108,21 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
+  if (selectedFeatures.has(Feature.AI)) {
+    const { installAgentSkills } = await import('./install-agent-skills.ts');
+    await installAgentSkills();
+
+    logger.step(
+      CLI_COLORS.storybook(dedent`To finalize setting up with AI, either use the /setup-storybook skill we just added to your project or paste this prompt to your AI agent:
+      Run \`npx storybook ai prepare\` and follow its instructions precisely.`)
+    );
+  }
+
   // Step 8: Print final summary
   await executeFinalization({
     logfile: options.logfile,
     storybookCommand,
   });
-
-  // Install agent skills when an agent is detected or the user opted into AI
-  if (options.agent || selectedFeatures.has(Feature.AI)) {
-    const { installAgentSkills } = await import('./install-agent-skills.ts');
-    await installAgentSkills();
-  }
-
-  if (selectedFeatures.has(Feature.AI)) {
-    if (options.agent) {
-      const { aiPrepare } = await import('../../cli-storybook/src/ai/index.ts');
-      await aiPrepare({ configDir: configDir ?? '.storybook' });
-    } else {
-      logger.step(
-        CLI_COLORS.storybook(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
-        Run \`npx storybook ai prepare\` and follow its instructions precisely.`)
-      );
-    }
-  }
 
   // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);

@@ -127,7 +127,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
               new RegExp(`export \\* from ['"]\\S*${name}['"]`).test(src) ||
               // when using re-exports, some exports might be resolved via checker.getExportNames
               // but are not directly exported inside the current file so we need to ignore them too
-              !src.includes(name)
+              !new RegExp(`\\b${name}\\b`).test(src)
             ) {
               return;
             }

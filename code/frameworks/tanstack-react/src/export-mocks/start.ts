@@ -13,15 +13,15 @@ export function useServerFn<T extends (...args: Array<any>) => Promise<any>>(
 }
 
 function createMockServerFnBuilder(): any {
-  const builder: any = () => createMockServerFnBuilder();
+  const builder = () => createMockServerFnBuilder();
 
   builder.options = {};
 
-  builder.middleware = (_middlewares: any) => {
+  builder.middleware = () => {
     return createMockServerFnBuilder();
   };
 
-  builder.inputValidator = (_validator: any) => {
+  builder.inputValidator = () => {
     return createMockServerFnBuilder();
   };
 
@@ -39,7 +39,7 @@ function createMockServerFnBuilder(): any {
 }
 
 // Override `createServerFn` from start-client-core with our mock version
-export const createServerFn: typeof _createServerFn = (_options?: any, __opts?: any) => {
+export const createServerFn: typeof _createServerFn = () => {
   return createMockServerFnBuilder();
 };
 

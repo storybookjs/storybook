@@ -351,7 +351,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           provide: {
-            'sb-config': {},
             'sb-ghost-stories': !!process.env.STORYBOOK_COMPONENT_PATHS,
           },
 

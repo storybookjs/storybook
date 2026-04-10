@@ -53,14 +53,14 @@ export const testStory = ({
 
     let runConfig: Record<string, unknown> = { a11y: true };
     try {
-      runConfig = inject('sb-config');
+      runConfig = inject('sb-config') ?? { a11y: true };
     } catch {
       // Standalone Vitest runs might not provide Storybook run config.
     }
 
     let ghostStoriesEnabled = false;
     try {
-      ghostStoriesEnabled = inject('sb-ghost-stories');
+      ghostStoriesEnabled = inject('sb-ghost-stories') ?? false;
     } catch {
       // Standalone Vitest runs might not provide Storybook ghost stories config.
     }

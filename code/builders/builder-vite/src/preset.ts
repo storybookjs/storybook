@@ -3,12 +3,12 @@ import type { Options } from 'storybook/internal/types';
 
 import type { PluginOption } from 'vite';
 
-import { storybookConfigPlugin } from './plugins/storybook-config-plugin';
-import { storybookOptimizeDepsPlugin } from './plugins/storybook-optimize-deps-plugin';
-import { storybookProjectAnnotationsPlugin } from './plugins/storybook-project-annotations-plugin';
-import { storybookSanitizeEnvs } from './plugins/storybook-runtime-plugin';
-import { viteInjectMockerRuntime } from './plugins/vite-inject-mocker/plugin';
-import { viteMockPlugin } from './plugins/vite-mock/plugin';
+import { storybookConfigPlugin } from './plugins/storybook-config-plugin.ts';
+import { storybookOptimizeDepsPlugin } from './plugins/storybook-optimize-deps-plugin.ts';
+import { storybookProjectAnnotationsPlugin } from './plugins/storybook-project-annotations-plugin.ts';
+import { storybookSanitizeEnvs } from './plugins/storybook-runtime-plugin.ts';
+import { viteInjectMockerRuntime } from './plugins/vite-inject-mocker/plugin.ts';
+import { viteMockPlugin } from './plugins/vite-mock/plugin.ts';
 
 export const optimizeViteDeps: string[] = ['storybook/internal/preview/runtime'];
 

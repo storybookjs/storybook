@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '..';
-import { ComponentWithError } from './ComponentWithError';
+import type { Meta, StoryObj } from '../index.ts';
+import { ComponentWithError } from './ComponentWithError.tsx';
 
 const meta = {
   title: 'Example/ComponentWithError',

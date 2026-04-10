@@ -8,9 +8,9 @@ import { ChevronSmallDownIcon } from '@storybook/icons';
 import type { ImpactValue } from 'axe-core';
 import { styled } from 'storybook/theming';
 
-import { getTitleForAxeResult } from '../../axeRuleMappingHelper';
-import { type EnhancedResult, RuleType } from '../../types';
-import { Details } from './Details';
+import { getTitleForAxeResult } from '../../axeRuleMappingHelper.ts';
+import { type EnhancedResult, RuleType } from '../../types.ts';
+import { Details } from './Details.tsx';
 
 const impactStatus: Record<NonNullable<ImpactValue>, ComponentProps<typeof Badge>['status']> = {
   minor: 'neutral',

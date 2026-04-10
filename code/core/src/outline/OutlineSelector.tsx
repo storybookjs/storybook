@@ -6,7 +6,7 @@ import { OutlineIcon } from '@storybook/icons';
 
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, PARAM_KEY } from './constants';
+import { ADDON_ID, PARAM_KEY } from './constants.ts';
 
 export const OutlineSelector = memo(function OutlineSelector() {
   const [globals, updateGlobals] = useGlobals();

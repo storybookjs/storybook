@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, userEvent, within } from 'storybook/test';
 
-import { Drag } from './Drag';
+import { Drag } from './Drag.tsx';
 
 /**
  * Presentational drag-handle component used for the sidebar and addon-panel resizers.

@@ -5,7 +5,7 @@ import { STORY_CHANGED } from 'storybook/internal/core-events';
 
 import { useAddonState, useChannel, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants';
+import { ADDON_ID, CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants.ts';
 
 export function Title() {
   const api = useStorybookApi();

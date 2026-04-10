@@ -1,7 +1,7 @@
 import { addons, types } from 'storybook/manager-api';
 
-import { ADDON_ID, PARAM_KEY, THEME_SWITCHER_ID } from './constants';
-import { ThemeSwitcher } from './theme-switcher';
+import { ADDON_ID, PARAM_KEY, THEME_SWITCHER_ID } from './constants.ts';
+import { ThemeSwitcher } from './theme-switcher.tsx';
 
 addons.register(ADDON_ID, () => {
   addons.add(THEME_SWITCHER_ID, {

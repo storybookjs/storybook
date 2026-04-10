@@ -6,8 +6,8 @@
  */
 import type * as t from '@babel/types';
 
-import { babelParse } from './babelParse';
-import { resolveExpression } from './expression-resolver';
+import { babelParse } from './babelParse.ts';
+import { resolveExpression } from './expression-resolver.ts';
 
 type AST = t.File;
 

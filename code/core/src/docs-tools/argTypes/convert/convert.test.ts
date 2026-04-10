@@ -7,8 +7,8 @@ import { transformSync } from 'storybook/internal/babel';
 import { mapValues } from 'es-toolkit/object';
 import requireFromString from 'require-from-string';
 
-import { normalizeNewlines } from '../utils';
-import { convert } from './index';
+import { normalizeNewlines } from '../utils.ts';
+import { convert } from './index.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => JSON.stringify(val, null, 2),

@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { removeRendererInPackageJson, transformSourceFiles } from './renderer-to-framework';
-import { rendererToFramework } from './renderer-to-framework';
+import { removeRendererInPackageJson, transformSourceFiles } from './renderer-to-framework.ts';
+import { rendererToFramework } from './renderer-to-framework.ts';
 
 vi.mock('node:fs/promises');
 vi.mock('globby', () => ({

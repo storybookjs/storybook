@@ -14,7 +14,7 @@ import type {
   Renderer,
   StoryAnnotationsOrFn,
   StrictArgs,
-} from './story';
+} from './story.ts';
 
 // NOTE Example of internal type definition for @storybook/<X> (where X is a renderer)
 interface XRenderer extends Renderer {

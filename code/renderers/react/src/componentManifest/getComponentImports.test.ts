@@ -4,12 +4,12 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { getImports as buildImports, getComponentData } from './getComponentImports';
-import { setupMemfsMocks } from './memfs-test-setup';
+import { getImports as buildImports, getComponentData } from './getComponentImports.ts';
+import { setupMemfsMocks } from './memfs-test-setup.ts';
 
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
-vi.mock(import('./utils'), { spy: true });
+vi.mock(import('./utils.ts'), { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('tsconfig-paths', { spy: true });

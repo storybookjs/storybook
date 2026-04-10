@@ -11,13 +11,13 @@ import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
-import { JsPackageManager } from '../js-package-manager/JsPackageManager';
-import { frameworkToBuilder } from './framework';
-import { getAddonNames } from './get-addon-names';
-import { extractFrameworkPackageName } from './get-framework-name';
-import { extractRenderer } from './get-renderer-name';
-import { getStorybookConfiguration } from './get-storybook-configuration';
-import { loadMainConfig } from './load-main-config';
+import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
+import { frameworkToBuilder } from './framework.ts';
+import { getAddonNames } from './get-addon-names.ts';
+import { extractFrameworkPackageName } from './get-framework-name.ts';
+import { extractRenderer } from './get-renderer-name.ts';
+import { getStorybookConfiguration } from './get-storybook-configuration.ts';
+import { loadMainConfig } from './load-main-config.ts';
 
 export const rendererPackages: Record<string, SupportedRenderer> = {
   '@storybook/react': SupportedRenderer.REACT,

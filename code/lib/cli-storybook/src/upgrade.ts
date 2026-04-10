@@ -19,21 +19,21 @@ import picocolors from 'picocolors';
 import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { processAutoblockerResults } from './autoblock/utils';
+import { processAutoblockerResults } from './autoblock/utils.ts';
 import {
   type AutomigrationCheckResult,
   type AutomigrationResult,
   runAutomigrations,
-} from './automigrate/multi-project';
-import { FixStatus } from './automigrate/types';
-import { displayDoctorResults, runMultiProjectDoctor } from './doctor';
-import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types';
+} from './automigrate/multi-project.ts';
+import { FixStatus } from './automigrate/types.ts';
+import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
+import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
   type CollectProjectsSuccessResult,
   getProjects,
   shortenPath,
   upgradeStorybookDependencies,
-} from './util';
+} from './util.ts';
 
 type Package = {
   package: string;

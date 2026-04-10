@@ -8,7 +8,7 @@ import {
   protectUrls,
   wrapTextForClack,
   wrapTextForClackHint,
-} from './wrap-utils';
+} from './wrap-utils.ts';
 
 // Mock dependencies at the top with spy: true option
 vi.mock('@clack/prompts', () => ({

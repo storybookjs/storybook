@@ -3,7 +3,7 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { Spaced } from './Spaced';
+import { Spaced } from './Spaced.tsx';
 
 const PlaceholderBlock = styled.div(({ color }) => ({
   background: color || 'hotpink',

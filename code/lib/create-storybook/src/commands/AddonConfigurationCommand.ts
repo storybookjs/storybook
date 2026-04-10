@@ -5,10 +5,10 @@ import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import { dedent } from 'ts-dedent';
 
-import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall';
-import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall';
-import type { CommandOptions } from '../generators/types';
-import { TelemetryService } from '../services';
+import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall.ts';
+import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall.ts';
+import type { CommandOptions } from '../generators/types.ts';
+import { TelemetryService } from '../services/index.ts';
 
 const ADDON_INSTALLATION_INSTRUCTIONS = {
   '@storybook/addon-vitest':
@@ -108,7 +108,7 @@ export class AddonConfigurationCommand {
   /** Configure test addons (a11y and vitest) */
   private async configureAddons(configDir: string, addons: string[]) {
     // Import postinstallAddon from cli-storybook package
-    const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
+    const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon.ts');
 
     const task = prompt.taskLog({
       id: 'configure-addons',

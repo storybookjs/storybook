@@ -1,6 +1,6 @@
 import type { PresetProperty } from 'storybook/internal/types';
 
-import type { StorybookConfig } from './types';
+import type { StorybookConfig } from './types.ts';
 
 export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),
@@ -36,7 +36,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   // Add react-docgen so long as the option is not false
   if (typeof reactDocgenOption === 'string') {
-    const { reactDocgen } = await import('./plugins/react-docgen');
+    const { reactDocgen } = await import('./plugins/react-docgen.ts');
     // Needs to run before the react plugin, so add to the front
     plugins.unshift(
       // If react-docgen is specified, use it for everything, otherwise only use it for non-typescript files

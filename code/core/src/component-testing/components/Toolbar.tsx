@@ -14,9 +14,9 @@ import {
 import { type API } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { type ControlStates } from '../../instrumenter/types';
-import type { Controls } from './InteractionsPanel';
-import { type PlayStatus, StatusBadge } from './StatusBadge';
+import { type ControlStates } from '../../instrumenter/types.ts';
+import type { Controls } from './InteractionsPanel.tsx';
+import { type PlayStatus, StatusBadge } from './StatusBadge.tsx';
 
 const ToolbarWrapper = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,

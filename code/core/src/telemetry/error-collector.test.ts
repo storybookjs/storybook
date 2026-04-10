@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ErrorCollector } from './error-collector';
+import { ErrorCollector } from './error-collector.ts';
 
 describe('ErrorCollector', () => {
   it('should collect errors', () => {

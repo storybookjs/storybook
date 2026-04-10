@@ -4,10 +4,10 @@ import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
 
-import { now, saveBench } from '../bench/utils';
-import type { Task, TaskKey } from '../task';
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants';
-import { isNxTaskExecution } from '../utils/nx';
+import { now, saveBench } from '../bench/utils.ts';
+import type { Task, TaskKey } from '../task.ts';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
 
 const logger = console;
 
@@ -83,7 +83,7 @@ export const sandbox: Task = {
       setImportMap,
       setupVitest,
       runMigrations,
-    } = await import('./sandbox-parts');
+    } = await import('./sandbox-parts.ts');
 
     const extraDeps = [
       ...(details.template.modifications?.extraDependencies ?? []),
@@ -168,7 +168,7 @@ export const sandbox: Task = {
     await setImportMap(details.sandboxDir);
 
     const { JsPackageManagerFactory } =
-      await import('../../code/core/src/common/js-package-manager/JsPackageManagerFactory');
+      await import('../../code/core/src/common/js-package-manager/JsPackageManagerFactory.ts');
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 

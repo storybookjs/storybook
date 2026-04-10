@@ -9,9 +9,9 @@ import { loadCustomWebpackConfig } from '@storybook/core-webpack';
 import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 
-import { WebpackInjectMockerRuntimePlugin } from '../plugins/webpack-inject-mocker-runtime-plugin';
-import { WebpackMockPlugin } from '../plugins/webpack-mock-plugin';
-import { createDefaultWebpackConfig } from '../preview/base-webpack.config';
+import { WebpackInjectMockerRuntimePlugin } from '../plugins/webpack-inject-mocker-runtime-plugin.ts';
+import { WebpackMockPlugin } from '../plugins/webpack-mock-plugin.ts';
+import { createDefaultWebpackConfig } from '../preview/base-webpack.config.ts';
 
 export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<string, any> => {
   return {

@@ -1,2 +1,2 @@
 export * from '@storybook/svelte';
-export * from './types';
+export * from './types.ts';

@@ -15,10 +15,10 @@ import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
 
-import { autoblock } from './autoblock';
-import type { AutoblockerResult } from './autoblock/types';
-import { getStorybookData } from './automigrate/helpers/mainConfigFile';
-import { type UpgradeOptions } from './upgrade';
+import { autoblock } from './autoblock/index.ts';
+import type { AutoblockerResult } from './autoblock/types.ts';
+import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
+import { type UpgradeOptions } from './upgrade.ts';
 
 // ============================================================================
 // TYPES AND INTERFACES

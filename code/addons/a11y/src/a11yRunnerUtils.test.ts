@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { AxeResults } from 'axe-core';
 
-import { withLinkPaths } from './a11yRunnerUtils';
+import { withLinkPaths } from './a11yRunnerUtils.ts';
 
 describe('a11yRunnerUtils', () => {
   describe('withLinkPaths', () => {

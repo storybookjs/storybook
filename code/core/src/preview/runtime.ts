@@ -2,10 +2,10 @@ import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/inte
 
 import { global } from '@storybook/global';
 
-import { globalPackages, globalsNameReferenceMap } from './globals/globals';
-import { globalsNameValueMap } from './globals/runtime';
-import { maybeSetupPreviewNavigator } from './preview-navigator';
-import { prepareForTelemetry } from './utils';
+import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
+import { globalsNameValueMap } from './globals/runtime.ts';
+import { maybeSetupPreviewNavigator } from './preview-navigator.ts';
+import { prepareForTelemetry } from './utils.ts';
 
 function errorListener(args: any) {
   const error = args.error || args;

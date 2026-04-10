@@ -5,8 +5,8 @@ import {
   generateReleaseDescription,
   mapCherryPicksToTodo,
   mapToChangelist,
-} from '../generate-pr-description';
-import type { Change } from '../utils/get-changes';
+} from '../generate-pr-description.ts';
+import type { Change } from '../utils/get-changes.ts';
 
 describe('Generate PR Description', () => {
   const changes: Change[] = [

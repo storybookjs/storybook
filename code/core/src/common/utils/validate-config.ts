@@ -6,8 +6,8 @@ import {
 
 import { resolveModulePath } from 'exsolve';
 
-import { extractFrameworkPackageName } from '..';
-import { frameworkPackages } from './get-storybook-info';
+import { extractFrameworkPackageName } from '../index.ts';
+import { frameworkPackages } from './get-storybook-info.ts';
 
 const renderers = ['html', 'preact', 'react', 'server', 'svelte', 'vue', 'vue3', 'web-components'];
 

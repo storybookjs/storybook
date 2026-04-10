@@ -1,14 +1,15 @@
 import React, { useCallback, useState } from 'react';
 
 import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
 
-import { type API, type Combo, Consumer } from 'storybook/manager-api';
+import { type API, type Combo, Consumer, experimental_useStatusStore } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { TagsFilterPanel } from './TagsFilterPanel';
+import { FilterPanel } from './FilterPanel.tsx';
 
 const StyledButton = styled(Button)<{ $isHighlighted: boolean }>(({ $isHighlighted, theme }) => ({
   '&:focus-visible': {
@@ -38,18 +39,23 @@ const TagSelected = styled(Badge)(({ theme }) => ({
   color: theme.color.inverseText,
 }));
 
-const tagsFilterMapper = ({ api, state }: Combo) => ({
+const filterMapper = ({ api, state }: Combo) => ({
   api,
   indexJson: state.internal_index as StoryIndex | undefined,
   activeFilterCount:
-    (state.includedTagFilters?.length ?? 0) + (state.excludedTagFilters?.length ?? 0),
+    (state.includedTagFilters?.length ?? 0) +
+    (state.excludedTagFilters?.length ?? 0) +
+    (state.includedStatusFilters?.length ?? 0) +
+    (state.excludedStatusFilters?.length ?? 0),
   defaultIncludedFilters: state.defaultIncludedTagFilters,
   defaultExcludedFilters: state.defaultExcludedTagFilters,
   includedFilters: state.includedTagFilters,
   excludedFilters: state.excludedTagFilters,
+  includedStatusFilters: (state.includedStatusFilters ?? []) as StatusValue[],
+  excludedStatusFilters: (state.excludedStatusFilters ?? []) as StatusValue[],
 });
 
-interface TagsFilterInnerProps {
+interface FilterInnerProps {
   api: API;
   indexJson: StoryIndex;
   activeFilterCount: number;
@@ -57,9 +63,11 @@ interface TagsFilterInnerProps {
   defaultExcludedFilters: string[];
   includedFilters: string[];
   excludedFilters: string[];
+  includedStatusFilters: StatusValue[];
+  excludedStatusFilters: StatusValue[];
 }
 
-const TagsFilterInner = ({
+const FilterInner = ({
   api,
   indexJson,
   activeFilterCount,
@@ -67,8 +75,11 @@ const TagsFilterInner = ({
   defaultExcludedFilters,
   includedFilters,
   excludedFilters,
-}: TagsFilterInnerProps) => {
+  includedStatusFilters,
+  excludedStatusFilters,
+}: FilterInnerProps) => {
   const [expanded, setExpanded] = useState(false);
+  const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
 
   const handleToggleExpand = useCallback(
     (event: React.SyntheticEvent<Element, Event>): void => {
@@ -86,13 +97,16 @@ const TagsFilterInner = ({
       offset={8}
       padding={0}
       popover={() => (
-        <TagsFilterPanel
+        <FilterPanel
           api={api}
           indexJson={indexJson}
           defaultIncludedFilters={defaultIncludedFilters}
           defaultExcludedFilters={defaultExcludedFilters}
           includedFilters={includedFilters}
           excludedFilters={excludedFilters}
+          allStatuses={allStatuses}
+          includedStatusFilters={includedStatusFilters}
+          excludedStatusFilters={excludedStatusFilters}
         />
       )}
     >
@@ -116,8 +130,8 @@ const TagsFilterInner = ({
   );
 };
 
-export const TagsFilter = () => (
-  <Consumer filter={tagsFilterMapper}>
+export const Filter = () => (
+  <Consumer filter={filterMapper}>
     {({
       api,
       indexJson,
@@ -126,9 +140,11 @@ export const TagsFilter = () => (
       defaultExcludedFilters,
       includedFilters,
       excludedFilters,
+      includedStatusFilters,
+      excludedStatusFilters,
     }) =>
       indexJson ? (
-        <TagsFilterInner
+        <FilterInner
           api={api}
           indexJson={indexJson}
           activeFilterCount={activeFilterCount}
@@ -136,6 +152,8 @@ export const TagsFilter = () => (
           defaultExcludedFilters={defaultExcludedFilters}
           includedFilters={includedFilters}
           excludedFilters={excludedFilters}
+          includedStatusFilters={includedStatusFilters}
+          excludedStatusFilters={excludedStatusFilters}
         />
       ) : null
     }

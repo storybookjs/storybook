@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { WhatsNewFooter } from './whats_new';
+import { WhatsNewFooter } from './whats_new.tsx';
 
 const meta = {
   component: WhatsNewFooter,

@@ -3,7 +3,7 @@ import React from 'react';
 import { styled } from 'storybook/theming';
 import { dedent } from 'ts-dedent';
 
-import { MatcherResult } from './MatcherResult';
+import { MatcherResult } from './MatcherResult.tsx';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,

@@ -1,7 +1,7 @@
 import type { StrictArgTypes } from 'storybook/internal/types';
 
-import type { Component } from '../types';
-import type { PropDef } from './PropDef';
+import type { Component } from '../types.ts';
+import type { PropDef } from './PropDef.ts';
 
 export type PropsExtractor = (component: Component) => { rows?: PropDef[] } | null;
 

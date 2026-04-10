@@ -3,7 +3,7 @@ import { toId } from 'storybook/internal/csf';
 
 import type { Expect, Page } from '@playwright/test';
 
-import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates';
+import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates.ts';
 
 export class SbPage {
   readonly page: Page;

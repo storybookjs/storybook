@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { groupBy, invariant } from './utils';
+import { groupBy, invariant } from './utils.ts';
 
 describe('utils', () => {
   describe('groupBy', () => {

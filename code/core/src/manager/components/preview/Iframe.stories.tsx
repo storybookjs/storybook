@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import React from 'react';
 
-import { IFrame } from './Iframe';
+import { IFrame } from './Iframe.tsx';
 
 export default {
   component: IFrame,

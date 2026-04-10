@@ -6,8 +6,8 @@ import { global } from '@storybook/global';
 
 import { styled } from 'storybook/theming';
 
-import { useChecklist } from '../components/sidebar/useChecklist';
-import { Checklist } from './Checklist/Checklist';
+import { useChecklist } from '../components/sidebar/useChecklist.ts';
+import { Checklist } from './Checklist/Checklist.tsx';
 
 const Container = styled.div(({ theme }) => ({
   display: 'flex',

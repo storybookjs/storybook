@@ -7,9 +7,9 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { importModule } from '../../shared/utils/module';
-import { getInterpretedFile } from './interpret-files';
-import { validateConfigurationFiles } from './validate-configuration-files';
+import { importModule } from '../../shared/utils/module.ts';
+import { getInterpretedFile } from './interpret-files.ts';
+import { validateConfigurationFiles } from './validate-configuration-files.ts';
 
 export async function loadMainConfig({
   configDir = '.storybook',

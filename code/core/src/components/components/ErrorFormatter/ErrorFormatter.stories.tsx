@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { dedent } from 'ts-dedent';
 
-import { ErrorFormatter } from './ErrorFormatter';
+import { ErrorFormatter } from './ErrorFormatter.tsx';
 
 const meta: Meta<typeof ErrorFormatter> = {
   component: ErrorFormatter,

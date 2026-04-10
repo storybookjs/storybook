@@ -6,8 +6,8 @@ import picocolors from 'picocolors';
 import semver from 'semver';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain';
-import { getChanges } from './utils/get-changes';
+import { esMain } from '../utils/esmain.ts';
+import { getChanges } from './utils/get-changes.ts';
 
 program
   .name('write-changelog')

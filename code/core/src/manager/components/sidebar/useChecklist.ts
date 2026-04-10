@@ -16,9 +16,9 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 
-import type { ItemState } from '../../../shared/checklist-store';
-import type { ChecklistData } from '../../../shared/checklist-store/checklistData';
-import { checklistData } from '../../../shared/checklist-store/checklistData';
+import type { ItemState } from '../../../shared/checklist-store/index.ts';
+import type { ChecklistData } from '../../../shared/checklist-store/checklistData.tsx';
+import { checklistData } from '../../../shared/checklist-store/checklistData.tsx';
 
 type RawItemWithSection = ChecklistData['sections'][number]['items'][number] & {
   itemIndex: number;

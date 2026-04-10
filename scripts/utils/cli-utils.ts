@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-import { ROOT_DIRECTORY } from './constants';
+import { ROOT_DIRECTORY } from './constants.ts';
 
 const logger = console;
 

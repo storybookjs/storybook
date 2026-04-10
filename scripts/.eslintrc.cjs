@@ -95,5 +95,31 @@ module.exports = {
         '@typescript-eslint/return-await': 'off',
       },
     },
+    {
+      files: ['*.ts', '*.tsx', '**/*.ts', '**/*.tsx'],
+      excludedFiles: [
+        '**/*.d.ts',
+        '**/docs/**/*',
+        '**/template/**/*',
+        '**/templates/**/*',
+        '**/__testfixtures__/**/*',
+        '**/__mocks-ng-workspace__/**/*',
+      ],
+      rules: {
+        'import-x/extensions': [
+          'error',
+          'always',
+          {
+            ignorePackages: true,
+            checkTypeImports: true,
+            fix: true,
+            pathGroupOverrides: [
+              { pattern: 'storybook/**', action: 'ignore' },
+              { pattern: '@storybook/**', action: 'ignore' },
+            ],
+          },
+        ],
+      },
+    },
   ],
 };

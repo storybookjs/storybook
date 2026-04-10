@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Confetti } from './Confetti';
+import { Confetti } from './Confetti.tsx';
 
 const meta: Meta<typeof Confetti> = {
   component: Confetti,

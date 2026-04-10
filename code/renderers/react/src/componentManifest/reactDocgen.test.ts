@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, test } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { parseWithReactDocgen } from './reactDocgen';
-import { invalidateCache } from './utils';
+import { parseWithReactDocgen } from './reactDocgen.ts';
+import { invalidateCache } from './utils.ts';
 
 beforeEach(() => {
   invalidateCache();

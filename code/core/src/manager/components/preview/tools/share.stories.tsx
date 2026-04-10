@@ -7,7 +7,7 @@ import type { StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, waitFor } from 'storybook/test';
 
-import { shareTool } from './share';
+import { shareTool } from './share.tsx';
 
 const managerContext = {
   state: {

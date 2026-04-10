@@ -16,7 +16,7 @@ import type { Constructor, RemoveIndexSignature, SetOptional, Simplify } from 't
 import type { FunctionalComponent, VNodeChild } from 'vue';
 import type { ComponentProps, ComponentSlots } from 'vue-component-type-helpers';
 
-import type { VueRenderer } from './types';
+import type { VueRenderer } from './types.ts';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { VueRenderer };

@@ -1,6 +1,6 @@
-import type { ActionOptions, ActionsFunction, ActionsMap } from '../models';
-import { action } from './action';
-import { config } from './configureActions';
+import type { ActionOptions, ActionsFunction, ActionsMap } from '../models/index.ts';
+import { action } from './action.ts';
+import { config } from './configureActions.ts';
 
 export const actions: ActionsFunction = (...args: any[]) => {
   let options: ActionOptions = config;

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 
 import { expect, fn, spyOn } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { ManagerErrorBoundary } from './ManagerErrorBoundary';
+import preview from '../../../../../.storybook/preview.tsx';
+import { ManagerErrorBoundary } from './ManagerErrorBoundary.tsx';
 
 // Mocks for play assertions: set by decorator, asserted in play functions
 let consoleErrorSpy: ReturnType<typeof spyOn>;

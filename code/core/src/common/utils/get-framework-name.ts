@@ -2,8 +2,8 @@ import type { Options } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { frameworkPackages } from './get-storybook-info';
-import { normalizePath } from './normalize-path';
+import { frameworkPackages } from './get-storybook-info.ts';
+import { normalizePath } from './normalize-path.ts';
 
 /** Framework can be a string or an object. This utility always returns the string name. */
 export async function getFrameworkName(options: Options) {

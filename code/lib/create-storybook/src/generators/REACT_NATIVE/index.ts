@@ -55,9 +55,9 @@ export default defineGeneratorModule({
     const packagesToResolve = [
       ...peerDependencies,
       ...(needsCrossEnv ? ['cross-env'] : []),
-      '@storybook/addon-ondevice-controls',
-      '@storybook/addon-ondevice-actions',
-      '@storybook/react-native',
+      '@storybook/addon-ondevice-controls@10.4.0-canary-20260410132227',
+      '@storybook/addon-ondevice-actions@10.4.0-canary-20260410132227',
+      '@storybook/react-native@10.4.0-canary-20260410132227',
       'storybook',
     ];
 
@@ -74,7 +74,6 @@ export default defineGeneratorModule({
 
     // Add React Native specific scripts
     packageManager.addScripts({
-      'storybook-generate': 'sb-rn-get-stories',
       ...scriptDerivationResult.scriptsToAdd,
     });
 

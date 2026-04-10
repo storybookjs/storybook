@@ -10,6 +10,6 @@ import { view } from './storybook.requires';
  */
 const StorybookUIRoot = view.getStorybookUI({});
 
-AppRegistry.registerComponent('storybook', () => StorybookUIRoot);
+AppRegistry.registerComponent('main', () => StorybookUIRoot);
 
 export default StorybookUIRoot;

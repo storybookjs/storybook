@@ -23,7 +23,7 @@ describe('generateReactNativeEntrypoint', () => {
       expect(result.targetPath).toBe(outputPath);
       expect(output).toContain("import { AppRegistry } from 'react-native';");
       expect(output).toContain("import { view } from './storybook.requires';");
-      expect(output).toContain("AppRegistry.registerComponent('storybook'");
+      expect(output).toContain("AppRegistry.registerComponent('main'");
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }

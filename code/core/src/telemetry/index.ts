@@ -23,6 +23,14 @@ export {
   getAiSetupPending,
 } from './event-cache.ts';
 
+export {
+  AI_STORY_TITLE_PREFIX,
+  collectAiPrepareEvidence,
+  countAiAuthoredStories,
+  isStoryCreatedByAISetup,
+  type AiSetupPendingRecord,
+} from './ai-prepare-evidence.ts';
+
 export { getSessionId, SESSION_TIMEOUT } from './session-id.ts';
 
 export { addToGlobalContext } from './telemetry.ts';

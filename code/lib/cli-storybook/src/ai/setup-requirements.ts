@@ -2,36 +2,22 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import { findConfigFile } from 'storybook/internal/common';
+import {
+  AI_STORY_TITLE_PREFIX,
+  isStoryCreatedByAISetup,
+  type AiSetupPendingRecord,
+} from 'storybook/internal/telemetry';
 
 import type { AiPrepareTraits } from './types.ts';
 
-/**
- * Title prefix the prompt instructs agents to use for generated stories.
- * When migrating to a tag-based approach, update isStoryAIGenerated() below.
- */
-export const AI_STORY_TITLE_PREFIX = 'AI Generated/';
+// Re-export for backward compatibility
+export { AI_STORY_TITLE_PREFIX, isStoryCreatedByAISetup, type AiSetupPendingRecord };
+
+// Keep the old name as a deprecated alias
+export const isStoryAIGenerated = isStoryCreatedByAISetup;
 
 /** Expected number of story components the prompt asks the agent to create. */
 export const AI_EXPECTED_STORY_COMPONENTS = 9;
-
-/**
- * Determines whether a story index entry was authored by AI setup.
- * Currently checks title prefix. When we migrate to a tag-based approach,
- * swap this to check for the tag instead — this is the single swap point.
- */
-export function isStoryAIGenerated(entry: { title: string; tags?: string[] }): boolean {
-  return entry.title.startsWith(AI_STORY_TITLE_PREFIX);
-}
-
-/** Record cached at ai-prepare time. Read by subsequent CLI entry points for evidence collection. */
-export interface AiSetupPendingRecord {
-  timestamp: number;
-  sessionId: string;
-  configDir: string;
-  previewFile: string | null;
-  previewHash: string | null;
-  traits: AiPrepareTraits;
-}
 
 /**
  * Snapshot the preview file state for baseline comparison.
@@ -64,12 +50,8 @@ export async function hasPreviewChanged(
   baseline: { previewFile: string | null; previewHash: string | null }
 ): Promise<boolean> {
   const current = await snapshotPreviewFile(configDir);
-
-  // Different file path (including one being null) = changed
   if (current.previewFile !== baseline.previewFile) {
     return true;
   }
-
-  // Same path (or both null) — compare hashes
   return current.previewHash !== baseline.previewHash;
 }

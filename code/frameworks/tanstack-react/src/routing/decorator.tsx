@@ -23,6 +23,7 @@ export type MockRouterOptions = {
  * Checks whether a value is a TanStack Router Route instance.
  */
 function isRoute(value: unknown): value is InstanceType<typeof Route> {
+  // todo: check if works with multiple versions of the router in a monorepo
   return value instanceof Route || value instanceof RootRoute;
 }
 

@@ -1,4 +1,8 @@
-import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
+import {
+  collectAiPrepareEvidence,
+  getPrecedingUpgrade,
+  telemetry,
+} from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import type { Polka } from 'polka';
@@ -36,6 +40,12 @@ export async function doTelemetry(
       });
       return;
     }
+
+    // Fire-and-forget: collect ai-prepare evidence with story index
+    if (indexAndStats) {
+      collectAiPrepareEvidence('dev', options.configDir, indexAndStats.storyIndex);
+    }
+
     const { versionCheck, versionUpdates } = options;
     invariant(
       !versionUpdates || (versionUpdates && versionCheck),

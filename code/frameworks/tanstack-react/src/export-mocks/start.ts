@@ -13,7 +13,7 @@ export function useServerFn<T extends (...args: Array<any>) => Promise<any>>(
 }
 
 function createMockServerFnBuilder(): any {
-  const builder: any = (options?: any) => createMockServerFnBuilder();
+  const builder: any = () => createMockServerFnBuilder();
 
   builder.options = {};
 

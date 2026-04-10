@@ -46,9 +46,9 @@ function getRouteFromContext(
   if (resolvedRoute instanceof RootRoute) {
     const children = resolvedRoute.children as Route[] | undefined;
     if (children?.length) {
-      children[0].update({ component: () => <Story />, ...routeOverrides });
+      children[0].update({ component: () => <Story />, ...routeOverrides } as any);
     } else {
-      resolvedRoute.update({ component: () => <Story />, ...routeOverrides });
+      resolvedRoute.update({ component: () => <Story />, ...routeOverrides } as any);
     }
     return resolvedRoute;
   }
@@ -98,7 +98,7 @@ function createStoryRouter({ Story, context }: MockRouterOptions): Router<AnyRoo
   // Interpolate params into the path and append query/search params.
   let resolvedPath = interpolatePath({
     path: initialPath,
-    params: routerParameters?.params ?? context.args.params ?? {},
+    params: routerParameters?.params ?? {},
   }).interpolatedPath;
   const search = routerParameters?.query ? defaultStringifySearch(routerParameters.query) : '';
   if (search) {

@@ -56,6 +56,7 @@ export type StoryRouteFileOptions<TRoute = undefined> =
             | 'head'
             | 'search'
             | 'parseParams'
+            | 'context'
           >
         >
       : Pick<
@@ -69,6 +70,7 @@ export type StoryRouteFileOptions<TRoute = undefined> =
           | 'head'
           | 'search'
           | 'parseParams'
+          | 'context'
         >
     : Pick<
         RouteOptions<unknown>,
@@ -81,6 +83,7 @@ export type StoryRouteFileOptions<TRoute = undefined> =
         | 'head'
         | 'search'
         | 'parseParams'
+        | 'context'
       >;
 
 export type CreateStoryRouteOptions<TRoute = undefined> = StoryRouteFileOptions<TRoute> & {
@@ -119,4 +122,6 @@ export interface RouterParameters<TRoute = undefined> {
   validateSearch?: RouteOption<TRoute, 'validateSearch'>;
   /** Override the route's loader dependencies. */
   loaderDeps?: RouteOption<TRoute, 'loaderDeps'>;
+  /** Override the route's context. */
+  context?: Record<string, unknown>;
 }

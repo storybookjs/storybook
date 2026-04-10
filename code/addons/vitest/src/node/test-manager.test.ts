@@ -22,6 +22,7 @@ const vitest = vi.hoisted(() => ({
   init: vi.fn(),
   close: vi.fn(),
   onCancel: vi.fn(),
+  provide: vi.fn(),
   runTestSpecifications: vi.fn(),
   cancelCurrentRun: vi.fn(),
   globTestSpecifications: vi.fn(),
@@ -154,11 +155,15 @@ const mockTestProviderStore: TestProviderStoreById = {
 
 const tests = [
   {
-    project: { config: { env: { __STORYBOOK_URL__: 'http://localhost:6006' } } },
+    project: {
+      config: { env: { __STORYBOOK_URL__: 'http://localhost:6006' } },
+    },
     moduleId: path.join(process.cwd(), 'path/to/file'),
   },
   {
-    project: { config: { env: { __STORYBOOK_URL__: 'http://localhost:6006' } } },
+    project: {
+      config: { env: { __STORYBOOK_URL__: 'http://localhost:6006' } },
+    },
     moduleId: path.join(process.cwd(), 'path/to/another/file'),
   },
 ];
@@ -211,7 +216,74 @@ describe('TestManager', () => {
       },
     });
     expect(createVitest).toHaveBeenCalledTimes(1);
+    expect(vitest.provide).toHaveBeenCalledWith('sb-config', {
+      coverage: false,
+      a11y: false,
+    });
     expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests, true);
+  });
+
+  it('should provide merged config override before running tests', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'external:actor',
+        configOverride: {
+          coverage: false,
+          a11y: true,
+          customFlag: 'custom-value',
+        },
+      },
+    });
+
+    expect(vitest.provide).toHaveBeenLastCalledWith('sb-config', {
+      coverage: false,
+      a11y: true,
+      customFlag: 'custom-value',
+    });
+  });
+
+  it('should persist all reports in currentRun', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'story--one',
+          testResult: passedResult,
+          reports: [
+            {
+              type: 'a11y',
+              status: 'passed',
+              result: { id: 'a11y-report' } as any,
+            } as any,
+            {
+              type: 'custom',
+              status: 'passed',
+              result: { id: 'custom-report' } as any,
+            } as any,
+          ],
+        });
+        testManager.onTestRunEnd({
+          totalTestCount: 1,
+          unhandledErrors: [],
+        });
+      },
+    });
+
+    expect(mockStore.getState().currentRun.reports['story--one']).toEqual([
+      { type: 'a11y', status: 'passed', result: { id: 'a11y-report' } },
+      { type: 'custom', status: 'passed', result: { id: 'custom-report' } },
+    ]);
   });
 
   it('should filter tests', async () => {
@@ -325,7 +397,10 @@ describe('TestManager', () => {
 
   it('should ignore non-requested same-name story results after run', async () => {
     const testManager = await TestManager.start(options);
-    const passedResult = { state: 'passed', errors: [] } as unknown as TestResult;
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
 
     await testManager.runTestsWithState({
       storyIds: ['story--one', 'another--two'],
@@ -357,7 +432,10 @@ describe('TestManager', () => {
 
   it('should keep child test results when parent story is requested', async () => {
     const testManager = await TestManager.start(options);
-    const passedResult = { state: 'passed', errors: [] } as unknown as TestResult;
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
 
     await testManager.runTestsWithState({
       storyIds: ['parent--story'],
@@ -385,7 +463,10 @@ describe('TestManager', () => {
     expect(createVitest).toHaveBeenCalledTimes(1);
     createVitest.mockClear();
 
-    mockStore.setState((s) => ({ ...s, config: { coverage: true, a11y: false } }));
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: true, a11y: false },
+    }));
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -408,7 +489,10 @@ describe('TestManager', () => {
     expect(createVitest).toHaveBeenCalledTimes(1);
     createVitest.mockClear();
 
-    mockStore.setState((s) => ({ ...s, config: { coverage: true, a11y: false } }));
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: true, a11y: false },
+    }));
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',

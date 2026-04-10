@@ -38,7 +38,7 @@ export const storeOptions = {
       },
       componentTestStatuses: [],
       a11yStatuses: [],
-      a11yReports: {},
+      reports: {},
       componentTestCount: {
         success: 0,
         error: 0,
@@ -75,7 +75,7 @@ export type TriggerTestRunRequestPayload = {
   requestId: string;
   actor: string;
   storyIds?: string[];
-  config?: Partial<StoreState['config']>;
+  config?: Record<string, unknown>;
 };
 
 export type TestRunResult = CurrentRun;

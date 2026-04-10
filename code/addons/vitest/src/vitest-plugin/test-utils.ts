@@ -1,20 +1,11 @@
-import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
+import { inject, type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
 import { type Meta, type Story, getStoryChildren, isStory } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
-import { server } from '@vitest/browser/context';
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
 import { setViewport } from './viewports.ts';
-
-declare module 'vitest/browser' {
-  interface BrowserCommands {
-    getInitialGlobals: () => Promise<Record<string, any>>;
-  }
-}
-
-const { getInitialGlobals } = server.commands;
 
 /**
  * Converts a file URL to a file path, handling URL encoding
@@ -60,10 +51,39 @@ export const testStory = ({
 
     const storyAnnotations = test ? test.input : annotations.story;
 
+    let runConfig: Record<string, unknown> = { a11y: true };
+    try {
+      runConfig = inject('sb-config');
+    } catch {
+      // Standalone Vitest runs might not provide Storybook run config.
+    }
+
+    let ghostStoriesEnabled = false;
+    try {
+      ghostStoriesEnabled = inject('sb-ghost-stories');
+    } catch {
+      // Standalone Vitest runs might not provide Storybook ghost stories config.
+    }
+
+    const shouldRunA11yTests = !!runConfig.a11y;
+    const initialGlobals = {
+      sbConfig: runConfig,
+      ...(ghostStoriesEnabled
+        ? {
+            ghostStories: {
+              enabled: true,
+            },
+          }
+        : {}),
+      a11y: {
+        manual: !shouldRunA11yTests,
+      },
+    };
+
     const composedStory = composeStory(
       storyAnnotations,
       annotations.meta!,
-      { initialGlobals: (await getInitialGlobals?.()) ?? {} },
+      { initialGlobals },
       annotations.preview ?? globalThis.globalProjectAnnotations,
       exportName
     );

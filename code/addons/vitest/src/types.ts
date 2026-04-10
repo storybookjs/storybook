@@ -1,10 +1,7 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type { PreviewAnnotation, Status, StoryId, StoryIndex } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
-
-// import type { A11yReport } from '@storybook/addon-a11y';
-// TODO: There's a type error in axe-core that makes this error during production builds
-type A11yReport = any;
+import type { Report } from 'storybook/preview-api';
 
 export interface VitestError extends Error {
   VITEST_TEST_PATH?: string;
@@ -24,6 +21,8 @@ export type ErrorLike = {
   cause?: ErrorLike;
 };
 
+export type RunConfig = Record<string, unknown>;
+
 export type RunTrigger =
   | 'run-all'
   | 'global'
@@ -33,7 +32,7 @@ export type RunTrigger =
 
 export type CurrentRun = {
   triggeredBy: RunTrigger | undefined;
-  config: StoreState['config'];
+  config: RunConfig;
   componentTestStatuses: Status[];
   a11yStatuses: Status[];
   componentTestCount: {
@@ -45,7 +44,7 @@ export type CurrentRun = {
     warning: number;
     error: number;
   };
-  a11yReports: Record<StoryId, A11yReport[]>;
+  reports: Record<StoryId, Report[]>;
   totalTestCount: number | undefined;
   storyIds: StoryId[] | undefined;
   startedAt: number | undefined;
@@ -84,7 +83,7 @@ export type TriggerRunEvent = {
   payload: {
     storyIds?: string[] | undefined;
     triggeredBy: RunTrigger;
-    configOverride?: StoreState['config'];
+    configOverride?: RunConfig;
   };
 };
 

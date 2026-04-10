@@ -102,7 +102,10 @@ export class VitestManager {
 
     for (const location of potentialConfigFileLocations) {
       for (const file of configFiles) {
-        const maybe = find.any([file], { cwd: location, last: getProjectRoot() });
+        const maybe = find.any([file], {
+          cwd: location,
+          last: getProjectRoot(),
+        });
         if (maybe && existsSync(maybe)) {
           firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
@@ -363,10 +366,19 @@ export class VitestManager {
     return { filteredTestSpecifications, filteredStoryIds };
   }
 
+  private getCurrentRunConfig() {
+    return this.testManager.store.getState().currentRun.config;
+  }
+
+  private provideRunConfig() {
+    this.vitest?.provide('sb-config', this.getCurrentRunConfig());
+  }
+
   async runTests(runPayload: TriggerRunEvent['payload']) {
-    const { watching, config } = this.testManager.store.getState();
+    const { watching } = this.testManager.store.getState();
+    const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
-      config.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
+      !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
     const currentCoverage = this.vitest?.config.coverage?.enabled;
 
     if (!this.vitest) {
@@ -376,6 +388,8 @@ export class VitestManager {
     } else {
       await this.vitestRestartPromise;
     }
+
+    this.provideRunConfig();
 
     this.resetGlobalTestNamePattern();
 

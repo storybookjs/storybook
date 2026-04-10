@@ -7,7 +7,6 @@ import type { ViteUserConfig } from 'vitest/config';
 import {
   DEFAULT_FILES_PATTERN,
   getInterpretedFile,
-  loadPreviewOrConfigFile,
   normalizeStories,
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
@@ -19,12 +18,7 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import {
-  componentTransform,
-  isCsfFactoryPreview,
-  readConfig,
-  vitestTransform,
-} from 'storybook/internal/csf-tools';
+import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
@@ -356,6 +350,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
+          provide: {
+            'sb-config': {},
+            'sb-ghost-stories': !!process.env.STORYBOOK_COMPONENT_PATHS,
+          },
+
           include: [...includeStories, ...getComponentTestPaths()],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
@@ -375,25 +374,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             : {}),
 
           browser: {
-            commands: {
-              getInitialGlobals: () => {
-                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
-
-                const shouldRunA11yTests = isVitestStorybook ? (envConfig.a11y ?? false) : true;
-                const globals: Record<string, unknown> = {};
-                globals.a11y = {
-                  manual: !shouldRunA11yTests,
-                };
-
-                if (process.env.STORYBOOK_COMPONENT_PATHS) {
-                  globals.ghostStories = {
-                    enabled: true,
-                  };
-                }
-
-                return globals;
-              },
-            },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
             ...(nonMutableInputConfig.test?.browser &&
             nonMutableInputConfig.test.browser.screenshotFailures === undefined

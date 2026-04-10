@@ -55,9 +55,7 @@ const server = createServer(async (req, res) => {
 
   if (req.method === 'GET' && req.url?.startsWith('/events')) {
     const typeFilter = req.url.split('/events/')[1];
-    const filtered = typeFilter
-      ? events.filter((e) => e.eventType === typeFilter)
-      : events;
+    const filtered = typeFilter ? events.filter((e) => e.eventType === typeFilter) : events;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(filtered));
     return;

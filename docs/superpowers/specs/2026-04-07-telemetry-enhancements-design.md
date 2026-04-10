@@ -1,20 +1,21 @@
 # Telemetry Enhancements Design
 
-> **Status**: Design approved. Writing implementation plans.
+> **Status**: WS1 revision design approved. Writing implementation plan for revisions.
 > **Started**: 2026-04-07
-> **Updated**: 2026-04-08
-> **Mode**: All sections approved → writing implementation plans
+> **Updated**: 2026-04-10
+> **Mode**: WS1 shipped as PR #34510 → revision design approved → writing revision plan
 > **Resume**: see [§ Resume Tomorrow](#resume-tomorrow) at the bottom
 
 ## Resume tomorrow
 
 If you're picking this up fresh:
 1. Read this whole document. It captures every decision made so far.
-2. **Where we left off**: All sections approved (2026-04-08). Two workstreams: WS1 (agentic telemetry) and WS2 (feature adoption tracking).
-3. Check if implementation plan files exist at `docs/superpowers/specs/2026-04-08-ws1-*.md` and `2026-04-08-ws2-*.md`. If not, invoke writing-plans skill to produce them.
-4. Execute WS1 first.
+2. **Where we left off**: WS1 revision design approved (2026-04-10, Section 9). Implementation plan for revisions should exist at `docs/superpowers/specs/2026-04-10-ws1-revision-plan-engineer.md`. If not, invoke writing-plans skill to produce it.
+3. Execute the revision plan against branch `sidnioulz/agentic-telemetry-ws1` (PR #34510).
+4. After revisions, WS2 remains to be executed.
 5. **Spike script**: `scripts/spike-extract-features.ts` — delete during WS2 (or whenever convenient).
 6. **Outstanding clarifications** (if any) are listed in [§ Open Questions](#open-questions).
+7. **Feature pitch parked**: `docs/superpowers/specs/2026-04-10-test-result-reporter-pitch.md` — `StorybookTestResultReporter` for enriching vitest run telemetry. Not blocking.
 
 ---
 
@@ -875,16 +876,18 @@ node scripts/spike-extract-features.ts ../storybook-sandboxes/react-vite-default
 If you're picking this up fresh:
 
 1. **Read this whole document.** It captures every decision made.
-2. Where we left off: **All sections approved (2026-04-08).** Two workstreams defined.
-3. **Implementation plans** should exist at:
-   - `docs/superpowers/specs/2026-04-08-ws1-agentic-telemetry-plan.md`
-   - `docs/superpowers/specs/2026-04-08-ws2-feature-adoption-plan.md`
-4. **Execute WS1 first.**
-5. **Spike script**: `scripts/spike-extract-features.ts` — delete during WS2 (or whenever convenient).
+2. Where we left off: **WS1 revision design approved (2026-04-10, Section 9).** Revision plan should exist.
+3. **Revision plan** should exist at:
+   - `docs/superpowers/specs/2026-04-10-ws1-revision-plan-engineer.md`
+4. **Execute WS1 revisions** against branch `sidnioulz/agentic-telemetry-ws1` (PR #34510).
+5. **After revisions**, WS2 remains to be executed from:
+   - `docs/superpowers/specs/2026-04-08-ws2-feature-adoption-plan-engineer.md`
+6. **Spike script**: `scripts/spike-extract-features.ts` — delete during WS2.
+7. **Feature pitch parked**: `docs/superpowers/specs/2026-04-10-test-result-reporter-pitch.md`
 
 ### How to keep Claude on track when resuming
 
-> Read `docs/superpowers/specs/2026-04-07-telemetry-enhancements-design.md`. All sections are approved. Check if plan files exist under `docs/superpowers/specs/`. If they do, begin executing WS1. If they don't, invoke writing-plans and produce them first.
+> Read `docs/superpowers/specs/2026-04-07-telemetry-enhancements-design.md`. Section 9 has the WS1 revision design. Check if the revision plan exists at `docs/superpowers/specs/2026-04-10-ws1-revision-plan-engineer.md`. If it does, execute it. If not, invoke writing-plans and produce it first. Branch is `sidnioulz/agentic-telemetry-ws1`.
 
 ---
 
@@ -918,3 +921,162 @@ If you're picking this up fresh:
 26. **AI story detection** (2026-04-08): `isStoryAIGenerated()` checker function in `setup-requirements.ts` colocated with prompt code. Currently title-prefix based (`AI Generated/`), planned migration to tag-based. Field named `aiAuthoredStories` (not `storiesWithAiTitle`). Not added to `summarizeIndex` to avoid cross-contamination when users adopt AI-written stories.
 27. **Session window for evidence** (2026-04-08): Use existing `SESSION_TIMEOUT` (2h) instead of 24h. Cache expires silently — manageable in Metabase.
 28. **Setup requirements colocation** (2026-04-08): `setup-requirements.ts` lives next to `prompt.ts` so prompt changes naturally accompany observation logic updates. Contains title prefix, expected count, and `isStoryAIGenerated()` checker.
+
+---
+
+## Section 9: WS1 PR #34510 Revision Design — APPROVED ✓ (2026-04-10)
+
+Revisions based on PR review feedback from Steve, Copilot, and CodeRabbit.
+
+### 9.1 Code Reorganization & Naming
+
+#### 9.1a Rename `ai-setup-evidence` → `ai-prepare-evidence`
+
+Rename in `types.ts` and all references. Better reflects the command (`sb ai prepare`) that triggers the evidence chain.
+
+#### 9.1b Move evidence code to `code/core/src/telemetry/`
+
+Move `collectAiSetupEvidence` and `checkPreviewChanged` from `withTelemetry.ts` into a new file `code/core/src/telemetry/ai-prepare-evidence.ts`. No circular dependency risk — telemetry already imports from `storybook/internal/common` (where `cache`, `findConfigFile`, `isCI` live). Dependency direction stays `telemetry → common`.
+
+New file exports:
+- `collectAiPrepareEvidence(options)` (renamed from `collectAiSetupEvidence`)
+- `checkPreviewChanged(configDir, snapshotHash)`
+- `countAiAuthoredStories(storyIndex)` (new)
+- `isStoryCreatedByAISetup(entry)` (moved from `setup-requirements.ts`)
+
+`withTelemetry.ts` imports and calls `collectAiPrepareEvidence()` from the new location.
+
+#### 9.1c Move `isStoryCreatedByAISetup` to shared location
+
+Renamed from `isStoryAIGenerated` to emphasize it detects stories created by the `sb ai prepare` flow specifically (via frontmatter marker), not any arbitrary AI-generated story.
+
+Moved to `code/core/src/telemetry/ai-prepare-evidence.ts`. The ghost stories channel imports from there. The original in `setup-requirements.ts` becomes a re-export or gets removed.
+
+#### 9.1d Type inheritance for `AiSetupPendingRecord`
+
+In `event-cache.ts`, replace the "kept in sync" comment with actual type inheritance. `AiSetupPendingRecord` extends or picks from the types defined in the evidence module.
+
+#### 9.1e Minor fixes
+
+- `checkPreviewChanged`: Return `true` when preview file is missing or unreadable (absence implies change)
+- Remove useless `.catch(() => {})` on the fire-and-forget promise in `withTelemetry.ts`
+- Fix comment wording on the ai-prepare skip gate
+- Fix test name in `storybook-metadata.test.ts`: "should not detect userSince info in CI when not running as an agent"
+- CodeRabbit: Use spy-based mock pattern in `withTelemetry.test.ts` instead of factory mocks
+
+### 9.2 Evidence Collection Logic
+
+#### 9.2a Remove `doctorRanSinceSetup`
+
+Redundant — `sb doctor` invocations are already logged as telemetry events server-side. We should only collect evidence for locally-observable things not already captured. The implementation was also broken (count hardcoded, race condition with current boot event).
+
+Remove from `AiSetupPendingRecord` type, evidence collection, and event payload.
+
+#### 9.2b Implement `countAiAuthoredStories` using the story index
+
+**Approach**: Single event, fired from `doTelemetry` for dev/build commands (where story index is available), from `withTelemetry` for other commands (where `aiAuthoredStories` is `undefined`).
+
+How it works:
+- `collectAiPrepareEvidence` accepts an optional `storyIndex` parameter
+- When provided, calls `countAiAuthoredStories(storyIndex)` which iterates entries and applies `isStoryCreatedByAISetup()` to count matches
+- For dev/build: evidence fires from `doTelemetry` (story index available via `generator.getIndexAndStats()`)
+- For other commands: evidence fires from `withTelemetry` (no story index, field = `undefined`)
+
+#### 9.2c Event cache scoping
+
+Compare `record.configDir` against the current `configDir` when reading the pending record. If they don't match, skip (different project). `sessionId` comparison not needed — `configDir` covers the main cross-project scenario.
+
+#### 9.2d Payload shape after revisions
+
+```ts
+{
+  type: 'ai-prepare-evidence',
+  payload: {
+    previewChanged: boolean,                  // true if preview.ts differs from snapshot, OR is missing/unreadable
+    aiAuthoredStories: number | undefined,    // count when story index available, undefined otherwise
+    sessionId: string,                        // from the pending record
+    timeSinceSetup: number,                   // ms since ai prepare ran
+    // doctorRanSinceSetup: REMOVED
+  }
+}
+```
+
+### 9.3 Testing
+
+New file: `code/core/src/telemetry/ai-prepare-evidence.test.ts`
+
+Test cases:
+1. No event when no agent detected
+2. No event when no pending record
+3. No event when pending record is expired (> SESSION_TIMEOUT)
+4. No event when configDir doesn't match
+5. Event fires with correct payload when all gates pass
+6. `previewChanged` is `true` when preview file is missing/unreadable
+7. `previewChanged` is `false` when hash matches snapshot
+8. `previewChanged` is `true` when hash differs from snapshot
+9. `aiAuthoredStories` is `undefined` when no story index provided
+10. `aiAuthoredStories` counts correctly with mixed entries
+
+All tests use spy-based mock pattern (`vi.spyOn` / `vi.mock` with inline implementations).
+
+Fix test name in `storybook-metadata.test.ts`.
+Clean up `withTelemetry.test.ts` after move (remove dead code).
+
+### 9.4 AI-Written Story Scoring
+
+#### 9.4a Separate event alongside ghost stories
+
+When ghost stories scoring fires, also detect and score stories created by `sb ai prepare`. Two distinct events to preserve existing Metabase funnels:
+
+- `ghost-stories` event: unchanged, existing payload
+- `ai-prepare-story-scoring` event: new, same `TestRunSummary` shape, different source files
+
+Flow:
+1. Ghost stories channel fires (10min delay + once-ever gate)
+2. Run existing ghost stories candidate selection + scoring (unchanged)
+3. Query story index for entries matching `isStoryCreatedByAISetup()`
+4. Run the same vitest scoring pipeline against those AI-authored story files
+5. Fire separate `ai-prepare-story-scoring` telemetry event
+
+Reuse existing modular pipeline: `runGhostStories()` accepts file paths, returns `TestRunSummary`.
+
+#### 9.4b CPU capacity check before scoring
+
+Before launching vitest scoring (ghost stories or AI-written stories), check that the Test addon isn't already running:
+
+```ts
+async function waitForTestsIdle(maxWaitMs = 30 * 60 * 1000, pollIntervalMs = 60 * 1000): Promise<boolean> {
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    const state = internal_fullTestProviderStore.getFullState();
+    const isRunning = Object.values(state).some(s => s === 'test-provider-state:running');
+    if (!isRunning) return true;
+    await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+  }
+  return false; // timed out — skip scoring
+}
+```
+
+Poll every 60s, 30min max timeout, skip scoring entirely if tests are still running.
+
+#### 9.4c Story index access in ghost stories channel
+
+Pass story index generator as an additional parameter when setting up the channel handler in `dev-server.ts`.
+
+### 9.5 Vitest Run Output Capture — PARKED
+
+The `configureVitest` hook in the `storybookTest()` vitest plugin already fires a `test-run` telemetry event on every vitest start. This already tells us when an agent runs vitest. Enriching with test results (pass/fail counts) is valuable but additive.
+
+Parked as a feature pitch: `docs/superpowers/specs/2026-04-10-test-result-reporter-pitch.md`
+
+### 9.6 Decisions log (revision-specific)
+
+29. **Rename to `ai-prepare-evidence`** (2026-04-10): Better alignment with `sb ai prepare` command name.
+30. **Move evidence to telemetry folder** (2026-04-10): No circular dependency risk confirmed. `telemetry → common` dependency direction preserved.
+31. **Rename `isStoryAIGenerated` → `isStoryCreatedByAISetup`** (2026-04-10): Emphasizes detection is specific to `sb ai prepare` flow, not any AI-generated story.
+32. **Remove `doctorRanSinceSetup`** (2026-04-10): Redundant with server-side telemetry. Implementation was broken.
+33. **Evidence from `doTelemetry` for dev/build** (2026-04-10): Fire evidence where story index is available. `undefined` for non-dev/build commands.
+34. **configDir comparison for cache scoping** (2026-04-10): Simple guard against cross-project records.
+35. **Separate `ai-prepare-story-scoring` event** (2026-04-10): Distinct from ghost-stories to preserve existing Metabase funnels.
+36. **30min CPU capacity check timeout** (2026-04-10): Increased from 10min for longer test suites.
+37. **Vitest test run capture parked** (2026-04-10): Existing `test-run` telemetry event already covers run detection. Reporter-based enrichment deferred to future pitch.

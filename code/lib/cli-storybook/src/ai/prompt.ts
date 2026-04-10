@@ -21,7 +21,10 @@ export function getDocsMarkdownUrl(
   return `https://storybook.js.org/docs${versionSegment}/${path}.md${query ? `?${query}` : ''}`;
 }
 
-export function getPrompts(projectInfo: ProjectInfo): { prompts: AiPrompt[]; traits: AiPrepareTraits } {
+export function getPrompts(projectInfo: ProjectInfo): {
+  prompts: AiPrompt[];
+  traits: AiPrepareTraits;
+} {
   const traits: AiPrepareTraits = {
     csfSyntax: projectInfo.hasCsfFactoryPreview ? 'factory-v1' : 'csf3-v1',
     setupGenericV1: 'v1',
@@ -293,7 +296,10 @@ function getProjectOverview(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function generateMarkdownOutput(projectInfo: ProjectInfo): { markdown: string; traits: AiPrepareTraits } {
+export function generateMarkdownOutput(projectInfo: ProjectInfo): {
+  markdown: string;
+  traits: AiPrepareTraits;
+} {
   const { prompts: aiPrompts, traits } = getPrompts(projectInfo);
 
   const sections: string[] = [];

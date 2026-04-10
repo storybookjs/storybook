@@ -45,7 +45,8 @@ export type EventType =
   | 'doctor'
   | 'share'
   | 'ghost-stories'
-  | 'ai-prepare';
+  | 'ai-prepare'
+  | 'ai-install-skills';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;

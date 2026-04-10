@@ -24,6 +24,7 @@ import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
+import { installAgentSkills } from '../../../create-storybook/src/install-agent-skills.ts';
 import { aiPrepare } from '../ai/index.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
@@ -326,6 +327,18 @@ aiCommand
     await withTelemetry('ai-prepare', { cliOptions: mergedOptions }, async () => {
       await aiPrepare(mergedOptions);
     }).catch(handleCommandFailure(mergedOptions.logfile));
+  });
+
+aiCommand
+  .command('install-skills')
+  .description(
+    'Install Storybook agent skills for AI coding agents (Claude, Cursor, Copilot, etc.)'
+  )
+  .action(async (_options, cmd) => {
+    const parentOptions = cmd.parent?.opts() ?? {};
+    await withTelemetry('ai-install-skills', { cliOptions: parentOptions }, async () => {
+      await installAgentSkills();
+    }).catch(handleCommandFailure(parentOptions.logfile));
   });
 
 // Show available subcommands when `storybook ai` is run without arguments

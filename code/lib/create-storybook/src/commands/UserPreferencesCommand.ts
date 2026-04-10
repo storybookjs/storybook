@@ -193,7 +193,7 @@ export class UserPreferencesCommand {
 
     return prompt.confirm({
       message: dedent`Would you like to improve your Storybook setup with AI?
-      We will provide you with a prompt that you can use with your LLM to fully set up Storybook with best practices, tailored to your project.`,
+      We will install Storybook skills for your AI coding agent (Claude, Cursor, Copilot, etc.) and provide you with a prompt to fully set up Storybook with best practices, tailored to your project.`,
     });
   }
 

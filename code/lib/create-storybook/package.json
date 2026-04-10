@@ -33,6 +33,7 @@
     "bin/**/*",
     "dist/**/*",
     "rendererAssets/**/*",
+    "skills/**/*",
     "templates/**/*",
     "README.md",
     "!src/**/*"

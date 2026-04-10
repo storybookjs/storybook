@@ -114,6 +114,12 @@ export async function doInitiate(options: CommandOptions): Promise<
     storybookCommand,
   });
 
+  // Install agent skills when an agent is detected or the user opted into AI
+  if (options.agent || selectedFeatures.has(Feature.AI)) {
+    const { installAgentSkills } = await import('./install-agent-skills.ts');
+    await installAgentSkills();
+  }
+
   if (selectedFeatures.has(Feature.AI)) {
     if (options.agent) {
       const { aiPrepare } = await import('../../cli-storybook/src/ai/index.ts');

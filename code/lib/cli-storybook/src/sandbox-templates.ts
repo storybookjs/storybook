@@ -532,10 +532,8 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
-    inDevelopment: true,
     modifications: {
       useCsfFactory: true,
-      // useCsfFactory: true,
       extraDependencies: [],
       mainConfig: {
         framework: '@storybook/tanstack-react',

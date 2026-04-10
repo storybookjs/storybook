@@ -46,7 +46,8 @@ export type EventType =
   | 'share'
   | 'ghost-stories'
   | 'ai-prepare'
-  | 'ai-setup-evidence';
+  | 'ai-prepare-evidence'
+  | 'ai-prepare-story-scoring';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;

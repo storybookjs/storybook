@@ -160,7 +160,6 @@ export const checklistData = {
           id: 'aiPrepare',
           label: 'Set up with AI',
           icon: WandIcon,
-          afterCompletion: 'unavailable',
           criteria: 'AI prepare command has been run',
           action: {
             label: 'Copy prompt',

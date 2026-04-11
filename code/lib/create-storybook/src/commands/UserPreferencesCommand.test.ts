@@ -1,7 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AddonVitestService, ProjectType, globalSettings } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
 import { PackageManagerName, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
@@ -10,7 +9,7 @@ import { Feature } from 'storybook/internal/types';
 import type { CommandOptions } from '../generators/types.ts';
 import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService.ts';
 import { TelemetryService } from '../services/TelemetryService.ts';
-import { UserPreferencesCommand } from './UserPreferencesCommand.ts';
+import { UserPreferencesCommand, executeUserPreferences } from './UserPreferencesCommand.ts';
 
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -23,15 +22,20 @@ interface CommandWithPrivates {
     trackNewUserCheck: ReturnType<typeof vi.fn>;
     trackInstallType: ReturnType<typeof vi.fn>;
   };
-  featureService: {
-    validateTestFeatureCompatibility: ReturnType<typeof vi.fn>;
-  };
 }
 
 describe('UserPreferencesCommand', () => {
   let command: UserPreferencesCommand;
-  const mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
   const originalIsTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+
+  const defaultExecuteOptions = {
+    framework: null as null,
+    builder: 'vite' as SupportedBuilder,
+    renderer: 'react' as SupportedRenderer,
+    projectType: ProjectType.REACT,
+    isTestFeatureAvailable: true,
+    isAiPrepareAvailable: false,
+  };
 
   afterAll(() => {
     if (originalIsTTYDescriptor) {
@@ -51,7 +55,7 @@ describe('UserPreferencesCommand', () => {
       disableTelemetry: true,
     };
 
-    command = new UserPreferencesCommand(commandOptions, mockPackageManager);
+    command = new UserPreferencesCommand(commandOptions);
 
     // Mock AddonVitestService
     const mockAddonVitestService = vi.fn().mockImplementation(() => ({
@@ -90,13 +94,8 @@ describe('UserPreferencesCommand', () => {
       trackInstallType: vi.fn(),
     };
 
-    const mockFeatureService = {
-      validateTestFeatureCompatibility: vi.fn().mockResolvedValue({ compatible: true }),
-    };
-
     // Inject mocked services
     (command as unknown as CommandWithPrivates).telemetryService = mockTelemetryService;
-    (command as unknown as CommandWithPrivates).featureService = mockFeatureService;
 
     // Mock logger and prompt
     vi.mocked(logger.intro).mockImplementation(() => {});
@@ -122,27 +121,14 @@ describe('UserPreferencesCommand', () => {
   describe('execute', () => {
     it('should return recommended config for new users in non-interactive mode', async () => {
       const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isTestFeatureAvailable: true,
       });
 
       expect(result.newUser).toBe(true);
       expect(result.selectedFeatures).toContain('docs');
       expect(result.selectedFeatures).toContain('test');
       expect(result.selectedFeatures).toContain('onboarding');
-    });
-
-    it('should include AI feature by default in non-interactive mode', async () => {
-      const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
-      });
-
-      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
     });
 
     it('should prompt for new user in interactive mode', async () => {
@@ -153,14 +139,8 @@ describe('UserPreferencesCommand', () => {
       });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
-      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup
 
-      const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
-      });
+      const result = await command.execute(defaultExecuteOptions);
 
       expect(prompt.select).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -181,97 +161,53 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
-      vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // no AI setup
 
-      const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
-      });
-
-      expect(prompt.select).toHaveBeenCalledTimes(2);
-      expect(result.newUser).toBe(false);
-      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
-      expect(telemetryService.trackInstallType).toHaveBeenCalledWith('light');
-    });
-
-    it('should not include test feature in minimal install', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
-
-      vi.mocked(prompt.select)
-        .mockResolvedValueOnce(false) // not new user
-        .mockResolvedValueOnce('light'); // minimal install
-      vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // no AI setup
-
-      const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
-      });
+      const result = await command.execute(defaultExecuteOptions);
 
       expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
       expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
       expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(false);
     });
 
-    it('should validate test feature compatibility in interactive mode', async () => {
+    it('should remove test feature if isTestFeatureAvailable is false', async () => {
       Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         configurable: true,
       });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
-      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup
-      const featureService = (command as unknown as CommandWithPrivates).featureService;
-      vi.mocked(featureService.validateTestFeatureCompatibility).mockResolvedValue({
-        compatible: true,
-      });
-
-      await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
-      });
-
-      expect(featureService.validateTestFeatureCompatibility).toHaveBeenCalledWith(
-        null,
-        'vite',
-        process.cwd()
-      );
-    });
-
-    it('should remove test feature if user chooses to continue without it', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
-
-      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
-      const featureService = (command as unknown as CommandWithPrivates).featureService;
-      vi.mocked(featureService.validateTestFeatureCompatibility).mockResolvedValue({
-        compatible: false,
-        reasons: ['React version is too old'],
-      });
-      vi.mocked(prompt.confirm)
-        .mockResolvedValueOnce(true) // continue without test
-        .mockResolvedValueOnce(true); // AI setup
 
       const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isTestFeatureAvailable: false,
       });
 
       expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
       expect(result.selectedFeatures.has(Feature.DOCS)).toBe(true);
       expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
+    });
+  });
+
+  describe('isTestFeatureAvailable option', () => {
+    it('should include test feature when isTestFeatureAvailable=true in recommended install', async () => {
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        isTestFeatureAvailable: true,
+      });
+
+      expect(result.selectedFeatures.has(Feature.TEST)).toBe(true);
+    });
+
+    it('should NOT include test feature when isTestFeatureAvailable=false in recommended install', async () => {
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        isTestFeatureAvailable: false,
+      });
+
+      expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
+      // Other features should still be present
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(true);
+      expect(result.selectedFeatures.has(Feature.A11Y)).toBe(true);
     });
   });
 
@@ -286,10 +222,8 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
 
       const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
       });
 
       expect(prompt.confirm).toHaveBeenCalledWith(
@@ -312,10 +246,8 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // AI setup: no
 
       const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
@@ -328,10 +260,8 @@ describe('UserPreferencesCommand', () => {
       });
 
       const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
@@ -349,29 +279,24 @@ describe('UserPreferencesCommand', () => {
         disableTelemetry: true,
         yes: true,
       };
-      const yesCommand = new UserPreferencesCommand(commandOptions, mockPackageManager);
+      const yesCommand = new UserPreferencesCommand(commandOptions);
 
       // Inject mocked services
       (yesCommand as unknown as CommandWithPrivates).telemetryService = {
         trackNewUserCheck: vi.fn(),
         trackInstallType: vi.fn(),
       };
-      (yesCommand as unknown as CommandWithPrivates).featureService = {
-        validateTestFeatureCompatibility: vi.fn().mockResolvedValue({ compatible: true }),
-      };
 
       const result = await yesCommand.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
     });
 
-    it('should not prompt for AI setup when renderer is not react', async () => {
+    it('should not prompt for AI setup when isAiPrepareAvailable is false', async () => {
       Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         configurable: true,
@@ -380,29 +305,8 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
       const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'vue3' as SupportedRenderer,
-        projectType: ProjectType.REACT,
-      });
-
-      expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
-    });
-
-    it('should not prompt for AI setup when builder is not vite', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
-
-      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
-
-      const result = await command.execute({
-        framework: null,
-        builder: 'webpack5' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: false,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
@@ -421,10 +325,8 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
 
       const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
@@ -445,15 +347,31 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // AI setup: no
 
       const result = await command.execute({
-        framework: null,
-        builder: 'vite' as SupportedBuilder,
-        renderer: 'react' as SupportedRenderer,
-        projectType: ProjectType.REACT,
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
       expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
       expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+    });
+  });
+
+  describe('executeUserPreferences helper', () => {
+    it('should return a valid result', async () => {
+      const commandOptions: CommandOptions = {
+        packageManager: PackageManagerName.NPM,
+        disableTelemetry: true,
+      };
+
+      const result = await executeUserPreferences({
+        options: commandOptions,
+        ...defaultExecuteOptions,
+      });
+
+      // Should return a valid result
+      expect(result.selectedFeatures).toBeDefined();
+      expect(result.newUser).toBeDefined();
     });
   });
 });

@@ -22,7 +22,11 @@ type ExecuteFinalizationParams = {
  * - Show next steps
  */
 export class FinalizationCommand {
-  constructor(private logfile: string | boolean | undefined) {}
+  constructor(
+    private logfile: string | boolean | undefined,
+    private agent: boolean,
+    private showAiInstructions: boolean
+  ) {}
   /** Execute finalization steps */
   async execute({ storybookCommand }: ExecuteFinalizationParams): Promise<void> {
     // Update .gitignore
@@ -76,26 +80,46 @@ export class FinalizationCommand {
 
   /** Print success message with feature summary */
   private printSuccessMessage(storybookCommand?: string | null): void {
-    logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
+    if (this.agent) {
+      logger.step(
+        CLI_COLORS.storybook(
+          dedent`Storybook is installed but is not entirely set up yet.
+          To finish setting up, now run \`npx storybook ai prepare\` and follow its instructions precisely.`
+        )
+      );
+    } else {
+      logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
+    }
     this.printNextSteps(storybookCommand);
   }
 
   private printNextSteps(storybookCommand?: string | null): void {
     if (storybookCommand) {
-      logger.log(
-        `To run Storybook manually, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`
-      );
+      logger.log(`To run Storybook, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`);
     }
 
     logger.log(dedent`
       Want to learn more about Storybook? ${CLI_COLORS.cta('https://storybook.js.org/')}
       Having trouble or want to chat? ${CLI_COLORS.cta('https://discord.gg/storybook/')}
     `);
+
+    if (this.showAiInstructions) {
+      logger.step(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
+
+        ${CLI_COLORS.storybook(`Run \`npx storybook ai prepare\` and follow its instructions precisely.`)}
+      `);
+    }
   }
 }
 export const executeFinalization = ({
+  agent,
   logfile,
+  showAiInstructions,
   ...params
-}: ExecuteFinalizationParams & { logfile: string | boolean | undefined }) => {
-  return new FinalizationCommand(logfile).execute(params);
+}: ExecuteFinalizationParams & {
+  agent: boolean;
+  showAiInstructions: boolean;
+  logfile: string | boolean | undefined;
+}) => {
+  return new FinalizationCommand(logfile, agent, showAiInstructions).execute(params);
 };

@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 
 import { getBuilderOptions, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { mapStaticDir } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
 
 import type {
@@ -34,6 +35,36 @@ const configEnvBuild: ConfigEnv = {
   isSsrBuild: false,
 };
 
+const resolvePublicDir = (projectRoot: string, publicDir: ViteConfig['publicDir']) => {
+  if (publicDir === false) {
+    return undefined;
+  }
+
+  return resolve(projectRoot, publicDir ?? 'public');
+};
+
+const shouldDisableVitePublicDir = async (
+  options: Options,
+  projectRoot: string,
+  publicDir: ViteConfig['publicDir']
+) => {
+  const resolvedPublicDir = resolvePublicDir(projectRoot, publicDir);
+
+  if (!resolvedPublicDir) {
+    return false;
+  }
+
+  const staticDirs = (await options.presets.apply('staticDirs', [], options)) ?? [];
+
+  return staticDirs.some((staticDir) => {
+    try {
+      return mapStaticDir(staticDir, options.configDir).staticPath === resolvedPublicDir;
+    } catch {
+      return false;
+    }
+  });
+};
+
 // Vite config that is common to development and production mode
 export async function commonConfig(
   options: Options,
@@ -52,6 +83,10 @@ export async function commonConfig(
   const { config: { build: buildProperty = undefined, ...userConfig } = {} } =
     (await loadConfigFromFile(configEnv, viteConfigPath, projectRoot)) ?? {};
 
+  const disableVitePublicDir =
+    _type === 'build' &&
+    (await shouldDisableVitePublicDir(options, projectRoot, userConfig.publicDir));
+
   // Storybook's Vite config is assembled from self-contained plugins.
   // The config plugin handles base settings (root, cacheDir, resolve conditions, etc.),
   // while other plugins handle entry points, docgen, and runtime globals.
@@ -67,6 +102,7 @@ export async function commonConfig(
       ? { cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey) }
       : {}),
     // Pass build.target option from user's vite config
+    ...(disableVitePublicDir ? { publicDir: false } : {}),
     build: {
       target: buildProperty?.target,
     },

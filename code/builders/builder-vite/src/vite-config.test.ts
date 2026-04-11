@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 import type { Options, Presets } from 'storybook/internal/types';
@@ -36,6 +40,47 @@ const dummyOptions: Options = {
   presetsList: [],
 };
 
+const createOptions = ({
+  configDir = '',
+  staticDirs = [],
+}: {
+  configDir?: string;
+  staticDirs?: unknown[];
+} = {}) =>
+  ({
+    ...dummyOptions,
+    configDir,
+    presets: {
+      apply: async (key: string) =>
+        (
+          ({
+            framework: {
+              name: '',
+            },
+            addons: [],
+            core: {
+              builder: {},
+            },
+            options: {},
+            staticDirs,
+          }) as Record<string, unknown>
+        )[key],
+    } as Presets,
+  }) satisfies Options;
+
+const createTempProject = () => {
+  const projectRoot = mkdtempSync(join(tmpdir(), 'storybook-builder-vite-'));
+  const configDir = join(projectRoot, '.storybook');
+
+  mkdirSync(configDir, { recursive: true });
+
+  return { projectRoot, configDir };
+};
+
+afterEach(() => {
+  loadConfigFromFileMock.mockReset();
+});
+
 describe('commonConfig', () => {
   it('should set configFile to false and include plugins', async () => {
     loadConfigFromFileMock.mockReturnValueOnce(
@@ -48,6 +93,120 @@ describe('commonConfig', () => {
     const config = await commonConfig(dummyOptions, 'development');
     expect(config.configFile).toBe(false);
     expect(config.plugins).toBeDefined();
+  });
+
+  it('disables Vite publicDir for builds when staticDirs already includes the public directory', async () => {
+    const { projectRoot, configDir } = createTempProject();
+    const publicDir = join(projectRoot, 'public');
+    mkdirSync(publicDir, { recursive: true });
+
+    loadConfigFromFileMock.mockReturnValueOnce(
+      Promise.resolve({
+        config: {},
+        path: '',
+        dependencies: [],
+      })
+    );
+
+    try {
+      const config = await commonConfig(
+        createOptions({
+          configDir,
+          staticDirs: [{ from: '../public', to: '/foo' }],
+        }),
+        'build'
+      );
+
+      expect(config.publicDir).toBe(false);
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps Vite publicDir enabled during development even when staticDirs includes the public directory', async () => {
+    const { projectRoot, configDir } = createTempProject();
+    const publicDir = join(projectRoot, 'public');
+    mkdirSync(publicDir, { recursive: true });
+
+    loadConfigFromFileMock.mockReturnValueOnce(
+      Promise.resolve({
+        config: {},
+        path: '',
+        dependencies: [],
+      })
+    );
+
+    try {
+      const config = await commonConfig(
+        createOptions({
+          configDir,
+          staticDirs: [{ from: '../public', to: '/foo' }],
+        }),
+        'development'
+      );
+
+      expect(config.publicDir).toBeUndefined();
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('disables a custom Vite publicDir when staticDirs already includes the same directory', async () => {
+    const { projectRoot, configDir } = createTempProject();
+    const assetsDir = join(projectRoot, 'assets');
+    mkdirSync(assetsDir, { recursive: true });
+
+    loadConfigFromFileMock.mockReturnValueOnce(
+      Promise.resolve({
+        config: { publicDir: 'assets' },
+        path: '',
+        dependencies: [],
+      })
+    );
+
+    try {
+      const config = await commonConfig(
+        createOptions({
+          configDir,
+          staticDirs: [{ from: '../assets', to: '/foo' }],
+        }),
+        'build'
+      );
+
+      expect(config.publicDir).toBe(false);
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps Vite publicDir enabled for builds when staticDirs points somewhere else', async () => {
+    const { projectRoot, configDir } = createTempProject();
+    const publicDir = join(projectRoot, 'public');
+    const assetsDir = join(projectRoot, 'assets');
+    mkdirSync(publicDir, { recursive: true });
+    mkdirSync(assetsDir, { recursive: true });
+
+    loadConfigFromFileMock.mockReturnValueOnce(
+      Promise.resolve({
+        config: {},
+        path: '',
+        dependencies: [],
+      })
+    );
+
+    try {
+      const config = await commonConfig(
+        createOptions({
+          configDir,
+          staticDirs: [{ from: '../assets', to: '/foo' }],
+        }),
+        'build'
+      );
+
+      expect(config.publicDir).toBeUndefined();
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true });
+    }
   });
 });
 

@@ -418,6 +418,54 @@ describe('story extraction', () => {
       }
     `);
   });
+
+  it('preserves custom relative importPath values from indexers', async () => {
+    const relativePath = './src/A.stories.js';
+    const absolutePath = join(options.workingDir, relativePath);
+    const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
+
+    const generator = new StoryIndexGenerator([specifier], {
+      ...options,
+      indexers: [
+        {
+          test: /\.stories\.(m?js|ts)x?$/,
+          createIndex: async () => [
+            {
+              exportName: 'StoryOne',
+              importPath: './src/generated/VirtualA.stories.ts',
+              type: 'story',
+              subtype: 'story',
+            },
+          ],
+        },
+      ],
+    });
+    const result = await generator.extractStories(specifier, absolutePath);
+
+    expect(result).toMatchInlineSnapshot(`
+			{
+			  "dependents": [],
+			  "entries": [
+			    {
+			      "componentPath": undefined,
+			      "exportName": "StoryOne",
+			      "extra": {
+			        "metaId": undefined,
+			        "stats": {},
+			      },
+			      "id": "a--story-one",
+			      "importPath": "./src/generated/VirtualA.stories.ts",
+			      "name": "Story One",
+			      "subtype": "story",
+			      "tags": [],
+			      "title": "A",
+			      "type": "story",
+			    },
+			  ],
+			  "type": "stories",
+			}
+		`);
+  });
 });
 describe('docs entries from story extraction', () => {
   it(`adds docs entry when autodocs is "tag" and an entry has the "${Tag.AUTODOCS}" tag`, async () => {

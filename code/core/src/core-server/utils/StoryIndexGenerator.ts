@@ -413,7 +413,6 @@ export class StoryIndexGenerator {
     const indexer = this.options.indexers.find((ind) => ind.test.exec(absolutePath));
 
     invariant(indexer, `No matching indexer found for ${absolutePath}`);
-
     const indexInputs = (await indexer.createIndex(absolutePath, {
       makeTitle: defaultMakeTitle,
     })) as StoryIndexInput[]; // we don't actually support DocsIndexInputs at runtime, although types say we do
@@ -437,6 +436,9 @@ export class StoryIndexGenerator {
       }
       if (path.startsWith('virtual:')) {
         return path;
+      }
+      if (/^\.{1,2}[\\/]/.test(path)) {
+        return slash(normalizeStoryPath(path));
       }
       return slash(normalizeStoryPath(relative(this.options.workingDir, path)));
     };

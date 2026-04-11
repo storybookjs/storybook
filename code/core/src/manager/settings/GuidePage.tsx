@@ -39,9 +39,10 @@ const Intro = styled.div(({ theme }) => ({
 
 const AiCtaCard = styled.div(({ theme }) => ({
   display: 'flex',
-  flexDirection: 'column',
-  gap: 12,
-  padding: 20,
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  padding: 15,
   border: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
   borderRadius: 8,
   background: theme.background.content,
@@ -49,14 +50,10 @@ const AiCtaCard = styled.div(({ theme }) => ({
 
 const AiCtaHeading = styled.h2(({ theme }) => ({
   margin: 0,
-  fontSize: theme.typography.size.s3,
-  fontWeight: theme.typography.weight.bold,
+  fontSize: theme.typography.size.s2,
+  fontWeight: theme.typography.weight.regular,
+  textWrap: 'pretty',
 }));
-
-const AiCtaBody = styled.p({
-  margin: 0,
-  lineHeight: 1.4,
-});
 
 const AiCtaActions = styled.div({
   display: 'flex',
@@ -81,17 +78,13 @@ export const GuidePage = () => {
       {showAiCta && (
         <AiCtaCard>
           <AiCtaHeading>Want to have your AI agent set up Storybook automatically?</AiCtaHeading>
-          <AiCtaBody>
-            Run a single command to generate a tailored prompt for your AI coding assistant. It will
-            write stories, configure decorators, and verify everything works.
-          </AiCtaBody>
           <AiCtaActions>
-            <Button variant="ghost" size="small" onClick={() => checklist.skip('aiPrepare')}>
+            <Button variant="ghost" size="medium" onClick={() => checklist.skip('aiPrepare')}>
               Skip
             </Button>
             <Button
               variant="solid"
-              size="small"
+              size="medium"
               onClick={() => {
                 // eslint-disable-next-line compat/compat
                 navigator.clipboard?.writeText(AI_PREPARE_PROMPT);

@@ -6,13 +6,7 @@ import { global } from '@storybook/global';
 
 import { styled } from 'storybook/theming';
 
-import {
-  AI_CTA_BODY,
-  AI_CTA_COPY_BUTTON_LABEL,
-  AI_CTA_HEADING,
-  AI_CTA_SKIP_BUTTON_LABEL,
-  AI_PREPARE_PROMPT,
-} from '../../shared/checklist-store/prompts.ts';
+import { AI_CTA_BODY, AI_PREPARE_PROMPT } from '../../shared/constants/ai-prompts.ts';
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
 import { Checklist } from './Checklist/Checklist.tsx';
 
@@ -86,11 +80,14 @@ export const GuidePage = () => {
       </Intro>
       {showAiCta && (
         <AiCtaCard>
-          <AiCtaHeading>{AI_CTA_HEADING}</AiCtaHeading>
-          <AiCtaBody>{AI_CTA_BODY}</AiCtaBody>
+          <AiCtaHeading>Want to have your AI agent set up Storybook automatically?</AiCtaHeading>
+          <AiCtaBody>
+            Run a single command to generate a tailored prompt for your AI coding assistant. It will
+            write stories, configure decorators, and verify everything works.
+          </AiCtaBody>
           <AiCtaActions>
             <Button variant="ghost" size="small" onClick={() => checklist.skip('aiPrepare')}>
-              {AI_CTA_SKIP_BUTTON_LABEL}
+              Skip
             </Button>
             <Button
               variant="solid"
@@ -100,7 +97,7 @@ export const GuidePage = () => {
                 navigator.clipboard?.writeText(AI_PREPARE_PROMPT);
               }}
             >
-              {AI_CTA_COPY_BUTTON_LABEL}
+              Copy prompt
             </Button>
           </AiCtaActions>
         </AiCtaCard>

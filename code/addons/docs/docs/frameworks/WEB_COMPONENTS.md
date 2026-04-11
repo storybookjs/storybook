@@ -54,6 +54,22 @@ To generate this file with Stencil, add `docs-vscode` to outputTargets in `stenc
 },
 ```
 
+If you are using Stencil with `@storybook/web-components-vite` and register components with `defineCustomElements()` from the generated loader, enable Stencil's import injection to make static Storybook builds include the lazy-loaded component entry files.
+
+For Stencil 4.26 and later:
+
+```ts
+import type { Config } from '@stencil/core';
+
+export const config: Config = {
+  extras: {
+    enableImportInjection: true,
+  },
+};
+```
+
+For older Stencil versions, use `experimentalImportInjection: true` instead.
+
 The file looks something like this:
 
 ```json

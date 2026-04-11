@@ -233,7 +233,10 @@ export const Checklist = ({
   accept,
   skip,
   reset,
-}: Pick<ReturnType<typeof useChecklist>, 'availableItems' | 'accept' | 'skip' | 'reset'>) => {
+  forceCollapsed = false,
+}: Pick<ReturnType<typeof useChecklist>, 'availableItems' | 'accept' | 'skip' | 'reset'> & {
+  forceCollapsed?: boolean;
+}) => {
   const api = useStorybookApi();
   const locationHash = useLocationHash();
 
@@ -269,7 +272,8 @@ export const Checklist = ({
   return (
     <Sections>
       {sections.map(({ id, title, items, progress }) => {
-        const collapsed = progress === 100 && items.every((item) => item.id !== locationHash);
+        const collapsed =
+          forceCollapsed || (progress === 100 && items.every((item) => item.id !== locationHash));
 
         return (
           <li key={id}>

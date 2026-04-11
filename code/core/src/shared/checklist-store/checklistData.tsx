@@ -18,6 +18,8 @@ import {
 import { type API, Tag, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
+import { WandIcon } from '@storybook/icons';
+
 import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants.ts';
 import {
   ADDON_ONBOARDING_CHANNEL,
@@ -32,6 +34,7 @@ import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared.ts';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide.tsx';
 import { LocationMonitor } from '../../manager/hooks/useLocation.ts';
 import type { initialState } from './checklistData.state.ts';
+import { AI_CHECKLIST_LABEL, AI_PREPARE_PROMPT, AI_SIDEBAR_ACTION_LABEL } from './prompts.ts';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -153,6 +156,19 @@ export const checklistData = {
       id: 'basics',
       title: 'Storybook basics',
       items: [
+        {
+          id: 'aiPrepare',
+          label: AI_CHECKLIST_LABEL,
+          icon: WandIcon,
+          afterCompletion: 'unavailable',
+          criteria: 'AI prepare command has been run',
+          action: {
+            label: AI_SIDEBAR_ACTION_LABEL,
+            onClick: ({ api }) => {
+              navigator.clipboard?.writeText(AI_PREPARE_PROMPT);
+            },
+          },
+        },
         {
           id: 'guidedTour',
           label: 'Take the guided tour',

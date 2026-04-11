@@ -164,7 +164,8 @@ export const checklistData = {
           criteria: 'AI prepare command has been run',
           action: {
             label: AI_SIDEBAR_ACTION_LABEL,
-            onClick: ({ api }) => {
+            onClick: () => {
+              // eslint-disable-next-line compat/compat
               navigator.clipboard?.writeText(AI_PREPARE_PROMPT);
             },
           },

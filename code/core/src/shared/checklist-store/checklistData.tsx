@@ -66,6 +66,9 @@ export interface ChecklistData {
       /** Display name. Keep it short and actionable (with a verb). */
       label: string;
 
+      /** Optional custom icon component to display instead of the default status icon. */
+      icon?: React.ComponentType;
+
       /** Description of the criteria that must be met to complete the item. */
       criteria: string;
 

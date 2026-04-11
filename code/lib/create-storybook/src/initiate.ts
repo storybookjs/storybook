@@ -152,6 +152,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     isAiPrepareAvailable,
     showAiInstructions: selectedFeatures.has(Feature.AI),
     logfile: options.logfile,
+    storybookCommand,
   });
 
   // Step 9: Track telemetry

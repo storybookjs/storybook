@@ -26,7 +26,7 @@ vi.mock('./event-cache.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./event-cache.ts')>();
   return {
     ...actual,
-    getAiSetupPending: vi.fn(() => undefined),
+    getAiPreparePending: vi.fn(() => undefined),
   };
 });
 
@@ -41,12 +41,10 @@ vi.mock('./index.ts', async (importOriginal) => {
 // Import mocked modules for spy access
 import { findConfigFile } from 'storybook/internal/common';
 import { readFile } from 'node:fs/promises';
-import {
-  detectAgent,
-  getAiPreparePending,
-  SESSION_TIMEOUT,
-  telemetry,
-} from 'storybook/internal/telemetry';
+import { detectAgent } from './detect-agent.ts';
+import { getAiPreparePending } from './event-cache.ts';
+import { SESSION_TIMEOUT } from './session-id.ts';
+import { telemetry } from './index.ts';
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>();
@@ -79,6 +77,7 @@ describe('isStoryCreatedByAIPrepare', () => {
   it('returns true for stories with the ai-generated tag', () => {
     expect(
       isStoryCreatedByAIPrepare({
+        type: 'story',
         title: 'Foo',
         tags: ['ai-generated', 'dev', 'play-fn'],
       } as IndexEntry)
@@ -86,7 +85,7 @@ describe('isStoryCreatedByAIPrepare', () => {
   });
 
   it('returns false for regular stories', () => {
-    expect(isStoryCreatedByAIPrepare({ title: 'Foo' } as IndexEntry)).toBe(false);
+    expect(isStoryCreatedByAIPrepare({ type: 'story', title: 'Foo' } as IndexEntry)).toBe(false);
   });
 });
 
@@ -96,6 +95,7 @@ describe('countAiAuthoredStories', () => {
       'ai-1': {
         type: 'story',
         title: 'AI Generated/Button',
+        tags: ['ai-generated'],
         id: 'ai-1',
         name: 'Default',
         importPath: './ai.stories.ts',
@@ -103,6 +103,7 @@ describe('countAiAuthoredStories', () => {
       'ai-2': {
         type: 'story',
         title: 'AI Generated/Card',
+        tags: ['ai-generated'],
         id: 'ai-2',
         name: 'Default',
         importPath: './ai2.stories.ts',
@@ -117,6 +118,7 @@ describe('countAiAuthoredStories', () => {
       docs: {
         type: 'docs',
         title: 'AI Generated/Docs',
+        tags: ['ai-generated'],
         id: 'docs',
         name: 'Docs',
         importPath: './docs.mdx',
@@ -280,6 +282,7 @@ describe('collectAiPrepareEvidence', () => {
       'ai-1': {
         type: 'story',
         title: 'AI Generated/Button',
+        tags: ['ai-generated'],
         id: 'ai-1',
         name: 'Default',
         importPath: './ai.stories.ts',

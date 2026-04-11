@@ -13,7 +13,7 @@ import type { CoreConfig, Options } from 'storybook/internal/types';
 import { logger } from 'storybook/internal/node-logger';
 
 import { runGhostStories } from '../utils/ghost-stories/run-story-tests.ts';
-import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { waitForIdleVitest } from '../utils/wait-for-idle-vitest.ts';
 
 export function initAIAnalyticsChannel(

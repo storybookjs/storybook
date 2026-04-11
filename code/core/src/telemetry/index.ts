@@ -16,24 +16,21 @@ export * from './sanitize.ts';
 
 export * from './error-collector.ts';
 
+export * from './ai-prepare-utils.ts';
+
 export {
   getPrecedingUpgrade,
   getLastEvents,
   type CacheEntry,
-  getAiSetupPending,
+  getAiPreparePending,
+  type AiPreparePendingRecord,
 } from './event-cache.ts';
-
-export {
-  AI_STORY_TITLE_PREFIX,
-  collectAiPrepareEvidence,
-  countAiAuthoredStories,
-  isStoryCreatedByAISetup,
-  type AiSetupPendingRecord,
-} from './ai-prepare-evidence.ts';
 
 export { getSessionId, SESSION_TIMEOUT } from './session-id.ts';
 
 export { addToGlobalContext } from './telemetry.ts';
+
+export { detectAgent } from './detect-agent.ts';
 
 /** Is this story part of the CLI generated examples, including user-created stories in those files */
 export const isExampleStoryId = (storyId: string) =>
@@ -67,8 +64,6 @@ export const telemetry = async (
     }
   } finally {
     const { error } = payload;
-    // make sure to anonymise possible paths from error messages
-
     // make sure to anonymise possible paths from error messages
     if (error) {
       payload.error = sanitizeError(error);

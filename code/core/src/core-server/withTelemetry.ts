@@ -1,8 +1,8 @@
 import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
-  ErrorCollector,
   collectAiPrepareEvidence,
+  ErrorCollector,
   getPrecedingUpgrade,
   oneWayHash,
   telemetry,

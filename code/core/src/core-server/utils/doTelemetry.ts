@@ -41,7 +41,9 @@ export async function doTelemetry(
       return;
     }
 
-    // Fire-and-forget: collect ai-prepare evidence with story index
+    // sb ai commands trigger side effects performed by agent harnesses, which can't be observed
+    // directly. This is the entry point for collecting evidence about those side effects and
+    // recording them in telemetry.
     if (indexAndStats) {
       collectAiPrepareEvidence('dev', options.configDir, indexAndStats.storyIndex);
     }

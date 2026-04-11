@@ -4,24 +4,22 @@ import { resolve } from 'node:path';
 import type { PackageManagerName } from 'storybook/internal/common';
 import { cache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { getSessionId, telemetry } from 'storybook/internal/telemetry';
+import {
+  getSessionId,
+  snapshotPreviewFile,
+  telemetry,
+  type AiPreparePendingRecord,
+} from 'storybook/internal/telemetry';
 import { SupportedLanguage } from 'storybook/internal/types';
 
 import { ProjectTypeService } from '../../../create-storybook/src/services/ProjectTypeService.ts';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { generateMarkdownOutput } from './prompt.ts';
-import { snapshotPreviewFile } from './setup-requirements.ts';
-import type { AiSetupPendingRecord } from './setup-requirements.ts';
-import type { ProjectInfo, AiPrepareOptions, AiPrepareTraits } from './types.ts';
+import type { ProjectInfo, AiPrepareOptions } from './types.ts';
 
 export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
-  const {
-    configDir: userConfigDir,
-    packageManager: packageManagerName,
-    output,
-    frontmatter,
-  } = options;
+  const { configDir: userConfigDir, packageManager: packageManagerName, output } = options;
 
   let projectInfo: ProjectInfo;
 
@@ -68,22 +66,6 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
     return;
   }
 
-  // Fire start event with project context
-  await telemetry('ai-prepare', {
-    cliOptions: {
-      output: output ? 'file' : undefined,
-      configDir: projectInfo.configDir,
-      packageManager: packageManagerName,
-    },
-    project: {
-      framework: projectInfo.framework,
-      renderer: projectInfo.rendererPackage,
-      builder: projectInfo.builderPackage,
-      language: projectInfo.language,
-      hasCsfFactoryPreview: projectInfo.hasCsfFactoryPreview,
-    },
-  });
-
   if (
     projectInfo.rendererPackage !== '@storybook/react' &&
     projectInfo.builderPackage !== '@storybook/builder-vite'
@@ -99,7 +81,21 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
 
   const result = generateMarkdownOutput(projectInfo);
   const markdownOutput = result.markdown;
-  const traits = result.traits;
+
+  await telemetry('ai-prepare', {
+    cliOptions: {
+      output: output ? 'file' : undefined,
+      configDir: projectInfo.configDir,
+      packageManager: packageManagerName,
+    },
+    project: {
+      framework: projectInfo.framework,
+      renderer: projectInfo.rendererPackage,
+      builder: projectInfo.builderPackage,
+      language: projectInfo.language,
+      hasCsfFactoryPreview: projectInfo.hasCsfFactoryPreview,
+    },
+  });
 
   // Snapshot the preview file baseline and cache the pending setup record.
   // Subsequent CLI entry points (dev, build, doctor, etc.) read this to
@@ -107,47 +103,21 @@ export async function aiPrepare(options: AiPrepareOptions): Promise<void> {
   const resolvedConfigDir = resolve(projectInfo.configDir);
   const previewSnapshot = await snapshotPreviewFile(resolvedConfigDir);
   const sessionId = await getSessionId();
-  const pendingRecord: AiSetupPendingRecord = {
+  const pendingRecord: AiPreparePendingRecord = {
     timestamp: Date.now(),
     sessionId,
     configDir: resolvedConfigDir,
-    previewFile: previewSnapshot.previewFile,
-    previewHash: previewSnapshot.previewHash,
-    traits,
+    ...previewSnapshot,
   };
-  await cache.set('ai-setup-pending', pendingRecord);
-
-  let finalOutput = markdownOutput;
-  if (frontmatter && output) {
-    const frontmatterBlock = buildFrontmatter(projectInfo, traits);
-    finalOutput = frontmatterBlock + markdownOutput;
-  }
+  await cache.set('ai-prepare-pending', pendingRecord);
 
   if (output) {
     const outputPath = resolve(output);
-    await writeFile(outputPath, finalOutput, 'utf-8');
+    await writeFile(outputPath, markdownOutput, 'utf-8');
     logger.log(`Prompt written to ${outputPath}`);
   } else {
-    logger.log(finalOutput);
+    logger.log(markdownOutput);
   }
-}
-
-function buildFrontmatter(projectInfo: ProjectInfo, traits: AiPrepareTraits): string {
-  const lines = [
-    '---',
-    `storybook: ${projectInfo.storybookVersion || 'unknown'}`,
-    `framework: '${projectInfo.framework || 'unknown'}'`,
-    `renderer: '${projectInfo.rendererPackage || 'unknown'}'`,
-    `builder: '${projectInfo.builderPackage || 'unknown'}'`,
-    `language: ${projectInfo.language}`,
-    `hasCsfFactoryPreview: ${projectInfo.hasCsfFactoryPreview}`,
-    'traits:',
-  ];
-  for (const [key, value] of Object.entries(traits)) {
-    lines.push(`  ${key}: ${value}`);
-  }
-  lines.push('---', '');
-  return lines.join('\n');
 }
 
 function parseMajorVersion(version: string): number | undefined {

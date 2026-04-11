@@ -574,6 +574,8 @@ export default {
     'withReset',
   ],
   'storybook/internal/core-events': [
+    'AI_PREPARE_ANALYTICS_REQUEST',
+    'AI_PREPARE_ANALYTICS_RESPONSE',
     'ARGTYPES_INFO_REQUEST',
     'ARGTYPES_INFO_RESPONSE',
     'CHANNEL_CREATED',

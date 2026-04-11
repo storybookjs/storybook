@@ -1,51 +1,50 @@
+import { getAiPreparePending } from './event-cache.ts';
+import { SESSION_TIMEOUT } from './session-id.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import { findConfigFile } from 'storybook/internal/common';
-import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
-
 import { detectAgent } from './detect-agent.ts';
-import { getAiSetupPending } from './event-cache.ts';
 import { telemetry } from './index.ts';
-import { SESSION_TIMEOUT } from './session-id.ts';
 import type { EventType } from './types.ts';
-
-/**
- * Title prefix the prompt instructs agents to use for generated stories.
- * When migrating to a tag-based approach, update isStoryCreatedByAISetup() below.
- */
-export const AI_STORY_TITLE_PREFIX = 'AI Generated/';
-
-/**
- * Record cached at ai-prepare time.
- * Read by subsequent CLI entry points for evidence collection.
- * Canonical definition — imported by event-cache.ts and setup-requirements.ts.
- */
-export interface AiSetupPendingRecord {
-  timestamp: number;
-  sessionId: string;
-  configDir: string;
-  previewFile: string | null;
-  previewHash: string | null;
-  traits: Record<string, string>;
-}
+import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
 /**
  * Determines whether a story index entry was authored by the `sb ai prepare` flow.
  * Currently checks title prefix. When we migrate to a tag-based approach,
  * swap this to check for the tag instead — this is the single swap point.
  */
-export function isStoryCreatedByAISetup(entry: { title: string; tags?: string[] }): boolean {
-  return entry.title.startsWith(AI_STORY_TITLE_PREFIX);
+export function isStoryCreatedByAIPrepare(entry: IndexEntry): boolean {
+  return entry.type === 'story' && (entry.tags?.includes('ai-generated') ?? false);
 }
 
 /**
  * Count stories in the index that were created by `sb ai prepare`.
  */
 export function countAiAuthoredStories(storyIndex: StoryIndex): number {
-  return Object.values(storyIndex.entries).filter(
-    (entry: IndexEntry) => entry.type === 'story' && isStoryCreatedByAISetup(entry)
-  ).length;
+  return Object.values(storyIndex.entries).filter(isStoryCreatedByAIPrepare).length;
+}
+
+/**
+ * Snapshot the preview file state for baseline comparison.
+ * Returns the filename and SHA-256 hash, or nulls if no preview file exists.
+ */
+export async function snapshotPreviewFile(
+  configDir: string
+): Promise<{ previewPath: string | null; previewHash: string | null }> {
+  const previewPath = findConfigFile('preview', configDir);
+  if (!previewPath) {
+    return { previewPath: null, previewHash: null };
+  }
+
+  try {
+    const content = await readFile(previewPath, 'utf-8');
+    const hash = createHash('sha256').update(content).digest('hex');
+    return { previewPath, previewHash: hash };
+  } catch {
+    // File found by findConfigFile but unreadable — treat as absent
+    return { previewPath, previewHash: null };
+  }
 }
 
 /**
@@ -54,11 +53,10 @@ export function countAiAuthoredStories(storyIndex: StoryIndex): number {
  */
 export async function checkPreviewChanged(
   configDir: string,
-  baselineFile: string | null,
-  baselineHash: string | null
+  baseline: { previewPath: string | null; previewHash: string | null }
 ): Promise<boolean> {
   const currentPath = findConfigFile('preview', configDir);
-  if (currentPath !== baselineFile) {
+  if (currentPath !== baseline.previewPath) {
     return true;
   }
   if (!currentPath) {
@@ -67,9 +65,9 @@ export async function checkPreviewChanged(
   try {
     const content = await readFile(currentPath, 'utf-8');
     const hash = createHash('sha256').update(content).digest('hex');
-    return hash !== baselineHash;
+    return hash !== baseline.previewHash;
   } catch {
-    // File unreadable — treat as changed
+    // File unreadable — treat as changed because we expected it to be readable post init
     return true;
   }
 }
@@ -96,19 +94,20 @@ export async function collectAiPrepareEvidence(
     }
 
     // Gate 2: Is there a pending ai-prepare record?
-    const pending = await getAiSetupPending();
+    const pending = await getAiPreparePending();
     if (!pending) {
       return;
     }
 
-    // Gate 3: Is it within the session window?
-    const timeSinceSetup = Date.now() - pending.timestamp;
-    if (timeSinceSetup > SESSION_TIMEOUT) {
+    // Gate 3: Does the configDir match? (cross-project guard)
+    if (configDir && pending.configDir !== configDir) {
       return;
     }
 
-    // Gate 4: Does the configDir match? (cross-project guard)
-    if (configDir && pending.configDir !== configDir) {
+    // Gate 4: Is it within the session window?
+    const timeSincePrepare = Date.now() - pending.timestamp;
+    if (timeSincePrepare > SESSION_TIMEOUT) {
+      // TODO: purge aiPreparePending
       return;
     }
 
@@ -120,11 +119,7 @@ export async function collectAiPrepareEvidence(
     }
 
     // Check if preview file changed from baseline
-    const previewChanged = await checkPreviewChanged(
-      pending.configDir,
-      pending.previewFile,
-      pending.previewHash
-    );
+    const previewChanged = await checkPreviewChanged(pending.configDir, pending);
 
     // Count AI-authored stories if story index is available
     const aiAuthoredStories = storyIndex ? countAiAuthoredStories(storyIndex) : undefined;
@@ -135,7 +130,7 @@ export async function collectAiPrepareEvidence(
         previewChanged,
         aiAuthoredStories,
         sessionId: pending.sessionId,
-        timeSinceSetup,
+        timeSincePrepare,
       },
       {
         immediate: true,

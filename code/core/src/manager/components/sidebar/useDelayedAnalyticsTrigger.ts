@@ -1,18 +1,22 @@
 import { useEffect, useRef } from 'react';
 
-import { GHOST_STORIES_REQUEST, PREVIEW_INITIALIZED } from 'storybook/internal/core-events';
+import {
+  AI_PREPARE_ANALYTICS_REQUEST,
+  GHOST_STORIES_REQUEST,
+  PREVIEW_INITIALIZED,
+} from 'storybook/internal/core-events';
+import { global } from '@storybook/global';
 import { useStorybookApi } from 'storybook/manager-api';
 
 /** Delay before firing ghost stories after PREVIEW_INITIALIZED (10 minutes). */
 const TRIGGER_DELAY_MS = 10 * 60 * 1000;
 
 /**
- * Fires a one-time GHOST_STORIES_REQUEST event 10 minutes after the preview
- * initializes. The server-side handler in ghost-stories-channel.ts enforces
- * the once-ever-per-project gate via lastEvents cache, so this hook is
- * fire-and-forget.
+ * Fires one-time analytics events 10 minutes after the preview initializes.
+ * The server-side handlers for those events enforce the once-ever-per-project
+ * gate via lastEvents cache, so this hook is fire-and-forget.
  */
-export function useGhostStoriesTrigger(): void {
+export function useDelayedAnalyticsTrigger(): void {
   const api = useStorybookApi();
   const fired = useRef(false);
 
@@ -28,7 +32,14 @@ export function useGhostStoriesTrigger(): void {
         return;
       }
       fired.current = true;
-      api.emit(GHOST_STORIES_REQUEST);
+
+      // if `ai prepare` is in the same session, we run ghost stories and ai prepare analytics.
+      if (
+        global.STORYBOOK_LAST_EVENTS?.['ai-prepare']?.body.sessionId === global.STORYBOOK_SESSION_ID
+      ) {
+        api.emit(GHOST_STORIES_REQUEST);
+        api.emit(AI_PREPARE_ANALYTICS_REQUEST);
+      }
     };
 
     const onInit = () => {

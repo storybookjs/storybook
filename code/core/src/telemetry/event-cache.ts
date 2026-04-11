@@ -1,7 +1,6 @@
 import { cache } from 'storybook/internal/common';
 
 import type { EventType, TelemetryEvent } from './types.ts';
-import type { AiSetupPendingRecord } from './ai-prepare-evidence.ts';
 
 interface UpgradeSummary {
   timestamp: number;
@@ -82,9 +81,21 @@ export const getPrecedingUpgrade = async (
     ? upgradeFields(lastUpgradeEvent)
     : undefined;
 };
+/**
+ * Record cached at ai-prepare time.
+ * Read by subsequent CLI entry points for evidence collection.
+ * Canonical definition — imported by event-cache.ts and prepare-requirements.ts.
+ */
+export interface AiPreparePendingRecord {
+  timestamp: number;
+  sessionId: string;
+  configDir: string;
+  previewPath: string | null;
+  previewHash: string | null;
+}
 
-export const getAiSetupPending = async (): Promise<AiSetupPendingRecord | undefined> => {
+export const getAiPreparePending = async (): Promise<AiPreparePendingRecord | undefined> => {
   // Wait for any pending set operations to complete before reading
   await processingPromise;
-  return (await cache.get('ai-setup-pending')) ?? undefined;
+  return (await cache.get('ai-prepare-pending')) ?? undefined;
 };

@@ -1,13 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
 import {
   checkPreviewChanged,
   collectAiPrepareEvidence,
   countAiAuthoredStories,
-  isStoryCreatedByAISetup,
-} from './ai-prepare-evidence.ts';
+  isStoryCreatedByAIPrepare,
+} from './ai-prepare-utils.ts';
 
 // Mock modules with spy pattern
 vi.mock('storybook/internal/common', async (importOriginal) => {
@@ -41,10 +41,12 @@ vi.mock('./index.ts', async (importOriginal) => {
 // Import mocked modules for spy access
 import { findConfigFile } from 'storybook/internal/common';
 import { readFile } from 'node:fs/promises';
-import { detectAgent } from './detect-agent.ts';
-import { getAiSetupPending } from './event-cache.ts';
-import { telemetry } from './index.ts';
-import { SESSION_TIMEOUT } from './session-id.ts';
+import {
+  detectAgent,
+  getAiPreparePending,
+  SESSION_TIMEOUT,
+  telemetry,
+} from 'storybook/internal/telemetry';
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>();
@@ -58,9 +60,8 @@ const makePendingRecord = (overrides = {}) => ({
   timestamp: Date.now() - 60_000, // 1 minute ago
   sessionId: 'test-session-id',
   configDir: '/test/config',
-  previewFile: '/test/config/preview.ts',
+  previewPath: '/test/config/preview.ts',
   previewHash: 'abc123',
-  traits: { framework: 'react' },
   ...overrides,
 });
 
@@ -74,13 +75,18 @@ beforeEach(() => {
   vi.mocked(telemetry).mockResolvedValue(undefined);
 });
 
-describe('isStoryCreatedByAISetup', () => {
-  it('returns true for AI-titled stories', () => {
-    expect(isStoryCreatedByAISetup({ title: 'AI Generated/Button' })).toBe(true);
+describe('isStoryCreatedByAIPrepare', () => {
+  it('returns true for stories with the ai-generated tag', () => {
+    expect(
+      isStoryCreatedByAIPrepare({
+        title: 'Foo',
+        tags: ['ai-generated', 'dev', 'play-fn'],
+      } as IndexEntry)
+    ).toBe(true);
   });
 
   it('returns false for regular stories', () => {
-    expect(isStoryCreatedByAISetup({ title: 'Components/Button' })).toBe(false);
+    expect(isStoryCreatedByAIPrepare({ title: 'Foo' } as IndexEntry)).toBe(false);
   });
 });
 
@@ -144,11 +150,10 @@ describe('checkPreviewChanged', () => {
     const { createHash } = await import('node:crypto');
     const expectedHash = createHash('sha256').update('file content').digest('hex');
 
-    const result = await checkPreviewChanged(
-      '/test/config',
-      '/test/config/preview.ts',
-      expectedHash
-    );
+    const result = await checkPreviewChanged('/test/config', {
+      previewPath: '/test/config/preview.ts',
+      previewHash: expectedHash,
+    });
     expect(result).toBe(false);
   });
 
@@ -156,7 +161,10 @@ describe('checkPreviewChanged', () => {
     vi.mocked(findConfigFile).mockReturnValue('/test/config/preview.ts');
     vi.mocked(readFile).mockResolvedValue('modified content');
 
-    const result = await checkPreviewChanged('/test/config', '/test/config/preview.ts', 'old-hash');
+    const result = await checkPreviewChanged('/test/config', {
+      previewPath: '/test/config/preview.ts',
+      previewHash: 'some-old-hash',
+    });
     expect(result).toBe(true);
   });
 
@@ -164,18 +172,20 @@ describe('checkPreviewChanged', () => {
     vi.mocked(findConfigFile).mockReturnValue('/test/config/preview.ts');
     vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'));
 
-    const result = await checkPreviewChanged(
-      '/test/config',
-      '/test/config/preview.ts',
-      'some-hash'
-    );
+    const result = await checkPreviewChanged('/test/config', {
+      previewPath: '/test/config/preview.ts',
+      previewHash: 'some-hash',
+    });
     expect(result).toBe(true);
   });
 
   it('returns true when file path changed', async () => {
     vi.mocked(findConfigFile).mockReturnValue('/test/config/preview.tsx');
 
-    const result = await checkPreviewChanged('/test/config', '/test/config/preview.ts', 'hash');
+    const result = await checkPreviewChanged('/test/config', {
+      previewPath: '/test/config/preview.ts',
+      previewHash: 'hash',
+    });
     expect(result).toBe(true);
   });
 });
@@ -190,7 +200,7 @@ describe('collectAiPrepareEvidence', () => {
 
   it('does not fire when no pending record', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
-    vi.mocked(getAiSetupPending).mockResolvedValue(undefined);
+    vi.mocked(getAiPreparePending).mockResolvedValue(undefined);
 
     await collectAiPrepareEvidence('dev', '/test/config');
     expect(telemetry).not.toHaveBeenCalled();
@@ -198,7 +208,7 @@ describe('collectAiPrepareEvidence', () => {
 
   it('does not fire when pending record is expired', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
-    vi.mocked(getAiSetupPending).mockResolvedValue(
+    vi.mocked(getAiPreparePending).mockResolvedValue(
       makePendingRecord({ timestamp: Date.now() - SESSION_TIMEOUT - 1000 })
     );
 
@@ -208,7 +218,7 @@ describe('collectAiPrepareEvidence', () => {
 
   it('does not fire when configDir does not match', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
-    vi.mocked(getAiSetupPending).mockResolvedValue(
+    vi.mocked(getAiPreparePending).mockResolvedValue(
       makePendingRecord({ configDir: '/other/project/.storybook' })
     );
 
@@ -219,8 +229,8 @@ describe('collectAiPrepareEvidence', () => {
   it('fires event with correct payload when all gates pass', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
     const pending = makePendingRecord({ configDir: '/test/config' });
-    vi.mocked(getAiSetupPending).mockResolvedValue(pending);
-    vi.mocked(findConfigFile).mockReturnValue(pending.previewFile);
+    vi.mocked(getAiPreparePending).mockResolvedValue(pending);
+    vi.mocked(findConfigFile).mockReturnValue(pending.previewPath);
     vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'));
 
     await collectAiPrepareEvidence('dev', '/test/config');
@@ -242,7 +252,7 @@ describe('collectAiPrepareEvidence', () => {
   it('reports aiAuthoredStories as undefined when no story index provided', async () => {
     vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
     const pending = makePendingRecord({ configDir: '/test/config' });
-    vi.mocked(getAiSetupPending).mockResolvedValue(pending);
+    vi.mocked(getAiPreparePending).mockResolvedValue(pending);
     vi.mocked(findConfigFile).mockReturnValue(null);
 
     await collectAiPrepareEvidence('dev', '/test/config');
@@ -263,7 +273,7 @@ describe('collectAiPrepareEvidence', () => {
       previewFile: null,
       previewHash: null,
     });
-    vi.mocked(getAiSetupPending).mockResolvedValue(pending);
+    vi.mocked(getAiPreparePending).mockResolvedValue(pending);
     vi.mocked(findConfigFile).mockReturnValue(null);
 
     const storyIndex = makeStoryIndex({

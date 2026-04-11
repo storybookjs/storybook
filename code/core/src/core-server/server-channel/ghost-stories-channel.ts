@@ -1,44 +1,22 @@
 import type { Channel } from 'storybook/internal/channels';
 import { GHOST_STORIES_REQUEST, GHOST_STORIES_RESPONSE } from 'storybook/internal/core-events';
-import { getLastEvents, getStorybookMetadata, telemetry } from 'storybook/internal/telemetry';
+import {
+  getLastEvents,
+  getSessionId,
+  getStorybookMetadata,
+  telemetry,
+} from 'storybook/internal/telemetry';
+import { logger } from 'storybook/internal/node-logger';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { isStoryCreatedByAISetup } from '../../telemetry/ai-prepare-evidence.ts';
-import { fullTestProviderStore } from '../stores/test-provider.ts';
 import { getComponentCandidates } from '../utils/ghost-stories/get-candidates.ts';
 import { runGhostStories } from '../utils/ghost-stories/run-story-tests.ts';
-import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
-
-/**
- * Wait for the test provider to be idle (no tests running).
- * Returns true if idle, false if timed out.
- */
-async function waitForTestsIdle(
-  maxWaitMs = 30 * 60 * 1000,
-  pollIntervalMs = 60 * 1000
-): Promise<boolean> {
-  const deadline = Date.now() + maxWaitMs;
-  while (Date.now() < deadline) {
-    try {
-      const state = fullTestProviderStore.getFullState();
-      const isRunning = Object.values(state).some((s) => s === 'test-provider-state:running');
-      if (!isRunning) {
-        return true;
-      }
-    } catch {
-      // Store not initialized yet — treat as idle
-      return true;
-    }
-    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-  }
-  return false;
-}
+import { waitForIdleVitest } from '../utils/wait-for-idle-vitest.ts';
 
 export function initGhostStoriesChannel(
   channel: Channel,
   options: Options,
-  coreOptions: CoreConfig,
-  getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined
+  coreOptions: CoreConfig
 ) {
   if (coreOptions.disableTelemetry) {
     return channel;
@@ -60,13 +38,24 @@ export function initGhostStoriesChannel(
       const ghostRunStart = Date.now();
       const lastEvents = await getLastEvents();
       const lastInit = lastEvents?.init;
-      if (!lastEvents || !lastInit) {
+      const lastAIPrepare = lastEvents?.['ai-prepare'];
+      const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
+
+      // We only want to run ghost stories immediately after init or ai prepare.
+      const lastRelevantEvent = lastAIPrepare ?? lastInit;
+      if (!lastRelevantEvent) {
         return;
       }
 
-      const lastGhostStoriesRun = lastEvents['ghost-stories'];
+      // Already ran once for this project — never run again
       if (lastGhostStoriesRun) {
-        return; // Already ran once for this project — never run again
+        return;
+      }
+
+      const sessionId = await getSessionId();
+      // We only capture ghost stories in the first ever session since init or ai prepare.
+      if (lastRelevantEvent.body?.sessionId && lastRelevantEvent.body.sessionId !== sessionId) {
+        return;
       }
 
       const metadata = await getStorybookMetadata(options.configDir);
@@ -82,13 +71,11 @@ export function initGhostStoriesChannel(
         return;
       }
 
-      // Wait for any running tests to finish before launching scoring
-      const isIdle = await waitForTestsIdle();
+      // Wait for any running tests to finish before launching scoring, so we don't
+      // disturb end user activities.
+      const isIdle = await waitForIdleVitest();
       if (!isIdle) {
-        telemetry('ghost-stories', {
-          stats,
-          runError: 'Timed out waiting for tests to finish',
-        });
+        logger.debug('GHOST_STORIES_REQUEST timed out waiting for vitest to be available.');
         return;
       }
 
@@ -136,39 +123,6 @@ export function initGhostStoriesChannel(
         stats,
         results: testRunResult.summary,
       });
-
-      // Phase 3: Score AI-written stories (if any)
-      const generatorPromise = getStoryIndexGeneratorPromise?.();
-      if (generatorPromise) {
-        try {
-          const generator = await generatorPromise;
-          const indexAndStats = await generator.getIndexAndStats();
-          if (indexAndStats) {
-            const aiStoryFiles = new Set<string>();
-            for (const entry of Object.values(indexAndStats.storyIndex.entries)) {
-              if (entry.type === 'story' && isStoryCreatedByAISetup(entry)) {
-                aiStoryFiles.add(entry.importPath);
-              }
-            }
-
-            if (aiStoryFiles.size > 0) {
-              const aiTestRunResult = await runGhostStories([...aiStoryFiles]);
-              telemetry('ai-prepare-story-scoring', {
-                stats: {
-                  fileCount: aiStoryFiles.size,
-                  testRunDuration: aiTestRunResult.duration,
-                },
-                results: aiTestRunResult.summary,
-                ...(aiTestRunResult.runError ? { runError: aiTestRunResult.runError } : {}),
-              });
-            }
-          }
-        } catch {
-          telemetry('ai-prepare-story-scoring', {
-            runError: 'Unknown error during AI story scoring',
-          });
-        }
-      }
     } catch {
       telemetry('ghost-stories', {
         stats,

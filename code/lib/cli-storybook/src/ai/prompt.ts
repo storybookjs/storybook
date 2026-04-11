@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
 
-import type { ProjectInfo, AiPrompt, AiPrepareTraits } from './types.ts';
+import type { ProjectInfo, AiPrompt } from './types.ts';
 
 /**
  * Builds a markdown-format docs URL with renderer and language query parameters.
@@ -23,13 +23,7 @@ export function getDocsMarkdownUrl(
 
 export function getPrompts(projectInfo: ProjectInfo): {
   prompts: AiPrompt[];
-  traits: AiPrepareTraits;
 } {
-  const traits: AiPrepareTraits = {
-    csfSyntax: projectInfo.hasCsfFactoryPreview ? 'factory-v1' : 'csf3-v1',
-    setupGenericV1: 'v1',
-  };
-
   const aiPrompts: AiPrompt[] = [];
 
   aiPrompts.push({
@@ -38,7 +32,7 @@ export function getPrompts(projectInfo: ProjectInfo): {
     instructions: getSetupInstructions(projectInfo),
   });
 
-  return { prompts: aiPrompts, traits };
+  return { prompts: aiPrompts };
 }
 
 function getSetupInstructions(projectInfo: ProjectInfo): string {
@@ -298,9 +292,8 @@ function getProjectOverview(projectInfo: ProjectInfo): string {
 
 export function generateMarkdownOutput(projectInfo: ProjectInfo): {
   markdown: string;
-  traits: AiPrepareTraits;
 } {
-  const { prompts: aiPrompts, traits } = getPrompts(projectInfo);
+  const { prompts: aiPrompts } = getPrompts(projectInfo);
 
   const sections: string[] = [];
 
@@ -314,5 +307,5 @@ export function generateMarkdownOutput(projectInfo: ProjectInfo): {
     sections.push(aiPrompt.instructions);
   }
 
-  return { markdown: sections.join('\n\n'), traits };
+  return { markdown: sections.join('\n\n') };
 }

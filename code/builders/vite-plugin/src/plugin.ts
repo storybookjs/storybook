@@ -14,6 +14,23 @@ import { createStaticMiddlewares } from './static-middleware';
 import { createStoryIndexMiddleware } from './story-index-middleware';
 import type { StorybookPluginOptions } from './types';
 
+function scopeToStorybookEnv(plugins: PluginOption[]): PluginOption[] {
+  return plugins
+    .flat()
+    .filter(Boolean)
+    .map((plugin) => {
+      if (!plugin || typeof plugin !== 'object' || !('name' in plugin)) {
+        return plugin;
+      }
+      return {
+        ...plugin,
+        applyToEnvironment(environment: { name: string }) {
+          return environment.name === 'storybook';
+        },
+      } as Plugin;
+    });
+}
+
 /**
  * Vite plugin that embeds Storybook into the user's Vite dev server.
  *
@@ -43,10 +60,10 @@ export async function storybookPlugin(
   const channelPath = `${normalizedBasePath}storybook-server-channel`;
 
   const options = await loadStorybookConfig(configDir);
-  const previewPlugins = await getPreviewPlugins(options, normalizedBasePath);
+  const previewPlugins = scopeToStorybookEnv(await getPreviewPlugins(options, normalizedBasePath));
 
   const addonConfig = await options.presets.apply('viteFinal', {}, options);
-  const addonPlugins = addonConfig?.plugins ?? [];
+  const addonPlugins = scopeToStorybookEnv(addonConfig?.plugins ?? []);
 
   const mainPlugin: Plugin = {
     name: 'storybook:main',

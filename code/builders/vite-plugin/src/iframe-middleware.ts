@@ -6,6 +6,8 @@ import type { Options } from 'storybook/internal/types';
 import type { Connect, ViteDevServer } from 'vite';
 
 import { transformIframeHtml } from '../../builder-vite/src/transform-iframe-html';
+import { SB_VIRTUAL_FILES } from '../../builder-vite/src/virtual-file-names';
+import { getStorybookModulePrefix } from './environment-module-router';
 
 export function createIframeMiddleware(
   options: Options,
@@ -25,16 +27,21 @@ export function createIframeMiddleware(
         import.meta.resolve('@storybook/builder-vite/input/iframe.html')
       );
       const rawHtml = await readFile(templatePath, { encoding: 'utf8' });
-      // Call transformIframeHtml directly to replace config placeholders and
-      // rewrite the virtual module URL. In dev mode, the URL becomes
-      // /@id/__x00__virtual:... which Vite's transform middleware can serve.
-      // NOTE: We call this here instead of via a plugin transformIndexHtml hook
-      // because Vite 8 does not register transformIndexHtml hooks for plugins
-      // returned from config().
-      const transformed = await transformIframeHtml(rawHtml, options);
 
-      // Run Vite's transformIndexHtml pipeline to inject @vite/client and
-      // run any registered plugin hooks (e.g. channel path patching).
+      // Transform config placeholders and rewrite the virtual module URL.
+      // In dev mode this produces /@id/__x00__virtual:... which we then
+      // rewrite to /@storybook-env/virtual:... for environment routing.
+      let transformed = await transformIframeHtml(rawHtml, options);
+
+      // Route the virtual module through the storybook environment.
+      const envPrefix = getStorybookModulePrefix();
+      transformed = transformed.replace(
+        `/@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`,
+        `${envPrefix}/${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
+      );
+
+      // Run Vite's transformIndexHtml pipeline to inject @vite/client
+      // and run remaining hooks (channel path patching).
       const finalHtml = await server.transformIndexHtml(iframePath, transformed);
 
       res.setHeader('Content-Type', 'text/html');

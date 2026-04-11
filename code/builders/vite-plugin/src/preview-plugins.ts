@@ -31,6 +31,12 @@ async function getEntryPlugins(options: Options, basePath: string): Promise<Plug
   const adaptedCodeGenPlugin: Plugin = {
     ...baseCodeGenPlugin,
     async transformIndexHtml(html, ctx) {
+      // In dev mode, iframe-middleware calls transformIframeHtml directly and
+      // rewrites the URL for storybook environment routing. Skip here to avoid
+      // double-transforming (which would produce /@id/__x00__/@id/__x00__...).
+      if (ctx.server) {
+        return undefined;
+      }
       const expectedPath = `${basePath}iframe.html`;
       if (ctx.path !== expectedPath && ctx.path !== '/iframe.html') {
         return undefined;

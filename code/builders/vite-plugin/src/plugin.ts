@@ -31,6 +31,18 @@ function scopeToStorybookEnv(plugins: PluginOption[]): PluginOption[] {
     });
 }
 
+function wrapInStorybookEnv(name: string, plugins: PluginOption[]): Plugin {
+  return {
+    name,
+    applyToEnvironment(environment) {
+      if (environment.name !== 'storybook') {
+        return false;
+      }
+      return plugins as Plugin[];
+    },
+  };
+}
+
 /**
  * Vite plugin that embeds Storybook into the user's Vite dev server.
  *
@@ -63,7 +75,7 @@ export async function storybookPlugin(
   const previewPlugins = scopeToStorybookEnv(await getPreviewPlugins(options, normalizedBasePath));
 
   const addonConfig = await options.presets.apply('viteFinal', {}, options);
-  const addonPlugins = scopeToStorybookEnv(addonConfig?.plugins ?? []);
+  const addonEnvPlugin = wrapInStorybookEnv('storybook:addon-plugins', addonConfig?.plugins ?? []);
 
   const mainPlugin: Plugin = {
     name: 'storybook:main',
@@ -185,5 +197,5 @@ export async function storybookPlugin(
     },
   };
 
-  return [mainPlugin, ...addonPlugins, ...previewPlugins, buildPlugin];
+  return [mainPlugin, addonEnvPlugin, ...previewPlugins, buildPlugin];
 }

@@ -6,7 +6,7 @@ import { global } from '@storybook/global';
 
 import { styled } from 'storybook/theming';
 
-import { AI_CTA_BODY, AI_PREPARE_PROMPT } from '../../shared/constants/ai-prompts.ts';
+import { AI_PREPARE_PROMPT } from '../../shared/constants/ai-prompts.ts';
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
 import { Checklist } from './Checklist/Checklist.tsx';
 
@@ -79,12 +79,18 @@ export const GuidePage = () => {
         <AiCtaCard>
           <AiCtaHeading>Want to have your AI agent set up Storybook automatically?</AiCtaHeading>
           <AiCtaActions>
-            <Button variant="ghost" size="medium" onClick={() => checklist.skip('aiPrepare')}>
+            <Button
+              variant="ghost"
+              size="medium"
+              ariaLabel={false}
+              onClick={() => checklist.skip('aiPrepare')}
+            >
               Skip
             </Button>
             <Button
               variant="solid"
               size="medium"
+              ariaLabel={false}
               onClick={() => {
                 // eslint-disable-next-line compat/compat
                 navigator.clipboard?.writeText(AI_PREPARE_PROMPT);

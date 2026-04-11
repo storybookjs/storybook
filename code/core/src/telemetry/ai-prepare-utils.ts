@@ -1,4 +1,4 @@
-import { getAiPreparePending } from './event-cache.ts';
+import { flushAiPreparePending, getAiPreparePending } from './event-cache.ts';
 import { SESSION_TIMEOUT } from './session-id.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -107,7 +107,8 @@ export async function collectAiPrepareEvidence(
     // Gate 4: Is it within the session window?
     const timeSincePrepare = Date.now() - pending.timestamp;
     if (timeSincePrepare > SESSION_TIMEOUT) {
-      // TODO: purge aiPreparePending
+      // Session expired, clean up pending record.
+      await flushAiPreparePending();
       return;
     }
 

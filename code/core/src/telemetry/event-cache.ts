@@ -99,3 +99,10 @@ export const getAiPreparePending = async (): Promise<AiPreparePendingRecord | un
   await processingPromise;
   return (await cache.get('ai-prepare-pending')) ?? undefined;
 };
+
+export const flushAiPreparePending = async (): Promise<undefined> => {
+  // Wait for any pending set operations to complete before removing
+  await processingPromise;
+  await cache.remove('ai-prepare-pending');
+  return undefined;
+};

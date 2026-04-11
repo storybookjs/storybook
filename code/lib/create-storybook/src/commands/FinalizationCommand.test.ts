@@ -18,7 +18,7 @@ describe('FinalizationCommand', () => {
   let command: FinalizationCommand;
 
   beforeEach(() => {
-    command = new FinalizationCommand(undefined, false, false);
+    command = new FinalizationCommand(undefined, false, false, false);
 
     vi.mocked(getProjectRoot).mockReturnValue('/test/project');
     vi.mocked(logger.step).mockImplementation(() => {});
@@ -109,8 +109,8 @@ describe('FinalizationCommand', () => {
   });
 
   describe('agent mode', () => {
-    it('should show agent-specific message when agent=true', async () => {
-      const agentCommand = new FinalizationCommand(undefined, true, false);
+    it('should show agent-specific message when agent=true and ai prepare is supported', async () => {
+      const agentCommand = new FinalizationCommand(undefined, true, true, false);
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await agentCommand.execute({});
@@ -120,9 +120,22 @@ describe('FinalizationCommand', () => {
       );
       expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai prepare'));
     });
+    it('should show standard success message when agent=true and ai prepare is NOT supported', async () => {
+      const agentCommand = new FinalizationCommand(undefined, true, false, true);
+      vi.mocked(find.up).mockReturnValue(undefined);
+
+      await agentCommand.execute({});
+
+      expect(logger.step).toHaveBeenCalledWith(
+        expect.stringContaining('Storybook was successfully installed')
+      );
+      // Ensure the agent message is NOT shown
+      const stepCalls = vi.mocked(logger.step).mock.calls.map((c) => String(c[0]));
+      expect(stepCalls.some((msg) => msg.includes('is not entirely set up yet'))).toBe(false);
+    });
 
     it('should show standard success message when agent=false', async () => {
-      const nonAgentCommand = new FinalizationCommand(undefined, false, false);
+      const nonAgentCommand = new FinalizationCommand(undefined, false, false, false);
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await nonAgentCommand.execute({});
@@ -138,7 +151,7 @@ describe('FinalizationCommand', () => {
 
   describe('AI instructions', () => {
     it('should show AI instructions when showAiInstructions=true', async () => {
-      const aiCommand = new FinalizationCommand(undefined, false, true);
+      const aiCommand = new FinalizationCommand(undefined, false, true, true);
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await aiCommand.execute({});
@@ -150,7 +163,7 @@ describe('FinalizationCommand', () => {
     });
 
     it('should NOT show AI instructions when showAiInstructions=false', async () => {
-      const noAiCommand = new FinalizationCommand(undefined, false, false);
+      const noAiCommand = new FinalizationCommand(undefined, false, false, false);
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await noAiCommand.execute({});
@@ -160,7 +173,7 @@ describe('FinalizationCommand', () => {
     });
 
     it('should show both agent message and AI instructions when both are true', async () => {
-      const bothCommand = new FinalizationCommand(undefined, true, true);
+      const bothCommand = new FinalizationCommand(undefined, true, true, true);
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await bothCommand.execute({});
@@ -176,7 +189,7 @@ describe('FinalizationCommand', () => {
 
   describe('storybookCommand message', () => {
     it('should print "To run Storybook, run" with the command', async () => {
-      const cmd = new FinalizationCommand(undefined, false, false);
+      const cmd = new FinalizationCommand(undefined, false, false, false);
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await cmd.execute({ storybookCommand: 'npm run storybook' });
@@ -186,7 +199,7 @@ describe('FinalizationCommand', () => {
     });
 
     it('should not print storybook command message when storybookCommand is null', async () => {
-      const cmd = new FinalizationCommand(undefined, false, false);
+      const cmd = new FinalizationCommand(undefined, false, false, false);
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await cmd.execute({ storybookCommand: null });
@@ -203,6 +216,7 @@ describe('FinalizationCommand', () => {
       await executeFinalization({
         agent: true,
         showAiInstructions: false,
+        isAiPrepareAvailable: true,
         logfile: undefined,
       });
 
@@ -218,6 +232,7 @@ describe('FinalizationCommand', () => {
       await executeFinalization({
         agent: false,
         showAiInstructions: true,
+        isAiPrepareAvailable: false,
         logfile: undefined,
       });
 
@@ -232,6 +247,7 @@ describe('FinalizationCommand', () => {
       await executeFinalization({
         agent: false,
         showAiInstructions: false,
+        isAiPrepareAvailable: false,
         logfile: undefined,
         storybookCommand: 'yarn storybook',
       });

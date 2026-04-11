@@ -317,6 +317,8 @@ export const ChecklistWidget = () => {
                       <ActionList.Icon>
                         {item.isCompleted && animated ? (
                           <Particles anchor={Checked} key={item.id} />
+                        ) : item.icon ? (
+                          <item.icon />
                         ) : (
                           <StatusFailIcon />
                         )}

@@ -25,6 +25,7 @@ export class FinalizationCommand {
   constructor(
     private logfile: string | boolean | undefined,
     private agent: boolean,
+    private isAiPrepareAvailable: boolean,
     private showAiInstructions: boolean
   ) {}
   /** Execute finalization steps */
@@ -80,7 +81,7 @@ export class FinalizationCommand {
 
   /** Print success message with feature summary */
   private printSuccessMessage(storybookCommand?: string | null): void {
-    if (this.agent) {
+    if (this.agent && this.isAiPrepareAvailable) {
       logger.step(
         CLI_COLORS.storybook(
           dedent`Storybook is installed but is not entirely set up yet.
@@ -114,12 +115,16 @@ export class FinalizationCommand {
 export const executeFinalization = ({
   agent,
   logfile,
+  isAiPrepareAvailable,
   showAiInstructions,
   ...params
 }: ExecuteFinalizationParams & {
   agent: boolean;
   showAiInstructions: boolean;
+  isAiPrepareAvailable: boolean;
   logfile: string | boolean | undefined;
 }) => {
-  return new FinalizationCommand(logfile, agent, showAiInstructions).execute(params);
+  return new FinalizationCommand(logfile, agent, isAiPrepareAvailable, showAiInstructions).execute(
+    params
+  );
 };

@@ -41,8 +41,14 @@ export function createEnvironmentModuleRouter(server: ViteDevServer): Connect.Ne
     // Unwrap /@id/__x00__ encoded virtual module URLs.
     // Vite's transform middleware does this before calling transformRequest;
     // we must do the same since we bypass that middleware.
+    // `__x00__` is the URL-encoded form of the null-byte prefix Rollup uses to
+    // mark virtual modules — we must restore it, because some plugins (e.g.
+    // @vitejs/plugin-vue's `\0plugin-vue:export-helper`) filter on the exact
+    // null-prefixed id and will not match without it.
     if (actualUrl.startsWith('/@id/__x00__')) {
-      actualUrl = actualUrl.slice('/@id/__x00__'.length);
+      actualUrl = '\0' + actualUrl.slice('/@id/__x00__'.length);
+    } else if (actualUrl.startsWith('/@id/')) {
+      actualUrl = actualUrl.slice('/@id/'.length);
     }
 
     try {
@@ -76,10 +82,16 @@ export function createEnvironmentModuleRouter(server: ViteDevServer): Connect.Ne
  * - /@fs/... (file system paths outside root)
  * - /src/... (relative to root)
  * - /node_modules/... (deps)
+ *
+ * The regex matches four forms Vite emits:
+ * - `from "…"`                (static import/export with a clause)
+ * - `import("…")`             (dynamic import)
+ * - `import "…"`              (bare side-effect import)
+ * - `export * from "…"`       (already covered by `from`)
  */
 function rewriteImportPaths(code: string): string {
   return code.replace(
-    /((?:from\s+|import\s*\()["'])(\/@?[^"']+)(["'])/g,
+    /((?:from\s+|import\s*\(\s*|import\s+)["'])(\/@?[^"']+)(["'])/g,
     (_match, prefix, path, suffix) => {
       if (path.startsWith(STORYBOOK_MODULE_PREFIX)) {
         return _match;

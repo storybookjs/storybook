@@ -1,7 +1,7 @@
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { Plugin, PluginOption } from 'vite';
+import { type Plugin, type PluginOption, mergeConfig } from 'vite';
 
 import { buildStorybookEnvironment, getStorybookBuildConfig } from './build-storybook';
 import { createServerChannel } from './channel-middleware';
@@ -12,7 +12,16 @@ import { buildManager, createManagerMiddlewares } from './manager-middleware';
 import { getPreviewPlugins } from './preview-plugins';
 import { createStaticMiddlewares } from './static-middleware';
 import { createStoryIndexMiddleware } from './story-index-middleware';
+import { computeStorybookEnvOptions } from './storybook-env-options';
 import type { StorybookPluginOptions } from './types';
+
+/**
+ * Env vars with these prefixes are exposed through `import.meta.env` inside the storybook
+ * environment. `VITE_` is Vite's own default; `STORYBOOK_` matches what the legacy
+ * `storybookConfigPlugin` injected globally. This must live at the root `UserConfig` level
+ * because `envPrefix` is not a per-environment option in Vite.
+ */
+const STORYBOOK_ENV_PREFIX: readonly string[] = ['VITE_', 'STORYBOOK_'];
 
 function scopeToStorybookEnv(plugins: PluginOption[]): PluginOption[] {
   return plugins
@@ -77,6 +86,18 @@ export async function storybookPlugin(
   const addonConfig = await options.presets.apply('viteFinal', {}, options);
   const addonEnvPlugin = wrapInStorybookEnv('storybook:addon-plugins', addonConfig?.plugins ?? []);
 
+  // Precompute the storybook environment slice once at plugin creation time. Each piece
+  // (aliases for external globals, optimizeDeps entries, define map, resolve conditions,
+  // preserveSymlinks) was previously contributed by a separate preview plugin via a top-level
+  // `config` hook — which meant it leaked into the user's own environment. Moving the
+  // computation here and returning the result from `configEnvironment('storybook')` scopes
+  // the configuration strictly to the storybook environment.
+  const storybookEnvOptions = await computeStorybookEnvOptions({
+    options,
+    configDir,
+    envPrefix: STORYBOOK_ENV_PREFIX,
+  });
+
   const mainPlugin: Plugin = {
     name: 'storybook:main',
     enforce: 'pre',
@@ -85,15 +106,24 @@ export async function storybookPlugin(
       options.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
 
       return {
+        // `envPrefix` is a root-level option in Vite (not per-environment), so it is set here
+        // rather than in `configEnvironment`. This exposes STORYBOOK_-prefixed env vars to the
+        // client source code globally — acceptable because build-time env vars are not secrets.
+        envPrefix: [...STORYBOOK_ENV_PREFIX],
+        server: {
+          fs: {
+            // Allow the Storybook config directory to be served — required when the user's
+            // `server.fs.allow` is already restricted. Additive and safe.
+            allow: [configDir],
+          },
+        },
+        // Environment consumer / shape must be declared here because `environments` is not
+        // returnable from `configEnvironment`. Everything *inside* the storybook env is
+        // returned from `configEnvironment('storybook')` below so it can be computed async
+        // and mergeConfig'd with the build-time options.
         environments: {
           storybook: {
-            resolve: {
-              conditions: ['storybook', 'stories', 'test'],
-            },
             consumer: 'client',
-            optimizeDeps: {
-              include: ['storybook/internal/preview/runtime'],
-            },
           },
         },
       };
@@ -103,7 +133,10 @@ export async function storybookPlugin(
       if (name !== 'storybook') {
         return;
       }
-      return getStorybookBuildConfig(options, 'storybook-static');
+      return mergeConfig(
+        storybookEnvOptions,
+        getStorybookBuildConfig(options, 'storybook-static')
+      );
     },
 
     async configureServer(server) {

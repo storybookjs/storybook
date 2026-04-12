@@ -89,7 +89,7 @@ async function buildStoryIndex(options: Options, outputDir: string): Promise<voi
   await writeFile(join(outputDir, 'index.json'), JSON.stringify(storyIndex));
 }
  
-export function buildStorybookPlugin (sb: StorybookConfigOptions, options: Options): Plugin {
+export function buildStorybookPlugin ( options: Options): Plugin {
 
   const iframePath = fileURLToPath(
     import.meta.resolve('@storybook/builder-vite/input/iframe.html')

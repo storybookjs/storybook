@@ -8,6 +8,35 @@ export function getStorybookModulePrefix(): string {
   return STORYBOOK_MODULE_PREFIX;
 }
 
+/**
+ * Middleware that serves files from `.vite/deps_storybook/` directly from disk.
+ * TODO:  find out why Vite doesn't serve these files correctly when imported from the storybook environment and if there's a better way to handle this than a custom middleware.
+ */
+export function createDepsStorybookMiddleware(server: ViteDevServer): Connect.NextHandleFunction {
+  const DEPS_STORYBOOK_PREFIX = '/node_modules/.vite/deps_storybook/';
+
+  return async (req, res, next) => {
+    const url = req.url?.split('?')[0];
+    if (!url?.startsWith(DEPS_STORYBOOK_PREFIX)) {
+      return next();
+    }
+
+    const root = server.config.root;
+    const filePath = join(root, url);
+
+    try {
+      const content = await readFile(filePath);
+      const isMap = url.endsWith('.map');
+      res.setHeader('Content-Type', isMap ? 'application/json' : 'application/javascript');
+      res.setHeader('Cache-Control', 'max-age=31536000, immutable');
+      res.statusCode = 200;
+      res.end(content);
+    } catch {
+      next();
+    }
+  };
+}
+
 export function registerEnvironmentModuleMiddleware(server: ViteDevServer) {
   const router = createEnvironmentModuleRouter(server);
   server.middlewares.use(router);
@@ -29,6 +58,8 @@ function rewriteImportPaths(code: string): string {
  * through the storybook DevEnvironment instead of the default client environment.
  */
 function createEnvironmentModuleRouter(server: ViteDevServer): Connect.NextHandleFunction {
+  const DEPS_STORYBOOK_PREFIX = '/node_modules/.vite/deps_storybook/';
+
   return async (req, res, next) => {
     const url = req.url;
     if (!url?.startsWith(STORYBOOK_MODULE_PREFIX + '/')) {
@@ -40,6 +71,23 @@ function createEnvironmentModuleRouter(server: ViteDevServer): Connect.NextHandl
       return next();
     }
     let actualUrl = url.slice(STORYBOOK_MODULE_PREFIX.length);
+
+    const cleanUrl = actualUrl.split('?')[0];
+    if (cleanUrl.startsWith(DEPS_STORYBOOK_PREFIX)) {
+      const root = server.config.root;
+      const filePath = join(root, cleanUrl);
+      try {
+        const content = await readFile(filePath);
+        const isMap = cleanUrl.endsWith('.map');
+        res.setHeader('Content-Type', isMap ? 'application/json' : 'application/javascript');
+        res.setHeader('Cache-Control', 'max-age=31536000, immutable');
+        res.statusCode = 200;
+        res.end(content);
+        return;
+      } catch {
+        return next();
+      }
+    }
 
     if (
       actualUrl.startsWith('/') &&

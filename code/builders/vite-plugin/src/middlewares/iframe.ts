@@ -22,7 +22,6 @@ export function registerIframeMiddleware(
         encoding: 'utf8',
       }
     );
-    debugger;
     let transformed = await transformIframeHtml(indexHtml, options);
     const envPrefix = getStorybookModulePrefix();
     const storybookAppSrc = `${envPrefix}/${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`;
@@ -41,7 +40,12 @@ export function registerIframeMiddleware(
     }
 
     const transformedByVite = await server.transformIndexHtml(iframePath, transformed);
-    const finalHtml = transformedByVite.replace(APP_SCRIPT_PLACEHOLDER, appScriptTag);
+    let finalHtml = transformedByVite.replace(APP_SCRIPT_PLACEHOLDER, appScriptTag);
+
+    finalHtml = finalHtml.replace(
+      /src="\/vite-inject-mocker-entry\.js"/,
+      `src="${envPrefix}/vite-inject-mocker-entry.js"`
+    );
 
     res.setHeader('Content-Type', 'text/html');
     res.statusCode = 200;

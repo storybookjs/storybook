@@ -4,17 +4,26 @@ import {
   experimental_loadStorybook,
   type StoryIndexGenerator,
 } from 'storybook/internal/core-server';
+import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 import type { UserOptions } from './types';
 import { join, resolve } from 'pathe';
-import { loadMainConfig } from 'storybook/internal/common';
 import { createServerChannel } from './middlewares/channel';
-import { registerEnvironmentModuleMiddleware } from './middlewares/module-router';
+import {
+  createDepsStorybookMiddleware,
+  registerEnvironmentModuleMiddleware,
+} from './middlewares/module-router';
 import { buildManager, registerManagerMiddleware } from './middlewares/manager';
 import { registerIframeMiddleware } from './middlewares/iframe';
 import { getPreviewPlugins } from './plugins/preview-plugins';
 import { createStaticMiddlewares } from './middlewares/static';
 import { registerStoryIndexMiddleware } from './middlewares/story-index';
-import { storybookOptimizeDepsPlugin } from '../../builder-vite/src/plugins';
+import { buildStorybookPlugin } from './build';
+import {
+  escapeGlobPath,
+  getMockRedirectIncludeEntries,
+} from '../../builder-vite/src/plugins/storybook-optimize-deps-plugin';
+import { processPreviewAnnotation } from '../../builder-vite/src/utils/process-preview-annotation';
+import { getUniqueImportPaths } from '../../builder-vite/src/utils/unique-import-paths';
 
 export async function SbMain(options?: UserOptions): Promise<PluginOption> {
   const finalOptions = {
@@ -32,43 +41,40 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
 
   const finalConfig = (await sb.presets.apply('viteFinal', finalOptions)) as InlineConfig;
 
+  const pluginConfigs = extractPluginConfigs(finalConfig.plugins ?? []);
+
+  // This is VERYY hacky
+  // environment scopedc plugins doesn't run config hooks by vite
+  const resolveConfig = mergeConfig(
+    finalConfig.resolve ?? {},
+    pluginConfigs.resolve ?? {}
+  ) as InlineConfig['resolve'];
+
+  const storybookOptimizeDeps = await computeStorybookOptimizeDeps(sb);
+
   return [
     {
       name: 'storybook-env',
 
       config(_, { command }) {
         sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
-        console.log(finalConfig.optimizeDeps);
         return {
-          optimizeDeps: finalConfig.optimizeDeps,
+          resolve: resolveConfig,
           environments: {
             storybook: {
               consumer: 'client',
-              // dev: finalConfig.dev,
-              // build: finalConfig.build,
-              // optimizeDeps: finalConfig.optimizeDeps,
-              // resolve: finalConfig.resolve,
-              resolve: finalConfig.resolve,
+              resolve: resolveConfig,
               define: finalConfig.define,
             },
           },
           envPrefix: ['VITE_', 'STORYBOOK_'],
         };
       },
-      async configEnvironment(name) {
+      configEnvironment(name) {
         if (name === 'storybook') {
-          /**
-           *   - define                                                                                                                                                                                                 
-  - resolve (limited to EnvironmentResolveOptions)                                                                                                                                                         
-  - consumer                                  
-  - keepProcessEnv                        
-  - optimizeDeps                                                                                                                                                                                           
-  - dev                                                                                                                                                                                                    
-  - build                  
-
-  move theses into a the root config
-           */
-          return finalConfig;
+          return {
+            optimizeDeps: storybookOptimizeDeps,
+          };
         }
       },
 
@@ -81,8 +87,6 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
           {}
         );
         const wsToken = coreOptions.channelOptions?.wsToken ?? '';
-
-        debugger;
 
         const staticMiddlewares = await createStaticMiddlewares(sb, '/__storybook/');
         for (const middleware of staticMiddlewares) {
@@ -109,6 +113,7 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
 
         registerIframeMiddleware(server, sb, '/__storybook/');
 
+        server.middlewares.use(createDepsStorybookMiddleware(server));
         registerEnvironmentModuleMiddleware(server);
 
         storyIndexGenerator.onInvalidated(() => {
@@ -152,7 +157,7 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
         return addonConfig.plugins || [];
       },
     },
-    storybookOptimizeDepsPlugin(sb),
+    buildStorybookPlugin(sb),
   ];
 }
 
@@ -187,3 +192,70 @@ const wrapTransformIndexHtml: (
     };
   }
 };
+
+async function computeStorybookOptimizeDeps(options: Options) {
+  const { loadPreviewOrConfigFile } = await import('storybook/internal/common');
+  const { babelParser, extractMockCalls, findMockRedirect } =
+    await import('storybook/internal/mocking-utils');
+
+  const projectRoot = resolve(options.configDir, '..');
+
+  const [extraOptimizeDeps, storyIndexGenerator, previewAnnotations] = await Promise.all([
+    options.presets.apply<string[]>('optimizeViteDeps', []),
+    options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
+    options.presets.apply<PreviewAnnotation[]>('previewAnnotations', [], options),
+  ]);
+
+  const index = await storyIndexGenerator.getIndex();
+  const previewOrConfigFile = loadPreviewOrConfigFile({ configDir: options.configDir });
+
+  const mockRedirectIncludeEntries = previewOrConfigFile
+    ? getMockRedirectIncludeEntries(
+        extractMockCalls(
+          {
+            previewConfigPath: previewOrConfigFile,
+            coreOptions: { disableTelemetry: true },
+            configDir: options.configDir,
+          },
+          babelParser,
+          projectRoot,
+          findMockRedirect
+        )
+      )
+    : [];
+
+  const previewAnnotationEntries = [...previewAnnotations, previewOrConfigFile]
+    .filter((path): path is PreviewAnnotation => path !== undefined)
+    .map((path) => processPreviewAnnotation(path, projectRoot));
+
+  return {
+    entries: [
+      ...mockRedirectIncludeEntries,
+      ...getUniqueImportPaths(index).map(escapeGlobPath),
+      ...previewAnnotationEntries.map(escapeGlobPath),
+    ],
+    include: [...extraOptimizeDeps, 'storybook/internal/preview/runtime'],
+  };
+}
+
+function extractPluginConfigs(plugins: PluginOption[]): InlineConfig {
+  let merged: InlineConfig = {};
+  for (const plugin of (plugins as Plugin[]).flat().filter(Boolean)) {
+    if (
+      plugin &&
+      typeof plugin === 'object' &&
+      'config' in plugin &&
+      typeof plugin.config === 'function'
+    ) {
+      const result = plugin.config({} as any, {
+        command: 'serve',
+        mode: 'development',
+        isSsrBuild: false,
+      });
+      if (result && typeof result === 'object') {
+        merged = mergeConfig(merged, result);
+      }
+    }
+  }
+  return merged;
+}

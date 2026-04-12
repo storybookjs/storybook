@@ -57,6 +57,16 @@ export async function renderToCanvas(
 
   // if the story is already rendered and we are not forcing a remount, we just update the reactive args
   if (existingApp && !forceRemount) {
+    // Update the reactive proxies before calling storyFn so that decorators
+    // and the story function see the already-reactive objects instead of new
+    // plain objects.  This prevents globals (and args) from getting out of
+    // sync with the Vue reactivity system (see #34319).
+    updateArgs<Globals>(existingApp.reactiveGlobals, storyContext.globals);
+    storyContext.globals = existingApp.reactiveGlobals;
+
+    updateArgs<Args>(existingApp.reactiveArgs, storyContext.args);
+    storyContext.args = existingApp.reactiveArgs;
+
     // normally storyFn should be call once only in setup function,but because the nature of react and how storybook rendering the decorators
     // we need to call here to run the decorators again
     // i may wrap each decorator in memoized function to avoid calling it if the args are not changed
@@ -64,7 +74,6 @@ export async function renderToCanvas(
     const args = getArgs(element, storyContext); // get args in case they are altered by decorators otherwise use the args from the context
 
     updateArgs<Args>(existingApp.reactiveArgs, args);
-    updateArgs<Globals>(existingApp.reactiveGlobals, storyContext.globals);
     return () => {
       teardown(existingApp.vueApp, canvasElement);
     };

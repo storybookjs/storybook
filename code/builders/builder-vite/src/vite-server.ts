@@ -6,6 +6,23 @@ import type { InlineConfig, ServerOptions } from 'vite';
 import { createViteLogger } from './logger';
 import { commonConfig } from './vite-config';
 
+export async function createViteConfig(options: Options) {
+  const { presets } = options;
+
+  const commonCfg = await commonConfig(options, 'development');
+
+  // const { allowedHosts } = await presets.apply('core', {});
+
+  const config: InlineConfig = {
+    ...commonCfg,
+    appType: 'custom' as const,
+  };
+
+  const finalConfig = await presets.apply('viteFinal', config, options);
+
+  return finalConfig;
+}
+
 export async function createViteServer(options: Options, devServer: Server) {
   const { presets } = options;
 

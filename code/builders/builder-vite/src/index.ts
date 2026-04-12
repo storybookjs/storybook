@@ -15,6 +15,7 @@ export { withoutVitePlugins } from './utils/without-vite-plugins';
 export { hasVitePlugins } from './utils/has-vite-plugins';
 
 export * from './types';
+export { createViteConfig } from './vite-server';
 
 function iframeHandler(options: Options, server: ViteDevServer): Middleware {
   return async (req, res) => {

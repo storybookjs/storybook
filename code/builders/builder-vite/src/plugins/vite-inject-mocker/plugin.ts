@@ -12,6 +12,7 @@ export const viteInjectMockerRuntime = (options: {
     import.meta.resolve('storybook/internal/mocking-utils/mocker-runtime')
   );
 
+  console.log('mockerRuntimePath', mockerRuntimePath);
   let viteConfig: ResolvedConfig;
 
   return {

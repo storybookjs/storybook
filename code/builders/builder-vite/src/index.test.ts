@@ -302,12 +302,24 @@ describe('onModuleGraphChange', () => {
     expect(fakeViteServer.waitForRequestsIdle).not.toHaveBeenCalled();
   });
 
-  it('rejects listeners registered after start', async () => {
-    await start(createStartArgs());
+  it('allows listeners registered after start and runs change detection', async () => {
+    await start(createStartArgs(['/src/Button.tsx']));
+    await vi.advanceTimersByTimeAsync(1000);
 
-    expect(() => onModuleGraphChange(vi.fn())).toThrow(
-      'Vite module graph listeners must be registered before the builder starts.'
-    );
+    fakeViteServer.moduleGraph.fileToModulesMap = createFileToModulesMap([
+      '/src/Button.tsx',
+      new Set([createViteModuleNode('/src/Button.tsx')]),
+    ]);
+
+    const cb = vi.fn();
+    onModuleGraphChange(cb);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    cb.mockClear();
+    fakeViteServer.watcher.emit('change', '/src/Button.tsx');
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(cb).toHaveBeenCalledTimes(1);
   });
 
   it('does not reattach the watcher if bail runs while waiting for idle requests', async () => {

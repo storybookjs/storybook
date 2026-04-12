@@ -100,7 +100,7 @@ describe('PreflightCheckCommand', () => {
     it('should use provided package manager', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
 
-      await command.execute({ packageManager: 'yarn' } as any);
+      await command.execute({ packageManager: 'yarn' as PackageManagerName });
 
       expect(JsPackageManagerFactory.getPackageManager).toHaveBeenCalledWith({
         force: 'yarn',

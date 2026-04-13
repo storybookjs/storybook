@@ -10,7 +10,6 @@ import type { ViteBuilder } from 'vite';
 
 import { buildFrameworkGlobalsFromOptions } from '../../../../core/src/builder-manager/utils/framework';
 import { readTemplate, renderHTML } from '../../../../core/src/builder-manager/utils/template';
-import { bundlerOptionsKey } from '../../../builder-vite/src/utils/vite-features';
 import type { Plugin } from 'vite';
 const storybookPackageDir = dirname(fileURLToPath(import.meta.resolve('storybook/package.json')));
 const CORE_MANAGER_DIR = join(storybookPackageDir, 'dist/manager');
@@ -89,37 +88,14 @@ async function buildStoryIndex(options: Options, outputDir: string): Promise<voi
   await writeFile(join(outputDir, 'index.json'), JSON.stringify(storyIndex));
 }
  
-export function buildStorybookPlugin ( options: Options): Plugin {
-
-  const iframePath = fileURLToPath(
-    import.meta.resolve('@storybook/builder-vite/input/iframe.html')
-  );
-
- 
+export function buildStorybookPlugin(options: Options): Plugin {
   return {
     name: 'storybook:build',
     apply: 'build',
-    async configEnvironment(name) {
-        if(name !== 'storybook') {
-          return;
-        }
-
-        return  {
-          build: {
-            outDir: 'storybook-static',
-            emptyOutDir: false,
-            [bundlerOptionsKey]: {
-              input: iframePath,
-              external: [/\.\/sb-common-assets\/.*\.woff2/],
-            },
-          },
-        }
-    },
     async config(_, { mode }) {
       if (mode !== 'storybook') {
         return;
       }
-
       return {
         builder: {
           async buildApp(builder) {
@@ -128,5 +104,5 @@ export function buildStorybookPlugin ( options: Options): Plugin {
         },
       };
     },
-  }
+  };
 }

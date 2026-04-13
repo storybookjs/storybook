@@ -3,9 +3,10 @@ import {
   type StoryIndexGenerator,
 } from 'storybook/internal/core-server';
 
-import { resolveConfig, type InlineConfig, type Plugin, type PluginOption } from 'vite';
+import type { InlineConfig, Plugin, PluginOption } from 'vite';
 
 import { pluginConfig } from '../../builder-vite/src/vite-config';
+import { bundlerOptionsKey } from '../../builder-vite/src/utils/vite-features';
 import { buildStorybookPlugin } from './build';
 import { createServerChannel } from './middlewares/channel';
 import { registerIframeMiddleware } from './middlewares/iframe';
@@ -18,7 +19,10 @@ import { createStaticMiddlewares } from './middlewares/static';
 import { registerStoryIndexMiddleware } from './middlewares/story-index';
 import type { UserOptions } from './types';
 
-import { join, resolve } from 'pathe';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+import { dirname, join, resolve } from 'pathe';
 
 export async function SbMain(options?: UserOptions): Promise<PluginOption> {
   const finalOptions = {
@@ -43,20 +47,16 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
     .flat(3)
     .filter(Boolean) as Plugin[];
 
-  const resolved = await resolveConfig(
-    { plugins: allPlugins, configFile: false },
-    'serve'
+  const iframeSourcePath = fileURLToPath(
+    import.meta.resolve('@storybook/builder-vite/input/iframe.html')
   );
-
-  const aliases = resolved.resolve.alias;
-  const envConfig: Record<string, any> = {
-    resolve: { conditions: resolved.resolve.conditions },
-    define: resolved.define,
-    optimizeDeps: {
-      entries: resolved.optimizeDeps.entries,
-      include: resolved.optimizeDeps.include,
-    },
-  };
+  const projectRoot = resolve(finalOptions.configDir, '..');
+  const localIframePath = join(projectRoot, 'node_modules', '.cache', 'storybook', 'iframe.html');
+  const localIframeDir = dirname(localIframePath);
+  if (!existsSync(localIframeDir)) {
+    mkdirSync(localIframeDir, { recursive: true });
+  }
+  copyFileSync(iframeSourcePath, localIframePath);
 
   return [
     {
@@ -68,6 +68,22 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
           envPrefix: ['VITE_', 'STORYBOOK_'],
           server: { fs: { allow: [finalOptions.configDir] } },
           environments: { storybook: { consumer: 'client' } },
+        };
+      },
+
+      configEnvironment(name) {
+        if (name !== 'storybook') {
+          return;
+        }
+        return {
+          build: {
+            outDir: 'storybook-static',
+            emptyOutDir: false,
+            [bundlerOptionsKey]: {
+              input: localIframePath,
+              external: [/\.\/sb-common-assets\/.*\.woff2/],
+            },
+          },
         };
       },
 
@@ -136,46 +152,42 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
         },
       },
     },
-    {
-      name: 'storybook:env-config',
-      configEnvironment(name) {
-        if (name !== 'storybook') {
-          return;
-        }
-        return envConfig;
-      },
-    },
-    {
-      name: 'storybook:env-aliases',
-      enforce: 'pre' as const,
-      apply: 'serve' as const,
-      applyToEnvironment(env: { name: string }) {
-        return env.name === 'storybook';
-      },
-      resolveId(source) {
-        for (const alias of aliases) {
-          if (alias.find instanceof RegExp) {
-            if (alias.find.test(source)) {
-              return source.replace(alias.find, alias.replacement);
-            }
-          } else if (source === alias.find) {
-            return alias.replacement;
-          } else if (source.startsWith(alias.find + '/')) {
-            return alias.replacement + source.slice(String(alias.find).length);
-          }
-        }
-      },
-    },
-    {
-      name: 'storybook:scoped-plugins',
-      applyToEnvironment(environment: { name: string }) {
-        if (environment.name !== 'storybook') {
-          return false;
-        }
-        return allPlugins as Plugin[];
-      },
-    },
+    ...scopeToStorybookEnv(allPlugins),
     buildStorybookPlugin(sb),
   ];
 }
 
+/**
+ * Wraps plugins for the storybook environment:
+ * - Strips config() to prevent root-level config leakage
+ * - Adds applyToEnvironment to scope per-env hooks (resolveId, load, transform)
+ * - Wraps transformIndexHtml to only fire on storybook pages
+ *
+ * The plugins' configEnvironment hooks are preserved and fire naturally
+ * since the plugins remain top-level (not inside applyToEnvironment).
+ */
+function scopeToStorybookEnv(plugins: Plugin[]): Plugin[] {
+  return plugins.map((plugin) => {
+    return {
+      ...plugin,
+      applyToEnvironment(environment: { name: string }) {
+        return environment.name === 'storybook';
+      },
+      transformIndexHtml: plugin.transformIndexHtml
+        ? wrapTransformIndexHtml(plugin.transformIndexHtml)
+        : undefined,
+    } as Plugin;
+  });
+}
+
+const wrapTransformIndexHtml: (
+  transform: Plugin['transformIndexHtml']
+) => Plugin['transformIndexHtml'] = (transform) => {
+  if (typeof transform === 'function') {
+    return async (html, ctx) => {
+      if (ctx.path.startsWith('/__storybook/')) {
+        return transform.apply(this, [html, ctx]);
+      }
+    };
+  }
+};

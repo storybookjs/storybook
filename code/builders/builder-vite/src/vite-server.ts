@@ -43,6 +43,7 @@ export async function createViteServer(options: Options, devServer: Server) {
         strict: true,
       },
     },
+    base: '/__storybook',
     appType: 'custom' as const,
   };
 

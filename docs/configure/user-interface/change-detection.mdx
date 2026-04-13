@@ -44,12 +44,6 @@ The priority ordering when multiple statuses apply is: **new** > **modified** > 
 
 Change detection statuses are displayed alongside test statuses in the sidebar using a dual-slot design.
 
-### Story leaf nodes
-
-Story leaf nodes show a single combined status icon. The `modified` and `affected` statuses are not shown directly on story leaves — they bubble up to the parent component or group node instead. The exception is `new`: a story leaf that is newly added in git shows the sparkle icon directly.
-
-For all other status types (e.g., test results), story leaves show the most critical status across all status types.
-
 ## Filtering
 
 You can filter the sidebar to show only stories with a specific change detection status using the filter panel. This lets you quickly isolate new, modified, or affected stories when reviewing a change.

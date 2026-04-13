@@ -24,7 +24,7 @@ Change detection starts in one of three readiness states:
 | **unavailable** | Change detection cannot run; a reason is provided (e.g., feature disabled, builder does not support module graph, not a git repository) |
 | **error** | An unexpected error occurred during initialization or scanning |
 
-If change detection icons never appear in your sidebar, check that both requirements above are met and that the feature is enabled (see [Configuration](#configuration) below).
+If change detection icons never appear in your sidebar, check that both requirements above are met and that the feature has not been disabled (see [Configuration](#configuration) below).
 
 ## Status indicators
 
@@ -56,7 +56,7 @@ You can filter the sidebar to show only stories with a specific change detection
 
 ## Configuration
 
-Change detection is disabled by default. Enable it in your Storybook configuration:
+Change detection is enabled by default. To disable it, set `features.changeDetection` to `false` in your Storybook configuration:
 
 {/* prettier-ignore-start */}
 

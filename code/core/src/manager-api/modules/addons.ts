@@ -1,3 +1,4 @@
+import { logger } from 'storybook/internal/client-logger';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 import type {
   API_StateMerger,
@@ -100,7 +101,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({ provider, store, fullAPI }): 
     clearStatuses: () => {
       const testProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
       Object.values(testProviders).forEach((testProvider) => {
-        testProvider.clear?.();
+        try {
+          testProvider.clear?.();
+        } catch (e) {
+          logger.warn(`Failed to clear test provider "${testProvider.id}":`, e);
+        }
       });
     },
     getSelectedPanel: (): any => {

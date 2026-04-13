@@ -257,7 +257,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     });
   });
 
-  const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
+  const enableCrashReports = core?.enableCrashReports || options.enableCrashReports;
 
   channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
     if (event.type !== 'test-run-completed') {

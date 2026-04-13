@@ -34,6 +34,10 @@ export interface SubAPI {
     type: T
   ) => Addon_Collection<Addon_TypesMapping[T]>;
   /**
+   * Clears statuses for all registered test providers by calling each provider's `clear` function.
+   */
+  clearStatuses: () => void;
+  /**
    * Returns the id of the currently selected panel.
    *
    * @returns {string} - The ID of the currently selected panel.
@@ -93,6 +97,12 @@ export function ensurePanel(
 export const init: ModuleFn<SubAPI, SubState> = ({ provider, store, fullAPI }): any => {
   const api: SubAPI = {
     getElements: (type) => provider.getElements(type),
+    clearStatuses: () => {
+      const testProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
+      Object.values(testProviders).forEach((testProvider) => {
+        testProvider.clear?.();
+      });
+    },
     getSelectedPanel: (): any => {
       const { selectedPanel } = store.getState();
       return ensurePanel(api.getElements(Addon_TypesEnum.PANEL), selectedPanel, selectedPanel);

@@ -109,11 +109,12 @@ export async function doInitiate(options: CommandOptions): Promise<
   });
 
   if (selectedFeatures.has(Feature.AI)) {
+    logger.step('Setting up Storybook AI skills file');
     const { installAgentSkills } = await import('./install-agent-skills.ts');
     await installAgentSkills();
 
-    logger.step(
-      CLI_COLORS.storybook(dedent`To finalize setting up with AI, either use the /setup-storybook skill we just added to your project or paste this prompt to your AI agent:
+    logger.log(
+      CLI_COLORS.storybook(dedent`Done. To finalize setting up with AI, either use the /setup-storybook skill or paste the following prompt to your AI agent:
       Run \`npx storybook ai prepare\` and follow its instructions precisely.`)
     );
   }

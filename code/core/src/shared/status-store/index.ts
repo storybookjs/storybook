@@ -71,6 +71,18 @@ export type StatusStoreEvent = {
   payload: Status[];
 };
 
+export function countStatusesByValue(
+  allStatuses: StatusesByStoryIdAndTypeId
+): Record<StatusValue, number> {
+  const counts = {} as Record<StatusValue, number>;
+  for (const statusByTypeId of Object.values(allStatuses)) {
+    for (const status of Object.values(statusByTypeId)) {
+      counts[status.value] = (counts[status.value] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
 export type StatusStore = {
   getAll: () => StatusesByStoryIdAndTypeId;
   set: (statuses: Status[]) => void;
@@ -85,6 +97,7 @@ export type StatusStore = {
 };
 type FullStatusStore = StatusStore & {
   selectStatuses: (statuses: Status[]) => void;
+  countByValue: () => Record<StatusValue, number>;
   typeId: undefined;
 };
 export type StatusStoreByTypeId = StatusStore & {
@@ -133,6 +146,9 @@ export function createStatusStore({
   const fullStatusStore: FullStatusStore = {
     getAll() {
       return universalStatusStore.getState();
+    },
+    countByValue() {
+      return countStatusesByValue(universalStatusStore.getState());
     },
     set(statuses) {
       universalStatusStore.setState((state) => {

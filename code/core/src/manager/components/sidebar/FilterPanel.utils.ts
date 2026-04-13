@@ -4,7 +4,11 @@ import type { FilterFunction, StatusValue, Tag } from 'storybook/internal/types'
 
 import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags.ts';
 
-export { statusValueShortName, toStatusValue } from '../../../shared/status-store/index.ts';
+export {
+  countStatusesByValue,
+  statusValueShortName,
+  toStatusValue,
+} from '../../../shared/status-store/index.ts';
 
 export type FilterItem = {
   id: string;

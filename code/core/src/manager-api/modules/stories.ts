@@ -1270,11 +1270,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           }
         }
         const targetStatuses = new Set([...initialIncludedStatuses, ...initialExcludedStatuses]);
-        for (const statusByTypeId of Object.values(fullStatusStore.getAll())) {
-          for (const status of Object.values(statusByTypeId)) {
-            if (targetStatuses.has(status.value)) {
-              storyCounts[status.value] = (storyCounts[status.value] ?? 0) + 1;
-            }
+        const statusCounts = fullStatusStore.countByValue();
+        for (const statusValue of targetStatuses) {
+          if (statusCounts[statusValue] !== undefined) {
+            storyCounts[statusValue] = statusCounts[statusValue];
           }
         }
 

@@ -81,6 +81,68 @@ describe('statusStore', () => {
       });
     });
 
+    describe('countByValue', () => {
+      it('should count statuses by value across all stories and types', () => {
+        // Arrange
+        const { fullStatusStore } = createStatusStore({
+          universalStatusStore: new MockUniversalStore({
+            ...UNIVERSAL_STATUS_STORE_OPTIONS,
+            initialState,
+          }),
+          environment: 'manager',
+        });
+
+        // Act
+        const result = fullStatusStore.countByValue();
+
+        // Assert - story-1/type-1=success, story-1/type-2=error, story-2/type-1=pending, story-2/type-2=unknown
+        expect(result).toEqual({
+          'status-value:success': 1,
+          'status-value:error': 1,
+          'status-value:pending': 1,
+          'status-value:unknown': 1,
+        });
+      });
+
+      it('should aggregate counts when multiple stories share the same status value', () => {
+        // Arrange
+        const sharedSuccessStatus: Status = { ...story2Type1Status, value: 'status-value:success' };
+        const { fullStatusStore } = createStatusStore({
+          universalStatusStore: new MockUniversalStore<
+            StatusesByStoryIdAndTypeId,
+            StatusStoreEvent
+          >({
+            ...UNIVERSAL_STATUS_STORE_OPTIONS,
+            initialState: {
+              'story-1': { 'type-1': story1Type1Status }, // success
+              'story-2': { 'type-1': sharedSuccessStatus }, // success
+            },
+          }),
+          environment: 'manager',
+        });
+
+        // Act
+        const result = fullStatusStore.countByValue();
+
+        // Assert
+        expect(result).toEqual({ 'status-value:success': 2 });
+      });
+
+      it('should return an empty object when the store is empty', () => {
+        // Arrange
+        const { fullStatusStore } = createStatusStore({
+          universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+          environment: 'manager',
+        });
+
+        // Act
+        const result = fullStatusStore.countByValue();
+
+        // Assert
+        expect(result).toEqual({});
+      });
+    });
+
     describe('set', () => {
       it('should add new statuses', () => {
         // Arrange - create a status store

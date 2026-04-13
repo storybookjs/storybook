@@ -26,8 +26,7 @@ import {
   vitestTransform,
 } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
-import { oneWayHash } from 'storybook/internal/telemetry';
+import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
@@ -387,6 +386,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
                 if (process.env.STORYBOOK_COMPONENT_PATHS) {
                   globals.ghostStories = {
+                    enabled: true,
+                  };
+                  globals.renderAnalysis = {
+                    enabled: true,
+                  };
+                }
+
+                if (detectAgent()) {
+                  globals.renderAnalysis = {
                     enabled: true,
                   };
                 }

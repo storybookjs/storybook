@@ -147,10 +147,10 @@ export async function doInitiate(options: CommandOptions): Promise<
   });
 
   // Step 8: Print final summary
+  const hasAiFeature = selectedFeatures.has(Feature.AI);
   await executeFinalization({
-    agent: !!options.agent,
-    isAiPrepareAvailable,
-    showAiInstructions: selectedFeatures.has(Feature.AI),
+    showAgentFollowUp: !!options.agent && hasAiFeature,
+    showAiInstructions: hasAiFeature,
     logfile: options.logfile,
     storybookCommand,
   });

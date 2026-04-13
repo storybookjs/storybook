@@ -18,7 +18,11 @@ describe('FinalizationCommand', () => {
   let command: FinalizationCommand;
 
   beforeEach(() => {
-    command = new FinalizationCommand(undefined, false, false, false);
+    command = new FinalizationCommand({
+      logfile: undefined,
+      showAgentFollowUp: false,
+      showAiInstructions: false,
+    });
 
     vi.mocked(getProjectRoot).mockReturnValue('/test/project');
     vi.mocked(logger.step).mockImplementation(() => {});
@@ -109,8 +113,12 @@ describe('FinalizationCommand', () => {
   });
 
   describe('agent mode', () => {
-    it('should show agent-specific message when agent=true and ai prepare is supported', async () => {
-      const agentCommand = new FinalizationCommand(undefined, true, true, false);
+    it('should show agent-specific message when showAgentFollowUp=true', async () => {
+      const agentCommand = new FinalizationCommand({
+        logfile: undefined,
+        showAgentFollowUp: true,
+        showAiInstructions: false,
+      });
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await agentCommand.execute({});
@@ -120,8 +128,13 @@ describe('FinalizationCommand', () => {
       );
       expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai prepare'));
     });
-    it('should show standard success message when agent=true and ai prepare is NOT supported', async () => {
-      const agentCommand = new FinalizationCommand(undefined, true, false, true);
+
+    it('should show standard success message when showAgentFollowUp=false with AI instructions', async () => {
+      const agentCommand = new FinalizationCommand({
+        logfile: undefined,
+        showAgentFollowUp: false,
+        showAiInstructions: true,
+      });
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await agentCommand.execute({});
@@ -134,8 +147,12 @@ describe('FinalizationCommand', () => {
       expect(stepCalls.some((msg) => msg.includes('is not entirely set up yet'))).toBe(false);
     });
 
-    it('should show standard success message when agent=false', async () => {
-      const nonAgentCommand = new FinalizationCommand(undefined, false, false, false);
+    it('should show standard success message when showAgentFollowUp=false', async () => {
+      const nonAgentCommand = new FinalizationCommand({
+        logfile: undefined,
+        showAgentFollowUp: false,
+        showAiInstructions: false,
+      });
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await nonAgentCommand.execute({});
@@ -151,7 +168,11 @@ describe('FinalizationCommand', () => {
 
   describe('AI instructions', () => {
     it('should show AI instructions when showAiInstructions=true', async () => {
-      const aiCommand = new FinalizationCommand(undefined, false, true, true);
+      const aiCommand = new FinalizationCommand({
+        logfile: undefined,
+        showAgentFollowUp: false,
+        showAiInstructions: true,
+      });
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await aiCommand.execute({});
@@ -163,7 +184,11 @@ describe('FinalizationCommand', () => {
     });
 
     it('should NOT show AI instructions when showAiInstructions=false', async () => {
-      const noAiCommand = new FinalizationCommand(undefined, false, false, false);
+      const noAiCommand = new FinalizationCommand({
+        logfile: undefined,
+        showAgentFollowUp: false,
+        showAiInstructions: false,
+      });
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await noAiCommand.execute({});
@@ -173,7 +198,11 @@ describe('FinalizationCommand', () => {
     });
 
     it('should show both agent message and AI instructions when both are true', async () => {
-      const bothCommand = new FinalizationCommand(undefined, true, true, true);
+      const bothCommand = new FinalizationCommand({
+        logfile: undefined,
+        showAgentFollowUp: true,
+        showAiInstructions: true,
+      });
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await bothCommand.execute({});
@@ -189,7 +218,11 @@ describe('FinalizationCommand', () => {
 
   describe('storybookCommand message', () => {
     it('should print "To run Storybook, run" with the command', async () => {
-      const cmd = new FinalizationCommand(undefined, false, false, false);
+      const cmd = new FinalizationCommand({
+        logfile: undefined,
+        showAgentFollowUp: false,
+        showAiInstructions: false,
+      });
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await cmd.execute({ storybookCommand: 'npm run storybook' });
@@ -199,7 +232,11 @@ describe('FinalizationCommand', () => {
     });
 
     it('should not print storybook command message when storybookCommand is null', async () => {
-      const cmd = new FinalizationCommand(undefined, false, false, false);
+      const cmd = new FinalizationCommand({
+        logfile: undefined,
+        showAgentFollowUp: false,
+        showAiInstructions: false,
+      });
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await cmd.execute({ storybookCommand: null });
@@ -210,13 +247,12 @@ describe('FinalizationCommand', () => {
   });
 
   describe('executeFinalization helper', () => {
-    it('should pass agent and showAiInstructions to FinalizationCommand', async () => {
+    it('should show agent follow-up when showAgentFollowUp=true', async () => {
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await executeFinalization({
-        agent: true,
+        showAgentFollowUp: true,
         showAiInstructions: false,
-        isAiPrepareAvailable: true,
         logfile: undefined,
       });
 
@@ -230,9 +266,8 @@ describe('FinalizationCommand', () => {
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await executeFinalization({
-        agent: false,
+        showAgentFollowUp: false,
         showAiInstructions: true,
-        isAiPrepareAvailable: false,
         logfile: undefined,
       });
 
@@ -245,9 +280,8 @@ describe('FinalizationCommand', () => {
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await executeFinalization({
-        agent: false,
+        showAgentFollowUp: false,
         showAiInstructions: false,
-        isAiPrepareAvailable: false,
         logfile: undefined,
         storybookCommand: 'yarn storybook',
       });

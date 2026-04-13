@@ -220,16 +220,12 @@ export class UserPreferencesCommand {
 
   /** Prompt user about AI-assisted Storybook setup */
   private async promptAiSetup(skipPrompt: boolean): Promise<boolean> {
-    let useAi: boolean;
-
-    if (skipPrompt) {
-      useAi = true;
-    } else {
-      useAi = await prompt.confirm({
-        message: dedent`Would you like to improve your Storybook setup with AI?
-      We will install dependencies and give you a prompt to set up a Storybook that follows best practices, with content tailored to your project.`,
-      });
-    }
+    const useAi = skipPrompt
+      ? true
+      : await prompt.confirm({
+          message:
+            'Would you like to install AI features (MCP addon, skills and prompt suggestions)?',
+        });
 
     if (useAi) {
       await this.telemetryService.trackAiPromptNudge({ skipPrompt });

@@ -69,10 +69,15 @@ export async function setTelemetryEnabled(enabled: boolean) {
     const pending = _queue;
     _queue = [];
     for (const event of pending) {
-      await _processAndSend(event.eventType, event.payload, {
-        ...event.options,
-        timestamp: event.timestamp,
-      });
+      try {
+        await _processAndSend(event.eventType, event.payload, {
+          ...event.options,
+          timestamp: event.timestamp,
+        });
+      } catch (error) {
+        logger.warn('Failed to flush queued telemetry event');
+        logger.debug(error);
+      }
     }
   } else {
     // Clear the queue (disabled, or already resolved)

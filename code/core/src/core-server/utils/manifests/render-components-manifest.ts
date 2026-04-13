@@ -1,17 +1,17 @@
-import path from "node:path";
+import path from 'node:path';
 
-import { groupBy } from "storybook/internal/common";
+import { groupBy } from 'storybook/internal/common';
 
-import type { ComponentDoc, PropItem } from "react-docgen-typescript";
+import type { ComponentDoc, PropItem } from 'react-docgen-typescript';
 
 // Type-only import to reuse the source-of-truth react-component-meta manifest shape
 // without creating a runtime dependency from core to the React renderer package.
-import type { ComponentDoc as ReactComponentMetaDoc } from "../../../../../renderers/react/src/componentManifest/componentMeta/componentMetaExtractor.ts";
+import type { ComponentDoc as ReactComponentMetaDoc } from '../../../../../renderers/react/src/componentManifest/componentMeta/componentMetaExtractor.ts';
 import type {
   ComponentManifest,
   ComponentsManifest,
   ComponentSubcomponentManifest,
-} from "../../../types/index.ts";
+} from '../../../types/index.ts';
 
 /** Minimal docs entry type for rendering in the manifest debugger */
 interface DocsManifestEntry {
@@ -37,8 +37,7 @@ interface ComponentManifestLikeWithDocgen extends ComponentSubcomponentManifest 
 }
 
 /** Extended component manifest that may include docs from the docs addon */
-interface ComponentManifestWithDocs
-  extends ComponentManifestLikeWithDocgen, ComponentManifest {
+interface ComponentManifestWithDocs extends ComponentManifestLikeWithDocgen, ComponentManifest {
   docs?: Record<string, DocsManifestEntry>;
   subcomponents?: Record<string, ComponentManifestLikeWithDocgen>;
 }
@@ -47,29 +46,25 @@ interface ComponentManifestWithDocs
 // Only HTML/CSS no JS
 export function renderComponentsManifest(
   manifest: ComponentsManifest | undefined,
-  docsManifest?: DocsManifest,
+  docsManifest?: DocsManifest
 ) {
   const entries = Object.entries(manifest?.components ?? {}).sort((a, b) =>
-    (a[1].name || a[0]).localeCompare(b[1].name || b[0]),
+    (a[1].name || a[0]).localeCompare(b[1].name || b[0])
   );
 
   // Get unattached docs entries
   const docsEntries = Object.entries(docsManifest?.docs ?? {}).sort((a, b) =>
-    (a[1].name || a[0]).localeCompare(b[1].name || b[0]),
+    (a[1].name || a[0]).localeCompare(b[1].name || b[0])
   );
 
   const analyses = entries.map(([, c]) => analyzeComponent(c));
   const docsAnalyses = docsEntries.map(([, d]) => analyzeDoc(d));
   const attachedDocs = analyses.reduce((sum, a) => sum + a.totalDocs, 0);
-  const attachedDocsWithError = analyses.reduce(
-    (sum, a) => sum + a.docsErrors,
-    0,
-  );
+  const attachedDocsWithError = analyses.reduce((sum, a) => sum + a.docsErrors, 0);
   const unattachedDocsWithError = docsAnalyses.filter((a) => a.hasError).length;
   const totals = {
     components: entries.length,
-    componentsWithPropTypeError: analyses.filter((a) => a.hasPropTypeError)
-      .length,
+    componentsWithPropTypeError: analyses.filter((a) => a.hasPropTypeError).length,
     infos: analyses.filter((a) => a.hasWarns).length,
     stories: analyses.reduce((sum, a) => sum + a.totalStories, 0),
     storyErrors: analyses.reduce((sum, a) => sum + a.storyErrors, 0),
@@ -77,57 +72,51 @@ export function renderComponentsManifest(
     docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
 
-  const activeEngine = manifest?.meta?.docgen ?? "react-docgen";
+  const activeEngine = manifest?.meta?.docgen ?? 'react-docgen';
   const durationMs = manifest?.meta?.durationMs ?? 0;
 
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
   const allPill = `<a class="filter-pill all" data-k="all" href="#filter-all">All</a>`;
   const compErrorsPill =
     totals.componentsWithPropTypeError > 0
-      ? `<a class="filter-pill err" data-k="errors" href="#filter-errors">${totals.componentsWithPropTypeError}/${totals.components} prop type ${plural(totals.componentsWithPropTypeError, "error")}</a>`
+      ? `<a class="filter-pill err" data-k="errors" href="#filter-errors">${totals.componentsWithPropTypeError}/${totals.components} prop type ${plural(totals.componentsWithPropTypeError, 'error')}</a>`
       : totals.components > 0
         ? `<span class="filter-pill ok" aria-disabled="true">${totals.components} components ok</span>`
-        : "";
+        : '';
   const compInfosPill =
     totals.infos > 0
-      ? `<a class="filter-pill info" data-k="infos" href="#filter-infos">${totals.infos}/${totals.components} ${plural(totals.infos, "info", "infos")}</a>`
-      : "";
+      ? `<a class="filter-pill info" data-k="infos" href="#filter-infos">${totals.infos}/${totals.components} ${plural(totals.infos, 'info', 'infos')}</a>`
+      : '';
   const storiesPill =
     totals.storyErrors > 0
       ? `<a class="filter-pill err" data-k="story-errors" href="#filter-story-errors">${totals.storyErrors}/${totals.stories} story errors</a>`
       : totals.stories > 0
-        ? `<span class="filter-pill ok" aria-disabled="true">${totals.stories} ${plural(totals.stories, "story", "stories")} ok</span>`
-        : "";
+        ? `<span class="filter-pill ok" aria-disabled="true">${totals.stories} ${plural(totals.stories, 'story', 'stories')} ok</span>`
+        : '';
   const docsPill =
     totals.docs > 0
       ? totals.docsWithError > 0
-        ? `<a class="filter-pill info" data-k="docs" href="#filter-docs">${totals.docsWithError}/${totals.docs} doc ${plural(totals.docsWithError, "error")}</a>`
-        : `<a class="filter-pill ok" data-k="docs" href="#filter-docs">${totals.docs} ${plural(totals.docs, "doc")} ok</a>`
-      : "";
+        ? `<a class="filter-pill info" data-k="docs" href="#filter-docs">${totals.docsWithError}/${totals.docs} doc ${plural(totals.docsWithError, 'error')}</a>`
+        : `<a class="filter-pill ok" data-k="docs" href="#filter-docs">${totals.docs} ${plural(totals.docs, 'doc')} ok</a>`
+      : '';
 
-  const grid = entries
-    .map(([key, c], idx) => renderComponentCard(key, c, `${idx}`))
-    .join("");
-  const docsGrid = docsEntries
-    .map(([key, d], idx) => renderDocCard(key, d, `doc-${idx}`))
-    .join("");
+  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
+  const docsGrid = docsEntries.map(([key, d], idx) => renderDocCard(key, d, `doc-${idx}`)).join('');
 
   const errorGroups = Object.entries(
     groupBy(
       entries.map(([, it]) => it).filter((it) => it.error),
-      (manifest) => manifest.error?.name ?? "Error",
-    ),
+      (manifest) => manifest.error?.name ?? 'Error'
+    )
   ).sort(([, a], [, b]) => b.length - a.length);
 
   const errorGroupsHTML = errorGroups
     .map(([error, grouped]) => {
-      const id = error.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const id = error.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const headerText = `${esc(error)}`;
       const cards = grouped
-        .map((manifest, id) =>
-          renderComponentCard(manifest.id, manifest, `error-${id}`),
-        )
-        .join("");
+        .map((manifest, id) => renderComponentCard(manifest.id, manifest, `error-${id}`))
+        .join('');
       return `
         <section class="group">
           <input id="${id}-toggle" class="group-tg" type="checkbox" hidden />
@@ -140,7 +129,7 @@ export function renderComponentsManifest(
         </section>
       `;
     })
-    .join("");
+    .join('');
 
   return `<!doctype html>
 <html lang="en">
@@ -738,7 +727,7 @@ export function renderComponentsManifest(
 <main>
   <div class="wrap">
     ${
-      activeEngine === "react-docgen"
+      activeEngine === 'react-docgen'
         ? `<div class="note info" style="margin-bottom: 16px;">
             <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>${(durationMs / 1000).toFixed(1)}s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
             <pre><code>typescript: {
@@ -747,7 +736,7 @@ export function renderComponentsManifest(
             Note: <code>react-docgen-typescript</code> can be slower. If performance is acceptable for your project, it generally produces better results.
             <a href="https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen" target="_blank">Learn more</a>
           </div>`
-        : activeEngine === "react-docgen-typescript" && durationMs > 7500
+        : activeEngine === 'react-docgen-typescript' && durationMs > 7500
           ? `<div class="note err" style="margin-bottom: 16px;">
               <strong>Performance warning:</strong> <code>react-docgen-typescript</code> took <strong>${(durationMs / 1000).toFixed(1)}s</strong> to generate the manifest. This delay applies every time the manifest is used by an agent. Consider switching to the faster <code>react-docgen</code> in your <code>main.ts</code>:
               <pre><code>typescript: {
@@ -765,12 +754,12 @@ export function renderComponentsManifest(
     <div class="grid" role="list">
       ${grid}
     </div>`
-        : ""
+        : ''
     }
     ${
       errorGroups.length
         ? `<div class="error-groups" role="region" aria-label="Prop type error groups">${errorGroupsHTML}</div>`
-        : ""
+        : ''
     }
     ${
       docsGrid
@@ -778,12 +767,12 @@ export function renderComponentsManifest(
     <div class="grid" role="list">
       ${docsGrid}
     </div>`
-        : ""
+        : ''
     }
     ${
       !grid && !docsGrid
         ? `<div class="card"><div class="head"><div class="hint">No components or docs.</div></div></div>`
-        : ""
+        : ''
     }
   </div>
 </main>
@@ -792,29 +781,22 @@ export function renderComponentsManifest(
 }
 
 const esc = (s: unknown) =>
-  String(s ?? "").replace(/[&<>"']/g, (c) => {
-    return (
-      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
-        c
-      ] ?? c
-    );
+  String(s ?? '').replace(/[&<>"']/g, (c) => {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c;
   });
-const plural = (n: number, one: string, many = `${one}s`) =>
-  n === 1 ? one : many;
+const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 
 function analyzeComponent(c: ComponentManifestWithDocs) {
   const hasPropTypeError = !!c.error;
   const warns: string[] = [];
 
   if (!c.description?.trim()) {
-    warns.push(
-      "No description found. Write a jsdoc comment such as /** Component description */.",
-    );
+    warns.push('No description found. Write a jsdoc comment such as /** Component description */.');
   }
 
   if (!c.import?.trim()) {
     warns.push(
-      `Specify an @import jsdoc tag on your component or your stories meta such as @import import { ${c.name} } from 'my-design-system';`,
+      `Specify an @import jsdoc tag on your component or your stories meta such as @import import { ${c.name} } from 'my-design-system';`
     );
   }
 
@@ -850,7 +832,7 @@ function analyzeDoc(d: DocsManifestEntry) {
   };
 }
 
-function note(title: string, bodyHTML: string, kind: "info" | "err") {
+function note(title: string, bodyHTML: string, kind: 'info' | 'err') {
   return `
     <div class="note ${kind}">
       <div class="note-title">${esc(title)}</div>
@@ -860,24 +842,24 @@ function note(title: string, bodyHTML: string, kind: "info" | "err") {
 
 function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
   const a = analyzeDoc(d);
-  const statusDot = a.hasError ? "dot-err" : "dot-ok";
+  const statusDot = a.hasError ? 'dot-err' : 'dot-ok';
 
   const slug = `${id}-${(d.id || key)
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")}`;
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')}`;
 
   const errorBadge = a.hasError
     ? `<label for="${slug}-err" class="badge err as-toggle">error</label>`
-    : "";
+    : '';
 
   const contentBadge = d.content
     ? `<label for="${slug}-content" class="badge ok as-toggle">view content</label>`
-    : "";
+    : '';
 
   return `
 <article
-  class="card is-doc ${a.hasError ? "has-doc-error" : "no-doc-error"}"
+  class="card is-doc ${a.hasError ? 'has-doc-error' : 'no-doc-error'}"
   role="listitem"
   aria-label="${esc(d.name || key)}">
   <div class="head">
@@ -889,12 +871,12 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
       </div>
     </div>
     <div class="meta" title="${esc(d.path)}">${esc(d.id)} · ${esc(d.path)}</div>
-    ${d.summary ? `<div>${esc(d.summary)}</div>` : ""}
+    ${d.summary ? `<div>${esc(d.summary)}</div>` : ''}
   </div>
 
   <!-- Hidden toggles must be siblings BEFORE .panels -->
-  ${a.hasError ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ""}
-  ${d.content ? `<input id="${slug}-content" class="tg tg-content" type="checkbox" hidden />` : ""}
+  ${a.hasError ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ''}
+  ${d.content ? `<input id="${slug}-content" class="tg tg-content" type="checkbox" hidden />` : ''}
 
   <div class="panels">
     ${
@@ -902,11 +884,11 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
         ? `
         <div class="panel panel-err">
           <div class="note err">
-            <div class="note-title">${esc(d.error?.name || "Error")}</div>
-            <div class="note-body"><pre><code>${esc(d.error?.message || "Unknown error")}</code></pre></div>
+            <div class="note-title">${esc(d.error?.name || 'Error')}</div>
+            <div class="note-body"><pre><code>${esc(d.error?.message || 'Unknown error')}</code></pre></div>
           </div>
         </div>`
-        : ""
+        : ''
     }
     ${
       d.content
@@ -916,19 +898,15 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
             <pre><code>${esc(d.content)}</code></pre>
           </div>
         </div>`
-        : ""
+        : ''
     }
   </div>
 </article>`;
 }
 
-function renderComponentCard(
-  key: string,
-  c: ComponentManifestWithDocs,
-  id: string,
-) {
+function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
   const a = analyzeComponent(c);
-  const statusDot = a.hasAnyError ? "dot-err" : "dot-ok";
+  const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
   const allStories = c.stories ?? [];
   const errorStories = allStories.filter((ex) => !!ex?.error);
   const okStories = allStories.filter((ex) => !ex?.error);
@@ -941,31 +919,31 @@ function renderComponentCard(
 
   const slug = `c-${id}-${(c.id || key)
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")}`;
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')}`;
 
   const componentErrorBadge = a.hasPropTypeError
     ? `<label for="${slug}-err" class="badge err as-toggle">prop type error</label>`
-    : "";
+    : '';
 
   const infosBadge = a.hasWarns
-    ? `<label for="${slug}-info" class="badge info as-toggle">${a.warns.length} ${plural(a.warns.length, "info", "infos")}</label>`
-    : "";
+    ? `<label for="${slug}-info" class="badge info as-toggle">${a.warns.length} ${plural(a.warns.length, 'info', 'infos')}</label>`
+    : '';
 
   const storiesBadge =
     a.totalStories > 0
-      ? `<label for="${slug}-stories" class="badge ${a.storyErrors > 0 ? "err" : "ok"} as-toggle">${a.storyErrors > 0 ? `${a.storyErrors}/${a.totalStories} story errors` : `${a.totalStories} ${plural(a.totalStories, "story", "stories")}`}</label>`
-      : "";
+      ? `<label for="${slug}-stories" class="badge ${a.storyErrors > 0 ? 'err' : 'ok'} as-toggle">${a.storyErrors > 0 ? `${a.storyErrors}/${a.totalStories} story errors` : `${a.totalStories} ${plural(a.totalStories, 'story', 'stories')}`}</label>`
+      : '';
 
   const docsBadge =
     a.totalDocs > 0
-      ? `<label for="${slug}-docs" class="badge ${a.docsErrors > 0 ? "err" : "ok"} as-toggle">${a.docsErrors > 0 ? `${a.docsErrors}/${a.totalDocs} doc errors` : `${a.totalDocs} ${plural(a.totalDocs, "doc")}`}</label>`
-      : "";
+      ? `<label for="${slug}-docs" class="badge ${a.docsErrors > 0 ? 'err' : 'ok'} as-toggle">${a.docsErrors > 0 ? `${a.docsErrors}/${a.totalDocs} doc errors` : `${a.totalDocs} ${plural(a.totalDocs, 'doc')}`}</label>`
+      : '';
 
   const subcomponentsBadge =
     subcomponentEntries.length > 0
-      ? `<label for="${slug}-subcomponents" class="badge ok as-toggle">${subcomponentEntries.length} ${plural(subcomponentEntries.length, "subcomponent")}</label>`
-      : "";
+      ? `<label for="${slug}-subcomponents" class="badge ok as-toggle">${subcomponentEntries.length} ${plural(subcomponentEntries.length, 'subcomponent')}</label>`
+      : '';
 
   const {
     parsed: activeParsed,
@@ -973,13 +951,11 @@ function renderComponentCard(
     filePath,
     exportName,
   } = getDocgenRenderData(c, a.hasPropTypeError);
-  const propEntries = activeParsed
-    ? Object.entries(activeParsed.props ?? {})
-    : [];
+  const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
-      ? `<label for="${slug}-props" class="badge ok as-toggle">${propEntries.length} ${plural(propEntries.length, "prop type")}</label>`
-      : "";
+      ? `<label for="${slug}-props" class="badge ok as-toggle">${propEntries.length} ${plural(propEntries.length, 'prop type')}</label>`
+      : '';
 
   const primaryBadge = componentErrorBadge || propTypesBadge;
 
@@ -988,40 +964,37 @@ function renderComponentCard(
       ? propEntries
           .sort(([aName], [bName]) => aName.localeCompare(bName))
           .map(([propName, info]) => {
-            const description = (info?.description ?? "").trim();
-            const t = (info?.type ?? "any").trim();
-            const optional = info?.required ? "" : "?";
-            const defaultVal = (info?.defaultValue ?? "").trim();
-            const def = defaultVal ? ` = ${defaultVal}` : "";
+            const description = (info?.description ?? '').trim();
+            const t = (info?.type ?? 'any').trim();
+            const optional = info?.required ? '' : '?';
+            const defaultVal = (info?.defaultValue ?? '').trim();
+            const def = defaultVal ? ` = ${defaultVal}` : '';
             const doc =
-              [
-                "/**",
-                ...description.split("\n").map((line) => ` * ${line}`),
-                " */",
-              ].join("\n") + "\n";
-            return `${description ? doc : ""}${propName}${optional}: ${t}${def}`;
+              ['/**', ...description.split('\n').map((line) => ` * ${line}`), ' */'].join('\n') +
+              '\n';
+            return `${description ? doc : ''}${propName}${optional}: ${t}${def}`;
           })
-          .join("\n\n")
-      : "";
+          .join('\n\n')
+      : '';
 
   const tags =
-    c.jsDocTags && typeof c.jsDocTags === "object"
+    c.jsDocTags && typeof c.jsDocTags === 'object'
       ? Object.entries(c.jsDocTags)
           .flatMap(([k, v]) =>
             (Array.isArray(v) ? v : [v]).map(
-              (val) => `<span class="chip">${esc(k)}: ${esc(val)}</span>`,
-            ),
+              (val) => `<span class="chip">${esc(k)}: ${esc(val)}</span>`
+            )
           )
-          .join("")
-      : "";
+          .join('')
+      : '';
 
   return `
 <article
   class="card 
-  ${a.hasPropTypeError ? "has-error" : "no-error"} 
-  ${a.hasWarns ? "has-info" : "no-info"} 
-  ${a.storyErrors ? "has-story-error" : "no-story-error"}
-  ${a.docsErrors ? "has-doc-error" : "no-doc-error"}"
+  ${a.hasPropTypeError ? 'has-error' : 'no-error'} 
+  ${a.hasWarns ? 'has-info' : 'no-info'} 
+  ${a.storyErrors ? 'has-story-error' : 'no-story-error'}
+  ${a.docsErrors ? 'has-doc-error' : 'no-doc-error'}"
   role="listitem"
   aria-label="${esc(c.name || key)}">
   <div class="head">
@@ -1036,35 +1009,35 @@ function renderComponentCard(
       </div>
     </div>
     <div class="meta" title="${esc(c.path)}">${esc(c.id)} · ${esc(c.path)}</div>
-    ${c.summary ? `<div>${esc(c.summary)}</div>` : ""}
-    ${c.description ? `<div class="hint">${esc(c.description)}</div>` : ""}
-    ${tags ? `<div class="kv">${tags}</div>` : ""}
+    ${c.summary ? `<div>${esc(c.summary)}</div>` : ''}
+    ${c.description ? `<div class="hint">${esc(c.description)}</div>` : ''}
+    ${tags ? `<div class="kv">${tags}</div>` : ''}
   </div>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  ${a.hasPropTypeError ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ""}
-  ${a.hasWarns ? `<input id="${slug}-info" class="tg tg-info" type="checkbox" hidden />` : ""}
-  ${a.totalStories > 0 ? `<input id="${slug}-stories" class="tg tg-stories" type="checkbox" hidden />` : ""}
-  ${a.totalDocs > 0 ? `<input id="${slug}-docs" class="tg tg-docs" type="checkbox" hidden />` : ""}
-  ${subcomponentEntries.length > 0 ? `<input id="${slug}-subcomponents" class="tg tg-subcomponents" type="checkbox" hidden />` : ""}
-  ${!a.hasPropTypeError && propEntries.length > 0 ? `<input id="${slug}-props" class="tg tg-props" type="checkbox" hidden />` : ""}
+  ${a.hasPropTypeError ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ''}
+  ${a.hasWarns ? `<input id="${slug}-info" class="tg tg-info" type="checkbox" hidden />` : ''}
+  ${a.totalStories > 0 ? `<input id="${slug}-stories" class="tg tg-stories" type="checkbox" hidden />` : ''}
+  ${a.totalDocs > 0 ? `<input id="${slug}-docs" class="tg tg-docs" type="checkbox" hidden />` : ''}
+  ${subcomponentEntries.length > 0 ? `<input id="${slug}-subcomponents" class="tg tg-subcomponents" type="checkbox" hidden />` : ''}
+  ${!a.hasPropTypeError && propEntries.length > 0 ? `<input id="${slug}-props" class="tg tg-props" type="checkbox" hidden />` : ''}
 
   <div class="panels">
     ${
       a.hasPropTypeError
         ? `
         <div class="panel panel-err">
-          ${note("Prop type error", `<pre><code>${esc(c.error?.message || "Unknown error")}</code></pre>`, "err")}
+          ${note('Prop type error', `<pre><code>${esc(c.error?.message || 'Unknown error')}</code></pre>`, 'err')}
         </div>`
-        : ""
+        : ''
     }
     ${
       a.hasWarns
         ? `
         <div class="panel panel-info">
-          ${a.warns.map((w) => note("Info", esc(w), "info")).join("")}
+          ${a.warns.map((w) => note('Info', esc(w), 'info')).join('')}
         </div>`
-        : ""
+        : ''
     }
     ${
       !a.hasPropTypeError && propEntries.length > 0
@@ -1073,14 +1046,14 @@ function renderComponentCard(
           <div class="note ok">
             <div class="row">
               <span class="ex-name">Prop types <small>(${cardEngine})</small></span>
-              <span class="badge ok">${propEntries.length} ${plural(propEntries.length, "prop type")}</span>
+              <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
             </div>
-            <pre><code>Component: ${filePath ? esc(path.relative(process.cwd(), filePath)) : ""}${exportName ? "::" + esc(exportName) : ""}</code></pre>
+            <pre><code>Component: ${filePath ? esc(path.relative(process.cwd(), filePath)) : ''}${exportName ? '::' + esc(exportName) : ''}</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>${esc(propsCode)}</code></pre>
           </div>
         </div>`
-        : ""
+        : ''
     }
     ${
       a.totalStories > 0
@@ -1094,13 +1067,13 @@ function renderComponentCard(
                 <span class="ex-name">${esc(ex.name)}</span>
                 <span class="badge err">story error</span>
               </div>
-              ${ex?.summary ? `<div class=\"hint\">Summary: ${esc(ex.summary)}</div>` : ""}
-              ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ""}
-              ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ""}
-              ${ex?.error?.message ? `<pre><code>${esc(ex.error.message)}</code></pre>` : ""}
-            </div>`,
+              ${ex?.summary ? `<div class=\"hint\">Summary: ${esc(ex.summary)}</div>` : ''}
+              ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ''}
+              ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
+              ${ex?.error?.message ? `<pre><code>${esc(ex.error.message)}</code></pre>` : ''}
+            </div>`
             )
-            .join("")}
+            .join('')}
           
           
           ${
@@ -1111,7 +1084,7 @@ function renderComponentCard(
                 </div>
                 <pre><code>${c.import}</code></pre>
               </div>`
-              : ""
+              : ''
           }
           
           ${okStories
@@ -1122,14 +1095,14 @@ function renderComponentCard(
                 <span class="ex-name">${esc(ex.name)}</span>
                 <span class="badge ok">story ok</span>
               </div>
-              ${ex?.summary ? `<div>${esc(ex.summary)}</div>` : ""}
-              ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ""}
-              ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ""}
-            </div>`,
+              ${ex?.summary ? `<div>${esc(ex.summary)}</div>` : ''}
+              ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ''}
+              ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
+            </div>`
             )
-            .join("")}
+            .join('')}
         </div>`
-        : ""
+        : ''
     }
     ${
       a.totalDocs > 0
@@ -1144,11 +1117,11 @@ function renderComponentCard(
                 <span class="badge err">doc error</span>
               </div>
               <div class="hint">${esc(doc.path)}</div>
-              ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ""}
-              ${doc?.error?.message ? `<pre><code>${esc(doc.error.message)}</code></pre>` : ""}
-            </div>`,
+              ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
+              ${doc?.error?.message ? `<pre><code>${esc(doc.error.message)}</code></pre>` : ''}
+            </div>`
             )
-            .join("")}
+            .join('')}
           ${okDocs
             .map(
               (doc) => `
@@ -1158,13 +1131,13 @@ function renderComponentCard(
                 <span class="badge ok">doc ok</span>
               </div>
               <div class="hint">${esc(doc.path)}</div>
-              ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ""}
-              ${doc?.content ? `<div class="mdx-content"><pre><code>${esc(doc.content)}</code></pre></div>` : ""}
-            </div>`,
+              ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
+              ${doc?.content ? `<div class="mdx-content"><pre><code>${esc(doc.content)}</code></pre></div>` : ''}
+            </div>`
             )
-            .join("")}
+            .join('')}
         </div>`
-        : ""
+        : ''
     }
     ${
       subcomponentEntries.length > 0
@@ -1172,11 +1145,11 @@ function renderComponentCard(
         <div class="panel panel-subcomponents">
           ${subcomponentEntries
             .map(([subcomponentName, subcomponent]) =>
-              renderSubcomponentNote(subcomponentName, subcomponent),
+              renderSubcomponentNote(subcomponentName, subcomponent)
             )
-            .join("")}
+            .join('')}
         </div>`
-        : ""
+        : ''
     }
   </div>
 </article>`;
@@ -1196,14 +1169,14 @@ type ParsedDocgen = {
 type RdtComponentDoc = ComponentDoc & { exportName?: string };
 type DocgenRenderData = {
   parsed?: ParsedDocgen;
-  engine?: "react-docgen" | "react-docgen-typescript" | "react-component-meta";
+  engine?: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
   filePath?: string;
   exportName?: string;
 };
 
 const getDocgenRenderData = (
   component: ComponentManifestLikeWithDocgen,
-  hasPropTypeError: boolean,
+  hasPropTypeError: boolean
 ): DocgenRenderData => {
   if (hasPropTypeError) {
     return {};
@@ -1212,7 +1185,7 @@ const getDocgenRenderData = (
   if (component.reactDocgen) {
     return {
       parsed: parseReactDocgen(component.reactDocgen),
-      engine: "react-docgen",
+      engine: 'react-docgen',
       filePath: component.reactDocgen.definedInFile,
       exportName: component.reactDocgen.exportName,
     };
@@ -1221,7 +1194,7 @@ const getDocgenRenderData = (
   if (component.reactDocgenTypescript) {
     return {
       parsed: parseReactDocgenTypescript(component.reactDocgenTypescript),
-      engine: "react-docgen-typescript",
+      engine: 'react-docgen-typescript',
       filePath: component.reactDocgenTypescript.filePath,
       exportName: component.reactDocgenTypescript.exportName,
     };
@@ -1230,7 +1203,7 @@ const getDocgenRenderData = (
   if (component.reactComponentMeta) {
     return {
       parsed: parseReactComponentMeta(component.reactComponentMeta),
-      engine: "react-component-meta",
+      engine: 'react-component-meta',
       filePath: component.reactComponentMeta.filePath,
       exportName: component.reactComponentMeta.exportName,
     };
@@ -1241,85 +1214,79 @@ const getDocgenRenderData = (
 
 function renderSubcomponentNote(
   subcomponentName: string,
-  subcomponent: ComponentManifestLikeWithDocgen,
+  subcomponent: ComponentManifestLikeWithDocgen
 ) {
   const hasPropTypeError = Boolean(subcomponent.error);
   const { parsed, engine, filePath, exportName } = getDocgenRenderData(
     subcomponent,
-    hasPropTypeError,
+    hasPropTypeError
   );
   const propEntries = Object.entries(parsed?.props ?? {});
   const tags =
-    subcomponent.jsDocTags && typeof subcomponent.jsDocTags === "object"
+    subcomponent.jsDocTags && typeof subcomponent.jsDocTags === 'object'
       ? Object.entries(subcomponent.jsDocTags)
           .flatMap(([key, value]) =>
             (Array.isArray(value) ? value : [value]).map(
-              (tagValue) =>
-                `<span class="chip">${esc(key)}: ${esc(tagValue)}</span>`,
-            ),
+              (tagValue) => `<span class="chip">${esc(key)}: ${esc(tagValue)}</span>`
+            )
           )
-          .join("")
-      : "";
+          .join('')
+      : '';
   const propsCode =
     propEntries.length > 0
       ? propEntries
           .sort(([aName], [bName]) => aName.localeCompare(bName))
           .map(([propName, info]) => {
-            const description = (info?.description ?? "").trim();
-            const type = (info?.type ?? "any").trim();
-            const optional = info?.required ? "" : "?";
-            const defaultValue = (info?.defaultValue ?? "").trim();
-            const fallback = defaultValue ? ` = ${defaultValue}` : "";
+            const description = (info?.description ?? '').trim();
+            const type = (info?.type ?? 'any').trim();
+            const optional = info?.required ? '' : '?';
+            const defaultValue = (info?.defaultValue ?? '').trim();
+            const fallback = defaultValue ? ` = ${defaultValue}` : '';
             const doc =
-              [
-                "/**",
-                ...description.split("\n").map((line) => ` * ${line}`),
-                " */",
-              ].join("\n") + "\n";
+              ['/**', ...description.split('\n').map((line) => ` * ${line}`), ' */'].join('\n') +
+              '\n';
 
-            return `${description ? doc : ""}${propName}${optional}: ${type}${fallback}`;
+            return `${description ? doc : ''}${propName}${optional}: ${type}${fallback}`;
           })
-          .join("\n\n")
-      : "";
+          .join('\n\n')
+      : '';
 
   return `
-    <div class="note ${hasPropTypeError ? "err" : "ok"}">
+    <div class="note ${hasPropTypeError ? 'err' : 'ok'}">
       <div class="row">
         <span class="ex-name">${esc(subcomponentName)}</span>
-        <span class="badge ${hasPropTypeError ? "err" : "ok"}">
+        <span class="badge ${hasPropTypeError ? 'err' : 'ok'}">
           ${
             hasPropTypeError
-              ? "prop type error"
+              ? 'prop type error'
               : propEntries.length > 0
-                ? `${propEntries.length} ${plural(propEntries.length, "prop type")}`
-                : "no prop types"
+                ? `${propEntries.length} ${plural(propEntries.length, 'prop type')}`
+                : 'no prop types'
           }
         </span>
       </div>
       <div class="hint">${esc(subcomponent.path)}</div>
-      ${subcomponent.summary ? `<div>${esc(subcomponent.summary)}</div>` : ""}
-      ${subcomponent.description ? `<div class="hint">${esc(subcomponent.description)}</div>` : ""}
-      ${tags ? `<div class="kv">${tags}</div>` : ""}
-      ${subcomponent.import ? `<pre><code>${esc(subcomponent.import)}</code></pre>` : ""}
+      ${subcomponent.summary ? `<div>${esc(subcomponent.summary)}</div>` : ''}
+      ${subcomponent.description ? `<div class="hint">${esc(subcomponent.description)}</div>` : ''}
+      ${tags ? `<div class="kv">${tags}</div>` : ''}
+      ${subcomponent.import ? `<pre><code>${esc(subcomponent.import)}</code></pre>` : ''}
       ${
         hasPropTypeError
-          ? `<pre><code>${esc(subcomponent.error?.message ?? "Unknown error")}</code></pre>`
-          : ""
+          ? `<pre><code>${esc(subcomponent.error?.message ?? 'Unknown error')}</code></pre>`
+          : ''
       }
       ${
         !hasPropTypeError && propEntries.length > 0
           ? `
-          <pre><code>Component: ${filePath ? esc(path.relative(process.cwd(), filePath)) : ""}${exportName ? "::" + esc(exportName) : ""}${engine ? ` (${esc(engine)})` : ""}</code></pre>
+          <pre><code>Component: ${filePath ? esc(path.relative(process.cwd(), filePath)) : ''}${exportName ? '::' + esc(exportName) : ''}${engine ? ` (${esc(engine)})` : ''}</code></pre>
           <pre><code>${esc(propsCode)}</code></pre>`
-          : ""
+          : ''
       }
     </div>
   `;
 }
 
-const parseReactDocgenTypescript = (
-  reactDocgenTypescript: RdtComponentDoc,
-): ParsedDocgen => {
+const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): ParsedDocgen => {
   const props: Record<string, PropItem> = reactDocgenTypescript.props ?? {};
   return {
     props: Object.fromEntries(
@@ -1333,14 +1300,12 @@ const parseReactDocgenTypescript = (
           defaultValue: prop.defaultValue?.value,
           required: prop.required,
         },
-      ]),
+      ])
     ),
   };
 };
 
-const parseReactComponentMeta = (
-  reactComponentMeta: ReactComponentMetaDoc,
-): ParsedDocgen => {
+const parseReactComponentMeta = (reactComponentMeta: ReactComponentMetaDoc): ParsedDocgen => {
   const props = reactComponentMeta.props ?? {};
   return {
     props: Object.fromEntries(
@@ -1352,7 +1317,7 @@ const parseReactComponentMeta = (
           defaultValue: prop.defaultValue?.value,
           required: prop.required,
         },
-      ]),
+      ])
     ),
   };
 };
@@ -1402,7 +1367,7 @@ const parseReactDocgen = (reactDocgen: DocgenDoc): ParsedDocgen => {
           defaultValue: prop.defaultValue?.value,
           required: prop.required,
         },
-      ]),
+      ])
     ),
   };
 };
@@ -1422,59 +1387,53 @@ function serializeTsType(tsType: DocgenTsType | undefined): string | undefined {
   }
 
   if (tsType.elements) {
-    if (tsType.name === "union") {
-      const parts = tsType.elements.map(
-        (el) => serializeTsType(el) ?? "unknown",
-      );
-      return parts.join(" | ");
+    if (tsType.name === 'union') {
+      const parts = tsType.elements.map((el) => serializeTsType(el) ?? 'unknown');
+      return parts.join(' | ');
     }
-    if (tsType.name === "intersection") {
-      const parts = tsType.elements.map(
-        (el) => serializeTsType(el) ?? "unknown",
-      );
-      return parts.join(" & ");
+    if (tsType.name === 'intersection') {
+      const parts = tsType.elements.map((el) => serializeTsType(el) ?? 'unknown');
+      return parts.join(' & ');
     }
-    if (tsType.name === "Array") {
+    if (tsType.name === 'Array') {
       // Prefer raw earlier; here build fallback
       const el = tsType.elements[0];
-      const inner = serializeTsType(el) ?? "unknown";
+      const inner = serializeTsType(el) ?? 'unknown';
       return `${inner}[]`;
     }
-    if (tsType.name === "tuple") {
-      const parts = tsType.elements.map(
-        (el) => serializeTsType(el) ?? "unknown",
-      );
-      return `[${parts.join(", ")}]`;
+    if (tsType.name === 'tuple') {
+      const parts = tsType.elements.map((el) => serializeTsType(el) ?? 'unknown');
+      return `[${parts.join(', ')}]`;
     }
   }
-  if (tsType.value && tsType.name === "literal") {
+  if (tsType.value && tsType.name === 'literal') {
     return tsType.value;
   }
-  if (tsType.signature && tsType.name === "signature") {
-    if (tsType.type === "function") {
+  if (tsType.signature && tsType.name === 'signature') {
+    if (tsType.type === 'function') {
       const args = (tsType.signature.arguments ?? []).map((a) => {
-        const argType = serializeTsType(a.type) ?? "any";
+        const argType = serializeTsType(a.type) ?? 'any';
         return `${a.name}: ${argType}`;
       });
-      const ret = serializeTsType(tsType.signature.return) ?? "void";
-      return `(${args.join(", ")}) => ${ret}`;
+      const ret = serializeTsType(tsType.signature.return) ?? 'void';
+      return `(${args.join(', ')}) => ${ret}`;
     }
-    if (tsType.type === "object") {
+    if (tsType.type === 'object') {
       const props = (tsType.signature.properties ?? []).map((p) => {
         const req: boolean = Boolean(p.value?.required);
-        const propType = serializeTsType(p.value) ?? "any";
-        return `${p.key}${req ? "" : "?"}: ${propType}`;
+        const propType = serializeTsType(p.value) ?? 'any';
+        return `${p.key}${req ? '' : '?'}: ${propType}`;
       });
-      return `{ ${props.join("; ")} }`;
+      return `{ ${props.join('; ')} }`;
     }
-    return "unknown";
+    return 'unknown';
   }
   // Default case (Generic like Item<TMeta>)
   if (tsType.elements) {
-    const inner = tsType.elements.map((el) => serializeTsType(el) ?? "unknown");
+    const inner = tsType.elements.map((el) => serializeTsType(el) ?? 'unknown');
 
     if (inner.length > 0) {
-      return `${tsType.name}<${inner.join(", ")}>`;
+      return `${tsType.name}<${inner.join(', ')}>`;
     }
   }
 

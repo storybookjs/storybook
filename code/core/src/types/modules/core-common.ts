@@ -1,27 +1,23 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
-import type { ChannelLike } from "storybook/internal/channels";
-import type { FileSystemCache } from "storybook/internal/common";
-import type { StoryIndexGenerator } from "storybook/internal/core-server";
-import type { CsfFile } from "storybook/internal/csf-tools";
-import type { LogLevel } from "storybook/internal/node-logger";
+import type { ChannelLike } from 'storybook/internal/channels';
+import type { FileSystemCache } from 'storybook/internal/common';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { LogLevel } from 'storybook/internal/node-logger';
 
-import type {
-  Server as HttpServer,
-  IncomingMessage,
-  ServerResponse,
-} from "http";
-import type { Server as NetServer } from "net";
-import type { Options as TelejsonOptions } from "telejson";
-import type { PackageJson as PackageJsonFromTypeFest } from "type-fest";
+import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
+import type { Server as NetServer } from 'net';
+import type { Options as TelejsonOptions } from 'telejson';
+import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { SupportedBuilder } from "./builders.ts";
-import type { SupportedFramework } from "./frameworks.ts";
-import type { Indexer, StoriesEntry } from "./indexer.ts";
-import type { SupportedRenderer } from "./renderers.ts";
+import type { SupportedBuilder } from './builders.ts';
+import type { SupportedFramework } from './frameworks.ts';
+import type { Indexer, StoriesEntry } from './indexer.ts';
+import type { SupportedRenderer } from './renderers.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
-export type BuilderName = "webpack5" | "@storybook/builder-webpack5" | string;
+export type BuilderName = 'webpack5' | '@storybook/builder-webpack5' | string;
 export type RendererName = string;
 
 export interface CoreConfig {
@@ -75,57 +71,51 @@ interface DirectoryMapping {
 
 export interface Presets {
   apply(
-    extension: "typescript",
+    extension: 'typescript',
     config: TypescriptOptions,
-    args?: Options,
+    args?: Options
   ): Promise<TypescriptOptions>;
-  apply(extension: "framework", config?: {}, args?: any): Promise<Preset>;
-  apply(extension: "babel", config?: {}, args?: any): Promise<any>;
-  apply(extension: "swc", config?: {}, args?: any): Promise<any>;
-  apply(extension: "entries", config?: [], args?: any): Promise<unknown>;
-  apply(extension: "env", config?: {}, args?: any): Promise<any>;
-  apply(extension: "stories", config?: [], args?: any): Promise<StoriesEntry[]>;
-  apply(extension: "managerEntries", config: [], args?: any): Promise<string[]>;
+  apply(extension: 'framework', config?: {}, args?: any): Promise<Preset>;
+  apply(extension: 'babel', config?: {}, args?: any): Promise<any>;
+  apply(extension: 'swc', config?: {}, args?: any): Promise<any>;
+  apply(extension: 'entries', config?: [], args?: any): Promise<unknown>;
+  apply(extension: 'env', config?: {}, args?: any): Promise<any>;
+  apply(extension: 'stories', config?: [], args?: any): Promise<StoriesEntry[]>;
+  apply(extension: 'managerEntries', config: [], args?: any): Promise<string[]>;
+  apply(extension: 'refs', config?: [], args?: any): Promise<StorybookConfigRaw['refs']>;
   apply(
-    extension: "refs",
-    config?: [],
-    args?: any,
-  ): Promise<StorybookConfigRaw["refs"]>;
+    extension: 'core',
+    config?: StorybookConfigRaw['core'],
+    args?: any
+  ): Promise<NonNullable<StorybookConfigRaw['core']>>;
   apply(
-    extension: "core",
-    config?: StorybookConfigRaw["core"],
-    args?: any,
-  ): Promise<NonNullable<StorybookConfigRaw["core"]>>;
+    extension: 'docs',
+    config?: StorybookConfigRaw['docs'],
+    args?: any
+  ): Promise<NonNullable<StorybookConfigRaw['docs']>>;
   apply(
-    extension: "docs",
-    config?: StorybookConfigRaw["docs"],
-    args?: any,
-  ): Promise<NonNullable<StorybookConfigRaw["docs"]>>;
+    extension: 'features',
+    config?: StorybookConfigRaw['features'],
+    args?: any
+  ): Promise<NonNullable<StorybookConfigRaw['features']>>;
   apply(
-    extension: "features",
-    config?: StorybookConfigRaw["features"],
-    args?: any,
-  ): Promise<NonNullable<StorybookConfigRaw["features"]>>;
+    extension: 'typescript',
+    config?: StorybookConfigRaw['typescript'],
+    args?: any
+  ): Promise<NonNullable<StorybookConfigRaw['typescript']>>;
   apply(
-    extension: "typescript",
-    config?: StorybookConfigRaw["typescript"],
-    args?: any,
-  ): Promise<NonNullable<StorybookConfigRaw["typescript"]>>;
+    extension: 'build',
+    config?: StorybookConfigRaw['build'],
+    args?: any
+  ): Promise<NonNullable<StorybookConfigRaw['build']>>;
   apply(
-    extension: "build",
-    config?: StorybookConfigRaw["build"],
-    args?: any,
-  ): Promise<NonNullable<StorybookConfigRaw["build"]>>;
-  apply(
-    extension: "staticDirs",
-    config?: StorybookConfigRaw["staticDirs"],
-    args?: any,
-  ): Promise<StorybookConfigRaw["staticDirs"]>;
+    extension: 'staticDirs',
+    config?: StorybookConfigRaw['staticDirs'],
+    args?: any
+  ): Promise<StorybookConfigRaw['staticDirs']>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
-  apply<T extends keyof StorybookConfigRaw>(
-    extension: T,
-  ): Promise<StorybookConfigRaw[T]>;
+  apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
   apply<T>(extension: string, config?: T, args?: unknown): Promise<T>;
 }
 
@@ -218,12 +208,12 @@ export interface CLIOptions extends CLIBaseOptions {
 }
 
 export interface BuilderOptions {
-  configType?: "DEVELOPMENT" | "PRODUCTION";
+  configType?: 'DEVELOPMENT' | 'PRODUCTION';
   ignorePreview?: boolean;
   cache?: FileSystemCache;
   configDir: string;
   docsMode?: boolean;
-  features?: StorybookConfigRaw["features"];
+  features?: StorybookConfigRaw['features'];
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
@@ -246,7 +236,7 @@ export type Options = LoadOptions &
 export type Middleware<T extends IncomingMessage = IncomingMessage> = (
   req: T & IncomingMessage,
   res: ServerResponse,
-  next: (err?: string | Error) => Promise<void> | void,
+  next: (err?: string | Error) => Promise<void> | void
 ) => Promise<void> | void;
 
 export interface ServerApp<T extends IncomingMessage = IncomingMessage> {
@@ -294,16 +284,16 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
  * The same file can be imported in multiple ways (e.g. based on query params or import context),
  * each representing a unique module identity, hence the value is a Set<ModuleNode>.
  */
-export type ModuleGraph = Map<ModuleNode["file"], Set<ModuleNode>>;
+export type ModuleGraph = Map<ModuleNode['file'], Set<ModuleNode>>;
 
 export type ModuleGraphChangeEvent =
-  | { type: "moduleGraph"; moduleGraph: ModuleGraph }
-  | { type: "unavailable"; reason: string; error?: Error }
-  | { type: "error"; error: Error };
+  | { type: 'moduleGraph'; moduleGraph: ModuleGraph }
+  | { type: 'unavailable'; reason: string; error?: Error }
+  | { type: 'error'; error: Error };
 
 export interface ModuleNode {
   file: string;
-  type: "js" | "css" | "asset";
+  type: 'js' | 'css' | 'asset';
   importers: Set<ModuleNode>;
   importedModules: Set<ModuleNode>;
 }
@@ -377,7 +367,7 @@ type Tag = string;
 
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
-  defaultFilterSelection?: "include" | "exclude" | undefined;
+  defaultFilterSelection?: 'include' | 'exclude' | undefined;
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }
@@ -386,7 +376,7 @@ export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
 export type ComponentSubcomponentManifest = Pick<
   ComponentManifest,
-  "name" | "path" | "description" | "import" | "summary" | "jsDocTags" | "error"
+  'name' | 'path' | 'description' | 'import' | 'summary' | 'jsDocTags' | 'error'
 >;
 
 export interface ComponentManifest {
@@ -412,17 +402,14 @@ export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
   meta?: {
-    docgen: "react-docgen" | "react-docgen-typescript" | "react-component-meta";
+    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
     durationMs: number;
   };
 }
 
 type ManifestName = string;
 
-export type Manifests = { components?: ComponentsManifest } & Record<
-  ManifestName,
-  unknown
->;
+export type Manifests = { components?: ComponentsManifest } & Record<ManifestName, unknown>;
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
 
@@ -639,8 +626,8 @@ export interface StorybookConfig {
    * addons = [{ name: '@storybook/addon-essentials', options: { backgrounds: false } }];
    * ```
    */
-  addons?: StorybookConfigRaw["addons"];
-  core?: PresetValue<StorybookConfigRaw["core"]>;
+  addons?: StorybookConfigRaw['addons'];
+  core?: PresetValue<StorybookConfigRaw['core']>;
   /**
    * Sets a list of directories of static files to be loaded by Storybook server
    *
@@ -651,11 +638,11 @@ export interface StorybookConfig {
    * staticDirs = [{ from: './public', to: '/assets' }];
    * ```
    */
-  staticDirs?: PresetValue<StorybookConfigRaw["staticDirs"]>;
-  logLevel?: PresetValue<StorybookConfigRaw["logLevel"]>;
-  features?: PresetValue<StorybookConfigRaw["features"]>;
+  staticDirs?: PresetValue<StorybookConfigRaw['staticDirs']>;
+  logLevel?: PresetValue<StorybookConfigRaw['logLevel']>;
+  features?: PresetValue<StorybookConfigRaw['features']>;
 
-  build?: PresetValue<StorybookConfigRaw["build"]>;
+  build?: PresetValue<StorybookConfigRaw['build']>;
 
   /**
    * Tells Storybook where to find stories.
@@ -667,47 +654,45 @@ export interface StorybookConfig {
    * stories = async () => [...(await myCustomStoriesEntryBuilderFunc())];
    * ```
    */
-  stories: PresetValue<StorybookConfigRaw["stories"]>;
+  stories: PresetValue<StorybookConfigRaw['stories']>;
 
   /** Framework, e.g. '@storybook/react-vite', required in v7 */
-  framework?: StorybookConfigRaw["framework"];
+  framework?: StorybookConfigRaw['framework'];
 
   /** Controls how Storybook handles TypeScript files. */
-  typescript?: PresetValue<StorybookConfigRaw["typescript"]>;
+  typescript?: PresetValue<StorybookConfigRaw['typescript']>;
 
   /** References external Storybooks */
-  refs?: PresetValue<StorybookConfigRaw["refs"]>;
+  refs?: PresetValue<StorybookConfigRaw['refs']>;
 
   /** Modify or return babel config. */
-  babel?: PresetValue<StorybookConfigRaw["babel"]>;
+  babel?: PresetValue<StorybookConfigRaw['babel']>;
 
   /** Modify or return swc config. */
-  swc?: PresetValue<StorybookConfigRaw["swc"]>;
+  swc?: PresetValue<StorybookConfigRaw['swc']>;
 
   /** Modify or return env config. */
-  env?: PresetValue<StorybookConfigRaw["env"]>;
+  env?: PresetValue<StorybookConfigRaw['env']>;
 
   /** Modify or return babel config. */
-  babelDefault?: PresetValue<StorybookConfigRaw["babelDefault"]>;
+  babelDefault?: PresetValue<StorybookConfigRaw['babelDefault']>;
 
   /** Add additional scripts to run in the preview a la `.storybook/preview.js` */
-  previewAnnotations?: PresetValue<StorybookConfigRaw["previewAnnotations"]>;
+  previewAnnotations?: PresetValue<StorybookConfigRaw['previewAnnotations']>;
 
   /** Process CSF files for the story index. */
-  experimental_indexers?: PresetValue<
-    StorybookConfigRaw["experimental_indexers"]
-  >;
+  experimental_indexers?: PresetValue<StorybookConfigRaw['experimental_indexers']>;
 
   /** Docs related features in index generation */
-  docs?: PresetValue<StorybookConfigRaw["docs"]>;
+  docs?: PresetValue<StorybookConfigRaw['docs']>;
 
   /**
    * Programmatically modify the preview head/body HTML. The previewHead and previewBody functions
    * accept a string, which is the existing head/body, and return a modified string.
    */
-  previewHead?: PresetValue<StorybookConfigRaw["previewHead"]>;
+  previewHead?: PresetValue<StorybookConfigRaw['previewHead']>;
 
-  previewBody?: PresetValue<StorybookConfigRaw["previewBody"]>;
+  previewBody?: PresetValue<StorybookConfigRaw['previewBody']>;
 
   /**
    * Programmatically override the preview's main page template. This should return a reference to a
@@ -719,46 +704,40 @@ export interface StorybookConfig {
    * previewMainTemplate = '.storybook/index.ejs';
    * ```
    */
-  previewMainTemplate?: PresetValue<StorybookConfigRaw["previewMainTemplate"]>;
+  previewMainTemplate?: PresetValue<StorybookConfigRaw['previewMainTemplate']>;
 
   /**
    * Programmatically modify the preview head/body HTML. The managerHead function accept a string,
    * which is the existing head content, and return a modified string.
    */
-  managerHead?: PresetValue<StorybookConfigRaw["managerHead"]>;
+  managerHead?: PresetValue<StorybookConfigRaw['managerHead']>;
 
   /** Configure non-standard tag behaviors */
-  tags?: PresetValue<StorybookConfigRaw["tags"]>;
+  tags?: PresetValue<StorybookConfigRaw['tags']>;
 }
 
-export type PresetValue<T> =
-  | T
-  | ((config: T, options: Options) => T | Promise<T>);
+export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);
 
 export type PresetProperty<K, TStorybookConfig = StorybookConfigRaw> =
   | TStorybookConfig[K extends keyof TStorybookConfig ? K : never]
   | PresetPropertyFn<K, TStorybookConfig>;
 
-export type PresetPropertyFn<
-  K,
-  TStorybookConfig = StorybookConfigRaw,
-  TOptions = {},
-> = (
+export type PresetPropertyFn<K, TStorybookConfig = StorybookConfigRaw, TOptions = {}> = (
   config: TStorybookConfig[K extends keyof TStorybookConfig ? K : never],
-  options: Options & TOptions,
+  options: Options & TOptions
 ) =>
   | TStorybookConfig[K extends keyof TStorybookConfig ? K : never]
   | Promise<TStorybookConfig[K extends keyof TStorybookConfig ? K : never]>;
 
 export interface CoreCommon_ResolvedAddonPreset {
-  type: "presets";
+  type: 'presets';
   name: string;
 }
 
 export type PreviewAnnotation = string | { bare: string; absolute: string };
 
 export interface CoreCommon_ResolvedAddonVirtual {
-  type: "virtual";
+  type: 'virtual';
   name: string;
   managerEntries?: string[];
   previewAnnotations?: PreviewAnnotation[];

@@ -1,7 +1,7 @@
 import type {
 	AllManifests,
 	ComponentManifest,
-	ComponentSubcomponentManifest,
+	SubcomponentManifest,
 	Doc,
 	SourceManifests,
 	Story,
@@ -74,7 +74,7 @@ function extractSummary(
  */
 function getParsedDocgen(
 	componentManifest: Pick<
-		ComponentManifest | ComponentSubcomponentManifest,
+		ComponentManifest | SubcomponentManifest,
 		'reactDocgen' | 'reactDocgenTypescript' | 'reactComponentMeta'
 	>,
 ): ParsedDocgen | undefined {
@@ -166,7 +166,7 @@ function formatPropsSection(
 }
 
 function formatSubcomponentsSection(
-	subcomponents: Record<string, ComponentSubcomponentManifest> | undefined,
+	subcomponents: Record<string, SubcomponentManifest> | undefined,
 ): string[] {
 	if (!subcomponents || Object.keys(subcomponents).length === 0) {
 		return [];

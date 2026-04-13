@@ -1,4 +1,3 @@
-import type { Documentation } from 'react-docgen';
 import type { ComponentDoc } from 'react-docgen-typescript';
 import * as v from 'valibot';
 
@@ -122,34 +121,27 @@ export type Doc = v.InferOutput<typeof Doc>;
  */
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
-export const ComponentSubcomponentManifest = v.object({
-	...BaseManifest.entries,
+const BaseComponentProperties = v.object({
+		...BaseManifest.entries,
 	path: v.string(),
 	summary: v.optional(v.string()),
 	import: v.optional(v.string()),
-	// loose schema for react-docgen types
 	reactDocgen: v.optional(v.any()),
-	// loose schema for react-docgen-typescript types
 	reactDocgenTypescript: v.optional(v.any()),
-	// loose schema for react-component-meta types
 	reactComponentMeta: v.optional(v.any()),
 });
-export type ComponentSubcomponentManifest = v.InferOutput<typeof ComponentSubcomponentManifest>;
+
+export const SubcomponentManifest = v.object({
+	...BaseComponentProperties.entries,
+});
+
+export type SubcomponentManifest = v.InferOutput<typeof SubcomponentManifest>;
 
 export const ComponentManifest = v.object({
-	...BaseManifest.entries,
+	...BaseComponentProperties.entries,
 	id: v.string(),
-	path: v.string(),
-	summary: v.optional(v.string()),
-	import: v.optional(v.string()),
 	stories: v.optional(v.array(Story)),
-	subcomponents: v.optional(v.record(v.string(), ComponentSubcomponentManifest)),
-	// loose schema for react-docgen types, as they are pretty complex
-	reactDocgen: v.optional(v.any()),
-	// loose schema for react-docgen-typescript types
-	reactDocgenTypescript: v.optional(v.any()),
-	// loose schema for react-component-meta types
-	reactComponentMeta: v.optional(v.any()),
+	subcomponents: v.optional(v.record(v.string(), SubcomponentManifest)),
 	docs: v.optional(v.record(v.string(), Doc)),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;

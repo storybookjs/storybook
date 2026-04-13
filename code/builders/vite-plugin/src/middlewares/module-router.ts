@@ -110,6 +110,9 @@ function createEnvironmentModuleRouter(server: ViteDevServer): Connect.NextHandl
       const result = await storybookEnv.transformRequest(actualUrl);
 
       if (!result) {
+        if (actualUrl.includes('.mdx')) {
+          console.log('[module-router] MDX transform returned null');
+        }
         return next();
       }
 

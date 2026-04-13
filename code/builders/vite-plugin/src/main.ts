@@ -38,14 +38,11 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
   });
 
   const sbPlugins = await pluginConfig(sb);
-  const finalConfig = (await sb.presets.apply(
-    'viteFinal',
-    { plugins: sbPlugins }
-  )) as InlineConfig;
+  const finalConfig = (await sb.presets.apply('viteFinal', { plugins: sbPlugins })) as InlineConfig;
 
-  const allPlugins = (finalConfig.plugins ?? [])
-    .flat(3)
-    .filter(Boolean) as Plugin[];
+  const allPlugins = (await Promise.all(
+    (finalConfig.plugins ?? []).flat(3).filter(Boolean)
+  )) as Plugin[];
 
   const iframeSourcePath = fileURLToPath(
     import.meta.resolve('@storybook/builder-vite/input/iframe.html')
@@ -120,7 +117,7 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
 
         registerIframeMiddleware(server, sb, '/__storybook/');
 
-        server.middlewares.use(createDepsStorybookMiddleware(server));
+        // server.middlewares.use(createDepsStorybookMiddleware(server));
         registerEnvironmentModuleMiddleware(server);
 
         storyIndexGenerator.onInvalidated(() => {

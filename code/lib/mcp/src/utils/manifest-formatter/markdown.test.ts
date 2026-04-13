@@ -66,6 +66,79 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 		});
 	});
 
+	describe('subcomponents section', () => {
+		it('should include subcomponent docs and props before stories', () => {
+			const manifest: ComponentManifest = {
+				id: 'combo-box',
+				name: 'ComboBox',
+				path: 'src/components/ComboBox.tsx',
+				description: 'A combo box component',
+				subcomponents: {
+					Item: {
+						name: 'ComboBoxItem',
+						path: 'src/components/ComboBoxItem.tsx',
+						description: 'Use for individual list items.',
+						import: 'import { ComboBoxItem } from "@/components";',
+						reactComponentMeta: {
+							displayName: 'ComboBoxItem',
+							filePath: 'src/components/ComboBoxItem.tsx',
+							description: '',
+							exportName: 'ComboBoxItem',
+							props: {
+								textValue: {
+									name: 'textValue',
+									description: 'Required when the children are not plain text.',
+									required: false,
+									defaultValue: null,
+									type: {
+										name: 'string',
+									},
+								},
+							},
+						},
+					},
+				},
+				stories: [
+					{
+						name: 'Default',
+						snippet: '<ComboBox />',
+					},
+				],
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toContain('## Subcomponents');
+			expect(result).toContain('### ComboBoxItem');
+			expect(result).toContain('#### Props');
+			expect(result).toContain('export type ComboBoxItemProps = {');
+			expect(result.indexOf('## Subcomponents')).toBeLessThan(result.indexOf('## Stories'));
+		});
+
+		it('should include subcomponent errors when docgen is unavailable', () => {
+			const manifest: ComponentManifest = {
+				id: 'combo-box',
+				name: 'ComboBox',
+				path: 'src/components/ComboBox.tsx',
+				subcomponents: {
+					Item: {
+						name: 'ComboBoxItem',
+						path: 'src/components/ComboBoxItem.tsx',
+						error: {
+							name: 'No component import found',
+							message: 'No component file found for ComboBoxItem.',
+						},
+					},
+				},
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toContain('Error: No component import found');
+			expect(result).toContain('No component file found for ComboBoxItem.');
+		});
+	});
+
 	describe('stories section', () => {
 		it('should include story ID in detailed story output', () => {
 			const manifest: ComponentManifest = {

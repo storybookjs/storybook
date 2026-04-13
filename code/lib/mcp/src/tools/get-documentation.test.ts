@@ -381,6 +381,100 @@ describe('getDocumentationTool', () => {
 		`);
 	});
 
+	it('should include subcomponents in get-documentation output', async () => {
+		getManifestsSpy.mockResolvedValue({
+			componentManifest: {
+				v: 1,
+				components: {
+					'combo-box': {
+						id: 'combo-box',
+						name: 'ComboBox',
+						path: 'src/components/ComboBox.tsx',
+						description: 'A combo box component',
+						subcomponents: {
+							Item: {
+								name: 'ComboBoxItem',
+								path: 'src/components/ComboBoxItem.tsx',
+								description: 'Use for individual options.',
+								import: 'import { ComboBoxItem } from "@/components";',
+								reactComponentMeta: {
+									displayName: 'ComboBoxItem',
+									filePath: 'src/components/ComboBoxItem.tsx',
+									description: '',
+									exportName: 'ComboBoxItem',
+									props: {
+										textValue: {
+											name: 'textValue',
+											description: 'Required when children are not plain text.',
+											required: false,
+											defaultValue: null,
+											type: {
+												name: 'string',
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: GET_TOOL_NAME,
+				arguments: {
+					id: 'combo-box',
+				},
+			},
+		};
+
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		const response = await server.receive(request, {
+			custom: { request: mockHttpRequest },
+		});
+
+		expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "# ComboBox
+
+			ID: combo-box
+
+			A combo box component
+
+			## Subcomponents
+
+			### ComboBoxItem
+
+			Use for individual options.
+
+			\`\`\`
+			import { ComboBoxItem } from "@/components";
+			\`\`\`
+
+			#### Props
+
+			\`\`\`
+			export type ComboBoxItemProps = {
+			  /**
+			    Required when children are not plain text.
+			  */
+			  textValue?: string;
+			}
+			\`\`\`",
+			      "type": "text",
+			    },
+			  ],
+			}
+		`);
+	});
+
 	describe('multi-source mode', () => {
 		const sources = [
 			{ id: 'local', title: 'Local' },

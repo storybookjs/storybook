@@ -2,6 +2,7 @@ import type { FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
+import { announce } from '@react-aria/live-announcer';
 
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
@@ -261,6 +262,12 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
 
   const rawJsonEditorLabel = `Edit ${name} as JSON`;
 
+  useEffect(() => {
+    if (parseError) {
+      announce(`Invalid JSON: ${parseError.message}`);
+    }
+  }, [parseError]);
+
   const rawJSONForm = (
     <RawInputWrapper>
       <label htmlFor={controlId} className="sb-sr-only">
@@ -292,9 +299,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
         <RawInputLabel aria-hidden="true">{rawJsonEditorLabel}</RawInputLabel>
       )}
       {parseError && (
-        <ErrorMessage id={jsonErrorId} role="status" aria-live="polite">
-          Invalid JSON: {parseError.message}
-        </ErrorMessage>
+        <ErrorMessage id={jsonErrorId}>Invalid JSON: {parseError.message}</ErrorMessage>
       )}
     </RawInputWrapper>
   );

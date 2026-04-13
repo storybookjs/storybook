@@ -413,6 +413,46 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     });
   };
 
+  type IncludedKey = 'includedTagFilters' | 'includedStatusFilters';
+  type ExcludedKey = 'excludedTagFilters' | 'excludedStatusFilters';
+
+  const addFilters = async (
+    items: string[],
+    excluded: boolean,
+    includedKey: IncludedKey,
+    excludedKey: ExcludedKey
+  ): Promise<void> => {
+    const state = store.getState();
+    const newIncluded = new Set(state[includedKey] as string[]);
+    const newExcluded = new Set(state[excludedKey] as string[]);
+    for (const item of items) {
+      if (excluded) {
+        newIncluded.delete(item);
+        newExcluded.add(item);
+      } else {
+        newIncluded.add(item);
+        newExcluded.delete(item);
+      }
+    }
+    await persistFilters({
+      [includedKey]: Array.from(newIncluded),
+      [excludedKey]: Array.from(newExcluded),
+    });
+  };
+
+  const removeFilters = async (
+    items: string[],
+    includedKey: IncludedKey,
+    excludedKey: ExcludedKey
+  ): Promise<void> => {
+    const state = store.getState();
+    const itemSet = new Set(items);
+    await persistFilters({
+      [includedKey]: (state[includedKey] as string[]).filter((v) => !itemSet.has(v)),
+      [excludedKey]: (state[excludedKey] as string[]).filter((v) => !itemSet.has(v)),
+    });
+  };
+
   const api: SubAPI = {
     storyId: toId,
     getData: (storyId, refId): any => {
@@ -853,33 +893,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
 
     addTagFilters: async (tags: Tag[], excluded: boolean) => {
-      const state = store.getState();
-      const newIncluded = new Set(state.includedTagFilters);
-      const newExcluded = new Set(state.excludedTagFilters);
-      for (const tag of tags) {
-        if (excluded) {
-          newIncluded.delete(tag);
-          newExcluded.add(tag);
-        } else {
-          newIncluded.add(tag);
-          newExcluded.delete(tag);
-        }
-      }
-      await persistFilters({
-        includedTagFilters: Array.from(newIncluded),
-        excludedTagFilters: Array.from(newExcluded),
-      });
-
+      await addFilters(tags, excluded, 'includedTagFilters', 'excludedTagFilters');
       recomputeTagsFilter();
     },
 
     removeTagFilters: async (tags: Tag[]) => {
-      const state = store.getState();
-      await persistFilters({
-        includedTagFilters: state.includedTagFilters.filter((tag) => !tags.includes(tag)),
-        excludedTagFilters: state.excludedTagFilters.filter((tag) => !tags.includes(tag)),
-      });
-
+      await removeFilters(tags, 'includedTagFilters', 'excludedTagFilters');
       recomputeTagsFilter();
     },
 
@@ -894,31 +913,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
 
     addStatusFilters: async (statuses: StatusValue[], excluded: boolean) => {
-      const state = store.getState();
-      const newIncluded = new Set(state.includedStatusFilters);
-      const newExcluded = new Set(state.excludedStatusFilters);
-      for (const status of statuses) {
-        if (excluded) {
-          newIncluded.delete(status);
-          newExcluded.add(status);
-        } else {
-          newIncluded.add(status);
-          newExcluded.delete(status);
-        }
-      }
-      await persistFilters({
-        includedStatusFilters: Array.from(newIncluded),
-        excludedStatusFilters: Array.from(newExcluded),
-      });
+      await addFilters(statuses, excluded, 'includedStatusFilters', 'excludedStatusFilters');
       recomputeStatusFilter();
     },
 
     removeStatusFilters: async (statuses: StatusValue[]) => {
-      const state = store.getState();
-      await persistFilters({
-        includedStatusFilters: state.includedStatusFilters.filter((s) => !statuses.includes(s)),
-        excludedStatusFilters: state.excludedStatusFilters.filter((s) => !statuses.includes(s)),
-      });
+      await removeFilters(statuses, 'includedStatusFilters', 'excludedStatusFilters');
       recomputeStatusFilter();
     },
   };

@@ -84,12 +84,12 @@ export const FilterPanel = ({
       // Also include the count for the filter that was just changed,
       // since the state arrays may not yet reflect the toggle
       if (changed.action !== 'remove') {
-        if (changed.filterType === 'tag') {
-          const entry = builtInEntries.find((e) => e.id === changed.filterId);
-          if (entry) storyCounts[changed.filterId] = entry.count;
-        } else {
-          const entry = statusEntries.find((e) => e.statusValue === changed.filterId);
-          if (entry) storyCounts[changed.filterId] = entry.count;
+        const changedEntry =
+          changed.filterType === 'tag'
+            ? builtInEntries.find((e) => e.id === changed.filterId)
+            : statusEntries.find((e) => e.statusValue === changed.filterId);
+        if (changedEntry) {
+          storyCounts[changed.filterId] = changedEntry.count;
         }
       }
 

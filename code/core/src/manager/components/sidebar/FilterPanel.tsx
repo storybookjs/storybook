@@ -57,7 +57,11 @@ export const FilterPanel = ({
   const statusEntries = useStatusFilterEntries(allStatuses);
 
   const emitFilterTelemetry = useCallback(
-    (changed: { filterType: 'tag' | 'status'; filterId: string; action: 'include' | 'exclude' | 'remove' }) => {
+    (changed: {
+      filterType: 'tag' | 'status';
+      filterId: string;
+      action: 'include' | 'exclude' | 'remove';
+    }) => {
       // Only include built-in tag filters in telemetry (not user-defined tags)
       const builtInTagIds = new Set(builtInEntries.map((e) => e.id));
       const activeBuiltInIncluded = includedFilters.filter((id) => builtInTagIds.has(id));
@@ -104,7 +108,15 @@ export const FilterPanel = ({
         storyCounts,
       });
     },
-    [api, builtInEntries, statusEntries, includedFilters, excludedFilters, includedStatusFilters, excludedStatusFilters]
+    [
+      api,
+      builtInEntries,
+      statusEntries,
+      includedFilters,
+      excludedFilters,
+      includedStatusFilters,
+      excludedStatusFilters,
+    ]
   );
 
   const toTagFilterItem = useCallback(

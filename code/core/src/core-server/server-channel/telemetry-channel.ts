@@ -53,7 +53,7 @@ export function initTelemetryChannel(channel: Channel, options: Options) {
     channel.on(SHARE_ISOLATE_MODE, async () => {
       telemetry('share', { action: 'isolate-mode-opened' });
     });
-    channel.on(SIDEBAR_FILTER_CHANGED, async (payload) => {
+    channel.on(SIDEBAR_FILTER_CHANGED, (payload) => {
       telemetry('sidebar-filter', payload);
     });
   }

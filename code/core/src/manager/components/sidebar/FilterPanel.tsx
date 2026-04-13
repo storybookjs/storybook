@@ -11,7 +11,12 @@ import { styled, useTheme } from 'storybook/theming';
 
 import { getStatus } from '../../utils/status.tsx';
 import { createFilterLink, StatusIcon } from './FilterPanelLink.tsx';
-import { type FilterItem, areFiltersEqual } from './FilterPanel.utils.ts';
+import {
+  type FilterItem,
+  type FilterTelemetryChanged,
+  areFiltersEqual,
+  computeFilterTelemetryPayload,
+} from './FilterPanel.utils.ts';
 import {
   type StatusFilterEntry,
   type TagFilterEntry,
@@ -57,55 +62,16 @@ export const FilterPanel = ({
   const statusEntries = useStatusFilterEntries(allStatuses);
 
   const emitFilterTelemetry = useCallback(
-    (changed: {
-      filterType: 'tag' | 'status';
-      filterId: string;
-      action: 'include' | 'exclude' | 'remove';
-    }) => {
-      const builtInTagIds = new Set(builtInEntries.map((e) => e.id));
-      const activeBuiltInIncluded = includedFilters.filter((id) => builtInTagIds.has(id));
-      const activeBuiltInExcluded = excludedFilters.filter((id) => builtInTagIds.has(id));
-      const activeIncludedSet = new Set(activeBuiltInIncluded);
-      const activeExcludedSet = new Set(activeBuiltInExcluded);
-      const includedStatusSet = new Set(includedStatusFilters);
-      const excludedStatusSet = new Set(excludedStatusFilters);
-
-      const storyCounts: Record<string, number> = {};
-      for (const entry of builtInEntries) {
-        if (activeIncludedSet.has(entry.id) || activeExcludedSet.has(entry.id)) {
-          storyCounts[entry.id] = entry.count;
-        }
-      }
-      for (const entry of statusEntries) {
-        if (includedStatusSet.has(entry.statusValue) || excludedStatusSet.has(entry.statusValue)) {
-          storyCounts[entry.statusValue] = entry.count;
-        }
-      }
-      // Also include the count for the filter that was just changed,
-      // since the state arrays may not yet reflect the toggle
-      if (changed.action !== 'remove') {
-        const changedEntry =
-          changed.filterType === 'tag'
-            ? builtInEntries.find((e) => e.id === changed.filterId)
-            : statusEntries.find((e) => e.statusValue === changed.filterId);
-        if (changedEntry) {
-          storyCounts[changed.filterId] = changedEntry.count;
-        }
-      }
-
-      api.emit(SIDEBAR_FILTER_CHANGED, {
-        trigger: 'interaction',
-        changed,
-        activeTagFilters: {
-          included: activeBuiltInIncluded,
-          excluded: activeBuiltInExcluded,
-        },
-        activeStatusFilters: {
-          included: [...includedStatusFilters],
-          excluded: [...excludedStatusFilters],
-        },
-        storyCounts,
+    (changed: FilterTelemetryChanged) => {
+      const payload = computeFilterTelemetryPayload(changed, {
+        builtInEntries,
+        statusEntries,
+        includedTagFilters: includedFilters,
+        excludedTagFilters: excludedFilters,
+        includedStatusFilters,
+        excludedStatusFilters,
       });
+      api.emit(SIDEBAR_FILTER_CHANGED, payload);
     },
     [
       api,

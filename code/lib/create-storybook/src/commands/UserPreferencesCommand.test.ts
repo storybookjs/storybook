@@ -21,6 +21,7 @@ interface CommandWithPrivates {
   telemetryService: {
     trackNewUserCheck: ReturnType<typeof vi.fn>;
     trackInstallType: ReturnType<typeof vi.fn>;
+    trackAiPromptNudge: ReturnType<typeof vi.fn>;
   };
 }
 
@@ -92,6 +93,7 @@ describe('UserPreferencesCommand', () => {
     const mockTelemetryService = {
       trackNewUserCheck: vi.fn(),
       trackInstallType: vi.fn(),
+      trackAiPromptNudge: vi.fn(),
     };
 
     // Inject mocked services
@@ -285,6 +287,7 @@ describe('UserPreferencesCommand', () => {
       (yesCommand as unknown as CommandWithPrivates).telemetryService = {
         trackNewUserCheck: vi.fn(),
         trackInstallType: vi.fn(),
+        trackAiPromptNudge: vi.fn(),
       };
 
       const result = await yesCommand.execute({
@@ -354,6 +357,54 @@ describe('UserPreferencesCommand', () => {
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
       expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
       expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+    });
+
+    it('should track ai-prompt-nudge telemetry when user accepts AI setup', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
+
+      await command.execute({
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
+      });
+
+      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
+      expect(telemetryService.trackAiPromptNudge).toHaveBeenCalledWith({ skipPrompt: false });
+    });
+
+    it('should not track ai-prompt-nudge telemetry when user declines AI setup', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // AI setup: no
+
+      await command.execute({
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
+      });
+
+      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
+      expect(telemetryService.trackAiPromptNudge).not.toHaveBeenCalled();
+    });
+
+    it('should track ai-prompt-nudge telemetry when AI is auto-accepted in non-interactive mode', async () => {
+      // Non-interactive (no TTY) with AI available — auto-accepts
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        isAiPrepareAvailable: true,
+      });
+
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
+      expect(telemetryService.trackAiPromptNudge).toHaveBeenCalledWith({ skipPrompt: true });
     });
   });
 

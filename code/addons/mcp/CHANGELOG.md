@@ -1,5 +1,18 @@
 # @storybook/addon-mcp
 
+## 0.5.0
+
+### Minor Changes
+
+- [#208](https://github.com/storybookjs/mcp/pull/208) [`5418509`](https://github.com/storybookjs/mcp/commit/5418509f2c482d3b598032b7f263f759c8c3f777) Thanks [@yannbf](https://github.com/yannbf)! - Enable components manifest by default
+
+### Patch Changes
+
+- [#204](https://github.com/storybookjs/mcp/pull/204) [`b2a327d`](https://github.com/storybookjs/mcp/commit/b2a327dde8d0529ee3a2b80e033ce35991ad538e) Thanks [@JReinhold](https://github.com/JReinhold)! - upgrade tmcp dependencies
+
+- Updated dependencies [[`70b5b23`](https://github.com/storybookjs/mcp/commit/70b5b2333a3bd37fc8065cc56cc8f8dcd474572e), [`b2a327d`](https://github.com/storybookjs/mcp/commit/b2a327dde8d0529ee3a2b80e033ce35991ad538e)]:
+  - @storybook/mcp@0.6.2
+
 ## 0.4.2
 
 ### Patch Changes

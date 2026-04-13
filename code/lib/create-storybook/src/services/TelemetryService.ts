@@ -32,6 +32,15 @@ export class TelemetryService {
     });
   }
 
+  /** Track when a user accepts the AI setup nudge prompt */
+  async trackAiPromptNudge(context: { skipPrompt: boolean }): Promise<void> {
+    await this.runTelemetryIfEnabled('ai-prompt-nudge', {
+      id: 'prepare',
+      origin: 'init',
+      context,
+    });
+  }
+
   /** Track Playwright prompt decision (install | skip | aborted) */
   async trackPlaywrightPromptDecision(
     result: 'installed' | 'skipped' | 'aborted' | 'failed'

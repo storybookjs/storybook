@@ -31,7 +31,7 @@ test.describe('addon-controls', () => {
       'background-color',
       'rgb(85, 90, 185)'
     );
-    const toggle = sbPage.panelContent().locator('input[name=primary]');
+    const toggle = sbPage.panelContent().locator('label:has(input[name="primary"])');
     await toggle.click();
     await expect(async () => {
       await expect(sbPage.previewRoot().locator('button')).toHaveCSS(
@@ -116,5 +116,60 @@ test.describe('addon-controls', () => {
     await sbPage.waitUntilLoaded();
     await sbPage.viewAddonPanel('Controls');
     await expect(sbPage.panelContent().getByText('children').first()).toBeVisible();
+  });
+
+  test('should render boolean control with explicit forced-colors styling', async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active' });
+    await page.goto(`${storybookUrl}?path=/story/example-button--primary`);
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
+    await sbPage.viewAddonPanel('Controls');
+
+    const panel = sbPage.panelContent();
+    const label = panel.locator('label:has(input[name="primary"])');
+    const input = panel.locator('input[name="primary"]');
+    const falseOption = label.locator('span').first();
+    const trueOption = label.locator('span').last();
+    const outlineColorBeforeFocus = await label.evaluate((el) => getComputedStyle(el).outlineColor);
+
+    expect(await label.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
+    await input.focus();
+    await expect(input).toBeFocused();
+
+    const outlineColorAfterFocus = await label.evaluate((el) => getComputedStyle(el).outlineColor);
+
+    await expect(label).toHaveCSS('outline-style', 'solid');
+    await expect(label).toHaveCSS('outline-width', '1px');
+    await expect(trueOption).toHaveCSS('forced-color-adjust', 'none');
+    await expect(falseOption).toHaveCSS('box-shadow', 'none');
+    await expect(trueOption).toHaveCSS('box-shadow', 'none');
+    expect(outlineColorAfterFocus).not.toBe(outlineColorBeforeFocus);
+
+    const selectedBackground = await trueOption.evaluate(
+      (el) => getComputedStyle(el).backgroundColor
+    );
+    const unselectedBackground = await falseOption.evaluate(
+      (el) => getComputedStyle(el).backgroundColor
+    );
+
+    expect(selectedBackground).not.toBe('rgba(0, 0, 0, 0)');
+    expect(selectedBackground).not.toBe(unselectedBackground);
+  });
+
+  test('should not add hover shadow to the inactive boolean option', async ({ page }) => {
+    await page.goto(`${storybookUrl}?path=/story/example-button--primary`);
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
+    await sbPage.viewAddonPanel('Controls');
+
+    const falseOption = sbPage
+      .panelContent()
+      .locator('label:has(input[name="primary"]) span')
+      .first();
+    await falseOption.hover();
+
+    await expect(falseOption).toHaveCSS('box-shadow', 'none');
   });
 });

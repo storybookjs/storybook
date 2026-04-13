@@ -10,6 +10,7 @@ import {
   UPDATE_GLOBALS,
 } from 'storybook/internal/core-events';
 import {
+  Addon_TypesEnum,
   type API_IndexHash,
   type API_PreparedIndexEntry,
   type API_StoryEntry,
@@ -528,7 +529,11 @@ export default {
         {
           id: 'shareStorybook',
           label: 'Share your Storybook for feedback',
-          criteria: 'User has shared their Storybook via the Share button or published it',
+          available: () =>
+            addons
+              .experimental_getRegisteredAddons(Addon_TypesEnum.TOOLEXTRA)
+              .includes('chromaui/addon-visual-tests/share-tool'),
+          criteria: 'User has shared their Storybook',
           subscribe: ({ api, done }) => {
             const SHARE_PROGRESS_KEY = 'chromaui/addon-visual-tests/shareProgress';
             const SET_VALUE = 'experimental_useSharedState_setValue';
@@ -538,69 +543,72 @@ export default {
               }
             });
           },
-          content: ({ api }) => {
-            const hasAddon = addons
-              .experimental_getRegisteredAddons()
-              .includes('chromaui/addon-visual-tests');
-            // TODO: Distinguish between addon-visual-test versions
-            if (hasAddon) {
-              return (
-                <>
-                  <p>
-                    Share your Storybook with your team in one click using Chromatic. Click the{' '}
-                    <strong>Share</strong> button in the toolbar to publish and get a shareable
-                    link.
-                  </p>
-                  <strong>Take it further</strong>
-                  <p>
-                    Read the{' '}
-                    <Link href="https://www.chromatic.com/docs/sharing" target="_blank" withArrow>
-                      sharing documentation
-                    </Link>
-                  </p>
-                </>
-              );
-            }
-
-            return (
-              <>
-                <p>
-                  Publishing your Storybook is easy and unlocks super clear review cycles and other
-                  collaborative workflows.
-                </p>
-                <p>
-                  Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
-                  <Link href="https://chromatic.com" target="_blank">
-                    Chromatic
-                  </Link>
-                  ,{' '}
-                  <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
-                    Vercel
-                  </Link>
-                  , or{' '}
-                  <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
-                    Netlify
-                  </Link>
-                  .
-                </p>
-                <strong>Take it further</strong>
-                <p>
-                  Read the{' '}
-                  <Link
-                    href={api.getDocsUrl({
-                      subpath: 'sharing/publish-storybook',
-                      renderer: true,
-                      ref: 'guide',
-                    })}
-                    target="_blank"
-                    withArrow
-                  >
-                    publishing documentation
-                  </Link>
-                </p>
-              </>
-            );
+          action: {
+            label: 'Share',
+            onClick: () => document.getElementById('chromatic-share-button')?.click(),
           },
+          content: () => (
+            <>
+              <p>
+                Share your Storybook with your team in one click using Chromatic. Click the{' '}
+                <strong>Share</strong> button in the toolbar to publish and get a shareable link.
+              </p>
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link href="https://www.chromatic.com/docs/sharing" target="_blank" withArrow>
+                  sharing documentation
+                </Link>
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'publishStorybook',
+          label: 'Publish your Storybook for feedback',
+          available: () =>
+            !addons
+              .experimental_getRegisteredAddons(Addon_TypesEnum.TOOLEXTRA)
+              .includes('chromaui/addon-visual-tests/share-tool'),
+          criteria: 'User has published their Storybook',
+          content: ({ api }) => (
+            <>
+              <p>
+                Publishing your Storybook is easy and unlocks super clear review cycles and other
+                collaborative workflows.
+              </p>
+              <p>
+                Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
+                <Link href="https://chromatic.com" target="_blank">
+                  Chromatic
+                </Link>
+                ,{' '}
+                <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
+                  Vercel
+                </Link>
+                , or{' '}
+                <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
+                  Netlify
+                </Link>
+                .
+              </p>
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'sharing/publish-storybook',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  publishing documentation
+                </Link>
+              </p>
+            </>
+          ),
         },
       ],
     },

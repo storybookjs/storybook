@@ -3,10 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
-import {
-  NoStatsForViteDevError,
-  ViteModuleGraphSubscriptionError,
-} from 'storybook/internal/server-errors';
+import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type {
   Builder,
@@ -45,11 +42,12 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
 }
 
 let server: ViteDevServer;
+let lastBuilderOptions: Options | undefined;
 const listeners = new Set<(event: ModuleGraphChangeEvent) => void>();
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let watcherChangeHandler: (() => void) | undefined;
 let waitForModuleGraph: ReturnType<typeof setInterval> | undefined;
-let moduleGraphRegistrationClosed = false;
+let moduleGraphTrackingStarted = false;
 
 function clearModuleGraphPolling(): void {
   if (waitForModuleGraph) {
@@ -85,16 +83,41 @@ export async function bail(): Promise<void> {
     debounce = undefined;
   }
 
-  moduleGraphRegistrationClosed = false;
+  moduleGraphTrackingStarted = false;
+  lastBuilderOptions = undefined;
   listeners.clear();
   return server?.close();
 }
 
-export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphChange']> = (cb) => {
-  if (moduleGraphRegistrationClosed) {
-    throw new ViteModuleGraphSubscriptionError();
+function startModuleGraphTracking(): void {
+  if (moduleGraphTrackingStarted || listeners.size === 0 || !server || !lastBuilderOptions) {
+    return;
   }
+
+  moduleGraphTrackingStarted = true;
+
+  // Debounce handler to prevent multiple callback invocations when multiple files are edited
+  watcherChangeHandler = () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      notifyListeners(buildModuleGraph(server.moduleGraph.fileToModulesMap));
+    }, 100);
+  };
+
+  startChangeDetection(lastBuilderOptions).catch((error) => {
+    clearModuleGraphPolling();
+    logger.error('Failed to initialize Vite change detection');
+    logger.error(error instanceof Error ? error : String(error));
+    notifyListenersOfStartupFailure({
+      type: 'error',
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
+  });
+}
+
+export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphChange']> = (cb) => {
   listeners.add(cb);
+  startModuleGraphTracking();
 
   return () => {
     listeners.delete(cb);
@@ -163,31 +186,13 @@ export const start: ViteBuilder['start'] = async ({
   router,
   server: devServer,
 }) => {
-  moduleGraphRegistrationClosed = true;
+  lastBuilderOptions = options as Options;
   server = await createViteServer(options as Options, devServer);
 
   router.get('/iframe.html', iframeHandler(options as Options, server));
   router.use(server.middlewares);
 
-  if (listeners.size > 0) {
-    // Debounce handler to prevent multiple callback invocations when multiple files are edited
-    watcherChangeHandler = () => {
-      clearTimeout(debounce);
-      debounce = setTimeout(() => {
-        notifyListeners(buildModuleGraph(server.moduleGraph.fileToModulesMap));
-      }, 100);
-    };
-    // We intentionally don't await this. Cleanup happens in bail().
-    void startChangeDetection(options).catch((error) => {
-      clearModuleGraphPolling();
-      logger.error('Failed to initialize Vite change detection');
-      logger.error(error instanceof Error ? error : String(error));
-      notifyListenersOfStartupFailure({
-        type: 'error',
-        error: error instanceof Error ? error : new Error(String(error)),
-      });
-    });
-  }
+  startModuleGraphTracking();
 
   return {
     bail,

@@ -45,10 +45,10 @@ When automocking, you use the `sb.mock` utility function to register modules you
 There are some key details to keep in mind when using the `sb.mock` utility:
 
 - You can register both local modules (e.g., `../lib/session.ts`) and packages in `node_modules` (e.g., `uuid`).
-- You can only register mocked modules in your project-level configuration: `.storybook/preview.js|ts`. This ensures consistent and performant mocking across all stories in your project. You can modify the behavior of these modules in your stories, but you cannot register them directly in the story files.
+- You can only register mocked modules in your project-level configuration: `.storybook/preview.*`. This ensures consistent and performant mocking across all stories in your project. You can modify the behavior of these modules in your stories, but you cannot register them directly in the story files.
 - When registering a mock for a local module, the path must:
   - Not use an alias or subpath import (e.g., `@/lib/session.ts` or `#lib/session`).
-  - Be relative to the `.storybook/preview.js|ts` file.
+  - Be relative to the `.storybook/preview.*` file.
   - Include the file extension (e.g., `.ts` or `.js`).
 - If you are using Typescript, you can wrap the module path in `import()` to ensure the module is correctly resolved and typed. For example, `sb.mock(import('../lib/session.ts'))`.
 - If you are using the [Webpack builder](../../builders/webpack.mdx), you can only automock `node_module` packages that have ESModules (ESM) entry points. If a module has both CommonJS (CJS) and ESM entry points, Webpack doesn't correctly resolve the ESM entry and it cannot be mocked. Webpack users can still mock CJS `node_module` packages by providing a [mock file](#mock-files).
@@ -57,7 +57,7 @@ There are some key details to keep in mind when using the `sb.mock` utility:
 
 For most cases, you should register a mocked module as spy-only, by setting the `spy` option to `true`. This leaves the original module's functionality intact, while still allowing you to modify the behavior if needed and make assertions in your tests.
 
-For example, if you want to spy on the `getUserFromSession` function and the `uuidv4` function from the `uuid` package, you can call the `sb.mock` utility function in your `.storybook/preview.js|ts` file:
+For example, if you want to spy on the `getUserFromSession` function and the `uuidv4` function from the `uuid` package, you can call the `sb.mock` utility function in your `.storybook/preview.*` file:
 
 <CodeSnippets path="automock-register-spy.md" />
 
@@ -119,7 +119,7 @@ They must export the same named exports as the original module. If you want to m
 
 </Callout>
 
-You can then use the `sb.mock` utility to register these mock files in your `preview.js|ts` file:
+You can then use the `sb.mock` utility to register these mock files in your `preview.*` file:
 
 <CodeSnippets path="automock-register-mock-file.md" />
 
@@ -151,11 +151,11 @@ Storybook's automocking is built on Vitest's mocking engine. The behavior adjust
 
 **Dev Mode**
 
-In dev mode, mocking relies on Vite's module graph invalidation. When a mock is added, changed, or removed (either in `.storybook/preview.js|ts` or the `__mocks__` directory), the plugin intelligently invalidates all affected modules and triggers a hot reload. This provides a fast and interactive development experience.
+In dev mode, mocking relies on Vite's module graph invalidation. When a mock is added, changed, or removed (either in `.storybook/preview.*` or the `__mocks__` directory), the plugin intelligently invalidates all affected modules and triggers a hot reload. This provides a fast and interactive development experience.
 
 **Dev and build mode**
 
-- Build-time analysis: A new Vite plugin, viteMockPlugin, scans `.storybook/preview.js|ts` for all `sb.mock()` calls during the build process.
+- Build-time analysis: A new Vite plugin, viteMockPlugin, scans `.storybook/preview.*` for all `sb.mock()` calls during the build process.
 - Mock Processing:
   - `__mocks__` redirects: If a corresponding file is found in the top-level `__mocks__` directory, that file is loaded and transformed by Vite.
   - Automocking & spies: If no `__mocks__` file is found, the original module's code is transformed at build-time to replace its exports with mocks or spies.
@@ -165,7 +165,7 @@ In dev mode, mocking relies on Vite's module graph invalidation. When a mock is 
 
 While this feature uses Vitest's mocking engine, the implementation within Storybook has some key differences:
 
-- Scope: Mocks are global and defined only in `.storybook/preview.js|ts`. Unlike Vitest, you cannot call `sb.mock()` inside individual story files.
+- Scope: Mocks are global and defined only in `.storybook/preview.*`. Unlike Vitest, you cannot call `sb.mock()` inside individual story files.
 - Static by Design: All mocking decisions are finalized at build time. This makes the system robust and performant but less dynamic than Vitest's test-by-test mocking capabilities. There is no `sb.unmock()` or equivalent, as the module graph is fixed in a production build.
 - Runtime Mocking: While the module swap is static, you can still control the behavior of the mocked functions at runtime within a play function or `beforeEach` hook (e.g., `mocked(myFunction).mockReturnValue('new value')`).
 - No Factory Functions: The `sb.mock()` API does not accept a factory function as its second argument (e.g., `sb.mock('path', () => ({...}))`). This is because all mocking decisions are resolved at build time, whereas factories are executed at runtime.
@@ -308,7 +308,7 @@ Usage of the aliased module in stories is similar to when [using subpath imports
 
 ### Setting up and cleaning up
 
-Before the story renders, you can use the asynchronous `beforeEach` function to perform any setup you need (e.g., configure the mock behavior). This function can be defined at the story, component (which will run for all stories in the file), or project (defined in `.storybook/preview.js|ts`, which will run for all stories in the project).
+Before the story renders, you can use the asynchronous `beforeEach` function to perform any setup you need (e.g., configure the mock behavior). This function can be defined at the story, component (which will run for all stories in the file), or project (defined in `.storybook/preview.*`, which will run for all stories in the project).
 
 You can also return a cleanup function from `beforeEach` which will be called after your story unmounts. This is useful for tasks like unsubscribing observers, etc.
 

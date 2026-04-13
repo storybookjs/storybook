@@ -283,6 +283,7 @@ export async function baseGenerator(
     storybookConfigFolder: storybookConfigFolder as string,
     language,
     frameworkPackage,
+    renderer,
   });
 
   if (addScripts) {

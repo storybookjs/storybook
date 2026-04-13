@@ -122,7 +122,7 @@ export type Doc = v.InferOutput<typeof Doc>;
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
 const BaseComponentProperties = v.object({
-		...BaseManifest.entries,
+	...BaseManifest.entries,
 	path: v.string(),
 	summary: v.optional(v.string()),
 	import: v.optional(v.string()),

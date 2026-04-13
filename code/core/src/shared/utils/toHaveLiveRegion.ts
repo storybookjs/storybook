@@ -15,16 +15,16 @@
  */
 export interface LiveRegionMatcherOptions {
   /** Expected text content (string for exact match, RegExp for pattern). */
-  text: string | RegExp;
+  text?: string | RegExp;
   /** Expected `aria-live` politeness level. If omitted any level matches. */
   level?: 'polite' | 'assertive';
 }
 
 export function toHaveLiveRegion(
   container: HTMLElement,
-  options: LiveRegionMatcherOptions
+  options?: LiveRegionMatcherOptions
 ): { pass: boolean; message: () => string } {
-  const { text, level } = options;
+  const { text, level } = options || {};
 
   // Find all live region elements: elements with explicit aria-live,
   // or implicit live-region roles (status → polite, alert → assertive).
@@ -62,10 +62,11 @@ export function toHaveLiveRegion(
 
     // Filter by text content.
     const content = el.textContent ?? '';
-    let textMatches: boolean;
+    // If no text option provided, match any region.
+    let textMatches: boolean = !text;
     if (typeof text === 'string') {
       textMatches = content.includes(text);
-    } else {
+    } else if (text) {
       // Reset lastIndex because RegExp.prototype.test() with the global or sticky flag
       // mutates lastIndex after each call, causing subsequent tests on different elements
       // to start matching from the wrong position and potentially return false negatives.

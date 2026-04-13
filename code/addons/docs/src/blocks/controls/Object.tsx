@@ -2,7 +2,7 @@ import type { FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
-import { announce } from '@react-aria/live-announcer';
+import { announce, destroyAnnouncer } from '@react-aria/live-announcer';
 
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
@@ -265,7 +265,11 @@ export const ObjectControl: FC<ObjectProps> = ({ name, storyId, value, onChange,
   useEffect(() => {
     if (parseError) {
       announce(`Invalid JSON: ${parseError.message}`);
+    } else {
+      destroyAnnouncer();
     }
+
+    return () => destroyAnnouncer();
   }, [parseError]);
 
   const rawJSONForm = (

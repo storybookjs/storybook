@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { destroyAnnouncer } from '@react-aria/live-announcer';
 
 import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
@@ -11,6 +12,9 @@ const meta = {
   args: {
     name: 'object',
     onChange: fn(),
+  },
+  beforeEach: async () => {
+    destroyAnnouncer();
   },
 } satisfies Meta<typeof ObjectControl>;
 
@@ -166,13 +170,16 @@ export const JsonEditorValidation: Story = {
       await fireEvent.change(rawInput, { target: { value: '{"label":' } });
       rawInput.blur();
 
-      const parseError = await canvas.findByRole('status');
-      await expect(parseError).toHaveTextContent('Invalid JSON');
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({
+          text: 'Invalid JSON: Unexpected end of JSON input',
+        });
+      });
       await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
-      await expect(rawInput).toHaveAttribute(
-        'aria-describedby',
-        parseError.getAttribute('id') ?? ''
-      );
+
+      const error = await canvas.findByText('Invalid JSON: Unexpected end of JSON input');
+      await expect(rawInput).toHaveAttribute('aria-describedby', error.getAttribute('id') ?? '');
+
       await expect(args.onChange).not.toHaveBeenCalled();
     });
 
@@ -184,7 +191,7 @@ export const JsonEditorValidation: Story = {
       rawInput.blur();
 
       await waitFor(async () => {
-        await expect(canvas.queryByRole('status')).not.toBeInTheDocument();
+        await expect(document.body).not.toHaveLiveRegion();
       });
       await expect(rawInput).toHaveAttribute('aria-invalid', 'false');
       await expect(rawInput).not.toHaveAttribute('aria-describedby');
@@ -198,9 +205,7 @@ export const JsonEditorErrorReset: Story = {
     value: { label: 'value' },
     onChange: fn(),
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, step }) => {
     await step('Create a parse error in the raw JSON editor', async () => {
       const editAsJsonButton = canvas.getByRole('switch', { name: 'Edit object as JSON' });
       await fireEvent.click(editAsJsonButton);
@@ -210,7 +215,11 @@ export const JsonEditorErrorReset: Story = {
       await fireEvent.change(rawInput, { target: { value: '{"label":' } });
       rawInput.blur();
 
-      await expect(await canvas.findByRole('status')).toHaveTextContent('Invalid JSON');
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({
+          text: 'Invalid JSON: Unexpected end of JSON input',
+        });
+      });
       await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
     });
 
@@ -221,7 +230,7 @@ export const JsonEditorErrorReset: Story = {
 
       const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
       await waitFor(async () => {
-        await expect(canvas.queryByRole('status')).not.toBeInTheDocument();
+        await expect(document.body).not.toHaveLiveRegion();
       });
       await expect(rawInput).toHaveAttribute('aria-invalid', 'false');
       await expect(rawInput).not.toHaveAttribute('aria-describedby');

@@ -261,24 +261,24 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
   channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
     if (event.type !== 'test-run-completed') {
-      telemetry('addon-test', {
+      telemetry('addon-test', () => ({
         ...event,
         payload: {
           ...event.payload,
           storyId: oneWayHash(event.payload.storyId),
         },
-      });
+      }));
     }
   });
 
   store.subscribe('TOGGLE_WATCHING', async (event) => {
-    await telemetry('addon-test', {
+    await telemetry('addon-test', () => ({
       watchMode: event.payload.to,
-    });
+    }));
   });
   store.subscribe('TEST_RUN_COMPLETED', async (event) => {
     const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
-    await telemetry('addon-test', {
+    await telemetry('addon-test', () => ({
       ...currentRun,
       duration: (finishedAt ?? 0) - (startedAt ?? 0),
       unhandledErrorCount: unhandledErrors.length,
@@ -289,14 +289,14 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
             return sanitizeError(errorWithoutStacks);
           }),
         }),
-    });
+    }));
   });
 
   if (enableCrashReports) {
     store.subscribe('FATAL_ERROR', async (event) => {
-      await telemetry('addon-test', {
+      await telemetry('addon-test', () => ({
         fatalError: cleanPaths(event.payload.error.message),
-      });
+      }));
     });
   }
 

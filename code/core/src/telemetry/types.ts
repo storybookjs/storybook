@@ -103,6 +103,10 @@ export interface Payload {
   [key: string]: any;
 }
 
+export type PayloadFactory = () => Payload | Promise<Payload>;
+
+export type PayloadInput = Payload | PayloadFactory;
+
 export interface Context {
   [key: string]: any;
 }

@@ -4,7 +4,14 @@ import { notify } from './notify.ts';
 import { sanitizeError } from './sanitize.ts';
 import { getStorybookMetadata } from './storybook-metadata.ts';
 import { sendTelemetry } from './telemetry.ts';
-import type { EventType, Options, Payload, TelemetryData } from './types.ts';
+import type {
+  EventType,
+  Options,
+  Payload,
+  PayloadFactory,
+  PayloadInput,
+  TelemetryData,
+} from './types.ts';
 
 export { oneWayHash } from './one-way-hash.ts';
 
@@ -30,28 +37,34 @@ export const isExampleStoryId = (storyId: string) =>
 
 // --- State machine ---
 
-type TelemetryState = 'uninitialized' | 'enabled' | 'disabled';
+type TelemetryState = undefined | 'enabled' | 'disabled';
 
-let _state: TelemetryState = 'uninitialized';
+globalThis.SB_TELEMETRY_STATE = undefined as TelemetryState; // Start in uninitialized state until we know whether telemetry is enabled or disabled based on presets and CLI options. In the meantime, events are queued.
 
 type QueuedEvent = {
   eventType: EventType;
-  payload: Payload;
+  payload: PayloadInput;
   options: Partial<Options>;
   timestamp: number;
 };
 
 let _queue: QueuedEvent[] = [];
 
+const isPayloadFactory = (payload: PayloadInput): payload is PayloadFactory =>
+  typeof payload === 'function';
+
+const resolvePayload = async (payload: PayloadInput): Promise<Payload> =>
+  isPayloadFactory(payload) ? await payload() : payload;
+
 /**
  * Resolve telemetry state. When enabled, flushes the queue. When disabled, clears it.
  * This should be called once presets have been evaluated and the disableTelemetry config is known.
  */
 export async function setTelemetryEnabled(enabled: boolean) {
-  const previousState = _state;
-  _state = enabled ? 'enabled' : 'disabled';
+  const previousState = globalThis.SB_TELEMETRY_STATE;
+  globalThis.SB_TELEMETRY_STATE = enabled ? 'enabled' : 'disabled';
 
-  if (enabled && previousState === 'uninitialized') {
+  if (enabled && previousState === undefined) {
     // Flush the queue
     const pending = _queue;
     _queue = [];
@@ -69,21 +82,23 @@ export async function setTelemetryEnabled(enabled: boolean) {
 
 /** Check whether telemetry is currently enabled. */
 export function isTelemetryModuleEnabled() {
-  return _state !== 'disabled';
+  return globalThis.SB_TELEMETRY_STATE === 'enabled';
 }
 
 /** Check whether the telemetry state has been resolved (is no longer uninitialized). */
 export function isTelemetryStateResolved() {
-  return _state !== 'uninitialized';
+  return globalThis.SB_TELEMETRY_STATE !== undefined;
 }
 
 // --- Internal send logic ---
 
 async function _processAndSend(
   eventType: EventType,
-  payload: Payload,
+  payloadInput: PayloadInput,
   options: Partial<Options> = {}
 ) {
+  const payload = await resolvePayload(payloadInput);
+
   // Don't notify on boot since it can lead to double notification in `sb init`.
   // The notification will happen when the actual command runs.
   if (eventType !== 'boot' && options.notify !== false) {
@@ -127,15 +142,15 @@ async function _processAndSend(
 
 export const telemetry = async (
   eventType: EventType,
-  payload: Payload = {},
+  payload: PayloadInput = {},
   options: Partial<Options> = {}
 ) => {
   // force:true bypasses the disabled state (used for error telemetry with enableCrashReports)
-  if (_state === 'disabled' && !options.force) {
+  if (globalThis.SB_TELEMETRY_STATE === 'disabled' && !options.force) {
     return;
   }
 
-  if (_state === 'uninitialized' && !options.force) {
+  if (globalThis.SB_TELEMETRY_STATE === undefined && !options.force) {
     _queue.push({ eventType, payload, options, timestamp: Date.now() });
     return;
   }

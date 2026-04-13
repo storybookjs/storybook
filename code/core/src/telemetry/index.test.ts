@@ -67,6 +67,8 @@ describe('telemetry state machine', () => {
     const { sendTelemetry } = await import('./telemetry.ts');
 
     await telemetryModule.setTelemetryEnabled(true);
+    expect(telemetryModule.isTelemetryModuleEnabled()).toBe(true);
+
     await telemetryModule.telemetry('dev', { foo: 'bar' });
 
     // Sent immediately, not queued
@@ -77,6 +79,8 @@ describe('telemetry state machine', () => {
     const { sendTelemetry } = await import('./telemetry.ts');
 
     await telemetryModule.setTelemetryEnabled(false);
+    expect(telemetryModule.isTelemetryModuleEnabled()).toBe(false);
+
     await telemetryModule.telemetry('dev', { foo: 'bar' });
 
     expect(sendTelemetry).not.toHaveBeenCalled();
@@ -89,6 +93,35 @@ describe('telemetry state machine', () => {
     await telemetryModule.telemetry('error', { eventType: 'dev' }, { force: true });
 
     expect(sendTelemetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not evaluate payload factory when disabled', async () => {
+    const { sendTelemetry } = await import('./telemetry.ts');
+    const payloadFactory = vi.fn().mockReturnValue({ eventType: 'dev' });
+
+    await telemetryModule.setTelemetryEnabled(false);
+    await telemetryModule.telemetry('dev', payloadFactory);
+
+    expect(payloadFactory).not.toHaveBeenCalled();
+    expect(sendTelemetry).not.toHaveBeenCalled();
+  });
+
+  it('evaluates payload factory when queued event is flushed', async () => {
+    const { sendTelemetry } = await import('./telemetry.ts');
+    const payloadFactory = vi.fn().mockReturnValue({ eventType: 'dev' });
+
+    await telemetryModule.telemetry('boot', payloadFactory, { stripMetadata: true });
+
+    expect(payloadFactory).not.toHaveBeenCalled();
+    expect(sendTelemetry).not.toHaveBeenCalled();
+
+    await telemetryModule.setTelemetryEnabled(true);
+
+    expect(payloadFactory).toHaveBeenCalledTimes(1);
+    expect(sendTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({ eventType: 'boot', payload: { eventType: 'dev' } }),
+      expect.objectContaining({ stripMetadata: true, timestamp: expect.any(Number) })
+    );
   });
 
   it('preserves timestamps when flushing queued events', async () => {
@@ -130,8 +163,7 @@ describe('telemetry state machine', () => {
   });
 
   it('isTelemetryModuleEnabled returns correct state', async () => {
-    // uninitialized — report as enabled (callers that check this expect boolean)
-    expect(telemetryModule.isTelemetryModuleEnabled()).toBe(true);
+    expect(telemetryModule.isTelemetryModuleEnabled()).toBe(false);
 
     await telemetryModule.setTelemetryEnabled(false);
     expect(telemetryModule.isTelemetryModuleEnabled()).toBe(false);

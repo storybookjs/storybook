@@ -15,40 +15,48 @@ export async function doTelemetry(
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>,
   options: Options
 ) {
-  const generator = await storyIndexGeneratorPromise;
-  let indexAndStats;
-  try {
-    indexAndStats = await generator?.getIndexAndStats();
-  } catch (err) {
-    // If we fail to get the index, treat it as a recoverable error, but send it up to telemetry
-    // as if we crashed. In the future we will revisit this to send a distinct error
-    if (!(err instanceof Error)) {
-      throw new Error('encountered a non-recoverable error');
-    }
-    sendTelemetryError(err, 'dev', {
-      cliOptions: options,
-      presetOptions: {
-        ...options,
-        corePresets: [],
-        overridePresets: [],
-      },
-    });
-    return;
-  }
   const { versionCheck, versionUpdates } = options;
   invariant(
     !versionUpdates || (versionUpdates && versionCheck),
     'versionCheck should be defined when versionUpdates is true'
   );
-  const payload = {
-    precedingUpgrade: await getPrecedingUpgrade(),
-  };
-  if (indexAndStats) {
-    Object.assign(payload, {
-      versionStatus: versionUpdates && versionCheck ? versionStatus(versionCheck) : 'disabled',
-      storyIndex: summarizeIndex(indexAndStats.storyIndex),
-      storyStats: indexAndStats.stats,
-    });
-  }
-  telemetry('dev', payload, { configDir: options.configDir });
+  telemetry(
+    'dev',
+    async () => {
+      const generator = await storyIndexGeneratorPromise;
+      let indexAndStats;
+      try {
+        indexAndStats = await generator?.getIndexAndStats();
+      } catch (err) {
+        // If we fail to get the index, treat it as a recoverable error, but send it up to telemetry
+        // as if we crashed. In the future we will revisit this to send a distinct error.
+        const error = err instanceof Error ? err : new Error('encountered a non-recoverable error');
+
+        sendTelemetryError(error, 'dev', {
+          cliOptions: options,
+          presetOptions: {
+            ...options,
+            corePresets: [],
+            overridePresets: [],
+          },
+        });
+
+        // Keep the regular dev telemetry event from being sent in this failure path.
+        return { error };
+      }
+
+      const payload = {
+        precedingUpgrade: await getPrecedingUpgrade(),
+      };
+      if (indexAndStats) {
+        Object.assign(payload, {
+          versionStatus: versionUpdates && versionCheck ? versionStatus(versionCheck) : 'disabled',
+          storyIndex: summarizeIndex(indexAndStats.storyIndex),
+          storyStats: indexAndStats.stats,
+        });
+      }
+      return payload;
+    },
+    { configDir: options.configDir }
+  );
 }

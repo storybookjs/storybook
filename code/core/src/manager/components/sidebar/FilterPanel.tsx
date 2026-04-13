@@ -1,6 +1,7 @@
 import React, { Fragment, useCallback, useMemo } from 'react';
 
 import { ActionList } from 'storybook/internal/components';
+import { SIDEBAR_FILTER_CHANGED } from 'storybook/internal/core-events';
 import type { StatusValue, StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
 
 import { BatchAcceptIcon, DocumentIcon, ShareAltIcon, SweepIcon, UndoIcon } from '@storybook/icons';
@@ -55,6 +56,68 @@ export const FilterPanel = ({
   const { builtInEntries, tagEntries } = useTagFilterEntries(indexJson);
   const statusEntries = useStatusFilterEntries(allStatuses);
 
+  const emitFilterTelemetry = useCallback(
+    (changed: {
+      filterType: 'tag' | 'status';
+      filterId: string;
+      action: 'include' | 'exclude' | 'remove';
+    }) => {
+      const builtInTagIds = new Set(builtInEntries.map((e) => e.id));
+      const activeBuiltInIncluded = includedFilters.filter((id) => builtInTagIds.has(id));
+      const activeBuiltInExcluded = excludedFilters.filter((id) => builtInTagIds.has(id));
+      const activeIncludedSet = new Set(activeBuiltInIncluded);
+      const activeExcludedSet = new Set(activeBuiltInExcluded);
+      const includedStatusSet = new Set(includedStatusFilters);
+      const excludedStatusSet = new Set(excludedStatusFilters);
+
+      const storyCounts: Record<string, number> = {};
+      for (const entry of builtInEntries) {
+        if (activeIncludedSet.has(entry.id) || activeExcludedSet.has(entry.id)) {
+          storyCounts[entry.id] = entry.count;
+        }
+      }
+      for (const entry of statusEntries) {
+        if (includedStatusSet.has(entry.statusValue) || excludedStatusSet.has(entry.statusValue)) {
+          storyCounts[entry.statusValue] = entry.count;
+        }
+      }
+      // Also include the count for the filter that was just changed,
+      // since the state arrays may not yet reflect the toggle
+      if (changed.action !== 'remove') {
+        if (changed.filterType === 'tag') {
+          const entry = builtInEntries.find((e) => e.id === changed.filterId);
+          if (entry) storyCounts[changed.filterId] = entry.count;
+        } else {
+          const entry = statusEntries.find((e) => e.statusValue === changed.filterId);
+          if (entry) storyCounts[changed.filterId] = entry.count;
+        }
+      }
+
+      api.emit(SIDEBAR_FILTER_CHANGED, {
+        trigger: 'interaction',
+        changed,
+        activeTagFilters: {
+          included: activeBuiltInIncluded,
+          excluded: activeBuiltInExcluded,
+        },
+        activeStatusFilters: {
+          included: [...includedStatusFilters],
+          excluded: [...excludedStatusFilters],
+        },
+        storyCounts,
+      });
+    },
+    [
+      api,
+      builtInEntries,
+      statusEntries,
+      includedFilters,
+      excludedFilters,
+      includedStatusFilters,
+      excludedStatusFilters,
+    ]
+  );
+
   const toTagFilterItem = useCallback(
     (entry: TagFilterEntry): FilterItem | null => {
       if (entry.count === 0 && entry.type === 'built-in') return null;
@@ -75,11 +138,27 @@ export const FilterPanel = ({
           } else {
             api.addTagFilters([entry.id], false);
           }
+          if (entry.type === 'built-in') {
+            emitFilterTelemetry({
+              filterType: 'tag',
+              filterId: entry.id,
+              action: isChecked ? 'remove' : 'include',
+            });
+          }
         },
-        onInvert: () => api.addTagFilters([entry.id], !isExcluded),
+        onInvert: () => {
+          api.addTagFilters([entry.id], !isExcluded);
+          if (entry.type === 'built-in') {
+            emitFilterTelemetry({
+              filterType: 'tag',
+              filterId: entry.id,
+              action: !isExcluded ? 'exclude' : 'include',
+            });
+          }
+        },
       };
     },
-    [api, includedFilters, excludedFilters]
+    [api, includedFilters, excludedFilters, emitFilterTelemetry]
   );
 
   const toStatusFilterItem = useCallback(
@@ -102,11 +181,23 @@ export const FilterPanel = ({
           } else {
             api.addStatusFilters([entry.statusValue], false);
           }
+          emitFilterTelemetry({
+            filterType: 'status',
+            filterId: entry.statusValue,
+            action: isChecked ? 'remove' : 'include',
+          });
         },
-        onInvert: () => api.addStatusFilters([entry.statusValue], !isExcluded),
+        onInvert: () => {
+          api.addStatusFilters([entry.statusValue], !isExcluded);
+          emitFilterTelemetry({
+            filterType: 'status',
+            filterId: entry.statusValue,
+            action: !isExcluded ? 'exclude' : 'include',
+          });
+        },
       };
     },
-    [api, includedStatusFilters, excludedStatusFilters, theme]
+    [api, includedStatusFilters, excludedStatusFilters, theme, emitFilterTelemetry]
   );
 
   const builtInItems = useMemo(

@@ -63,11 +63,9 @@ export class SbPage {
       )
     );
 
-    // In mobile mode the sidebar drawer unmounts after closing (300ms transition),
-    // so the element may no longer be in the DOM. Skip the check if unmounted;
-    // waitForURL above already confirmed correct navigation.
-    const selectedCount = await storyLink.count();
-    if (selectedCount > 0) {
+    // In mobile mode the sidebar drawer unmounts after navigation,
+    // so the element may no longer be in the DOM.
+    if (await storyLink.isVisible()) {
       await this.expect(storyLink).toHaveAttribute('data-selected', 'true');
     }
 

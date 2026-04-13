@@ -41,6 +41,7 @@ import type { PluginOption } from 'vite';
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
+import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -471,6 +472,18 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
           { configDir: finalOptions.configDir }
         );
+
+        // When an agent is running vitest via CLI, inject a reporter that sends
+        // detailed test result telemetry (pass/fail, error analysis, empty renders)
+        const agent = detectAgent();
+        if (agent) {
+          context.vitest.config.reporters.push(
+            new AgentTelemetryReporter({
+              configDir: finalOptions.configDir,
+              agent,
+            })
+          );
+        }
       }
     },
     async configureServer(server) {

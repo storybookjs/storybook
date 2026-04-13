@@ -3,6 +3,7 @@ import React from 'react';
 
 import { Link, SyntaxHighlighter } from 'storybook/internal/components';
 import {
+  AI_PROMPT_NUDGE,
   PREVIEW_INITIALIZED,
   STORY_ARGS_UPDATED,
   STORY_FINISHED,
@@ -163,9 +164,10 @@ export const checklistData = {
           criteria: 'AI prepare command has been run',
           action: {
             label: 'Copy prompt',
-            onClick: () => {
+            onClick: ({ api }) => {
               // eslint-disable-next-line compat/compat
               navigator.clipboard?.writeText(AI_PREPARE_PROMPT);
+              api.emit(AI_PROMPT_NUDGE, { id: 'prepare', origin: 'onboarding-checklist-side' });
             },
           },
         },

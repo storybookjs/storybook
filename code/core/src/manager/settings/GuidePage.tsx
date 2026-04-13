@@ -1,9 +1,11 @@
 import React from 'react';
 
 import { Button, Link } from 'storybook/internal/components';
+import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
+import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { AI_PREPARE_PROMPT } from '../../shared/constants/ai-prompts.ts';
@@ -61,6 +63,7 @@ const AiCtaActions = styled.div({
 });
 
 export const GuidePage = () => {
+  const api = useStorybookApi();
   const checklist = useChecklist();
 
   const aiPrepareItem = checklist.availableItems.find((item) => item.id === 'aiPrepare');
@@ -94,6 +97,7 @@ export const GuidePage = () => {
               onClick={() => {
                 // eslint-disable-next-line compat/compat
                 navigator.clipboard?.writeText(AI_PREPARE_PROMPT);
+                api.emit(AI_PROMPT_NUDGE, { id: 'prepare', origin: 'onboarding-guide-page' });
               }}
             >
               Copy prompt

@@ -1,6 +1,6 @@
-import { AbstractRenderer } from './AbstractRenderer';
-import { CanvasRenderer } from './CanvasRenderer';
-import { DocsRenderer } from './DocsRenderer';
+import { AbstractRenderer } from './AbstractRenderer.ts';
+import { CanvasRenderer } from './CanvasRenderer.ts';
+import { DocsRenderer } from './DocsRenderer.ts';
 
 type RenderType = 'canvas' | 'docs';
 export class RendererFactory {

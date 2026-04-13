@@ -4,7 +4,7 @@ import { cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 
-import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
+import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });

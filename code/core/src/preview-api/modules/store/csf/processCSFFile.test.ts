@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { processCSFFile } from './processCSFFile';
+import { processCSFFile } from './processCSFFile.ts';
 
 it('returns a CSFFile object with meta and stories', () => {
   const { meta, stories } = processCSFFile(

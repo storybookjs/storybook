@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, fireEvent, fn, within } from 'storybook/test';
 
-import { FileSearchList } from './FileSearchList';
+import { FileSearchList } from './FileSearchList.tsx';
 
 const meta = {
   component: FileSearchList,

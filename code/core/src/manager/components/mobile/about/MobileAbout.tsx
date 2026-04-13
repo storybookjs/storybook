@@ -8,9 +8,9 @@ import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybo
 import { useTransitionState } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 
-import { MOBILE_TRANSITION_DURATION } from '../../../constants';
-import { useLayout } from '../../layout/LayoutProvider';
-import { UpgradeBlock } from '../../upgrade/UpgradeBlock';
+import { MOBILE_TRANSITION_DURATION } from '../../../constants.ts';
+import { useLayout } from '../../layout/LayoutProvider.tsx';
+import { UpgradeBlock } from '../../upgrade/UpgradeBlock.tsx';
 
 export const MobileAbout: FC = () => {
   const { isMobileAboutOpen, setMobileAboutOpen } = useLayout();

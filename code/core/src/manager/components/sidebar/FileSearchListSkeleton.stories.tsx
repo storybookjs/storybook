@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { FileSearchListLoadingSkeleton } from './FileSearchListSkeleton';
+import { FileSearchListLoadingSkeleton } from './FileSearchListSkeleton.tsx';
 
 const meta = {
   component: FileSearchListLoadingSkeleton,

@@ -9,8 +9,8 @@ import { execaCommand } from 'execa';
 import { globSync } from 'glob';
 import { join, resolve } from 'path';
 
-import { temporaryDirectory } from '../code/core/src/common/utils/cli';
-import { esMain } from './utils/esmain';
+import { temporaryDirectory } from '../code/core/src/common/utils/cli.ts';
+import { esMain } from './utils/esmain.ts';
 
 const logger = console;
 

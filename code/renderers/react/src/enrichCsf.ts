@@ -5,7 +5,7 @@ import type { PresetPropertyFn } from 'storybook/internal/types';
 
 import { join } from 'pathe';
 
-import { getCodeSnippet } from './componentManifest/generateCodeSnippet';
+import { getCodeSnippet } from './componentManifest/generateCodeSnippet.ts';
 
 export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (input, options) => {
   const features = await options.presets.apply('features');

@@ -8,8 +8,8 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 // Relative path import to avoid dependency to storybook/test
-import { getFrameworkPackageName } from '../helpers/mainConfigFile';
-import type { Fix } from '../types';
+import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
+import type { Fix } from '../types.ts';
 
 export const fileExtensions = [
   '.js',

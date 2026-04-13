@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { useTheme } from 'storybook/theming';
 
-import { useMediaQuery } from '../../hooks/useMedia';
+import { useMediaQuery } from '../../hooks/useMedia.tsx';
 
 function findActiveLandmarkElement() {
   let currentElement: Element | null = document.activeElement;

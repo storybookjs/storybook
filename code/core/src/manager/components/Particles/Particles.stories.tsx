@@ -1,5 +1,5 @@
-import preview from '../../../../../.storybook/preview';
-import { Particles } from './Particles';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Particles } from './Particles.tsx';
 
 const SomeComponent = (props: React.ComponentProps<'div'>) => {
   return <div {...props}>Cool</div>;

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveModulePath } from 'exsolve';
 
-import { validateFrameworkName } from './validate-config';
+import { validateFrameworkName } from './validate-config.ts';
 
 // mock exsolve to spy
 vi.mock('exsolve', { spy: true });

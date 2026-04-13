@@ -10,8 +10,8 @@ import {
   MINIMUM_RIGHT_PANEL_WIDTH_PX,
   MINIMUM_SIDEBAR_WIDTH_PX,
   TOOLBAR_HEIGHT_PX,
-} from '../../constants';
-import type { LayoutState } from './Layout';
+} from '../../constants.ts';
+import type { LayoutState } from './Layout.tsx';
 
 // the distance from the edge of the screen at which the panel/sidebar will snap to the edge
 const SNAP_THRESHOLD_PX = 30;

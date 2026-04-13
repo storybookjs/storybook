@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { Configuration } from 'webpack';
 
-import type { StorybookConfig } from './types';
+import type { StorybookConfig } from './types.ts';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,

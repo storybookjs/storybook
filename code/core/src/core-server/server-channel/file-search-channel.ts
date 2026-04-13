@@ -16,9 +16,9 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options, SupportedRenderer } from 'storybook/internal/types';
 
-import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
-import { getParser } from '../utils/parser';
-import { searchFiles } from '../utils/search-files';
+import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file.ts';
+import { getParser } from '../utils/parser/index.ts';
+import { searchFiles } from '../utils/search-files.ts';
 
 export async function initFileSearchChannel(
   channel: Channel,

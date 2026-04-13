@@ -10,8 +10,8 @@ import Button from './__tests__/Button.vue';
 import Decorator2TsVue from './__tests__/Decorator2.vue';
 import DecoratorTsVue from './__tests__/Decorator.vue';
 import GenericComponent from './__tests__/GenericComponent.vue';
-import { __definePreview } from './preview';
-import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj } from './public-types';
+import { __definePreview } from './preview.ts';
+import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj } from './public-types.ts';
 
 type ButtonProps = ComponentPropsAndSlots<typeof Button>;
 

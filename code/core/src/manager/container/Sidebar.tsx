@@ -3,9 +3,9 @@ import React from 'react';
 import type { Combo, StoriesHash } from 'storybook/manager-api';
 import { Consumer, experimental_useStatusStore } from 'storybook/manager-api';
 
-import type { SidebarProps as SidebarComponentProps } from '../components/sidebar/Sidebar';
-import { Sidebar as SidebarComponent } from '../components/sidebar/Sidebar';
-import { useMenu } from './Menu';
+import type { SidebarProps as SidebarComponentProps } from '../components/sidebar/Sidebar.tsx';
+import { Sidebar as SidebarComponent } from '../components/sidebar/Sidebar.tsx';
+import { useMenu } from './Menu.tsx';
 
 export type Item = StoriesHash[keyof StoriesHash];
 

@@ -1,11 +1,12 @@
 import type { JsPackageManager } from 'storybook/internal/common';
+import { getVitePlusVersions } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { lt } from 'semver';
 
-import { shortenPath } from '../util';
-import type { AutoblockerResult } from './types';
+import { shortenPath } from '../util.ts';
+import type { AutoblockerResult } from './types.ts';
 
 type Result<M extends Record<string, string>> = {
   installedVersion: string | undefined;
@@ -29,12 +30,24 @@ export async function findOutdatedPackage<M extends Record<string, string>>(
   }
 ): Promise<false | Result<M>> {
   const list = await Promise.all(
-    typedKeys(minimalVersionsMap).map(async (packageName) => ({
-      packageName,
-      installedVersion:
-        (await options.packageManager.getModulePackageJSON(packageName))?.version ?? null,
-      minimumVersion: minimalVersionsMap[packageName],
-    }))
+    typedKeys(minimalVersionsMap).map(async (packageName) => {
+      // When vite-plus is used, packages like vite are overridden and their
+      // package.json reports the vite-plus wrapper version (e.g. 0.1.16) instead
+      // of the actual vendored version. Check vite-plus first.
+      const vitePlusVersions = await getVitePlusVersions();
+      let installedVersion = vitePlusVersions?.[packageName] ?? null;
+
+      if (!installedVersion) {
+        const packageJson = await options.packageManager.getModulePackageJSON(packageName);
+        installedVersion = packageJson?.version ?? null;
+      }
+
+      return {
+        packageName,
+        installedVersion,
+        minimumVersion: minimalVersionsMap[packageName],
+      };
+    })
   );
 
   return list.reduce<false | Result<M>>(

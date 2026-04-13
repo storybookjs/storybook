@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildIndex } from './build-index';
+import { buildIndex } from './build-index.ts';
 
 describe('buildIndex', () => {
   it.skip('should build index', async () => {

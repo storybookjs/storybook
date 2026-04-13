@@ -15,11 +15,11 @@ import type {
 
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
-import * as reactAnnotations from './entry-preview';
-import * as reactArgTypesAnnotations from './entry-preview-argtypes';
-import * as reactDocsAnnotations from './entry-preview-docs';
-import type { AddMocks } from './public-types';
-import type { ReactTypes } from './types';
+import * as reactAnnotations from './entry-preview.tsx';
+import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
+import * as reactDocsAnnotations from './entry-preview-docs.ts';
+import type { AddMocks } from './public-types.ts';
+import type { ReactTypes } from './types.ts';
 
 /** Extracts and unions all args types from an array of decorators. */
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<

@@ -4,6 +4,6 @@
  * Provides a centralized way to manage and access Storybook generators
  */
 
-export { GeneratorRegistry, generatorRegistry } from './GeneratorRegistry';
+export { GeneratorRegistry, generatorRegistry } from './GeneratorRegistry.ts';
 
-export { registerAllGenerators } from './registerGenerators';
+export { registerAllGenerators } from './registerGenerators.ts';

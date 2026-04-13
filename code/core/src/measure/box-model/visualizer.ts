@@ -6,10 +6,10 @@ import type {
   ElementMeasurements,
   Extremities,
   FloatingAlignment,
-} from '../util-types';
-import { draw } from './canvas';
-import type { Label, LabelStack } from './labels';
-import { labelStacks } from './labels';
+} from '../util-types.ts';
+import { draw } from './canvas.ts';
+import type { Label, LabelStack } from './labels.ts';
+import { labelStacks } from './labels.ts';
 
 const colors = {
   margin: '#f6b26ba8',

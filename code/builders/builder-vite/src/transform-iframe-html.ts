@@ -1,7 +1,7 @@
 import { normalizeStories } from 'storybook/internal/common';
 import type { DocsOptions, Options, TagsOptions } from 'storybook/internal/types';
 
-import { SB_VIRTUAL_FILES } from './virtual-file-names';
+import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export type PreviewHtml = string | undefined;
 

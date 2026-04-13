@@ -263,7 +263,7 @@ If your story imports components that use `next/navigation`, you need to set the
 
 {/* prettier-ignore-end */}
 
-If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.js|ts`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
+If your Next.js project uses the `app` directory for every page (in other words, it does not have a `pages` directory), you can set the parameter `nextjs.appDirectory` to `true` in the [`.storybook/preview.tsx`](../../configure/index.mdx#configure-story-rendering) file to apply it to all stories.
 
 {/* prettier-ignore-start */}
 
@@ -434,7 +434,7 @@ Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/buildi
 
 [Absolute imports](https://nextjs.org/docs/pages/building-your-application/configuring/absolute-imports-and-module-aliases#absolute-imports) from the root directory are supported.
 
-```jsx title="index.jsx|tsx"
+```jsx title="index.tsx"
 // All good!
 import Button from 'components/button';
 // Also good!
@@ -450,9 +450,9 @@ export default function HomePage() {
 }
 ```
 
-Also OK for global styles in `.storybook/preview.js|ts`!
+Also OK for global styles in `.storybook/preview.tsx`!
 
-```js title=".storybook/preview.js|ts"
+```js title=".storybook/preview.tsx"
 import 'styles/globals.scss';
 
 // ...
@@ -466,7 +466,7 @@ import 'styles/globals.scss';
 
 [Module aliases](https://nextjs.org/docs/app/building-your-application/configuring/absolute-imports-and-module-aliases#module-aliases) are also supported.
 
-```jsx title="index.jsx|tsx"
+```jsx title="index.tsx"
 // All good!
 import Button from '@/components/button';
 // Also good!
@@ -502,7 +502,7 @@ To configure subpath imports, you define the `imports` property in your project'
 
 Which can then be used like this:
 
-```jsx title="index.jsx|tsx"
+```jsx title="index.tsx"
 import Button from '#components/button';
 import styles from '#styles/HomePage.module.css';
 

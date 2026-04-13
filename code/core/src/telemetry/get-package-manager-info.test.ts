@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { execaCommand as rawExecaCommand } from 'execa';
 import { detect as rawDetect } from 'package-manager-detector';
 
-import { getPackageManagerInfo } from './get-package-manager-info';
+import { getPackageManagerInfo } from './get-package-manager-info.ts';
 
 vi.mock('execa', async () => {
   return {

@@ -14,7 +14,7 @@ import type {
   Method,
   Pipe,
   Property,
-} from './compodoc-types';
+} from './compodoc-types.ts';
 
 const { FEATURES } = global;
 

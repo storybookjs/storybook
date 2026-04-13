@@ -7,8 +7,8 @@ import { join } from 'pathe';
 import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
-import { Tag } from '../../../shared/constants/tags';
-import { type DocsManifest, renderComponentsManifest } from './render-components-manifest';
+import { Tag } from '../../../shared/constants/tags.ts';
+import { type DocsManifest, renderComponentsManifest } from './render-components-manifest.ts';
 
 function isDocsManifest(manifest: unknown): manifest is DocsManifest {
   return typeof manifest === 'object' && manifest !== null && 'docs' in manifest;

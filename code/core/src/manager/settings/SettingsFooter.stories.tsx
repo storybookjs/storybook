@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Decorator } from '@storybook/react-vite';
 
-import SettingsFooter from './SettingsFooter';
+import SettingsFooter from './SettingsFooter.tsx';
 
 export default {
   component: SettingsFooter,

@@ -3,7 +3,7 @@ import type { InstallationMetadata } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
 
-import { hasMultipleVersions } from './hasMultipleVersions';
+import { hasMultipleVersions } from './hasMultipleVersions.ts';
 
 export const messageDivider = '\n\n';
 

@@ -9,20 +9,20 @@ import {
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
   createChecklistStore,
-} from '../shared/checklist-store';
+} from '../shared/checklist-store/index.ts';
 import {
   type StatusStoreEvent,
   type StatusesByStoryIdAndTypeId,
   createStatusStore,
-} from '../shared/status-store';
-import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../shared/status-store';
+} from '../shared/status-store/index.ts';
+import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../shared/status-store/index.ts';
 import type {
   TestProviderStateByProviderId,
   TestProviderStoreEvent,
-} from '../shared/test-provider-store';
-import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../shared/test-provider-store';
-import { createTestProviderStore } from '../shared/test-provider-store';
-import type { UniversalStore } from '../shared/universal-store';
+} from '../shared/test-provider-store/index.ts';
+import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../shared/test-provider-store/index.ts';
+import { createTestProviderStore } from '../shared/test-provider-store/index.ts';
+import type { UniversalStore } from '../shared/universal-store/index.ts';
 
 export const {
   fullStatusStore: internal_fullStatusStore,

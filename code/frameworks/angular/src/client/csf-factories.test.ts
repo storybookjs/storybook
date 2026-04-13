@@ -4,8 +4,8 @@ import { describe, expect, it, test } from 'vitest';
 
 import type { Args } from 'storybook/internal/types';
 
-import { __definePreview } from './preview';
-import type { Decorator } from './public-types';
+import { __definePreview } from './preview.ts';
+import type { Decorator } from './public-types.ts';
 
 @Component({
   selector: 'storybook-button',

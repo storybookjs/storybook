@@ -1,11 +1,11 @@
-import type { ExtractedJsDoc } from '../jsdocParser';
-import { parseJsDoc } from '../jsdocParser';
-import type { Component } from '../types';
-import type { PropDefFactory } from './createPropDef';
-import { getPropDefFactory } from './createPropDef';
-import type { DocgenInfo, PropDef } from './types';
-import { TypeSystem } from './types';
-import { getDocgenDescription, getDocgenSection, isValidDocgenSection } from './utils';
+import type { ExtractedJsDoc } from '../jsdocParser.ts';
+import { parseJsDoc } from '../jsdocParser.ts';
+import type { Component } from '../types.ts';
+import type { PropDefFactory } from './createPropDef.ts';
+import { getPropDefFactory } from './createPropDef.ts';
+import type { DocgenInfo, PropDef } from './types.ts';
+import { TypeSystem } from './types.ts';
+import { getDocgenDescription, getDocgenSection, isValidDocgenSection } from './utils/index.ts';
 
 export interface ExtractedProp {
   propDef: PropDef;

@@ -18,7 +18,7 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { addons } from './main';
+import { addons } from './main.ts';
 
 interface Hook {
   name: string;

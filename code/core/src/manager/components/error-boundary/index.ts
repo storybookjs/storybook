@@ -1,1 +1,1 @@
-export { ManagerErrorBoundary } from './ManagerErrorBoundary';
+export { ManagerErrorBoundary } from './ManagerErrorBoundary.tsx';

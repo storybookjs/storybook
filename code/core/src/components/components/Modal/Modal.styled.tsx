@@ -10,9 +10,9 @@ import { Text } from 'react-aria-components/patched-dist/Text';
 import type { TransitionStatus } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 
-import { Button } from '../Button/Button';
+import { Button } from '../Button/Button.tsx';
 // Import the ModalContext from the main Modal component
-import { ModalContext } from './Modal';
+import { ModalContext } from './Modal.tsx';
 
 const fadeIn = keyframes({
   from: { opacity: 0 },

@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { Channel } from 'storybook/internal/channels';
 import type { CSFFile, Renderer } from 'storybook/internal/types';
 
-import type { StoryStore } from '../../store';
-import { DocsContext } from './DocsContext';
-import { csfFileParts } from './test-utils';
+import type { StoryStore } from '../../store/index.ts';
+import { DocsContext } from './DocsContext.ts';
+import { csfFileParts } from './test-utils.ts';
 
 const channel = new Channel({});
 const renderStoryToElement = vi.fn();

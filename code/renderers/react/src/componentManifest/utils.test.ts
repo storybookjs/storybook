@@ -9,7 +9,14 @@ import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 
-import { asyncCache, cached, findTsconfigPath, groupBy, invalidateCache, invariant } from './utils';
+import {
+  asyncCache,
+  cached,
+  findTsconfigPath,
+  groupBy,
+  invalidateCache,
+  invariant,
+} from './utils.ts';
 
 // Helpers
 const calls = () => {

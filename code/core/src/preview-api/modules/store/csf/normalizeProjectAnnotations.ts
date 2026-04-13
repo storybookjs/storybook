@@ -5,10 +5,10 @@ import type {
   Renderer,
 } from 'storybook/internal/types';
 
-import { inferArgTypes } from '../inferArgTypes';
-import { inferControls } from '../inferControls';
-import { normalizeArrays } from './normalizeArrays';
-import { normalizeInputTypes } from './normalizeInputTypes';
+import { inferArgTypes } from '../inferArgTypes.ts';
+import { inferControls } from '../inferControls.ts';
+import { normalizeArrays } from './normalizeArrays.ts';
+import { normalizeInputTypes } from './normalizeInputTypes.ts';
 
 // TODO(kasperpeulen) Consolidate this function with composeConfigs
 // As composeConfigs is the real normalizer, and always run before normalizeProjectAnnotations

@@ -1,6 +1,6 @@
 import type { PresetProperty } from 'storybook/internal/types';
 
-import type { StandaloneOptions } from './builders/utils/standalone-options';
+import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import { fileURLToPath } from 'node:url';
 
 export const addons: PresetProperty<'addons'> = [

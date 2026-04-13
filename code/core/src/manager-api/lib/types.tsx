@@ -1,8 +1,8 @@
 import type { RouterData } from 'storybook/internal/router';
 import type { API_ProviderData } from 'storybook/internal/types';
 
-import type { API, State } from '../root';
-import type Store from '../store';
+import type { API, State } from '../root.tsx';
+import type Store from '../store.ts';
 
 export type ModuleFn<APIType = unknown, StateType = unknown> = (
   m: ModuleArgs,

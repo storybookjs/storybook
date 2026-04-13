@@ -6,13 +6,13 @@ import { telemetry } from 'storybook/internal/telemetry';
 import { throttle } from 'es-toolkit/function';
 import { toMerged } from 'es-toolkit/object';
 
-import { globalSettings } from '../../cli';
+import { globalSettings } from '../../cli/index.ts';
 import {
   type ChecklistState,
   type StoreEvent,
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
-} from '../../shared/checklist-store';
+} from '../../shared/checklist-store/index.ts';
 
 export async function initializeChecklist() {
   try {

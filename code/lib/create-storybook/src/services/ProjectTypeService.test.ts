@@ -5,8 +5,8 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { NxProjectDetectedError } from 'storybook/internal/server-errors';
 
-import type { CommandOptions } from '../generators/types';
-import { ProjectTypeService } from './ProjectTypeService';
+import type { CommandOptions } from '../generators/types.ts';
+import { ProjectTypeService } from './ProjectTypeService.ts';
 
 describe('ProjectTypeService', () => {
   let pm: JsPackageManager;

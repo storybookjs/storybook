@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { SbPage, isReactSandbox } from './util';
+import { SbPage, isReactSandbox } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';

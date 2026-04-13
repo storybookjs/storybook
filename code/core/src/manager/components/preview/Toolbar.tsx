@@ -18,9 +18,9 @@ import {
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { useLandmark } from '../../hooks/useLandmark';
-import { useLayout } from '../layout/LayoutProvider';
-import type { PreviewProps } from './utils/types';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+import { useLayout } from '../layout/LayoutProvider.tsx';
+import type { PreviewProps } from './utils/types.tsx';
 
 export const getTools = (getFn: API['getElements']) => Object.values(getFn(types.TOOL));
 export const getToolsExtra = (getFn: API['getElements']) => Object.values(getFn(types.TOOLEXTRA));

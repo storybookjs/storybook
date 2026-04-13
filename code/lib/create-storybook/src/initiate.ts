@@ -16,12 +16,12 @@ import {
   executePreflightCheck,
   executeProjectDetection,
   executeUserPreferences,
-} from './commands';
-import { DependencyCollector } from './dependency-collector';
-import { registerAllGenerators } from './generators';
-import type { CommandOptions } from './generators/types';
-import { FeatureCompatibilityService } from './services/FeatureCompatibilityService';
-import { TelemetryService } from './services/TelemetryService';
+} from './commands/index.ts';
+import { DependencyCollector } from './dependency-collector.ts';
+import { registerAllGenerators } from './generators/index.ts';
+import type { CommandOptions } from './generators/types.ts';
+import { FeatureCompatibilityService } from './services/FeatureCompatibilityService.ts';
+import { TelemetryService } from './services/TelemetryService.ts';
 
 /**
  * Main entry point for Storybook initialization

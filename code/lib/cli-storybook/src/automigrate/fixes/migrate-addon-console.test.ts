@@ -7,12 +7,12 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import type { CheckOptions, RunOptions } from '../types';
+import type { CheckOptions, RunOptions } from '../types.ts';
 import {
   type MigrateAddonConsoleOptions,
   migrateAddonConsole,
   transformPreviewFile,
-} from './migrate-addon-console';
+} from './migrate-addon-console.ts';
 
 // Mock external dependencies
 vi.mock('storybook/internal/common', async (importOriginal) => {

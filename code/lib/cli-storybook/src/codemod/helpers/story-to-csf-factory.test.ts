@@ -6,7 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import path from 'path';
 import { dedent } from 'ts-dedent';
 
-import { storyToCsfFactory } from './story-to-csf-factory';
+import { storyToCsfFactory } from './story-to-csf-factory.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {

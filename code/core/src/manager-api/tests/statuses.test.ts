@@ -6,15 +6,15 @@ import {
   computeStatusFilterFn,
   parseStatusesParam,
   serializeStatusesParam,
-} from '../modules/statuses';
+} from '../modules/statuses.ts';
 
-vi.mock('../stores/status', () => ({
+vi.mock('../stores/status.ts', () => ({
   fullStatusStore: {
     getAll: vi.fn(() => ({})),
   },
 }));
 
-import { fullStatusStore } from '../stores/status';
+import { fullStatusStore } from '../stores/status.ts';
 
 const entry = (id: string): API_PreparedIndexEntry => ({ id }) as unknown as API_PreparedIndexEntry;
 

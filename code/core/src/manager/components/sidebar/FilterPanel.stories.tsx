@@ -5,11 +5,11 @@ import type {
   StatusesByStoryIdAndTypeId,
   StatusValue,
 } from 'storybook/internal/types';
-
-import { IconSymbolsDecorator, MockAPIDecorator } from './Filter.story-helpers';
-import { FilterPanel } from './FilterPanel';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { API } from '../../../manager-api';
+import type { API } from '../../../manager-api/index.ts';
+
+import { IconSymbolsDecorator, MockAPIDecorator } from './Filter.story-helpers.tsx';
+import { FilterPanel } from './FilterPanel.tsx';
 
 const getEntries = (includeUserTags: boolean) => {
   const entries = {

@@ -5,7 +5,7 @@ import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
-import { createUpdateMessage } from './update-check';
+import { createUpdateMessage } from './update-check.ts';
 
 export function outputStartupInformation(options: {
   updateInfo: VersionCheck;

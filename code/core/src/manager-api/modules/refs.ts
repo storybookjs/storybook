@@ -16,8 +16,8 @@ import { dedent } from 'ts-dedent';
 import {
   transformSetStoriesStoryDataToPreparedStoryIndex,
   transformStoryIndexToStoriesHash,
-} from '../lib/stories';
-import type { ModuleFn } from '../lib/types';
+} from '../lib/stories.ts';
+import type { ModuleFn } from '../lib/types.tsx';
 
 const { location, fetch } = global;
 

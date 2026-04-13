@@ -7,8 +7,8 @@ import {
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import * as scaffoldModule from '../scaffold-new-project';
-import { PreflightCheckCommand } from './PreflightCheckCommand';
+import * as scaffoldModule from '../scaffold-new-project.ts';
+import { PreflightCheckCommand } from './PreflightCheckCommand.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('../scaffold-new-project', { spy: true });
@@ -100,7 +100,7 @@ describe('PreflightCheckCommand', () => {
     it('should use provided package manager', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
 
-      await command.execute({ packageManager: 'yarn' } as any);
+      await command.execute({ packageManager: 'yarn' as PackageManagerName });
 
       expect(JsPackageManagerFactory.getPackageManager).toHaveBeenCalledWith({
         force: 'yarn',

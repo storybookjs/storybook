@@ -13,24 +13,20 @@ import {
 
 import path from 'pathe';
 
-import { ComponentMetaManager } from './componentMeta/ComponentMetaManager';
-import type { ComponentDoc } from './componentMeta/componentMetaExtractor';
-import { getCodeSnippet } from './generateCodeSnippet';
+import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
+import type { ComponentDoc } from './componentMeta/componentMetaExtractor.ts';
+import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
   type TypescriptOptions,
   getComponents,
   getImports,
-} from './getComponentImports';
-import { extractJSDocInfo } from './jsdocTags';
-import { type DocObj } from './reactDocgen';
-import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
-import {
-  extractDeclaredSubcomponents,
-  findExactComponentMatch,
-  type DeclaredSubcomponent,
-} from './subcomponents';
-import { cachedFindUp, cachedReadTextFileSync, invalidateCache, invariant } from './utils';
+} from './getComponentImports.ts';
+import { extractJSDocInfo } from './jsdocTags.ts';
+import { extractDeclaredSubcomponents, findExactComponentMatch } from './subcomponents.ts';
+import { type DocObj } from './reactDocgen.ts';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript.ts';
+import { cachedFindUp, cachedReadTextFileSync, invalidateCache, invariant } from './utils.ts';
 
 interface ReactSubcomponentManifest extends ComponentSubcomponentManifest {
   reactDocgen?: DocObj;
@@ -352,7 +348,9 @@ export const manifests: PresetPropertyFn<
               entry.storiesImports[0];
         const storyPath = path.join(process.cwd(), storyFilePath);
         const storyFile = cachedReadTextFileSync(storyPath);
-        const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
+        const csf = loadCsf(storyFile, {
+          makeTitle: () => entry.title,
+        }).parse();
         const componentName = csf._meta?.component;
         const declaredSubcomponents = extractDeclaredSubcomponents(csf);
         const allComponents = await getComponents({
@@ -393,7 +391,10 @@ export const manifests: PresetPropertyFn<
               (subcomponent): subcomponent is { component: ComponentRef; name: string } =>
                 subcomponent.component !== undefined
             )
-            .map((subcomponent) => ({ storyPath, component: subcomponent.component })),
+            .map((subcomponent) => ({
+              storyPath,
+              component: subcomponent.component,
+            })),
         ])
       );
     }

@@ -4,8 +4,8 @@ import { darken, transparentize } from 'polished';
 import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
-import { Button } from '../Button/Button';
-import { ToggleButton } from '../ToggleButton/ToggleButton';
+import { Button } from '../Button/Button.tsx';
+import { ToggleButton } from '../ToggleButton/ToggleButton.tsx';
 
 const ActionListItem = styled.li<{
   active?: boolean;

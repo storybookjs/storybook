@@ -5,16 +5,16 @@ import { Tag } from 'storybook/internal/core-server';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { ComponentMetaManager } from './componentMeta/ComponentMetaManager';
-import { indexJson } from './fixtures';
-import { manifests } from './generator';
-import { setupMemfsMocks } from './memfs-test-setup';
+import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
+import { indexJson } from './fixtures.ts';
+import { manifests } from './generator.ts';
+import { setupMemfsMocks } from './memfs-test-setup.ts';
 
 // Opt into memfs for this file (loads from __mocks__/fs.cjs)
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
 
-vi.mock(import('./utils'), { spy: true });
+vi.mock(import('./utils.ts'), { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('tsconfig-paths', { spy: true });

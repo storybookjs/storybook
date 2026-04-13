@@ -6,7 +6,7 @@
  * JSON.stringify( Object.values($reactTemp1) .reduce((acc, {parameters, ...node}) => { acc[node.id]
  * = node; return acc; }, {}), null, 2)
  */
-import type { Dataset } from './types';
+import type { Dataset } from './types.ts';
 
 // @ts-expect-error (TODO)
 export const index = {

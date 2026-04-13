@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { generateModernIframeScriptCodeFromPreviews } from './codegen-modern-iframe-script';
-import { generateAddonSetupCode } from './codegen-set-addon-channel';
-import { optimizeViteDeps } from './preset';
+import { generateModernIframeScriptCodeFromPreviews } from './codegen-modern-iframe-script.ts';
+import { generateAddonSetupCode } from './codegen-set-addon-channel.ts';
+import { optimizeViteDeps } from './preset.ts';
 
 describe('generateModernIframeScriptCodeFromPreviews', () => {
   it('handle one annotation', async () => {

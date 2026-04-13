@@ -1,7 +1,7 @@
 import { sep } from 'node:path';
 
-import { execCommandCountLines } from './exec-command-count-lines';
-import { runTelemetryOperation } from './run-telemetry-operation';
+import { execCommandCountLines } from './exec-command-count-lines.ts';
+import { runTelemetryOperation } from './run-telemetry-operation.ts';
 
 // We are looking for files with the word "page" or "screen" somewhere in them with these exts
 const nameMatches = ['page', 'screen'];

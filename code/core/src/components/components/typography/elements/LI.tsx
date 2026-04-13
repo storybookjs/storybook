@@ -1,7 +1,7 @@
 import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
-import { codeCommon, withReset } from '../lib/common';
+import { codeCommon, withReset } from '../lib/common.tsx';
 
 export const LI = styled.li(({ theme }) => ({
   ...(withReset({ theme }) as CSSObject),

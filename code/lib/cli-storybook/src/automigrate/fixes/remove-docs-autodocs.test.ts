@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import type { CheckOptions, Fix } from '../types';
-import { removeDocsAutodocs } from './remove-docs-autodocs';
+import type { CheckOptions, Fix } from '../types.ts';
+import { removeDocsAutodocs } from './remove-docs-autodocs.ts';
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = (await importOriginal()) as typeof fs;

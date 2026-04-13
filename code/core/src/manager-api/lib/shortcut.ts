@@ -1,7 +1,7 @@
-import type { API_KeyCollection } from '../modules/shortcuts';
-import { isMacLike } from './platform';
+import type { API_KeyCollection } from '../modules/shortcuts.ts';
+import { isMacLike } from './platform.ts';
 
-export type { API_KeyCollection } from '../modules/shortcuts';
+export type { API_KeyCollection } from '../modules/shortcuts.ts';
 
 export const controlOrMetaSymbol = () => (isMacLike() ? '⌘' : 'ctrl');
 export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');

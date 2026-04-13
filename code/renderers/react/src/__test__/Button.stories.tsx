@@ -5,9 +5,9 @@ import { action } from 'storybook/actions';
 import type { HandlerFunction } from 'storybook/actions';
 import { expect, fn, mocked, userEvent, within } from 'storybook/test';
 
-import type { StoryFn as CSF2Story, StoryObj as CSF3Story, Meta } from '..';
-import type { ButtonProps } from './Button';
-import { Button } from './Button';
+import type { StoryFn as CSF2Story, StoryObj as CSF3Story, Meta } from '../index.ts';
+import type { ButtonProps } from './Button.tsx';
+import { Button } from './Button.tsx';
 
 const meta = {
   title: 'Example/Button',

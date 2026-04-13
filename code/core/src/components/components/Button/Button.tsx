@@ -8,8 +8,8 @@ import { darken, lighten, rgba, transparentize } from 'polished';
 import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/manager-api';
 import { isPropValid, styled } from 'storybook/theming';
 
-import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
-import { useAriaDescription } from './helpers/useAriaDescription';
+import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper.tsx';
+import { useAriaDescription } from './helpers/useAriaDescription.tsx';
 
 export interface ButtonProps extends Omit<ComponentProps<typeof StyledButton>, 'as'> {
   as?: ComponentProps<typeof StyledButton>['as'] | typeof Slot;

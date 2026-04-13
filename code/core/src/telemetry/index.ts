@@ -30,7 +30,7 @@ export { getSessionId, SESSION_TIMEOUT } from './session-id.ts';
 
 export { addToGlobalContext } from './telemetry.ts';
 
-export { detectAgent } from './detect-agent.ts';
+export { detectAgent, type AgentInfo } from './detect-agent.ts';
 
 /** Is this story part of the CLI generated examples, including user-created stories in those files */
 export const isExampleStoryId = (storyId: string) =>

@@ -39,3 +39,14 @@ export {
 export { getComponentCandidates } from './utils/ghost-stories/get-candidates.ts';
 export { runGhostStories } from './utils/ghost-stories/run-story-tests.ts';
 export { getServerPort } from './utils/server-address.ts';
+
+export {
+  analyzeTestResults,
+  extractCategorizedErrors,
+} from '../shared/utils/analyze-test-results.ts';
+export type {
+  StoryTestResult,
+  TestRunAnalysis,
+  CategorizedError,
+  ErrorCategorizationResult,
+} from '../shared/utils/test-result-types.ts';

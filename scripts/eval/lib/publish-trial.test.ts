@@ -245,8 +245,8 @@ describe('publishTrialBranch', () => {
     expect(prBody).toContain('Score (preview gain): `0.5`');
     expect(prBody).toContain('Ghost stories before: `1/4 (25%)`');
     expect(prBody).toContain('Ghost stories after: `3/4 (75%)`');
-    expect(prBody).toContain('Generated stories before: `4/8 (50%)`');
-    expect(prBody).toContain('Generated stories after: `6/8 (75%)`');
+    expect(prBody).toContain('Vitest pass rate before preview changes: `4/8 (50%)`');
+    expect(prBody).toContain('Vitest pass rate after preview changes: `6/8 (75%)`');
     expect(prBody).toContain('Preview gain: `0.5`');
     expect(prBody).toContain('[.storybook/eval-results/data.json](');
     expect(prBody).toContain('<summary>Full prompt</summary>');

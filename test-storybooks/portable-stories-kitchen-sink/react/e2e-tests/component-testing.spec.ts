@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { SbPage } from "../../../../code/e2e-tests/util";
 
@@ -66,6 +66,11 @@ const restoreAllFiles = async () => {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 };
 
+const closeTestingModuleOverlays = async ({ page }: { page: Page }) => {
+  await page.keyboard.press("Escape").catch(() => undefined);
+  await page.click("body", { force: true }).catch(() => undefined);
+};
+
 test.describe("component testing", () => {
   test.describe.configure({ mode: "serial" });
   test.beforeEach(async ({ page }) => {
@@ -82,7 +87,7 @@ test.describe("component testing", () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await page.click("body");
+    await closeTestingModuleOverlays({ page });
     try {
       const descriptionButton = page.locator("#testing-module-description button");
       if (
@@ -106,12 +111,12 @@ test.describe("component testing", () => {
     }
 
     // Make sure any popover is closed
-    await page.click("body");
+    await closeTestingModuleOverlays({ page });
 
     // Ensure that all test results are removed and features are disabled, as previous tests might have enabled them
     const clearStatusesButton = page.getByLabel("Clear all statuses");
     if (await clearStatusesButton.isVisible()) {
-      await clearStatusesButton.click();
+      await clearStatusesButton.click({ force: true });
     }
 
     const watchModeToggle = page.getByRole("switch", { name: "Watch mode" });
@@ -119,7 +124,7 @@ test.describe("component testing", () => {
       (await watchModeToggle.isVisible()) &&
       (await watchModeToggle.getAttribute("aria-checked")) === "true"
     ) {
-      await watchModeToggle.click();
+      await watchModeToggle.click({ force: true });
     }
 
     const configs = [
@@ -128,7 +133,7 @@ test.describe("component testing", () => {
     ];
     for (const config of configs) {
       if (await config.isChecked()) {
-        await config.click();
+        await config.click({ force: true });
       }
     }
   });

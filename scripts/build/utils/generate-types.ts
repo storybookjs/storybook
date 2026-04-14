@@ -67,7 +67,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
               timer = setTimeout(() => {
                 console.log('⌛ Timed out generating d.ts files for', entryPoint);
 
-                dtsProcess.kill('SIGTERM');
+                dtsProcess.kill(408); // timed out
                 resolve(void 0);
               }, 120000);
             }),

@@ -4,8 +4,6 @@ import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-er
 import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 import type { ViewportMap } from 'storybook/viewport';
 
-import { isAutomaticScreenshotCaptureEnabled } from './screenshots';
-
 declare global {
   // eslint-disable-next-line no-var
   var __vitest_browser__: boolean;
@@ -29,33 +27,24 @@ export const DEFAULT_VIEWPORT_DIMENSIONS = {
   height: 900,
 };
 
-export const SCREENSHOT_VIEWPORT_DIMENSIONS = {
-  width: 393,
-  height: 852,
-};
-
 const validPixelOrNumber = /^\d+(px)?$/;
 const percentagePattern = /^(\d+(\.\d+)?%)$/;
 const vwPattern = /^(\d+(\.\d+)?vw)$/;
 const vhPattern = /^(\d+(\.\d+)?vh)$/;
 const emRemPattern = /^(\d+)(em|rem)$/;
 
-const parseDimension = (
-  value: string,
-  dimension: 'width' | 'height',
-  referenceViewport: { width: number; height: number }
-) => {
+const parseDimension = (value: string, dimension: 'width' | 'height') => {
   if (validPixelOrNumber.test(value)) {
     return Number.parseInt(value, 10);
   } else if (percentagePattern.test(value)) {
     const percentageValue = parseFloat(value) / 100;
-    return Math.round(referenceViewport[dimension] * percentageValue);
+    return Math.round(DEFAULT_VIEWPORT_DIMENSIONS[dimension] * percentageValue);
   } else if (vwPattern.test(value)) {
     const vwValue = parseFloat(value) / 100;
-    return Math.round(referenceViewport.width * vwValue);
+    return Math.round(DEFAULT_VIEWPORT_DIMENSIONS.width * vwValue);
   } else if (vhPattern.test(value)) {
     const vhValue = parseFloat(value) / 100;
-    return Math.round(referenceViewport.height * vhValue);
+    return Math.round(DEFAULT_VIEWPORT_DIMENSIONS.height * vhValue);
   } else if (emRemPattern.test(value)) {
     const emRemValue = Number.parseInt(value, 10);
     return emRemValue * 16;
@@ -65,9 +54,6 @@ const parseDimension = (
 };
 
 export const setViewport = async (parameters: Parameters = {}, globals: Globals = {}) => {
-  const fallbackViewport = isAutomaticScreenshotCaptureEnabled()
-    ? SCREENSHOT_VIEWPORT_DIMENSIONS
-    : DEFAULT_VIEWPORT_DIMENSIONS;
   let defaultViewport;
   const viewportsParam: ViewportsParam = parameters.viewport ?? {};
   const viewportsGlobal: ViewportsGlobal = globals.viewport ?? {};
@@ -94,15 +80,15 @@ export const setViewport = async (parameters: Parameters = {}, globals: Globals 
     ...viewportsParam.options,
   };
 
-  let viewportWidth = fallbackViewport.width;
-  let viewportHeight = fallbackViewport.height;
+  let viewportWidth = DEFAULT_VIEWPORT_DIMENSIONS.width;
+  let viewportHeight = DEFAULT_VIEWPORT_DIMENSIONS.height;
 
   if (defaultViewport && defaultViewport in options) {
     const { styles } = options[defaultViewport];
     if (styles?.width && styles?.height) {
       const { width, height } = styles;
-      viewportWidth = parseDimension(width, 'width', fallbackViewport);
-      viewportHeight = parseDimension(height, 'height', fallbackViewport);
+      viewportWidth = parseDimension(width, 'width');
+      viewportHeight = parseDimension(height, 'height');
     }
   }
 

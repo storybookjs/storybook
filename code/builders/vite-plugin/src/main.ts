@@ -19,10 +19,9 @@ import { createStaticMiddlewares } from './middlewares/static';
 import { registerStoryIndexMiddleware } from './middlewares/story-index';
 import type { UserOptions } from './types';
 
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { dirname, join, resolve } from 'pathe';
+import { join, resolve } from 'pathe';
 
 export async function SbMain(options?: UserOptions): Promise<PluginOption> {
   const finalOptions = {
@@ -44,16 +43,9 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
     (finalConfig.plugins ?? []).flat(3).filter(Boolean)
   )) as Plugin[];
 
-  const iframeSourcePath = fileURLToPath(
+  const iframePath = fileURLToPath(
     import.meta.resolve('@storybook/builder-vite/input/iframe.html')
   );
-  const projectRoot = resolve(finalOptions.configDir, '..');
-  const localIframePath = join(projectRoot, 'node_modules', '.cache', 'storybook', 'iframe.html');
-  const localIframeDir = dirname(localIframePath);
-  if (!existsSync(localIframeDir)) {
-    mkdirSync(localIframeDir, { recursive: true });
-  }
-  copyFileSync(iframeSourcePath, localIframePath);
 
   return [
     {
@@ -77,7 +69,7 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
             outDir: 'storybook-static',
             emptyOutDir: false,
             [bundlerOptionsKey]: {
-              input: localIframePath,
+              input: iframePath,
               external: [/\.\/sb-common-assets\/.*\.woff2/],
             },
           },

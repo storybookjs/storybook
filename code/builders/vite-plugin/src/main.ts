@@ -47,12 +47,17 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
     import.meta.resolve('@storybook/builder-vite/input/iframe.html')
   );
 
+  let basePath = '/__storybook/';
+
   return [
     {
       name: 'storybook-env',
 
-      config(_, { command }) {
+      config(_, { command, mode }) {
         sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
+        if (mode === 'storybook') {
+          basePath = '/';
+        }
         return {
           envPrefix: ['VITE_', 'STORYBOOK_'],
           server: { fs: { allow: [finalOptions.configDir] } },
@@ -86,12 +91,12 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
         );
         const wsToken = coreOptions.channelOptions?.wsToken ?? '';
 
-        const staticMiddlewares = await createStaticMiddlewares(sb, '/__storybook/');
+        const staticMiddlewares = await createStaticMiddlewares(sb, basePath);
         for (const middleware of staticMiddlewares) {
           server.middlewares.use(middleware);
         }
 
-        registerStoryIndexMiddleware(server, storyIndexGenerator, '/__storybook/');
+        registerStoryIndexMiddleware(server, storyIndexGenerator, basePath);
 
         if (server.httpServer) {
           const channel = createServerChannel(
@@ -103,11 +108,11 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
 
           await sb.presets.apply('experimental_serverChannel', channel);
 
-          const managerHtml = await buildManager(sb, '/__storybook/', '/storybook-server-channel');
-          registerManagerMiddleware(server, managerHtml, '/__storybook/');
+          const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');
+          registerManagerMiddleware(server, managerHtml, basePath);
         }
 
-        registerIframeMiddleware(server, sb, '/__storybook/');
+        registerIframeMiddleware(server, sb, basePath);
 
         // server.middlewares.use(createDepsStorybookMiddleware(server));
         registerEnvironmentModuleMiddleware(server);
@@ -121,8 +126,8 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
       transformIndexHtml: {
         order: 'post',
         handler(html, ctx) {
-          const iframePath = '/__storybook/iframe.html';
-          if (ctx.path !== iframePath && ctx.path !== '/iframe.html') {
+          const expectedIframePath = `${basePath}iframe.html`;
+          if (ctx.path !== expectedIframePath && ctx.path !== '/iframe.html') {
             return html;
           }
 
@@ -141,7 +146,7 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
         },
       },
     },
-    ...scopeToStorybookEnv(allPlugins),
+    ...scopeToStorybookEnv(allPlugins, basePath),
     buildStorybookPlugin(sb),
   ];
 }
@@ -155,7 +160,7 @@ export async function SbMain(options?: UserOptions): Promise<PluginOption> {
  * The plugins' configEnvironment hooks are preserved and fire naturally
  * since the plugins remain top-level (not inside applyToEnvironment).
  */
-function scopeToStorybookEnv(plugins: Plugin[]): Plugin[] {
+function scopeToStorybookEnv(plugins: Plugin[], basePath: string): Plugin[] {
   return plugins.map((plugin) => {
     return {
       ...plugin,
@@ -163,20 +168,21 @@ function scopeToStorybookEnv(plugins: Plugin[]): Plugin[] {
         return environment.name === 'storybook';
       },
       transformIndexHtml: plugin.transformIndexHtml
-        ? wrapTransformIndexHtml(plugin.transformIndexHtml)
+        ? wrapTransformIndexHtml(plugin.transformIndexHtml, basePath)
         : undefined,
     } as Plugin;
   });
 }
 
-const wrapTransformIndexHtml: (
-  transform: Plugin['transformIndexHtml']
-) => Plugin['transformIndexHtml'] = (transform) => {
+function wrapTransformIndexHtml(
+  transform: Plugin['transformIndexHtml'],
+  basePath: string
+): Plugin['transformIndexHtml'] {
   if (typeof transform === 'function') {
     return async (html, ctx) => {
-      if (ctx.path.startsWith('/__storybook/')) {
+      if (ctx.path.startsWith(basePath)) {
         return transform.apply(this, [html, ctx]);
       }
     };
   }
-};
+}

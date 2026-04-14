@@ -82,6 +82,9 @@ export interface ChecklistData {
       /** What to do after the item is completed (prevent undo or hide the item). */
       afterCompletion?: 'immutable' | 'unavailable';
 
+      /** Whether to show the item in the GuidePage. Only set to `false` if the GuidePage has another tailored way to display the item.*/
+      showOnGuidePage?: boolean;
+
       /**
        * Function to check if the item should be available (displayed in the checklist). Called any
        * time the index is updated.
@@ -98,6 +101,8 @@ export interface ChecklistData {
       /** Action button to be displayed when item is not completed. */
       action?: {
         label: string;
+        /** If set, clicking the button copies this text to the clipboard via useCopyButton. */
+        copyContent?: string;
         onClick: (args: { api: API; accept: () => void }) => void;
       };
 
@@ -161,12 +166,12 @@ export const checklistData = {
           id: 'aiPrepare',
           label: 'Set up with AI',
           icon: WandIcon,
-          criteria: 'AI prepare command has been run',
+          criteria: 'ai prepare command has been run',
+          showOnGuidePage: false,
           action: {
             label: 'Copy prompt',
+            copyContent: AI_PREPARE_PROMPT,
             onClick: ({ api }) => {
-              // eslint-disable-next-line compat/compat
-              navigator.clipboard?.writeText(AI_PREPARE_PROMPT);
               api.emit(AI_PROMPT_NUDGE, { id: 'prepare', origin: 'onboarding-checklist-side' });
             },
           },

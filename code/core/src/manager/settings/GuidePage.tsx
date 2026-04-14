@@ -1,16 +1,12 @@
 import React from 'react';
 
-import { Button, Link } from 'storybook/internal/components';
-import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
-
+import { Link } from 'storybook/internal/components';
 import { global } from '@storybook/global';
-
-import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { AI_PREPARE_PROMPT } from '../../shared/constants/ai-prompts.ts';
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
 import { Checklist } from './Checklist/Checklist.tsx';
+import { AiSetupBlock } from './Checklist/AiSetupBlock.tsx';
 
 const Container = styled.div(({ theme }) => ({
   display: 'flex',
@@ -39,35 +35,10 @@ const Intro = styled.div(({ theme }) => ({
   },
 }));
 
-const AiCtaCard = styled.div(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
-  padding: 15,
-  border: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
-  borderRadius: 8,
-  background: theme.background.content,
-}));
-
-const AiCtaHeading = styled.h2(({ theme }) => ({
-  margin: 0,
-  fontSize: theme.typography.size.s2,
-  fontWeight: theme.typography.weight.regular,
-  textWrap: 'pretty',
-}));
-
-const AiCtaActions = styled.div({
-  display: 'flex',
-  gap: 8,
-});
-
 export const GuidePage = () => {
-  const api = useStorybookApi();
   const checklist = useChecklist();
 
   const aiPrepareItem = checklist.availableItems.find((item) => item.id === 'aiPrepare');
-  const showAiCta = aiPrepareItem?.isOpen ?? false;
 
   return (
     <Container>
@@ -78,34 +49,10 @@ export const GuidePage = () => {
           will help you make the most of your Storybook.
         </p>
       </Intro>
-      {showAiCta && (
-        <AiCtaCard>
-          <AiCtaHeading>Want to have your AI agent set up Storybook automatically?</AiCtaHeading>
-          <AiCtaActions>
-            <Button
-              variant="ghost"
-              size="medium"
-              ariaLabel={false}
-              onClick={() => checklist.skip('aiPrepare')}
-            >
-              Skip
-            </Button>
-            <Button
-              variant="solid"
-              size="medium"
-              ariaLabel={false}
-              onClick={() => {
-                // eslint-disable-next-line compat/compat
-                navigator.clipboard?.writeText(AI_PREPARE_PROMPT);
-                api.emit(AI_PROMPT_NUDGE, { id: 'prepare', origin: 'onboarding-guide-page' });
-              }}
-            >
-              Copy prompt
-            </Button>
-          </AiCtaActions>
-        </AiCtaCard>
+      {aiPrepareItem && (
+        <AiSetupBlock item={aiPrepareItem} reset={checklist.reset} skip={checklist.skip} />
       )}
-      <Checklist {...checklist} forceCollapsed={showAiCta} />
+      <Checklist {...checklist} forceCollapsed={aiPrepareItem?.isOpen} />
       {global.FEATURES?.sidebarOnboardingChecklist !== false && (
         <>
           {checklist.openItems.length === 0 ? (

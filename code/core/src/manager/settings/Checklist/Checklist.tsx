@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { type MouseEventHandler, useMemo } from 'react';
 
 import { ActionList, Button, Collapsible } from 'storybook/internal/components';
 
@@ -16,6 +16,7 @@ import { styled } from 'storybook/theming';
 import { Focus } from '../../components/Focus/Focus.tsx';
 import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist.ts';
 import { useLocationHash } from '../../hooks/useLocation.ts';
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 
 type ChecklistSection = {
   id: string;
@@ -164,7 +165,7 @@ const ItemContent = styled.div(({ theme }) => ({
   },
 }));
 
-const StatusIcon = styled.div(({ theme }) => ({
+export const StatusIcon = styled.div(({ theme }) => ({
   position: 'relative',
   flex: '0 0 auto',
   minHeight: 16,
@@ -193,7 +194,7 @@ const Checked = styled(StatusPassIcon)<{ 'data-visible'?: boolean }>(
     transition: 'all var(--transition-duration, 0.2s)',
   })
 );
-const Skipped = styled.span<{ visible?: boolean }>(({ theme, visible }) => ({
+export const Skipped = styled.span<{ visible?: boolean }>(({ theme, visible }) => ({
   display: 'flex',
   alignItems: 'center',
   color: theme.textMutedColor,
@@ -228,6 +229,28 @@ const ToggleButton = styled(Button)({
   },
 });
 
+const ChecklistCopyButton = ({
+  label,
+  copyContent,
+  onClick,
+}: {
+  label: string;
+  copyContent: string;
+  onClick: MouseEventHandler<HTMLButtonElement>;
+}) => {
+  const { children: copyChildren, buttonProps: copyButtonProps } = useCopyButton<string>({
+    children: label,
+    onCopy: onClick,
+    content: copyContent,
+  });
+
+  return (
+    <Button variant="solid" size="small" {...copyButtonProps}>
+      {copyChildren}
+    </Button>
+  );
+};
+
 export const Checklist = ({
   availableItems,
   accept,
@@ -261,7 +284,9 @@ export const Checklist = ({
   const sections = useMemo(
     () =>
       Object.values(sectionsById).map(({ id, title, itemIds }) => {
-        const items = itemIds.map<ChecklistItem>((id) => itemsById[id]);
+        const items = itemIds
+          .map<ChecklistItem>((id) => itemsById[id])
+          .filter(({ showOnGuidePage }) => showOnGuidePage !== false);
         const progress =
           (items.reduce((acc, item) => (item.isOpen ? acc : acc + 1), 0) / items.length) * 100;
         return { id, title, items, progress };
@@ -365,22 +390,36 @@ export const Checklist = ({
                                           <LockIcon />
                                         </Button>
                                       )}
-                                      {isOpen && !isLocked && item.action && (
-                                        <Button
-                                          ariaLabel={false}
-                                          variant="solid"
-                                          size="small"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            item.action?.onClick({
-                                              api,
-                                              accept: () => accept(item.id),
-                                            });
-                                          }}
-                                        >
-                                          {item.action.label}
-                                        </Button>
-                                      )}
+                                      {isOpen &&
+                                        !isLocked &&
+                                        item.action &&
+                                        (item.action.copyContent ? (
+                                          <ChecklistCopyButton
+                                            label={item.action.label}
+                                            copyContent={item.action.copyContent}
+                                            onClick={() =>
+                                              item.action!.onClick({
+                                                api,
+                                                accept: () => accept(item.id),
+                                              })
+                                            }
+                                          />
+                                        ) : (
+                                          <Button
+                                            ariaLabel={false}
+                                            variant="solid"
+                                            size="small"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              item.action?.onClick({
+                                                api,
+                                                accept: () => accept(item.id),
+                                              });
+                                            }}
+                                          >
+                                            {item.action.label}
+                                          </Button>
+                                        ))}
                                       {isOpen && !isLocked && !item.action && !item.subscribe && (
                                         <Button
                                           ariaLabel={false}

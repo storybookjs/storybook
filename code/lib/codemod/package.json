@@ -51,7 +51,7 @@
     "tinyglobby": "^0.2.13"
   },
   "devDependencies": {
-    "@types/jscodeshift": "^0.11.10",
+    "@types/jscodeshift": "^17.3.0",
     "ansi-regex": "^6.0.1",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.9.3"

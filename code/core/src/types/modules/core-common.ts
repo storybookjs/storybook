@@ -374,6 +374,11 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
+export type ComponentSubcomponentManifest = Pick<
+  ComponentManifest,
+  'name' | 'path' | 'description' | 'import' | 'summary' | 'jsDocTags' | 'error'
+>;
+
 export interface ComponentManifest {
   id: string;
   path: string;
@@ -389,6 +394,7 @@ export interface ComponentManifest {
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
+  subcomponents?: Record<string, ComponentSubcomponentManifest>;
   error?: { name: string; message: string };
 }
 
@@ -530,7 +536,7 @@ export interface StorybookConfigRaw {
     /**
      * Enable component manifest generation for MCP and other tooling integrations.
      *
-     * @default true
+     * @default false
      */
     componentsManifest?: boolean;
 

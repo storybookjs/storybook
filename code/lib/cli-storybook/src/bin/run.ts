@@ -3,7 +3,6 @@ import {
   HandledError,
   JsPackageManagerFactory,
   PackageManagerName,
-  isCI,
   optionalEnvToBoolean,
   removeAddon as remove,
   versions,
@@ -106,14 +105,10 @@ command('init')
   .option('-y --yes', 'Answer yes to all prompts')
   .option('-b --builder <webpack5 | vite>', 'Builder library')
   .option('-l --linkable', 'Prepare installation for link (contributor helper)')
-  .option(
-    '--dev',
-    'Launch the development server after completing initialization. Enabled by default (default: true)',
-    !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)
-  )
+  .option('--dev', 'Launch the development server after completing initialization')
   .option(
     '--no-dev',
-    'Complete the initialization of Storybook without launching the Storybook development server'
+    'Do not launch the Storybook development server after completing initialization (default)'
   );
 
 command('add <addon>')
@@ -320,10 +315,6 @@ aiCommand
     )
   )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .option(
-    '--frontmatter',
-    'Prepend YAML frontmatter with project context and traits (requires --output)'
-  )
   .action(async (options, cmd) => {
     const parentOptions = cmd.parent?.opts() ?? {};
     const mergedOptions = { ...parentOptions, ...options };

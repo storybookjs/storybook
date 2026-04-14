@@ -48,7 +48,9 @@ export type EventType =
   | 'ai-prepare'
   | 'ai-prepare-evidence'
   | 'ai-prepare-story-scoring'
+  | 'ai-prompt-nudge'
   | 'agent-test-run';
+
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;

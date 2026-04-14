@@ -9,6 +9,28 @@ import type { StoryTestResult } from 'storybook/internal/core-server';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
 import type { AgentInfo } from 'storybook/internal/telemetry';
 
+/**
+ * Extracts a clean single-line error message from a Vitest error.
+ *
+ * Important to handle scenarios e.g. stripping out a "Click to debug" banner and extracting the actual error message.
+ */
+export function extractErrorMessage(
+  message: string | undefined,
+  stack: string | undefined
+): string {
+  let rawMessage = message ?? '';
+
+  // Strip the Storybook debug banner if present
+  if (rawMessage.startsWith('\n\x1B[34m')) {
+    const bannerEnd = rawMessage.indexOf('\n\n');
+    if (bannerEnd !== -1) {
+      rawMessage = rawMessage.slice(bannerEnd + 2);
+    }
+  }
+
+  return rawMessage.split('\n')[0] || stack?.split('\n')[0] || 'unknown error';
+}
+
 interface AgentTelemetryReporterOptions {
   configDir: string;
   agent: AgentInfo;
@@ -66,7 +88,7 @@ export class AgentTelemetryReporter implements Reporter {
     let stack: string | undefined;
     if (testResult.errors && testResult.errors.length > 0) {
       const firstError = testResult.errors[0];
-      error = firstError.message?.split('\n')[0];
+      error = extractErrorMessage(firstError.message, firstError.stack);
       stack = firstError.stack;
     }
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
+import { AgentTelemetryReporter, extractErrorMessage } from './agent-telemetry-reporter.ts';
 
 vi.mock('storybook/internal/telemetry', () => ({
   telemetry: vi.fn(),
@@ -57,6 +57,52 @@ function createMockTestModules(testCounts: { passed: number; failed: number }) {
     },
   ];
 }
+
+describe('extractErrorMessage', () => {
+  it('returns the first line of a plain message', () => {
+    expect(extractErrorMessage('TypeError: foo is not a function\n    at bar', undefined)).toBe(
+      'TypeError: foo is not a function'
+    );
+  });
+
+  it('strips the Storybook debug banner and returns the actual message', () => {
+    const message =
+      '\n\x1B[34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/button--primary\x1B[39m\n\nmissing theme context provider';
+    expect(extractErrorMessage(message, undefined)).toBe('missing theme context provider');
+  });
+
+  it('falls back to the first line of the stack when message is empty', () => {
+    expect(extractErrorMessage('', 'Error: something broke\n    at foo')).toBe(
+      'Error: something broke'
+    );
+  });
+
+  it('falls back to the first line of the stack when message is undefined', () => {
+    expect(extractErrorMessage(undefined, 'Error: something broke\n    at foo')).toBe(
+      'Error: something broke'
+    );
+  });
+
+  it('returns "unknown error" when both message and stack are empty', () => {
+    expect(extractErrorMessage('', undefined)).toBe('unknown error');
+  });
+
+  it('returns "unknown error" when both message and stack are undefined', () => {
+    expect(extractErrorMessage(undefined, undefined)).toBe('unknown error');
+  });
+
+  it('handles a banner where the actual message itself is multi-line', () => {
+    const message =
+      '\n\x1B[34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/button--primary\x1B[39m\n\nfirst error line\nsecond line';
+    expect(extractErrorMessage(message, undefined)).toBe('first error line');
+  });
+
+  it('falls back to stack when message starts with a newline but has no banner', () => {
+    expect(extractErrorMessage('\nsome error', 'Error: fallback\n    at foo')).toBe(
+      'Error: fallback'
+    );
+  });
+});
 
 describe('AgentTelemetryReporter', () => {
   let reporter: AgentTelemetryReporter;

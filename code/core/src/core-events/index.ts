@@ -103,6 +103,8 @@ enum events {
   SHARE_STORY_LINK = 'shareStoryLink',
   SHARE_ISOLATE_MODE = 'shareIsolateMode',
   SHARE_POPOVER_OPENED = 'sharePopoverOpened',
+
+  AI_PROMPT_NUDGE = 'aiPromptNudge',
 }
 
 // Enables: `import Events from ...`
@@ -179,6 +181,7 @@ export const {
   SHARE_STORY_LINK,
   SHARE_ISOLATE_MODE,
   SHARE_POPOVER_OPENED,
+  AI_PROMPT_NUDGE,
 } = events;
 
 export * from './data/create-new-story.ts';

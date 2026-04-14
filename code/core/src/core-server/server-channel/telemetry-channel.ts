@@ -1,5 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import {
+  AI_PROMPT_NUDGE,
   PREVIEW_INITIALIZED,
   SHARE_ISOLATE_MODE,
   SHARE_POPOVER_OPENED,
@@ -51,6 +52,9 @@ export function initTelemetryChannel(channel: Channel, options: Options) {
     });
     channel.on(SHARE_ISOLATE_MODE, async () => {
       telemetry('share', { action: 'isolate-mode-opened' });
+    });
+    channel.on(AI_PROMPT_NUDGE, async ({ id, origin }: { id: string; origin: string }) => {
+      telemetry('ai-prompt-nudge', { id, origin });
     });
   }
 }

@@ -120,7 +120,7 @@ export function formatTable(headers: string[], rows: string[][]): string {
 }
 
 /** Load a prompt by name from prompts/{name}.md. */
-export function loadPrompt(name = 'setup'): string {
+export function loadPrompt(name = 'pattern-copy-play'): string {
   const file = resolve(PROMPTS_DIR, `${name}.md`);
   if (!existsSync(file)) {
     throw new Error(`Prompt not found: ${file}\nAvailable: ${listPrompts().join(', ')}`);

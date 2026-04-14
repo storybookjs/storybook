@@ -96,9 +96,9 @@ describe('listPrompts', () => {
 });
 
 describe('loadPrompt', () => {
-  it('loads setup prompt by default', () => {
+  it('loads pattern-copy-play prompt by default', () => {
     const prompt = loadPrompt();
-    expect(prompt).toContain('Storybook');
+    expect(prompt).toContain('play function');
     expect(prompt.length).toBeGreaterThan(0);
   });
 
@@ -119,7 +119,7 @@ describe('loadPrompt', () => {
   });
 
   it('returns trimmed content', () => {
-    const prompt = loadPrompt('setup');
+    const prompt = loadPrompt('pattern-copy-play');
     expect(prompt).toBe(prompt.trim());
   });
 });

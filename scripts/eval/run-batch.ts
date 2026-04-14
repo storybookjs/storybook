@@ -317,7 +317,7 @@ function createBatchRunDescriptor(
   project: BatchRunDescriptor['project'],
   variant: AgentVariant,
   repetition: number,
-  prompt = 'setup'
+  prompt = 'pattern-copy-play'
 ): BatchRunDescriptor {
   const label = `${project}-${variant.agent}-${variant.model}-${variant.effort}-${prompt}-r${String(repetition).padStart(2, '0')}`;
   return {

@@ -47,7 +47,7 @@ const PROJECT_NAMES = PROJECTS.map((p) => p.name) as [string, ...string[]];
 
 const base = {
   project: z.enum(PROJECT_NAMES).optional(),
-  prompt: z.string().default('setup'),
+  prompt: z.string().default('pattern-copy-play'),
   verbose: z.boolean().default(false),
   manual: z.boolean().default(false),
   listProjects: z.boolean().default(false),

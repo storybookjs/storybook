@@ -46,6 +46,9 @@ describe('buildBatchRunDescriptors', () => {
     expect(new Set(descriptors.map((descriptor) => descriptor.project))).toEqual(
       new Set(BATCH_PROJECT_NAMES)
     );
+    expect(new Set(descriptors.map((descriptor) => descriptor.prompt))).toEqual(
+      new Set(['pattern-copy-play'])
+    );
     expect(new Set(BATCH_PROJECT_NAMES)).not.toContain('baklava');
 
     for (const descriptor of descriptors) {

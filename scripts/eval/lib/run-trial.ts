@@ -46,7 +46,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   const { project, variant, prompt: promptName } = config;
   const { agent: agentName, model } = variant;
   const log = logger ?? createLogger();
-  const resolvedPromptName = promptName || 'setup';
+  const resolvedPromptName = promptName || 'pattern-copy-play';
   const trialId = generateTrialId();
   const timestamp = new Date().toISOString();
 

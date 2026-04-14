@@ -10,7 +10,7 @@ import type {
   ToolResultContent,
   ToolUseContent,
   UserMessage,
-} from './result-doc-templates/transcript.types.ts';
+} from './transcript-types.ts';
 import type { EvalEnvironment } from './utils.ts';
 
 export interface EvalArtifacts {

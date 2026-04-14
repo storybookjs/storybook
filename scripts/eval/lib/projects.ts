@@ -52,4 +52,12 @@ export const PROJECTS: Project[] = [
     projectDir: 'packages/lib',
     description: 'GraphQL',
   },
+  {
+    name: 'excalidraw',
+    repo: 'https://github.com/storybook-tmp/excalidraw',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/excalidraw',
+    projectDir: 'excalidraw-app',
+    description: 'Monorepo with canvas based drawing app',
+  },
 ];

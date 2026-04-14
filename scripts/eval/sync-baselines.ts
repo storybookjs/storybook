@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
+import { BASELINE_STORYBOOK_FILES } from './lib/baseline-template-files.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
 import {
   formatTable,
@@ -14,7 +15,6 @@ import {
   REPOS_DIR,
 } from './lib/utils.ts';
 
-const SOURCE_PROJECT = 'mealdrop';
 const COMMIT_MESSAGE = 'Eval: sync .storybook baseline';
 
 export interface ProjectPaths {
@@ -27,7 +27,6 @@ export interface ProjectPaths {
 
 export interface SyncBaselinesOptions {
   reposRoot?: string;
-  sourceProjectName?: string;
   projects?: Project[];
   push?: boolean;
   commitMessage?: string;
@@ -46,11 +45,8 @@ if (main) {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
-      'repos-root': { type: 'string' },
-      'source-project': { type: 'string' },
       project: { type: 'string', multiple: true },
       'skip-push': { type: 'boolean' },
-      'commit-message': { type: 'string' },
     },
     strict: true,
   });
@@ -60,11 +56,8 @@ if (main) {
     : PROJECTS;
 
   await syncBaselines({
-    reposRoot: values['repos-root'],
-    sourceProjectName: values['source-project'],
     projects: selectedProjects,
     push: !values['skip-push'],
-    commitMessage: values['commit-message'],
     log: (message) => console.log(message),
   });
 }
@@ -72,15 +65,9 @@ if (main) {
 export async function syncBaselines(options: SyncBaselinesOptions = {}) {
   const log = options.log ?? (() => {});
   const reposRoot = resolve(options.reposRoot ?? REPOS_DIR);
-  const sourceProjectName = options.sourceProjectName ?? SOURCE_PROJECT;
   const projects = options.projects ?? PROJECTS;
   const push = options.push ?? true;
   const commitMessage = options.commitMessage ?? COMMIT_MESSAGE;
-
-  const sourceProject = projects.find((project) => project.name === sourceProjectName);
-  if (!sourceProject) {
-    throw new Error(`Source project not found: ${sourceProjectName}`);
-  }
 
   const resolvedProjects = await Promise.all(
     projects.map(async (project) => {
@@ -88,12 +75,9 @@ export async function syncBaselines(options: SyncBaselinesOptions = {}) {
       return { project, paths };
     })
   );
-  const source = resolvedProjects.find(({ project }) => project.name === sourceProjectName)!;
 
-  await preflightRepos(resolvedProjects, source);
-  await syncSourceRepo(source, log);
-
-  const sourceFiles = await readSourceStorybookDir(source.paths.storybookDir);
+  await preflightRepos(resolvedProjects);
+  const baselineFiles = await readBaselineStorybookDir();
   const results: SyncResult[] = [];
 
   for (const { project, paths } of resolvedProjects) {
@@ -101,8 +85,7 @@ export async function syncBaselines(options: SyncBaselinesOptions = {}) {
     const result = await syncProjectRepo({
       project,
       paths,
-      sourceProjectName,
-      sourceFiles,
+      baselineFiles,
       push,
       commitMessage,
       log,
@@ -148,8 +131,7 @@ export async function resolveProjectPaths(
 }
 
 async function preflightRepos(
-  projects: Array<{ project: Project; paths: ProjectPaths }>,
-  source: { project: Project; paths: ProjectPaths }
+  projects: Array<{ project: Project; paths: ProjectPaths }>
 ) {
   for (const { project, paths } of projects) {
     if (!existsSync(paths.repoRoot)) {
@@ -168,23 +150,6 @@ async function preflightRepos(
       nodeOptions: { cwd: paths.repoRoot },
     });
 
-    if (project.name === source.project.name) {
-      const dirtyFiles = await getDirtyFiles(paths.repoRoot);
-      const allowedFiles = new Set(getManagedPaths(paths));
-      const unexpected = dirtyFiles.filter((file) => !isManagedPath(file, allowedFiles));
-      if (unexpected.length > 0) {
-        throw new Error(`${project.name} has unrelated local changes: ${unexpected.join(', ')}`);
-      }
-
-      const isBehind = await isBehindOrigin(paths.repoRoot, project.branch);
-      if (isBehind && dirtyFiles.length > 0) {
-        throw new Error(
-          `${project.name} is behind origin/${project.branch} and has local baseline edits; fast-forward first`
-        );
-      }
-      continue;
-    }
-
     const dirtyFiles = await getDirtyFiles(paths.repoRoot);
     if (dirtyFiles.length > 0) {
       throw new Error(`${project.name} has local changes: ${dirtyFiles.join(', ')}`);
@@ -192,52 +157,31 @@ async function preflightRepos(
   }
 }
 
-async function syncSourceRepo(
-  source: { project: Project; paths: ProjectPaths },
-  log: (message: string) => void
-) {
-  const dirtyFiles = await getDirtyFiles(source.paths.repoRoot);
-  if (dirtyFiles.length > 0) {
-    log(pc.dim(`Using local baseline edits from ${source.project.name}`));
-    return;
-  }
-
-  await x('git', ['checkout', source.project.branch], {
-    nodeOptions: { cwd: source.paths.repoRoot },
-  });
-  await x('git', ['pull', '--ff-only', 'origin', source.project.branch], {
-    timeout: 120_000,
-    nodeOptions: { cwd: source.paths.repoRoot },
-  });
-}
-
 async function syncProjectRepo(opts: {
   project: Project;
   paths: ProjectPaths;
-  sourceProjectName: string;
-  sourceFiles: Map<string, string>;
+  baselineFiles: Map<string, string>;
   push: boolean;
   commitMessage: string;
   log: (message: string) => void;
 }) {
-  const { project, paths, sourceProjectName, sourceFiles, push, commitMessage, log } = opts;
+  const { project, paths, baselineFiles, push, commitMessage, log } = opts;
+  const additionalManagedPaths = await getAdditionalManagedPaths(paths);
 
-  if (project.name !== sourceProjectName) {
-    await x('git', ['checkout', project.branch], {
-      nodeOptions: { cwd: paths.repoRoot },
-    });
-    await x('git', ['pull', '--ff-only', 'origin', project.branch], {
-      timeout: 120_000,
-      nodeOptions: { cwd: paths.repoRoot },
-    });
-  }
+  await x('git', ['checkout', project.branch], {
+    nodeOptions: { cwd: paths.repoRoot },
+  });
+  await x('git', ['pull', '--ff-only', 'origin', project.branch], {
+    timeout: 120_000,
+    nodeOptions: { cwd: paths.repoRoot },
+  });
 
-  await syncStorybookDir(paths.storybookDir, sourceFiles);
-  await rm(join(paths.repoRoot, 'eval-results'), { recursive: true, force: true });
+  await syncStorybookDir(paths.storybookDir, baselineFiles);
+  await rm(getLegacyEvalResultsDir(paths.projectPath), { recursive: true, force: true });
   await mkdir(paths.evalResultsDir, { recursive: true });
   await writeFile(join(paths.evalResultsDir, 'data.json'), '{}\n');
 
-  const managedPaths = getManagedPaths(paths);
+  const managedPaths = getManagedPaths(paths, additionalManagedPaths);
   await x('git', ['add', '-A', '--', ...managedPaths], {
     nodeOptions: { cwd: paths.repoRoot },
   });
@@ -263,28 +207,8 @@ async function syncProjectRepo(opts: {
   return { changed: true as const, commitSha };
 }
 
-async function readSourceStorybookDir(sourceDir: string) {
-  const entries = await readdir(sourceDir, { withFileTypes: true });
-  const files = new Map<string, string>();
-
-  for (const entry of entries) {
-    const fullPath = join(sourceDir, entry.name);
-    if (entry.isDirectory()) {
-      const nested = await readSourceStorybookDir(fullPath);
-      for (const [name, contents] of nested) {
-        files.set(join(entry.name, name), contents);
-      }
-      continue;
-    }
-
-    if (!entry.isFile()) {
-      continue;
-    }
-
-    files.set(entry.name, await readFile(fullPath, 'utf-8'));
-  }
-
-  return files;
+async function readBaselineStorybookDir() {
+  return new Map(Object.entries(BASELINE_STORYBOOK_FILES));
 }
 
 async function syncStorybookDir(targetDir: string, sourceFiles: Map<string, string>) {
@@ -315,8 +239,33 @@ async function findStorybookMainFile(projectPath: string) {
   return undefined;
 }
 
-function getManagedPaths(paths: ProjectPaths) {
-  return [relative(paths.repoRoot, paths.storybookDir), 'eval-results'];
+function getManagedPaths(paths: ProjectPaths, extraPaths: string[] = []) {
+  return [relative(paths.repoRoot, paths.storybookDir), ...extraPaths];
+}
+
+async function getAdditionalManagedPaths(paths: ProjectPaths) {
+  const legacyEvalResultsPath = normalizeRepoPath(
+    relative(paths.repoRoot, getLegacyEvalResultsDir(paths.projectPath))
+  );
+
+  if (!legacyEvalResultsPath) {
+    return [];
+  }
+
+  const legacyEvalResultsExists = existsSync(join(paths.repoRoot, legacyEvalResultsPath));
+  if (legacyEvalResultsExists) {
+    return [legacyEvalResultsPath];
+  }
+
+  const tracked = await x('git', ['ls-files', '--error-unmatch', '--', legacyEvalResultsPath], {
+    throwOnError: false,
+    nodeOptions: { cwd: paths.repoRoot },
+  });
+  return tracked.exitCode === 0 ? [legacyEvalResultsPath] : [];
+}
+
+function getLegacyEvalResultsDir(projectPath: string) {
+  return join(projectPath, 'eval-results');
 }
 
 async function getDirtyFiles(repoRoot: string) {
@@ -344,29 +293,11 @@ async function getCurrentBranch(repoRoot: string) {
   return result.stdout.trim();
 }
 
-async function isBehindOrigin(repoRoot: string, branch: string) {
-  const result = await x('git', ['merge-base', '--is-ancestor', `origin/${branch}`, 'HEAD'], {
-    throwOnError: false,
-    nodeOptions: { cwd: repoRoot },
-  });
-  return result.exitCode !== 0;
-}
-
 async function getHead(repoRoot: string) {
   const result = await x('git', ['rev-parse', 'HEAD'], {
     nodeOptions: { cwd: repoRoot },
   });
   return result.stdout.trim();
-}
-
-function isManagedPath(file: string, managedPaths: Set<string>) {
-  const normalizedFile = normalizeRepoPath(file);
-  return [...managedPaths].some((managed) => {
-    const normalizedManaged = normalizeRepoPath(managed);
-    return (
-      normalizedFile === normalizedManaged || normalizedFile.startsWith(`${normalizedManaged}/`)
-    );
-  });
 }
 
 function normalizeRepoPath(value: string) {

@@ -66,7 +66,6 @@ export function parseVitestResults(report: any): TestRunSummary {
   // Transform the Vitest test results to our expected format
   const storyTestResults: StoryTestResult[] = [];
   let passedButEmptyRender = 0;
-  let emptyRenderFailures = 0;
 
   for (const testSuite of report.testResults) {
     for (const assertion of testSuite.assertionResults) {
@@ -83,10 +82,6 @@ export function parseVitestResults(report: any): TestRunSummary {
 
       if (status === 'PASS' && hasEmptyRender) {
         passedButEmptyRender++;
-      }
-
-      if (hasEmptyRender) {
-        emptyRenderFailures++;
       }
 
       // Extract error message (first line of failureMessages)
@@ -121,7 +116,6 @@ export function parseVitestResults(report: any): TestRunSummary {
       total,
       passed,
       passedButEmptyRender,
-      emptyRenderFailures,
       successRate,
       successRateWithoutEmptyRender,
       uniqueErrorCount: errorClassification.uniqueErrorCount,

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parseVitestResults } from './parse-vitest-report';
+import { parseVitestResults } from './parse-vitest-report.ts';
 
 vi.mock('../../../shared/utils/categorize-render-errors', { spy: true });
 
@@ -45,7 +45,6 @@ describe('parse-vitest-report', () => {
         total: 3,
         passed: 3,
         passedButEmptyRender: 0,
-        emptyRenderFailures: 0,
         successRate: 1.0,
         successRateWithoutEmptyRender: 1.0,
         uniqueErrorCount: 0,
@@ -200,45 +199,8 @@ describe('parse-vitest-report', () => {
       const result = parseVitestResults(mockVitestResults);
 
       expect(result.summary?.passedButEmptyRender).toBe(2);
-      expect(result.summary?.emptyRenderFailures).toBe(2);
       expect(result.summary?.successRate).toBe(1.0);
       expect(result.summary?.successRateWithoutEmptyRender).toBe(0.33);
-    });
-
-    it('counts empty render reports even when the test failed', () => {
-      const mockVitestResults = {
-        success: false,
-        numTotalTests: 2,
-        numPassedTests: 1,
-        numFailedTests: 1,
-        testResults: [
-          {
-            assertionResults: [
-              {
-                fullName: 'VisibleStory',
-                status: 'passed',
-                failureMessages: [],
-              },
-              {
-                fullName: 'EmptyStory',
-                status: 'failed',
-                meta: {
-                  reports: [{ type: 'render-analysis', result: { emptyRender: true } }],
-                },
-                failureMessages: ['Error: Empty render'],
-              },
-            ],
-          },
-        ],
-      };
-
-      const result = parseVitestResults(mockVitestResults);
-
-      expect(result.summary?.total).toBe(2);
-      expect(result.summary?.passed).toBe(1);
-      expect(result.summary?.passedButEmptyRender).toBe(0);
-      expect(result.summary?.emptyRenderFailures).toBe(1);
-      expect(result.summary?.successRateWithoutEmptyRender).toBe(0.5);
     });
 
     it('should handle multiple test suites', () => {

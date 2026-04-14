@@ -5,7 +5,7 @@ import { Channel } from 'storybook/internal/channels';
 import { GHOST_STORIES_REQUEST, GHOST_STORIES_RESPONSE } from 'storybook/internal/core-events';
 import type { Options } from 'storybook/internal/types';
 
-import { initGhostStoriesChannel } from './ghost-stories-channel';
+import { initGhostStoriesChannel } from './ghost-stories-channel.ts';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('storybook/internal/common')>();
@@ -66,7 +66,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 
 const mockCommon = await import('storybook/internal/common');
 const mockTelemetry = await import('storybook/internal/telemetry');
-const mockStoryGeneration = await import('../utils/ghost-stories/get-candidates');
+const mockStoryGeneration = await import('../utils/ghost-stories/get-candidates.ts');
 
 describe('ghostStoriesChannel', () => {
   const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
@@ -184,30 +184,26 @@ describe('ghostStoriesChannel', () => {
       } as any);
 
       // Telemetry is called with the correct data
-      expect(mockTelemetry.telemetry).toHaveBeenCalledWith(
-        'ghost-stories',
-        expect.objectContaining({
-          stats: expect.objectContaining({
-            globMatchCount: 10,
-            candidateAnalysisDuration: expect.any(Number),
-            totalRunDuration: expect.any(Number),
-            analyzedCount: 5,
-            avgComplexity: 2.5,
-            candidateCount: 2,
-            testRunDuration: expect.any(Number),
-          }),
-          results: expect.objectContaining({
-            total: 2,
-            passed: 2,
-            successRate: 1,
-            successRateWithoutEmptyRender: 1,
-            categorizedErrors: expect.any(Object),
-            emptyRenderFailures: 0,
-            uniqueErrorCount: 0,
-            passedButEmptyRender: 0,
-          }),
-        })
-      );
+      expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
+        stats: {
+          globMatchCount: 10,
+          candidateAnalysisDuration: expect.any(Number),
+          totalRunDuration: expect.any(Number),
+          analyzedCount: 5,
+          avgComplexity: 2.5,
+          candidateCount: 2,
+          testRunDuration: expect.any(Number),
+        },
+        results: {
+          total: 2,
+          passed: 2,
+          successRate: 1,
+          successRateWithoutEmptyRender: 1,
+          categorizedErrors: expect.any(Object),
+          uniqueErrorCount: 0,
+          passedButEmptyRender: 0,
+        },
+      });
     });
 
     it('should execute successful discovery run with test failure', async () => {

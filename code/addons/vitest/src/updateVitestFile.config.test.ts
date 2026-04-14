@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as babel from 'storybook/internal/babel';
 
-import { getDiff } from '../../../core/src/core-server/utils/save-story/getDiff';
-import { loadTemplate, updateConfigFile } from './updateVitestFile';
+import { getDiff } from '../../../core/src/core-server/utils/save-story/getDiff.ts';
+import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
@@ -18,10 +18,6 @@ vi.mock('storybook/internal/node-logger', () => ({
 vi.mock('../../../core/src/shared/utils/module', () => ({
   resolvePackageDir: vi.fn().mockImplementation(() => join(__dirname, '..')),
 }));
-
-function normalizeDiff(value: string) {
-  return value.replace(/[ \t]+$/gm, '');
-}
 
 describe('updateConfigFile', () => {
   it('updates vite config file', async () => {
@@ -57,26 +53,26 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
         import react from '@vitejs/plugin-react';
-
+        
         // https://vite.dev/config/
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default defineConfig({
           plugins: [react()],
           test: {
             globals: true,
-
+        
       -     workspace: ['packages/*']
-      -
+      - 
       +     workspace: ['packages/*', {
       +       extends: true,
       +       plugins: [
@@ -97,7 +93,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         });"
     `);
@@ -135,27 +131,27 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
         import react from '@vitejs/plugin-react';
-
+        
         // https://vite.dev/config/
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default {
           plugins: [react()],
           test: {
             globals: true,
-
+        
       -     workspace: ['packages/*']
-      -
+      - 
       +     workspace: ['packages/*', {
       +       extends: true,
       +       plugins: [
@@ -176,7 +172,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         };"
     `);
@@ -246,25 +242,25 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
         import react from '@vitejs/plugin-react';
-
+        
         // https://vite.dev/config/
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default defineConfig({
           plugins: [react()],
           test: {
-
+        
       -     globals: true
-      -
+      - 
       +     projects: [{
       +       extends: true,
       +       test: {
@@ -290,7 +286,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         });"
     `);
@@ -330,54 +326,54 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
 
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
-      "  import { defineConfig } from 'vite';
-        import viteReact from '@vitejs/plugin-react';
-        import { fileURLToPath, URL } from 'url';
-
-      + import path from 'node:path';
-      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
-        const config = defineConfig({
-          resolve: {
-            preserveSymlinks: true,
-            alias: {
-              '@': fileURLToPath(new URL('./src', import.meta.url))
-            }
-          },
-
-      -   plugins: [viteReact()]
-      -
-      +   plugins: [viteReact()],
-      +   test: {
-      +     projects: [{
-      +       extends: true,
-      +       plugins: [
-      +       // The plugin will run tests for the stories defined in your Storybook config
-      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +       storybookTest({
-      +         configDir: path.join(dirname, '.storybook')
-      +       })],
-      +       test: {
-      +         name: 'storybook',
-      +         browser: {
-      +           enabled: true,
-      +           headless: true,
-      +           provider: 'playwright',
-      +           instances: [{
-      +             browser: 'chromium'
-      +           }]
-      +         }
-      +       }
-      +     }]
-      +   }
-      +
-        });
-        export default config;"
-    `);
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+  "  import { defineConfig } from 'vite';
+    import viteReact from '@vitejs/plugin-react';
+    import { fileURLToPath, URL } from 'url';
+    
+  + import path from 'node:path';
+  + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+  + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+  + 
+  + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+  + 
+    const config = defineConfig({
+      resolve: {
+        preserveSymlinks: true,
+        alias: {
+          '@': fileURLToPath(new URL('./src', import.meta.url))
+        }
+      },
+    
+  -   plugins: [viteReact()]
+  - 
+  +   plugins: [viteReact()],
+  +   test: {
+  +     projects: [{
+  +       extends: true,
+  +       plugins: [
+  +       // The plugin will run tests for the stories defined in your Storybook config
+  +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+  +       storybookTest({
+  +         configDir: path.join(dirname, '.storybook')
+  +       })],
+  +       test: {
+  +         name: 'storybook',
+  +         browser: {
+  +           enabled: true,
+  +           headless: true,
+  +           provider: 'playwright',
+  +           instances: [{
+  +             browser: 'chromium'
+  +           }]
+  +         }
+  +       }
+  +     }]
+  +   }
+  + 
+    });
+    export default config;"
+`);
   });
 
   it('edits projects property of test config', async () => {
@@ -413,26 +409,26 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
         import react from '@vitejs/plugin-react';
-
+        
         // https://vite.dev/config/
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default defineConfig({
           plugins: [react()],
           test: {
             globals: true,
             projects: ['packages/*', {
               some: 'config'
-
+        
       +     }, {
       +       extends: true,
       +       plugins: [
@@ -452,7 +448,7 @@ describe('updateConfigFile', () => {
       +           }]
       +         }
       +       }
-      +
+      + 
             }]
           }
         });"
@@ -491,25 +487,25 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
         import react from '@vitejs/plugin-react';
-
+        
         // https://vite.dev/config/
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default defineConfig({
           plugins: [react()],
           test: {
-
+        
       -     globals: true
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -535,7 +531,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         });"
     `);
@@ -570,23 +566,23 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
         import react from '@vitejs/plugin-react';
-
+        
         // https://vite.dev/config/
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default defineConfig({
-
+        
       -   plugins: [react()]
-      -
+      - 
       +   plugins: [react()],
       +   test: {
       +     workspace: [{
@@ -610,7 +606,7 @@ describe('updateConfigFile', () => {
       +       }
       +     }]
       +   }
-      +
+      + 
         });"
     `);
   });
@@ -651,25 +647,25 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig } from 'vite';
         import { defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, defineConfig({
           plugins: [react()]
         }), defineConfig({
           test: {
-
+        
       -     environment: 'jsdom'
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -695,7 +691,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }));"
     `);
@@ -733,24 +729,24 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig } from 'vite';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, {
           plugins: [react()],
           test: {
-
+        
       -     environment: 'jsdom'
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -776,7 +772,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         });"
     `);
@@ -813,22 +809,22 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig } from 'vite';
         import { defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, defineConfig({
-
+        
       -   plugins: [react()]
-      -
+      - 
       +   plugins: [react()],
       +   test: {
       +     workspace: [{
@@ -852,7 +848,7 @@ describe('updateConfigFile', () => {
       +       }
       +     }]
       +   }
-      +
+      + 
         }));"
     `);
   });
@@ -891,24 +887,24 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
         import viteConfig from './vite.config';
-
+        
         // https://vite.dev/config/
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
-
+        
       -     globals: true
-      -
+      - 
       +     projects: [{
       +       extends: true,
       +       test: {
@@ -934,7 +930,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }));"
     `);
@@ -982,17 +978,17 @@ describe('updateConfigFile', () => {
     expect(after).not.toBe(before);
 
     // check if the code was updated correctly (storybook project appended to existing projects, no double nesting)
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig, defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
             expect: {
@@ -1001,7 +997,7 @@ describe('updateConfigFile', () => {
               test: {
                 name: "server"
               }
-
+        
       +     }, {
       +       extends: true,
       +       plugins: [
@@ -1021,7 +1017,7 @@ describe('updateConfigFile', () => {
       +           }]
       +         }
       +       }
-      +
+      + 
             }]
           }
         }));"
@@ -1069,29 +1065,29 @@ describe('updateConfigFile', () => {
 
     // check if the code was updated correctly
     // Coverage should stay at the top level, not moved into the workspace
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig, defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts'],
-      -
+      - 
             coverage: {
               exclude: ['storybook.setup.ts', '**/*.stories.*']
-
+        
       -     }
-      -
+      - 
       +     },
       +     workspace: [{
       +       extends: true,
@@ -1120,7 +1116,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }));"
     `);
@@ -1167,29 +1163,29 @@ describe('updateConfigFile', () => {
 
     // check if the code was updated correctly
     // Coverage should stay at the top level, not moved into the projects
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig, defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts'],
-      -
+      - 
             coverage: {
               exclude: ['storybook.setup.ts', '**/*.stories.*']
-
+        
       -     }
-      -
+      - 
       +     },
       +     projects: [{
       +       extends: true,
@@ -1218,7 +1214,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }));"
     `);
@@ -1251,24 +1247,24 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { defineConfig, mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default defineConfig(mergeConfig(viteConfig, {
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -1296,7 +1292,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }));"
     `);
@@ -1332,25 +1328,25 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { defineConfig, mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         import type { ViteUserConfig } from 'vitest/config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default defineConfig(mergeConfig(viteConfig, {
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -1378,7 +1374,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }) satisfies ViteUserConfig);"
     `);
@@ -1412,26 +1408,26 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
         import type { ViteUserConfig } from 'vitest/config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, {
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -1459,7 +1455,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }) as ViteUserConfig;"
     `);
@@ -1492,27 +1488,27 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         const test = {
           name: 'node',
           environment: 'happy-dom',
           include: ['**/*.test.ts']
         };
         export default mergeConfig(viteConfig, {
-
+        
       -   test
-      -
+      - 
       +   test: {
       +     workspace: [{
       +       extends: true,
@@ -1542,7 +1538,7 @@ describe('updateConfigFile', () => {
       +       }
       +     }]
       +   }
-      +
+      + 
         });"
     `);
   });
@@ -1579,24 +1575,24 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { defineConfig, mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         const config = mergeConfig(viteConfig, defineConfig({
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -1624,7 +1620,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }));
         export default config;"
@@ -1657,24 +1653,24 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { defineProject } from 'vitest/config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default defineProject({
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -1702,7 +1698,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         });"
     `);
@@ -1740,24 +1736,24 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { defineConfig, mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export const config = mergeConfig(viteConfig, defineConfig({
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -1785,7 +1781,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }));
         export default config;"
@@ -1821,25 +1817,25 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export const vitestConfig = {
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -1867,7 +1863,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         };
         export default mergeConfig(viteConfig, vitestConfig);"
@@ -1903,25 +1899,25 @@ describe('updateConfigFile', () => {
 
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         const vitestConfig = {
           test: {
-
+        
       -     name: 'node',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts']
-      -
+      - 
       +     workspace: [{
       +       extends: true,
       +       test: {
@@ -1949,7 +1945,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         };
         export default mergeConfig(viteConfig, vitestConfig);"
@@ -1994,20 +1990,20 @@ describe('updateConfigFile', () => {
     const after = babel.generate(target).code;
     expect(after).not.toBe(before);
 
-    expect(normalizeDiff(getDiff(before, after))).toMatchInlineSnapshot(`
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig, defineConfig } from 'vitest/config';
         import viteConfig from './vite.config';
-
+        
       + import path from 'node:path';
       + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-      +
+      + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      +
+      + 
         export default mergeConfig(viteConfig, defineConfig({
           test: {
-
+        
       -     name: 'unit',
       -     environment: 'happy-dom',
       -     include: ['**/*.test.ts'],
@@ -2016,13 +2012,13 @@ describe('updateConfigFile', () => {
       -     },
       -     pool: 'forks',
       -     maxWorkers: 4,
-      -
+      - 
             coverage: {
               provider: 'v8',
               exclude: ['**/*.stories.*']
-
+        
       -     }
-      -
+      - 
       +     },
       +     workspace: [{
       +       extends: true,
@@ -2056,7 +2052,7 @@ describe('updateConfigFile', () => {
       +         }
       +       }
       +     }]
-      +
+      + 
           }
         }));"
     `);

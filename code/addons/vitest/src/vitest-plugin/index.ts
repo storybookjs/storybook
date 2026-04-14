@@ -39,9 +39,9 @@ import { dedent } from 'ts-dedent';
 import type { PluginOption } from 'vite';
 
 // Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
-import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
-import type { InternalOptions, UserOptions } from './types';
-import { requiresProjectAnnotations } from './utils';
+import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
+import type { InternalOptions, UserOptions } from './types.ts';
+import { requiresProjectAnnotations } from './utils.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -387,12 +387,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
                 if (process.env.STORYBOOK_COMPONENT_PATHS) {
                   globals.ghostStories = {
-                    enabled: true,
-                  };
-                }
-
-                if (process.env.STORYBOOK_FAIL_ON_EMPTY_RENDER === 'true') {
-                  globals.emptyRenderFailure = {
                     enabled: true,
                   };
                 }

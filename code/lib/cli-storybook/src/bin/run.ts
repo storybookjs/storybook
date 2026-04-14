@@ -320,10 +320,6 @@ aiCommand
     )
   )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .option(
-    '--frontmatter',
-    'Prepend YAML frontmatter with project context and traits (requires --output)'
-  )
   .action(async (options, cmd) => {
     const parentOptions = cmd.parent?.opts() ?? {};
     const mergedOptions = { ...parentOptions, ...options };

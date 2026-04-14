@@ -138,11 +138,20 @@ describe('syncBaselines', () => {
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
     ).toContain('# Eval Summary');
     expect(
+      readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
+    ).toContain("{data.project?.name ?? '-'}");
+    expect(
       readFileSync(
         join(reposRoot, 'wikitok', 'frontend', '.storybook', 'eval-support', 'transcript.mdx'),
         'utf-8'
       )
     ).toContain('../eval-results/data.json');
+    expect(
+      readFileSync(
+        join(reposRoot, 'wikitok', 'frontend', '.storybook', 'eval-support', 'transcript.mdx'),
+        'utf-8'
+      )
+    ).toContain("<Transcript {...(data.docs?.transcript ?? { prompt: '', promptTokenCount: 0, promptCost: 0, messages: [] })} />");
 
     expect(
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-results', 'data.json'), 'utf-8')

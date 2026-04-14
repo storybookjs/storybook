@@ -44,25 +44,25 @@ const EVAL_SUPPORT_SUMMARY_MDX = `import data from '../eval-results/data.json';
 
 <table>
   <tbody>
-    <tr><td><strong>Project</strong></td><td>{data.project.name}</td></tr>
-    <tr><td><strong>ID</strong></td><td>{data.id}</td></tr>
-    <tr><td><strong>Prompt</strong></td><td>{data.prompt.name}</td></tr>
-    <tr><td><strong>Agent</strong></td><td>{data.variant.agent}</td></tr>
-    <tr><td><strong>Model</strong></td><td>{data.variant.model}</td></tr>
-    <tr><td><strong>Effort</strong></td><td>{data.variant.effort}</td></tr>
-    <tr><td><strong>Score</strong></td><td>{data.score.score}</td></tr>
-    <tr><td><strong>Build</strong></td><td>{data.grade.buildSuccess ? 'PASS' : 'FAIL'}</td></tr>
-    <tr><td><strong>TypeScript errors</strong></td><td>{data.grade.typeCheckErrors}</td></tr>
-    <tr><td><strong>Ghost stories</strong></td><td>{data.grade.ghostStories ? \`\${data.grade.ghostStories.passed}/\${data.grade.ghostStories.total} (\${Math.round(data.grade.ghostStories.successRate * 100)}%)\` : '-'}</td></tr>
-    <tr><td><strong>Duration</strong></td><td>{Math.round(data.execution.duration)}s</td></tr>
-    <tr><td><strong>Cost</strong></td><td>{data.execution.cost == null ? '-' : \`$\${data.execution.cost.toFixed(2)}\`}</td></tr>
+    <tr><td><strong>Project</strong></td><td>{data.project?.name ?? '-'}</td></tr>
+    <tr><td><strong>ID</strong></td><td>{data.id ?? '-'}</td></tr>
+    <tr><td><strong>Prompt</strong></td><td>{data.prompt?.name ?? '-'}</td></tr>
+    <tr><td><strong>Agent</strong></td><td>{data.variant?.agent ?? '-'}</td></tr>
+    <tr><td><strong>Model</strong></td><td>{data.variant?.model ?? '-'}</td></tr>
+    <tr><td><strong>Effort</strong></td><td>{data.variant?.effort ?? '-'}</td></tr>
+    <tr><td><strong>Score</strong></td><td>{data.score?.score ?? '-'}</td></tr>
+    <tr><td><strong>Build</strong></td><td>{data.grade?.buildSuccess === true ? 'PASS' : data.grade?.buildSuccess === false ? 'FAIL' : '-'}</td></tr>
+    <tr><td><strong>TypeScript errors</strong></td><td>{data.grade?.typeCheckErrors ?? '-'}</td></tr>
+    <tr><td><strong>Ghost stories</strong></td><td>{data.grade?.ghostStories ? \`\${data.grade.ghostStories.passed}/\${data.grade.ghostStories.total} (\${Math.round(data.grade.ghostStories.successRate * 100)}%)\` : '-'}</td></tr>
+    <tr><td><strong>Duration</strong></td><td>{typeof data.execution?.duration === 'number' ? \`\${Math.round(data.execution.duration)}s\` : '-'}</td></tr>
+    <tr><td><strong>Cost</strong></td><td>{typeof data.execution?.cost === 'number' ? \`$\${data.execution.cost.toFixed(2)}\` : '-'}</td></tr>
   </tbody>
 </table>
 
 ## Changed Files
 
 <ul>
-  {data.grade.fileChanges.map((change) => (
+  {(data.grade?.fileChanges ?? []).map((change) => (
     <li key={change.path}>
       <code>{change.gitStatus}</code> <code>{change.path}</code>
     </li>
@@ -76,7 +76,7 @@ import { Transcript } from './transcript';
 
 # Transcript
 
-<Transcript {...data.docs.transcript} />
+<Transcript {...(data.docs?.transcript ?? { prompt: '', promptTokenCount: 0, promptCost: 0, messages: [] })} />
 `;
 
 const EVAL_SUPPORT_TRANSCRIPT_TSX = `/*
@@ -1136,10 +1136,10 @@ export interface TranscriptProps {
 `;
 
 export const BASELINE_STORYBOOK_FILES = {
-  "main.ts": MAIN_TS,
-  "preview.tsx": PREVIEW_TSX,
-  "eval-support/summary.mdx": EVAL_SUPPORT_SUMMARY_MDX,
-  "eval-support/transcript.mdx": EVAL_SUPPORT_TRANSCRIPT_MDX,
-  "eval-support/transcript.tsx": EVAL_SUPPORT_TRANSCRIPT_TSX,
-  "eval-support/transcript.types.ts": EVAL_SUPPORT_TRANSCRIPT_TYPES_TS,
+  'main.ts': MAIN_TS,
+  'preview.tsx': PREVIEW_TSX,
+  'eval-support/summary.mdx': EVAL_SUPPORT_SUMMARY_MDX,
+  'eval-support/transcript.mdx': EVAL_SUPPORT_TRANSCRIPT_MDX,
+  'eval-support/transcript.tsx': EVAL_SUPPORT_TRANSCRIPT_TSX,
+  'eval-support/transcript.types.ts': EVAL_SUPPORT_TRANSCRIPT_TYPES_TS,
 } satisfies Record<string, string>;

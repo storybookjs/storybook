@@ -1,7 +1,6 @@
-import { execFile, execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
-import { dirname, extname, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -90,7 +89,7 @@ interface EvalDataPayload {
     ghostStories?: GhostSummaryPayload;
     fileChanges?: FileChangePayload[];
   };
-  screenshots?: ScreenshotPayload[];
+  screenshots?: unknown[];
   transcript?: unknown[];
   artifacts?: {
     buildOutput?: {
@@ -123,12 +122,6 @@ interface FileChangePayload {
   gitStatus?: string;
 }
 
-interface ScreenshotPayload {
-  storyFilePath?: string;
-  exportName?: string;
-  imagePath?: string;
-}
-
 interface NormalizedGhostSummary {
   candidateCount: number;
   total: number;
@@ -138,26 +131,13 @@ interface NormalizedGhostSummary {
 interface NormalizedStoryRenderSummary {
   total: number;
   passed: number;
-  emptyRenderFailures: number;
+  emptyRenderFailures: number | null;
 }
 
 interface NormalizedFileChange {
   path: string;
   previousPath: string | null;
   gitStatus: GitStatus;
-}
-
-interface NormalizedScreenshot {
-  storyFilePath: string;
-  exportName: string;
-  imagePath: string;
-}
-
-interface ScreenshotBlobRecord {
-  imageBlob: Buffer;
-  imageMimeType: string;
-  imageByteSize: number;
-  imageSha256: string;
 }
 
 interface NormalizedTrialData {
@@ -185,9 +165,7 @@ interface NormalizedTrialData {
   evalCommit: string;
   buildOutputPath: string | null;
   typecheckOutputPath: string | null;
-  screenshotOutputPath: string | null;
   fileChanges: NormalizedFileChange[];
-  screenshots: NormalizedScreenshot[];
   transcriptJson: string;
 }
 
@@ -198,8 +176,6 @@ interface CollectorSummary {
   failedTrials: number;
   backfilledTrialCosts: number;
   failedTrialCostBackfills: number;
-  backfilledScreenshotBlobs: number;
-  failedScreenshotBlobBackfills: number;
 }
 
 interface CollectPullRequestOptions {
@@ -207,7 +183,6 @@ interface CollectPullRequestOptions {
   project: Project;
   projectId: number;
   pullRequest: PullRequestListItem;
-  skipImageFetch: boolean;
 }
 
 type PullRequestState = 'all' | 'open';
@@ -234,7 +209,7 @@ export async function main() {
 
   try {
     configureDatabase(db);
-    ensureSchema(db);
+    ensureSchema(db, dbPath);
 
     const summary: CollectorSummary = {
       insertedTrials: 0,
@@ -243,8 +218,6 @@ export async function main() {
       failedTrials: 0,
       backfilledTrialCosts: 0,
       failedTrialCostBackfills: 0,
-      backfilledScreenshotBlobs: 0,
-      failedScreenshotBlobBackfills: 0,
     };
 
     for (const project of projects) {
@@ -258,7 +231,6 @@ export async function main() {
           project,
           projectId,
           pullRequest,
-          skipImageFetch: args.skipImageFetch,
         });
 
         if (result === 'inserted') {
@@ -277,16 +249,8 @@ export async function main() {
     summary.backfilledTrialCosts = trialCostBackfill.backfilled;
     summary.failedTrialCostBackfills = trialCostBackfill.failed;
 
-    if (args.skipImageFetch) {
-      logger.logStep('Skipped screenshot blob fetch/backfill (--skip-image-fetch).');
-    } else {
-      const screenshotBackfill = await backfillMissingScreenshotBlobs(db);
-      summary.backfilledScreenshotBlobs = screenshotBackfill.backfilled;
-      summary.failedScreenshotBlobBackfills = screenshotBackfill.failed;
-    }
-
     logger.logSuccess(
-      `Inserted ${summary.insertedTrials} trials, skipped ${summary.skippedTrials} existing trials, skipped ${summary.skippedWithoutDataJson} PRs without usable data.json, failed ${summary.failedTrials}, backfilled ${summary.backfilledTrialCosts} trial costs, failed ${summary.failedTrialCostBackfills} trial cost backfills, backfilled ${summary.backfilledScreenshotBlobs} screenshot blobs, failed ${summary.failedScreenshotBlobBackfills} screenshot backfills`
+      `Inserted ${summary.insertedTrials} trials, skipped ${summary.skippedTrials} existing trials, skipped ${summary.skippedWithoutDataJson} PRs without usable data.json, failed ${summary.failedTrials}, backfilled ${summary.backfilledTrialCosts} trial costs, failed ${summary.failedTrialCostBackfills} trial cost backfills`
     );
   } finally {
     db.close();
@@ -301,7 +265,6 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
       project: { type: 'string' },
       limit: { type: 'string' },
       state: { type: 'string' },
-      'skip-image-fetch': { type: 'boolean' },
     },
     strict: true,
     allowPositionals: false,
@@ -323,7 +286,6 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
     project: values.project ?? undefined,
     limit,
     prState,
-    skipImageFetch: values['skip-image-fetch'] ?? false,
   };
 }
 
@@ -350,7 +312,9 @@ function configureDatabase(db: DatabaseSync) {
   `);
 }
 
-function ensureSchema(db: DatabaseSync) {
+export function ensureSchema(db: DatabaseSync, dbPath = DEFAULT_DB_PATH) {
+  failIfLegacyScreenshotSchema(db, dbPath);
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
       id INTEGER PRIMARY KEY,
@@ -409,7 +373,6 @@ function ensureSchema(db: DatabaseSync) {
       data_json_path TEXT NOT NULL,
       build_output_path TEXT,
       typecheck_output_path TEXT,
-      screenshot_output_path TEXT,
       ingested_at TEXT NOT NULL,
       UNIQUE(project_id, pr_number),
       UNIQUE(project_id, head_ref_oid)
@@ -430,18 +393,6 @@ function ensureSchema(db: DatabaseSync) {
       PRIMARY KEY (trial_id, seq)
     );
 
-    CREATE TABLE IF NOT EXISTS trial_screenshots (
-      trial_id TEXT NOT NULL REFERENCES trials(trial_id) ON DELETE CASCADE,
-      story_file_path TEXT NOT NULL,
-      export_name TEXT NOT NULL,
-      image_path TEXT NOT NULL,
-      image_blob BLOB,
-      image_mime_type TEXT,
-      image_byte_size INTEGER,
-      image_sha256 TEXT,
-      PRIMARY KEY (trial_id, story_file_path, export_name)
-    );
-
     CREATE TABLE IF NOT EXISTS trial_file_changes (
       trial_id TEXT NOT NULL REFERENCES trials(trial_id) ON DELETE CASCADE,
       seq INTEGER NOT NULL,
@@ -457,10 +408,6 @@ function ensureSchema(db: DatabaseSync) {
     );
   `);
 
-  ensureTableColumn(db, 'trial_screenshots', 'image_blob', 'BLOB');
-  ensureTableColumn(db, 'trial_screenshots', 'image_mime_type', 'TEXT');
-  ensureTableColumn(db, 'trial_screenshots', 'image_byte_size', 'INTEGER');
-  ensureTableColumn(db, 'trial_screenshots', 'image_sha256', 'TEXT');
   ensureTableColumn(db, 'trials', 'story_before_total', 'INTEGER');
   ensureTableColumn(db, 'trials', 'story_before_passed', 'INTEGER');
   ensureTableColumn(db, 'trials', 'story_before_empty', 'INTEGER');
@@ -786,12 +733,10 @@ async function collectPullRequest(
       prIsDraft: getRequiredBoolean(opts.pullRequest.isDraft, 'pullRequest.isDraft') ? 1 : 0,
       headRefName,
       headRefOid,
-      headRepositorySlug,
       dataJsonPath,
       ingestedAt: new Date().toISOString(),
       pullRequest: opts.pullRequest,
       normalized,
-      skipImageFetch: opts.skipImageFetch,
     });
 
     logger.logSuccess(`Inserted ${opts.project.githubSlug}#${prNumber} (${trialId})`);
@@ -893,40 +838,6 @@ function fetchDataJson(repoSlug: string, dataJsonPath: string, headRefOid: strin
   }
 }
 
-function fetchScreenshotBlobRecord(repoSlug: string, imagePath: string, headRefOid: string) {
-  const imageBlob = fetchRepositoryBlob(repoSlug, imagePath, headRefOid);
-  if (!imageBlob) {
-    logger.logError(`Failed to fetch screenshot blob ${repoSlug}:${imagePath}@${headRefOid}`);
-    return null;
-  }
-
-  return {
-    imageBlob,
-    imageMimeType: inferImageMimeType(imagePath),
-    imageByteSize: imageBlob.byteLength,
-    imageSha256: createHash('sha256').update(imageBlob).digest('hex'),
-  } satisfies ScreenshotBlobRecord;
-}
-
-async function fetchScreenshotBlobRecordAsync(
-  repoSlug: string,
-  imagePath: string,
-  headRefOid: string
-) {
-  const imageBlob = await fetchRepositoryBlobAsync(repoSlug, imagePath, headRefOid);
-  if (!imageBlob) {
-    logger.logError(`Failed to fetch screenshot blob ${repoSlug}:${imagePath}@${headRefOid}`);
-    return null;
-  }
-
-  return {
-    imageBlob,
-    imageMimeType: inferImageMimeType(imagePath),
-    imageByteSize: imageBlob.byteLength,
-    imageSha256: createHash('sha256').update(imageBlob).digest('hex'),
-  } satisfies ScreenshotBlobRecord;
-}
-
 function fetchRepositoryBlob(repoSlug: string, filePath: string, ref: string) {
   return runGhBytes(
     [
@@ -937,36 +848,6 @@ function fetchRepositoryBlob(repoSlug: string, filePath: string, ref: string) {
     ],
     null
   );
-}
-
-async function fetchRepositoryBlobAsync(repoSlug: string, filePath: string, ref: string) {
-  return runGhBytesAsync(
-    [
-      'api',
-      '-H',
-      'Accept: application/vnd.github.raw',
-      `repos/${repoSlug}/contents/${filePath}?ref=${ref}`,
-    ],
-    null
-  );
-}
-
-function inferImageMimeType(filePath: string) {
-  const extension = extname(filePath).toLowerCase();
-
-  if (extension === '.png') {
-    return 'image/png';
-  }
-
-  if (extension === '.jpg' || extension === '.jpeg') {
-    return 'image/jpeg';
-  }
-
-  if (extension === '.webp') {
-    return 'image/webp';
-  }
-
-  return 'application/octet-stream';
 }
 
 function runGhJsonOrThrow<T>(args: string[]): T {
@@ -993,28 +874,6 @@ function runGhBytes(args: string[], fallback: Buffer | null) {
   }
 }
 
-function runGhBytesAsync(args: string[], fallback: Buffer | null) {
-  return new Promise<Buffer | null>((resolvePromise) => {
-    execFile(
-      'gh',
-      args,
-      {
-        encoding: 'buffer',
-        maxBuffer: 50 * 1024 * 1024,
-      },
-      (error, stdout) => {
-        if (error) {
-          logger.logError(`gh ${args.join(' ')} failed: ${formatError(error)}`);
-          resolvePromise(fallback);
-          return;
-        }
-
-        resolvePromise(stdout);
-      }
-    );
-  });
-}
-
 function ensureTableColumn(
   db: DatabaseSync,
   tableName: string,
@@ -1027,6 +886,42 @@ function ensureTableColumn(
   if (!hasColumn) {
     db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`);
   }
+}
+
+function failIfLegacyScreenshotSchema(db: DatabaseSync, dbPath: string) {
+  const hasLegacyScreenshotTable = tableExists(db, 'trial_screenshots');
+  const hasLegacyScreenshotColumn = tableHasColumn(db, 'trials', 'screenshot_output_path');
+
+  if (!hasLegacyScreenshotTable && !hasLegacyScreenshotColumn) {
+    return;
+  }
+
+  throw new Error(
+    `Legacy screenshot-era eval collector DB schema detected at ${dbPath}. Delete .cache/eval-pr-data.sqlite (or the custom DB file you passed in) and rerun scripts/eval/collect-pr-data.ts to regenerate it.`
+  );
+}
+
+function tableExists(db: DatabaseSync, tableName: string) {
+  const row = db
+    .prepare(
+      `
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'table' AND name = ?
+      `
+    )
+    .get(tableName) as { name?: unknown } | undefined;
+
+  return typeof row?.name === 'string';
+}
+
+function tableHasColumn(db: DatabaseSync, tableName: string, columnName: string) {
+  if (!tableExists(db, tableName)) {
+    return false;
+  }
+
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name?: unknown }>;
+  return columns.some((column) => column.name === columnName);
 }
 
 function findExistingTrialId(
@@ -1062,12 +957,10 @@ function insertTrial(
     prIsDraft: 0 | 1;
     headRefName: string;
     headRefOid: string;
-    headRepositorySlug: string;
     dataJsonPath: string;
     ingestedAt: string;
     pullRequest: PullRequestListItem;
     normalized: NormalizedTrialData;
-    skipImageFetch: boolean;
   }
 ) {
   db.exec('BEGIN');
@@ -1118,9 +1011,8 @@ function insertTrial(
         data_json_path,
         build_output_path,
         typecheck_output_path,
-        screenshot_output_path,
         ingested_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       input.trialId,
       input.projectId,
@@ -1163,18 +1055,10 @@ function insertTrial(
       input.dataJsonPath,
       input.normalized.buildOutputPath,
       input.normalized.typecheckOutputPath,
-      input.normalized.screenshotOutputPath,
       input.ingestedAt
     );
 
     insertTrialChecks(db, input.trialId, input.pullRequest.statusCheckRollup);
-    insertTrialScreenshots(db, {
-      trialId: input.trialId,
-      screenshots: input.normalized.screenshots,
-      headRepositorySlug: input.headRepositorySlug,
-      headRefOid: input.headRefOid,
-      skipImageFetch: input.skipImageFetch,
-    });
     insertTrialFileChanges(db, input.trialId, input.normalized.fileChanges);
     insertTrialTranscript(db, input.trialId, input.normalized.transcriptJson);
 
@@ -1238,128 +1122,6 @@ function insertTrialChecks(
       getOptionalString(check.targetUrl)
     );
   }
-}
-
-function insertTrialScreenshots(
-  db: DatabaseSync,
-  input: {
-    trialId: string;
-    screenshots: NormalizedScreenshot[];
-    headRepositorySlug: string;
-    headRefOid: string;
-    skipImageFetch: boolean;
-  }
-) {
-  const statement = db.prepare(`
-    INSERT INTO trial_screenshots (
-      trial_id,
-      story_file_path,
-      export_name,
-      image_path,
-      image_blob,
-      image_mime_type,
-      image_byte_size,
-      image_sha256
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  for (const screenshot of input.screenshots) {
-    const blobRecord = input.skipImageFetch
-      ? null
-      : fetchScreenshotBlobRecord(input.headRepositorySlug, screenshot.imagePath, input.headRefOid);
-
-    statement.run(
-      input.trialId,
-      screenshot.storyFilePath,
-      screenshot.exportName,
-      screenshot.imagePath,
-      blobRecord?.imageBlob ?? null,
-      blobRecord?.imageMimeType ?? null,
-      blobRecord?.imageByteSize ?? null,
-      blobRecord?.imageSha256 ?? null
-    );
-  }
-}
-
-async function backfillMissingScreenshotBlobs(db: DatabaseSync) {
-  const rows = db
-    .prepare(`
-    SELECT
-      ts.trial_id,
-      ts.story_file_path,
-      ts.export_name,
-      ts.image_path,
-      t.head_ref_oid,
-      p.github_slug
-    FROM trial_screenshots ts
-    INNER JOIN trials t ON t.trial_id = ts.trial_id
-    INNER JOIN projects p ON p.id = t.project_id
-    WHERE ts.image_blob IS NULL
-    ORDER BY t.trial_timestamp DESC
-  `)
-    .all() as Array<{
-    trial_id?: unknown;
-    story_file_path?: unknown;
-    export_name?: unknown;
-    image_path?: unknown;
-    head_ref_oid?: unknown;
-    github_slug?: unknown;
-  }>;
-
-  if (rows.length === 0) {
-    logger.logStep('No screenshot blobs need backfill.');
-    return { backfilled: 0, failed: 0 };
-  }
-
-  logger.logStep(`Backfilling ${rows.length} screenshot blob(s)...`);
-  const limit = pLimit(8);
-
-  const statement = db.prepare(`
-    UPDATE trial_screenshots
-    SET
-      image_blob = ?,
-      image_mime_type = ?,
-      image_byte_size = ?,
-      image_sha256 = ?
-    WHERE trial_id = ? AND story_file_path = ? AND export_name = ?
-  `);
-
-  let backfilled = 0;
-  let failed = 0;
-
-  await Promise.all(
-    rows.map((row) =>
-      limit(async () => {
-        const blobRecord = await fetchScreenshotBlobRecordAsync(
-          getRequiredString(row.github_slug, 'trial_screenshots.github_slug'),
-          getRequiredString(row.image_path, 'trial_screenshots.image_path'),
-          getRequiredString(row.head_ref_oid, 'trial_screenshots.head_ref_oid')
-        );
-
-        if (!blobRecord) {
-          failed += 1;
-          return;
-        }
-
-        statement.run(
-          blobRecord.imageBlob,
-          blobRecord.imageMimeType,
-          blobRecord.imageByteSize,
-          blobRecord.imageSha256,
-          getRequiredString(row.trial_id, 'trial_screenshots.trial_id'),
-          getRequiredString(row.story_file_path, 'trial_screenshots.story_file_path'),
-          getRequiredString(row.export_name, 'trial_screenshots.export_name')
-        );
-        backfilled += 1;
-      })
-    )
-  );
-
-  logger.logSuccess(
-    `Backfilled ${backfilled} screenshot blob(s), failed ${failed} screenshot blob fetch(es)`
-  );
-
-  return { backfilled, failed };
 }
 
 function insertTrialFileChanges(
@@ -1465,12 +1227,17 @@ async function backfillMissingTrialCosts(db: DatabaseSync) {
   return { backfilled, failed };
 }
 
-function normalizeTrialData(opts: { data: EvalDataPayload; trialId: string }): NormalizedTrialData {
+export function normalizeTrialData(opts: {
+  data: EvalDataPayload;
+  trialId: string;
+}): NormalizedTrialData {
   const dataId = getRequiredString(opts.data.id, 'data.json.id');
   if (dataId !== opts.trialId) {
     throw new Error(`data.json.id ${dataId} does not match inferred trial_id ${opts.trialId}`);
   }
 
+  const dataSchemaVersion = getEvalDataSchemaVersion(opts.data.schemaVersion);
+  assertSupportedScreenshotFields(opts.data, dataSchemaVersion);
   const prompt = getRequiredObject(opts.data.prompt, 'data.json.prompt');
   const variant = getRequiredObject(opts.data.variant, 'data.json.variant');
   const environment = getRequiredObject(opts.data.environment, 'data.json.environment');
@@ -1482,7 +1249,7 @@ function normalizeTrialData(opts: { data: EvalDataPayload; trialId: string }): N
     promptName: getRequiredString(prompt.name, 'data.json.prompt.name'),
     promptContent: getRequiredString(prompt.content, 'data.json.prompt.content'),
     trialTimestamp: getRequiredString(opts.data.timestamp, 'data.json.timestamp'),
-    dataSchemaVersion: getRequiredInteger(opts.data.schemaVersion, 'data.json.schemaVersion'),
+    dataSchemaVersion,
     baselineCommit: getRequiredString(opts.data.baselineCommit, 'data.json.baselineCommit'),
     agent: getRequiredString(variant.agent, 'data.json.variant.agent'),
     model: getRequiredString(variant.model, 'data.json.variant.model'),
@@ -1515,14 +1282,41 @@ function normalizeTrialData(opts: { data: EvalDataPayload; trialId: string }): N
       artifacts?.typecheckOutput,
       'data.json.artifacts.typecheckOutput'
     ),
-    screenshotOutputPath: getOptionalArtifactPath(
-      artifacts?.screenshotOutput,
-      'data.json.artifacts.screenshotOutput'
-    ),
     fileChanges: normalizeFileChanges(grade.fileChanges),
-    screenshots: normalizeScreenshots(opts.data.screenshots),
     transcriptJson: stringifyTranscript(opts.data.transcript),
   };
+}
+
+function getEvalDataSchemaVersion(value: unknown): 3 | 4 {
+  const schemaVersion = getRequiredInteger(value, 'data.json.schemaVersion');
+
+  if (schemaVersion !== 3 && schemaVersion !== 4) {
+    throw new Error(`data.json.schemaVersion must be 3 or 4`);
+  }
+
+  return schemaVersion;
+}
+
+function assertSupportedScreenshotFields(data: EvalDataPayload, schemaVersion: 3 | 4) {
+  if (schemaVersion !== 4) {
+    return;
+  }
+
+  const legacyFields: string[] = [];
+  if (hasOwn(data, 'screenshots')) {
+    legacyFields.push('data.json.screenshots');
+  }
+
+  const artifacts = getOptionalObject(data.artifacts);
+  if (artifacts && hasOwn(artifacts, 'screenshotOutput')) {
+    legacyFields.push('data.json.artifacts.screenshotOutput');
+  }
+
+  if (legacyFields.length > 0) {
+    throw new Error(
+      `data.json.schemaVersion 4 must not include screenshot-era fields: ${legacyFields.join(', ')}`
+    );
+  }
 }
 
 function normalizeGhostSummary(value: unknown, label: string): NormalizedGhostSummary | null {
@@ -1550,10 +1344,7 @@ function normalizeStoryRenderSummary(
   return {
     total: getRequiredInteger(summary.total, `${label}.total`),
     passed: getRequiredInteger(summary.passed, `${label}.passed`),
-    emptyRenderFailures: getRequiredInteger(
-      summary.emptyRenderFailures,
-      `${label}.emptyRenderFailures`
-    ),
+    emptyRenderFailures: getOptionalInteger(summary.emptyRenderFailures, `${label}.emptyRenderFailures`),
   };
 }
 
@@ -1575,28 +1366,6 @@ function normalizeFileChanges(value: unknown): NormalizedFileChange[] {
       path: getRequiredString(fileChange.path, `data.json.grade.fileChanges[${index}].path`),
       previousPath: getOptionalString(fileChange.previousPath),
       gitStatus,
-    };
-  });
-}
-
-function normalizeScreenshots(value: unknown): NormalizedScreenshot[] {
-  const screenshots = getRequiredArray(value, 'data.json.screenshots');
-
-  return screenshots.map((entry, index) => {
-    const screenshot = getRequiredObject(entry, `data.json.screenshots[${index}]`);
-    return {
-      storyFilePath: getRequiredString(
-        screenshot.storyFilePath,
-        `data.json.screenshots[${index}].storyFilePath`
-      ),
-      exportName: getRequiredString(
-        screenshot.exportName,
-        `data.json.screenshots[${index}].exportName`
-      ),
-      imagePath: getRequiredString(
-        screenshot.imagePath,
-        `data.json.screenshots[${index}].imagePath`
-      ),
     };
   });
 }
@@ -1661,6 +1430,10 @@ function getOptionalObject(value: unknown) {
   return value as Record<string, unknown>;
 }
 
+function hasOwn(value: Record<string, unknown>, key: string) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
 function getRequiredArray(value: unknown, label: string) {
   if (!Array.isArray(value)) {
     throw new Error(`${label} must be an array`);
@@ -1707,6 +1480,18 @@ function getOptionalNumber(value: unknown, label: string) {
 function getRequiredInteger(value: unknown, label: string) {
   if (typeof value !== 'number' || !Number.isInteger(value)) {
     throw new Error(`${label} must be an integer`);
+  }
+
+  return value;
+}
+
+function getOptionalInteger(value: unknown, label: string) {
+  if (value == null) {
+    return null;
+  }
+
+  if (typeof value !== 'number' || !Number.isInteger(value)) {
+    throw new Error(`${label} must be an integer when present`);
   }
 
   return value;

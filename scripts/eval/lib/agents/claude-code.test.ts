@@ -112,4 +112,56 @@ describe('claudeAgent.execute', () => {
       }),
     ]);
   });
+
+  it('trims verbose tool input and tool result logs', async () => {
+    const longText = Array.from({ length: 40 }, (_, index) => `line ${index + 1}`).join('\n');
+
+    queryMock.mockImplementation(async function* () {
+      yield {
+        type: 'assistant',
+        message: {
+          content: [
+            {
+              type: 'tool_use',
+              name: 'Bash',
+              input: { command: longText },
+            },
+          ],
+        },
+      };
+      yield {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 'tool_12345678',
+              content: longText,
+            },
+          ],
+        },
+      };
+      yield {
+        type: 'result',
+        subtype: 'success',
+        num_turns: 1,
+        total_cost_usd: 0.1,
+        duration_api_ms: 1000,
+      };
+    });
+
+    await claudeAgent.execute({
+      prompt: 'prompt',
+      projectPath: '/repo',
+      variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'medium' },
+      resultsDir: '/results',
+      logger,
+    });
+
+    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('🔧 Bash('));
+    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('… 28 more lines …'));
+    expect(logger.log).toHaveBeenCalledWith(
+      expect.stringContaining('📎 tool_result(12345678):')
+    );
+  });
 });

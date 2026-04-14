@@ -132,4 +132,42 @@ describe('codexAgent.execute', () => {
 
     expect(result.execution.turns).toBe(2);
   });
+
+  it('trims verbose command output in logs', async () => {
+    const longOutput = Array.from({ length: 40 }, (_, index) => `line ${index + 1}`).join('\n');
+
+    runStreamedMock.mockResolvedValue({
+      events: (async function* () {
+        yield {
+          type: 'item.completed',
+          item: {
+            type: 'command_execution',
+            command: 'cat huge.log',
+            exit_code: 0,
+            aggregated_output: longOutput,
+          },
+        };
+        yield {
+          type: 'turn.completed',
+          usage: {
+            input_tokens: 10,
+            cached_input_tokens: 2,
+            output_tokens: 4,
+          },
+        };
+      })(),
+    });
+
+    await codexAgent.execute({
+      prompt: 'prompt',
+      projectPath: '/repo',
+      variant: { agent: 'codex', model: 'gpt-5.4', effort: 'medium' },
+      resultsDir: '/results',
+      logger,
+    });
+
+    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('🔧 $ cat huge.log → exit 0'));
+    expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('… 28 more lines …'));
+    expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('line 13'));
+  });
 });

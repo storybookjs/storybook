@@ -11,8 +11,8 @@ vi.mock('./prepare-trial', () => ({
   prepareTrial: vi.fn(),
 }));
 vi.mock('./grade', () => ({
-  collectGhostStoriesGrade: vi.fn(),
   grade: vi.fn(),
+  collectGhostStoriesGrade: vi.fn(),
 }));
 vi.mock('./publish-trial', () => ({
   publishTrialBranch: vi.fn().mockResolvedValue({
@@ -25,19 +25,7 @@ vi.mock('./publish-trial', () => ({
       'effort:high',
       'prompt:setup',
     ],
-  }),
-}));
-vi.mock('./screenshots', () => ({
-  runStorybookScreenshots: vi.fn().mockResolvedValue({
-    screenshots: [
-      {
-        storyFilePath: 'src/Button.stories.tsx',
-        exportName: 'Primary',
-        imagePath: 'src/Button.stories.Primary.chromium.png',
-      },
-    ],
-    attempted: true,
-    success: true,
+    url: 'https://github.com/storybook-tmp/test-project/pull/123',
   }),
 }));
 vi.mock('./utils', async (importOriginal) => {
@@ -63,7 +51,6 @@ import { collectGhostStoriesGrade, grade } from './grade';
 import { prepareTrial } from './prepare-trial';
 import { publishTrialBranch } from './publish-trial';
 import { runTrial } from './run-trial';
-import { runStorybookScreenshots } from './screenshots';
 import { captureEnvironment } from './utils';
 
 let TMP: string;
@@ -96,7 +83,7 @@ describe('runTrial pipeline', () => {
     const result = await runTrial(baseConfig);
 
     expect(result).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       id: expect.any(String),
       project: {
         name: 'test-project',
@@ -115,15 +102,20 @@ describe('runTrial pipeline', () => {
       },
       grade: {
         baselineGhostStories: {
-          candidateCount: 12,
-          total: 6,
+          candidateCount: 5,
+          total: 4,
           passed: 2,
-          successRate: 0.33,
+          successRate: 0.5,
+        },
+        ghostStories: {
+          candidateCount: 5,
+          total: 4,
+          passed: 3,
+          successRate: 0.75,
         },
         baselinePreviewStories: {
           total: 6,
           passed: 2,
-          emptyRenderFailures: 1,
           storyFiles: 3,
         },
         buildSuccess: true,
@@ -131,17 +123,12 @@ describe('runTrial pipeline', () => {
       score: {
         score: 0.5,
       },
-      screenshots: [
-        {
-          storyFilePath: 'src/Button.stories.tsx',
-          exportName: 'Primary',
-          imagePath: 'src/Button.stories.Primary.chromium.png',
-        },
-      ],
       publish: {
         branch: 'trial/test-branch',
+        url: 'https://github.com/storybook-tmp/test-project/pull/123',
       },
     });
+    expect(result).not.toHaveProperty('screenshots');
     expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
@@ -185,21 +172,16 @@ describe('runTrial pipeline', () => {
       resultsDir: join(TMP, '.storybook', 'eval-results'),
     });
     expect(vi.mocked(grade).mock.calls[0][1]).toBeDefined();
-    expect(vi.mocked(grade).mock.calls[0][2]).toMatchObject({
-      candidateCount: 12,
-      total: 6,
-      passed: 2,
-      successRate: 0.33,
-    });
     expect(vi.mocked(collectGhostStoriesGrade)).toHaveBeenCalledWith(
       TMP,
       expect.anything(),
       'baseline ghost stories'
     );
-    expect(vi.mocked(runStorybookScreenshots).mock.calls[0][0]).toMatchObject({
-      projectPath: TMP,
-      repoRoot: TMP,
-      resultsDir: join(TMP, '.storybook', 'eval-results'),
+    expect(vi.mocked(grade).mock.calls[0][2]).toMatchObject({
+      candidateCount: 5,
+      total: 4,
+      passed: 2,
+      successRate: 0.5,
     });
     expect(vi.mocked(publishTrialBranch).mock.calls[0][0]).toMatchObject({
       data: expect.objectContaining({
@@ -221,10 +203,18 @@ describe('runTrial pipeline', () => {
 
     const data: TrialReport = JSON.parse(readFileSync(join(resultsDir, 'data.json'), 'utf-8'));
     expect(data).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       id: expect.any(String),
       execution: { cost: 0.42 },
-      grade: { buildSuccess: true },
+      grade: {
+        buildSuccess: true,
+        baselineGhostStories: {
+          candidateCount: 5,
+          total: 4,
+          passed: 2,
+          successRate: 0.5,
+        },
+      },
       prompt: {
         name: 'setup',
       },
@@ -234,11 +224,6 @@ describe('runTrial pipeline', () => {
           path: '.storybook/eval-results/typecheck-output.txt',
           errorCount: 0,
         },
-        screenshotOutput: {
-          path: '.storybook/eval-results/screenshot-output.txt',
-          attempted: true,
-          success: true,
-        },
       },
       docs: {
         transcript: {
@@ -246,6 +231,8 @@ describe('runTrial pipeline', () => {
         },
       },
     });
+    expect(data).not.toHaveProperty('screenshots');
+    expect(data).not.toHaveProperty('artifacts.screenshotOutput');
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
     expect(promptContent).toContain('set up Storybook');
@@ -262,16 +249,37 @@ describe('runTrial pipeline', () => {
     });
   });
 
-  it('skips screenshot generation when the build fails', async () => {
+  it('does not include screenshot-era fields when the build fails', async () => {
     setupMocks({ buildSuccess: false, typeCheckErrors: 5 });
 
     await runTrial(baseConfig);
 
-    expect(vi.mocked(runStorybookScreenshots)).not.toHaveBeenCalled();
     expect(vi.mocked(publishTrialBranch)).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          screenshots: [],
+          artifacts: expect.not.objectContaining({
+            screenshotOutput: expect.anything(),
+          }),
+        }),
+      })
+    );
+  });
+
+  it('keeps play-prompt output on the no-screenshot schema', async () => {
+    setupMocks();
+
+    await runTrial({
+      ...baseConfig,
+      prompt: 'pattern-copy-play',
+    });
+
+    expect(vi.mocked(publishTrialBranch)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          prompt: expect.objectContaining({ name: 'pattern-copy-play' }),
+          artifacts: expect.not.objectContaining({
+            screenshotOutput: expect.anything(),
+          }),
         }),
       })
     );
@@ -294,16 +302,21 @@ describe('runTrial pipeline', () => {
       };
     });
 
-    vi.mocked(collectGhostStoriesGrade).mockImplementation(async () => {
-      callOrder.push('baseline');
-      return undefined;
-    });
-
     vi.mocked(claudeAgent.execute).mockImplementation(async () => {
       callOrder.push('agent');
       return {
         execution: { cost: 0.1, duration: 10, turns: 3 },
         transcript: [],
+      };
+    });
+
+    vi.mocked(collectGhostStoriesGrade).mockImplementation(async () => {
+      callOrder.push('baseline-ghost');
+      return {
+        candidateCount: 3,
+        total: 2,
+        passed: 1,
+        successRate: 0.5,
       };
     });
 
@@ -329,7 +342,7 @@ describe('runTrial pipeline', () => {
 
     await runTrial(baseConfig);
 
-    expect(callOrder).toEqual(['prepare', 'baseline', 'agent', 'grade']);
+    expect(callOrder).toEqual(['prepare', 'baseline-ghost', 'agent', 'grade']);
   });
 });
 
@@ -368,25 +381,32 @@ function setupMocks(overrides?: {
     ],
   });
 
-  vi.mocked(collectGhostStoriesGrade).mockImplementation(async () => ({
-    candidateCount: 12,
-    total: 6,
+  vi.mocked(collectGhostStoriesGrade).mockResolvedValue({
+    candidateCount: 5,
+    total: 4,
     passed: 2,
-    successRate: 0.33,
-  }));
+    successRate: 0.5,
+  });
 
   vi.mocked(grade).mockResolvedValue({
     grade: {
       baselineGhostStories: {
-        candidateCount: 12,
-        total: 6,
+        candidateCount: 5,
+        total: 4,
         passed: 2,
-        successRate: 0.33,
+        successRate: 0.5,
       },
+      ghostStories: buildSuccess
+        ? {
+            candidateCount: 5,
+            total: 4,
+            passed: 3,
+            successRate: 0.75,
+          }
+        : undefined,
       baselinePreviewStories: {
         total: 6,
         passed: 2,
-        emptyRenderFailures: 1,
         storyFiles: 3,
       },
       buildSuccess,
@@ -401,16 +421,9 @@ function setupMocks(overrides?: {
       ],
       ...(buildSuccess
         ? {
-            ghostStories: {
-              candidateCount: 12,
-              total: 6,
-              passed: 3,
-              successRate: 0.5,
-            },
             storyRender: {
               total: 6,
               passed: 4,
-              emptyRenderFailures: 1,
               storyFiles: 3,
             },
           }

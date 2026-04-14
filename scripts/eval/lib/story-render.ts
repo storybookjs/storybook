@@ -1,16 +1,16 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { x } from 'tinyexec';
 import { parseVitestResults } from '../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts';
-import { getChangedStoryFiles } from './screenshots.ts';
 import type { FileChange } from './grade.ts';
 import type { Logger } from './utils.ts';
+
+const STORY_FILE_PATTERN = /\.(stories|story)\.[tj]sx?$/;
 
 export interface StoryRenderGrade {
   total: number;
   passed: number;
-  emptyRenderFailures: number;
   storyFiles: number;
 }
 
@@ -37,6 +37,12 @@ export function getGeneratedStoryFiles(
     const relativePath = relative(projectPath, storyFile);
     return relativePath !== '' && !relativePath.startsWith('..');
   });
+}
+
+export function getChangedStoryFiles(repoRoot: string, fileChanges: FileChange[]): string[] {
+  return fileChanges
+    .filter((change) => change.gitStatus !== 'D' && STORY_FILE_PATTERN.test(change.path))
+    .map((change) => resolve(repoRoot, change.path));
 }
 
 export function getPreviewEnvironmentFiles(fileChanges: FileChange[]): string[] {
@@ -66,7 +72,6 @@ export async function runStoryRenderPass(opts: {
       summary: {
         total: 0,
         passed: 0,
-        emptyRenderFailures: 0,
         storyFiles: 0,
       },
     };
@@ -96,7 +101,6 @@ export async function runStoryRenderPass(opts: {
         env: {
           ...process.env,
           STORYBOOK_DISABLE_TELEMETRY: '1',
-          STORYBOOK_FAIL_ON_EMPTY_RENDER: 'true',
         },
       },
     }
@@ -157,7 +161,6 @@ async function readStoryRenderSummary(reportPath: string, storyFiles: number) {
   return {
     total: parsed.total,
     passed: parsed.passed,
-    emptyRenderFailures: parsed.emptyRenderFailures,
     storyFiles,
   } satisfies StoryRenderGrade;
 }

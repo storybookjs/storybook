@@ -83,6 +83,8 @@ describe('formatReadableUtcTimestamp', () => {
 describe('listPrompts', () => {
   it('lists available prompt names', () => {
     const prompts = listPrompts();
+    expect(prompts).toContain('pattern-copy-play');
+    expect(prompts).not.toContain('pattern-copy');
     expect(prompts).toContain('setup');
   });
 
@@ -104,6 +106,12 @@ describe('loadPrompt', () => {
     const prompt = loadPrompt('setup');
     expect(prompt).toContain('Storybook');
     expect(prompt).toContain('### Step 1');
+  });
+
+  it('loads the play-driven pattern-copy prompt by name', () => {
+    const prompt = loadPrompt('pattern-copy-play');
+    expect(prompt).toContain('play function');
+    expect(prompt).toContain('The purpose of the `play` function is to prove');
   });
 
   it('throws for unknown prompt', () => {

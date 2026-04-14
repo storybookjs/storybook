@@ -1,7 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
-import { getGeneratedStoryFiles, getPreviewEnvironmentFiles } from './story-render.ts';
+import {
+  getChangedStoryFiles,
+  getGeneratedStoryFiles,
+  getPreviewEnvironmentFiles,
+} from './story-render.ts';
 import type { FileChange } from './grade.ts';
+
+describe('getChangedStoryFiles', () => {
+  it('returns created and modified story files only', () => {
+    const fileChanges: FileChange[] = [
+      { path: 'src/Button.stories.tsx', gitStatus: 'A' },
+      { path: 'src/Header.story.ts', gitStatus: 'M' },
+      { path: '.storybook/main.ts', gitStatus: 'M' },
+      { path: 'src/Deleted.stories.tsx', gitStatus: 'D' },
+    ];
+
+    expect(getChangedStoryFiles('/repo', fileChanges)).toEqual([
+      '/repo/src/Button.stories.tsx',
+      '/repo/src/Header.story.ts',
+    ]);
+  });
+});
 
 describe('getGeneratedStoryFiles', () => {
   it('returns generated story files that live under the evaluated project path', () => {

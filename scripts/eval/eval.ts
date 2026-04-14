@@ -167,15 +167,14 @@ if (args.manual) {
     logger
   );
 
-  const storyRender = result.grade.storyRender;
-  const storyRenderStr = storyRender
-    ? `${storyRender.passed}/${storyRender.total} (${Math.round((storyRender.total > 0 ? storyRender.passed / storyRender.total : 0) * 100)}%)`
-    : '-';
-  const ghostStories = result.grade.ghostStories;
-  const ghostStoriesStr = ghostStories
-    ? `${ghostStories.passed}/${ghostStories.total} (${Math.round((ghostStories.total > 0 ? ghostStories.passed / ghostStories.total : 0) * 100)}%)`
-    : '-';
-
+  const storyRenderStr = formatPassedTotalSummary(
+    result.grade.baselinePreviewStories,
+    result.grade.storyRender
+  );
+  const ghostStoriesStr = formatPassedTotalSummary(
+    result.grade.baselineGhostStories,
+    result.grade.ghostStories
+  );
   logger.log(pc.bold('\nResult'));
   logger.log(`  Build:   ${result.grade.buildSuccess ? pc.green('PASS') : pc.red('FAIL')}`);
   logger.log(`  Stories: ${storyRenderStr}`);
@@ -185,6 +184,7 @@ if (args.manual) {
   logger.log(`  Cost:    ${formatCost(result.execution.cost)}`);
   logger.log(`  Time:    ${formatDuration(result.execution.duration)}`);
   logger.log(`  Turns:   ${result.execution.turns}`);
+  logger.log(`  PR:      ${result.publish.url}`);
 
   logger.log('\nDone.');
 }
@@ -209,4 +209,27 @@ function toVariant(args: z.infer<typeof argsSchema>): AgentVariant {
   return args.agent === 'claude'
     ? { agent: 'claude', model: args.model, effort: args.effort }
     : { agent: 'codex', model: args.model, effort: args.effort };
+}
+
+function formatPassedTotalSummary(
+  before?: { passed: number; total: number },
+  after?: { passed: number; total: number }
+) {
+  const beforeSummary = formatPassedTotal(before);
+  const afterSummary = formatPassedTotal(after);
+
+  if (beforeSummary === '-' && afterSummary === '-') {
+    return '-';
+  }
+
+  return `${beforeSummary} -> ${afterSummary}`;
+}
+
+function formatPassedTotal(summary?: { passed: number; total: number }) {
+  if (!summary) {
+    return '-';
+  }
+
+  const rate = summary.total > 0 ? summary.passed / summary.total : 0;
+  return `${summary.passed}/${summary.total} (${Math.round(rate * 100)}%)`;
 }

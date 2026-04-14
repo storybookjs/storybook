@@ -6,6 +6,7 @@ import {
   type AgentExecutionResult,
   type Execution,
 } from './config.ts';
+import { trimNonChatOutput } from '../output-preview.ts';
 
 export const codexAgent: AgentDriver = {
   name: 'codex',
@@ -53,7 +54,7 @@ export const codexAgent: AgentDriver = {
             case 'command_execution':
               logger.log(`🔧 $ ${item.command} → exit ${item.exit_code ?? '?'}`);
               if (item.aggregated_output) {
-                logger.log(`   ${item.aggregated_output}`);
+                logger.log(`   ${trimNonChatOutput(item.aggregated_output)}`);
               }
               break;
             case 'file_change':

@@ -132,7 +132,7 @@ describe('publishTrialBranch', () => {
 
     const publish = await publishTrialBranch({
       data: {
-        schemaVersion: 3,
+        schemaVersion: 4,
         id: 'trial-123',
         timestamp: '2026-04-02T00:00:00.000Z',
         project: {
@@ -164,15 +164,14 @@ describe('publishTrialBranch', () => {
         },
         grade: {
           baselineGhostStories: {
-            candidateCount: 10,
-            total: 8,
-            passed: 4,
-            successRate: 0.11,
+            candidateCount: 6,
+            total: 4,
+            passed: 1,
+            successRate: 0.25,
           },
           baselinePreviewStories: {
             total: 8,
             passed: 4,
-            emptyRenderFailures: 2,
             storyFiles: 3,
           },
           buildSuccess: true,
@@ -180,15 +179,14 @@ describe('publishTrialBranch', () => {
           fileChanges: [],
           storybookChanges: [],
           ghostStories: {
-            candidateCount: 10,
-            total: 8,
-            passed: 6,
-            successRate: 0.22,
+            candidateCount: 6,
+            total: 4,
+            passed: 3,
+            successRate: 0.75,
           },
           storyRender: {
             total: 8,
             passed: 6,
-            emptyRenderFailures: 1,
             storyFiles: 3,
           },
         },
@@ -200,24 +198,12 @@ describe('publishTrialBranch', () => {
             gain: 0.5,
           },
         },
-        screenshots: [
-          {
-            storyFilePath: 'src/Button.stories.tsx',
-            exportName: 'Primary',
-            imagePath: 'src/Button.stories.Primary.chromium.png',
-          },
-        ],
         transcript: [],
         artifacts: {
           buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },
           typecheckOutput: {
             path: '.storybook/eval-results/typecheck-output.txt',
             errorCount: 0,
-          },
-          screenshotOutput: {
-            path: '.storybook/eval-results/screenshot-output.txt',
-            attempted: true,
-            success: true,
           },
         },
         docs: {
@@ -244,6 +230,7 @@ describe('publishTrialBranch', () => {
     expect(publish).toMatchObject({
       branch: 'trial/foo',
       labels: expect.arrayContaining(['prompt:setup']),
+      url: 'https://github.com/storybook-tmp/mealdrop/pull/123',
     });
 
     expect(readFileSync(configPath, 'utf-8')).toBe(originalConfig);
@@ -256,18 +243,16 @@ describe('publishTrialBranch', () => {
     expect(prBody).toContain('ID: `trial-123`');
     expect(prBody).toContain('Created at: `Apr 2 2026 00:00:00 UTC`');
     expect(prBody).toContain('Score (preview gain): `0.5`');
-    expect(prBody).toContain('Ghost stories before: `4/8 (50%)`');
-    expect(prBody).toContain('Ghost stories after: `6/8 (75%)`');
+    expect(prBody).toContain('Ghost stories before: `1/4 (25%)`');
+    expect(prBody).toContain('Ghost stories after: `3/4 (75%)`');
     expect(prBody).toContain('Generated stories before: `4/8 (50%)`');
     expect(prBody).toContain('Generated stories after: `6/8 (75%)`');
-    expect(prBody).toContain('Empty render failures after: `1`');
     expect(prBody).toContain('Preview gain: `0.5`');
-    expect(prBody).toContain('Screenshot count: `1`');
     expect(prBody).toContain('[.storybook/eval-results/data.json](');
     expect(prBody).toContain('<summary>Full prompt</summary>');
     expect(prBody.match(/<details>/g)).toHaveLength(1);
     expect(prBody).not.toContain('src/Button.stories.Primary.chromium.png');
-    expect(prBody).not.toContain('## Chromatic');
+    expect(prBody).not.toContain('Screenshot');
     expect(existsSync(join(resultsDir, 'pr-body.md'))).toBe(false);
 
     expect(calls).toEqual(
@@ -324,7 +309,7 @@ describe('publishTrialBranch', () => {
     await expect(
       publishTrialBranch({
         data: {
-          schemaVersion: 3,
+          schemaVersion: 4,
           id: 'trial-456',
           timestamp: '2026-04-02T00:00:00.000Z',
           project: {
@@ -366,7 +351,6 @@ describe('publishTrialBranch', () => {
               gain: 1,
             },
           },
-          screenshots: [],
           transcript: [],
           artifacts: {
             buildOutput: {
@@ -444,7 +428,7 @@ describe('publishTrialBranch', () => {
 
     await publishTrialBranch({
       data: {
-        schemaVersion: 3,
+        schemaVersion: 4,
         id: 'trial-789',
         timestamp: '2026-04-02T00:00:00.000Z',
         project: {
@@ -486,7 +470,6 @@ describe('publishTrialBranch', () => {
             gain: 1,
           },
         },
-        screenshots: [],
         transcript: [],
         artifacts: {
           buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },

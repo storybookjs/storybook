@@ -86,7 +86,7 @@ describe('grading helpers', () => {
     // Total includes package.json
     expect(changedFiles).toHaveLength(storybookFiles.length + 1);
 
-    // Step 3: Score is now just ghost-story success-rate gain.
+    // Step 3: Score is now just story-render preview gain.
     const quality = computeQualityScore({
       baselinePreviewStories: { passed: 1, total: 4 },
       storyRender: { passed: 4, total: 4 },
@@ -117,7 +117,7 @@ describe('grading helpers', () => {
     const errorCount = countTypeCheckErrors(tscLines.join('\n'));
     expect(errorCount).toBe(candidates.length + 1);
 
-    // Missing post-run ghost data means no measurable gain.
+    // Missing post-run story-render data means no measurable gain.
     const quality = computeQualityScore({
       baselinePreviewStories: { passed: 2, total: 5 },
     });
@@ -147,7 +147,7 @@ describe('grading helpers', () => {
     const storybookFiles = filterStorybookFiles(parseChangedFiles(gitOutput));
     expect(storybookFiles).toHaveLength(candidates.length);
 
-    // Score tracks only the increase in ghost-story success rate.
+    // Score tracks only the increase in story-render success rate.
     expect(
       computeQualityScore({
         baselinePreviewStories: { passed: 3, total: 5 },

@@ -7,6 +7,7 @@ import {
   type AgentExecutionResult,
   type Execution,
 } from './config.ts';
+import { trimNonChatOutput } from '../output-preview.ts';
 import type { Logger } from '../utils.ts';
 
 export const claudeAgent: AgentDriver = {
@@ -82,7 +83,7 @@ function logMessage(message: SDKMessage, logger: Logger) {
         if (block.type === 'text') {
           logger.log(`💬 ${block.text}`);
         } else if (block.type === 'tool_use') {
-          logger.log(`🔧 ${block.name}(${formatFullJson(block.input)})`);
+          logger.log(`🔧 ${block.name}(${formatToolInput(block.input)})`);
         }
       }
       if (message.error) {
@@ -105,7 +106,9 @@ function logMessage(message: SDKMessage, logger: Logger) {
                     )
                     .join('')
                 : '[no content]';
-          logger.log(`📎 tool_result(${block.tool_use_id?.slice(-8)}): ${text}`);
+          logger.log(
+            `📎 tool_result(${block.tool_use_id?.slice(-8)}): ${trimNonChatOutput(text)}`
+          );
         }
       }
       break;
@@ -141,11 +144,11 @@ function logMessage(message: SDKMessage, logger: Logger) {
   }
 }
 
-function formatFullJson(value: unknown) {
+function formatToolInput(value: unknown) {
   try {
-    return JSON.stringify(value, null, 2);
+    return trimNonChatOutput(JSON.stringify(value, null, 2));
   } catch {
-    return String(value);
+    return trimNonChatOutput(String(value));
   }
 }
 

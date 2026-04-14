@@ -17,6 +17,7 @@ import {
 export interface PublishMetadata {
   branch: string;
   labels: string[];
+  url: string;
 }
 
 export function buildTrialLabels(
@@ -102,9 +103,12 @@ export async function publishTrialBranch(opts: {
     );
   }
 
+  opts.logger.logSuccess(`Draft PR opened: ${prUrl}`);
+
   return {
     branch: opts.workspace.trialBranch,
     labels,
+    url: prUrl,
   } satisfies PublishMetadata;
 }
 
@@ -230,13 +234,6 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     opts.branch,
     opts.data.artifacts.typecheckOutput.path
   );
-  const screenshotOutputUrl = opts.data.artifacts.screenshotOutput
-    ? createBlobUrl(
-        opts.data.project.githubSlug,
-        opts.branch,
-        opts.data.artifacts.screenshotOutput.path
-      )
-    : undefined;
   const baselineGhostStories = formatGhostStories(opts.data.grade.baselineGhostStories);
   const postAgentGhostStories = formatGhostStories(opts.data.grade.ghostStories);
   const baselinePreviewStories = formatStoryRender(opts.data.grade.baselinePreviewStories);
@@ -258,11 +255,9 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
     `- Ghost stories after: \`${postAgentGhostStories}\``,
     `- Generated stories before: \`${baselinePreviewStories}\``,
     `- Generated stories after: \`${postAgentStoryRender}\``,
-    `- Empty render failures after: \`${opts.data.grade.storyRender?.emptyRenderFailures ?? 0}\``,
     `- Preview gain: \`${formatScore(opts.data.score.score)}\``,
     `- Duration: \`${formatDuration(opts.data.execution.duration)}\``,
     `- Cost: \`${formatCost(opts.data.execution.cost)}\``,
-    `- Screenshot count: \`${opts.data.screenshots.length}\``,
     `- Raw data: [${getEvalResultsRelativePath('data.json', opts.data.project.projectDir)}](${dataUrl})`,
   ];
 
@@ -273,12 +268,6 @@ function renderPrBody(opts: { branch: string; data: EvalData }) {
   if (opts.data.grade.typeCheckErrors > 0) {
     lines.push(
       `- Typecheck log: [${opts.data.artifacts.typecheckOutput.path}](${typecheckOutputUrl})`
-    );
-  }
-
-  if (opts.data.artifacts.screenshotOutput && !opts.data.artifacts.screenshotOutput.success) {
-    lines.push(
-      `- Screenshot log: [${opts.data.artifacts.screenshotOutput.path}](${screenshotOutputUrl})`
     );
   }
 

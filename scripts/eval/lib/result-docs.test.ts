@@ -267,7 +267,6 @@ describe('normalizeTranscriptForDocs', () => {
         score: 1,
         breakdown: { beforeRate: 0, afterRate: 1, gain: 1 },
       },
-      screenshots: [],
       transcript: [],
       artifacts: {
         buildOutput: { path: '.storybook/eval-results/build-output.txt', success: true },
@@ -279,7 +278,7 @@ describe('normalizeTranscriptForDocs', () => {
     });
 
     expect(data).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       id: '20260402T041205123Z-deadbeef',
       prompt: {
         name: 'setup',
@@ -308,5 +307,7 @@ describe('normalizeTranscriptForDocs', () => {
         },
       },
     });
+    expect(data).not.toHaveProperty('screenshots');
+    expect(data).not.toHaveProperty('artifacts.screenshotOutput');
   });
 });

@@ -15,6 +15,7 @@ import type {
   ToolUseContent,
   UserMessage,
 } from './transcript.types.ts';
+import { trimNonChatOutput } from '../output-preview.ts';
 
 const formatJsonWithPreservedWhitespace = (obj: any): string => {
   return JSON.stringify(obj, null, 2)
@@ -91,19 +92,24 @@ const CodeBlock = ({
   content,
   language = '',
   isError = false,
+  truncateContent = true,
 }: {
   content: string;
   language?: string;
   isError?: boolean;
+  truncateContent?: boolean;
 }) => {
-  const [isTruncated, setIsTruncated] = useState(content.length > 500);
+  const previewContent = truncateContent ? trimNonChatOutput(content) : content;
+  const canExpand = truncateContent && previewContent !== content;
+  const [showFullContent, setShowFullContent] = useState(false);
   const codeRef = useRef<HTMLElement>(null);
+  const displayedContent = showFullContent ? content : previewContent;
 
   useEffect(() => {
     if (codeRef.current && (globalThis as any).hljs) {
       (globalThis as any).hljs.highlightElement(codeRef.current);
     }
-  }, [content, isTruncated]);
+  }, [displayedContent]);
 
   return (
     <div style={{ position: 'relative', marginBottom: '1rem' }}>
@@ -114,38 +120,21 @@ const CodeBlock = ({
           backgroundColor: isError ? '#fef2f2' : '#1e1e1e',
           color: isError ? '#991b1b' : '#d4d4d4',
           borderRadius: '6px',
-          overflow: isTruncated ? 'hidden' : 'auto',
+          overflow: 'auto',
           fontSize: '0.875rem',
           fontFamily: 'monospace',
           border: isError ? '1px solid #fecaca' : 'none',
-          maxHeight: isTruncated ? '300px' : 'none',
-          position: 'relative',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
         }}
       >
         <code ref={codeRef} className={language ? `language-${language}` : ''}>
-          {content}
+          {displayedContent}
         </code>
-        {isTruncated && content.length > 500 && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '60px',
-              background: isError
-                ? 'linear-gradient(transparent, #fef2f2)'
-                : 'linear-gradient(transparent, #1e1e1e)',
-              pointerEvents: 'none',
-            }}
-          />
-        )}
       </pre>
-      {content.length > 500 && (
+      {canExpand && (
         <button
-          onClick={() => setIsTruncated(!isTruncated)}
+          onClick={() => setShowFullContent(!showFullContent)}
           style={{
             marginTop: '0.5rem',
             padding: '0.5rem 1rem',
@@ -157,7 +146,7 @@ const CodeBlock = ({
             fontSize: '0.875rem',
           }}
         >
-          {isTruncated ? 'Show more' : 'Show less'}
+          {showFullContent ? 'Show less' : 'Show more'}
         </button>
       )}
     </div>
@@ -904,7 +893,7 @@ function renderTurnContent(
         if (item.type === 'text' && 'text' in item) {
           return (
             <ContentSection key={index} label="Text">
-              <CodeBlock content={item.text} language="markdown" />
+              <CodeBlock content={item.text} language="markdown" truncateContent={false} />
             </ContentSection>
           );
         }

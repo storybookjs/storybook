@@ -127,14 +127,14 @@ describe('buildBatchRunDescriptors', () => {
   });
 
   it('uses a prompt override for every batch run descriptor', () => {
-    const descriptors = buildBatchRunDescriptors({ prompt: 'pattern-copy' });
+    const descriptors = buildBatchRunDescriptors({ prompt: 'pattern-copy-play' });
 
     expect(new Set(descriptors.map((descriptor) => descriptor.prompt))).toEqual(
-      new Set(['pattern-copy'])
+      new Set(['pattern-copy-play'])
     );
     expect(descriptors[0]?.args).toContain('--prompt');
-    expect(descriptors[0]?.args).toContain('pattern-copy');
-    expect(descriptors[0]?.label).toContain('-pattern-copy-');
+    expect(descriptors[0]?.args).toContain('pattern-copy-play');
+    expect(descriptors[0]?.label).toContain('-pattern-copy-play-');
   });
 
   it('interleaves projects first so batch startup spreads across repos', () => {
@@ -195,7 +195,7 @@ describe('parseRunBatchArgs', () => {
     expect(
       parseRunBatchArgs([
         '--prompt',
-        'pattern-copy',
+        'pattern-copy-play',
         '--agents',
         'claude,codex',
         '--claude-effort',
@@ -206,7 +206,7 @@ describe('parseRunBatchArgs', () => {
         '3',
       ])
     ).toEqual({
-      prompt: 'pattern-copy',
+      prompt: 'pattern-copy-play',
       agents: ['claude', 'codex'],
       claudeEffort: 'high',
       codexEffort: 'medium',
@@ -305,7 +305,7 @@ describe('runBatch', () => {
 
   it('writes summary metadata and per-run logs under the batch directory', async () => {
     TMP = mkdtempSync(join(tmpdir(), 'eval-run-batch-summary-'));
-    const descriptor = buildBatchRunDescriptors({ prompt: 'pattern-copy' })[0];
+    const descriptor = buildBatchRunDescriptors({ prompt: 'pattern-copy-play' })[0];
     const spawn = createAutoSpawn([0]);
 
     const summary = await runBatch(
@@ -338,7 +338,7 @@ describe('runBatch', () => {
 
     const logContents = readFileSync(logPath, 'utf-8');
     expect(logContents).toContain('$ node ./scripts/eval/eval.ts');
-    expect(logContents).toContain('--prompt pattern-copy');
+    expect(logContents).toContain('--prompt pattern-copy-play');
     expect(logContents).toContain(`stdout:${descriptor.label}`);
     expect(logContents).toContain(`stderr:${descriptor.label}`);
   });

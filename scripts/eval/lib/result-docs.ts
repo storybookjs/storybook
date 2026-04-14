@@ -1,7 +1,6 @@
 import type { AgentVariant, Execution } from './agents/config.ts';
 import type { Grade, QualityScore } from './grade.ts';
 import type { Project } from './projects.ts';
-import type { ScreenshotArtifact } from './screenshots.ts';
 import type {
   AssistantMessage,
   ResultMessage,
@@ -23,15 +22,10 @@ export interface EvalArtifacts {
     path: string;
     errorCount: number;
   };
-  screenshotOutput?: {
-    path: string;
-    attempted: boolean;
-    success: boolean;
-  };
 }
 
 export interface EvalData {
-  schemaVersion: 3;
+  schemaVersion: 4;
   id: string;
   timestamp: string;
   project: Project;
@@ -45,7 +39,6 @@ export interface EvalData {
   execution: Execution;
   grade: Grade;
   score: QualityScore;
-  screenshots: ScreenshotArtifact[];
   transcript: unknown[];
   artifacts: EvalArtifacts;
   docs: {
@@ -81,12 +74,11 @@ export function buildEvalData(opts: {
   execution: Execution;
   grade: Grade;
   score: QualityScore;
-  screenshots: ScreenshotArtifact[];
   transcript: unknown[];
   artifacts: EvalArtifacts;
 }): EvalData {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     id: opts.id,
     timestamp: opts.timestamp,
     project: opts.project,
@@ -97,7 +89,6 @@ export function buildEvalData(opts: {
     execution: opts.execution,
     grade: opts.grade,
     score: opts.score,
-    screenshots: opts.screenshots,
     transcript: opts.transcript,
     artifacts: opts.artifacts,
     docs: {

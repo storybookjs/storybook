@@ -8,8 +8,8 @@ import {
 import { global } from '@storybook/global';
 import { useStorybookApi } from 'storybook/manager-api';
 
-/** Delay before firing ghost stories after PREVIEW_INITIALIZED (10 minutes). */
-const TRIGGER_DELAY_MS = 10 * 60 * 1000;
+/** Delay before firing ghost stories after PREVIEW_INITIALIZED (4 minutes). */
+const TRIGGER_DELAY_MS = 4 * 60 * 1000;
 
 /**
  * Fires one-time analytics events 10 minutes after the preview initializes.

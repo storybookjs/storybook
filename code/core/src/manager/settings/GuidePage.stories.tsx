@@ -67,6 +67,22 @@ export const AiCtaSkipped = meta.story({
   },
 });
 
+export const AiCtaDone = meta.story({
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        aiPrepare: { status: 'done' },
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
+    });
+  },
+});
+
 export const AllDone = meta.story({
   beforeEach: async () => {
     const allDoneItems = Object.keys(initialState.items).reduce(

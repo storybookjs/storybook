@@ -1,7 +1,6 @@
 import {
-  type MouseEvent,
-  type MouseEventHandler,
   type ReactNode,
+  type SyntheticEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -19,7 +18,7 @@ export interface UseCopyButtonOptions<T> {
   /** Text written to the clipboard when the button is clicked. */
   content: string;
   /** Optional side-effect called after the text is successfully written to the clipboard. */
-  onCopy?: MouseEventHandler<HTMLButtonElement>;
+  onCopy?: (e: SyntheticEvent) => void;
   /** aria-label for the button in its default state. Pass `false` to suppress. */
   ariaLabel?: false | string;
   /** aria-label for the button while in its "copied" state. Pass `false` to suppress. */
@@ -33,7 +32,7 @@ export interface UseCopyButtonResult<T> {
   children: T;
   /** Props to spread onto the `<Button>` element. */
   buttonProps: {
-    onClick: (e?: MouseEvent<HTMLButtonElement>) => void;
+    onClick: (e: SyntheticEvent) => void;
     ariaLabel: false | string;
   };
 }
@@ -60,7 +59,7 @@ export function useCopyButton<T extends ReactNode>({
   );
 
   const handleClick = useCallback(
-    (e?: MouseEvent<HTMLButtonElement>) => {
+    (e: SyntheticEvent) => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
@@ -70,7 +69,7 @@ export function useCopyButton<T extends ReactNode>({
 
       // eslint-disable-next-line compat/compat
       navigator.clipboard?.writeText(content).then(() => {
-        if (e) onCopy?.(e);
+        onCopy?.(e);
         setCopied(true);
         announce(announcement, 'polite');
 

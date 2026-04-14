@@ -1,4 +1,4 @@
-import type { ComponentProps, FC, SyntheticEvent } from 'react';
+import type { ComponentProps, FC, MouseEvent, SyntheticEvent } from 'react';
 import React, { useContext, useMemo, useState } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
@@ -85,7 +85,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         //   ) : null,
         onClick: (e: SyntheticEvent) => {
           e.preventDefault();
-          copyButtonProps.onClick();
+          copyButtonProps.onClick(e);
         },
       });
     }

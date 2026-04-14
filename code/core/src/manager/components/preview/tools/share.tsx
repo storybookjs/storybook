@@ -102,9 +102,7 @@ const ShareMenu = React.memo(function ShareMenu({
           title: copyTitle,
           icon: <LinkIcon />,
           right: enableShortcuts ? <Shortcut keys={copyStoryLink} /> : null,
-          onClick: () => {
-            copyButtonProps.onClick();
-          },
+          onClick: copyButtonProps.onClick,
         },
         {
           id: 'open-new-tab',

@@ -1,4 +1,4 @@
-import React, { type MouseEventHandler, useMemo } from 'react';
+import React, { type SyntheticEvent, useMemo } from 'react';
 
 import { ActionList, Button, Collapsible } from 'storybook/internal/components';
 
@@ -236,7 +236,7 @@ const ChecklistCopyButton = ({
 }: {
   label: string;
   copyContent: string;
-  onClick: MouseEventHandler<HTMLButtonElement>;
+  onClick: (e: SyntheticEvent) => void;
 }) => {
   const { children: copyChildren, buttonProps: copyButtonProps } = useCopyButton<string>({
     children: label,

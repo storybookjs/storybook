@@ -1,10 +1,4 @@
-import React, {
-  type MouseEventHandler,
-  type ReactElement,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { type ReactElement, type SyntheticEvent, useEffect, useRef, useState } from 'react';
 
 import {
   ActionList,
@@ -187,7 +181,7 @@ const CopyButton = ({
 }: {
   label: string;
   copyContent: string;
-  onClick: MouseEventHandler<HTMLButtonElement>;
+  onClick: (e: SyntheticEvent) => void;
 }) => {
   const { children: copyChildren, buttonProps: copyButtonProps } = useCopyButton<
     string | ReactElement

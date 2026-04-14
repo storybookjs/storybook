@@ -16,9 +16,8 @@ import { Skipped, StatusIcon } from './Checklist.tsx';
 
 const AiCtaCard = styled.div(({ theme }) => ({
   display: 'flex',
-  gap: 8,
   flexDirection: 'column',
-  padding: '15px 10px 10px 15px',
+  padding: '10px 10px 10px 15px',
   border: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
   borderRadius: 8,
   background: theme.background.content,
@@ -44,13 +43,14 @@ const AiCtaDescription = styled.p(({ theme }) => ({
   color: theme.color.defaultText,
   fontSize: theme.typography.size.s2,
   fontWeight: theme.typography.weight.regular,
+  marginTop: 8,
 }));
 
 const AiCtaActions = styled.div({
   display: 'flex',
   gap: 8,
-  alignSelf: 'flex-end',
-  marginTop: 4,
+  justifyContent: 'flex-end',
+  marginTop: 12,
 });
 
 const CopyButton = ({ api }: { api: API }) => {

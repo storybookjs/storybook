@@ -35,7 +35,7 @@ describe('UserPreferencesCommand', () => {
     renderer: 'react' as SupportedRenderer,
     projectType: ProjectType.REACT,
     isTestFeatureAvailable: true,
-    isAiPrepareAvailable: false,
+    isAiSetupAvailable: false,
   };
 
   afterAll(() => {
@@ -225,7 +225,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(prompt.confirm).toHaveBeenCalledWith(
@@ -249,7 +249,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
@@ -263,7 +263,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
@@ -292,14 +292,14 @@ describe('UserPreferencesCommand', () => {
 
       const result = await yesCommand.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
     });
 
-    it('should not prompt for AI setup when isAiPrepareAvailable is false', async () => {
+    it('should not prompt for AI setup when isAiSetupAvailable is false', async () => {
       Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         configurable: true,
@@ -309,7 +309,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: false,
+        isAiSetupAvailable: false,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
@@ -329,7 +329,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
@@ -351,7 +351,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
@@ -370,7 +370,7 @@ describe('UserPreferencesCommand', () => {
 
       await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
@@ -388,7 +388,7 @@ describe('UserPreferencesCommand', () => {
 
       await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
@@ -399,7 +399,7 @@ describe('UserPreferencesCommand', () => {
       // Non-interactive (no TTY) with AI available — auto-accepts
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiPrepareAvailable: true,
+        isAiSetupAvailable: true,
       });
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);

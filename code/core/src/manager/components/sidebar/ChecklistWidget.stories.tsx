@@ -95,14 +95,14 @@ export const Narrow = meta.story({
   play,
 });
 
-export const WithAiPrepare = meta.story({
+export const WithAiSetup = meta.story({
   beforeEach: async () => {
     mockStore.setState({
       loaded: true,
       widget: {},
       items: {
         ...initialState.items,
-        // aiPrepare is intentionally left 'open' so it appears in the widget's task list
+        // aiSetup is intentionally left 'open' so it appears in the widget's task list
         controls: { status: 'accepted' },
         renderComponent: { status: 'done' },
       },

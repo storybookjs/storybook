@@ -574,8 +574,8 @@ export default {
     'withReset',
   ],
   'storybook/internal/core-events': [
-    'AI_PREPARE_ANALYTICS_REQUEST',
-    'AI_PREPARE_ANALYTICS_RESPONSE',
+    'AI_SETUP_ANALYTICS_REQUEST',
+    'AI_SETUP_ANALYTICS_RESPONSE',
     'AI_PROMPT_NUDGE',
     'ARGTYPES_INFO_REQUEST',
     'ARGTYPES_INFO_RESPONSE',

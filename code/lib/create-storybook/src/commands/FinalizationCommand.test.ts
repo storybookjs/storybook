@@ -126,7 +126,7 @@ describe('FinalizationCommand', () => {
       expect(logger.step).toHaveBeenCalledWith(
         expect.stringContaining('is not entirely set up yet')
       );
-      expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai prepare'));
+      expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai setup'));
     });
 
     it('should show standard success message when showAgentFollowUp=false with AI instructions', async () => {
@@ -180,7 +180,7 @@ describe('FinalizationCommand', () => {
       expect(logger.step).toHaveBeenCalledWith(
         expect.stringContaining('To finalize setting up with AI')
       );
-      expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai prepare'));
+      expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai setup'));
     });
 
     it('should NOT show AI instructions when showAiInstructions=false', async () => {

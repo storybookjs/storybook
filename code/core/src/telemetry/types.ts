@@ -45,9 +45,9 @@ export type EventType =
   | 'doctor'
   | 'share'
   | 'ghost-stories'
-  | 'ai-prepare'
-  | 'ai-prepare-evidence'
-  | 'ai-prepare-story-scoring'
+  | 'ai-setup'
+  | 'ai-setup-evidence'
+  | 'ai-setup-story-scoring'
   | 'ai-prompt-nudge';
 
 export interface Dependency {

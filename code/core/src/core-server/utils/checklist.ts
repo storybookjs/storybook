@@ -63,14 +63,14 @@ export async function initializeChecklist() {
         }) satisfies StoreState
     );
 
-    // Check if ai-prepare has ever been run and mark it as done
-    const aiPrepareEvent = await getEventCacheEntry('ai-prepare');
-    if (aiPrepareEvent) {
+    // Check if ai-setup has ever been run and mark it as done
+    const aiSetupEvent = await getEventCacheEntry('ai-setup');
+    if (aiSetupEvent) {
       const currentState = store.getState();
-      if (currentState.items.aiPrepare?.status === 'open') {
+      if (currentState.items.aiSetup?.status === 'open') {
         store.setState((state) => ({
           ...state,
-          items: { ...state.items, aiPrepare: { ...state.items.aiPrepare, status: 'done' } },
+          items: { ...state.items, aiSetup: { ...state.items.aiSetup, status: 'done' } },
         }));
       }
     }

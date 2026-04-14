@@ -44,10 +44,10 @@ describe('FeatureCompatibilityService', () => {
     });
   });
 
-  describe('supportsAIPrepareFeature', () => {
+  describe('supportsAISetupFeature', () => {
     it('should return true for react renderer with vite builder', () => {
       expect(
-        FeatureCompatibilityService.supportsAIPrepareFeature(
+        FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.REACT,
           SupportedBuilder.VITE
         )
@@ -56,7 +56,7 @@ describe('FeatureCompatibilityService', () => {
 
     it('should return false for vue3 renderer with vite builder', () => {
       expect(
-        FeatureCompatibilityService.supportsAIPrepareFeature(
+        FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.VUE3,
           SupportedBuilder.VITE
         )
@@ -65,7 +65,7 @@ describe('FeatureCompatibilityService', () => {
 
     it('should return false for react renderer with webpack5 builder', () => {
       expect(
-        FeatureCompatibilityService.supportsAIPrepareFeature(
+        FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.REACT,
           SupportedBuilder.WEBPACK5
         )
@@ -74,14 +74,14 @@ describe('FeatureCompatibilityService', () => {
 
     it('should return false for non-react renderer with non-vite builder', () => {
       expect(
-        FeatureCompatibilityService.supportsAIPrepareFeature(
+        FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.ANGULAR,
           SupportedBuilder.WEBPACK5
         )
       ).toBe(false);
 
       expect(
-        FeatureCompatibilityService.supportsAIPrepareFeature(
+        FeatureCompatibilityService.supportsAISetupFeature(
           SupportedRenderer.SVELTE,
           SupportedBuilder.WEBPACK5
         )

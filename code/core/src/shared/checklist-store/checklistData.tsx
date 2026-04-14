@@ -35,7 +35,7 @@ import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared.ts';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide.tsx';
 import { LocationMonitor } from '../../manager/hooks/useLocation.ts';
 import type { initialState } from './checklistData.state.ts';
-import { AI_PREPARE_PROMPT } from '../constants/ai-prompts.ts';
+import { AI_SETUP_PROMPT } from '../constants/ai-prompts.ts';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -163,14 +163,14 @@ export const checklistData = {
       title: 'Storybook basics',
       items: [
         {
-          id: 'aiPrepare',
+          id: 'aiSetup',
           label: 'Set up with AI',
           icon: WandIcon,
-          criteria: 'ai prepare command has been run',
+          criteria: 'ai setup command has been run',
           showOnGuidePage: false,
           action: {
             label: 'Copy prompt',
-            copyContent: AI_PREPARE_PROMPT,
+            copyContent: AI_SETUP_PROMPT,
             onClick: ({ api }) => {
               api.emit(AI_PROMPT_NUDGE, { id: 'prepare', origin: 'onboarding-checklist-side' });
             },

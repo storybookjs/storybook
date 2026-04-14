@@ -58,7 +58,7 @@ export const AiCtaSkipped = meta.story({
       widget: {},
       items: {
         ...initialState.items,
-        aiPrepare: { status: 'skipped' },
+        aiSetup: { status: 'skipped' },
         controls: { status: 'accepted' },
         renderComponent: { status: 'done' },
         viewports: { status: 'skipped' },
@@ -74,7 +74,7 @@ export const AiCtaDone = meta.story({
       widget: {},
       items: {
         ...initialState.items,
-        aiPrepare: { status: 'done' },
+        aiSetup: { status: 'done' },
         controls: { status: 'accepted' },
         renderComponent: { status: 'done' },
         viewports: { status: 'skipped' },

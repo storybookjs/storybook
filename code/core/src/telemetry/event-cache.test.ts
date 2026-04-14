@@ -5,8 +5,8 @@ import { cache } from 'storybook/internal/common';
 
 import type { CacheEntry } from './event-cache.ts';
 import {
-  flushAiPreparePending,
-  getAiPreparePending,
+  flushAiSetupPending,
+  getAiSetupPending,
   getLastEvents,
   getPrecedingUpgrade,
   set,
@@ -354,7 +354,7 @@ describe('event-cache', () => {
     });
   });
 
-  describe('ai-prepare pending cache', () => {
+  describe('ai-setup pending cache', () => {
     let cacheGetMock: MockInstance;
     let cacheRemoveMock: MockInstance;
 
@@ -364,7 +364,7 @@ describe('event-cache', () => {
       cacheRemoveMock = vi.mocked(cache.remove);
     });
 
-    it('returns cached ai-prepare pending record when present', async () => {
+    it('returns cached ai-setup pending record when present', async () => {
       const pending = {
         timestamp: 123,
         sessionId: 'session-1',
@@ -375,18 +375,18 @@ describe('event-cache', () => {
 
       cacheGetMock.mockResolvedValueOnce(pending);
 
-      await expect(getAiPreparePending()).resolves.toEqual(pending);
-      expect(cacheGetMock).toHaveBeenCalledWith('ai-prepare-pending');
+      await expect(getAiSetupPending()).resolves.toEqual(pending);
+      expect(cacheGetMock).toHaveBeenCalledWith('ai-setup-pending');
     });
 
-    it('removes the cached ai-prepare pending record and returns undefined', async () => {
+    it('removes the cached ai-setup pending record and returns undefined', async () => {
       cacheRemoveMock.mockResolvedValueOnce(undefined);
       cacheGetMock.mockResolvedValueOnce(undefined);
 
-      await expect(flushAiPreparePending()).resolves.toBeUndefined();
-      expect(cacheRemoveMock).toHaveBeenCalledWith('ai-prepare-pending');
-      await expect(getAiPreparePending()).resolves.toBeUndefined();
-      expect(cacheGetMock).toHaveBeenCalledWith('ai-prepare-pending');
+      await expect(flushAiSetupPending()).resolves.toBeUndefined();
+      expect(cacheRemoveMock).toHaveBeenCalledWith('ai-setup-pending');
+      await expect(getAiSetupPending()).resolves.toBeUndefined();
+      expect(cacheGetMock).toHaveBeenCalledWith('ai-setup-pending');
     });
   });
 });

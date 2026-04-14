@@ -35,7 +35,7 @@ export interface UserPreferencesOptions {
   renderer: SupportedRenderer;
   projectType: ProjectType;
   isTestFeatureAvailable: boolean;
-  isAiPrepareAvailable: boolean;
+  isAiSetupAvailable: boolean;
 }
 
 /**
@@ -80,9 +80,7 @@ export class UserPreferencesCommand {
         : 'recommended';
 
     // Ask about AI setup (only available for compatible projects, e.g. React + Vite)
-    const useAiForSetup = options.isAiPrepareAvailable
-      ? await this.promptAiSetup(skipPrompt)
-      : false;
+    const useAiForSetup = options.isAiSetupAvailable ? await this.promptAiSetup(skipPrompt) : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,

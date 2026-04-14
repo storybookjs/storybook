@@ -3,7 +3,7 @@ import type { StoreState } from './index.ts';
 export const initialState = {
   items: {
     accessibilityTests: { status: 'open' },
-    aiPrepare: { status: 'open' },
+    aiSetup: { status: 'open' },
     autodocs: { status: 'open' },
     ciTests: { status: 'open' },
     controls: { status: 'open' },

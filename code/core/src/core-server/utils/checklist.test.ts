@@ -69,7 +69,7 @@ describe('initializeChecklist', () => {
     } as unknown as Awaited<ReturnType<typeof globalSettings>>);
   });
 
-  it('keeps aiPrepare as open when no ai-prepare event exists in cache', async () => {
+  it('keeps aiSetup as open when no ai-setup event exists in cache', async () => {
     const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
     vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
 
@@ -77,41 +77,41 @@ describe('initializeChecklist', () => {
     await initializeChecklist();
 
     const state = mockStore.getState();
-    expect(state.items.aiPrepare.status).toBe('open');
+    expect(state.items.aiSetup.status).toBe('open');
   });
 
-  it('marks aiPrepare as done when ai-prepare event exists in cache', async () => {
+  it('marks aiSetup as done when ai-setup event exists in cache', async () => {
     const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
     vi.mocked(getEventCacheEntry).mockResolvedValue({
       timestamp: Date.now(),
-      body: { eventType: 'ai-prepare' } as TelemetryEvent,
+      body: { eventType: 'ai-setup' } as TelemetryEvent,
     } satisfies CacheEntry);
 
     const { initializeChecklist } = await import('./checklist.ts');
     await initializeChecklist();
 
     const state = mockStore.getState();
-    expect(state.items.aiPrepare.status).toBe('done');
+    expect(state.items.aiSetup.status).toBe('done');
   });
 
-  it('does not overwrite aiPrepare status if already done from persisted state', async () => {
-    // Simulate persisted user state where aiPrepare is already 'skipped'
+  it('does not overwrite aiSetup status if already done from persisted state', async () => {
+    // Simulate persisted user state where aiSetup is already 'skipped'
     mockSettingsValue.checklist = {
-      items: { aiPrepare: { status: 'skipped' } },
+      items: { aiSetup: { status: 'skipped' } },
       widget: {},
     };
 
     const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
     vi.mocked(getEventCacheEntry).mockResolvedValue({
       timestamp: Date.now(),
-      body: { eventType: 'ai-prepare' } as TelemetryEvent,
+      body: { eventType: 'ai-setup' } as TelemetryEvent,
     } satisfies CacheEntry);
 
     const { initializeChecklist } = await import('./checklist.ts');
     await initializeChecklist();
 
     const state = mockStore.getState();
-    // The ai-prepare event was found, but status was 'skipped' (not 'open'), so it stays 'skipped'
-    expect(state.items.aiPrepare.status).toBe('skipped');
+    // The ai-setup event was found, but status was 'skipped' (not 'open'), so it stays 'skipped'
+    expect(state.items.aiSetup.status).toBe('skipped');
   });
 });

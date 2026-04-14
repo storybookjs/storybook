@@ -41,7 +41,7 @@ import { initializeSaveStory } from '../utils/save-story/save-story.ts';
 import { parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
-import { initAIAnalyticsChannel } from '../server-channel/ai-prepare-channel.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);

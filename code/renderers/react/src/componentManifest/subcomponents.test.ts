@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from "storybook/internal/csf-tools";
 
-import { extractDeclaredSubcomponents } from './subcomponents';
+import { extractDeclaredSubcomponents } from "./subcomponents.ts";
 
-describe('extractDeclaredSubcomponents', () => {
-  it('does not loop forever on circular identifier references', () => {
+describe("extractDeclaredSubcomponents", () => {
+  it("does not loop forever on circular identifier references", () => {
     const csf = loadCsf(
       `
         import type { Meta } from '@storybook/react';
@@ -25,12 +25,12 @@ describe('extractDeclaredSubcomponents', () => {
 
         export default meta;
       `,
-      { makeTitle: (title) => title }
+      { makeTitle: (title) => title },
     ).parse();
 
     expect(extractDeclaredSubcomponents(csf)).toEqual([
-      { name: 'Loop', componentName: 'LoopA' },
-      { name: 'Item', componentName: 'Item' },
+      { name: "Loop", componentName: "LoopA" },
+      { name: "Item", componentName: "Item" },
     ]);
   });
 });

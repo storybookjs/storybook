@@ -1,7 +1,7 @@
 import { types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
-import type { ComponentRef } from './getComponentImports';
+import type { ComponentRef } from './getComponentImports.ts';
 
 export type DeclaredSubcomponent = {
   componentName: string;

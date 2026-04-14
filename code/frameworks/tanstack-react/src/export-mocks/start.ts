@@ -2,6 +2,8 @@ import React from 'react';
 import { fn } from 'storybook/test';
 import type { createServerFn as _createServerFn } from '@tanstack/start-client-core';
 import { onNavigate } from './spies';
+export * from '@tanstack/start-client-core';
+export * from '@tanstack/react-start';
 
 export function useServerFn<T extends (...args: Array<any>) => Promise<any>>(
   serverFn: T
@@ -64,3 +66,30 @@ export const Navigate = ({ to }: { to: string }) => {
 export const notFound = () => {
   throw new Error('Not found');
 };
+
+// TanStack Start server entry
+export const createStart = () => ({});
+
+// Cookie helpers
+const cookieStore = new Map<string, string>();
+
+export const setCookie = (name: string, value: string) => {
+  cookieStore.set(name, value);
+};
+
+export const getCookie = (name: string) => cookieStore.get(name);
+
+export const deleteCookie = (name: string) => {
+  cookieStore.delete(name);
+};
+
+export const clearCookieStore = () => {
+  cookieStore.clear();
+};
+
+// Server entry default export
+const fetchHandler = async () => new Response('Storybook Mock', { status: 200 });
+
+export { fetchHandler as fetch };
+
+export default { fetch: fetchHandler };

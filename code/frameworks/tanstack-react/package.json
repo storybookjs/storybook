@@ -59,6 +59,16 @@
       "types": "./dist/export-mocks/start.d.ts",
       "code": "./src/export-mocks/start.ts",
       "default": "./dist/export-mocks/start.js"
+    },
+    "./start-server": {
+      "types": "./dist/export-mocks/start-server.d.ts",
+      "code": "./src/export-mocks/start-server.ts",
+      "default": "./dist/export-mocks/start-server.js"
+    },
+    "./start-storage-context": {
+      "types": "./dist/export-mocks/start-storage-context.d.ts",
+      "code": "./src/export-mocks/start-storage-context.ts",
+      "default": "./dist/export-mocks/start-storage-context.js"
     }
   },
   "files": [
@@ -72,7 +82,8 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
-    "@storybook/react-vite": "workspace:*"
+    "@storybook/react-vite": "workspace:*",
+    "unenv": "^2.0.0-rc.24"
   },
   "devDependencies": {
     "@tanstack/react-router": "^1.168.10",

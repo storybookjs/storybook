@@ -4,9 +4,14 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
-
+import { defineEnv } from 'unenv';
 const INTERCEPTED_PATTERNS = ['virtual:cloudflare', 'server-entry', 'worker-entry'];
-const INTERCEPTED_MODULES = ['@tanstack/react-start', '@tanstack/start-server-core'];
+const INTERCEPTED_MODULES = ['@tanstack/react-start'];
+const START_SERVER_MODULES = [
+  '@tanstack/react-start/server',
+  '@tanstack/react-start-server',
+  '@tanstack/start-server-core',
+];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -27,6 +32,15 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 ];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
+  const { env } = defineEnv({
+    nodeCompat: true,
+    npmShims: true,
+    resolve: true,
+    overrides: {},
+    presets: [],
+  });
+  const { alias, inject, external, polyfill } = env;
+
   const reactConfig = await reactViteFinal(config, options);
 
   /**
@@ -50,6 +64,10 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   };
 
   const stubPath = fileURLToPath(import.meta.resolve('./export-mocks/start.js'));
+  const startServerMockPath = fileURLToPath(import.meta.resolve('./export-mocks/start-server.js'));
+  const startStorageContextMockPath = fileURLToPath(
+    import.meta.resolve('./export-mocks/start-storage-context.js')
+  );
   const routerMockPath = fileURLToPath(
     import.meta.resolve('@storybook/tanstack-react/react-router')
   );
@@ -72,9 +90,17 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
             return routerMockPath;
           }
 
-          // Intercept TanStack Start packages and sub-paths
+          if (START_SERVER_MODULES.includes(id)) {
+            return startServerMockPath;
+          }
+
+          if (id === '@tanstack/start-storage-context') {
+            return startStorageContextMockPath;
+          }
+
+          // Intercept TanStack Start packages.
           for (const mod of INTERCEPTED_MODULES) {
-            if (id === mod || id.startsWith(`${mod}/`)) {
+            if (id === mod) {
               return stubPath;
             }
           }
@@ -93,8 +119,18 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
       config() {
         return {
           optimizeDeps: {
-            exclude: ['@storybook/tanstack-react'],
+            exclude: [
+              '@storybook/tanstack-react',
+              '@tanstack/react-start/server',
+              '@tanstack/react-start-server',
+              '@tanstack/start-server-core',
+            ],
           },
+          resolve: {
+            alias,
+          },
+
+          external,
         };
       },
     },

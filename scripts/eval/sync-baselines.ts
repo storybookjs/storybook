@@ -130,9 +130,7 @@ export async function resolveProjectPaths(
   };
 }
 
-async function preflightRepos(
-  projects: Array<{ project: Project; paths: ProjectPaths }>
-) {
+async function preflightRepos(projects: Array<{ project: Project; paths: ProjectPaths }>) {
   for (const { project, paths } of projects) {
     if (!existsSync(paths.repoRoot)) {
       throw new Error(`Repo missing for ${project.name}: ${paths.repoRoot}`);

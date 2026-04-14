@@ -151,7 +151,9 @@ describe('syncBaselines', () => {
         join(reposRoot, 'wikitok', 'frontend', '.storybook', 'eval-support', 'transcript.mdx'),
         'utf-8'
       )
-    ).toContain("<Transcript {...(data.docs?.transcript ?? { prompt: '', promptTokenCount: 0, promptCost: 0, messages: [] })} />");
+    ).toContain(
+      "<Transcript {...(data.docs?.transcript ?? { prompt: '', promptTokenCount: 0, promptCost: 0, messages: [] })} />"
+    );
 
     expect(
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-results', 'data.json'), 'utf-8')
@@ -400,10 +402,7 @@ describe('syncBaselines', () => {
     execFileSync('git', ['clone', join(remotesRoot, 'edgy.git'), targetRemoteWorktree]);
     execFileSync('git', ['-C', targetRemoteWorktree, 'config', 'user.name', 'Test User']);
     execFileSync('git', ['-C', targetRemoteWorktree, 'config', 'user.email', 'test@example.com']);
-    writeFileSync(
-      join(targetRemoteWorktree, 'README.md'),
-      'updated upstream\n'
-    );
+    writeFileSync(join(targetRemoteWorktree, 'README.md'), 'updated upstream\n');
     execFileSync('git', ['-C', targetRemoteWorktree, 'add', '-A']);
     execFileSync('git', ['-C', targetRemoteWorktree, 'commit', '-m', 'update target upstream']);
     execFileSync('git', ['-C', targetRemoteWorktree, 'push', 'origin', 'main']);
@@ -425,9 +424,7 @@ describe('syncBaselines', () => {
       readFileSync(join(reposRoot, 'edgy', '.storybook', 'eval-support', 'summary.mdx'), 'utf-8')
     ).toBe(baselineTemplate('.storybook/eval-support/summary.mdx'));
     expect(readFileSync(join(reposRoot, 'edgy', 'README.md'), 'utf-8')).toBe('updated upstream\n');
-    expect(getHead(join(reposRoot, 'edgy'))).toBe(
-      getRemoteHead(join(remotesRoot, 'edgy.git'))
-    );
+    expect(getHead(join(reposRoot, 'edgy'))).toBe(getRemoteHead(join(remotesRoot, 'edgy.git')));
   });
 });
 

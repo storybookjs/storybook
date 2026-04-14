@@ -18,10 +18,7 @@ import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
-import {
-  extractBaselineEntryIds,
-  IndexBaselineService as IndexBaselineService,
-} from './IndexBaselineService.ts';
+import { extractBaselineEntryIds, IndexBaselineService } from './IndexBaselineService.ts';
 import { findAffectedStoryFiles } from './trace-changed.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
@@ -177,13 +174,13 @@ export class ChangeDetectionService {
       storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
       statusStore: StatusStoreByTypeId;
       gitDiffProvider?: GitDiffProvider;
-      IndexBaselineService?: IndexBaselineService;
+      indexBaselineService?: IndexBaselineService;
       workingDir?: string;
       debounceMs?: number;
     }
   ) {
     this.gitDiffProvider = options.gitDiffProvider;
-    this.indexBaselineService = options.IndexBaselineService;
+    this.indexBaselineService = options.indexBaselineService;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
     resetChangeDetectionReadiness();

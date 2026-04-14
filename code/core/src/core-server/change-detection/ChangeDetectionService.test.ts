@@ -112,7 +112,7 @@ class MockGitDiffProvider extends GitDiffProvider {
     void callback;
   });
   readonly isWorkingTreeCleanMock = vi.fn(async (): Promise<boolean> => true);
-  readonly getHeadShaMock = vi.fn(async (): Promise<string> => 'mock-sha');
+  readonly getHeadCommitMock = vi.fn(async (): Promise<string> => 'mock-sha');
 
   constructor() {
     super('/repo');
@@ -134,8 +134,8 @@ class MockGitDiffProvider extends GitDiffProvider {
     return this.isWorkingTreeCleanMock();
   }
 
-  override getHeadSha(): Promise<string> {
-    return this.getHeadShaMock();
+  override getHeadCommit(): Promise<string> {
+    return this.getHeadCommitMock();
   }
 }
 

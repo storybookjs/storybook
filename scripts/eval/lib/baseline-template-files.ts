@@ -1,9 +1,4 @@
-function template(value: string) {
-  return value.startsWith('\n') ? value.slice(1) : value;
-}
-
-const MAIN_TS = template(String.raw`
-import type { StorybookConfig } from '@storybook/react-vite';
+const MAIN_TS = `import type { StorybookConfig } from '@storybook/react-vite';
 
 const config: StorybookConfig = {
   stories: [
@@ -22,11 +17,9 @@ const config: StorybookConfig = {
 };
 
 export default config;
+`;
 
-`);
-
-const PREVIEW_TSX = template(String.raw`
-import type { Preview } from '@storybook/react-vite';
+const PREVIEW_TSX = `import type { Preview } from '@storybook/react-vite';
 
 const preview: Preview = {
   parameters: {
@@ -43,11 +36,9 @@ const preview: Preview = {
 };
 
 export default preview;
+`;
 
-`);
-
-const EVAL_SUPPORT_SUMMARY_MDX = template(String.raw`
-import data from '../eval-results/data.json';
+const EVAL_SUPPORT_SUMMARY_MDX = `import data from '../eval-results/data.json';
 
 # Eval Summary
 
@@ -77,22 +68,18 @@ import data from '../eval-results/data.json';
     </li>
   ))}
 </ul>
+`;
 
-`);
-
-const EVAL_SUPPORT_TRANSCRIPT_MDX = template(String.raw`
-{/* Transcript renderer copied directly from ~/code/github/mcp/eval/templates/result-docs/transcript.tsx and transcript.types.ts */}
+const EVAL_SUPPORT_TRANSCRIPT_MDX = `{/* Transcript renderer copied directly from ~/code/github/mcp/eval/templates/result-docs/transcript.tsx and transcript.types.ts */}
 import data from '../eval-results/data.json';
 import { Transcript } from './transcript';
 
 # Transcript
 
 <Transcript {...data.docs.transcript} />
+`;
 
-`);
-
-const EVAL_SUPPORT_TRANSCRIPT_TSX = template(String.raw`
-/*
+const EVAL_SUPPORT_TRANSCRIPT_TSX = `/*
  * Keep the baseline copies exact to ~/code/github/mcp/eval/templates/result-docs/transcript.tsx.
  * This repo-local template keeps only the minimum lint shims required by Storybook's monorepo.
  */
@@ -1063,11 +1050,9 @@ function renderSystemOrResult(turn: TranscriptMessage): React.ReactNode {
 		</ContentSection>
 	);
 }
+`;
 
-`);
-
-const EVAL_SUPPORT_TRANSCRIPT_TYPES_TS = template(String.raw`
-export interface TextContent {
+const EVAL_SUPPORT_TRANSCRIPT_TYPES_TS = `export interface TextContent {
 	type: 'text';
 	text: string;
 }
@@ -1148,14 +1133,13 @@ export interface TranscriptProps {
 	promptCost: number;
 	messages: TranscriptMessage[];
 }
-
-`);
+`;
 
 export const BASELINE_STORYBOOK_FILES = {
-  'main.ts': MAIN_TS,
-  'preview.tsx': PREVIEW_TSX,
-  'eval-support/summary.mdx': EVAL_SUPPORT_SUMMARY_MDX,
-  'eval-support/transcript.mdx': EVAL_SUPPORT_TRANSCRIPT_MDX,
-  'eval-support/transcript.tsx': EVAL_SUPPORT_TRANSCRIPT_TSX,
-  'eval-support/transcript.types.ts': EVAL_SUPPORT_TRANSCRIPT_TYPES_TS,
+  "main.ts": MAIN_TS,
+  "preview.tsx": PREVIEW_TSX,
+  "eval-support/summary.mdx": EVAL_SUPPORT_SUMMARY_MDX,
+  "eval-support/transcript.mdx": EVAL_SUPPORT_TRANSCRIPT_MDX,
+  "eval-support/transcript.tsx": EVAL_SUPPORT_TRANSCRIPT_TSX,
+  "eval-support/transcript.types.ts": EVAL_SUPPORT_TRANSCRIPT_TYPES_TS,
 } satisfies Record<string, string>;

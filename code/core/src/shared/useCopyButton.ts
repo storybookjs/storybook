@@ -33,7 +33,7 @@ export interface UseCopyButtonResult<T> {
   children: T;
   /** Props to spread onto the `<Button>` element. */
   buttonProps: {
-    onClick: MouseEventHandler<HTMLButtonElement>;
+    onClick: (e?: MouseEvent<HTMLButtonElement>) => void;
     ariaLabel: false | string;
   };
 }
@@ -60,7 +60,7 @@ export function useCopyButton<T extends ReactNode>({
   );
 
   const handleClick = useCallback(
-    (e: MouseEvent<HTMLButtonElement>) => {
+    (e?: MouseEvent<HTMLButtonElement>) => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
@@ -70,7 +70,7 @@ export function useCopyButton<T extends ReactNode>({
 
       // eslint-disable-next-line compat/compat
       navigator.clipboard?.writeText(content).then(() => {
-        onCopy?.(e);
+        if (e) onCopy?.(e);
         setCopied(true);
         announce(announcement, 'polite');
 

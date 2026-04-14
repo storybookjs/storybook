@@ -51,6 +51,7 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/vue3": "workspace:*",
+    "es-toolkit": "^1.43.0",
     "magic-string": "^0.30.0",
     "typescript": "^5.9.3",
     "vue-component-meta": "^2.0.0",

@@ -1,5 +1,4 @@
 import { fileURLToPath } from 'node:url';
-import path from 'node:path';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -46,7 +45,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
       p !== null &&
       'name' in pluginRecord &&
       typeof pluginRecord.name === 'string' &&
-      pluginRecord.name.startsWith('tanstack-start')
+      (pluginRecord.name.startsWith('tanstack-start') || pluginRecord.name.includes('rsc:'))
     );
   };
 

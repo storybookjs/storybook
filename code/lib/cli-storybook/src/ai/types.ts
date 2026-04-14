@@ -4,7 +4,6 @@ export interface AiPrepareOptions {
   configDir?: string;
   packageManager?: string;
   output?: string;
-  frontmatter?: boolean;
 }
 
 export interface ProjectInfo {

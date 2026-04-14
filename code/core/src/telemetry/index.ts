@@ -21,6 +21,7 @@ export * from './ai-prepare-utils.ts';
 export {
   getPrecedingUpgrade,
   getLastEvents,
+  isWithinInitialSession,
   type CacheEntry,
   getAiPreparePending,
   type AiPreparePendingRecord,

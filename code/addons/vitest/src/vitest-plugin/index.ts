@@ -7,7 +7,6 @@ import type { ViteUserConfig } from 'vitest/config';
 import {
   DEFAULT_FILES_PATTERN,
   getInterpretedFile,
-  loadPreviewOrConfigFile,
   normalizeStories,
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
@@ -19,14 +18,14 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import {
-  componentTransform,
-  isCsfFactoryPreview,
-  readConfig,
-  vitestTransform,
-} from 'storybook/internal/csf-tools';
+import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
-import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import {
+  detectAgent,
+  isWithinInitialSession,
+  oneWayHash,
+  telemetry,
+} from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
@@ -454,7 +453,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // return the new config, it will be deep-merged by vite
       return config;
     },
-    configureVitest(context) {
+    async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
       if (
@@ -476,7 +475,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         // When an agent is running vitest via CLI, inject a reporter that sends
         // detailed test result telemetry (pass/fail, error analysis, empty renders)
         const agent = detectAgent();
-        if (agent) {
+        if (agent && (await isWithinInitialSession(['init', 'ai-prepare']))) {
           context.vitest.config.reporters.push(
             new AgentTelemetryReporter({
               configDir: finalOptions.configDir,

@@ -21,7 +21,9 @@ export function getDocsMarkdownUrl(
   return `https://storybook.js.org/docs${versionSegment}/${path}.md${query ? `?${query}` : ''}`;
 }
 
-export function getPrompts(projectInfo: ProjectInfo): AiPrompt[] {
+export function getPrompts(projectInfo: ProjectInfo): {
+  prompts: AiPrompt[];
+} {
   const aiPrompts: AiPrompt[] = [];
 
   aiPrompts.push({
@@ -30,7 +32,7 @@ export function getPrompts(projectInfo: ProjectInfo): AiPrompt[] {
     instructions: getSetupInstructions(projectInfo),
   });
 
-  return aiPrompts;
+  return { prompts: aiPrompts };
 }
 
 function getTypeImportSource(projectInfo: ProjectInfo): string {
@@ -718,8 +720,10 @@ function getProjectOverview(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function generateMarkdownOutput(projectInfo: ProjectInfo): string {
-  const aiPrompts = getPrompts(projectInfo);
+export function generateMarkdownOutput(projectInfo: ProjectInfo): {
+  markdown: string;
+} {
+  const { prompts: aiPrompts } = getPrompts(projectInfo);
 
   const sections: string[] = [];
 
@@ -733,5 +737,5 @@ export function generateMarkdownOutput(projectInfo: ProjectInfo): string {
     sections.push(aiPrompt.instructions);
   }
 
-  return sections.join('\n\n');
+  return { markdown: sections.join('\n\n') };
 }

@@ -1,6 +1,7 @@
 import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
+  collectAiPrepareEvidence,
   ErrorCollector,
   getPrecedingUpgrade,
   oneWayHash,
@@ -183,6 +184,12 @@ export async function withTelemetry<T>(
 
   if (enableTelemetry) {
     telemetry('boot', { eventType }, { stripMetadata: true });
+  }
+
+  if (enableTelemetry) {
+    // Fire-and-forget: don't await, don't block the command
+    const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
+    collectAiPrepareEvidence(eventType, configDir);
   }
 
   try {

@@ -343,7 +343,7 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.getLastEvents).toHaveBeenCalled();
-        expect(mockTelemetry.getSessionId).toHaveBeenCalled();
+        expect(mockTelemetry.getSessionId).not.toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });

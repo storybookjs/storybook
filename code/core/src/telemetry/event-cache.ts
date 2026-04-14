@@ -81,3 +81,28 @@ export const getPrecedingUpgrade = async (
     ? upgradeFields(lastUpgradeEvent)
     : undefined;
 };
+/**
+ * Record cached at ai-prepare time.
+ * Read by subsequent CLI entry points for evidence collection.
+ * Canonical definition — imported by event-cache.ts and prepare-requirements.ts.
+ */
+export interface AiPreparePendingRecord {
+  timestamp: number;
+  sessionId: string;
+  configDir: string;
+  previewPath: string | null;
+  previewHash: string | null;
+}
+
+export const getAiPreparePending = async (): Promise<AiPreparePendingRecord | undefined> => {
+  // Wait for any pending set operations to complete before reading
+  await processingPromise;
+  return (await cache.get('ai-prepare-pending')) ?? undefined;
+};
+
+export const flushAiPreparePending = async (): Promise<undefined> => {
+  // Wait for any pending set operations to complete before removing
+  await processingPromise;
+  await cache.remove('ai-prepare-pending');
+  return undefined;
+};

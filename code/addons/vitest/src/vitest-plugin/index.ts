@@ -244,6 +244,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     plugins.push(mdxStubPlugin);
   }
 
+  let withinAgenticSetupSession = false;
+
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
     async transformIndexHtml(html) {
@@ -384,16 +386,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   manual: !shouldRunA11yTests,
                 };
 
-                if (process.env.STORYBOOK_COMPONENT_PATHS) {
-                  globals.ghostStories = {
-                    enabled: true,
-                  };
-                  globals.renderAnalysis = {
-                    enabled: true,
-                  };
-                }
-
-                if (detectAgent()) {
+                if (process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession) {
                   globals.renderAnalysis = {
                     enabled: true,
                   };
@@ -475,7 +468,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         // When an agent is running vitest via CLI, inject a reporter that sends
         // detailed test result telemetry (pass/fail, error analysis, empty renders)
         const agent = detectAgent();
-        if (agent && (await isWithinInitialSession(['init', 'ai-prepare']))) {
+        withinAgenticSetupSession =
+          !!agent && (await isWithinInitialSession(['init', 'ai-prepare']));
+        if (agent && withinAgenticSetupSession) {
           context.vitest.config.reporters.push(
             new AgentTelemetryReporter({
               configDir: finalOptions.configDir,

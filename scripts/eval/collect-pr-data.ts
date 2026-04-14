@@ -1433,7 +1433,7 @@ function getOptionalObject(value: unknown) {
   return value as Record<string, unknown>;
 }
 
-function hasOwn(value: Record<string, unknown>, key: string) {
+function hasOwn(value: object, key: string) {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 

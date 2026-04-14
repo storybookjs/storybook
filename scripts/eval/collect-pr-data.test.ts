@@ -275,9 +275,9 @@ function createEvalDataPayload(overrides: Record<string, unknown>) {
         total: 4,
         passed: 3,
       },
-      fileChanges: [],
+      fileChanges: [] as Array<Record<string, unknown>>,
     },
-    transcript: [],
+    transcript: [] as unknown[],
     artifacts: {
       buildOutput: {
         path: '.storybook/eval-results/build-output.txt',

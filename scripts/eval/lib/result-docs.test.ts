@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildEvalData, normalizeTranscriptForDocs } from './result-docs';
+import { buildEvalData, normalizeTranscriptForDocs } from './result-docs.ts';
 
 describe('normalizeTranscriptForDocs', () => {
   it('normalizes claude transcript entries into MCP transcript props', () => {

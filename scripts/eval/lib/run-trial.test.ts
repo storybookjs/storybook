@@ -46,12 +46,12 @@ vi.mock('./agents/codex', () => ({
   codexAgent: { name: 'codex', execute: vi.fn() },
 }));
 
-import { claudeAgent } from './agents/claude-code';
-import { collectGhostStoriesGrade, grade } from './grade';
-import { prepareTrial } from './prepare-trial';
-import { publishTrialBranch } from './publish-trial';
-import { runTrial } from './run-trial';
-import { captureEnvironment } from './utils';
+import { claudeAgent } from './agents/claude-code.ts';
+import { collectGhostStoriesGrade, grade } from './grade.ts';
+import { prepareTrial } from './prepare-trial.ts';
+import { publishTrialBranch } from './publish-trial.ts';
+import { runTrial } from './run-trial.ts';
+import { captureEnvironment } from './utils.ts';
 
 let TMP: string;
 

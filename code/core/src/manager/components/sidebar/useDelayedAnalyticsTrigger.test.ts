@@ -75,21 +75,21 @@ describe('useDelayedAnalyticsTrigger', () => {
     api._trigger(PREVIEW_INITIALIZED);
     expect(api.emit).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(4 * 60 * 1000);
 
     expect(api.emit).toHaveBeenCalledWith(GHOST_STORIES_REQUEST);
     expect(api.emit).toHaveBeenCalledWith(AI_PREPARE_ANALYTICS_REQUEST);
     expect(api.emit).toHaveBeenCalledTimes(2);
   });
 
-  it('does not emit before the 10-minute delay elapses', () => {
+  it('does not emit before the 4-minute delay elapses', () => {
     const api = createMockApi();
     mockUseStorybookApi.mockReturnValue(api as any);
 
     renderHook(() => useDelayedAnalyticsTrigger());
 
     api._trigger(PREVIEW_INITIALIZED);
-    vi.advanceTimersByTime(9 * 60 * 1000);
+    vi.advanceTimersByTime(3 * 60 * 1000);
 
     expect(api.emit).not.toHaveBeenCalled();
   });
@@ -120,10 +120,10 @@ describe('useDelayedAnalyticsTrigger', () => {
     const { unmount } = renderHook(() => useDelayedAnalyticsTrigger());
 
     api._trigger(PREVIEW_INITIALIZED);
-    vi.advanceTimersByTime(5 * 60 * 1000);
+    vi.advanceTimersByTime(2 * 60 * 1000);
 
     unmount();
-    vi.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(4 * 60 * 1000);
 
     expect(api.emit).not.toHaveBeenCalled();
   });

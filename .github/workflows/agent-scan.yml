@@ -5,6 +5,9 @@ on:
     types:
       - opened
       - reopened
+    branches:
+      - next
+      - main
 
 concurrency:
   group: agent-scan-${{ github.event.pull_request.number }}
@@ -16,6 +19,7 @@ jobs:
     permissions:
       pull-requests: write
     runs-on: ubuntu-latest
+    environment: Protected
     steps:     
       - uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
         id: app-token
@@ -35,18 +39,18 @@ jobs:
         id: agentscan
         uses: MatteoGabriele/agentscan-action@a584774dd15cabe6df4c6ab45fc43514a3b56b2d
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.app-token.outputs.token }}
           skip-members: "dependabot[bot],AriPerkkio,huang-julien,MichaelArestad,yannbf,vanessayuenn,jonniebigodes,Sidnioulz,kasperpeulen,valentinpalkovic,github-actions[bot],ndelangen,shilman,JReinhold,ghengeveld,storybook-bot,kylegach"
           agent-scan-comment: false
           cache-path: .agentscan-cache
       - name: Label flagged PR
         if: steps.agentscan.outputs.community-flagged != 'true'
         env:
-          INPUT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TOKEN: ${{ steps.app-token.outputs.token  }}
           INPUT_CLASSIFICATION: ${{ steps.agentscan.outputs.classification }}
         run: node .github/scripts/agent-scan-label-pr.mjs
       - name: Close community flagged accounts
         if: steps.agentscan.outputs.community-flagged == 'true'
         env:
-          INPUT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TOKEN: ${{ steps.app-token.outputs.token  }}
         run: node .github/scripts/agent-scan-close-pr.mjs

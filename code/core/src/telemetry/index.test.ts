@@ -172,3 +172,93 @@ describe('telemetry state machine', () => {
     expect(telemetryModule.isTelemetryModuleEnabled()).toBe(true);
   });
 });
+
+describe('payload error handler (onPayloadError)', () => {
+  it('calls registered handler when payload factory returns { error }', async () => {
+    const { sendTelemetry } = await import('./telemetry.ts');
+    const errorHandler = vi.fn().mockResolvedValue(undefined);
+
+    await telemetryModule.setTelemetryEnabled(true);
+    telemetryModule.onPayloadError(errorHandler);
+
+    const testError = new Error('index generation failed');
+    await telemetryModule.telemetry('dev', async () => ({ error: testError }));
+
+    // Handler should be called with the error and original event type
+    expect(errorHandler).toHaveBeenCalledTimes(1);
+    expect(errorHandler).toHaveBeenCalledWith(testError, 'dev');
+    // Normal telemetry should NOT be sent
+    expect(sendTelemetry).not.toHaveBeenCalled();
+
+    telemetryModule.onPayloadError(undefined);
+  });
+
+  it('calls registered handler when payload factory throws', async () => {
+    const { sendTelemetry } = await import('./telemetry.ts');
+    const errorHandler = vi.fn().mockResolvedValue(undefined);
+
+    await telemetryModule.setTelemetryEnabled(true);
+    telemetryModule.onPayloadError(errorHandler);
+
+    const testError = new Error('something broke');
+    await telemetryModule.telemetry('dev', async () => {
+      throw testError;
+    });
+
+    expect(errorHandler).toHaveBeenCalledTimes(1);
+    expect(errorHandler).toHaveBeenCalledWith(testError, 'dev');
+    expect(sendTelemetry).not.toHaveBeenCalled();
+
+    telemetryModule.onPayloadError(undefined);
+  });
+
+  it('does not call handler for error event type (prevents recursion)', async () => {
+    const { sendTelemetry } = await import('./telemetry.ts');
+    const errorHandler = vi.fn().mockResolvedValue(undefined);
+
+    await telemetryModule.setTelemetryEnabled(true);
+    telemetryModule.onPayloadError(errorHandler);
+
+    // An 'error' event with error in payload should be sent normally, not intercepted
+    await telemetryModule.telemetry(
+      'error',
+      { eventType: 'dev', error: new Error('test') },
+      { enableCrashReports: true, force: true }
+    );
+
+    expect(errorHandler).not.toHaveBeenCalled();
+    expect(sendTelemetry).toHaveBeenCalledTimes(1);
+    expect(sendTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({ eventType: 'error' }),
+      expect.anything()
+    );
+
+    telemetryModule.onPayloadError(undefined);
+  });
+
+  it('sends normal telemetry when no handler is registered and factory returns { error }', async () => {
+    const { sendTelemetry } = await import('./telemetry.ts');
+
+    await telemetryModule.setTelemetryEnabled(true);
+    // No handler registered — falls through to existing behavior
+
+    const testError = new Error('unhandled error');
+    await telemetryModule.telemetry('dev', async () => ({ error: testError }));
+
+    // Without a handler, the existing finally-block logic applies
+    // (error gets sanitized, event suppressed unless enableCrashReports)
+    expect(sendTelemetry).not.toHaveBeenCalled();
+  });
+
+  it('clears handler when undefined is passed', async () => {
+    const errorHandler = vi.fn().mockResolvedValue(undefined);
+
+    await telemetryModule.setTelemetryEnabled(true);
+    telemetryModule.onPayloadError(errorHandler);
+    telemetryModule.onPayloadError(undefined);
+
+    await telemetryModule.telemetry('dev', async () => ({ error: new Error('test') }));
+
+    expect(errorHandler).not.toHaveBeenCalled();
+  });
+});

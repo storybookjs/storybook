@@ -11,6 +11,7 @@ import {
   getPrecedingUpgrade,
   isTelemetryStateResolved,
   oneWayHash,
+  onPayloadError,
   setTelemetryEnabled,
   telemetry,
 } from 'storybook/internal/telemetry';
@@ -218,6 +219,12 @@ export async function withTelemetry<T>(
     process.on('SIGINT', cancelTelemetry);
   }
 
+  // Register error handler so that payload factories returning { error } or throwing
+  // automatically trigger sendTelemetryError with full context (presets, cache, error levels).
+  onPayloadError(async (error, evtType) => {
+    await sendTelemetryError(error, evtType, options);
+  });
+
   telemetry('boot', { eventType }, { stripMetadata: true });
 
   try {
@@ -256,5 +263,6 @@ export async function withTelemetry<T>(
       await sendTelemetryError(error, eventType, options, false);
     }
     process.off('SIGINT', cancelTelemetry);
+    onPayloadError(undefined);
   }
 }

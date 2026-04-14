@@ -95,6 +95,29 @@ export function isTelemetryStateResolved() {
   return globalThis.SB_TELEMETRY_STATE !== undefined;
 }
 
+// --- Payload error handler ---
+
+/**
+ * Callback invoked when a payload factory throws or returns { error }.
+ * Registered by withTelemetry() to delegate to sendTelemetryError with full context
+ * (presets, cache, error levels, sub-errors).
+ */
+type PayloadErrorHandler = (error: Error, eventType: EventType) => Promise<void>;
+globalThis.PAYLOAD_ERROR_HANDLER = undefined as PayloadErrorHandler | undefined;
+
+/**
+ * Register a handler for payload factory errors. When a telemetry payload factory
+ * throws or returns { error }, this handler is called instead of sending the normal event.
+ * Pass undefined to clear the handler.
+ *
+ * This is used by withTelemetry() to wire up sendTelemetryError with full context
+ * (cliOptions, presetOptions, error levels, sub-errors) so all commands benefit
+ * from automatic error telemetry.
+ */
+export function onPayloadError(handler: PayloadErrorHandler | undefined) {
+  globalThis.PAYLOAD_ERROR_HANDLER = handler;
+}
+
 // --- Internal send logic ---
 
 async function _processAndSend(
@@ -102,7 +125,25 @@ async function _processAndSend(
   payloadInput: PayloadInput,
   options: Partial<Options> = {}
 ) {
-  const payload = await resolvePayload(payloadInput);
+  let payload: Payload;
+
+  try {
+    payload = await resolvePayload(payloadInput);
+  } catch (err) {
+    // If the payload factory throws, delegate to the registered error handler
+    if (eventType !== 'error' && globalThis.PAYLOAD_ERROR_HANDLER) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      await globalThis.PAYLOAD_ERROR_HANDLER(error, eventType);
+    }
+    return;
+  }
+
+  // When a payload factory returns { error }, delegate to the registered error handler
+  if (payload.error && eventType !== 'error' && globalThis.PAYLOAD_ERROR_HANDLER) {
+    const error = payload.error instanceof Error ? payload.error : new Error(String(payload.error));
+    await globalThis.PAYLOAD_ERROR_HANDLER(error, eventType);
+    return;
+  }
 
   // Don't notify on boot since it can lead to double notification in `sb init`.
   // The notification will happen when the actual command runs.

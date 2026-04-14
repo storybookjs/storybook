@@ -6,11 +6,11 @@ import { SyncIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import { RuleType } from '../types';
-import { useA11yContext } from './A11yContext';
-import { Report } from './Report/Report';
-import { Tabs } from './Tabs';
-import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
+import { RuleType } from '../types.ts';
+import { useA11yContext } from './A11yContext.tsx';
+import { Report } from './Report/Report.tsx';
+import { Tabs } from './Tabs.tsx';
+import { TestDiscrepancyMessage } from './TestDiscrepancyMessage.tsx';
 
 const RotatingIcon = styled(SyncIcon)(({ theme }) => ({
   animation: `${theme.animation.rotate360} 1s linear infinite;`,

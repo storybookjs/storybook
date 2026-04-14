@@ -1,5 +1,5 @@
 ---
-title: 'ArgTypes'
+title: "ArgTypes"
 sidebar:
   order: 3
   title: ArgTypes
@@ -41,7 +41,7 @@ ArgTypes are most often specified at the component level, in the [meta (or defau
 
 {/* prettier-ignore-end */}
 
-They can apply to all stories when specified at the project (global) level, in the `preview.js|ts` configuration file:
+They can apply to all stories when specified at the project (global) level, in the `preview.*` configuration file:
 
 {/* prettier-ignore-start */}
 
@@ -124,26 +124,29 @@ Default: [Inferred](#automatic-argtype-inference); `'select'`, if [`options`](#o
 
 Specifies the type of control used to change the arg value with the [controls panel](../essentials/controls.mdx). Here are the available types, `ControlType`, grouped by the type of data they handle:
 
-| Data type      | ControlType      | Description                                                                                                                                                                             |
-| -------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **array**      | `'object'`       | Provides a JSON-based editor to handle the values of the array. Also allows editing in raw mode.<br /> `{ control: 'object' }`                                                          |
-| **boolean**    | `'boolean'`      | Provides a toggle for switching between possible states.<br /> `{ control: 'boolean' }`                                                                                                 |
-| **enum**       | `'check'`        | Provides a set of stacked checkboxes for selecting multiple options.<br /> `{ control: 'check', options: ['email', 'phone', 'mail'] }`                                                  |
-|                | `'inline-check'` | Provides a set of inlined checkboxes for selecting multiple options.<br /> `{ control: 'inline-check', options: ['email', 'phone', 'mail'] }`                                           |
-|                | `'radio'`        | Provides a set of stacked radio buttons based on the available options.<br /> `{ control: 'radio', options: ['email', 'phone', 'mail'] }`                                               |
-|                | `'inline-radio'` | Provides a set of inlined radio buttons based on the available options.<br /> `{ control: 'inline-radio', options: ['email', 'phone', 'mail'] }`                                        |
-|                | `'select'`       | Provides a select to choose a single value from the options.<br /> `{ control: 'select', options: [20, 30, 40, 50] }`                                                                   |
-|                | `'multi-select'` | Provides a select to choose multiple values from the options.<br /> `{ control: 'multi-select', options: ['USA', 'Canada', 'Mexico'] }`                                                 |
-| **number**     | `'number'`       | Provides a numeric input to include the range of all possible values.<br /> `{ control: { type: 'number', min:1, max:30, step: 2 } }`                                                   |
-|                | `'range'`        | Provides a range slider to include all possible values.<br /> `{ control: { type: 'range', min: 1, max: 30, step: 3 } }`                                                                |
-| **object**     | `'file'`         | Provides a file input that returns an array of URLs. Can be further customized to accept specific file types.<br /> `{ control: { type: 'file', accept: '.png' } }`                     |
-|                | `'object'`       | Provides a JSON-based editor to handle the object's values. Also allows editing in raw mode.<br /> `{ control: 'object' }`                                                              |
-| **string**     | `'color'`        | Provides a color picker to choose color values. Can be additionally configured to include a set of color presets.<br /> `{ control: { type: 'color', presetColors: ['red', 'green']} }` |
-|                | `'date'`         | Provides a datepicker to choose a date.<br /> `{ control: 'date' }`                                                                                                                     |
-|                | `'text'`         | Provides a freeform text input.<br /> `{ control: 'text' }`                                                                                                                             |
+| Data type   | ControlType      | Description                                                                                                                                                                             |
+| ----------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **array**   | `'object'`       | Provides a JSON-based editor to handle the values of the array. Also allows editing in raw mode.<br /> `{ control: 'object' }`                                                          |
+| **boolean** | `'boolean'`      | Provides a toggle for switching between possible states.<br /> `{ control: 'boolean' }`                                                                                                 |
+| **enum**    | `'check'`        | Provides a set of stacked checkboxes for selecting multiple options.<br /> `{ control: 'check', options: ['email', 'phone', 'mail'] }`                                                  |
+|             | `'inline-check'` | Provides a set of inlined checkboxes for selecting multiple options.<br /> `{ control: 'inline-check', options: ['email', 'phone', 'mail'] }`                                           |
+|             | `'radio'`        | Provides a set of stacked radio buttons based on the available options.<br /> `{ control: 'radio', options: ['email', 'phone', 'mail'] }`                                               |
+|             | `'inline-radio'` | Provides a set of inlined radio buttons based on the available options.<br /> `{ control: 'inline-radio', options: ['email', 'phone', 'mail'] }`                                        |
+|             | `'select'`       | Provides a select to choose a single value from the options.<br /> `{ control: 'select', options: [20, 30, 40, 50] }`                                                                   |
+|             | `'multi-select'` | Provides a select to choose multiple values from the options.<br /> `{ control: 'multi-select', options: ['USA', 'Canada', 'Mexico'] }`                                                 |
+| **number**  | `'number'`       | Provides a numeric input to include the range of all possible values.<br /> `{ control: { type: 'number', min:1, max:30, step: 2 } }`                                                   |
+|             | `'range'`        | Provides a range slider to include all possible values.<br /> `{ control: { type: 'range', min: 1, max: 30, step: 3 } }`                                                                |
+| **object**  | `'file'`         | Provides a file input that returns an array of URLs. Can be further customized to accept specific file types.<br /> `{ control: { type: 'file', accept: '.png' } }`                     |
+|             | `'object'`       | Provides a JSON-based editor to handle the object's values. Also allows editing in raw mode.<br /> `{ control: 'object' }`                                                              |
+| **string**  | `'color'`        | Provides a color picker to choose color values. Can be additionally configured to include a set of color presets.<br /> `{ control: { type: 'color', presetColors: ['red', 'green']} }` |
+|             | `'date'`         | Provides a datepicker to choose a date.<br /> `{ control: 'date' }`                                                                                                                     |
+|             | `'text'`         | Provides a freeform text input.<br /> `{ control: 'text' }`                                                                                                                             |
 
 <Callout variant="info" icon="💡">
-  The `date` control will convert the date into a UNIX timestamp when the value changes. It's a known limitation that will be fixed in a future release. If you need to represent the actual date, you'll need to update the story's implementation and convert the value into a date object.
+  The `date` control will convert the date into a UNIX timestamp when the value
+  changes. It's a known limitation that will be fixed in a future release. If
+  you need to represent the actual date, you'll need to update the story's
+  implementation and convert the value into a date object.
 </Callout>
 
 #### `control.accept`
@@ -249,7 +252,8 @@ The `argTypes` object uses the name of the arg as the key. By default, that key 
 <Callout variant="warning">
   Be careful renaming args in this way. Users of the component you're documenting will not be able to use the documented name as a property of your component and the actual name will not displayed.
 
-  For this reason, the `name` property is best used when defining an `argType` that is only used for documentation purposes and not an actual property of the component. For example, when [providing argTypes for each property of an object](https://stackblitz.com/edit/github-uplqzp?file=src/stories/Button.stories.tsx).
+For this reason, the `name` property is best used when defining an `argType` that is only used for documentation purposes and not an actual property of the component. For example, when [providing argTypes for each property of an object](https://stackblitz.com/edit/github-uplqzp?file=src/stories/Button.stories.tsx).
+
 </Callout>
 
 ### `options`
@@ -349,50 +353,51 @@ The full type of `SBType` is:
 <details>
   <summary>SBType</summary>
 
-  ```ts
-  interface SBBaseType {
-    required?: boolean;
-    raw?: string;
-  }
+```ts
+interface SBBaseType {
+  required?: boolean;
+  raw?: string;
+}
 
-  type SBScalarType = SBBaseType & {
-    name: 'boolean' | 'string' | 'number' | 'function' | 'symbol';
-  };
+type SBScalarType = SBBaseType & {
+  name: "boolean" | "string" | "number" | "function" | "symbol";
+};
 
-  type SBArrayType = SBBaseType & {
-    name: 'array';
-    value: SBType;
-  };
-  type SBObjectType = SBBaseType & {
-    name: 'object';
-    value: Record<string, SBType>;
-  };
-  type SBEnumType = SBBaseType & {
-    name: 'enum';
-    value: (string | number)[];
-  };
-  type SBIntersectionType = SBBaseType & {
-    name: 'intersection';
-    value: SBType[];
-  };
-  type SBUnionType = SBBaseType & {
-    name: 'union';
-    value: SBType[];
-  };
-  type SBOtherType = SBBaseType & {
-    name: 'other';
-    value: string;
-  };
+type SBArrayType = SBBaseType & {
+  name: "array";
+  value: SBType;
+};
+type SBObjectType = SBBaseType & {
+  name: "object";
+  value: Record<string, SBType>;
+};
+type SBEnumType = SBBaseType & {
+  name: "enum";
+  value: (string | number)[];
+};
+type SBIntersectionType = SBBaseType & {
+  name: "intersection";
+  value: SBType[];
+};
+type SBUnionType = SBBaseType & {
+  name: "union";
+  value: SBType[];
+};
+type SBOtherType = SBBaseType & {
+  name: "other";
+  value: string;
+};
 
-  type SBType =
-    | SBScalarType
-    | SBEnumType
-    | SBArrayType
-    | SBObjectType
-    | SBIntersectionType
-    | SBUnionType
-    | SBOtherType;
-  ```
+type SBType =
+  | SBScalarType
+  | SBEnumType
+  | SBArrayType
+  | SBObjectType
+  | SBIntersectionType
+  | SBUnionType
+  | SBOtherType;
+```
+
 </details>
 
 Default: [Inferred](#automatic-argtype-inference)

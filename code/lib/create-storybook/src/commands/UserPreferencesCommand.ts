@@ -1,16 +1,20 @@
 import type { ProjectType } from 'storybook/internal/cli';
 import { globalSettings } from 'storybook/internal/cli';
-import { type JsPackageManager, isCI } from 'storybook/internal/common';
+import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedFramework } from 'storybook/internal/types';
-import { Feature, SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import type {
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
+import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { CommandOptions } from '../generators/types';
-import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
-import { TelemetryService } from '../services/TelemetryService';
+import type { CommandOptions } from '../generators/types.ts';
+import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
 
 export type InstallType = 'recommended' | 'light';
 
@@ -30,6 +34,8 @@ export interface UserPreferencesOptions {
   builder: SupportedBuilder;
   renderer: SupportedRenderer;
   projectType: ProjectType;
+  isTestFeatureAvailable: boolean;
+  isAiPrepareAvailable: boolean;
 }
 
 /**
@@ -46,8 +52,6 @@ export interface UserPreferencesOptions {
 export class UserPreferencesCommand {
   constructor(
     private readonly commandOptions: CommandOptions,
-    packageManager: JsPackageManager,
-    private readonly featureService = new FeatureCompatibilityService(packageManager),
     private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
   ) {}
 
@@ -56,11 +60,6 @@ export class UserPreferencesCommand {
     // Display version information
     const isInteractive = process.stdout.isTTY && !isCI();
     const skipPrompt = !isInteractive || !!this.commandOptions.yes;
-
-    const isTestFeatureAvailable = await this.isTestFeatureAvailable(
-      options.framework,
-      options.builder
-    );
 
     // Get new user preference
     const newUser = await this.promptNewUser(skipPrompt);
@@ -77,17 +76,18 @@ export class UserPreferencesCommand {
     // Get install type
     const installType: InstallType =
       !newUser && !this.commandOptions.features
-        ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
+        ? await this.promptInstallType(skipPrompt, options.isTestFeatureAvailable)
         : 'recommended';
 
-    // Ask about AI setup (only available for React + Vite projects)
-    const isAiFeatureAvailable = this.isAiFeatureAvailable(options.renderer, options.builder);
-    const useAiForSetup = isAiFeatureAvailable ? await this.promptAiSetup(skipPrompt) : false;
+    // Ask about AI setup (only available for compatible projects, e.g. React + Vite)
+    const useAiForSetup = options.isAiPrepareAvailable
+      ? await this.promptAiSetup(skipPrompt)
+      : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,
       newUser,
-      isTestFeatureAvailable,
+      options.isTestFeatureAvailable,
       options.projectType,
       useAiForSetup
     );
@@ -185,18 +185,6 @@ export class UserPreferencesCommand {
     return installType;
   }
 
-  /** Prompt user about AI-assisted Storybook setup */
-  private async promptAiSetup(skipPrompt: boolean): Promise<boolean> {
-    if (skipPrompt) {
-      return true;
-    }
-
-    return prompt.confirm({
-      message: dedent`Would you like to improve your Storybook setup with AI?
-      We will provide you with a prompt that you can use with your LLM to fully set up Storybook with best practices, tailored to your project.`,
-    });
-  }
-
   /** Determine features based on install type and user status */
   private determineFeatures(
     installType: InstallType,
@@ -230,30 +218,28 @@ export class UserPreferencesCommand {
     return features;
   }
 
-  /** Check if AI feature is available based on renderer and builder */
-  private isAiFeatureAvailable(renderer: SupportedRenderer, builder: SupportedBuilder): boolean {
-    return renderer === SupportedRenderer.REACT && builder === SupportedBuilder.VITE;
-  }
+  /** Prompt user about AI-assisted Storybook setup */
+  private async promptAiSetup(skipPrompt: boolean): Promise<boolean> {
+    const useAi = skipPrompt
+      ? true
+      : await prompt.confirm({
+          message:
+            'Would you like to install AI features (MCP addon, skills and prompt suggestions)?',
+        });
 
-  /** Validate test feature compatibility and prompt user if issues found */
-  private async isTestFeatureAvailable(
-    framework: SupportedFramework | null,
-    builder: SupportedBuilder
-  ): Promise<boolean> {
-    const result = await this.featureService.validateTestFeatureCompatibility(
-      framework,
-      builder,
-      process.cwd()
-    );
+    if (useAi) {
+      await this.telemetryService.trackAiPromptNudge({ skipPrompt });
+    }
 
-    return result.compatible;
+    return useAi;
   }
 }
 
 export const executeUserPreferences = ({
   options,
-  packageManager,
   ...restOptions
-}: UserPreferencesOptions & { options: CommandOptions; packageManager: JsPackageManager }) => {
-  return new UserPreferencesCommand(options, packageManager).execute(restOptions);
+}: UserPreferencesOptions & {
+  options: CommandOptions;
+}) => {
+  return new UserPreferencesCommand(options).execute(restOptions);
 };

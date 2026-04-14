@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TrialConfig, TrialReport } from './run-trial';
+import type { TrialConfig, TrialReport } from './run-trial.ts';
 
 // Mock external dependencies to avoid real git/storybook/vitest calls
 vi.mock('./prepare-trial', () => ({

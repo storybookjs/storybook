@@ -1,7 +1,7 @@
 import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { addScopedAlias, getNextjsVersion, setAlias } from '../utils';
+import { addScopedAlias, getNextjsVersion, setAlias } from '../utils.ts';
 
 const mapping: Record<string, Record<string, string | boolean>> = {
   '<15.0.0': {

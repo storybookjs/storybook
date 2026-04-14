@@ -1,7 +1,7 @@
-export * from './client/index';
-export * from './types';
+export * from './client/index.ts';
+export * from './types.ts';
 
-export { __definePreview as definePreview } from './client/index';
+export { __definePreview as definePreview } from './client/index.ts';
 
 /*
  * ATTENTION:

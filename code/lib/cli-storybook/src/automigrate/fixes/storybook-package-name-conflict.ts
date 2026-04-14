@@ -1,7 +1,7 @@
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 interface StorybookPackageNameOptions {
   packageName: string;

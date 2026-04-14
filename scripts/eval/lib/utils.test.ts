@@ -9,7 +9,7 @@ import {
   loadPrompt,
   listPrompts,
   formatTable,
-} from './utils';
+} from './utils.ts';
 
 describe('formatDuration', () => {
   it('formats seconds under a minute', () => {

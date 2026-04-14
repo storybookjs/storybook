@@ -4,8 +4,8 @@ import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
 
 import { useMemo } from 'storybook/preview-api';
 
-import { PARAM_KEY } from '../constants';
-import { initializeThemeState, pluckThemeFromContext } from './helpers';
+import { PARAM_KEY } from '../constants.ts';
+import { initializeThemeState, pluckThemeFromContext } from './helpers.ts';
 
 type Theme = Record<string, any>;
 type ThemeMap = Record<string, Theme>;

@@ -6,7 +6,7 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { getProjectRoot, normalizeStoryPath } from '../paths';
+import { getProjectRoot, normalizeStoryPath } from '../paths.ts';
 
 vi.mock('empathic/find');
 

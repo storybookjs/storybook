@@ -5,10 +5,10 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { checklistData } from '../../../shared/checklist-store/checklistData';
-import type { ChecklistItem } from '../../components/sidebar/useChecklist';
-import { Checklist } from './Checklist';
+import preview from '../../../../../.storybook/preview.tsx';
+import { checklistData } from '../../../shared/checklist-store/checklistData.tsx';
+import type { ChecklistItem } from '../../components/sidebar/useChecklist.ts';
+import { Checklist } from './Checklist.tsx';
 
 const values: Record<string, 'accepted' | 'done' | 'skipped'> = {
   controls: 'accepted',

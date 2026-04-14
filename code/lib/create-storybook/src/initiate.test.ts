@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 
-import { VersionService } from './services/VersionService';
+import { VersionService } from './services/VersionService.ts';
 
 // Create a version service instance for testing
 const versionService = new VersionService();

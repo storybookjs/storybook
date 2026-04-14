@@ -18,15 +18,15 @@ import type {
 
 import type { ViteDevServer } from 'vite';
 
-import { build as viteBuild } from './build';
-import type { ViteBuilder } from './types';
-import { createViteServer } from './vite-server';
-import { buildModuleGraph } from './utils/build-module-graph';
+import { build as viteBuild } from './build.ts';
+import type { ViteBuilder } from './types.ts';
+import { createViteServer } from './vite-server.ts';
+import { buildModuleGraph } from './utils/build-module-graph.ts';
 
-export { withoutVitePlugins } from './utils/without-vite-plugins';
-export { hasVitePlugins } from './utils/has-vite-plugins';
+export { withoutVitePlugins } from './utils/without-vite-plugins.ts';
+export { hasVitePlugins } from './utils/has-vite-plugins.ts';
 
-export * from './types';
+export * from './types.ts';
 
 function iframeHandler(options: Options, server: ViteDevServer): Middleware {
   return async (req, res) => {
@@ -94,7 +94,6 @@ export const onModuleGraphChange: NonNullable<Builder<Options>['onModuleGraphCha
   if (moduleGraphRegistrationClosed) {
     throw new ViteModuleGraphSubscriptionError();
   }
-
   listeners.add(cb);
 
   return () => {

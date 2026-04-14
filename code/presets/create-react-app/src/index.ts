@@ -7,12 +7,12 @@ import { logger } from 'storybook/internal/node-logger';
 import PnpWebpackPlugin from 'pnp-webpack-plugin';
 import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
 
-import { checkPresets } from './helpers/checkPresets';
-import { getModulePath } from './helpers/getModulePath';
-import { getReactScriptsPath } from './helpers/getReactScriptsPath';
-import { mergePlugins } from './helpers/mergePlugins';
-import { processCraConfig } from './helpers/processCraConfig';
-import type { PluginOptions } from './types';
+import { checkPresets } from './helpers/checkPresets.ts';
+import { getModulePath } from './helpers/getModulePath.ts';
+import { getReactScriptsPath } from './helpers/getReactScriptsPath.ts';
+import { mergePlugins } from './helpers/mergePlugins.ts';
+import { processCraConfig } from './helpers/processCraConfig.ts';
+import type { PluginOptions } from './types.ts';
 
 const CWD = process.cwd();
 

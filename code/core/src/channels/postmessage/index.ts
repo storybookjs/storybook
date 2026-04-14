@@ -13,8 +13,8 @@ import type {
   ChannelHandler,
   ChannelTransport,
   Config,
-} from '../types';
-import { getEventSourceUrl } from './getEventSourceUrl';
+} from '../types.ts';
+import { getEventSourceUrl } from './getEventSourceUrl.ts';
 
 const { document, location } = global;
 

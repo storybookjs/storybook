@@ -18,8 +18,8 @@ import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import type { Template, TemplateKey } from './sandbox-templates';
-import { allTemplates as TEMPLATES } from './sandbox-templates';
+import type { Template, TemplateKey } from './sandbox-templates.ts';
+import { allTemplates as TEMPLATES } from './sandbox-templates.ts';
 
 interface SandboxOptions {
   filterValue?: string;

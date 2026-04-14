@@ -4,7 +4,7 @@ import { Feature } from 'storybook/internal/types';
 
 import { getProcessAncestry } from 'process-ancestry';
 
-import { VersionService } from './VersionService';
+import { VersionService } from './VersionService.ts';
 
 /** Service for tracking telemetry events during Storybook initialization */
 export class TelemetryService {
@@ -29,6 +29,15 @@ export class TelemetryService {
     await this.runTelemetryIfEnabled('init-step', {
       step: 'install-type',
       installType,
+    });
+  }
+
+  /** Track when a user accepts the AI setup nudge prompt */
+  async trackAiPromptNudge(context: { skipPrompt: boolean }): Promise<void> {
+    await this.runTelemetryIfEnabled('ai-prompt-nudge', {
+      id: 'prepare',
+      origin: 'init',
+      context,
     });
   }
 

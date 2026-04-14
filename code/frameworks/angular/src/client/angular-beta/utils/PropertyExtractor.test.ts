@@ -9,9 +9,9 @@ import {
 } from '@angular/platform-browser/animations';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { NgModuleMetadata } from '../../types';
-import { WithOfficialModule } from '../__testfixtures__/test.module';
-import { PropertyExtractor } from './PropertyExtractor';
+import type { NgModuleMetadata } from '../../types.ts';
+import { WithOfficialModule } from '../__testfixtures__/test.module.ts';
+import { PropertyExtractor } from './PropertyExtractor.ts';
 
 const TEST_TOKEN = new InjectionToken('testToken');
 const TestTokenProvider = { provide: TEST_TOKEN, useValue: 123 };

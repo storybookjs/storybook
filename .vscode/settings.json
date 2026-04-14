@@ -3,11 +3,18 @@
     "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.formatOnSave": true
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.formatOnSave": true
+  },
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
     "source.fixAll.oxc": "explicit"
   },
   "editor.formatOnSave": true,
+  "[mdx]": {
+    "editor.formatOnSave": false
+  },
   "editor.tabSize": 2,
   "eslint.options": {
     "cache": true,

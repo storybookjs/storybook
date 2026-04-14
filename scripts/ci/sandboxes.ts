@@ -1,9 +1,9 @@
 import { join } from 'path';
 
-import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { build_linux } from './common-jobs';
-import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
+import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { build_linux } from './common-jobs.ts';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   CACHE_KEYS,
   artifact,
@@ -14,9 +14,9 @@ import {
   verdaccio,
   workflow,
   workspace,
-} from './utils/helpers';
-import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types';
-import type { JobOrNoOpJob, Workflow } from './utils/types';
+} from './utils/helpers.ts';
+import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
+import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 
 function getSandboxSetupSteps(template: string) {
   const extraSteps = [];

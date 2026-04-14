@@ -10,11 +10,11 @@ import {
 import type { Subject, Subscription } from 'rxjs';
 import { map, skip } from 'rxjs/operators';
 
-import type { ICollection, NgModuleMetadata } from '../types';
-import { STORY_PROPS } from './StorybookProvider';
-import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer';
-import { getComponentInputsOutputs } from './utils/NgComponentAnalyzer';
-import { PropertyExtractor } from './utils/PropertyExtractor';
+import type { ICollection, NgModuleMetadata } from '../types.ts';
+import { STORY_PROPS } from './StorybookProvider.ts';
+import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
+import { getComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
+import { PropertyExtractor } from './utils/PropertyExtractor.ts';
 
 const getNonInputsOutputsProps = (
   ngComponentInputsOutputs: ComponentInputsOutputs,

@@ -1,6 +1,6 @@
 import type { BaseAnnotations } from 'storybook/internal/types';
 
-import { type ReactRenderer, type StoryContext } from './public-types';
+import { type ReactRenderer, type StoryContext } from './public-types.ts';
 
 export const mount: BaseAnnotations<ReactRenderer>['mount'] =
   (context: StoryContext) => async (ui) => {

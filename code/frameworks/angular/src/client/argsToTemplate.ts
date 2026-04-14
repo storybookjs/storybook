@@ -1,4 +1,4 @@
-import { formatPropInTemplate } from './angular-beta/ComputesTemplateFromComponent';
+import { formatPropInTemplate } from './angular-beta/ComputesTemplateFromComponent.ts';
 
 /**
  * Options for controlling the behavior of the argsToTemplate function.

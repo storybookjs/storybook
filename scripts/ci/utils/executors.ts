@@ -1,4 +1,4 @@
-import { LINUX_ROOT_DIR, WORKING_DIR } from './constants';
+import { LINUX_ROOT_DIR, WORKING_DIR } from './constants.ts';
 
 export const executors = {
   sb_node_22_browsers: {

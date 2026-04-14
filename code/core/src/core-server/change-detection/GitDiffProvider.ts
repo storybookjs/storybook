@@ -1,12 +1,24 @@
+import { watch, type FSWatcher } from 'node:fs';
+import { readFile, stat } from 'node:fs/promises';
+import { dirname, join, resolve as resolvePath } from 'pathe';
+
 // eslint-disable-next-line depend/ban-dependencies
 import { execa, type ExecaError } from 'execa';
+import { logger } from 'storybook/internal/node-logger';
 
-import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 
 export interface GitDiffResult {
   changed: Set<string>;
   new: Set<string>;
 }
+
+type GitStateChangeCallback = () => void;
+type GitFileSystem = {
+  watch: typeof watch;
+  readFile: typeof readFile;
+  stat: typeof stat;
+};
 
 function parseChangedFiles(stdout: string): Set<string> {
   return new Set(
@@ -19,8 +31,17 @@ function parseChangedFiles(stdout: string): Set<string> {
 
 export class GitDiffProvider {
   private repoRoot: string | undefined;
+  private gitStateCallback: GitStateChangeCallback = () => {};
+  private branchWatcher: FSWatcher | undefined;
+  private headWatcher: FSWatcher | undefined;
+  private packedRefsWatcher: FSWatcher | undefined;
+  private watchingInitialized = false;
+  private watchingStopped = false;
 
-  constructor(private readonly cwd = process.cwd()) {}
+  constructor(
+    private readonly cwd = process.cwd(),
+    private readonly fileSystem: GitFileSystem = { watch, readFile, stat }
+  ) {}
 
   async getRepoRoot(): Promise<string> {
     if (this.repoRoot) {
@@ -50,11 +71,12 @@ export class GitDiffProvider {
       }
     };
 
-    const [staged, unstaged, untracked, stagedAdded] = await Promise.all([
-      runGitCommand(['diff', '--name-only', '--diff-filter=d', '--cached']),
-      runGitCommand(['diff', '--name-only', '--diff-filter=d']),
-      runGitCommand(['ls-files', '--others', '--exclude-standard']),
+    const [staged, unstaged, added, intentToAdd, untracked] = await Promise.all([
+      runGitCommand(['diff', '--name-only', '--diff-filter=ad', '--cached']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=ad']),
       runGitCommand(['diff', '--name-only', '--diff-filter=A', '--cached']),
+      runGitCommand(['diff', '--name-only', '--diff-filter=A']),
+      runGitCommand(['ls-files', '--others', '--exclude-standard']),
     ]);
 
     return {
@@ -63,10 +85,183 @@ export class GitDiffProvider {
         ...parseChangedFiles(unstaged.stdout),
       ]),
       new: new Set([
+        ...parseChangedFiles(added.stdout),
+        ...parseChangedFiles(intentToAdd.stdout),
         ...parseChangedFiles(untracked.stdout),
-        ...parseChangedFiles(stagedAdded.stdout),
       ]),
     };
+  }
+
+  onGitStateChange(callback: GitStateChangeCallback): void {
+    // Change detection has a single long-lived consumer.
+    this.gitStateCallback = callback;
+    if (!this.watchingInitialized && !this.watchingStopped) {
+      this.watchingInitialized = true;
+      void this.initializeWatching();
+    }
+  }
+
+  private async initializeWatching(): Promise<void> {
+    try {
+      const gitDir = await this.getGitDir();
+      this.headWatcher = this.attachWatcher({
+        filePath: gitDir,
+        currentWatcher: this.headWatcher,
+        onChange: () => {
+          this.gitStateCallback();
+          this.reconfigureBranchWatcher(gitDir);
+        },
+      });
+      this.packedRefsWatcher = this.attachWatcher({
+        filePath: gitDir,
+        currentWatcher: this.packedRefsWatcher,
+        onChange: () => {
+          this.gitStateCallback();
+        },
+      });
+      await this.configureBranchWatcher(gitDir);
+    } catch {
+      // Watching git state is opportunistic; scanning still runs from module graph updates.
+    }
+  }
+
+  private attachWatcher(options: {
+    filePath: string;
+    currentWatcher: FSWatcher | undefined;
+    onChange: () => void;
+  }): FSWatcher | undefined {
+    const { filePath, currentWatcher, onChange } = options;
+    if (this.watchingStopped) {
+      return undefined;
+    }
+
+    try {
+      const watcher = this.fileSystem.watch(filePath, { persistent: false }, () => {
+        if (!this.watchingStopped) {
+          onChange();
+        }
+      });
+
+      currentWatcher?.close();
+
+      watcher.on('error', () => {
+        watcher.close();
+        if (this.headWatcher === watcher) {
+          this.headWatcher = undefined;
+        }
+        if (this.packedRefsWatcher === watcher) {
+          this.packedRefsWatcher = undefined;
+        }
+        if (this.branchWatcher === watcher) {
+          this.branchWatcher = undefined;
+        }
+        this.stopWatching();
+        logger.warn(
+          `Change detection git watcher failed for ${filePath}. Git state updates may stop until restart.`
+        );
+      });
+
+      return watcher;
+    } catch (error) {
+      if (this.isEnoentError(error)) {
+        return undefined;
+      }
+
+      throw error;
+    }
+  }
+
+  private async configureBranchWatcher(gitDir: string): Promise<void> {
+    const branchRef = await this.readHeadRef(gitDir);
+
+    this.branchWatcher?.close();
+    this.branchWatcher = undefined;
+
+    const watchBranch = (filePath: string): FSWatcher | undefined => {
+      this.branchWatcher = this.attachWatcher({
+        filePath,
+        currentWatcher: this.branchWatcher,
+        onChange: () => {
+          this.gitStateCallback();
+          this.reconfigureBranchWatcher(gitDir);
+        },
+      });
+      return this.branchWatcher;
+    };
+
+    if (branchRef?.startsWith('refs/heads/')) {
+      const refWatcher = watchBranch(dirname(join(gitDir, branchRef)));
+      if (!refWatcher) {
+        watchBranch(join(gitDir, 'refs', 'heads'));
+      }
+    }
+  }
+
+  private reconfigureBranchWatcher(gitDir: string): void {
+    void this.configureBranchWatcher(gitDir).catch(() => {
+      // Same trade-off as watcher errors: fail closed and warn instead of retrying/rebuilding.
+      logger.warn('Change detection failed to reconfigure git branch watcher.');
+      this.stopWatching();
+    });
+  }
+
+  private stopWatching(): void {
+    if (this.watchingStopped) {
+      return;
+    }
+
+    this.watchingStopped = true;
+    this.headWatcher?.close();
+    this.headWatcher = undefined;
+    this.packedRefsWatcher?.close();
+    this.packedRefsWatcher = undefined;
+    this.branchWatcher?.close();
+    this.branchWatcher = undefined;
+  }
+
+  private async getGitDir(): Promise<string> {
+    const repoRoot = await this.getRepoRoot();
+    const gitPath = join(repoRoot, '.git');
+
+    try {
+      const gitStat = await this.fileSystem.stat(gitPath);
+      if (gitStat.isDirectory()) {
+        return gitPath;
+      }
+
+      if (gitStat.isFile()) {
+        const gitPointer = await this.fileSystem.readFile(gitPath, 'utf8');
+        const match = /^gitdir:\s+(.+)$/m.exec(gitPointer.trim());
+
+        if (match) {
+          return resolvePath(repoRoot, match[1]);
+        }
+      }
+    } catch (error) {
+      if (!this.isEnoentError(error)) {
+        throw error;
+      }
+    }
+
+    return gitPath;
+  }
+
+  private async readHeadRef(gitDir: string): Promise<string | undefined> {
+    try {
+      const headContents = await this.fileSystem.readFile(join(gitDir, 'HEAD'), 'utf8');
+      const match = /^ref:\s+(.+)$/m.exec(headContents.trim());
+      return match?.[1];
+    } catch (error) {
+      if (!this.isEnoentError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  private isEnoentError(error: unknown): error is NodeJS.ErrnoException {
+    return Boolean(
+      error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT'
+    );
   }
 
   private toGitError(error: unknown, command: string): Error {

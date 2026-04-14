@@ -1,5 +1,5 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { PackageManagerName, isCI, optionalEnvToBoolean } from 'storybook/internal/common';
+import { PackageManagerName, optionalEnvToBoolean } from 'storybook/internal/common';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import { Feature, SupportedBuilder } from 'storybook/internal/types';
@@ -7,8 +7,8 @@ import { Feature, SupportedBuilder } from 'storybook/internal/types';
 import { Option, program } from 'commander';
 
 import { version } from '../../package.json';
-import type { CommandOptions } from '../generators/types';
-import { initiate } from '../initiate';
+import type { CommandOptions } from '../generators/types.ts';
+import { initiate } from '../initiate.ts';
 import { isAgent, detectAgent } from 'std-env';
 
 addToGlobalContext('cliVersion', version);
@@ -116,10 +116,8 @@ const createStorybookProgram = program
 
 createStorybookProgram
   .action(async (options) => {
-    const isNeitherCiNorSandbox =
-      !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
     options.debug = options.debug ?? false;
-    options.dev = options.dev ?? isNeitherCiNorSandbox;
+    options.dev = options.dev ?? false;
 
     if (options.features === false) {
       // Ensure features are treated as empty when --no-features is set

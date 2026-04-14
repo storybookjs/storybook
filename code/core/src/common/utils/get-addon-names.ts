@@ -1,6 +1,6 @@
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import { normalizePath } from './normalize-path';
+import { normalizePath } from './normalize-path.ts';
 
 export const getAddonNames = (mainConfig: StorybookConfig): string[] => {
   const addons = mainConfig.addons || [];

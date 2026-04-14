@@ -1,11 +1,11 @@
 import { opacify } from 'polished';
 
-import { animation, easing } from './animation';
-import { background, color, tokens, typography } from './base';
-import { themes } from './create';
-import { chromeDark, chromeLight, create as createSyntax } from './modules/syntax';
-import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types';
-import { getPreferredColorScheme } from './utils';
+import { animation, easing } from './animation.ts';
+import { background, color, tokens, typography } from './base.ts';
+import { themes } from './create.ts';
+import { chromeDark, chromeLight, create as createSyntax } from './modules/syntax.ts';
+import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types.ts';
+import { getPreferredColorScheme } from './utils.ts';
 
 const lightSyntaxColors = {
   green1: '#008000',

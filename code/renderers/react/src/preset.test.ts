@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { optimizeViteDeps } from './preset';
+import { optimizeViteDeps } from './preset.ts';
 
 describe('optimizeViteDeps', () => {
   it('includes react-dom/test-utils', () => {

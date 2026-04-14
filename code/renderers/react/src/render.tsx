@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { ArgsStoryFn } from 'storybook/internal/types';
 
-import type { ReactRenderer } from './types';
+import type { ReactRenderer } from './types.ts';
 
 export const render: ArgsStoryFn<ReactRenderer> = (args, context) => {
   const { id, component: Component } = context;

@@ -5,8 +5,8 @@ import { global } from '@storybook/global';
 
 import * as R from 'react-router-dom';
 
-import type { LinkProps, NavigateOptions, RenderData } from './types';
-import { getMatch, parsePath, queryFromLocation } from './utils';
+import type { LinkProps, NavigateOptions, RenderData } from './types.ts';
+import { getMatch, parsePath, queryFromLocation } from './utils.ts';
 
 const { document } = global;
 

@@ -1,20 +1,22 @@
-import { relative, resolve } from 'node:path';
+import { join, relative } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import type {
   Builder,
   ModuleGraph,
   ModuleGraphChangeEvent,
+  ModuleNode,
   Status,
   StatusStoreByTypeId,
 } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator';
-import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors';
-import { GitDiffProvider } from './GitDiffProvider';
-import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness';
-import { findAffectedStoryFiles } from './trace-changed';
+import { normalizePath } from '../../common/utils/normalize-path.ts';
+import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
+import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
+import { GitDiffProvider } from './GitDiffProvider.ts';
+import { resetChangeDetectionReadiness, setChangeDetectionReadiness } from './readiness.ts';
+import { findAffectedStoryFiles } from './trace-changed.ts';
 
 const CHANGE_DETECTION_DEBOUNCE_MS = 200;
 
@@ -39,19 +41,14 @@ function getStoryIdsByAbsolutePath(
   workingDir: string
 ): Map<string, Set<string>> {
   const storyIdsByFile = new Map<string, Set<string>>();
-
   Object.values(storyIndex.entries).forEach((entry) => {
-    if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
-      return;
+    if (entry.type === 'story' && !entry.importPath.startsWith('virtual:')) {
+      const filePath = join(workingDir, entry.importPath);
+      const storyIds = storyIdsByFile.get(filePath) ?? new Set<string>();
+      storyIds.add(entry.id);
+      storyIdsByFile.set(filePath, storyIds);
     }
-
-    const absolutePath = resolve(workingDir, entry.importPath);
-    // logger.info(`Story ${entry.id} absolute path: ${absolutePath}`);
-    const storyIds = storyIdsByFile.get(absolutePath) ?? new Set<string>();
-    storyIds.add(entry.id);
-    storyIdsByFile.set(absolutePath, storyIds);
   });
-
   return storyIdsByFile;
 }
 
@@ -74,11 +71,6 @@ function mergeStatusValues(
   return nextValue;
 }
 
-function toRepoRelativePath(repoRoot: string, filePath: string): string {
-  const relativePath = relative(repoRoot, filePath);
-  return relativePath.startsWith('\\\\?\\') ? relativePath : relativePath.replace(/\\/g, '/');
-}
-
 /**
  * Coordinates change detection by listening to builder module-graph updates, resolving changed
  * files from git, mapping those changes to affected stories, and publishing the resulting story
@@ -86,7 +78,7 @@ function toRepoRelativePath(repoRoot: string, filePath: string): string {
  */
 export class ChangeDetectionService {
   private disposed = false;
-  private unsubscribe: (() => void) | undefined;
+  private unsubscribeModuleGraph: (() => void) | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private latestModuleGraph: ModuleGraph | undefined;
   private hasReceivedModuleGraph = false;
@@ -94,7 +86,7 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private previousStatuses = new Map<string, Status>();
-  private readonly gitDiffProvider: Pick<GitDiffProvider, 'getChangedFiles' | 'getRepoRoot'>;
+  private gitDiffProvider: GitDiffProvider | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -102,12 +94,12 @@ export class ChangeDetectionService {
     private readonly options: {
       storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
       statusStore: StatusStoreByTypeId;
-      gitDiffProvider?: Pick<GitDiffProvider, 'getChangedFiles' | 'getRepoRoot'>;
+      gitDiffProvider?: GitDiffProvider;
       workingDir?: string;
       debounceMs?: number;
     }
   ) {
-    this.gitDiffProvider = options.gitDiffProvider ?? new GitDiffProvider(options.workingDir);
+    this.gitDiffProvider = options.gitDiffProvider;
     this.workingDir = options.workingDir ?? process.cwd();
     this.debounceMs = options.debounceMs ?? CHANGE_DETECTION_DEBOUNCE_MS;
     resetChangeDetectionReadiness();
@@ -136,7 +128,7 @@ export class ChangeDetectionService {
     }
 
     logger.debug('Change detection enabled.');
-    this.unsubscribe = onModuleGraphChange((event) => {
+    this.unsubscribeModuleGraph = onModuleGraphChange((event) => {
       if (this.disposed) {
         return;
       }
@@ -150,6 +142,11 @@ export class ChangeDetectionService {
 
       this.handleBuilderStartupEvent(event);
     });
+    this.getGitDiffProvider().onGitStateChange(() => {
+      if (!this.disposed) {
+        this.scheduleScan(this.debounceMs);
+      }
+    });
   }
 
   async dispose(): Promise<void> {
@@ -161,8 +158,8 @@ export class ChangeDetectionService {
       this.debounceTimer = undefined;
     }
 
-    this.unsubscribe?.();
-    this.unsubscribe = undefined;
+    this.unsubscribeModuleGraph?.();
+    this.unsubscribeModuleGraph = undefined;
   }
 
   private scheduleScan(delayMs: number): void {
@@ -237,26 +234,37 @@ export class ChangeDetectionService {
   }
 
   private async buildStatuses(moduleGraph: ModuleGraph): Promise<Map<string, Status>> {
+    const gitDiffProvider = this.getGitDiffProvider();
     const [changes, repoRoot, storyIndexGenerator] = await Promise.all([
-      this.gitDiffProvider.getChangedFiles(),
-      this.gitDiffProvider.getRepoRoot(),
+      gitDiffProvider.getChangedFiles(),
+      gitDiffProvider.getRepoRoot(),
       this.options.storyIndexGeneratorPromise,
     ]);
 
-    const changedFiles = new Set(
-      Array.from(changes.changed).map((filePath) => resolve(repoRoot, filePath))
-    );
-    const newFiles = new Set(
-      Array.from(changes.new).map((filePath) => resolve(repoRoot, filePath))
-    );
+    const changedFiles = new Set(Array.from(changes.changed).map((path) => join(repoRoot, path)));
+    const newFiles = new Set(Array.from(changes.new).map((path) => join(repoRoot, path)));
     const scannedFiles = new Set([...changedFiles, ...newFiles]);
+    const normalizedModuleGraph = new Map<string, Set<ModuleNode>>();
+    moduleGraph.forEach((nodes, filePath) => {
+      const normalizedPath = normalizePath(filePath);
+      const existingNodes = normalizedModuleGraph.get(normalizedPath);
+      if (existingNodes) {
+        nodes.forEach((node) => void existingNodes.add(node));
+      } else {
+        normalizedModuleGraph.set(normalizedPath, new Set(nodes));
+      }
+    });
 
     const storyIndex = await storyIndexGenerator.getIndex();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
 
     for (const changedFile of scannedFiles) {
-      const affectedStoryFiles = findAffectedStoryFiles(changedFile, moduleGraph, storyIdsByFile);
+      const affectedStoryFiles = findAffectedStoryFiles(
+        changedFile,
+        normalizedModuleGraph,
+        storyIdsByFile
+      );
       const lowestDistance = Math.min(
         ...Array.from(affectedStoryFiles.values(), ({ distance }) => distance)
       );
@@ -276,7 +284,7 @@ export class ChangeDetectionService {
         storyIds.forEach((storyId) => {
           const existingStatus = statuses.get(storyId);
           const changedStoryFiles = new Set<string>(existingStatus?.data?.changedFiles ?? []);
-          changedStoryFiles.add(toRepoRelativePath(repoRoot, changedFile));
+          changedStoryFiles.add(relative(repoRoot, changedFile));
 
           statuses.set(storyId, {
             storyId,
@@ -294,6 +302,11 @@ export class ChangeDetectionService {
     }
 
     return statuses;
+  }
+
+  private getGitDiffProvider(): GitDiffProvider {
+    this.gitDiffProvider ??= new GitDiffProvider(this.workingDir);
+    return this.gitDiffProvider;
   }
 
   private applyStatusStorePatch(nextStatuses: Map<string, Status>): void {

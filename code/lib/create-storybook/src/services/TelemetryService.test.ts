@@ -6,7 +6,7 @@ import { Feature } from 'storybook/internal/types';
 
 import { getProcessAncestry } from 'process-ancestry';
 
-import { TelemetryService } from './TelemetryService';
+import { TelemetryService } from './TelemetryService.ts';
 
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('process-ancestry', { spy: true });
@@ -71,6 +71,26 @@ describe('TelemetryService', () => {
 
       expect(telemetry).toHaveBeenCalledWith('scaffolded-empty', data);
     });
+
+    it('should track ai-prompt-nudge event with context when prompt was shown', async () => {
+      await telemetryService.trackAiPromptNudge({ skipPrompt: false });
+
+      expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
+        id: 'prepare',
+        origin: 'init',
+        context: { skipPrompt: false },
+      });
+    });
+
+    it('should track ai-prompt-nudge event with context when prompt was skipped', async () => {
+      await telemetryService.trackAiPromptNudge({ skipPrompt: true });
+
+      expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
+        id: 'prepare',
+        origin: 'init',
+        context: { skipPrompt: true },
+      });
+    });
   });
 
   describe('when telemetry is disabled', () => {
@@ -112,6 +132,12 @@ describe('TelemetryService', () => {
         packageManager: 'yarn',
         projectType: 'vue-vite-ts',
       });
+
+      expect(telemetry).not.toHaveBeenCalled();
+    });
+
+    it('should not track ai-prompt-nudge event', async () => {
+      await telemetryService.trackAiPromptNudge({ skipPrompt: false });
 
       expect(telemetry).not.toHaveBeenCalled();
     });

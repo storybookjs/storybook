@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import * as pkg from 'empathic/package';
 
-import versions from '../versions';
+import versions from '../versions.ts';
 
 /**
  * Get the path of the file or directory with input name inside the Storybook cache directory:

@@ -2,7 +2,7 @@ import type { Channel } from 'storybook/internal/channels';
 
 import { global } from '@storybook/global';
 
-import { mockChannel } from './storybook-channel-mock';
+import { mockChannel } from './storybook-channel-mock.ts';
 
 export class AddonStore {
   constructor() {

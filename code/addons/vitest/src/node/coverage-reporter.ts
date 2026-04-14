@@ -3,8 +3,8 @@ import type { ResolvedCoverageOptions } from 'vitest/node';
 import type { ReportNode, Visitor } from 'istanbul-lib-report';
 import { ReportBase } from 'istanbul-lib-report';
 
-import type { StoreState } from '../types';
-import type { TestManager } from './test-manager';
+import type { StoreState } from '../types.ts';
+import type { TestManager } from './test-manager.ts';
 
 export type StorybookCoverageReporterOptions = {
   testManager: TestManager;

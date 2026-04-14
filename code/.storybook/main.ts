@@ -56,6 +56,10 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
+      directory: '../core/src/actions/containers',
+      titlePrefix: 'actions',
+    },
+    {
       directory: '../addons/a11y/src',
       titlePrefix: 'addons/accessibility',
     },

@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
-import { INTERNAL_RENDER_CALL_ID } from '../constants';
-import { type PanelState, getInteractions, getPanelState } from './Panel';
+import { type Call, CallStates, type LogItem } from '../../instrumenter/types.ts';
+import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
+import { type PanelState, getInteractions, getPanelState } from './Panel.tsx';
 
 describe('Panel', () => {
   const log: LogItem[] = [

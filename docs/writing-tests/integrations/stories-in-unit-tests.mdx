@@ -33,7 +33,7 @@ Once the test runs, it loads the story and renders it. [Testing Library](https:/
 
 ### Override story properties
 
-By default, the `setProjectAnnotations` function injects into your existing tests any global configuration you've defined in your Storybook instance (i.e., parameters, decorators in the `preview.js|ts` file). Nevertheless, this may cause unforeseen side effects for tests that are not intended to use these global configurations. For example, you may want to always test a story in a particular locale (via `globalTypes`) or configure a story to apply specific `decorators` or `parameters`.
+By default, the `setProjectAnnotations` function injects into your existing tests any global configuration you've defined in your Storybook instance (i.e., parameters, decorators in the `preview.*` file). Nevertheless, this may cause unforeseen side effects for tests that are not intended to use these global configurations. For example, you may want to always test a story in a particular locale (via `globalTypes`) or configure a story to apply specific `decorators` or `parameters`.
 
 To avoid this, you can override the global configurations by extending either the `composeStory` or `composeStories` functions to provide test-specific configurations. For example:
 

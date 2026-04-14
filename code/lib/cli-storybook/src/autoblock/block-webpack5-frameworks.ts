@@ -1,5 +1,5 @@
-import { createBlocker } from './types';
-import { findOutdatedPackage } from './utils';
+import { createBlocker } from './types.ts';
+import { findOutdatedPackage } from './utils.ts';
 
 const minimalVersionsMap = {
   '@storybook/preact-webpack5': '9.0.0',

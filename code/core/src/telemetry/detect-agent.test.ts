@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { detectAgent } from './detect-agent';
+import { detectAgent } from './detect-agent.ts';
 
 const AGENT_ENV_KEYS = [
   'AI_AGENT',

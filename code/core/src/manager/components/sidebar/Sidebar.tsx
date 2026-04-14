@@ -10,22 +10,22 @@ import { PlusIcon } from '@storybook/icons';
 import { type State, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { focusableUIElements } from '../../../manager-api/modules/layout';
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
-import { useLandmark } from '../../hooks/useLandmark';
-import { useLayout } from '../layout/LayoutProvider';
-import { ChecklistWidget } from './ChecklistWidget';
-import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
-import { Explorer } from './Explorer';
-import type { HeadingProps } from './Heading';
-import { Heading } from './Heading';
-import { IconSymbols } from './IconSymbols';
-import { Search } from './Search';
-import { SearchResults } from './SearchResults';
-import { SidebarBottom } from './SidebarBottom';
-import { TagsFilter } from './TagsFilter';
-import type { CombinedDataset, Selection } from './types';
-import { useLastViewed } from './useLastViewed';
+import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+import { useLayout } from '../layout/LayoutProvider.tsx';
+import { ChecklistWidget } from './ChecklistWidget.tsx';
+import { CreateNewStoryFileModal } from './CreateNewStoryFileModal.tsx';
+import { Explorer } from './Explorer.tsx';
+import type { HeadingProps } from './Heading.tsx';
+import { Heading } from './Heading.tsx';
+import { IconSymbols } from './IconSymbols.tsx';
+import { Search } from './Search.tsx';
+import { SearchResults } from './SearchResults.tsx';
+import { SidebarBottom } from './SidebarBottom.tsx';
+import { Filter } from './Filter.tsx';
+import type { CombinedDataset, Selection } from './types.ts';
+import { useLastViewed } from './useLastViewed.ts';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
@@ -190,7 +190,7 @@ export const Sidebar = React.memo(function Sidebar({
                 </>
               )
             }
-            searchFieldContent={<TagsFilter />}
+            searchFieldContent={<Filter />}
             {...lastViewedProps}
           >
             {({

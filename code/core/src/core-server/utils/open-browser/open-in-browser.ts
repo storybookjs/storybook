@@ -3,7 +3,7 @@ import { logger } from 'storybook/internal/node-logger';
 import open from 'open';
 import { dedent } from 'ts-dedent';
 
-import { openBrowser } from './opener';
+import { openBrowser } from './opener.ts';
 
 export async function openInBrowser(address: string) {
   let errorOccurred = false;
